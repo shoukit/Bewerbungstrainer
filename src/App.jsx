@@ -14,7 +14,6 @@ function App() {
 
   // Track if we're currently starting a session to prevent double-starts
   const isStartingSession = useRef(false);
-  const hasCleanedUp = useRef(false);
 
   // Environment variables
   const ELEVENLABS_AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID;
@@ -40,20 +39,6 @@ function App() {
       isStartingSession.current = false;
     },
   });
-
-  // Cleanup on unmount to prevent WebSocket issues with React StrictMode
-  useEffect(() => {
-    return () => {
-      // Only cleanup once to avoid double-cleanup in StrictMode
-      if (!hasCleanedUp.current && conversation.status === 'connected') {
-        hasCleanedUp.current = true;
-        conversation.endSession().catch(err => {
-          console.error('Error ending session on cleanup:', err);
-        });
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only cleanup on actual unmount
 
   /**
    * Handles the end of interview and generates feedback
@@ -127,7 +112,6 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
 
     try {
       isStartingSession.current = true;
-      hasCleanedUp.current = false; // Reset cleanup flag
       setConversationMessages([]); // Clear previous messages
 
       console.log('Starting conversation with agent ID:', ELEVENLABS_AGENT_ID);
