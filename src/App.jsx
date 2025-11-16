@@ -23,6 +23,12 @@ function App() {
 
   // ElevenLabs Conversation Hook with extensive logging
   const conversation = useConversation({
+    overrides: {
+      agent: {
+        language: "de", // German language
+        firstMessage: "Guten Tag! Schön, dass Sie da sind. Erzählen Sie mir doch bitte zunächst etwas über sich selbst.",
+      },
+    },
     onConnect: () => {
       const now = Date.now();
       const timeSinceStart = connectionTimestamp.current ? now - connectionTimestamp.current : 0;
@@ -32,13 +38,26 @@ function App() {
       console.log(`   Microphone muted: ${conversation.micMuted}`);
       isStartingSession.current = false;
     },
-    onDisconnect: () => {
+    onDisconnect: (event) => {
       const now = Date.now();
       const timeSinceStart = connectionTimestamp.current ? now - connectionTimestamp.current : 0;
       console.log('🔴 [DISCONNECTED] ElevenLabs WebSocket disconnected');
       console.log(`   Time since start: ${timeSinceStart}ms`);
       console.log(`   Conversation status: ${conversation.status}`);
+      console.log(`   Disconnect event:`, event);
+      console.log(`   Close code:`, event?.code);
+      console.log(`   Close reason:`, event?.reason);
+      console.log(`   Was clean:`, event?.wasClean);
       isStartingSession.current = false;
+
+      // Set user-friendly error message based on close code
+      if (event?.code === 1002 || event?.code === 1003) {
+        setMicrophoneError('Agent-Konfigurationsfehler: Bitte überprüfe die Agent-Einstellungen im ElevenLabs Dashboard.');
+      } else if (event?.code === 1006) {
+        setMicrophoneError('Verbindung unerwartet getrennt. Möglicherweise stimmt die Agent-Konfiguration nicht.');
+      } else if (event?.reason) {
+        setMicrophoneError(`Verbindung getrennt: ${event.reason}`);
+      }
     },
     onMessage: (message) => {
       console.log('💬 [MESSAGE] Received:', {
@@ -207,7 +226,9 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       console.log('🚀 [START] Step 2: Initiating ElevenLabs session...');
       console.log(`   Timestamp: ${new Date(connectionTimestamp.current).toISOString()}`);
 
-      await conversation.startSession({ agentId: ELEVENLABS_AGENT_ID });
+      await conversation.startSession({
+        agentId: ELEVENLABS_AGENT_ID
+      });
 
       console.log('✅ [START] Session start requested successfully');
     } catch (error) {
