@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import Header from './components/Header';
 import FeedbackModal from './components/FeedbackModal';
@@ -12,6 +12,10 @@ function App() {
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
   const [conversationMessages, setConversationMessages] = useState([]);
 
+  // Track if we're currently starting a session to prevent double-starts
+  const isStartingSession = useRef(false);
+  const hasCleanedUp = useRef(false);
+
   // Environment variables
   const ELEVENLABS_AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID;
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
@@ -20,9 +24,11 @@ function App() {
   const conversation = useConversation({
     onConnect: () => {
       console.log('Connected to ElevenLabs conversation');
+      isStartingSession.current = false;
     },
     onDisconnect: () => {
       console.log('Disconnected from ElevenLabs conversation');
+      isStartingSession.current = false;
     },
     onMessage: (message) => {
       console.log('Message received:', message);
@@ -31,15 +37,31 @@ function App() {
     },
     onError: (error) => {
       console.error('Conversation error:', error);
+      isStartingSession.current = false;
     },
   });
+
+  // Cleanup on unmount to prevent WebSocket issues with React StrictMode
+  useEffect(() => {
+    return () => {
+      // Only cleanup once to avoid double-cleanup in StrictMode
+      if (!hasCleanedUp.current && conversation.status === 'connected') {
+        hasCleanedUp.current = true;
+        conversation.endSession().catch(err => {
+          console.error('Error ending session on cleanup:', err);
+        });
+      }
+    };
+  }, [conversation]);
 
   /**
    * Handles the end of interview and generates feedback
    */
   const handleEndInterview = async () => {
     // End the conversation first
-    await conversation.endSession();
+    if (conversation.status === 'connected') {
+      await conversation.endSession();
+    }
 
     setIsRequestingFeedback(true);
     setShowFeedbackModal(true);
@@ -96,11 +118,25 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       return;
     }
 
+    // Prevent multiple simultaneous connection attempts
+    if (isStartingSession.current || conversation.status === 'connected' || conversation.status === 'connecting') {
+      console.log('Session already starting or connected, skipping...');
+      return;
+    }
+
     try {
+      isStartingSession.current = true;
+      hasCleanedUp.current = false; // Reset cleanup flag
       setConversationMessages([]); // Clear previous messages
+
+      console.log('Starting conversation with agent ID:', ELEVENLABS_AGENT_ID);
       await conversation.startSession({ agentId: ELEVENLABS_AGENT_ID });
     } catch (error) {
       console.error('Error starting conversation:', error);
+      isStartingSession.current = false;
+
+      // Show error to user
+      alert('Fehler beim Starten des Gesprächs. Bitte überprüfe deine ElevenLabs Agent ID und versuche es erneut.');
     }
   };
 
@@ -164,9 +200,10 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                           onClick={handleStartConversation}
                           size="lg"
                           className="bg-green-600 hover:bg-green-700"
+                          disabled={conversation.status === 'connecting' || isStartingSession.current}
                         >
                           <Phone className="w-4 h-4 mr-2" />
-                          Gespräch starten
+                          {conversation.status === 'connecting' ? 'Verbinde...' : 'Gespräch starten'}
                         </Button>
                       </div>
                     </div>
