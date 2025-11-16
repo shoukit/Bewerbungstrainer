@@ -25,10 +25,8 @@ function App() {
   const isStartingSession = useRef(false);
   const connectionTimestamp = useRef(null);
 
-  // Audio recording references
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const recordedAudioBlobRef = useRef(null);
+  // Store the ElevenLabs conversation ID for audio download
+  const conversationIdRef = useRef(null);
 
   // Environment variables
   const ELEVENLABS_AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID;
@@ -101,106 +99,49 @@ function App() {
   });
 
   /**
-   * Starts recording audio from the user's microphone
+   * Downloads the conversation audio from ElevenLabs
+   * @param {string} conversationId - The ElevenLabs conversation ID
+   * @returns {Promise<Blob|null>} - The audio blob or null if failed
    */
-  const startAudioRecording = async () => {
-    console.log('🎙️ [AUDIO REC] Starting audio recording...');
+  const downloadConversationAudio = async (conversationId) => {
+    console.log('📥 [AUDIO DOWNLOAD] Downloading conversation audio from ElevenLabs...');
+    console.log(`📥 [AUDIO DOWNLOAD] Conversation ID: ${conversationId}`);
 
     try {
-      setAudioRecordingError(null); // Clear any previous errors
+      // ElevenLabs API endpoint for conversation audio
+      const url = `https://api.elevenlabs.io/v1/convai/conversations/${conversationId}/audio`;
 
-      // Request microphone access
-      // Note: This might fail if ElevenLabs is already using the microphone
-      // In that case, we'll fallback to no audio analysis
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
+      // Note: We need an API key for this endpoint
+      const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
 
-      console.log('🎙️ [AUDIO REC] Microphone stream obtained');
-      console.log('🎙️ [AUDIO REC] Audio tracks:', stream.getAudioTracks().length);
-
-      // Create MediaRecorder
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: mimeType
-      });
-
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      // Handle data available event
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-          console.log(`🎙️ [AUDIO REC] Audio chunk recorded: ${event.data.size} bytes (Total chunks: ${audioChunksRef.current.length})`);
-        }
-      };
-
-      // Handle recording stop event
-      mediaRecorder.onstop = () => {
-        console.log('🎙️ [AUDIO REC] Recording stopped');
-        console.log(`🎙️ [AUDIO REC] Total chunks collected: ${audioChunksRef.current.length}`);
-
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        recordedAudioBlobRef.current = audioBlob;
-        console.log(`🎙️ [AUDIO REC] Total audio size: ${audioBlob.size} bytes`);
-
-        if (audioBlob.size === 0) {
-          console.warn('⚠️ [AUDIO REC] Warning: Audio blob is empty! No audio was recorded.');
-          setAudioRecordingError('Keine Audio-Daten aufgenommen');
-        }
-
-        // Stop all tracks
-        stream.getTracks().forEach(track => {
-          track.stop();
-          console.log('🎙️ [AUDIO REC] Stopped track:', track.label);
-        });
-      };
-
-      // Handle errors during recording
-      mediaRecorder.onerror = (event) => {
-        console.error('❌ [AUDIO REC] MediaRecorder error:', event.error);
-        setAudioRecordingError(`Aufnahmefehler: ${event.error?.message || 'Unbekannter Fehler'}`);
-      };
-
-      // Start recording
-      mediaRecorder.start(1000); // Collect data every 1 second
-      console.log('✅ [AUDIO REC] Recording started successfully');
-      console.log(`🎙️ [AUDIO REC] Recording state: ${mediaRecorder.state}`);
-
-    } catch (error) {
-      console.error('❌ [AUDIO REC] Error starting audio recording:', error);
-      console.error('❌ [AUDIO REC] Error name:', error.name);
-      console.error('❌ [AUDIO REC] Error message:', error.message);
-
-      // Set user-friendly error message
-      if (error.name === 'NotAllowedError') {
-        setAudioRecordingError('Mikrofon-Zugriff wurde verweigert');
-      } else if (error.name === 'NotFoundError') {
-        setAudioRecordingError('Kein Mikrofon gefunden');
-      } else if (error.name === 'NotReadableError') {
-        setAudioRecordingError('Mikrofon wird bereits verwendet (möglicherweise durch ElevenLabs)');
-      } else {
-        setAudioRecordingError(`Aufnahmefehler: ${error.message}`);
+      if (!ELEVENLABS_API_KEY) {
+        console.error('❌ [AUDIO DOWNLOAD] ElevenLabs API key is missing');
+        throw new Error('ElevenLabs API key ist nicht konfiguriert');
       }
-    }
-  };
 
-  /**
-   * Stops recording audio
-   */
-  const stopAudioRecording = () => {
-    console.log('🛑 [AUDIO REC] Stopping audio recording...');
+      console.log('📥 [AUDIO DOWNLOAD] Fetching audio from API...');
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'xi-api-key': ELEVENLABS_API_KEY,
+        },
+      });
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      console.log('✅ [AUDIO REC] Recording stopped successfully');
-    } else {
-      console.log('⚠️ [AUDIO REC] No active recording to stop');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [AUDIO DOWNLOAD] API request failed:', response.status, errorText);
+        throw new Error(`API-Fehler: ${response.status} - ${errorText}`);
+      }
+
+      // Get the audio blob
+      const audioBlob = await response.blob();
+      console.log(`✅ [AUDIO DOWNLOAD] Audio downloaded successfully: ${audioBlob.size} bytes`);
+
+      return audioBlob;
+    } catch (error) {
+      console.error('❌ [AUDIO DOWNLOAD] Error downloading conversation audio:', error);
+      setAudioRecordingError(`Audio-Download fehlgeschlagen: ${error.message}`);
+      return null;
     }
   };
 
@@ -208,9 +149,6 @@ function App() {
    * Handles the end of interview and generates feedback
    */
   const handleEndInterview = async () => {
-    // Stop audio recording first
-    stopAudioRecording();
-
     // End the conversation
     if (conversation.status === 'connected') {
       await conversation.endSession();
@@ -250,17 +188,33 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
         `.trim();
       }
 
-      // Generate both text feedback and audio analysis in parallel
+      // Generate text feedback
       const feedbackPromise = generateInterviewFeedback(transcript, GEMINI_API_KEY);
 
+      // Download and analyze conversation audio from ElevenLabs
       let audioAnalysisPromise = Promise.resolve(null);
-      if (recordedAudioBlobRef.current && recordedAudioBlobRef.current.size > 0) {
-        console.log('🎙️ [FEEDBACK] Analyzing recorded audio...');
-        console.log(`🎙️ [FEEDBACK] Audio blob size: ${recordedAudioBlobRef.current.size} bytes`);
-        audioAnalysisPromise = generateAudioAnalysis(recordedAudioBlobRef.current, GEMINI_API_KEY)
+
+      if (conversationIdRef.current) {
+        console.log('📥 [FEEDBACK] Downloading conversation audio from ElevenLabs...');
+        console.log(`📥 [FEEDBACK] Conversation ID: ${conversationIdRef.current}`);
+
+        audioAnalysisPromise = downloadConversationAudio(conversationIdRef.current)
+          .then(audioBlob => {
+            if (audioBlob && audioBlob.size > 0) {
+              console.log('🎙️ [FEEDBACK] Analyzing conversation audio...');
+              console.log(`🎙️ [FEEDBACK] Audio blob size: ${audioBlob.size} bytes`);
+              return generateAudioAnalysis(audioBlob, GEMINI_API_KEY);
+            } else {
+              console.warn('⚠️ [FEEDBACK] No audio downloaded, skipping analysis');
+              return JSON.stringify({
+                summary: 'Audio-Analyse nicht verfügbar: Das Gespräch konnte nicht heruntergeladen werden.',
+                error: true,
+                errorMessage: 'Audio-Download fehlgeschlagen'
+              });
+            }
+          })
           .catch(error => {
             console.error('❌ [FEEDBACK] Audio analysis failed:', error);
-            // Return a structured error message that will be displayed in the UI
             return JSON.stringify({
               summary: "Die Audio-Analyse konnte leider nicht durchgeführt werden.",
               error: true,
@@ -268,16 +222,11 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
             });
           });
       } else {
-        console.warn('⚠️ [FEEDBACK] No audio recorded, skipping audio analysis');
-        console.warn(`⚠️ [FEEDBACK] Audio blob size: ${recordedAudioBlobRef.current?.size || 0} bytes`);
-        console.warn(`⚠️ [FEEDBACK] Audio recording error: ${audioRecordingError || 'None'}`);
-
-        // Provide a message explaining why audio analysis is not available
-        const reason = audioRecordingError || 'Es wurde kein Audio aufgenommen';
+        console.warn('⚠️ [FEEDBACK] No conversation ID available, skipping audio analysis');
         audioAnalysisPromise = Promise.resolve(JSON.stringify({
-          summary: `Audio-Analyse nicht verfügbar: ${reason}`,
+          summary: 'Audio-Analyse nicht verfügbar: Keine Gesprächs-ID gefunden.',
           error: true,
-          errorMessage: reason
+          errorMessage: 'Keine Gesprächs-ID vorhanden'
         }));
       }
 
@@ -384,15 +333,14 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       connectionTimestamp.current = Date.now();
       setConversationMessages([]); // Clear previous messages
       setMicrophoneError(null);
+      setAudioRecordingError(null);
+      conversationIdRef.current = null; // Clear previous conversation ID
 
-      // Start audio recording BEFORE ElevenLabs session to improve chances of microphone access
-      console.log('🚀 [START] Step 2: Starting audio recording for analysis...');
-      await startAudioRecording();
-
-      console.log('🚀 [START] Step 3: Initiating ElevenLabs session...');
+      console.log('🚀 [START] Step 2: Initiating ElevenLabs session...');
       console.log(`   Timestamp: ${new Date(connectionTimestamp.current).toISOString()}`);
 
-      await conversation.startSession({
+      // Start the conversation and capture the conversation ID
+      const conversationId = await conversation.startSession({
         agentId: ELEVENLABS_AGENT_ID,
         // Pass user data as client tools variables if needed
         clientTools: userData ? {
@@ -402,7 +350,10 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
         } : {}
       });
 
-      console.log('✅ [START] Session start requested successfully');
+      // Store the conversation ID for later audio download
+      conversationIdRef.current = conversationId;
+      console.log('✅ [START] Session started successfully');
+      console.log(`✅ [START] Conversation ID: ${conversationId}`);
 
       // Increment conversation count
       setConversationCount(prev => prev + 1);
@@ -802,6 +753,24 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                     <p className="text-xs text-red-700">
                       💡 Bitte stelle sicher, dass dein Browser Zugriff auf das Mikrofon hat.
                       Überprüfe die Browser-Einstellungen und erlaube den Mikrofonzugriff für diese Seite.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Warning if ElevenLabs API key is missing */}
+            {!import.meta.env.VITE_ELEVENLABS_API_KEY && (
+              <div className="relative overflow-hidden rounded-2xl border-2 border-yellow-200/60">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-orange-50"></div>
+                <div className="relative p-4 flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-yellow-900 mb-1">Hinweis</p>
+                    <p className="text-sm text-yellow-800">
+                      Der ElevenLabs API Key ist nicht konfiguriert. Audio-Analyse-Funktion ist nicht verfügbar.
                     </p>
                   </div>
                 </div>
