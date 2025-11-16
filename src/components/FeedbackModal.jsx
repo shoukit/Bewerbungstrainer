@@ -16,10 +16,18 @@ import {
   Star,
   Award,
   Target,
-  MessageSquare
+  MessageSquare,
+  Mic2,
+  Volume2,
+  Timer,
+  Activity,
+  AlertTriangle,
+  TrendingDown,
+  Music2,
+  BarChart3
 } from 'lucide-react';
 
-const FeedbackModal = ({ isOpen, onClose, feedbackContent, isLoading }) => {
+const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent, isLoading }) => {
   // Parse structured feedback from JSON
   const parsedFeedback = useMemo(() => {
     if (!feedbackContent) return null;
@@ -43,6 +51,30 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, isLoading }) => {
       return null;
     }
   }, [feedbackContent]);
+
+  // Parse audio analysis from JSON
+  const parsedAudioAnalysis = useMemo(() => {
+    if (!audioAnalysisContent) return null;
+
+    try {
+      // Try to extract JSON from response (remove markdown code blocks if present)
+      let jsonString = audioAnalysisContent.trim();
+
+      // Remove markdown code block markers if present
+      if (jsonString.startsWith('```json')) {
+        jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
+      } else if (jsonString.startsWith('```')) {
+        jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
+      }
+
+      const parsed = JSON.parse(jsonString);
+      return parsed;
+    } catch (error) {
+      console.error('Error parsing audio analysis JSON:', error);
+      // Return null to show fallback view
+      return null;
+    }
+  }, [audioAnalysisContent]);
 
   // Render rating stars
   const renderRatingStars = (rating) => {
@@ -206,6 +238,180 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, isLoading }) => {
     );
   };
 
+  const renderAudioAnalysis = () => {
+    if (!parsedAudioAnalysis) {
+      return null;
+    }
+
+    return (
+      <div className="space-y-6 mt-8">
+        {/* Audio Analysis Header */}
+        <div className="flex items-center gap-2 pb-2 border-b-2 border-blue-300">
+          <Mic2 className="w-6 h-6 text-blue-600" />
+          <h2 className="text-xl font-bold text-blue-900">Audio-Analyse deiner Sprechweise</h2>
+        </div>
+
+        {/* Summary */}
+        {parsedAudioAnalysis.summary && (
+          <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+            <div className="flex items-start gap-3">
+              <Music2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">Gesamteindruck</h3>
+                <p className="text-sm text-blue-800 leading-relaxed">{parsedAudioAnalysis.summary}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Audio Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Clarity */}
+          {parsedAudioAnalysis.clarity && (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Volume2 className="w-5 h-5 text-slate-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-2">Deutlichkeit</h4>
+                  {renderRatingStars(parsedAudioAnalysis.clarity.rating)}
+                  <p className="text-xs text-slate-700 mt-2">{parsedAudioAnalysis.clarity.feedback}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Pace */}
+          {parsedAudioAnalysis.pace && (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Timer className="w-5 h-5 text-slate-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-2">Sprechgeschwindigkeit</h4>
+                  {renderRatingStars(parsedAudioAnalysis.pace.rating)}
+                  {parsedAudioAnalysis.pace.wordsPerMinute && (
+                    <p className="text-xs text-slate-600 mt-1">~{parsedAudioAnalysis.pace.wordsPerMinute} Wörter/Min</p>
+                  )}
+                  <p className="text-xs text-slate-700 mt-2">{parsedAudioAnalysis.pace.feedback}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Filler Words */}
+          {parsedAudioAnalysis.fillerWords && (
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-orange-900 mb-2">Füllwörter</h4>
+                  {renderRatingStars(parsedAudioAnalysis.fillerWords.rating)}
+                  {parsedAudioAnalysis.fillerWords.count !== undefined && (
+                    <p className="text-xs text-orange-700 mt-1">Anzahl: {parsedAudioAnalysis.fillerWords.count}</p>
+                  )}
+                  {parsedAudioAnalysis.fillerWords.examples && parsedAudioAnalysis.fillerWords.examples.length > 0 && (
+                    <p className="text-xs text-orange-600 mt-1">
+                      Beispiele: {parsedAudioAnalysis.fillerWords.examples.join(', ')}
+                    </p>
+                  )}
+                  <p className="text-xs text-orange-800 mt-2">{parsedAudioAnalysis.fillerWords.feedback}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Nervousness */}
+          {parsedAudioAnalysis.nervousness && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Activity className="w-5 h-5 text-red-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-red-900 mb-2">Nervosität</h4>
+                  {renderRatingStars(parsedAudioAnalysis.nervousness.rating)}
+                  {parsedAudioAnalysis.nervousness.indicators && parsedAudioAnalysis.nervousness.indicators.length > 0 && (
+                    <ul className="text-xs text-red-700 mt-2 space-y-1">
+                      {parsedAudioAnalysis.nervousness.indicators.map((indicator, idx) => (
+                        <li key={idx}>• {indicator}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="text-xs text-red-800 mt-2">{parsedAudioAnalysis.nervousness.feedback}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Confidence */}
+          {parsedAudioAnalysis.confidence && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Award className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-green-900 mb-2">Selbstsicherheit</h4>
+                  {renderRatingStars(parsedAudioAnalysis.confidence.rating)}
+                  <p className="text-xs text-green-700 mt-2">{parsedAudioAnalysis.confidence.feedback}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tonal Modulation */}
+          {parsedAudioAnalysis.tonalModulation && (
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <BarChart3 className="w-5 h-5 text-purple-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-purple-900 mb-2">Tonmodulation</h4>
+                  {renderRatingStars(parsedAudioAnalysis.tonalModulation.rating)}
+                  <p className="text-xs text-purple-700 mt-2">{parsedAudioAnalysis.tonalModulation.feedback}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Strengths */}
+        {parsedAudioAnalysis.strengths && parsedAudioAnalysis.strengths.length > 0 && (
+          <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-green-900 mb-3">Stärken deiner Sprechweise</h3>
+                <ul className="space-y-2">
+                  {parsedAudioAnalysis.strengths.map((strength, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">•</span>
+                      <span className="text-sm text-green-800 leading-relaxed">{strength}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Overall Improvement */}
+        {parsedAudioAnalysis.overallImprovement && parsedAudioAnalysis.overallImprovement.length > 0 && (
+          <div className="p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-r-lg">
+            <div className="flex items-start gap-3">
+              <Lightbulb className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-indigo-900 mb-3">Verbesserungsvorschläge</h3>
+                <ul className="space-y-2">
+                  {parsedAudioAnalysis.overallImprovement.map((tip, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <Target className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-1" />
+                      <span className="text-sm text-indigo-800 leading-relaxed">{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderFeedback = () => {
     if (isLoading) {
       return (
@@ -226,7 +432,12 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, isLoading }) => {
       );
     }
 
-    return renderStructuredFeedback();
+    return (
+      <>
+        {renderStructuredFeedback()}
+        {renderAudioAnalysis()}
+      </>
+    );
   };
 
   return (
