@@ -11,32 +11,58 @@ function App() {
   const [feedbackContent, setFeedbackContent] = useState('');
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
   const [conversationMessages, setConversationMessages] = useState([]);
+  const [microphoneError, setMicrophoneError] = useState(null);
 
   // Track if we're currently starting a session to prevent double-starts
   const isStartingSession = useRef(false);
+  const connectionTimestamp = useRef(null);
 
   // Environment variables
   const ELEVENLABS_AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID;
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-  // ElevenLabs Conversation Hook
+  // ElevenLabs Conversation Hook with extensive logging
   const conversation = useConversation({
     onConnect: () => {
-      console.log('Connected to ElevenLabs conversation');
+      const now = Date.now();
+      const timeSinceStart = connectionTimestamp.current ? now - connectionTimestamp.current : 0;
+      console.log('🟢 [CONNECTED] ElevenLabs WebSocket connected');
+      console.log(`   Time since start: ${timeSinceStart}ms`);
+      console.log(`   Conversation status: ${conversation.status}`);
+      console.log(`   Microphone muted: ${conversation.micMuted}`);
       isStartingSession.current = false;
     },
     onDisconnect: () => {
-      console.log('Disconnected from ElevenLabs conversation');
+      const now = Date.now();
+      const timeSinceStart = connectionTimestamp.current ? now - connectionTimestamp.current : 0;
+      console.log('🔴 [DISCONNECTED] ElevenLabs WebSocket disconnected');
+      console.log(`   Time since start: ${timeSinceStart}ms`);
+      console.log(`   Conversation status: ${conversation.status}`);
       isStartingSession.current = false;
     },
     onMessage: (message) => {
-      console.log('Message received:', message);
+      console.log('💬 [MESSAGE] Received:', {
+        source: message.source,
+        message: message.message,
+        timestamp: new Date().toISOString()
+      });
       // Store messages for transcript
       setConversationMessages(prev => [...prev, message]);
     },
     onError: (error) => {
-      console.error('Conversation error:', error);
+      console.error('❌ [ERROR] Conversation error:', {
+        error,
+        errorType: error?.constructor?.name,
+        errorMessage: error?.message,
+        errorStack: error?.stack,
+        conversationStatus: conversation.status,
+        timestamp: new Date().toISOString()
+      });
       isStartingSession.current = false;
+      setMicrophoneError(error?.message || 'Unknown error occurred');
+    },
+    onModeChange: (mode) => {
+      console.log('🔄 [MODE_CHANGE] New mode:', mode);
     },
   });
 
@@ -96,32 +122,105 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
   };
 
   /**
+   * Check microphone permissions before starting
+   */
+  const checkMicrophonePermissions = async () => {
+    console.log('🎤 [MIC_CHECK] Checking microphone permissions...');
+
+    try {
+      // Check if browser supports getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Browser does not support microphone access');
+      }
+
+      // Request microphone permission
+      console.log('🎤 [MIC_CHECK] Requesting microphone permission...');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      console.log('🎤 [MIC_CHECK] ✅ Microphone permission granted');
+      console.log('   Audio tracks:', stream.getAudioTracks().length);
+      console.log('   Track settings:', stream.getAudioTracks()[0]?.getSettings());
+
+      // Stop the test stream immediately
+      stream.getTracks().forEach(track => {
+        track.stop();
+        console.log('🎤 [MIC_CHECK] Stopped test track:', track.label);
+      });
+
+      setMicrophoneError(null);
+      return true;
+    } catch (error) {
+      console.error('🎤 [MIC_CHECK] ❌ Microphone access denied or failed:', {
+        error,
+        errorName: error?.name,
+        errorMessage: error?.message
+      });
+
+      setMicrophoneError(error.message);
+      return false;
+    }
+  };
+
+  /**
    * Start the conversation
    */
   const handleStartConversation = async () => {
+    console.log('🚀 [START] Beginning conversation start sequence...');
+    console.log(`   Agent ID: ${ELEVENLABS_AGENT_ID}`);
+    console.log(`   Current status: ${conversation.status}`);
+
     if (!ELEVENLABS_AGENT_ID) {
-      console.error('Agent ID is missing');
+      console.error('❌ [START] Agent ID is missing');
       return;
     }
 
     // Prevent multiple simultaneous connection attempts
     if (isStartingSession.current || conversation.status === 'connected' || conversation.status === 'connecting') {
-      console.log('Session already starting or connected, skipping...');
+      console.log('⚠️ [START] Session already starting or connected, skipping...');
+      console.log(`   isStartingSession: ${isStartingSession.current}`);
+      console.log(`   conversation.status: ${conversation.status}`);
       return;
     }
 
     try {
-      isStartingSession.current = true;
-      setConversationMessages([]); // Clear previous messages
+      // First, check microphone permissions
+      console.log('🎤 [START] Step 1: Checking microphone permissions...');
+      const hasMicPermission = await checkMicrophonePermissions();
 
-      console.log('Starting conversation with agent ID:', ELEVENLABS_AGENT_ID);
+      if (!hasMicPermission) {
+        console.error('❌ [START] Cannot start without microphone permission');
+        alert('Mikrofon-Zugriff erforderlich! Bitte erlaube den Zugriff auf dein Mikrofon, um das Gespräch zu starten.');
+        return;
+      }
+
+      isStartingSession.current = true;
+      connectionTimestamp.current = Date.now();
+      setConversationMessages([]); // Clear previous messages
+      setMicrophoneError(null);
+
+      console.log('🚀 [START] Step 2: Initiating ElevenLabs session...');
+      console.log(`   Timestamp: ${new Date(connectionTimestamp.current).toISOString()}`);
+
       await conversation.startSession({ agentId: ELEVENLABS_AGENT_ID });
+
+      console.log('✅ [START] Session start requested successfully');
     } catch (error) {
-      console.error('Error starting conversation:', error);
+      console.error('❌ [START] Error starting conversation:', {
+        error,
+        errorName: error?.name,
+        errorMessage: error?.message,
+        errorStack: error?.stack
+      });
       isStartingSession.current = false;
 
       // Show error to user
-      alert('Fehler beim Starten des Gesprächs. Bitte überprüfe deine ElevenLabs Agent ID und versuche es erneut.');
+      alert(`Fehler beim Starten des Gesprächs: ${error.message}\n\nBitte überprüfe:\n- Mikrofon-Berechtigung\n- ElevenLabs Agent ID\n- Internetverbindung`);
     }
   };
 
@@ -274,6 +373,20 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                 </div>
               )}
             </div>
+
+            {/* Warning if microphone error occurred */}
+            {microphoneError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-red-800">
+                  <span className="font-semibold">Mikrofon-Fehler:</span> {microphoneError}
+                  <br />
+                  <span className="text-xs mt-1 block">
+                    Bitte stelle sicher, dass dein Browser Zugriff auf das Mikrofon hat.
+                    Überprüfe die Browser-Einstellungen und erlaube den Mikrofonzugriff für diese Seite.
+                  </span>
+                </p>
+              </div>
+            )}
 
             {/* Warning if Gemini API key is missing */}
             {!GEMINI_API_KEY && (
