@@ -36,10 +36,10 @@ export async function listAvailableModels(apiKey) {
  * Generates feedback for a job interview based on the conversation transcript
  * @param {string} transcript - The full conversation transcript
  * @param {string} apiKey - Google Gemini API key
- * @param {string} modelName - Optional model name (defaults to 'gemini-1.5-pro')
+ * @param {string} modelName - Optional model name (defaults to 'gemini-1.5-flash')
  * @returns {Promise<string>} - The generated feedback
  */
-export async function generateInterviewFeedback(transcript, apiKey, modelName = 'gemini-1.5-pro') {
+export async function generateInterviewFeedback(transcript, apiKey, modelName = 'gemini-1.5-flash') {
   console.log('🤖 [GEMINI] Starting feedback generation...');
 
   if (!apiKey) {
@@ -60,8 +60,9 @@ export async function generateInterviewFeedback(transcript, apiKey, modelName = 
   // List of model names to try (in order of preference)
   const modelsToTry = [
     modelName,
-    'gemini-pro',
     'gemini-1.5-flash',
+    'gemini-pro',
+    'gemini-1.5-pro',
     'gemini-2.0-flash-exp'
   ];
 

@@ -104,7 +104,7 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
     if (!parsedFeedback) {
       // Fallback: show raw content if parsing failed
       return (
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="space-y-4">
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-1" />
@@ -123,7 +123,7 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
     }
 
     return (
-      <div className="space-y-6 max-h-[65vh] overflow-y-auto pr-2">
+      <div className="space-y-6">
         {/* Summary Section */}
         {parsedFeedback.summary && (
           <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
@@ -466,10 +466,10 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
     }
 
     return (
-      <>
+      <div className="space-y-6 max-h-[65vh] overflow-y-auto pr-2">
         {renderStructuredFeedback()}
         {renderAudioAnalysis()}
-      </>
+      </div>
     );
   };
 
