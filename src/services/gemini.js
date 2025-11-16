@@ -16,7 +16,7 @@ export async function generateInterviewFeedback(transcript, apiKey) {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 
   const prompt = `Du bist ein professioneller Karriere-Coach. Deine Aufgabe ist es, das folgende Bewerbungsgespräch-Transkript zu analysieren. Der Bewerber (User) übt für eine Ausbildung zum Mechatroniker bei BMW.
 
