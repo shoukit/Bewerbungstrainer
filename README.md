@@ -91,9 +91,26 @@ Die Anwendung läuft nun auf `http://localhost:5173`
 
 ## 📖 Verwendung
 
-1. **Gespräch starten**: Klicke auf "Start", um die Verbindung zum KI-Agenten herzustellen
+### Erster Start - Profil-Wizard
+
+Beim ersten Öffnen der Anwendung wirst du durch einen 3-stufigen Wizard geleitet:
+
+1. **Schritt 1: Name** - Gib deinen Namen ein
+2. **Schritt 2: Position** - Gib die Position ein, für die du dich bewirbst (z.B. "Ausbildung zum Mechatroniker")
+3. **Schritt 3: Unternehmen** - Gib das Unternehmen ein, bei dem du dich bewirbst (z.B. "BMW AG")
+
+Diese Informationen werden:
+- Im Browser gespeichert (localStorage)
+- An den ElevenLabs-Agenten übergeben, um ein personalisiertes Bewerbungsgespräch zu führen
+- In der ersten Nachricht von Herr Müller verwendet
+
+**Hinweis**: Du kannst dein Profil jederzeit über den "Bearbeiten"-Button ändern.
+
+### Bewerbungsgespräch
+
+1. **Gespräch starten**: Klicke auf "Gespräch starten", um die Verbindung zum KI-Agenten herzustellen
 2. **Sprechen**: Nutze dein Mikrofon, um auf die Fragen von Herr Müller zu antworten
-3. **Feedback erhalten**: Klicke auf "Interview beenden & Feedback erhalten", um eine detaillierte Auswertung zu bekommen
+3. **Feedback erhalten**: Klicke auf "Gespräch beenden & Feedback erhalten", um eine detaillierte Auswertung zu bekommen
 
 ## 🏗️ Projektstruktur
 
@@ -104,7 +121,8 @@ src/
 │   │   ├── button.jsx
 │   │   └── dialog.jsx
 │   ├── Header.jsx          # BMW-Header mit Logo
-│   └── FeedbackModal.jsx   # Feedback-Anzeige Modal
+│   ├── FeedbackModal.jsx   # Feedback-Anzeige Modal
+│   └── UserWizard.jsx      # 3-stufiger Profil-Wizard
 ├── services/
 │   └── gemini.js          # Gemini API Integration
 ├── lib/
@@ -162,11 +180,19 @@ Für das Feedback wird ein **separater** Gemini API Call durchgeführt:
 - Stelle sicher, dass dein Browser Mikrofonzugriff hat
 - Teste in Chrome/Edge (beste Kompatibilität mit Web Audio API)
 
+## ✨ Features
+
+- ✅ **Personalisierter Wizard**: 3-stufiger Onboarding-Prozess zur Erfassung von Name, Position und Unternehmen
+- ✅ **Profil-Verwaltung**: Benutzer können ihre Profildaten jederzeit bearbeiten
+- ✅ **Persistenz**: Profildaten werden im Browser gespeichert (localStorage)
+- ✅ **Personalisierte Gespräche**: Der ElevenLabs-Agent nutzt die Profildaten für ein individuelles Bewerbungsgespräch
+- ✅ **Responsive Design**: Optimiert für Desktop und Mobile
+- ✅ **Deutsche Sprache**: Vollständig auf Deutsch lokalisiert
+
 ## 🚧 Bekannte Einschränkungen & TODOs
 
 - [ ] **Transkript-Integration**: Aktuell wird ein Mock-Transkript verwendet. Integration mit ElevenLabs Conversation History API erforderlich
-- [ ] **Persistenz**: Gesprächsverläufe werden nicht gespeichert
-- [ ] **Multi-User**: Keine Benutzer-Authentifizierung implementiert
+- [ ] **Multi-User**: Keine Benutzer-Authentifizierung implementiert (aktuell single-user mit localStorage)
 - [ ] **Fortschritts-Tracking**: Kein langfristiges Tracking über mehrere Interviews
 - [ ] **Backend-Proxy**: API Keys sollten nicht client-seitig exponiert werden
 

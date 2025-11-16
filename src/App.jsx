@@ -2,11 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import Header from './components/Header';
 import FeedbackModal from './components/FeedbackModal';
+import UserWizard from './components/UserWizard';
 import { Button } from './components/ui/button';
 import { generateInterviewFeedback } from './services/gemini';
 import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff } from 'lucide-react';
 
 function App() {
+  const [showWizard, setShowWizard] = useState(true);
+  const [userData, setUserData] = useState(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackContent, setFeedbackContent] = useState('');
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
@@ -26,7 +29,9 @@ function App() {
     overrides: {
       agent: {
         language: "de", // German language
-        firstMessage: "Guten Tag! Schön, dass Sie da sind. Erzählen Sie mir doch bitte zunächst etwas über sich selbst.",
+        firstMessage: userData
+          ? `Guten Tag ${userData.user_name}! Schön, dass Sie da sind. Ich freue mich, dass Sie sich für die Position als ${userData.position} bei ${userData.company} bewerben. Erzählen Sie mir doch bitte zunächst etwas über sich selbst und warum Sie sich für diese Position interessieren.`
+          : "Guten Tag! Schön, dass Sie da sind. Erzählen Sie mir doch bitte zunächst etwas über sich selbst.",
       },
     },
     onConnect: () => {
@@ -227,7 +232,13 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       console.log(`   Timestamp: ${new Date(connectionTimestamp.current).toISOString()}`);
 
       await conversation.startSession({
-        agentId: ELEVENLABS_AGENT_ID
+        agentId: ELEVENLABS_AGENT_ID,
+        // Pass user data as client tools variables if needed
+        clientTools: userData ? {
+          user_name: userData.user_name,
+          position: userData.position,
+          company: userData.company
+        } : {}
       });
 
       console.log('✅ [START] Session start requested successfully');
@@ -245,6 +256,37 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
     }
   };
 
+  /**
+   * Handles wizard completion
+   */
+  const handleWizardComplete = (data) => {
+    console.log('📝 [WIZARD] User data collected:', data);
+    setUserData(data);
+    setShowWizard(false);
+
+    // Store in localStorage for persistence
+    localStorage.setItem('bewerbungstrainer_user_data', JSON.stringify(data));
+  };
+
+  // Check if user data exists in localStorage on mount
+  useEffect(() => {
+    const storedData = localStorage.getItem('bewerbungstrainer_user_data');
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        setUserData(parsed);
+        setShowWizard(false);
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+      }
+    }
+  }, []);
+
+  // Show wizard if user hasn't completed it yet
+  if (showWizard) {
+    return <UserWizard onComplete={handleWizardComplete} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
@@ -255,6 +297,48 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
 
           {/* Main Content Area */}
           <div className="p-6 space-y-6">
+            {/* User Profile Info */}
+            {userData && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-green-900 mb-2">Dein Profil</h3>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="text-green-700 font-medium">Name:</span>
+                        <p className="text-green-900">{userData.user_name}</p>
+                      </div>
+                      <div>
+                        <span className="text-green-700 font-medium">Position:</span>
+                        <p className="text-green-900">{userData.position}</p>
+                      </div>
+                      <div>
+                        <span className="text-green-700 font-medium">Unternehmen:</span>
+                        <p className="text-green-900">{userData.company}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      if (confirm('Möchtest du deine Profildaten wirklich ändern? Das aktuelle Gespräch wird beendet.')) {
+                        localStorage.removeItem('bewerbungstrainer_user_data');
+                        setUserData(null);
+                        setShowWizard(true);
+                        if (conversation.status === 'connected') {
+                          conversation.endSession();
+                        }
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="ml-4"
+                  >
+                    Bearbeiten
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Instructions */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
