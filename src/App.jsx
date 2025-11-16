@@ -754,32 +754,6 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                         </p>
                       </div>
 
-                      {/* Message Log */}
-                      {conversationMessages.length > 0 && (
-                        <div className="w-full max-w-2xl mx-auto">
-                          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-white/60 shadow-lg max-h-48 overflow-y-auto">
-                            <div className="space-y-3">
-                              {conversationMessages.slice(-3).map((msg, idx) => (
-                                <div key={idx} className={`flex gap-3 ${
-                                  msg.source === 'ai' ? 'justify-start' : 'justify-end'
-                                }`}>
-                                  <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-                                    msg.source === 'ai'
-                                      ? 'bg-gradient-to-br from-ocean-blue-100 to-ocean-deep-100 text-ocean-deep-900'
-                                      : 'bg-gradient-to-br from-ocean-teal-100 to-ocean-teal-200 text-ocean-teal-900'
-                                  }`}>
-                                    <p className="text-xs font-semibold mb-1 opacity-70">
-                                      {msg.source === 'ai' ? '👔 Herr Müller' : '👤 Du'}
-                                    </p>
-                                    <p className="text-sm leading-relaxed">{msg.message}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
                       {/* End Call Button */}
                       <Button
                         onClick={handleEndInterview}
