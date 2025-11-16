@@ -4,7 +4,7 @@ import Header from './components/Header';
 import FeedbackModal from './components/FeedbackModal';
 import UserWizard from './components/UserWizard';
 import { Button } from './components/ui/button';
-import { generateInterviewFeedback } from './services/gemini';
+import { generateInterviewFeedback, listAvailableModels } from './services/gemini';
 import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff } from 'lucide-react';
 
 function App() {
@@ -281,6 +281,50 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       }
     }
   }, []);
+
+  // Expose debug functions to window for testing
+  useEffect(() => {
+    window.debugGemini = {
+      listModels: async () => {
+        if (!GEMINI_API_KEY) {
+          console.error('❌ GEMINI_API_KEY is not set');
+          return;
+        }
+        try {
+          const models = await listAvailableModels(GEMINI_API_KEY);
+          console.log('Available Gemini models:', models);
+          return models;
+        } catch (error) {
+          console.error('Error listing models:', error);
+        }
+      },
+      testFeedback: async (transcript = 'Test transcript') => {
+        if (!GEMINI_API_KEY) {
+          console.error('❌ GEMINI_API_KEY is not set');
+          return;
+        }
+        try {
+          const feedback = await generateInterviewFeedback(transcript, GEMINI_API_KEY);
+          console.log('Generated feedback:', feedback);
+          return feedback;
+        } catch (error) {
+          console.error('Error generating feedback:', error);
+        }
+      },
+      apiKey: GEMINI_API_KEY ? 'Set ✅' : 'Not set ❌'
+    };
+
+    console.log(`
+🔧 Debug-Funktionen verfügbar:
+  - window.debugGemini.listModels() - Liste verfügbare Gemini-Modelle
+  - window.debugGemini.testFeedback() - Teste Feedback-Generierung
+  - window.debugGemini.apiKey - Zeige API-Key Status
+    `);
+
+    return () => {
+      delete window.debugGemini;
+    };
+  }, [GEMINI_API_KEY]);
 
   // Show wizard if user hasn't completed it yet
   if (showWizard) {
