@@ -531,12 +531,12 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-ocean-blue-100 via-ocean-blue-200 to-ocean-blue-300 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-indigo-300/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-[500px] h-[500px] bg-purple-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-300/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-20 left-10 w-96 h-96 bg-ocean-blue-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-[500px] h-[500px] bg-ocean-deep-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-ocean-teal-300/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
       <div className="w-full max-w-5xl relative z-10">
@@ -550,35 +550,35 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
             {/* Stats and Quick Actions Row */}
             {userData && conversationCount > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-4 border border-indigo-100">
+                <div className="bg-gradient-to-br from-ocean-blue-50 to-ocean-blue-100 rounded-2xl p-4 border border-ocean-blue-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-ocean-blue-500 to-ocean-blue-600 flex items-center justify-center">
                       <History className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-xs text-slate-600">Gespräche</p>
-                      <p className="text-2xl font-bold text-slate-800">{conversationCount}</p>
+                      <p className="text-xs text-ocean-deep-600">Gespräche</p>
+                      <p className="text-2xl font-bold text-ocean-deep-800">{conversationCount}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-100">
+                <div className="bg-gradient-to-br from-ocean-teal-50 to-ocean-teal-100 rounded-2xl p-4 border border-ocean-teal-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-ocean-teal-400 to-ocean-teal-600 flex items-center justify-center">
                       <TrendingUp className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-xs text-slate-600">Fortschritt</p>
-                      <p className="text-2xl font-bold text-slate-800">
+                      <p className="text-xs text-ocean-deep-600">Fortschritt</p>
+                      <p className="text-2xl font-bold text-ocean-deep-800">
                         {conversationCount > 0 ? Math.min(conversationCount * 15, 100) : 0}%
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-50 to-pink-50 rounded-2xl p-4 border border-orange-100">
+                <div className="bg-gradient-to-br from-ocean-blue-50 to-ocean-teal-50 rounded-2xl p-4 border border-ocean-blue-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-ocean-deep-500 to-ocean-deep-600 flex items-center justify-center">
                       <Settings className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
@@ -607,25 +607,25 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
             )}
 
             {/* Instructions Card */}
-            <div className="relative overflow-hidden rounded-2xl border-2 border-indigo-200/60">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"></div>
+            <div className="relative overflow-hidden rounded-2xl border-2 border-ocean-blue-200/60">
+              <div className="absolute inset-0 bg-gradient-to-br from-ocean-blue-50 via-ocean-blue-100 to-ocean-teal-50"></div>
               <div className="relative p-5 flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-ocean-blue-500 to-ocean-deep-600 flex items-center justify-center flex-shrink-0 shadow-lg">
                   <MessageSquare className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-slate-800 mb-2 text-lg">So funktioniert's</p>
-                  <ul className="space-y-2 text-sm text-slate-700">
+                  <p className="font-bold text-ocean-deep-800 mb-2 text-lg">So funktioniert's</p>
+                  <ul className="space-y-2 text-sm text-ocean-deep-700">
                     <li className="flex items-start gap-2">
-                      <span className="text-indigo-600 font-bold mt-0.5">1.</span>
+                      <span className="text-ocean-blue-600 font-bold mt-0.5">1.</span>
                       <span>Klicke auf "Gespräch starten" und führe ein realistisches Bewerbungsgespräch</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-purple-600 font-bold mt-0.5">2.</span>
+                      <span className="text-ocean-deep-600 font-bold mt-0.5">2.</span>
                       <span>Antworte natürlich und ehrlich auf alle Fragen</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-pink-600 font-bold mt-0.5">3.</span>
+                      <span className="text-ocean-teal-600 font-bold mt-0.5">3.</span>
                       <span>Erhalte detailliertes KI-Feedback zu deiner Performance und Sprechweise</span>
                     </li>
                   </ul>
@@ -634,7 +634,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
             </div>
 
             {/* ElevenLabs Conversation Interface */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/30 p-8 min-h-[450px] border-2 border-slate-200/60">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ocean-blue-50 to-ocean-deep-100/30 p-8 min-h-[450px] border-2 border-ocean-blue-200/60">
               {ELEVENLABS_AGENT_ID ? (
                 <div className="flex flex-col items-center justify-center h-full space-y-6">
                   {/* Status Display */}
@@ -657,24 +657,24 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                   {conversation.status !== 'connected' ? (
                     <div className="text-center space-y-6">
                       <div className="relative inline-block">
-                        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl">
+                        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-ocean-blue-500 to-ocean-deep-600 flex items-center justify-center shadow-2xl">
                           <Phone className="w-12 h-12 text-white" strokeWidth={2.5} />
                         </div>
-                        <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                        <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-ocean-teal-400 to-ocean-teal-500 rounded-xl flex items-center justify-center shadow-lg">
                           <Play className="w-5 h-5 text-white" />
                         </div>
                       </div>
                       <div>
-                        <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                        <h3 className="text-2xl font-bold text-ocean-deep-800 mb-2">
                           Bereit für dein Interview?
                         </h3>
-                        <p className="text-sm text-slate-600 mb-6 max-w-md mx-auto">
+                        <p className="text-sm text-ocean-deep-600 mb-6 max-w-md mx-auto">
                           Starte jetzt dein Bewerbungsgespräch mit Herrn Müller und erhalte professionelles Feedback
                         </p>
                         <Button
                           onClick={conversationCount > 0 ? handleNewConversation : handleStartConversation}
                           size="lg"
-                          className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 text-base px-8 py-6"
+                          className="bg-gradient-to-r from-ocean-blue-600 via-ocean-deep-600 to-ocean-teal-500 hover:from-ocean-blue-700 hover:via-ocean-deep-700 hover:to-ocean-teal-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 text-base px-8 py-6"
                           disabled={conversation.status === 'connecting' || isStartingSession.current}
                         >
                           <Phone className="w-5 h-5 mr-2" />
@@ -692,7 +692,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                               {[...Array(7)].map((_, i) => (
                                 <div
                                   key={i}
-                                  className="w-3 bg-gradient-to-t from-indigo-500 to-purple-600 rounded-full animate-pulse shadow-lg"
+                                  className="w-3 bg-gradient-to-t from-ocean-blue-500 to-ocean-deep-600 rounded-full animate-pulse shadow-lg"
                                   style={{
                                     height: `${Math.random() * 100}%`,
                                     animationDelay: `${i * 0.1}s`,
@@ -700,7 +700,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                                 />
                               ))}
                             </div>
-                            <p className="text-sm text-slate-700 font-medium">
+                            <p className="text-sm text-ocean-deep-700 font-medium">
                               {conversation.isSpeaking ? '🗣️ Herr Müller spricht...' : '👂 Du bist dran'}
                             </p>
                           </div>
@@ -711,7 +711,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                           <div className={`w-28 h-28 rounded-3xl flex items-center justify-center transition-all duration-300 shadow-2xl ${
                             conversation.micMuted
                               ? 'bg-gradient-to-br from-red-400 to-pink-500'
-                              : 'bg-gradient-to-br from-indigo-500 to-purple-600 animate-pulse'
+                              : 'bg-gradient-to-br from-ocean-blue-500 to-ocean-deep-600 animate-pulse'
                           }`}>
                             {conversation.micMuted ? (
                               <MicOff className="w-14 h-14 text-white" strokeWidth={2} />
@@ -720,14 +720,14 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                             )}
                           </div>
                           <div className={`absolute -inset-2 rounded-3xl blur-xl opacity-50 ${
-                            conversation.micMuted ? 'bg-red-400' : 'bg-purple-500'
+                            conversation.micMuted ? 'bg-red-400' : 'bg-ocean-deep-500'
                           }`}></div>
                         </div>
 
                         <p className="text-sm font-medium mt-3 px-4 py-2 rounded-full ${
                           conversation.micMuted
                             ? 'bg-red-100 text-red-700'
-                            : 'bg-indigo-100 text-indigo-700'
+                            : 'bg-ocean-blue-100 text-ocean-blue-700'
                         }">
                           {conversation.micMuted ? '🔇 Mikrofon aus' : '🎤 Spreche klar und deutlich'}
                         </p>
@@ -744,8 +744,8 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                                 }`}>
                                   <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
                                     msg.source === 'ai'
-                                      ? 'bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-900'
-                                      : 'bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-900'
+                                      ? 'bg-gradient-to-br from-ocean-blue-100 to-ocean-deep-100 text-ocean-deep-900'
+                                      : 'bg-gradient-to-br from-ocean-teal-100 to-ocean-teal-200 text-ocean-teal-900'
                                   }`}>
                                     <p className="text-xs font-semibold mb-1 opacity-70">
                                       {msg.source === 'ai' ? '👔 Herr Müller' : '👤 Du'}
@@ -831,8 +831,8 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
         {/* Footer */}
         <div className="mt-8 text-center">
           <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/60 backdrop-blur-sm rounded-full border border-white/60 shadow-sm">
-            <p className="text-sm text-slate-600">
-              <span className="font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <p className="text-sm text-ocean-deep-600">
+              <span className="font-semibold bg-gradient-to-r from-ocean-blue-600 to-ocean-deep-600 bg-clip-text text-transparent">
                 Dein Bewerbungstrainer
               </span>
               {' '}© 2025 | Powered by ElevenLabs & Google Gemini
@@ -846,7 +846,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-2xl flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean-blue-500 to-ocean-deep-600 flex items-center justify-center">
                 <Settings className="w-5 h-5 text-white" />
               </div>
               Neues Gespräch starten
@@ -859,21 +859,21 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
           <div className="py-6 space-y-4">
             {/* Current data display */}
             <div className="relative overflow-hidden rounded-2xl border-2">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-ocean-blue-50 via-ocean-blue-100 to-ocean-teal-50"></div>
               <div className="relative p-4">
-                <p className="text-sm font-semibold text-slate-700 mb-3">Aktuelle Daten:</p>
+                <p className="text-sm font-semibold text-ocean-deep-700 mb-3">Aktuelle Daten:</p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-600">Name:</span>
-                    <span className="font-medium text-slate-800">{userData?.user_name}</span>
+                    <span className="text-ocean-deep-600">Name:</span>
+                    <span className="font-medium text-ocean-deep-800">{userData?.user_name}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-600">Position:</span>
-                    <span className="font-medium text-slate-800">{userData?.position}</span>
+                    <span className="text-ocean-deep-600">Position:</span>
+                    <span className="font-medium text-ocean-deep-800">{userData?.position}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-600">Unternehmen:</span>
-                    <span className="font-medium text-slate-800">{userData?.company}</span>
+                    <span className="text-ocean-deep-600">Unternehmen:</span>
+                    <span className="font-medium text-ocean-deep-800">{userData?.company}</span>
                   </div>
                 </div>
               </div>
@@ -884,14 +884,14 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
             <Button
               onClick={handleChangeData}
               variant="outline"
-              className="flex-1 border-2 border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50"
+              className="flex-1 border-2 border-ocean-blue-200 hover:border-ocean-blue-400 hover:bg-ocean-blue-50"
             >
               <Edit3 className="w-4 h-4 mr-2" />
               Daten ändern
             </Button>
             <Button
               onClick={handleKeepDataAndStart}
-              className="flex-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-600 text-white"
+              className="flex-1 bg-gradient-to-r from-ocean-blue-600 via-ocean-deep-600 to-ocean-teal-500 hover:from-ocean-blue-700 hover:via-ocean-deep-700 hover:to-ocean-teal-600 text-white"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Gleiche Daten verwenden
