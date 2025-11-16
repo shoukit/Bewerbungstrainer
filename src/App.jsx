@@ -26,7 +26,7 @@ function App() {
     overrides: {
       agent: {
         language: "de", // German language
-        firstMessage: "Guten Tag! Schön, dass Sie da sind. Erzählen Sie mir doch bitte zunächst etwas über sich selbst.",
+        // Note: firstMessage is configured in the ElevenLabs agent settings and cannot be overridden
       },
     },
     onConnect: () => {
