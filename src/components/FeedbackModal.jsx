@@ -261,14 +261,30 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
                 <h3 className="text-sm font-semibold text-orange-900 mb-2">Audio-Analyse nicht verfügbar</h3>
                 <p className="text-sm text-orange-800 leading-relaxed">{parsedAudioAnalysis.summary}</p>
                 {parsedAudioAnalysis.errorMessage && (
-                  <p className="text-xs text-orange-700 mt-2">
-                    <span className="font-semibold">Grund:</span> {parsedAudioAnalysis.errorMessage}
+                  <div className="text-xs text-orange-700 mt-3 p-3 bg-orange-100 rounded">
+                    <span className="font-semibold">Details:</span>
+                    <pre className="mt-1 whitespace-pre-wrap text-xs">{parsedAudioAnalysis.errorMessage}</pre>
+                  </div>
+                )}
+                {parsedAudioAnalysis.troubleshooting && parsedAudioAnalysis.troubleshooting.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-xs font-semibold text-orange-900 mb-2">💡 Lösungsvorschläge:</p>
+                    <ul className="space-y-1">
+                      {parsedAudioAnalysis.troubleshooting.map((tip, index) => (
+                        <li key={index} className="flex items-start gap-2 text-xs text-orange-800">
+                          <span className="text-orange-600 mt-0.5">•</span>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {!parsedAudioAnalysis.troubleshooting && (
+                  <p className="text-xs text-orange-600 mt-3">
+                    💡 <span className="font-semibold">Tipp:</span> Dies kann passieren, wenn das Mikrofon bereits
+                    von ElevenLabs verwendet wird. Versuche das Gespräch erneut zu starten.
                   </p>
                 )}
-                <p className="text-xs text-orange-600 mt-3">
-                  💡 <span className="font-semibold">Tipp:</span> Dies kann passieren, wenn das Mikrofon bereits
-                  von ElevenLabs verwendet wird. Versuche das Gespräch erneut zu starten.
-                </p>
               </div>
             </div>
           </div>

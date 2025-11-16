@@ -5,6 +5,7 @@ import FeedbackModal from './components/FeedbackModal';
 import UserWizard from './components/UserWizard';
 import { Button } from './components/ui/button';
 import { generateInterviewFeedback, generateAudioAnalysis, listAvailableModels } from './services/gemini';
+import { downloadConversationAudio } from './services/elevenlabs';
 import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff } from 'lucide-react';
 
 function App() {
@@ -22,13 +23,17 @@ function App() {
   const isStartingSession = useRef(false);
   const connectionTimestamp = useRef(null);
 
-  // Audio recording references
+  // Store the conversation ID for downloading audio from ElevenLabs
+  const conversationIdRef = useRef(null);
+
+  // Audio recording references (fallback if ElevenLabs download fails)
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recordedAudioBlobRef = useRef(null);
 
   // Environment variables
   const ELEVENLABS_AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID;
+  const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
   // ElevenLabs Conversation Hook with extensive logging
@@ -48,6 +53,21 @@ function App() {
       console.log(`   Time since start: ${timeSinceStart}ms`);
       console.log(`   Conversation status: ${conversation.status}`);
       console.log(`   Microphone muted: ${conversation.micMuted}`);
+
+      // Try to capture the conversation ID for audio download
+      // The ID might be available in different properties
+      const possibleId = conversation.conversationId ||
+                        conversation.id ||
+                        conversation.sessionId;
+
+      if (possibleId) {
+        conversationIdRef.current = possibleId;
+        console.log('🆔 [CONNECTED] Captured conversation ID:', possibleId);
+      } else {
+        console.warn('⚠️ [CONNECTED] Could not find conversation ID in conversation object');
+        console.log('🔍 [CONNECTED] Available properties:', Object.keys(conversation));
+      }
+
       isStartingSession.current = false;
     },
     onDisconnect: (event) => {
@@ -205,8 +225,19 @@ function App() {
    * Handles the end of interview and generates feedback
    */
   const handleEndInterview = async () => {
-    // Stop audio recording first
+    // Stop audio recording first (fallback method)
     stopAudioRecording();
+
+    // Store conversation ID before ending session
+    // The conversation object may contain the ID in different properties
+    // Try common property names used by ElevenLabs SDK
+    const conversationId = conversationIdRef.current ||
+                          conversation.conversationId ||
+                          conversation.id ||
+                          conversation.sessionId;
+
+    console.log('🆔 [CONVERSATION] Conversation ID:', conversationId);
+    console.log('🆔 [CONVERSATION] Full conversation object keys:', Object.keys(conversation));
 
     // End the conversation
     if (conversation.status === 'connected') {
@@ -247,35 +278,95 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
         `.trim();
       }
 
-      // Generate both text feedback and audio analysis in parallel
+      // Generate text feedback
       const feedbackPromise = generateInterviewFeedback(transcript, GEMINI_API_KEY);
 
+      // Audio analysis - try ElevenLabs download first, fallback to local recording
       let audioAnalysisPromise = Promise.resolve(null);
-      if (recordedAudioBlobRef.current && recordedAudioBlobRef.current.size > 0) {
-        console.log('🎙️ [FEEDBACK] Analyzing recorded audio...');
-        console.log(`🎙️ [FEEDBACK] Audio blob size: ${recordedAudioBlobRef.current.size} bytes`);
-        audioAnalysisPromise = generateAudioAnalysis(recordedAudioBlobRef.current, GEMINI_API_KEY)
-          .catch(error => {
-            console.error('❌ [FEEDBACK] Audio analysis failed:', error);
-            // Return a structured error message that will be displayed in the UI
-            return JSON.stringify({
-              summary: "Die Audio-Analyse konnte leider nicht durchgeführt werden.",
-              error: true,
-              errorMessage: error.message
-            });
+
+      // Try to download audio from ElevenLabs if we have the conversation ID and API key
+      if (conversationId && ELEVENLABS_API_KEY) {
+        console.log('🎵 [FEEDBACK] Attempting to download conversation audio from ElevenLabs...');
+        console.log(`🆔 [FEEDBACK] Using conversation ID: ${conversationId}`);
+
+        audioAnalysisPromise = downloadConversationAudio(conversationId, ELEVENLABS_API_KEY)
+          .then(audioBlob => {
+            console.log('✅ [FEEDBACK] Successfully downloaded audio from ElevenLabs');
+            console.log(`📊 [FEEDBACK] Audio size: ${audioBlob.size} bytes`);
+            return generateAudioAnalysis(audioBlob, GEMINI_API_KEY);
+          })
+          .catch(elevenLabsError => {
+            console.error('❌ [FEEDBACK] ElevenLabs audio download failed:', elevenLabsError);
+            console.log('🔄 [FEEDBACK] Falling back to locally recorded audio...');
+
+            // Fallback to locally recorded audio
+            if (recordedAudioBlobRef.current && recordedAudioBlobRef.current.size > 0) {
+              console.log('🎙️ [FEEDBACK] Using locally recorded audio as fallback');
+              console.log(`🎙️ [FEEDBACK] Local audio size: ${recordedAudioBlobRef.current.size} bytes`);
+              return generateAudioAnalysis(recordedAudioBlobRef.current, GEMINI_API_KEY)
+                .catch(geminiError => {
+                  console.error('❌ [FEEDBACK] Audio analysis also failed:', geminiError);
+                  return JSON.stringify({
+                    summary: "Die Audio-Analyse konnte leider nicht durchgeführt werden.",
+                    error: true,
+                    errorMessage: `ElevenLabs Download: ${elevenLabsError.message}\n\nLokale Analyse: ${geminiError.message}`,
+                    troubleshooting: [
+                      "Stelle sicher, dass 'Audio Saving' in den ElevenLabs Agent-Einstellungen aktiviert ist",
+                      "Überprüfe, ob der ELEVENLABS_API_KEY korrekt konfiguriert ist",
+                      "Überprüfe die Mikrofon-Berechtigungen für die lokale Aufnahme"
+                    ]
+                  });
+                });
+            } else {
+              // No audio available at all
+              const reason = audioRecordingError ||
+                           'Kein Audio von ElevenLabs verfügbar und keine lokale Aufnahme';
+              return JSON.stringify({
+                summary: `Audio-Analyse nicht verfügbar: ${reason}`,
+                error: true,
+                errorMessage: `ElevenLabs: ${elevenLabsError.message}\n\nLokale Aufnahme: ${audioRecordingError || 'Keine Audio-Daten'}`,
+                troubleshooting: [
+                  "Aktiviere 'Audio Saving' in den ElevenLabs Agent-Einstellungen",
+                  "Stelle sicher, dass VITE_ELEVENLABS_API_KEY in der .env gesetzt ist",
+                  "Erlaube Mikrofon-Zugriff für lokale Aufnahme als Fallback"
+                ]
+              });
+            }
           });
       } else {
-        console.warn('⚠️ [FEEDBACK] No audio recorded, skipping audio analysis');
-        console.warn(`⚠️ [FEEDBACK] Audio blob size: ${recordedAudioBlobRef.current?.size || 0} bytes`);
-        console.warn(`⚠️ [FEEDBACK] Audio recording error: ${audioRecordingError || 'None'}`);
+        // No conversation ID or API key - try local recording only
+        if (!conversationId) {
+          console.warn('⚠️ [FEEDBACK] No conversation ID available - cannot download from ElevenLabs');
+        }
+        if (!ELEVENLABS_API_KEY) {
+          console.warn('⚠️ [FEEDBACK] ELEVENLABS_API_KEY not configured - cannot download from ElevenLabs');
+        }
 
-        // Provide a message explaining why audio analysis is not available
-        const reason = audioRecordingError || 'Es wurde kein Audio aufgenommen';
-        audioAnalysisPromise = Promise.resolve(JSON.stringify({
-          summary: `Audio-Analyse nicht verfügbar: ${reason}`,
-          error: true,
-          errorMessage: reason
-        }));
+        if (recordedAudioBlobRef.current && recordedAudioBlobRef.current.size > 0) {
+          console.log('🎙️ [FEEDBACK] Using locally recorded audio (ElevenLabs download not available)');
+          console.log(`🎙️ [FEEDBACK] Audio blob size: ${recordedAudioBlobRef.current.size} bytes`);
+          audioAnalysisPromise = generateAudioAnalysis(recordedAudioBlobRef.current, GEMINI_API_KEY)
+            .catch(error => {
+              console.error('❌ [FEEDBACK] Audio analysis failed:', error);
+              return JSON.stringify({
+                summary: "Die Audio-Analyse konnte leider nicht durchgeführt werden.",
+                error: true,
+                errorMessage: error.message
+              });
+            });
+        } else {
+          console.warn('⚠️ [FEEDBACK] No audio available for analysis');
+          const reason = audioRecordingError || 'Es wurde kein Audio aufgenommen';
+          audioAnalysisPromise = Promise.resolve(JSON.stringify({
+            summary: `Audio-Analyse nicht verfügbar: ${reason}`,
+            error: true,
+            errorMessage: reason,
+            troubleshooting: [
+              "Setze VITE_ELEVENLABS_API_KEY für ElevenLabs Audio-Download",
+              "Oder erlaube Mikrofon-Zugriff für lokale Aufnahme"
+            ]
+          }));
+        }
       }
 
       // Wait for both to complete
@@ -701,6 +792,21 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                 <p className="text-sm text-yellow-800">
                   <span className="font-semibold">Hinweis:</span> Der Gemini API Key ist nicht konfiguriert.
                   Feedback-Funktion ist nicht verfügbar.
+                </p>
+              </div>
+            )}
+
+            {/* Warning if ElevenLabs API key is missing */}
+            {!ELEVENLABS_API_KEY && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800">
+                  <span className="font-semibold">Hinweis:</span> Der ElevenLabs API Key ist nicht konfiguriert.
+                  Audio-Analyse verwendet lokale Aufnahme als Fallback.
+                  <br />
+                  <span className="text-xs mt-1 block">
+                    Für beste Ergebnisse: Setze VITE_ELEVENLABS_API_KEY in der .env Datei und aktiviere
+                    "Audio Saving" in den ElevenLabs Agent-Einstellungen.
+                  </span>
                 </p>
               </div>
             )}
