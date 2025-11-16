@@ -82,22 +82,49 @@ export async function generateInterviewFeedback(transcript, apiKey, modelName = 
       console.log('✅ [GEMINI] Model instance created');
       console.log(`📡 [GEMINI] Model config:`, { model: currentModel });
 
-  const prompt = `Du bist ein professioneller Karriere-Coach. Deine Aufgabe ist es, das folgende Bewerbungsgespräch-Transkript zu analysieren. Der Bewerber (User) übt für eine Ausbildung zum Mechatroniker bei BMW.
+  const prompt = `Du bist ein professioneller Karriere-Coach. Analysiere das folgende Bewerbungsgespräch-Transkript und gib konstruktives Feedback in "Du"-Form.
 
-Gib dem Bewerber konstruktives Feedback in "Du"-Form.
+WICHTIG: Antworte NUR mit einem JSON-Objekt in folgendem Format (keine zusätzlichen Erklärungen):
 
-Analysiere:
-1. **Struktur der Antworten:** Waren die Antworten klar und strukturiert?
-2. **Inhalt:** Hat der Bewerber gute Beispiele genannt? War die Motivation klar?
-3. **Tonfall (abgeleitet):** Wirkte der Bewerber selbstbewusst und professionell?
-4. **Verbesserungsvorschläge:** Gib 3-4 konkrete, umsetzbare Tipps.
+{
+  "summary": "Eine kurze Zusammenfassung des Gesamteindrucks (2-3 Sätze)",
+  "strengths": [
+    "Stärke 1: Konkrete positive Beobachtung",
+    "Stärke 2: Was gut gemacht wurde",
+    "Stärke 3: Weitere Stärken"
+  ],
+  "improvements": [
+    "Verbesserung 1: Konkreter Bereich, der verbessert werden kann",
+    "Verbesserung 2: Was besser sein könnte",
+    "Verbesserung 3: Weitere Verbesserungspotenziale"
+  ],
+  "tips": [
+    "Tipp 1: Konkrete, umsetzbare Empfehlung",
+    "Tipp 2: Praktischer Ratschlag",
+    "Tipp 3: Weitere hilfreiche Tipps"
+  ],
+  "rating": {
+    "overall": 7,
+    "communication": 6,
+    "motivation": 7,
+    "professionalism": 8
+  }
+}
 
-Formatiere dein Feedback in klar gegliederte Abschnitte. Sei konstruktiv, motivierend und ehrlich.
+Bewertungsskala: 1-10 (1=sehr schwach, 10=exzellent)
+
+Analysiere diese Aspekte:
+- Struktur & Klarheit der Antworten
+- Inhalt & Beispiele
+- Motivation & Begeisterung
+- Professionalität & Selbstbewusstsein
+
+Sei konstruktiv, ehrlich und motivierend. Fokussiere auf umsetzbare Verbesserungen.
 
 Transkript:
 ${transcript}
 
-Dein Feedback:`;
+JSON Feedback:`;
 
       console.log(`📤 [GEMINI] Sending request to Gemini API...`);
       console.log(`📤 [GEMINI] Prompt length: ${prompt.length} characters`);
