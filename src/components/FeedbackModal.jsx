@@ -243,6 +243,39 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
       return null;
     }
 
+    // Check if this is an error message
+    if (parsedAudioAnalysis.error) {
+      return (
+        <div className="space-y-4 mt-8">
+          {/* Audio Analysis Header */}
+          <div className="flex items-center gap-2 pb-2 border-b-2 border-orange-300">
+            <Mic2 className="w-6 h-6 text-orange-600" />
+            <h2 className="text-xl font-bold text-orange-900">Audio-Analyse</h2>
+          </div>
+
+          {/* Error Message */}
+          <div className="p-4 bg-orange-50 border-l-4 border-orange-500 rounded-r-lg">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-orange-900 mb-2">Audio-Analyse nicht verfügbar</h3>
+                <p className="text-sm text-orange-800 leading-relaxed">{parsedAudioAnalysis.summary}</p>
+                {parsedAudioAnalysis.errorMessage && (
+                  <p className="text-xs text-orange-700 mt-2">
+                    <span className="font-semibold">Grund:</span> {parsedAudioAnalysis.errorMessage}
+                  </p>
+                )}
+                <p className="text-xs text-orange-600 mt-3">
+                  💡 <span className="font-semibold">Tipp:</span> Dies kann passieren, wenn das Mikrofon bereits
+                  von ElevenLabs verwendet wird. Versuche das Gespräch erneut zu starten.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6 mt-8">
         {/* Audio Analysis Header */}
