@@ -52,7 +52,8 @@ function App() {
         });
       }
     };
-  }, [conversation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only cleanup on actual unmount
 
   /**
    * Handles the end of interview and generates feedback
