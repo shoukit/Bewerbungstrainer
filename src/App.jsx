@@ -4,7 +4,7 @@ import Header from './components/Header';
 import FeedbackModal from './components/FeedbackModal';
 import UserWizard from './components/UserWizard';
 import { Button } from './components/ui/button';
-import { generateInterviewFeedback, listAvailableModels } from './services/gemini';
+import { generateInterviewFeedback, generateAudioAnalysis, listAvailableModels } from './services/gemini';
 import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff } from 'lucide-react';
 
 function App() {
@@ -15,10 +15,16 @@ function App() {
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
   const [conversationMessages, setConversationMessages] = useState([]);
   const [microphoneError, setMicrophoneError] = useState(null);
+  const [audioAnalysisContent, setAudioAnalysisContent] = useState('');
 
   // Track if we're currently starting a session to prevent double-starts
   const isStartingSession = useRef(false);
   const connectionTimestamp = useRef(null);
+
+  // Audio recording references
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordedAudioBlobRef = useRef(null);
 
   // Environment variables
   const ELEVENLABS_AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID;
@@ -91,10 +97,85 @@ function App() {
   });
 
   /**
+   * Starts recording audio from the user's microphone
+   */
+  const startAudioRecording = async () => {
+    console.log('🎙️ [AUDIO REC] Starting audio recording...');
+
+    try {
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      console.log('🎙️ [AUDIO REC] Microphone stream obtained');
+
+      // Create MediaRecorder
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: mimeType
+      });
+
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      // Handle data available event
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+          console.log(`🎙️ [AUDIO REC] Audio chunk recorded: ${event.data.size} bytes`);
+        }
+      };
+
+      // Handle recording stop event
+      mediaRecorder.onstop = () => {
+        console.log('🎙️ [AUDIO REC] Recording stopped');
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        recordedAudioBlobRef.current = audioBlob;
+        console.log(`🎙️ [AUDIO REC] Total audio size: ${audioBlob.size} bytes`);
+
+        // Stop all tracks
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log('🎙️ [AUDIO REC] Stopped track:', track.label);
+        });
+      };
+
+      // Start recording
+      mediaRecorder.start(1000); // Collect data every 1 second
+      console.log('✅ [AUDIO REC] Recording started successfully');
+
+    } catch (error) {
+      console.error('❌ [AUDIO REC] Error starting audio recording:', error);
+    }
+  };
+
+  /**
+   * Stops recording audio
+   */
+  const stopAudioRecording = () => {
+    console.log('🛑 [AUDIO REC] Stopping audio recording...');
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      console.log('✅ [AUDIO REC] Recording stopped successfully');
+    } else {
+      console.log('⚠️ [AUDIO REC] No active recording to stop');
+    }
+  };
+
+  /**
    * Handles the end of interview and generates feedback
    */
   const handleEndInterview = async () => {
-    // End the conversation first
+    // Stop audio recording first
+    stopAudioRecording();
+
+    // End the conversation
     if (conversation.status === 'connected') {
       await conversation.endSession();
     }
@@ -102,6 +183,7 @@ function App() {
     setIsRequestingFeedback(true);
     setShowFeedbackModal(true);
     setFeedbackContent(''); // Clear previous feedback
+    setAudioAnalysisContent(''); // Clear previous audio analysis
 
     try {
       // Build transcript from collected messages
@@ -132,9 +214,24 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
         `.trim();
       }
 
-      // Generate feedback using Gemini
-      const feedback = await generateInterviewFeedback(transcript, GEMINI_API_KEY);
+      // Generate both text feedback and audio analysis in parallel
+      const feedbackPromise = generateInterviewFeedback(transcript, GEMINI_API_KEY);
+
+      let audioAnalysisPromise = Promise.resolve(null);
+      if (recordedAudioBlobRef.current && recordedAudioBlobRef.current.size > 0) {
+        console.log('🎙️ [FEEDBACK] Analyzing recorded audio...');
+        audioAnalysisPromise = generateAudioAnalysis(recordedAudioBlobRef.current, GEMINI_API_KEY);
+      } else {
+        console.log('⚠️ [FEEDBACK] No audio recorded, skipping audio analysis');
+      }
+
+      // Wait for both to complete
+      const [feedback, audioAnalysis] = await Promise.all([feedbackPromise, audioAnalysisPromise]);
+
       setFeedbackContent(feedback);
+      if (audioAnalysis) {
+        setAudioAnalysisContent(audioAnalysis);
+      }
     } catch (error) {
       console.error('Error generating feedback:', error);
       setFeedbackContent(
@@ -242,6 +339,9 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       });
 
       console.log('✅ [START] Session start requested successfully');
+
+      // Start audio recording for analysis
+      await startAudioRecording();
     } catch (error) {
       console.error('❌ [START] Error starting conversation:', {
         error,
@@ -560,6 +660,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
         feedbackContent={feedbackContent}
+        audioAnalysisContent={audioAnalysisContent}
         isLoading={isRequestingFeedback}
       />
     </div>
