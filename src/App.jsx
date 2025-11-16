@@ -99,50 +99,112 @@ function App() {
   });
 
   /**
-   * Downloads the conversation audio from ElevenLabs
+   * Downloads the conversation audio from ElevenLabs with retry logic
    * @param {string} conversationId - The ElevenLabs conversation ID
+   * @param {number} maxRetries - Maximum number of retry attempts (default: 5)
+   * @param {number} initialDelay - Initial delay in ms before first retry (default: 2000)
    * @returns {Promise<Blob|null>} - The audio blob or null if failed
    */
-  const downloadConversationAudio = async (conversationId) => {
+  const downloadConversationAudio = async (conversationId, maxRetries = 5, initialDelay = 2000) => {
     console.log('📥 [AUDIO DOWNLOAD] Downloading conversation audio from ElevenLabs...');
     console.log(`📥 [AUDIO DOWNLOAD] Conversation ID: ${conversationId}`);
+    console.log(`📥 [AUDIO DOWNLOAD] Max retries: ${maxRetries}, Initial delay: ${initialDelay}ms`);
 
-    try {
-      // ElevenLabs API endpoint for conversation audio
-      const url = `https://api.elevenlabs.io/v1/convai/conversations/${conversationId}/audio`;
+    const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
 
-      // Note: We need an API key for this endpoint
-      const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
-
-      if (!ELEVENLABS_API_KEY) {
-        console.error('❌ [AUDIO DOWNLOAD] ElevenLabs API key is missing');
-        throw new Error('ElevenLabs API key ist nicht konfiguriert');
-      }
-
-      console.log('📥 [AUDIO DOWNLOAD] Fetching audio from API...');
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'xi-api-key': ELEVENLABS_API_KEY,
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [AUDIO DOWNLOAD] API request failed:', response.status, errorText);
-        throw new Error(`API-Fehler: ${response.status} - ${errorText}`);
-      }
-
-      // Get the audio blob
-      const audioBlob = await response.blob();
-      console.log(`✅ [AUDIO DOWNLOAD] Audio downloaded successfully: ${audioBlob.size} bytes`);
-
-      return audioBlob;
-    } catch (error) {
-      console.error('❌ [AUDIO DOWNLOAD] Error downloading conversation audio:', error);
-      setAudioRecordingError(`Audio-Download fehlgeschlagen: ${error.message}`);
+    if (!ELEVENLABS_API_KEY) {
+      console.error('❌ [AUDIO DOWNLOAD] ElevenLabs API key is missing');
+      const errorMsg = 'ElevenLabs API key ist nicht konfiguriert. Bitte setze VITE_ELEVENLABS_API_KEY in der .env Datei.';
+      setAudioRecordingError(errorMsg);
       return null;
     }
+
+    // ElevenLabs API endpoint for conversation audio
+    const url = `https://api.elevenlabs.io/v1/convai/conversations/${conversationId}/audio`;
+
+    // Retry with exponential backoff
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        // Wait before attempting (skip wait on first attempt)
+        if (attempt > 0) {
+          const delay = initialDelay * Math.pow(2, attempt - 1); // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+          console.log(`⏳ [AUDIO DOWNLOAD] Waiting ${delay}ms before retry attempt ${attempt}/${maxRetries}...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+        console.log(`📥 [AUDIO DOWNLOAD] Attempt ${attempt + 1}/${maxRetries + 1}: Fetching audio from API...`);
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'xi-api-key': ELEVENLABS_API_KEY,
+          },
+        });
+
+        if (response.ok) {
+          // Success! Get the audio blob
+          const audioBlob = await response.blob();
+          console.log(`✅ [AUDIO DOWNLOAD] Audio downloaded successfully on attempt ${attempt + 1}: ${audioBlob.size} bytes`);
+          setAudioRecordingError(null); // Clear any previous errors
+          return audioBlob;
+        }
+
+        // Handle specific error cases
+        const errorText = await response.text();
+        console.warn(`⚠️ [AUDIO DOWNLOAD] Attempt ${attempt + 1} failed with status ${response.status}:`, errorText);
+
+        // Parse error response if it's JSON
+        let errorDetail = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorDetail = errorJson.detail?.message || errorJson.message || errorText;
+        } catch (e) {
+          // Not JSON, use raw error text
+        }
+
+        // If we get a 404 with "missing_conversation_audio", it means the audio is still being processed
+        // We should retry in this case
+        if (response.status === 404 && errorText.includes('missing_conversation_audio')) {
+          console.log(`⏳ [AUDIO DOWNLOAD] Audio not ready yet (still processing). Will retry...`);
+
+          // If this is the last attempt, throw an error
+          if (attempt === maxRetries) {
+            const finalError = 'Das Gesprächsaudio ist noch nicht verfügbar. Möglicherweise ist die Aufzeichnung in den Agent-Einstellungen nicht aktiviert, oder die Verarbeitung dauert länger als erwartet.';
+            setAudioRecordingError(finalError);
+            console.error(`❌ [AUDIO DOWNLOAD] Max retries reached. Audio still not available.`);
+            return null;
+          }
+
+          continue; // Retry
+        }
+
+        // For other errors, throw immediately
+        throw new Error(`API-Fehler (${response.status}): ${errorDetail}`);
+
+      } catch (error) {
+        console.error(`❌ [AUDIO DOWNLOAD] Error on attempt ${attempt + 1}:`, error);
+
+        // If this is the last attempt, give up
+        if (attempt === maxRetries) {
+          const errorMsg = `Audio-Download fehlgeschlagen nach ${maxRetries + 1} Versuchen: ${error.message}`;
+          setAudioRecordingError(errorMsg);
+          return null;
+        }
+
+        // For network errors, retry
+        if (error.message.includes('fetch') || error.message.includes('network')) {
+          console.log(`⏳ [AUDIO DOWNLOAD] Network error, will retry...`);
+          continue;
+        }
+
+        // For other errors, throw immediately
+        setAudioRecordingError(`Audio-Download fehlgeschlagen: ${error.message}`);
+        return null;
+      }
+    }
+
+    // Should never reach here, but just in case
+    console.error('❌ [AUDIO DOWNLOAD] Unexpected end of retry loop');
+    return null;
   };
 
   /**
@@ -195,32 +257,40 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       let audioAnalysisPromise = Promise.resolve(null);
 
       if (conversationIdRef.current) {
-        console.log('📥 [FEEDBACK] Downloading conversation audio from ElevenLabs...');
+        console.log('📥 [FEEDBACK] Preparing to download conversation audio from ElevenLabs...');
         console.log(`📥 [FEEDBACK] Conversation ID: ${conversationIdRef.current}`);
+        console.log('⏳ [FEEDBACK] Waiting for audio to be processed by ElevenLabs...');
 
-        audioAnalysisPromise = downloadConversationAudio(conversationIdRef.current)
-          .then(audioBlob => {
-            if (audioBlob && audioBlob.size > 0) {
-              console.log('🎙️ [FEEDBACK] Analyzing conversation audio...');
-              console.log(`🎙️ [FEEDBACK] Audio blob size: ${audioBlob.size} bytes`);
-              return generateAudioAnalysis(audioBlob, GEMINI_API_KEY);
-            } else {
-              console.warn('⚠️ [FEEDBACK] No audio downloaded, skipping analysis');
-              return JSON.stringify({
-                summary: 'Audio-Analyse nicht verfügbar: Das Gespräch konnte nicht heruntergeladen werden.',
-                error: true,
-                errorMessage: 'Audio-Download fehlgeschlagen'
-              });
-            }
-          })
-          .catch(error => {
-            console.error('❌ [FEEDBACK] Audio analysis failed:', error);
+        audioAnalysisPromise = (async () => {
+          // Wait a bit before attempting download to give ElevenLabs time to process
+          // The audio file needs to be processed and stored after the conversation ends
+          const initialWait = 3000; // 3 seconds initial wait
+          console.log(`⏳ [FEEDBACK] Waiting ${initialWait}ms for audio processing...`);
+          await new Promise(resolve => setTimeout(resolve, initialWait));
+
+          // Now attempt to download with retries
+          const audioBlob = await downloadConversationAudio(conversationIdRef.current);
+
+          if (audioBlob && audioBlob.size > 0) {
+            console.log('🎙️ [FEEDBACK] Analyzing conversation audio...');
+            console.log(`🎙️ [FEEDBACK] Audio blob size: ${audioBlob.size} bytes`);
+            return generateAudioAnalysis(audioBlob, GEMINI_API_KEY);
+          } else {
+            console.warn('⚠️ [FEEDBACK] No audio downloaded, skipping analysis');
             return JSON.stringify({
-              summary: "Die Audio-Analyse konnte leider nicht durchgeführt werden.",
+              summary: 'Audio-Analyse nicht verfügbar: Das Gespräch konnte nicht heruntergeladen werden.',
               error: true,
-              errorMessage: error.message
+              errorMessage: 'Audio-Download fehlgeschlagen - möglicherweise ist die Aufzeichnung im Agent nicht aktiviert.'
             });
+          }
+        })().catch(error => {
+          console.error('❌ [FEEDBACK] Audio analysis failed:', error);
+          return JSON.stringify({
+            summary: "Die Audio-Analyse konnte leider nicht durchgeführt werden.",
+            error: true,
+            errorMessage: error.message
           });
+        });
       } else {
         console.warn('⚠️ [FEEDBACK] No conversation ID available, skipping audio analysis');
         audioAnalysisPromise = Promise.resolve(JSON.stringify({
@@ -759,6 +829,31 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
               </div>
             )}
 
+            {/* Warning if audio recording error occurred */}
+            {audioRecordingError && (
+              <div className="relative overflow-hidden rounded-2xl border-2 border-yellow-200/60">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-orange-50"></div>
+                <div className="relative p-4 flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-yellow-900 mb-1">Audio-Aufzeichnung</p>
+                    <p className="text-sm text-yellow-800 mb-2">{audioRecordingError}</p>
+                    <p className="text-xs text-yellow-700">
+                      💡 Hinweise zur Fehlerbehebung:
+                      <br />
+                      • Überprüfe, ob "Conversation Recording" in den ElevenLabs Agent-Einstellungen aktiviert ist
+                      <br />
+                      • Stelle sicher, dass der VITE_ELEVENLABS_API_KEY in der .env Datei gesetzt ist
+                      <br />
+                      • Die Audio-Verarbeitung kann einige Sekunden nach dem Gespräch dauern
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Warning if ElevenLabs API key is missing */}
             {!import.meta.env.VITE_ELEVENLABS_API_KEY && (
               <div className="relative overflow-hidden rounded-2xl border-2 border-yellow-200/60">
@@ -768,9 +863,16 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                     <AlertCircle className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-yellow-900 mb-1">Hinweis</p>
-                    <p className="text-sm text-yellow-800">
+                    <p className="font-semibold text-yellow-900 mb-1">Hinweis: Audio-Analyse</p>
+                    <p className="text-sm text-yellow-800 mb-2">
                       Der ElevenLabs API Key ist nicht konfiguriert. Audio-Analyse-Funktion ist nicht verfügbar.
+                    </p>
+                    <p className="text-xs text-yellow-700">
+                      💡 Um die Audio-Analyse zu aktivieren:
+                      <br />
+                      1. Setze <code className="bg-yellow-100 px-1 rounded">VITE_ELEVENLABS_API_KEY</code> in der .env Datei
+                      <br />
+                      2. Stelle sicher, dass "Conversation Recording" in den ElevenLabs Agent-Einstellungen aktiviert ist
                     </p>
                   </div>
                 </div>
