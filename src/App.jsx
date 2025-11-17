@@ -444,16 +444,23 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
 
       console.log('🚀 [START] Step 2: Initiating ElevenLabs session...');
       console.log(`   Timestamp: ${new Date(connectionTimestamp.current).toISOString()}`);
+      console.log(`   User data:`, userData);
 
       // Start the conversation and capture the conversation ID
       const conversationId = await conversation.startSession({
         agentId: ELEVENLABS_AGENT_ID,
-        // Pass user data as client tools variables if needed
-        clientTools: userData ? {
+        // Pass user data as variables for the agent's first message
+        variables: userData ? {
           user_name: userData.user_name,
           position: userData.position,
           company: userData.company
         } : {}
+      });
+
+      console.log('   Variables passed to agent:', {
+        user_name: userData?.user_name,
+        position: userData?.position,
+        company: userData?.company
       });
 
       // Store the conversation ID for later audio download
