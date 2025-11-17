@@ -5,6 +5,71 @@ import App from './App.jsx'
 
 // Keep track of whether we've already mounted to prevent double mounting
 let hasAlreadyMounted = false;
+let reactRoot = null;
+let currentRootElement = null;
+let domObserver = null;
+
+/**
+ * Start observing DOM changes to detect if the root element gets removed or modified
+ * This helps handle WordPress page builders and dynamic content that might remove/re-add the element
+ */
+function startDOMObserver() {
+  // Disconnect any existing observer
+  if (domObserver) {
+    domObserver.disconnect();
+  }
+
+  // Create a new observer
+  domObserver = new MutationObserver((mutations) => {
+    // Check if our root element still exists in the DOM
+    const rootElement = document.getElementById('bewerbungstrainer-app') || document.getElementById('root');
+
+    if (!rootElement || !document.body.contains(rootElement)) {
+      console.warn('⚠️ Bewerbungstrainer: Root element was removed from DOM');
+
+      // Reset mounted flag so we can remount if the element comes back
+      hasAlreadyMounted = false;
+      reactRoot = null;
+      currentRootElement = null;
+
+      // Disconnect observer
+      if (domObserver) {
+        domObserver.disconnect();
+        domObserver = null;
+      }
+
+      // Try to remount after a short delay
+      setTimeout(() => {
+        console.log('🔄 Bewerbungstrainer: Attempting to remount...');
+        waitForDOMAndMount();
+      }, 100);
+    } else if (rootElement !== currentRootElement) {
+      // Element was replaced - remount
+      console.warn('⚠️ Bewerbungstrainer: Root element was replaced');
+      hasAlreadyMounted = false;
+      reactRoot = null;
+      currentRootElement = null;
+
+      if (domObserver) {
+        domObserver.disconnect();
+        domObserver = null;
+      }
+
+      setTimeout(() => {
+        console.log('🔄 Bewerbungstrainer: Attempting to remount on new element...');
+        initReactApp();
+      }, 100);
+    }
+  });
+
+  // Start observing the entire document for changes
+  domObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  console.log('👁️ Bewerbungstrainer: Started DOM observer');
+}
 
 // Initialize React app when DOM is ready
 function initReactApp() {
@@ -32,14 +97,18 @@ function initReactApp() {
 
   try {
     console.log('✅ Bewerbungstrainer: Mounting React app on:', rootElement.id);
-    const root = createRoot(rootElement);
-    root.render(
+    reactRoot = createRoot(rootElement);
+    reactRoot.render(
       <StrictMode>
         <App />
       </StrictMode>
     );
+    currentRootElement = rootElement;
     hasAlreadyMounted = true;
     console.log('✅ Bewerbungstrainer: React app mounted successfully');
+
+    // Start observing the element to detect if it gets removed from DOM
+    startDOMObserver();
   } catch (error) {
     console.error('❌ Bewerbungstrainer: Failed to mount React app:', error);
   }
