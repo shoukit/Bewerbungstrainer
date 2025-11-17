@@ -43,9 +43,7 @@ function App() {
     overrides: {
       agent: {
         language: "de", // German language
-        firstMessage: userData
-          ? `Guten Tag ${userData.user_name}! Schön, dass Sie da sind. Ich freue mich, dass Sie sich für die Position als ${userData.position} bei ${userData.company} bewerben. Erzählen Sie mir doch bitte zunächst etwas über sich selbst und warum Sie sich für diese Position interessieren.`
-          : "Guten Tag! Schön, dass Sie da sind. Erzählen Sie mir doch bitte zunächst etwas über sich selbst.",
+        // Note: firstMessage is configured in the ElevenLabs agent settings and cannot be overridden
       },
     },
     onConnect: () => {
