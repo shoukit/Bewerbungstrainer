@@ -1,25 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { User, Briefcase, Building, ChevronRight, CheckCircle, Sparkles, Target, Zap } from 'lucide-react';
+import wordpressAPI from '../services/wordpress-api';
 
 /**
  * UserWizard Component
  *
  * A multi-step wizard that collects user information before starting the interview:
- * - user_name: The applicant's name
+ * - user_name: The applicant's name (auto-filled from WordPress if available)
  * - position: The position they're applying for
  * - company: The company they're applying to
  */
 function UserWizard({ onComplete, initialData = null }) {
-  const [step, setStep] = useState(1);
+  // Check if running in WordPress
+  const isWordPress = wordpressAPI.isWordPress();
+  const wpUser = isWordPress ? wordpressAPI.getCurrentUser() : null;
+
+  // Auto-fill user_name from WordPress if available
+  const defaultUserName = wpUser?.firstName || wpUser?.name || '';
+
+  // Skip step 1 (name) if in WordPress and we have a name
+  const initialStep = (isWordPress && defaultUserName) ? 2 : 1;
+  const totalSteps = (isWordPress && defaultUserName) ? 2 : 3;
+
+  const [step, setStep] = useState(initialStep);
   const [formData, setFormData] = useState(initialData || {
-    user_name: '',
+    user_name: defaultUserName,
     position: '',
     company: ''
   });
   const [errors, setErrors] = useState({});
-
-  const totalSteps = 3;
 
   /**
    * Validates the current step's input

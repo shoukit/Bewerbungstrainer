@@ -1,0 +1,102 @@
+/**
+ * Admin Styles
+ * Bewerbungstrainer WordPress Plugin
+ */
+
+.bewerbungstrainer-admin-container {
+    max-width: 1000px;
+    margin: 20px 0;
+}
+
+.bewerbungstrainer-admin-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.bewerbungstrainer-admin-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.bewerbungstrainer-admin-header p {
+    margin: 0;
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.bewerbungstrainer-settings-section {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.bewerbungstrainer-settings-section h2 {
+    margin: 0 0 20px 0;
+    font-size: 20px;
+    font-weight: 600;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 12px;
+}
+
+.bewerbungstrainer-form-field {
+    margin-bottom: 24px;
+}
+
+.bewerbungstrainer-form-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.bewerbungstrainer-form-field input[type="text"],
+.bewerbungstrainer-form-field textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.bewerbungstrainer-form-field input[type="text"]:focus,
+.bewerbungstrainer-form-field textarea:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.bewerbungstrainer-form-field .description {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #64748b;
+    font-style: italic;
+}
+
+.bewerbungstrainer-shortcode-info {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.bewerbungstrainer-shortcode-info h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.bewerbungstrainer-shortcode-info code {
+    display: inline-block;
+    padding: 6px 12px;
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 8px;
+}

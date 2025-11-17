@@ -6,6 +6,7 @@ import UserWizard from './components/UserWizard';
 import { Button } from './components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './components/ui/dialog';
 import { generateInterviewFeedback, generateAudioAnalysis, listAvailableModels } from './services/gemini';
+import wordpressAPI from './services/wordpress-api';
 import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff, Edit3, RotateCcw, Play, AlertCircle, TrendingUp, History, Settings } from 'lucide-react';
 
 function App() {
@@ -21,6 +22,10 @@ function App() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [conversationCount, setConversationCount] = useState(0);
 
+  // WordPress integration
+  const [currentSession, setCurrentSession] = useState(null);
+  const [isWordPress, setIsWordPress] = useState(false);
+
   // Track if we're currently starting a session to prevent double-starts
   const isStartingSession = useRef(false);
   const connectionTimestamp = useRef(null);
@@ -28,9 +33,10 @@ function App() {
   // Store the ElevenLabs conversation ID for audio download
   const conversationIdRef = useRef(null);
 
-  // Environment variables
-  const ELEVENLABS_AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID;
-  const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+  // Environment variables (support both Vite and WordPress)
+  const ELEVENLABS_AGENT_ID = wordpressAPI.getElevenLabsAgentId();
+  const GEMINI_API_KEY = wordpressAPI.getGeminiApiKey();
+  const ELEVENLABS_API_KEY = wordpressAPI.getElevenLabsApiKey();
 
   // ElevenLabs Conversation Hook with extensive logging
   const conversation = useConversation({
@@ -110,11 +116,9 @@ function App() {
     console.log(`📥 [AUDIO DOWNLOAD] Conversation ID: ${conversationId}`);
     console.log(`📥 [AUDIO DOWNLOAD] Max retries: ${maxRetries}, Initial delay: ${initialDelay}ms`);
 
-    const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
-
     if (!ELEVENLABS_API_KEY) {
       console.error('❌ [AUDIO DOWNLOAD] ElevenLabs API key is missing');
-      const errorMsg = 'ElevenLabs API key ist nicht konfiguriert. Bitte setze VITE_ELEVENLABS_API_KEY in der .env Datei.';
+      const errorMsg = 'ElevenLabs API key ist nicht konfiguriert.';
       setAudioRecordingError(errorMsg);
       return null;
     }
@@ -311,6 +315,40 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       } else {
         console.log('⚠️ [FEEDBACK] No audio analysis available');
       }
+
+      // Save to WordPress database if in WordPress mode
+      if (isWordPress && currentSession) {
+        try {
+          console.log('💾 [WORDPRESS] Saving session data to database...');
+
+          // Update session with transcript, feedback, and audio analysis
+          await wordpressAPI.updateSession(currentSession.id, {
+            transcript: transcript,
+            feedback_json: feedback,
+            audio_analysis_json: audioAnalysis
+          });
+
+          // Save audio from ElevenLabs if we have a conversation ID
+          if (conversationIdRef.current) {
+            console.log('🎵 [WORDPRESS] Saving audio from ElevenLabs...');
+            try {
+              await wordpressAPI.saveAudioFromElevenLabs(
+                conversationIdRef.current,
+                currentSession.id
+              );
+              console.log('✅ [WORDPRESS] Audio saved successfully');
+            } catch (audioError) {
+              console.error('❌ [WORDPRESS] Failed to save audio:', audioError);
+              // Don't fail the whole process if audio save fails
+            }
+          }
+
+          console.log('✅ [WORDPRESS] Session data saved successfully');
+        } catch (wpError) {
+          console.error('❌ [WORDPRESS] Failed to save session:', wpError);
+          // Don't fail the feedback display if WordPress save fails
+        }
+      }
     } catch (error) {
       console.error('Error generating feedback:', error);
       setFeedbackContent(
@@ -425,9 +463,31 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       console.log('✅ [START] Session started successfully');
       console.log(`✅ [START] Conversation ID: ${conversationId}`);
 
+      // Create WordPress session if in WordPress mode
+      if (isWordPress && userData) {
+        try {
+          console.log('💾 [WORDPRESS] Creating session in database...');
+          const response = await wordpressAPI.createSession({
+            position: userData.position,
+            company: userData.company,
+            conversation_id: conversationId
+          });
+
+          if (response.success && response.data) {
+            setCurrentSession(response.data);
+            console.log('✅ [WORDPRESS] Session created:', response.data.id);
+          }
+        } catch (wpError) {
+          console.error('❌ [WORDPRESS] Failed to create session:', wpError);
+          // Continue even if WordPress save fails
+        }
+      }
+
       // Increment conversation count
       setConversationCount(prev => prev + 1);
-      localStorage.setItem('bewerbungstrainer_conversation_count', String(conversationCount + 1));
+      if (!isWordPress) {
+        localStorage.setItem('bewerbungstrainer_conversation_count', String(conversationCount + 1));
+      }
     } catch (error) {
       console.error('❌ [START] Error starting conversation:', {
         error,
@@ -450,8 +510,10 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
     setUserData(data);
     setShowWizard(false);
 
-    // Store in localStorage for persistence
-    localStorage.setItem('bewerbungstrainer_user_data', JSON.stringify(data));
+    // Store in localStorage for persistence (only if not in WordPress)
+    if (!isWordPress) {
+      localStorage.setItem('bewerbungstrainer_user_data', JSON.stringify(data));
+    }
   };
 
   /**
@@ -482,23 +544,54 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
     setShowWizard(true);
   };
 
-  // Check if user data exists in localStorage on mount
+  // Initialize WordPress integration and load user data on mount
   useEffect(() => {
-    const storedData = localStorage.getItem('bewerbungstrainer_user_data');
-    if (storedData) {
-      try {
-        const parsed = JSON.parse(storedData);
-        setUserData(parsed);
-        setShowWizard(false);
-      } catch (error) {
-        console.error('Error parsing stored user data:', error);
-      }
-    }
+    // Check if running in WordPress
+    const wpMode = wordpressAPI.isWordPress();
+    setIsWordPress(wpMode);
+    console.log(`🔧 [INIT] WordPress mode: ${wpMode}`);
 
-    // Load conversation count
-    const storedCount = localStorage.getItem('bewerbungstrainer_conversation_count');
-    if (storedCount) {
-      setConversationCount(parseInt(storedCount, 10));
+    if (wpMode) {
+      // Load WordPress user data
+      const wpUser = wordpressAPI.getCurrentUser();
+      console.log('👤 [WORDPRESS] Current user:', wpUser);
+
+      // If user has firstName, use it as user_name
+      if (wpUser.firstName || wpUser.name) {
+        // Don't show wizard, user info comes from WordPress
+        // But still need position and company from wizard
+        setShowWizard(true); // Will ask for position/company only
+      }
+
+      // Load session count from WordPress
+      wordpressAPI.getSessions({ limit: 1 })
+        .then(response => {
+          if (response.success && response.pagination) {
+            setConversationCount(response.pagination.total);
+          }
+        })
+        .catch(error => {
+          console.error('❌ [WORDPRESS] Failed to load session count:', error);
+        });
+
+    } else {
+      // Standalone mode - use localStorage
+      const storedData = localStorage.getItem('bewerbungstrainer_user_data');
+      if (storedData) {
+        try {
+          const parsed = JSON.parse(storedData);
+          setUserData(parsed);
+          setShowWizard(false);
+        } catch (error) {
+          console.error('Error parsing stored user data:', error);
+        }
+      }
+
+      // Load conversation count
+      const storedCount = localStorage.getItem('bewerbungstrainer_conversation_count');
+      if (storedCount) {
+        setConversationCount(parseInt(storedCount, 10));
+      }
     }
   }, []);
 
@@ -606,7 +699,9 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                       <Button
                         onClick={() => {
                           if (confirm('Möchtest du deine Profildaten wirklich ändern?')) {
-                            localStorage.removeItem('bewerbungstrainer_user_data');
+                            if (!isWordPress) {
+                              localStorage.removeItem('bewerbungstrainer_user_data');
+                            }
                             setUserData(null);
                             setShowWizard(true);
                             if (conversation.status === 'connected') {
