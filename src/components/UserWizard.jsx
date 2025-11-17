@@ -21,7 +21,8 @@ function UserWizard({ onComplete, initialData = null }) {
 
   // Skip step 1 (name) if in WordPress and we have a name
   const initialStep = (isWordPress && defaultUserName) ? 2 : 1;
-  const totalSteps = (isWordPress && defaultUserName) ? 2 : 3;
+  // Total steps is always 3 (name, position, company), even if we skip name
+  const totalSteps = 3;
 
   const [step, setStep] = useState(initialStep);
   const [formData, setFormData] = useState(initialData || {
@@ -30,6 +31,10 @@ function UserWizard({ onComplete, initialData = null }) {
     company: ''
   });
   const [errors, setErrors] = useState({});
+
+  // Calculate display step numbers (relative to visible steps)
+  const displayStep = step - initialStep + 1;
+  const displayTotalSteps = totalSteps - initialStep + 1;
 
   /**
    * Validates the current step's input
@@ -86,7 +91,7 @@ function UserWizard({ onComplete, initialData = null }) {
    * Moves to the previous step
    */
   const handleBack = () => {
-    if (step > 1) {
+    if (step > initialStep) {
       setStep(step - 1);
     }
   };
@@ -150,18 +155,18 @@ function UserWizard({ onComplete, initialData = null }) {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-ocean-deep-900 flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-ocean-blue-100 flex items-center justify-center text-xs font-bold text-ocean-blue-600">
-                  {step}
+                  {displayStep}
                 </div>
-                Schritt {step} von {totalSteps}
+                Schritt {displayStep} von {displayTotalSteps}
               </span>
               <span className="text-sm font-medium text-ocean-deep-600 bg-ocean-blue-100 px-3 py-1 rounded-full">
-                {Math.round((step / totalSteps) * 100)}%
+                {Math.round((displayStep / displayTotalSteps) * 100)}%
               </span>
             </div>
             <div className="relative w-full bg-ocean-blue-200/50 rounded-full h-3 overflow-hidden">
               <div
                 className="absolute inset-y-0 left-0 bg-gradient-to-r from-ocean-blue-500 via-ocean-deep-500 to-ocean-teal-500 rounded-full transition-all duration-500 ease-out shadow-lg"
-                style={{ width: `${(step / totalSteps) * 100}%` }}
+                style={{ width: `${(displayStep / displayTotalSteps) * 100}%` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent"></div>
               </div>
@@ -367,7 +372,7 @@ function UserWizard({ onComplete, initialData = null }) {
           <div className="px-6 py-6 bg-gradient-to-r from-ocean-blue-50 to-ocean-teal-50/30 border-t border-ocean-blue-100/50 flex justify-between gap-4">
             <Button
               onClick={handleBack}
-              disabled={step === 1}
+              disabled={step === initialStep}
               variant="outline"
               className="min-w-[120px] border-2 border-slate-300 hover:border-ocean-blue-400 hover:bg-ocean-blue-50 transition-all duration-200 disabled:opacity-40"
             >
