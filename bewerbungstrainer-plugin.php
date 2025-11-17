@@ -162,26 +162,33 @@ class Bewerbungstrainer_Plugin {
 
         // Enqueue React app (built version)
         $asset_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/index.js';
-        if (file_exists($asset_file)) {
-            wp_enqueue_script(
-                'bewerbungstrainer-app',
-                BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/index.js',
-                array(),
-                filemtime($asset_file),
-                true
-            );
+        $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/index.css';
+
+        // Check if build files exist
+        if (!file_exists($asset_file) || !file_exists($css_file)) {
+            // Show error message if build files are missing
+            add_action('wp_footer', function() {
+                echo '<script>console.error("Bewerbungstrainer: Build files missing! Please run: npm install && npm run build");</script>';
+            });
+            return;
         }
 
-        // Enqueue CSS
-        $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/index.css';
-        if (file_exists($css_file)) {
-            wp_enqueue_style(
-                'bewerbungstrainer-app',
-                BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/index.css',
-                array(),
-                filemtime($css_file)
-            );
-        }
+        // Enqueue CSS first
+        wp_enqueue_style(
+            'bewerbungstrainer-app',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/index.css',
+            array(),
+            filemtime($css_file)
+        );
+
+        // Enqueue JavaScript
+        wp_enqueue_script(
+            'bewerbungstrainer-app',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/index.js',
+            array(),
+            filemtime($asset_file),
+            true
+        );
 
         // Pass data to JavaScript
         wp_localize_script('bewerbungstrainer-app', 'bewerbungstrainerConfig', array(
