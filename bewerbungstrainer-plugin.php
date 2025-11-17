@@ -60,6 +60,8 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-audio-handler.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-pdf-exporter.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-shortcodes.php';
     }
 
@@ -100,6 +102,18 @@ class Bewerbungstrainer_Plugin {
             $htaccess_content .= "    Allow from all\n";
             $htaccess_content .= "</FilesMatch>\n";
             file_put_contents($audio_dir . '/.htaccess', $htaccess_content);
+        }
+
+        // Create upload directory for documents
+        $documents_dir = $upload_dir['basedir'] . '/bewerbungstrainer-documents';
+        if (!file_exists($documents_dir)) {
+            wp_mkdir_p($documents_dir);
+        }
+
+        // Create PDF export directory
+        $pdfs_dir = $upload_dir['basedir'] . '/bewerbungstrainer-pdfs';
+        if (!file_exists($pdfs_dir)) {
+            wp_mkdir_p($pdfs_dir);
         }
 
         // Set default options
@@ -156,7 +170,8 @@ class Bewerbungstrainer_Plugin {
         global $post;
         if (!is_a($post, 'WP_Post') ||
             (!has_shortcode($post->post_content, 'bewerbungstrainer_interview') &&
-             !has_shortcode($post->post_content, 'bewerbungstrainer_uebungen'))) {
+             !has_shortcode($post->post_content, 'bewerbungstrainer_uebungen') &&
+             !has_shortcode($post->post_content, 'bewerbungstrainer_dokumente'))) {
             return;
         }
 

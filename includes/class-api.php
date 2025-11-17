@@ -33,6 +33,16 @@ class Bewerbungstrainer_API {
     private $audio_handler;
 
     /**
+     * PDF exporter instance
+     */
+    private $pdf_exporter;
+
+    /**
+     * Gemini handler instance
+     */
+    private $gemini_handler;
+
+    /**
      * Get singleton instance
      */
     public static function get_instance() {
@@ -48,6 +58,8 @@ class Bewerbungstrainer_API {
     private function __construct() {
         $this->db = Bewerbungstrainer_Database::get_instance();
         $this->audio_handler = Bewerbungstrainer_Audio_Handler::get_instance();
+        $this->pdf_exporter = Bewerbungstrainer_PDF_Exporter::get_instance();
+        $this->gemini_handler = Bewerbungstrainer_Gemini_Handler::get_instance();
 
         add_action('rest_api_init', array($this, 'register_routes'));
     }
@@ -116,6 +128,41 @@ class Bewerbungstrainer_API {
         register_rest_route($this->namespace, '/settings', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_settings'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Export session as PDF
+        register_rest_route($this->namespace, '/sessions/(?P<id>\d+)/export-pdf', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'export_session_pdf'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Upload document
+        register_rest_route($this->namespace, '/documents/upload', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'upload_document'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Get all documents for current user
+        register_rest_route($this->namespace, '/documents', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_documents'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Get specific document
+        register_rest_route($this->namespace, '/documents/(?P<id>\d+)', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_document'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Delete document
+        register_rest_route($this->namespace, '/documents/(?P<id>\d+)', array(
+            'methods' => 'DELETE',
+            'callback' => array($this, 'delete_document'),
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
     }
@@ -473,6 +520,238 @@ class Bewerbungstrainer_API {
             'audio_analysis_json' => $session->audio_analysis_json ? json_decode($session->audio_analysis_json, true) : null,
             'created_at' => $session->created_at,
             'updated_at' => $session->updated_at,
+        );
+    }
+
+    /**
+     * Export session as PDF
+     *
+     * @param WP_REST_Request $request Request object
+     * @return void Streams PDF to browser
+     */
+    public function export_session_pdf($request) {
+        $session_id = intval($request['id']);
+        $this->pdf_exporter->stream_session_pdf($session_id, get_current_user_id());
+    }
+
+    /**
+     * Upload document
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function upload_document($request) {
+        $files = $request->get_file_params();
+        $params = $request->get_params();
+
+        if (empty($files['file'])) {
+            return new WP_Error(
+                'missing_file',
+                __('Keine Datei hochgeladen.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        if (empty($params['document_type']) || !in_array($params['document_type'], array('cv', 'cover_letter'))) {
+            return new WP_Error(
+                'invalid_type',
+                __('Ungültiger Dokumenttyp.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        $file = $files['file'];
+
+        // Validate file type
+        $allowed_types = array('application/pdf');
+        if (!in_array($file['type'], $allowed_types)) {
+            return new WP_Error(
+                'invalid_file_type',
+                __('Nur PDF-Dateien sind erlaubt.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Validate file size (max 10MB)
+        $max_size = 10 * 1024 * 1024; // 10MB
+        if ($file['size'] > $max_size) {
+            return new WP_Error(
+                'file_too_large',
+                __('Datei ist zu groß. Maximal 10MB erlaubt.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Create uploads directory
+        $upload_dir = wp_upload_dir();
+        $bewerbungstrainer_dir = $upload_dir['basedir'] . '/bewerbungstrainer-documents';
+
+        if (!file_exists($bewerbungstrainer_dir)) {
+            wp_mkdir_p($bewerbungstrainer_dir);
+        }
+
+        // Generate unique filename
+        $filename = wp_unique_filename($bewerbungstrainer_dir, $file['name']);
+        $file_path = $bewerbungstrainer_dir . '/' . $filename;
+
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+            return new WP_Error(
+                'upload_failed',
+                __('Fehler beim Hochladen der Datei.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Generate file URL
+        $file_url = $upload_dir['baseurl'] . '/bewerbungstrainer-documents/' . $filename;
+
+        // Create database entry
+        $document_id = $this->db->create_document(array(
+            'user_id' => get_current_user_id(),
+            'document_type' => $params['document_type'],
+            'filename' => $filename,
+            'file_url' => $file_url,
+            'file_path' => $file_path,
+        ));
+
+        if (!$document_id) {
+            // Clean up file if database insert failed
+            wp_delete_file($file_path);
+            return new WP_Error(
+                'create_failed',
+                __('Fehler beim Speichern des Dokuments.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Analyze document with Gemini AI
+        $feedback = $this->gemini_handler->analyze_document($file_path, $params['document_type']);
+
+        if (!is_wp_error($feedback)) {
+            // Update document with feedback
+            $this->db->update_document($document_id, array(
+                'feedback_json' => json_encode($feedback),
+                'overall_rating' => isset($feedback['overall_rating']) ? $feedback['overall_rating'] : null,
+            ));
+        }
+
+        // Get updated document
+        $document = $this->db->get_document($document_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_document($document),
+        ), 201);
+    }
+
+    /**
+     * Get all documents for current user
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function get_documents($request) {
+        $params = $request->get_params();
+
+        $args = array(
+            'limit' => isset($params['limit']) ? intval($params['limit']) : 50,
+            'offset' => isset($params['offset']) ? intval($params['offset']) : 0,
+            'document_type' => isset($params['document_type']) ? $params['document_type'] : null,
+            'orderby' => isset($params['orderby']) ? $params['orderby'] : 'created_at',
+            'order' => isset($params['order']) ? $params['order'] : 'DESC',
+        );
+
+        $documents = $this->db->get_user_documents(get_current_user_id(), $args);
+        $total = $this->db->get_user_documents_count(get_current_user_id(), $args['document_type']);
+
+        $formatted_documents = array_map(array($this, 'format_document'), $documents);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $formatted_documents,
+            'pagination' => array(
+                'total' => $total,
+                'limit' => $args['limit'],
+                'offset' => $args['offset'],
+            ),
+        ), 200);
+    }
+
+    /**
+     * Get specific document
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function get_document($request) {
+        $document_id = intval($request['id']);
+        $document = $this->db->get_document($document_id);
+
+        if (!$document) {
+            return new WP_Error(
+                'not_found',
+                __('Dokument nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Check ownership
+        if ((int) $document->user_id !== get_current_user_id()) {
+            return new WP_Error(
+                'forbidden',
+                __('Keine Berechtigung.', 'bewerbungstrainer'),
+                array('status' => 403)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_document($document),
+        ), 200);
+    }
+
+    /**
+     * Delete document
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function delete_document($request) {
+        $document_id = intval($request['id']);
+        $result = $this->db->delete_document($document_id, get_current_user_id());
+
+        if (!$result) {
+            return new WP_Error(
+                'delete_failed',
+                __('Fehler beim Löschen des Dokuments oder keine Berechtigung.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => __('Dokument erfolgreich gelöscht.', 'bewerbungstrainer'),
+        ), 200);
+    }
+
+    /**
+     * Format document for API response
+     *
+     * @param object $document Document object from database
+     * @return array Formatted document data
+     */
+    private function format_document($document) {
+        return array(
+            'id' => (int) $document->id,
+            'user_id' => (int) $document->user_id,
+            'document_type' => $document->document_type,
+            'filename' => $document->filename,
+            'file_url' => $document->file_url,
+            'feedback' => $document->feedback_json ? json_decode($document->feedback_json, true) : null,
+            'overall_rating' => $document->overall_rating ? (float) $document->overall_rating : null,
+            'created_at' => $document->created_at,
+            'updated_at' => $document->updated_at,
         );
     }
 }
