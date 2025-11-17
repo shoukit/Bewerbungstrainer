@@ -449,15 +449,15 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       // Start the conversation and capture the conversation ID
       const conversationId = await conversation.startSession({
         agentId: ELEVENLABS_AGENT_ID,
-        // Pass user data as variables for the agent's first message
-        variables: userData ? {
+        // Pass user data as dynamic variables for the agent's first message
+        dynamicVariables: userData ? {
           user_name: userData.user_name,
           position: userData.position,
           company: userData.company
         } : {}
       });
 
-      console.log('   Variables passed to agent:', {
+      console.log('   Dynamic variables passed to agent:', {
         user_name: userData?.user_name,
         position: userData?.position,
         company: userData?.company
