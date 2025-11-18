@@ -57,11 +57,14 @@ class Bewerbungstrainer_Plugin {
      * Load required dependencies
      */
     private function load_dependencies() {
+        // Load base classes first
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-database.php';
-        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-audio-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-pdf-exporter.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
+
+        // Load API class after its dependencies
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-shortcodes.php';
     }
 
