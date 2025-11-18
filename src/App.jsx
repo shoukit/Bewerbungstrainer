@@ -838,11 +838,11 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                           }`}></div>
                         </div>
 
-                        <p className="text-sm font-medium mt-3 px-4 py-2 rounded-full ${
+                        <p className={`text-sm font-medium mt-3 px-4 py-2 rounded-full ${
                           conversation.micMuted
                             ? 'bg-red-100 text-red-700'
                             : 'bg-ocean-blue-100 text-ocean-blue-700'
-                        }">
+                        }`}>
                           {conversation.micMuted ? '🔇 Mikrofon aus' : '🎤 Spreche klar und deutlich'}
                         </p>
                       </div>
