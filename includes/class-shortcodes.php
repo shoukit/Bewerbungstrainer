@@ -33,6 +33,7 @@ class Bewerbungstrainer_Shortcodes {
     private function __construct() {
         add_shortcode('bewerbungstrainer_interview', array($this, 'interview_shortcode'));
         add_shortcode('bewerbungstrainer_uebungen', array($this, 'exercises_list_shortcode'));
+        add_shortcode('bewerbungstrainer_dokumente', array($this, 'documents_shortcode'));
     }
 
     /**
@@ -238,8 +239,21 @@ class Bewerbungstrainer_Shortcodes {
                         <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
                         <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
                     </svg>
-                    <?php esc_html_e('Details ansehen', 'bewerbungstrainer'); ?>
+                    <?php esc_html_e('Details', 'bewerbungstrainer'); ?>
                 </button>
+
+                <?php if ($feedback) : ?>
+                    <a
+                        href="<?php echo esc_url(rest_url('bewerbungstrainer/v1/sessions/' . $session->id . '/export-pdf')); ?>"
+                        class="bewerbungstrainer-btn bewerbungstrainer-btn-success bewerbungstrainer-export-pdf"
+                        target="_blank"
+                    >
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"></path>
+                        </svg>
+                        <?php esc_html_e('PDF', 'bewerbungstrainer'); ?>
+                    </a>
+                <?php endif; ?>
 
                 <?php if ($session->audio_url) : ?>
                     <button
@@ -250,7 +264,7 @@ class Bewerbungstrainer_Shortcodes {
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
                         </svg>
-                        <?php esc_html_e('Audio abspielen', 'bewerbungstrainer'); ?>
+                        <?php esc_html_e('Audio', 'bewerbungstrainer'); ?>
                     </button>
                 <?php endif; ?>
             </div>
@@ -398,6 +412,251 @@ class Bewerbungstrainer_Shortcodes {
     }
 
     /**
+     * Documents shortcode
+     *
+     * Usage: [bewerbungstrainer_dokumente]
+     */
+    public function documents_shortcode($atts) {
+        // Check if user is logged in
+        if (!is_user_logged_in()) {
+            return $this->render_login_message();
+        }
+
+        // Get database instance
+        $db = Bewerbungstrainer_Database::get_instance();
+
+        // Get documents
+        $documents = $db->get_user_documents(get_current_user_id(), array(
+            'limit' => 100,
+            'orderby' => 'created_at',
+            'order' => 'DESC',
+        ));
+
+        // Enqueue styles
+        $this->enqueue_documents_assets();
+
+        // Render documents view
+        ob_start();
+        ?>
+        <div class="bewerbungstrainer-documents-container">
+            <div class="bewerbungstrainer-documents-header">
+                <h2><?php esc_html_e('Dokumenten-Bewertung', 'bewerbungstrainer'); ?></h2>
+                <p><?php esc_html_e('Lade deinen Lebenslauf oder dein Anschreiben hoch und erhalte professionelles Feedback.', 'bewerbungstrainer'); ?></p>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="bewerbungstrainer-upload-section">
+                <div class="bewerbungstrainer-upload-box">
+                    <div class="bewerbungstrainer-upload-icon">
+                        <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                    </div>
+                    <h3><?php esc_html_e('Dokument hochladen', 'bewerbungstrainer'); ?></h3>
+                    <p><?php esc_html_e('Nur PDF-Dateien, max. 10MB', 'bewerbungstrainer'); ?></p>
+
+                    <form id="bewerbungstrainer-document-upload-form" enctype="multipart/form-data">
+                        <div class="bewerbungstrainer-upload-type">
+                            <label>
+                                <input type="radio" name="document_type" value="cv" checked>
+                                <span><?php esc_html_e('Lebenslauf', 'bewerbungstrainer'); ?></span>
+                            </label>
+                            <label>
+                                <input type="radio" name="document_type" value="cover_letter">
+                                <span><?php esc_html_e('Anschreiben', 'bewerbungstrainer'); ?></span>
+                            </label>
+                        </div>
+
+                        <div class="bewerbungstrainer-file-input-wrapper">
+                            <input type="file" id="bewerbungstrainer-file-input" name="file" accept=".pdf" required>
+                            <label for="bewerbungstrainer-file-input" class="bewerbungstrainer-btn bewerbungstrainer-btn-primary">
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <?php esc_html_e('Datei auswählen', 'bewerbungstrainer'); ?>
+                            </label>
+                            <span class="bewerbungstrainer-file-name"><?php esc_html_e('Keine Datei ausgewählt', 'bewerbungstrainer'); ?></span>
+                        </div>
+
+                        <button type="submit" class="bewerbungstrainer-btn bewerbungstrainer-btn-success bewerbungstrainer-submit-upload">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <?php esc_html_e('Hochladen und analysieren', 'bewerbungstrainer'); ?>
+                        </button>
+
+                        <div class="bewerbungstrainer-upload-status" style="display: none;"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Documents List -->
+            <?php if (!empty($documents)) : ?>
+                <div class="bewerbungstrainer-documents-list">
+                    <h3><?php esc_html_e('Meine Dokumente', 'bewerbungstrainer'); ?></h3>
+                    <div class="bewerbungstrainer-documents-grid">
+                        <?php foreach ($documents as $document) : ?>
+                            <?php $this->render_document_card($document); ?>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Render single document card
+     *
+     * @param object $document Document object
+     */
+    private function render_document_card($document) {
+        $feedback = $document->feedback_json ? json_decode($document->feedback_json, true) : null;
+        $date = new DateTime($document->created_at);
+        $formatted_date = $date->format('d.m.Y H:i');
+
+        $type_label = $document->document_type === 'cv' ? __('Lebenslauf', 'bewerbungstrainer') : __('Anschreiben', 'bewerbungstrainer');
+        ?>
+        <div class="bewerbungstrainer-document-card">
+            <div class="bewerbungstrainer-document-header">
+                <div class="bewerbungstrainer-document-type">
+                    <?php echo esc_html($type_label); ?>
+                </div>
+                <?php if ($document->overall_rating) : ?>
+                    <div class="bewerbungstrainer-document-rating">
+                        <span class="rating-value"><?php echo esc_html(number_format($document->overall_rating, 1)); ?>/10</span>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="bewerbungstrainer-document-body">
+                <h4><?php echo esc_html($document->filename); ?></h4>
+                <p class="bewerbungstrainer-document-date"><?php echo esc_html($formatted_date); ?></p>
+
+                <?php if ($feedback && isset($feedback['summary'])) : ?>
+                    <div class="bewerbungstrainer-document-summary">
+                        <?php echo esc_html(wp_trim_words($feedback['summary'], 15)); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="bewerbungstrainer-document-footer">
+                <?php if ($feedback) : ?>
+                    <button
+                        class="bewerbungstrainer-btn bewerbungstrainer-btn-primary bewerbungstrainer-view-document-details"
+                        onclick="bewerbungstrainerViewDocumentDetails(<?php echo esc_attr($document->id); ?>)"
+                    >
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <?php esc_html_e('Feedback ansehen', 'bewerbungstrainer'); ?>
+                    </button>
+                <?php else : ?>
+                    <span class="bewerbungstrainer-processing-badge"><?php esc_html_e('Wird verarbeitet...', 'bewerbungstrainer'); ?></span>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Details Modal -->
+        <?php if ($feedback) : ?>
+        <div id="bewerbungstrainer-document-modal-<?php echo esc_attr($document->id); ?>" class="bewerbungstrainer-modal" style="display: none;">
+            <div class="bewerbungstrainer-modal-overlay" onclick="bewerbungstrainerCloseDocumentModal(<?php echo esc_attr($document->id); ?>)"></div>
+            <div class="bewerbungstrainer-modal-content">
+                <button class="bewerbungstrainer-modal-close" onclick="bewerbungstrainerCloseDocumentModal(<?php echo esc_attr($document->id); ?>)">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+
+                <div class="bewerbungstrainer-modal-header">
+                    <h2><?php echo esc_html($type_label); ?> - Feedback</h2>
+                    <p class="bewerbungstrainer-modal-date"><?php echo esc_html($formatted_date); ?></p>
+                </div>
+
+                <div class="bewerbungstrainer-modal-body">
+                    <?php $this->render_document_feedback($feedback); ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    /**
+     * Render document feedback
+     *
+     * @param array $feedback Feedback data
+     */
+    private function render_document_feedback($feedback) {
+        ?>
+        <div class="bewerbungstrainer-document-feedback">
+            <?php if (isset($feedback['overall_rating'])) : ?>
+                <div class="bewerbungstrainer-rating-box">
+                    <h3><?php esc_html_e('Gesamtbewertung', 'bewerbungstrainer'); ?></h3>
+                    <div class="rating-value-large"><?php echo esc_html(number_format($feedback['overall_rating'], 1)); ?>/10</div>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($feedback['summary'])) : ?>
+                <div class="bewerbungstrainer-feedback-summary">
+                    <h4><?php esc_html_e('Zusammenfassung', 'bewerbungstrainer'); ?></h4>
+                    <p><?php echo esc_html($feedback['summary']); ?></p>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($feedback['ratings']) && !empty($feedback['ratings'])) : ?>
+                <div class="bewerbungstrainer-feedback-ratings">
+                    <h4><?php esc_html_e('Detailbewertungen', 'bewerbungstrainer'); ?></h4>
+                    <div class="bewerbungstrainer-ratings-grid">
+                        <?php foreach ($feedback['ratings'] as $category => $rating) : ?>
+                            <div class="bewerbungstrainer-rating-item">
+                                <span class="rating-label"><?php echo esc_html(ucfirst($category)); ?></span>
+                                <span class="rating-value"><?php echo esc_html($rating); ?>/10</span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($feedback['strengths']) && !empty($feedback['strengths'])) : ?>
+                <div class="bewerbungstrainer-feedback-strengths">
+                    <h4><?php esc_html_e('Stärken', 'bewerbungstrainer'); ?></h4>
+                    <ul>
+                        <?php foreach ($feedback['strengths'] as $strength) : ?>
+                            <li><?php echo esc_html($strength); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($feedback['improvements']) && !empty($feedback['improvements'])) : ?>
+                <div class="bewerbungstrainer-feedback-improvements">
+                    <h4><?php esc_html_e('Verbesserungspotenzial', 'bewerbungstrainer'); ?></h4>
+                    <ul>
+                        <?php foreach ($feedback['improvements'] as $improvement) : ?>
+                            <li><?php echo esc_html($improvement); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($feedback['recommendations']) && !empty($feedback['recommendations'])) : ?>
+                <div class="bewerbungstrainer-feedback-tips">
+                    <h4><?php esc_html_e('Handlungsempfehlungen', 'bewerbungstrainer'); ?></h4>
+                    <ul>
+                        <?php foreach ($feedback['recommendations'] as $recommendation) : ?>
+                            <li><?php echo esc_html($recommendation); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    /**
      * Render login message
      */
     private function render_login_message() {
@@ -469,5 +728,31 @@ class Bewerbungstrainer_Shortcodes {
             BEWERBUNGSTRAINER_VERSION,
             true
         );
+    }
+
+    /**
+     * Enqueue assets for documents shortcode
+     */
+    private function enqueue_documents_assets() {
+        wp_enqueue_style(
+            'bewerbungstrainer-documents',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'assets/css/documents.css',
+            array(),
+            BEWERBUNGSTRAINER_VERSION
+        );
+
+        wp_enqueue_script(
+            'bewerbungstrainer-documents',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'assets/js/documents.js',
+            array('jquery'),
+            BEWERBUNGSTRAINER_VERSION,
+            true
+        );
+
+        // Pass config to JavaScript
+        wp_localize_script('bewerbungstrainer-documents', 'bewerbungstrainerDocuments', array(
+            'apiUrl' => rest_url('bewerbungstrainer/v1'),
+            'nonce' => wp_create_nonce('wp_rest'),
+        ));
     }
 }
