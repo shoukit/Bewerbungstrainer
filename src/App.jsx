@@ -51,8 +51,6 @@ function App() {
       const timeSinceStart = connectionTimestamp.current ? now - connectionTimestamp.current : 0;
       console.log('🟢 [CONNECTED] ElevenLabs WebSocket connected');
       console.log(`   Time since start: ${timeSinceStart}ms`);
-      console.log(`   Conversation status: ${conversation.status}`);
-      console.log(`   Microphone muted: ${conversation.micMuted}`);
       isStartingSession.current = false;
     },
     onDisconnect: (event) => {
@@ -60,7 +58,6 @@ function App() {
       const timeSinceStart = connectionTimestamp.current ? now - connectionTimestamp.current : 0;
       console.log('🔴 [DISCONNECTED] ElevenLabs WebSocket disconnected');
       console.log(`   Time since start: ${timeSinceStart}ms`);
-      console.log(`   Conversation status: ${conversation.status}`);
       console.log(`   Disconnect event:`, event);
       console.log(`   Close code:`, event?.code);
       console.log(`   Close reason:`, event?.reason);
@@ -91,7 +88,6 @@ function App() {
         errorType: error?.constructor?.name,
         errorMessage: error?.message,
         errorStack: error?.stack,
-        conversationStatus: conversation.status,
         timestamp: new Date().toISOString()
       });
       isStartingSession.current = false;
