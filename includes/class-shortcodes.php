@@ -34,6 +34,8 @@ class Bewerbungstrainer_Shortcodes {
         add_shortcode('bewerbungstrainer_interview', array($this, 'interview_shortcode'));
         add_shortcode('bewerbungstrainer_uebungen', array($this, 'exercises_list_shortcode'));
         add_shortcode('bewerbungstrainer_dokumente', array($this, 'documents_shortcode'));
+        // Alias for easier usage
+        add_shortcode('bewerbungscoach', array($this, 'interview_shortcode'));
     }
 
     /**
