@@ -57,7 +57,8 @@ class Bewerbungstrainer_Database {
 
         $sql = "CREATE TABLE IF NOT EXISTS $table_sessions (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            user_id bigint(20) UNSIGNED NOT NULL,
+            user_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+            user_name varchar(255) DEFAULT NULL,
             session_id varchar(255) NOT NULL,
             position varchar(255) NOT NULL,
             company varchar(255) NOT NULL,
@@ -100,8 +101,8 @@ class Bewerbungstrainer_Database {
 
         dbDelta($sql_documents);
 
-        // Update version
-        update_option('bewerbungstrainer_db_version', '1.1.0');
+        // Update version - 1.2.0 adds user_name column for guest users
+        update_option('bewerbungstrainer_db_version', '1.2.0');
     }
 
     /**
@@ -115,6 +116,7 @@ class Bewerbungstrainer_Database {
 
         $defaults = array(
             'user_id' => get_current_user_id(),
+            'user_name' => null,
             'session_id' => wp_generate_uuid4(),
             'position' => '',
             'company' => '',
@@ -132,6 +134,7 @@ class Bewerbungstrainer_Database {
             $this->table_sessions,
             array(
                 'user_id' => $data['user_id'],
+                'user_name' => sanitize_text_field($data['user_name']),
                 'session_id' => $data['session_id'],
                 'position' => sanitize_text_field($data['position']),
                 'company' => sanitize_text_field($data['company']),
@@ -142,7 +145,7 @@ class Bewerbungstrainer_Database {
                 'feedback_json' => $data['feedback_json'],
                 'audio_analysis_json' => $data['audio_analysis_json'],
             ),
-            array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+            array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
         );
 
         if ($result === false) {
@@ -387,6 +390,61 @@ class Bewerbungstrainer_Database {
      */
     public function get_table_name() {
         return $this->table_sessions;
+    }
+
+    /**
+     * Get all training sessions (for admin)
+     *
+     * @param array $args Query arguments (limit, offset, orderby, order)
+     * @return array Array of session objects
+     */
+    public function get_all_sessions($args = array()) {
+        global $wpdb;
+
+        $defaults = array(
+            'limit' => 50,
+            'offset' => 0,
+            'orderby' => 'created_at',
+            'order' => 'DESC',
+        );
+
+        $args = wp_parse_args($args, $defaults);
+
+        // Validate orderby
+        $allowed_orderby = array('id', 'created_at', 'updated_at', 'position', 'company', 'user_name');
+        if (!in_array($args['orderby'], $allowed_orderby)) {
+            $args['orderby'] = 'created_at';
+        }
+
+        // Validate order
+        $args['order'] = strtoupper($args['order']) === 'ASC' ? 'ASC' : 'DESC';
+
+        $sessions = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_sessions}
+                ORDER BY {$args['orderby']} {$args['order']}
+                LIMIT %d OFFSET %d",
+                $args['limit'],
+                $args['offset']
+            )
+        );
+
+        return $sessions;
+    }
+
+    /**
+     * Get total count of all sessions (for admin)
+     *
+     * @return int Total count
+     */
+    public function get_all_sessions_count() {
+        global $wpdb;
+
+        $count = $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$this->table_sessions}"
+        );
+
+        return (int) $count;
     }
 
     /**

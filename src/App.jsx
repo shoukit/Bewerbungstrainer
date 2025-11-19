@@ -496,11 +496,12 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       console.log('✅ [START] Session started successfully');
       console.log(`✅ [START] Conversation ID: ${conversationId}`);
 
-      // Create WordPress session if in WordPress mode
+      // Create WordPress session if in WordPress mode (even for non-logged-in users)
       if (isWordPress && userData) {
         try {
           console.log('💾 [WORDPRESS] Creating session in database...');
           const response = await wordpressAPI.createSession({
+            user_name: userData.user_name, // Include user_name for non-logged-in users
             position: userData.position,
             company: userData.company,
             conversation_id: conversationId
@@ -611,25 +612,25 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
     if (wpMode) {
       // Load WordPress user data
       const wpUser = wordpressAPI.getCurrentUser();
+      const isLoggedIn = wpUser?.id && wpUser.id > 0;
       console.log('👤 [WORDPRESS] Current user:', wpUser);
+      console.log('👤 [WORDPRESS] Is logged in:', isLoggedIn);
 
-      // If user has firstName, use it as user_name
-      if (wpUser.firstName || wpUser.name) {
-        // Don't show wizard, user info comes from WordPress
-        // But still need position and company from wizard
-        setShowWizard(true); // Will ask for position/company only
+      // Always show wizard - it will skip name step for logged-in users with name
+      setShowWizard(true);
+
+      // Load session count from WordPress (only for logged-in users)
+      if (isLoggedIn) {
+        wordpressAPI.getSessions({ limit: 1 })
+          .then(response => {
+            if (response.success && response.pagination) {
+              setConversationCount(response.pagination.total);
+            }
+          })
+          .catch(error => {
+            console.error('❌ [WORDPRESS] Failed to load session count:', error);
+          });
       }
-
-      // Load session count from WordPress
-      wordpressAPI.getSessions({ limit: 1 })
-        .then(response => {
-          if (response.success && response.pagination) {
-            setConversationCount(response.pagination.total);
-          }
-        })
-        .catch(error => {
-          console.error('❌ [WORDPRESS] Failed to load session count:', error);
-        });
 
     } else {
       // Standalone mode - use localStorage
