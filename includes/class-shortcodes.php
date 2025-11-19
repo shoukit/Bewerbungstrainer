@@ -44,10 +44,8 @@ class Bewerbungstrainer_Shortcodes {
      * Usage: [bewerbungstrainer_interview]
      */
     public function interview_shortcode($atts) {
-        // Check if user is logged in
-        if (!is_user_logged_in()) {
-            return $this->render_login_message();
-        }
+        // Allow all users (logged in or not) to use the interview app
+        // The wizard will let them enter their name manually if not logged in
 
         // Enqueue assets
         $this->enqueue_interview_assets();
