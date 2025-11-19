@@ -138,11 +138,8 @@ class Bewerbungstrainer_Plugin {
      * Initialize plugin components
      */
     public function init() {
-        // Check if user is logged in for restricted access
-        if (!is_user_logged_in() && !is_admin()) {
-            // Allow only login/register pages
-            return;
-        }
+        // Initialize components for all users (logged in or not)
+        // This allows non-logged-in users to use the app with limited features
 
         // Initialize database
         Bewerbungstrainer_Database::get_instance();
@@ -164,11 +161,6 @@ class Bewerbungstrainer_Plugin {
      * Enqueue frontend assets
      */
     public function enqueue_frontend_assets() {
-        // Only load on pages with shortcodes or specific templates
-        if (!is_user_logged_in()) {
-            return;
-        }
-
         // Check if shortcode is present on the page
         global $post;
         if (!is_a($post, 'WP_Post') ||
@@ -208,14 +200,17 @@ class Bewerbungstrainer_Plugin {
             true
         );
 
-        // Pass data to JavaScript
+        // Pass data to JavaScript - handle both logged-in and non-logged-in users
+        $current_user_id = get_current_user_id();
+        $is_logged_in = is_user_logged_in();
+
         wp_localize_script('bewerbungstrainer-app', 'bewerbungstrainerConfig', array(
             'apiUrl' => rest_url('bewerbungstrainer/v1'),
             'nonce' => wp_create_nonce('wp_rest'),
             'currentUser' => array(
-                'id' => get_current_user_id(),
-                'name' => wp_get_current_user()->display_name,
-                'firstName' => get_user_meta(get_current_user_id(), 'first_name', true),
+                'id' => $current_user_id,
+                'name' => $is_logged_in ? wp_get_current_user()->display_name : '',
+                'firstName' => $is_logged_in ? get_user_meta($current_user_id, 'first_name', true) : '',
             ),
             'uploadsUrl' => wp_upload_dir()['baseurl'] . '/bewerbungstrainer',
             'elevenlabsAgentId' => get_option('bewerbungstrainer_elevenlabs_agent_id', ''),
