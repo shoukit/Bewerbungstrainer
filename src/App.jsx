@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import Header from './components/Header';
 import FeedbackModal from './components/FeedbackModal';
@@ -9,7 +9,22 @@ import { generateInterviewFeedback, generateAudioAnalysis, listAvailableModels }
 import wordpressAPI from './services/wordpress-api';
 import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff, Edit3, RotateCcw, Play, AlertCircle, TrendingUp, History, Settings } from 'lucide-react';
 
+console.log('📦 [APP] App.jsx module loaded');
+console.log('📦 [APP] Imports loaded:', {
+  React: typeof React,
+  useConversation: typeof useConversation,
+  Header: typeof Header,
+  FeedbackModal: typeof FeedbackModal,
+  UserWizard: typeof UserWizard,
+  Button: typeof Button,
+  Dialog: typeof Dialog,
+  DialogContent: typeof DialogContent,
+});
+
 function App() {
+  console.log('🏗️ [APP] App component function called - starting render');
+  console.log('🏗️ [APP] Timestamp:', new Date().toISOString());
+  console.log('🔧 [APP] Initializing state hooks...');
   const [showWizard, setShowWizard] = useState(true);
   const [userData, setUserData] = useState(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -26,6 +41,14 @@ function App() {
   const [currentSession, setCurrentSession] = useState(null);
   const [isWordPress, setIsWordPress] = useState(false);
 
+  console.log('🔧 [APP] State hooks initialized:', {
+    showWizard,
+    userData,
+    showFeedbackModal,
+    showSettingsDialog,
+    conversationCount
+  });
+
   // Track if we're currently starting a session to prevent double-starts
   const isStartingSession = useRef(false);
   const connectionTimestamp = useRef(null);
@@ -34,11 +57,18 @@ function App() {
   const conversationIdRef = useRef(null);
 
   // Environment variables (support both Vite and WordPress)
+  console.log('🔧 [APP] Getting API keys from wordpressAPI...');
   const ELEVENLABS_AGENT_ID = wordpressAPI.getElevenLabsAgentId();
   const GEMINI_API_KEY = wordpressAPI.getGeminiApiKey();
   const ELEVENLABS_API_KEY = wordpressAPI.getElevenLabsApiKey();
+  console.log('🔧 [APP] API keys loaded:', {
+    ELEVENLABS_AGENT_ID: ELEVENLABS_AGENT_ID ? `${ELEVENLABS_AGENT_ID.substring(0, 8)}...` : 'NOT SET',
+    GEMINI_API_KEY: GEMINI_API_KEY ? 'SET' : 'NOT SET',
+    ELEVENLABS_API_KEY: ELEVENLABS_API_KEY ? 'SET' : 'NOT SET'
+  });
 
   // ElevenLabs Conversation Hook with extensive logging
+  console.log('🔧 [APP] Initializing useConversation hook...');
   const conversation = useConversation({
     overrides: {
       agent: {
@@ -96,6 +126,15 @@ function App() {
     onModeChange: (mode) => {
       console.log('🔄 [MODE_CHANGE] New mode:', mode);
     },
+  });
+
+  console.log('🔧 [APP] useConversation hook initialized:', {
+    conversation: typeof conversation,
+    status: conversation?.status,
+    isSpeaking: conversation?.isSpeaking,
+    micMuted: conversation?.micMuted,
+    startSession: typeof conversation?.startSession,
+    endSession: typeof conversation?.endSession
   });
 
   /**
@@ -499,8 +538,10 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
   /**
    * Handles wizard completion
    */
-  const handleWizardComplete = (data) => {
+  const handleWizardComplete = useCallback((data) => {
+    console.log('📝 [WIZARD] handleWizardComplete called');
     console.log('📝 [WIZARD] User data collected:', data);
+    console.log('📝 [WIZARD] typeof data:', typeof data);
     setUserData(data);
     setShowWizard(false);
 
@@ -508,35 +549,57 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
     if (!isWordPress) {
       localStorage.setItem('bewerbungstrainer_user_data', JSON.stringify(data));
     }
-  };
+    console.log('📝 [WIZARD] handleWizardComplete completed');
+  }, [isWordPress]);
 
   /**
    * Handle starting a new conversation - ask user if they want to keep or change data
    */
-  const handleNewConversation = () => {
+  const handleNewConversation = useCallback(() => {
+    console.log('🆕 [APP] handleNewConversation called');
+    console.log('🆕 [APP] userData:', userData);
+    console.log('🆕 [APP] conversationCount:', conversationCount);
     if (userData && conversationCount > 0) {
+      console.log('🆕 [APP] Showing settings dialog');
       setShowSettingsDialog(true);
     } else {
       // First conversation, just start
+      console.log('🆕 [APP] Starting first conversation');
       handleStartConversation();
     }
-  };
+  }, [userData, conversationCount]);
 
   /**
    * Handle keeping existing data and starting conversation
    */
-  const handleKeepDataAndStart = () => {
+  const handleKeepDataAndStart = useCallback(() => {
+    console.log('✅ [APP] handleKeepDataAndStart called');
     setShowSettingsDialog(false);
     handleStartConversation();
-  };
+  }, []);
 
   /**
    * Handle changing data - show wizard again
    */
-  const handleChangeData = () => {
+  const handleChangeData = useCallback(() => {
+    console.log('✏️ [APP] handleChangeData called');
     setShowSettingsDialog(false);
     setShowWizard(true);
-  };
+  }, []);
+
+  // Callback for settings dialog onOpenChange
+  const handleSettingsDialogOpenChange = useCallback((open) => {
+    console.log('⚙️ [APP] handleSettingsDialogOpenChange called with:', open);
+    console.log('⚙️ [APP] typeof open:', typeof open);
+    console.log('⚙️ [APP] setShowSettingsDialog:', typeof setShowSettingsDialog);
+    setShowSettingsDialog(open);
+  }, []);
+
+  // Callback for feedback modal close
+  const handleFeedbackModalClose = useCallback(() => {
+    console.log('📝 [APP] handleFeedbackModalClose called');
+    setShowFeedbackModal(false);
+  }, []);
 
   // Initialize WordPress integration and load user data on mount
   useEffect(() => {
@@ -635,8 +698,26 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
 
   // Show wizard if user hasn't completed it yet
   if (showWizard) {
+    console.log('🧙 [APP] Rendering UserWizard');
+    console.log('🧙 [APP] handleWizardComplete type:', typeof handleWizardComplete);
     return <UserWizard onComplete={handleWizardComplete} />;
   }
+
+  console.log('🎨 [APP] Starting main render...');
+  console.log('🎨 [APP] State at render time:', {
+    showWizard,
+    userData: userData ? 'SET' : 'NULL',
+    showFeedbackModal,
+    showSettingsDialog,
+    conversationCount,
+    conversationStatus: conversation?.status
+  });
+  console.log('🎨 [APP] Callback functions:', {
+    handleSettingsDialogOpenChange: typeof handleSettingsDialogOpenChange,
+    handleFeedbackModalClose: typeof handleFeedbackModalClose,
+    handleKeepDataAndStart: typeof handleKeepDataAndStart,
+    handleChangeData: typeof handleChangeData
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ocean-blue-100 via-ocean-blue-200 to-ocean-blue-300 flex items-center justify-center p-4 relative overflow-hidden">
@@ -976,7 +1057,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       </div>
 
       {/* Settings Dialog - Ask user if they want to keep or change parameters */}
-      <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+      <Dialog open={showSettingsDialog} onOpenChange={handleSettingsDialogOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-2xl flex items-center gap-2">
@@ -1037,7 +1118,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       {/* Feedback Modal */}
       <FeedbackModal
         isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
+        onClose={handleFeedbackModalClose}
         feedbackContent={feedbackContent}
         audioAnalysisContent={audioAnalysisContent}
         isLoading={isRequestingFeedback}

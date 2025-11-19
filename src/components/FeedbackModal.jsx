@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,28 @@ import {
   BarChart3
 } from 'lucide-react';
 
+console.log('📦 [FEEDBACK_MODAL] FeedbackModal module loaded');
+
 const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent, isLoading }) => {
+  console.log('🎯 [FEEDBACK_MODAL] FeedbackModal component render');
+  console.log('🎯 [FEEDBACK_MODAL] Props:', {
+    isOpen,
+    onClose: typeof onClose,
+    feedbackContent: feedbackContent ? `${feedbackContent.length} chars` : 'NULL',
+    audioAnalysisContent: audioAnalysisContent ? `${audioAnalysisContent.length} chars` : 'NULL',
+    isLoading
+  });
+
+  // Create a stable callback for onOpenChange
+  const handleOpenChange = useCallback((open) => {
+    console.log('🔄 [FEEDBACK_MODAL] handleOpenChange called with:', open);
+    console.log('🔄 [FEEDBACK_MODAL] typeof open:', typeof open);
+    console.log('🔄 [FEEDBACK_MODAL] onClose:', typeof onClose);
+    if (!open) {
+      console.log('🔄 [FEEDBACK_MODAL] Closing modal, calling onClose');
+      onClose();
+    }
+  }, [onClose]);
   // Parse structured feedback from JSON
   const parsedFeedback = useMemo(() => {
     if (!feedbackContent) return null;
@@ -489,12 +510,13 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
     );
   };
 
+  console.log('🎨 [FEEDBACK_MODAL] Rendering Dialog with:', {
+    isOpen,
+    handleOpenChange: typeof handleOpenChange
+  });
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        onClose();
-      }
-    }}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
