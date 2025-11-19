@@ -501,19 +501,14 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       console.log(`   Timestamp: ${new Date(connectionTimestamp.current).toISOString()}`);
 
       // Start the conversation and capture the conversation ID
+      // dynamicVariables must be at the top level of startSession options
       const conversationId = await conversation.startSession({
         agentId: ELEVENLABS_AGENT_ID,
         // Pass user data as dynamic variables for the first message
-        overrides: {
-          agent: {
-            prompt: {
-              dynamicVariables: userData ? {
-                user_name: userData.user_name,
-                position: userData.position,
-                company: userData.company
-              } : {}
-            }
-          }
+        dynamicVariables: {
+          user_name: userData?.user_name || '',
+          position: userData?.position || '',
+          company: userData?.company || ''
         }
       });
 
