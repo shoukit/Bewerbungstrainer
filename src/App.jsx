@@ -248,13 +248,20 @@ function App() {
    * Handles the end of interview and generates feedback
    */
   const handleEndInterview = async () => {
+    console.log('🛑 [HANDLE_END_INTERVIEW] handleEndInterview called');
+    console.log('🛑 [HANDLE_END_INTERVIEW] Conversation status:', conversation.status);
+
     // End the conversation
     if (conversation.status === 'connected') {
+      console.log('🛑 [HANDLE_END_INTERVIEW] Ending session...');
       await conversation.endSession();
+      console.log('🛑 [HANDLE_END_INTERVIEW] Session ended');
     }
 
+    console.log('🛑 [HANDLE_END_INTERVIEW] Setting feedback modal open...');
     setIsRequestingFeedback(true);
     setShowFeedbackModal(true);
+    console.log('🛑 [HANDLE_END_INTERVIEW] Modal should now be open');
     setFeedbackContent(''); // Clear previous feedback
     setAudioAnalysisContent(''); // Clear previous audio analysis
 
