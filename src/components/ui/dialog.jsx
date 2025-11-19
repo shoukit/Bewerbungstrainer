@@ -16,8 +16,8 @@ console.log('📦 [DIALOG] DialogPrimitive:', {
   Description: typeof DialogPrimitive.Description
 });
 
-// Wrap Dialog with logging
-const Dialog = React.forwardRef(({ onOpenChange, ...props }, ref) => {
+// Wrap Dialog with logging - Note: Root doesn't support ref forwarding
+const Dialog = ({ onOpenChange, ...props }) => {
   console.log('🎭 [DIALOG] Dialog component render');
   console.log('🎭 [DIALOG] Props:', {
     open: props.open,
@@ -34,16 +34,17 @@ const Dialog = React.forwardRef(({ onOpenChange, ...props }, ref) => {
     } else {
       console.warn('⚠️ [DIALOG] No onOpenChange handler provided');
     }
+    // Explicitly return void to prevent any issues with Radix
+    return;
   }, [onOpenChange]);
 
   return (
     <DialogPrimitive.Root
-      ref={ref}
       onOpenChange={wrappedOnOpenChange}
       {...props}
     />
   );
-});
+};
 Dialog.displayName = "Dialog";
 
 const DialogTrigger = DialogPrimitive.Trigger
