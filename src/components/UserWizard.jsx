@@ -23,12 +23,15 @@ function UserWizard({ onComplete, initialData = null }) {
   const isWordPress = wordpressAPI.isWordPress();
   const wpUser = isWordPress ? wordpressAPI.getCurrentUser() : null;
 
-  // Auto-fill user_name from WordPress if available
-  const defaultUserName = wpUser?.firstName || wpUser?.name || '';
+  // Auto-fill user_name from WordPress if available (only if logged in)
+  const isLoggedIn = wpUser?.id && wpUser.id > 0;
+  const defaultUserName = isLoggedIn ? (wpUser?.firstName || wpUser?.name || '') : '';
 
-  // Skip step 1 (name) if in WordPress and we have a name
-  const initialStep = (isWordPress && defaultUserName) ? 2 : 1;
-  const totalSteps = (isWordPress && defaultUserName) ? 2 : 3;
+  // Skip step 1 (name) only if in WordPress AND logged in AND we have a name
+  // Otherwise always start at step 1 (name entry)
+  const skipNameStep = isWordPress && isLoggedIn && defaultUserName;
+  const initialStep = skipNameStep ? 2 : 1;
+  const totalSteps = 3; // Always 3 steps - name, position, company
 
   const [step, setStep] = useState(initialStep);
   const [formData, setFormData] = useState(initialData || {
@@ -100,7 +103,7 @@ function UserWizard({ onComplete, initialData = null }) {
    * Moves to the previous step
    */
   const handleBack = () => {
-    if (step > 1) {
+    if (step > initialStep) {
       setStep(step - 1);
     }
   };
@@ -381,7 +384,7 @@ function UserWizard({ onComplete, initialData = null }) {
           <div className="px-6 py-6 bg-gradient-to-r from-ocean-blue-50 to-ocean-teal-50/30 border-t border-ocean-blue-100/50 flex justify-between gap-4">
             <Button
               onClick={handleBack}
-              disabled={step === 1}
+              disabled={step === initialStep}
               variant="outline"
               className="min-w-[120px] border-2 border-slate-300 hover:border-ocean-blue-400 hover:bg-ocean-blue-50 transition-all duration-200 disabled:opacity-40"
             >

@@ -68,11 +68,11 @@ class Bewerbungstrainer_API {
      * Register REST API routes
      */
     public function register_routes() {
-        // Create new session
+        // Create new session (allow all users - logged in or guest)
         register_rest_route($this->namespace, '/sessions', array(
             'methods' => 'POST',
             'callback' => array($this, 'create_session'),
-            'permission_callback' => array($this, 'check_user_logged_in'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // Get all sessions for current user
@@ -89,11 +89,11 @@ class Bewerbungstrainer_API {
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
-        // Update session
+        // Update session (allow all users to update their own session)
         register_rest_route($this->namespace, '/sessions/(?P<id>\d+)', array(
             'methods' => 'PUT',
             'callback' => array($this, 'update_session'),
-            'permission_callback' => array($this, 'check_user_logged_in'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // Delete session
@@ -103,11 +103,11 @@ class Bewerbungstrainer_API {
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
-        // Save audio from ElevenLabs
+        // Save audio from ElevenLabs (allow all users)
         register_rest_route($this->namespace, '/audio/save-elevenlabs', array(
             'methods' => 'POST',
             'callback' => array($this, 'save_audio_elevenlabs'),
-            'permission_callback' => array($this, 'check_user_logged_in'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // Upload audio (base64)
@@ -165,6 +165,20 @@ class Bewerbungstrainer_API {
             'callback' => array($this, 'delete_document'),
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
+
+        // Admin: Get all sessions
+        register_rest_route($this->namespace, '/admin/sessions', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'admin_get_all_sessions'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Get specific session
+        register_rest_route($this->namespace, '/admin/sessions/(?P<id>\d+)', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'admin_get_session'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
     }
 
     /**
@@ -172,6 +186,20 @@ class Bewerbungstrainer_API {
      */
     public function check_user_logged_in() {
         return is_user_logged_in();
+    }
+
+    /**
+     * Permission callback - allow all users (logged in or not)
+     */
+    public function allow_all_users() {
+        return true;
+    }
+
+    /**
+     * Permission callback - check if user is admin
+     */
+    public function check_is_admin() {
+        return current_user_can('manage_options');
     }
 
     /**
@@ -188,20 +216,31 @@ class Bewerbungstrainer_API {
         }
 
         // Validate required fields
-        if (empty($params['position']) || empty($params['company'])) {
+        if (empty($params['position'])) {
             return new WP_Error(
                 'missing_fields',
-                __('Position und Unternehmen sind erforderlich.', 'bewerbungstrainer'),
+                __('Position ist erforderlich.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // For non-logged-in users, user_name is required
+        $user_id = get_current_user_id();
+        if ($user_id === 0 && empty($params['user_name'])) {
+            return new WP_Error(
+                'missing_fields',
+                __('Name ist für Gäste erforderlich.', 'bewerbungstrainer'),
                 array('status' => 400)
             );
         }
 
         // Create session
         $session_data = array(
-            'user_id' => get_current_user_id(),
+            'user_id' => $user_id,
+            'user_name' => isset($params['user_name']) ? $params['user_name'] : null,
             'session_id' => isset($params['session_id']) ? $params['session_id'] : wp_generate_uuid4(),
             'position' => $params['position'],
-            'company' => $params['company'],
+            'company' => isset($params['company']) ? $params['company'] : '',
             'conversation_id' => isset($params['conversation_id']) ? $params['conversation_id'] : null,
         );
 
@@ -306,8 +345,10 @@ class Bewerbungstrainer_API {
             );
         }
 
-        // Check ownership
-        if ((int) $session->user_id !== get_current_user_id()) {
+        // Check ownership - guest sessions (user_id = 0) can be updated by anyone
+        // This allows guests to save their feedback during the same session
+        $current_user_id = get_current_user_id();
+        if ((int) $session->user_id !== 0 && (int) $session->user_id !== $current_user_id) {
             return new WP_Error(
                 'forbidden',
                 __('Keine Berechtigung.', 'bewerbungstrainer'),
@@ -506,10 +547,21 @@ class Bewerbungstrainer_API {
      * @return array Formatted session data
      */
     private function format_session($session) {
+        // Get display name for session
+        $display_name = '';
+        if (!empty($session->user_name)) {
+            $display_name = $session->user_name;
+        } elseif ($session->user_id > 0) {
+            $user = get_userdata($session->user_id);
+            $display_name = $user ? $user->display_name : '';
+        }
+
         return array(
             'id' => (int) $session->id,
             'session_id' => $session->session_id,
             'user_id' => (int) $session->user_id,
+            'user_name' => $session->user_name,
+            'display_name' => $display_name,
             'position' => $session->position,
             'company' => $session->company,
             'conversation_id' => $session->conversation_id,
@@ -753,5 +805,61 @@ class Bewerbungstrainer_API {
             'created_at' => $document->created_at,
             'updated_at' => $document->updated_at,
         );
+    }
+
+    /**
+     * Admin: Get all sessions (for admin view)
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function admin_get_all_sessions($request) {
+        $params = $request->get_params();
+
+        $args = array(
+            'limit' => isset($params['limit']) ? intval($params['limit']) : 50,
+            'offset' => isset($params['offset']) ? intval($params['offset']) : 0,
+            'orderby' => isset($params['orderby']) ? $params['orderby'] : 'created_at',
+            'order' => isset($params['order']) ? $params['order'] : 'DESC',
+        );
+
+        $sessions = $this->db->get_all_sessions($args);
+        $total = $this->db->get_all_sessions_count();
+
+        $formatted_sessions = array_map(array($this, 'format_session'), $sessions);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $formatted_sessions,
+            'pagination' => array(
+                'total' => $total,
+                'limit' => $args['limit'],
+                'offset' => $args['offset'],
+            ),
+        ), 200);
+    }
+
+    /**
+     * Admin: Get specific session
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function admin_get_session($request) {
+        $session_id = intval($request['id']);
+        $session = $this->db->get_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'not_found',
+                __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_session($session),
+        ), 200);
     }
 }
