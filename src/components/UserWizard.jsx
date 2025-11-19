@@ -27,10 +27,9 @@ function UserWizard({ onComplete, initialData = null }) {
   const isLoggedIn = wpUser?.id && wpUser.id > 0;
   const defaultUserName = isLoggedIn ? (wpUser?.firstName || wpUser?.name || '') : '';
 
-  // Skip step 1 (name) only if in WordPress AND logged in AND we have a name
-  // Otherwise always start at step 1 (name entry)
-  const skipNameStep = isWordPress && isLoggedIn && defaultUserName;
-  const initialStep = skipNameStep ? 2 : 1;
+  // Always start at step 1 to allow name editing for all users (logged in or not)
+  // The name will be pre-filled for logged-in users but can be changed
+  const initialStep = 1;
   const totalSteps = 3; // Always 3 steps - name, position, company
 
   const [step, setStep] = useState(initialStep);
