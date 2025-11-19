@@ -461,7 +461,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
   /**
    * Start the conversation
    */
-  const handleStartConversation = async () => {
+  const handleStartConversation = useCallback(async () => {
     console.log('🚀 [START] Beginning conversation start sequence...');
     console.log(`   Agent ID: ${ELEVENLABS_AGENT_ID}`);
     console.log(`   Current status: ${conversation.status}`);
@@ -499,6 +499,13 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
 
       console.log('🚀 [START] Step 2: Initiating ElevenLabs session...');
       console.log(`   Timestamp: ${new Date(connectionTimestamp.current).toISOString()}`);
+
+      // Debug: Log the userData values being passed
+      console.log('📊 [START] Current userData:', userData);
+      console.log('📊 [START] Variables being passed to ElevenLabs:');
+      console.log(`   user_name: "${userData?.user_name || ''}" (type: ${typeof userData?.user_name})`);
+      console.log(`   position: "${userData?.position || ''}" (type: ${typeof userData?.position})`);
+      console.log(`   company: "${userData?.company || ''}" (type: ${typeof userData?.company})`);
 
       // Start the conversation and capture the conversation ID
       // dynamicVariables must be at the top level of startSession options
@@ -555,7 +562,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       // Show error to user
       alert(`Fehler beim Starten des Gesprächs: ${error.message}\n\nBitte überprüfe:\n- Mikrofon-Berechtigung\n- ElevenLabs Agent ID\n- Internetverbindung`);
     }
-  };
+  }, [conversation, userData, isWordPress, conversationCount, checkMicrophonePermissions]);
 
   /**
    * Handles wizard completion
@@ -589,7 +596,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       console.log('🆕 [APP] Starting first conversation');
       handleStartConversation();
     }
-  }, [userData, conversationCount]);
+  }, [userData, conversationCount, handleStartConversation]);
 
   /**
    * Handle keeping existing data and starting conversation
@@ -598,7 +605,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
     console.log('✅ [APP] handleKeepDataAndStart called');
     setShowSettingsDialog(false);
     handleStartConversation();
-  }, []);
+  }, [handleStartConversation]);
 
   /**
    * Handle changing data - show wizard again
