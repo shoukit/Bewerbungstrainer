@@ -483,12 +483,18 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       // Start the conversation and capture the conversation ID
       const conversationId = await conversation.startSession({
         agentId: ELEVENLABS_AGENT_ID,
-        // Pass user data as client tools variables if needed
-        clientTools: userData ? {
-          user_name: userData.user_name,
-          position: userData.position,
-          company: userData.company
-        } : {}
+        // Pass user data as dynamic variables for the first message
+        overrides: {
+          agent: {
+            prompt: {
+              dynamicVariables: userData ? {
+                user_name: userData.user_name,
+                position: userData.position,
+                company: userData.company
+              } : {}
+            }
+          }
+        }
       });
 
       // Store the conversation ID for later audio download
