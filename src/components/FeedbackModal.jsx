@@ -515,6 +515,17 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
     handleOpenChange: typeof handleOpenChange
   });
 
+  // Debug: check all imported components before render
+  console.log('🔍 [FEEDBACK_MODAL] Component check before render:', {
+    Dialog: typeof Dialog,
+    DialogContent: typeof DialogContent,
+    DialogHeader: typeof DialogHeader,
+    DialogTitle: typeof DialogTitle,
+    DialogDescription: typeof DialogDescription,
+    DialogFooter: typeof DialogFooter,
+    Button: typeof Button
+  });
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh]">

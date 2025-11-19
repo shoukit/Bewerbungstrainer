@@ -720,6 +720,24 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
     handleChangeData: typeof handleChangeData
   });
 
+  // Debug: check all imported components before render
+  console.log('🔍 [APP] Component check before render:', {
+    Dialog: typeof Dialog,
+    DialogContent: typeof DialogContent,
+    DialogHeader: typeof DialogHeader,
+    DialogTitle: typeof DialogTitle,
+    DialogDescription: typeof DialogDescription,
+    DialogFooter: typeof DialogFooter,
+    FeedbackModal: typeof FeedbackModal,
+    Header: typeof Header,
+    Button: typeof Button,
+    Settings: typeof Settings,
+    Edit3: typeof Edit3,
+    RotateCcw: typeof RotateCcw
+  });
+  console.log('🔍 [APP] Dialog component details:', Dialog);
+  console.log('🔍 [APP] DialogContent component details:', DialogContent);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-ocean-blue-100 via-ocean-blue-200 to-ocean-blue-300 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
