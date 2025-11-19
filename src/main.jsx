@@ -3,6 +3,11 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
+console.log('🚀 [MAIN] Script loaded - starting initialization');
+console.log('🚀 [MAIN] Document readyState:', document.readyState);
+console.log('🚀 [MAIN] Window location:', window.location.href);
+console.log('🚀 [MAIN] User agent:', navigator.userAgent);
+
 // Keep track of whether we've already mounted to prevent double mounting
 let hasAlreadyMounted = false;
 

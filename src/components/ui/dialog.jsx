@@ -4,7 +4,47 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Dialog = DialogPrimitive.Root
+console.log('📦 [DIALOG] Dialog UI component module loaded');
+console.log('📦 [DIALOG] DialogPrimitive:', {
+  Root: typeof DialogPrimitive.Root,
+  Trigger: typeof DialogPrimitive.Trigger,
+  Portal: typeof DialogPrimitive.Portal,
+  Close: typeof DialogPrimitive.Close,
+  Overlay: typeof DialogPrimitive.Overlay,
+  Content: typeof DialogPrimitive.Content,
+  Title: typeof DialogPrimitive.Title,
+  Description: typeof DialogPrimitive.Description
+});
+
+// Wrap Dialog with logging
+const Dialog = React.forwardRef(({ onOpenChange, ...props }, ref) => {
+  console.log('🎭 [DIALOG] Dialog component render');
+  console.log('🎭 [DIALOG] Props:', {
+    open: props.open,
+    onOpenChange: typeof onOpenChange,
+    hasChildren: !!props.children
+  });
+
+  const wrappedOnOpenChange = React.useCallback((open) => {
+    console.log('🔄 [DIALOG] onOpenChange triggered with:', open);
+    console.log('🔄 [DIALOG] typeof onOpenChange:', typeof onOpenChange);
+    if (onOpenChange) {
+      console.log('🔄 [DIALOG] Calling provided onOpenChange');
+      onOpenChange(open);
+    } else {
+      console.warn('⚠️ [DIALOG] No onOpenChange handler provided');
+    }
+  }, [onOpenChange]);
+
+  return (
+    <DialogPrimitive.Root
+      ref={ref}
+      onOpenChange={wrappedOnOpenChange}
+      {...props}
+    />
+  );
+});
+Dialog.displayName = "Dialog";
 
 const DialogTrigger = DialogPrimitive.Trigger
 
