@@ -49,6 +49,19 @@ function App() {
     conversationCount
   });
 
+  // Debug: Track when showFeedbackModal state changes
+  useEffect(() => {
+    console.log('🔴 [STATE_CHANGE] showFeedbackModal changed to:', showFeedbackModal);
+    console.log('🔴 [STATE_CHANGE] Timestamp:', new Date().toISOString());
+    console.log('🔴 [STATE_CHANGE] Stack trace:', new Error().stack);
+  }, [showFeedbackModal]);
+
+  // Debug: Track when isRequestingFeedback state changes
+  useEffect(() => {
+    console.log('🟡 [STATE_CHANGE] isRequestingFeedback changed to:', isRequestingFeedback);
+    console.log('🟡 [STATE_CHANGE] Timestamp:', new Date().toISOString());
+  }, [isRequestingFeedback]);
+
   // Track if we're currently starting a session to prevent double-starts
   const isStartingSession = useRef(false);
   const connectionTimestamp = useRef(null);
