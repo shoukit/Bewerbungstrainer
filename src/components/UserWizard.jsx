@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from './ui/button';
-import { User, Briefcase, Building, ChevronRight, CheckCircle, Sparkles, Target, Zap } from 'lucide-react';
+import { User, Briefcase, Building, ChevronRight, CheckCircle, Sparkles, Target, Zap, MessageCircle } from 'lucide-react';
 import wordpressAPI from '../services/wordpress-api';
+import ConversationStyleSelector from './ConversationStyleSelector';
 
 console.log('📦 [USER_WIZARD] UserWizard module loaded');
 
@@ -30,13 +31,14 @@ function UserWizard({ onComplete, initialData = null }) {
   // Always start at step 1 to allow name editing for all users (logged in or not)
   // The name will be pre-filled for logged-in users but can be changed
   const initialStep = 1;
-  const totalSteps = 3; // Always 3 steps - name, position, company
+  const totalSteps = 4; // 4 steps - name, position, company, conversation_style
 
   const [step, setStep] = useState(initialStep);
   const [formData, setFormData] = useState(initialData || {
     user_name: defaultUserName,
     position: '',
-    company: ''
+    company: '',
+    conversation_style: 'professional' // Default style
   });
   const [errors, setErrors] = useState({});
 
@@ -340,7 +342,54 @@ function UserWizard({ onComplete, initialData = null }) {
                   </div>
                 </div>
 
-                {/* Summary Card with modern design */}
+              </div>
+            )}
+
+            {/* Step 4: Conversation Style */}
+            {step === 4 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="flex items-center justify-center mb-6">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/30">
+                      <MessageCircle className="w-12 h-12 text-white" strokeWidth={2} />
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <span className="text-white font-bold text-sm">4</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-900 text-center mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    Wie soll das Gespräch sein?
+                  </h2>
+                  <p className="text-slate-600 text-center mb-8 text-base">
+                    Wähle den Gesprächsstil, der am besten zu deiner Vorbereitung passt
+                  </p>
+
+                  {/* Conversation Style Selector */}
+                  <ConversationStyleSelector
+                    selectedStyle={formData.conversation_style}
+                    onStyleChange={(styleId) => handleInputChange('conversation_style', styleId)}
+                  />
+
+                  {/* Info box */}
+                  <div className="mt-6 relative overflow-hidden rounded-2xl border-2 border-ocean-blue-200/60">
+                    <div className="absolute inset-0 bg-gradient-to-br from-ocean-blue-50 to-ocean-teal-50"></div>
+                    <div className="relative p-4 flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean-blue-500 to-ocean-deep-600 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-ocean-deep-800 mb-1">💡 Tipp</p>
+                        <p className="text-sm text-ocean-deep-700">
+                          Du kannst den Gesprächsstil auch während des Interviews anpassen, falls du mehr Herausforderung oder Unterstützung brauchst.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Final Summary Card */}
                 <div className="mt-8 relative overflow-hidden rounded-2xl border-2 border-gradient">
                   <div className="absolute inset-0 bg-gradient-to-br from-ocean-blue-50 via-ocean-blue-100 to-ocean-teal-50"></div>
                   <div className="relative p-6">
@@ -370,6 +419,13 @@ function UserWizard({ onComplete, initialData = null }) {
                         <div className="flex-1">
                           <span className="text-xs text-slate-500 block">Unternehmen</span>
                           <span className="font-semibold text-slate-800">{formData.company}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-white/60">
+                        <MessageCircle className="w-5 h-5 text-blue-600" />
+                        <div className="flex-1">
+                          <span className="text-xs text-slate-500 block">Gesprächsstil</span>
+                          <span className="font-semibold text-slate-900 capitalize">{formData.conversation_style === 'friendly' ? '😊 Freundlich' : formData.conversation_style === 'critical' ? '🔍 Kritisch' : '📋 Sachlich'}</span>
                         </div>
                       </div>
                     </div>
