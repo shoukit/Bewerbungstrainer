@@ -3,11 +3,12 @@ import { useConversation } from '@elevenlabs/react';
 import Header from './components/Header';
 import FeedbackModal from './components/FeedbackModal';
 import UserWizard from './components/UserWizard';
+import ConversationStyleSelector from './components/ConversationStyleSelector';
 import { Button } from './components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './components/ui/dialog';
 import { generateInterviewFeedback, generateAudioAnalysis, listAvailableModels } from './services/gemini';
 import wordpressAPI from './services/wordpress-api';
-import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff, Edit3, RotateCcw, Play, AlertCircle, TrendingUp, History, Settings } from 'lucide-react';
+import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff, Edit3, RotateCcw, Play, AlertCircle, TrendingUp, History, Settings, X } from 'lucide-react';
 
 console.log('📦 [APP] App.jsx module loaded');
 console.log('📦 [APP] Imports loaded:', {
@@ -36,6 +37,9 @@ function App() {
   const [audioRecordingError, setAudioRecordingError] = useState(null);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [conversationCount, setConversationCount] = useState(0);
+  const [currentConversationStyle, setCurrentConversationStyle] = useState('professional');
+  const [showStyleChangeHint, setShowStyleChangeHint] = useState(false);
+  const [styleChangeMessage, setStyleChangeMessage] = useState('');
 
   // WordPress integration
   const [currentSession, setCurrentSession] = useState(null);
@@ -506,6 +510,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
       console.log(`   user_name: "${userData?.user_name || ''}" (type: ${typeof userData?.user_name})`);
       console.log(`   position: "${userData?.position || ''}" (type: ${typeof userData?.position})`);
       console.log(`   company: "${userData?.company || ''}" (type: ${typeof userData?.company})`);
+      console.log(`   conversation_style: "${userData?.conversation_style || 'professional'}" (type: ${typeof userData?.conversation_style})`);
 
       // Start the conversation and capture the conversation ID
       // dynamicVariables must be at the top level of startSession options
@@ -515,7 +520,8 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
         dynamicVariables: {
           user_name: userData?.user_name || '',
           position: userData?.position || '',
-          company: userData?.company || ''
+          company: userData?.company || '',
+          conversation_style: userData?.conversation_style || 'professional'
         }
       });
 
@@ -574,12 +580,38 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
     setUserData(data);
     setShowWizard(false);
 
+    // Set initial conversation style
+    setCurrentConversationStyle(data.conversation_style || 'professional');
+
     // Store in localStorage for persistence (only if not in WordPress)
     if (!isWordPress) {
       localStorage.setItem('bewerbungstrainer_user_data', JSON.stringify(data));
     }
     console.log('📝 [WIZARD] handleWizardComplete completed');
   }, [isWordPress]);
+
+  /**
+   * Handles conversation style change during active conversation
+   */
+  const handleStyleChange = useCallback((newStyle) => {
+    console.log('🎨 [STYLE] Changing conversation style to:', newStyle);
+    setCurrentConversationStyle(newStyle);
+
+    // Show hint to user about what to say
+    const messages = {
+      friendly: 'Könnten Sie bitte etwas freundlicher und ermutigender sein?',
+      critical: 'Könnten Sie bitte kritischer und anspruchsvoller sein? Stellen Sie mir herausfordernde Fragen.',
+      professional: 'Könnten wir bitte zu einem sachlicheren und professionelleren Ton wechseln?'
+    };
+
+    setStyleChangeMessage(messages[newStyle] || messages.professional);
+    setShowStyleChangeHint(true);
+
+    // Auto-hide after 8 seconds
+    setTimeout(() => {
+      setShowStyleChangeHint(false);
+    }, 8000);
+  }, []);
 
   /**
    * Handle starting a new conversation - ask user if they want to keep or change data
@@ -922,6 +954,39 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                     </div>
                   ) : (
                     <div className="text-center space-y-6 w-full">
+                      {/* Style Change Hint Modal */}
+                      {showStyleChangeHint && (
+                        <div className="mb-4 relative overflow-hidden rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-lg animate-fade-in">
+                          <div className="p-4 flex items-start gap-3">
+                            <div className="flex-1">
+                              <p className="font-semibold text-indigo-900 mb-2 flex items-center gap-2">
+                                <MessageSquare className="w-5 h-5" />
+                                💡 Sage dem Interviewer:
+                              </p>
+                              <p className="text-indigo-800 bg-white/60 px-4 py-3 rounded-xl border border-indigo-200 italic">
+                                "{styleChangeMessage}"
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => setShowStyleChangeHint(false)}
+                              className="text-indigo-400 hover:text-indigo-600 transition-colors"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Conversation Style Controls */}
+                      <div className="mb-4">
+                        <p className="text-xs font-medium text-slate-500 mb-2">Gesprächsstil anpassen:</p>
+                        <ConversationStyleSelector
+                          selectedStyle={currentConversationStyle}
+                          onStyleChange={handleStyleChange}
+                          compact={true}
+                        />
+                      </div>
+
                       {/* Speaking Indicator */}
                       <div className="flex flex-col items-center">
                         {conversation.isSpeaking && (
