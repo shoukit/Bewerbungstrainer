@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "clean": "rm -rf node_modules dist .vite",
+    "clean:cache": "rm -rf dist .vite",
+    "fresh": "npm run clean && npm install",
+    "rebuild": "npm run clean:cache && npm run build"
   },
   "dependencies": {
     "@elevenlabs/react": "^0.1.0",
