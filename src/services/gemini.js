@@ -62,7 +62,7 @@ export async function generateInterviewFeedback(transcript, apiKey, modelName = 
     modelName,
     'gemini-1.5-flash',
     'gemini-pro',
-    'gemini-1.5-pro',
+    'gemini-1.5-pro-latest',  // Fixed: Use -latest suffix for v1beta API
     'gemini-2.0-flash-exp'
   ];
 
@@ -260,7 +260,7 @@ export async function generateAudioAnalysis(audioFile, apiKey, modelName = 'gemi
   const modelsToTry = [
     modelName,
     'gemini-1.5-flash',
-    'gemini-1.5-pro',
+    'gemini-1.5-pro-latest',  // Fixed: Use -latest suffix for v1beta API
     'gemini-2.0-flash-exp'
   ];
 
