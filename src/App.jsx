@@ -1,7 +1,7 @@
 import { BrowserRouter } from 'react-router-dom';
 import { AppProviders } from '@/shared/contexts';
 import AppRoutes from '@/routes/AppRoutes';
-import Header from '@/components/Header';
+import Header from '@/shared/components/layout/Header';
 import './index.css';
 
 /**

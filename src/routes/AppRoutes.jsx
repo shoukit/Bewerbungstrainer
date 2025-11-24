@@ -9,7 +9,7 @@ import HistoryPage from '@/pages/HistoryPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 // Shared Components
-import UserWizard from '@/components/UserWizard';
+import UserWizard from '@/shared/components/user/UserWizard';
 
 /**
  * Main application routing
