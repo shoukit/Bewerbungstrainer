@@ -191,11 +191,11 @@ class Bewerbungstrainer_Plugin {
             filemtime($css_file)
         );
 
-        // Enqueue JavaScript
+        // Enqueue JavaScript with wp-i18n dependency to prevent setLocaleData errors
         wp_enqueue_script(
             'bewerbungstrainer-app',
             BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/index.js',
-            array(),
+            array('wp-i18n'),
             filemtime($asset_file),
             true
         );
