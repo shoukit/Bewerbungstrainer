@@ -350,19 +350,19 @@ function UserWizard({ onComplete, initialData = null }) {
               <div className="space-y-6 animate-fade-in">
                 <div className="flex items-center justify-center mb-6">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-xl">
+                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/30">
                       <MessageCircle className="w-12 h-12 text-white" strokeWidth={2} />
                     </div>
-                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-ocean-teal-400 to-ocean-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
                       <span className="text-white font-bold text-sm">4</span>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-800 text-center mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  <h2 className="text-3xl font-bold text-slate-900 text-center mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                     Wie soll das Gespräch sein?
                   </h2>
-                  <p className="text-slate-600 text-center mb-8">
+                  <p className="text-slate-600 text-center mb-8 text-base">
                     Wähle den Gesprächsstil, der am besten zu deiner Vorbereitung passt
                   </p>
 
@@ -422,10 +422,10 @@ function UserWizard({ onComplete, initialData = null }) {
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-white/60">
-                        <MessageCircle className="w-5 h-5 text-purple-600" />
+                        <MessageCircle className="w-5 h-5 text-blue-600" />
                         <div className="flex-1">
                           <span className="text-xs text-slate-500 block">Gesprächsstil</span>
-                          <span className="font-semibold text-slate-800 capitalize">{formData.conversation_style === 'friendly' ? '😊 Freundlich' : formData.conversation_style === 'critical' ? '🔍 Kritisch' : '📋 Sachlich'}</span>
+                          <span className="font-semibold text-slate-900 capitalize">{formData.conversation_style === 'friendly' ? '😊 Freundlich' : formData.conversation_style === 'critical' ? '🔍 Kritisch' : '📋 Sachlich'}</span>
                         </div>
                       </div>
                     </div>

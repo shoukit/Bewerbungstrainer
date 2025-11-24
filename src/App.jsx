@@ -956,20 +956,21 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                     <div className="text-center space-y-6 w-full">
                       {/* Style Change Hint Modal */}
                       {showStyleChangeHint && (
-                        <div className="mb-4 relative overflow-hidden rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-lg animate-fade-in">
-                          <div className="p-4 flex items-start gap-3">
+                        <div className="mb-4 relative overflow-hidden rounded-3xl border-2 border-blue-100 bg-white/80 backdrop-blur-xl shadow-2xl shadow-blue-500/20 animate-fade-in">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                          <div className="p-4 flex items-start gap-3 relative z-10">
                             <div className="flex-1">
-                              <p className="font-semibold text-indigo-900 mb-2 flex items-center gap-2">
-                                <MessageSquare className="w-5 h-5" />
+                              <p className="font-bold text-slate-900 mb-2 flex items-center gap-2">
+                                <MessageSquare className="w-5 h-5 text-blue-600" strokeWidth={2} />
                                 💡 Sage dem Interviewer:
                               </p>
-                              <p className="text-indigo-800 bg-white/60 px-4 py-3 rounded-xl border border-indigo-200 italic">
+                              <p className="text-slate-700 bg-blue-50 px-4 py-3 rounded-2xl border border-blue-200 italic font-medium">
                                 "{styleChangeMessage}"
                               </p>
                             </div>
                             <button
                               onClick={() => setShowStyleChangeHint(false)}
-                              className="text-indigo-400 hover:text-indigo-600 transition-colors"
+                              className="text-slate-400 hover:text-slate-600 transition-colors"
                             >
                               <X className="w-5 h-5" />
                             </button>
@@ -979,7 +980,7 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
 
                       {/* Conversation Style Controls */}
                       <div className="mb-4">
-                        <p className="text-xs font-medium text-slate-500 mb-2">Gesprächsstil anpassen:</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Gesprächsstil anpassen</p>
                         <ConversationStyleSelector
                           selectedStyle={currentConversationStyle}
                           onStyleChange={handleStyleChange}
