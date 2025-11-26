@@ -188,6 +188,86 @@ class WordPressAPI {
     isWordPress() {
         return typeof window.bewerbungstrainerConfig !== 'undefined';
     }
+
+    /**
+     * ===== Video Training API Methods =====
+     */
+
+    /**
+     * Generate interview questions
+     */
+    async generateQuestions(data) {
+        return this.request('/video-training/generate-questions', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Create video training session
+     */
+    async createVideoTraining(data) {
+        return this.request('/video-training', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Upload video for training session
+     */
+    async uploadVideo(trainingId, videoFile, timeline) {
+        const formData = new FormData();
+        formData.append('video', videoFile);
+        formData.append('timeline', JSON.stringify(timeline));
+
+        return this.request(`/video-training/${trainingId}/upload`, {
+            method: 'POST',
+            headers: {
+                'X-WP-Nonce': this.nonce
+            },
+            body: formData
+        });
+    }
+
+    /**
+     * Trigger video analysis
+     */
+    async analyzeVideoTraining(trainingId) {
+        return this.request(`/video-training/${trainingId}/analyze`, {
+            method: 'POST'
+        });
+    }
+
+    /**
+     * Get video training session
+     */
+    async getVideoTraining(trainingId) {
+        return this.request(`/video-training/${trainingId}`, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get all video trainings for current user
+     */
+    async getVideoTrainings(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const endpoint = queryString ? `/video-training?${queryString}` : '/video-training';
+
+        return this.request(endpoint, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Delete video training
+     */
+    async deleteVideoTraining(trainingId) {
+        return this.request(`/video-training/${trainingId}`, {
+            method: 'DELETE'
+        });
+    }
 }
 
 // Export singleton instance
