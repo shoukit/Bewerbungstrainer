@@ -984,7 +984,7 @@ Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text davor oder danach.";
                 'temperature' => 0.7,
                 'topK' => 40,
                 'topP' => 0.95,
-                'maxOutputTokens' => 4096,
+                'maxOutputTokens' => 16384, // Increased to allow for complete video analysis responses
             )
         );
 
@@ -1083,44 +1083,63 @@ Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text davor oder danach.";
 
         $json_str = null;
 
-        // Method 1: Try to extract JSON from markdown code block (```json ... ```)
+        // Clean the response first - remove markdown code blocks if present
+        $cleaned_response = $response;
+
+        // Remove opening markdown fence (```json or ```)
+        $cleaned_response = preg_replace('/^```(?:json)?\s*\n?/s', '', $cleaned_response);
+
+        // Remove closing markdown fence if present (might be missing if truncated)
+        $cleaned_response = preg_replace('/\n?```\s*$/s', '', $cleaned_response);
+
+        // Trim whitespace
+        $cleaned_response = trim($cleaned_response);
+
+        error_log('Cleaned response (first 500 chars): ' . substr($cleaned_response, 0, 500));
+
+        // Method 1: Try the cleaned response directly (most reliable)
+        $json_str = $cleaned_response;
+        error_log('Attempting to decode cleaned response as JSON...');
+        $analysis = json_decode($json_str, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && isset($analysis['overall_score'])) {
+            error_log('JSON decoded successfully from cleaned response');
+            error_log('Overall score: ' . $analysis['overall_score']);
+            error_log('Categories: ' . (isset($analysis['categories']) ? count($analysis['categories']) : 0));
+            error_log('=== END PARSING (SUCCESS) ===');
+            return $analysis;
+        }
+
+        // Method 2: Try to extract JSON from markdown code block (```json ... ```)
         if (preg_match('/```(?:json)?\s*\n?(.*?)\n?```/s', $response, $matches)) {
             error_log('Found JSON in markdown code block');
             $json_str = trim($matches[1]);
-        }
-        // Method 2: Try to find raw JSON object
-        elseif (preg_match('/\{[\s\S]*\}/s', $response, $matches)) {
-            error_log('Found raw JSON object');
-            $json_str = $matches[0];
-        }
-
-        if ($json_str) {
-            error_log('Attempting to decode JSON...');
-            error_log('JSON string (first 500 chars): ' . substr($json_str, 0, 500));
 
             $analysis = json_decode($json_str, true);
-
-            if (json_last_error() === JSON_ERROR_NONE) {
-                error_log('JSON decoded successfully');
-
-                // Validate structure
-                if (isset($analysis['overall_score'])) {
-                    error_log('Valid analysis structure found');
-                    error_log('Overall score: ' . $analysis['overall_score']);
-                    error_log('Categories: ' . (isset($analysis['categories']) ? count($analysis['categories']) : 0));
-                    error_log('=== END PARSING (SUCCESS) ===');
-                    return $analysis;
-                } else {
-                    error_log('WARNING: JSON decoded but missing overall_score');
-                    error_log('Available keys: ' . implode(', ', array_keys($analysis)));
-                }
-            } else {
-                error_log('JSON decode error: ' . json_last_error_msg());
-                error_log('JSON error code: ' . json_last_error());
+            if (json_last_error() === JSON_ERROR_NONE && isset($analysis['overall_score'])) {
+                error_log('JSON decoded successfully from markdown block');
+                error_log('=== END PARSING (SUCCESS) ===');
+                return $analysis;
             }
-        } else {
-            error_log('No JSON found in response');
         }
+
+        // Method 3: Try to find raw JSON object
+        if (preg_match('/\{[\s\S]*\}/s', $response, $matches)) {
+            error_log('Found raw JSON object');
+            $json_str = $matches[0];
+
+            $analysis = json_decode($json_str, true);
+            if (json_last_error() === JSON_ERROR_NONE && isset($analysis['overall_score'])) {
+                error_log('JSON decoded successfully from raw object');
+                error_log('=== END PARSING (SUCCESS) ===');
+                return $analysis;
+            }
+        }
+
+        // Log the parsing failure
+        error_log('All JSON parsing methods failed');
+        error_log('JSON decode error: ' . json_last_error_msg());
+        error_log('JSON error code: ' . json_last_error());
 
         // Fallback: Return basic structure with full response for debugging
         error_log('Using fallback structure');
