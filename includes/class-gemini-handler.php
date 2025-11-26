@@ -864,11 +864,95 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
         }
 
         error_log('Upload successful! File URI: ' . $data['file']['uri']);
+        error_log('File name: ' . $data['file']['name']);
+
+        // Wait for file to be processed (become ACTIVE)
+        $file_name = $data['file']['name'];
+        $is_active = $this->wait_for_file_active($file_name, $api_key);
+
+        if (is_wp_error($is_active)) {
+            error_log('=== END UPLOAD (FAILED) ===');
+            return $is_active;
+        }
+
+        error_log('File is now ACTIVE and ready to use');
         error_log('=== END UPLOAD ===');
 
         return array(
             'uri' => $data['file']['uri'],
             'name' => $data['file']['name'],
+        );
+    }
+
+    /**
+     * Wait for uploaded file to become ACTIVE
+     *
+     * @param string $file_name File name (e.g., "files/abc123")
+     * @param string $api_key API key
+     * @return bool|WP_Error True if active, WP_Error on failure
+     */
+    private function wait_for_file_active($file_name, $api_key) {
+        error_log('Waiting for file to become ACTIVE...');
+        $max_attempts = 30; // 30 attempts = 60 seconds max
+        $attempt = 0;
+
+        while ($attempt < $max_attempts) {
+            $attempt++;
+
+            // Get file status
+            $status_url = 'https://generativelanguage.googleapis.com/v1beta/' . $file_name . '?key=' . $api_key;
+
+            $response = wp_remote_get($status_url, array(
+                'timeout' => 10,
+            ));
+
+            if (is_wp_error($response)) {
+                error_log('Error checking file status: ' . $response->get_error_message());
+                sleep(2);
+                continue;
+            }
+
+            $response_code = wp_remote_retrieve_response_code($response);
+            if ($response_code !== 200) {
+                error_log('File status check failed with code: ' . $response_code);
+                sleep(2);
+                continue;
+            }
+
+            $response_body = wp_remote_retrieve_body($response);
+            $data = json_decode($response_body, true);
+
+            if (isset($data['state'])) {
+                $state = $data['state'];
+                error_log("File status check (attempt $attempt): state = $state");
+
+                if ($state === 'ACTIVE') {
+                    error_log('File is ACTIVE!');
+                    return true;
+                } elseif ($state === 'FAILED') {
+                    error_log('File processing FAILED');
+                    return new WP_Error(
+                        'file_processing_failed',
+                        __('Video-Verarbeitung bei Gemini fehlgeschlagen.', 'bewerbungstrainer')
+                    );
+                } elseif ($state === 'PROCESSING') {
+                    error_log('File is still PROCESSING, waiting...');
+                    sleep(2); // Wait 2 seconds before next check
+                } else {
+                    error_log('Unknown file state: ' . $state);
+                    sleep(2);
+                }
+            } else {
+                error_log('No state in response');
+                sleep(2);
+            }
+        }
+
+        // Timeout reached
+        error_log('Timeout waiting for file to become ACTIVE');
+        return new WP_Error(
+            'file_processing_timeout',
+            __('Timeout beim Warten auf Video-Verarbeitung. Bitte versuche es später erneut.', 'bewerbungstrainer')
         );
     }
 
