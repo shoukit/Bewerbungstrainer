@@ -295,6 +295,9 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
     private function call_gemini_api($prompt, $api_key) {
         $url = $this->api_endpoint . '?key=' . $api_key;
 
+        error_log('Gemini API Endpoint: ' . $this->api_endpoint);
+        error_log('Full URL (with key): ' . substr($url, 0, 100) . '... (key hidden)');
+
         $body = array(
             'contents' => array(
                 array(
@@ -311,6 +314,8 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
             )
         );
 
+        error_log('Request body size: ' . strlen(json_encode($body)) . ' bytes');
+
         $response = wp_remote_post($url, array(
             'headers' => array(
                 'Content-Type' => 'application/json',
@@ -320,12 +325,16 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
         ));
 
         if (is_wp_error($response)) {
+            error_log('WordPress HTTP Error: ' . $response->get_error_message());
             return $response;
         }
 
         $response_code = wp_remote_retrieve_response_code($response);
+        error_log('Gemini API Response Code: ' . $response_code);
+
         if ($response_code !== 200) {
             $error_body = wp_remote_retrieve_body($response);
+            error_log('Gemini API Error Response Body: ' . $error_body);
             error_log('Gemini API Error (Code ' . $response_code . '): ' . $error_body);
 
             // Try to parse error message from response
@@ -404,6 +413,13 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
         // Get API key
         $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
 
+        error_log('=== VIDEO TRAINING DEBUG ===');
+        error_log('API Key configured: ' . (!empty($api_key) ? 'YES (length: ' . strlen($api_key) . ')' : 'NO'));
+        error_log('API Key first 10 chars: ' . substr($api_key, 0, 10) . '...');
+        error_log('Position: ' . $position);
+        error_log('Company: ' . $company);
+        error_log('Experience Level: ' . $experience_level);
+
         if (empty($api_key)) {
             return new WP_Error(
                 'missing_api_key',
@@ -415,14 +431,21 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
         $prompt = $this->get_question_generation_prompt($position, $company, $experience_level);
 
         // Call Gemini API
+        error_log('Calling Gemini API...');
         $response = $this->call_gemini_api($prompt, $api_key);
 
         if (is_wp_error($response)) {
+            error_log('Gemini API returned error: ' . $response->get_error_message());
             return $response;
         }
 
+        error_log('Gemini API response received successfully');
+
         // Parse response
         $questions = $this->parse_questions_response($response);
+
+        error_log('Parsed ' . count($questions) . ' questions');
+        error_log('=== END DEBUG ===');
 
         return $questions;
     }
