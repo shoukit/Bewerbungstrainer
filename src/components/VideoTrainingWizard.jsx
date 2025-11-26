@@ -115,6 +115,7 @@ function VideoTrainingWizard({ onComplete }) {
    */
   const initializeDevices = async () => {
     console.log('🎥 Initializing devices...');
+    setErrors({}); // Clear any previous errors
 
     try {
       // Check if mediaDevices API is available
@@ -125,6 +126,8 @@ function VideoTrainingWizard({ onComplete }) {
       // IMPORTANT: Request camera access FIRST to get permissions
       // Otherwise enumerateDevices will return empty labels
       console.log('🎥 Requesting camera and microphone access...');
+      console.log('⚠️ Please allow camera and microphone access in your browser!');
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
@@ -145,6 +148,11 @@ function VideoTrainingWizard({ onComplete }) {
 
       console.log('📹 Video devices found:', videoDevices.length, videoDevices);
       console.log('🎤 Audio devices found:', audioDevices.length, audioDevices);
+
+      // Check if we actually found devices
+      if (videoDevices.length === 0 || audioDevices.length === 0) {
+        console.warn('⚠️ Not all devices found - video:', videoDevices.length, 'audio:', audioDevices.length);
+      }
 
       setAvailableDevices({
         video: videoDevices,
@@ -176,17 +184,23 @@ function VideoTrainingWizard({ onComplete }) {
 
     } catch (error) {
       console.error('❌ Error accessing devices:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+
       let errorMessage = 'Fehler beim Zugriff auf Kamera oder Mikrofon';
+      let showRetry = true;
 
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        errorMessage = 'Zugriff auf Kamera/Mikrofon wurde verweigert. Bitte erlaube den Zugriff in deinen Browser-Einstellungen.';
+        errorMessage = 'Zugriff auf Kamera/Mikrofon wurde verweigert. Bitte klicke auf "Zulassen" im Browser-Dialog und versuche es erneut.';
       } else if (error.name === 'NotFoundError') {
-        errorMessage = 'Keine Kamera oder Mikrofon gefunden. Bitte stelle sicher, dass ein Gerät angeschlossen ist.';
+        errorMessage = 'Keine Kamera oder Mikrofon gefunden. Bitte stelle sicher, dass ein Gerät angeschlossen ist und nicht von einer anderen Anwendung verwendet wird.';
       } else if (error.name === 'NotReadableError' || error.name === 'OverconstrainedError') {
-        errorMessage = 'Kamera/Mikrofon wird bereits von einer anderen Anwendung verwendet oder ist nicht verfügbar.';
+        errorMessage = 'Kamera/Mikrofon wird bereits von einer anderen Anwendung verwendet oder ist nicht verfügbar. Bitte schließe andere Apps, die auf die Kamera/Mikrofon zugreifen.';
+      } else {
+        errorMessage = `Fehler beim Zugriff auf Kamera/Mikrofon: ${error.message}`;
       }
 
-      setErrors({ devices: errorMessage });
+      setErrors({ devices: errorMessage, showRetry });
     }
   };
 
@@ -437,13 +451,13 @@ function VideoTrainingWizard({ onComplete }) {
               >
                 <div className="flex items-start">
                   {/* Checkbox */}
-                  <div className={`w-6 h-6 rounded border-2 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 ${
+                  <div className={`w-6 h-6 rounded border-2 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 transition-colors ${
                     selectedQuestions.includes(q.id)
                       ? 'border-ocean-500 bg-ocean-500'
                       : 'border-gray-400 bg-white'
                   }`}>
                     {selectedQuestions.includes(q.id) && (
-                      <Check className="w-4 h-4 text-white stroke-[3]" />
+                      <Check className="w-5 h-5 text-white stroke-[4] font-bold" strokeWidth={4} />
                     )}
                   </div>
                   <div className="flex-1">
@@ -496,6 +510,15 @@ function VideoTrainingWizard({ onComplete }) {
             Das gesamte Interview wird in einem durchgehenden Video aufgezeichnet.
           </p>
 
+          {/* Permission notice */}
+          {!cameraStream && !errors.devices && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>⚠️ Wichtig:</strong> Bitte erlaube den Zugriff auf Kamera und Mikrofon im Browser-Dialog, wenn dieser erscheint.
+              </p>
+            </div>
+          )}
+
           {/* Video Preview */}
           <div className="bg-black rounded-lg overflow-hidden">
             <video
@@ -547,8 +570,16 @@ function VideoTrainingWizard({ onComplete }) {
           </div>
 
           {errors.devices && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              {errors.devices}
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 mb-3">{errors.devices}</p>
+              {errors.showRetry && (
+                <Button
+                  onClick={initializeDevices}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Erneut versuchen
+                </Button>
+              )}
             </div>
           )}
 
