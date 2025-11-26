@@ -427,6 +427,15 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
             );
         }
 
+        // First, let's list available models
+        error_log('Fetching available Gemini models...');
+        $available_models = $this->list_available_models($api_key);
+        if (!is_wp_error($available_models)) {
+            error_log('Available models: ' . json_encode($available_models));
+        } else {
+            error_log('Could not fetch models: ' . $available_models->get_error_message());
+        }
+
         // Build prompt
         $prompt = $this->get_question_generation_prompt($position, $company, $experience_level);
 
@@ -448,6 +457,50 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
         error_log('=== END DEBUG ===');
 
         return $questions;
+    }
+
+    /**
+     * List available Gemini models
+     *
+     * @param string $api_key API key
+     * @return array|WP_Error List of model names or error
+     */
+    private function list_available_models($api_key) {
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $api_key;
+
+        $response = wp_remote_get($url, array(
+            'timeout' => 30,
+        ));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ($response_code !== 200) {
+            $error_body = wp_remote_retrieve_body($response);
+            return new WP_Error('list_models_failed', 'Failed to list models: ' . $error_body);
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (!isset($data['models']) || !is_array($data['models'])) {
+            return new WP_Error('invalid_response', 'Invalid response from ListModels API');
+        }
+
+        // Extract model names that support generateContent
+        $model_names = array();
+        foreach ($data['models'] as $model) {
+            if (isset($model['name']) && isset($model['supportedGenerationMethods'])) {
+                if (in_array('generateContent', $model['supportedGenerationMethods'])) {
+                    // Extract just the model ID (e.g., "models/gemini-pro" -> "gemini-pro")
+                    $model_names[] = str_replace('models/', '', $model['name']);
+                }
+            }
+        }
+
+        return $model_names;
     }
 
     /**
