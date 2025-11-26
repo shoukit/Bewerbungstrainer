@@ -20,7 +20,7 @@ class Bewerbungstrainer_Gemini_Handler {
     /**
      * Gemini API endpoint
      */
-    private $api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    private $api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
     /**
      * Get singleton instance
@@ -326,10 +326,26 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
         $response_code = wp_remote_retrieve_response_code($response);
         if ($response_code !== 200) {
             $error_body = wp_remote_retrieve_body($response);
-            error_log('Gemini API Error: ' . $error_body);
+            error_log('Gemini API Error (Code ' . $response_code . '): ' . $error_body);
+
+            // Try to parse error message from response
+            $error_data = json_decode($error_body, true);
+            $error_message = 'HTTP ' . $response_code;
+
+            if (isset($error_data['error']['message'])) {
+                $error_message .= ': ' . $error_data['error']['message'];
+            }
+
+            // Add helpful context for common errors
+            if ($response_code === 404) {
+                $error_message .= ' (Überprüfen Sie den API-Key und stellen Sie sicher, dass die Gemini API aktiviert ist)';
+            } elseif ($response_code === 403) {
+                $error_message .= ' (API-Key ungültig oder Berechtigungen fehlen)';
+            }
+
             return new WP_Error(
                 'api_error',
-                __('Gemini API Fehler: ', 'bewerbungstrainer') . $response_code
+                __('Gemini API Fehler: ', 'bewerbungstrainer') . $error_message
             );
         }
 
@@ -725,7 +741,7 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
      * @return string|WP_Error Response or WP_Error
      */
     private function call_gemini_api_with_video($prompt, $video_uri, $api_key) {
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $api_key;
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=' . $api_key;
 
         $body = array(
             'contents' => array(
@@ -759,10 +775,26 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
         $response_code = wp_remote_retrieve_response_code($response);
         if ($response_code !== 200) {
             $error_body = wp_remote_retrieve_body($response);
-            error_log('Gemini API Error: ' . $error_body);
+            error_log('Gemini API Error (Code ' . $response_code . '): ' . $error_body);
+
+            // Try to parse error message from response
+            $error_data = json_decode($error_body, true);
+            $error_message = 'HTTP ' . $response_code;
+
+            if (isset($error_data['error']['message'])) {
+                $error_message .= ': ' . $error_data['error']['message'];
+            }
+
+            // Add helpful context for common errors
+            if ($response_code === 404) {
+                $error_message .= ' (Überprüfen Sie den API-Key und stellen Sie sicher, dass die Gemini API aktiviert ist)';
+            } elseif ($response_code === 403) {
+                $error_message .= ' (API-Key ungültig oder Berechtigungen fehlen)';
+            }
+
             return new WP_Error(
                 'api_error',
-                __('Gemini API Fehler: ', 'bewerbungstrainer') . $response_code
+                __('Gemini API Fehler: ', 'bewerbungstrainer') . $error_message
             );
         }
 
