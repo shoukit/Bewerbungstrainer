@@ -5,8 +5,13 @@ import './index.css';
 
 console.log('📹 Video Training App initializing...');
 
-// Wait for DOM to be ready
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize bewerbungstrainerConfig from video training config if available
+if (window.bewerbungstrainerVideoTraining && !window.bewerbungstrainerConfig) {
+  window.bewerbungstrainerConfig = window.bewerbungstrainerVideoTraining;
+}
+
+// Function to mount the app
+const mountApp = () => {
   const container = document.getElementById('bewerbungstrainer-video-training-app');
 
   if (container) {
@@ -20,4 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     console.warn('📹 Video Training container not found - waiting for shortcode');
   }
-});
+};
+
+// Check if DOM is already loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mountApp);
+} else {
+  // DOM is already ready, mount immediately
+  mountApp();
+}
