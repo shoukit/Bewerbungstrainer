@@ -812,17 +812,43 @@ class Bewerbungstrainer_Shortcodes {
             BEWERBUNGSTRAINER_VERSION
         );
 
+        // Find and register the shared chunk file (wordpress-api-*.js)
+        $assets_dir = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/';
+        $shared_chunk = null;
+        if (is_dir($assets_dir)) {
+            $files = glob($assets_dir . 'wordpress-api-*.js');
+            if (!empty($files)) {
+                $shared_chunk = basename($files[0]);
+            }
+        }
+
+        // If shared chunk exists, register it first
+        if ($shared_chunk) {
+            wp_register_script(
+                'bewerbungstrainer-wordpress-api-chunk',
+                BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/' . $shared_chunk,
+                array(),
+                BEWERBUNGSTRAINER_VERSION,
+                true
+            );
+        }
+
         // Register and enqueue video training React app as ES module
         wp_register_script(
             'bewerbungstrainer-video-training',
             BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/video-training.js',
-            array(), // No dependencies - config is in shortcode
+            $shared_chunk ? array('bewerbungstrainer-wordpress-api-chunk') : array(), // Depend on shared chunk if it exists
             BEWERBUNGSTRAINER_VERSION,
             true
         );
 
-        // Add type="module" attribute to script tag
+        // Add type="module" attribute to script tags
         add_filter('script_loader_tag', array($this, 'add_module_type_to_video_training_script'), 10, 3);
+
+        // Enqueue shared chunk first if it exists
+        if ($shared_chunk) {
+            wp_enqueue_script('bewerbungstrainer-wordpress-api-chunk');
+        }
 
         wp_enqueue_script('bewerbungstrainer-video-training');
 
@@ -861,7 +887,7 @@ class Bewerbungstrainer_Shortcodes {
      * @return string Modified script tag
      */
     public function add_module_type_to_video_training_script($tag, $handle, $src) {
-        if ($handle === 'bewerbungstrainer-video-training') {
+        if ($handle === 'bewerbungstrainer-video-training' || $handle === 'bewerbungstrainer-wordpress-api-chunk') {
             // Replace the opening <script tag to add type="module"
             // This preserves any inline scripts WordPress adds
             $tag = str_replace('<script ', '<script type="module" ', $tag);
