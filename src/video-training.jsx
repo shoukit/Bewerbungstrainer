@@ -7,7 +7,12 @@ console.log('📹 Video Training App initializing...');
 
 // Initialize bewerbungstrainerConfig from video training config if available
 if (window.bewerbungstrainerVideoTraining && !window.bewerbungstrainerConfig) {
+  console.log('📹 Config from bewerbungstrainerVideoTraining:', window.bewerbungstrainerVideoTraining);
   window.bewerbungstrainerConfig = window.bewerbungstrainerVideoTraining;
+} else if (window.bewerbungstrainerConfig) {
+  console.log('📹 Config from bewerbungstrainerConfig:', window.bewerbungstrainerConfig);
+} else {
+  console.error('📹 No configuration found! Neither bewerbungstrainerVideoTraining nor bewerbungstrainerConfig is defined.');
 }
 
 // Function to mount the app
