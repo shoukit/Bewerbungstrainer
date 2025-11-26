@@ -74,9 +74,22 @@ class Bewerbungstrainer_Shortcodes {
         // Enqueue assets
         $this->enqueue_video_training_assets();
 
+        // Prepare configuration for JavaScript
+        $config = array(
+            'apiUrl' => rest_url('bewerbungstrainer/v1'),
+            'nonce' => wp_create_nonce('wp_rest'),
+            'currentUser' => array(
+                'id' => get_current_user_id(),
+                'name' => wp_get_current_user()->display_name,
+            ),
+        );
+
         // Return container div where React app will mount
         ob_start();
         ?>
+        <script type="text/javascript">
+            window.bewerbungstrainerVideoTraining = <?php echo wp_json_encode($config); ?>;
+        </script>
         <div id="bewerbungstrainer-video-training-app" class="bewerbungstrainer-video-training-container">
             <div class="bewerbungstrainer-loading">
                 <div class="spinner"></div>
@@ -799,26 +812,11 @@ class Bewerbungstrainer_Shortcodes {
             BEWERBUNGSTRAINER_VERSION
         );
 
-        // Pass configuration to JavaScript via separate inline script
-        // This must load before the module, so we add it to the document directly
-        wp_add_inline_script(
-            'jquery', // Add to a script that loads early
-            'window.bewerbungstrainerVideoTraining = ' . wp_json_encode(array(
-                'apiUrl' => rest_url('bewerbungstrainer/v1'),
-                'nonce' => wp_create_nonce('wp_rest'),
-                'currentUser' => array(
-                    'id' => get_current_user_id(),
-                    'name' => wp_get_current_user()->display_name,
-                ),
-            )) . ';',
-            'after'
-        );
-
         // Register and enqueue video training React app as ES module
         wp_register_script(
             'bewerbungstrainer-video-training',
             BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/video-training.js',
-            array('jquery'), // Depend on jquery to ensure config loads first
+            array(), // No dependencies - config is in shortcode
             BEWERBUNGSTRAINER_VERSION,
             true
         );
