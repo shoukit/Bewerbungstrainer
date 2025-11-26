@@ -784,9 +784,35 @@ class Bewerbungstrainer_Shortcodes {
      * Enqueue assets for video training shortcode
      */
     private function enqueue_video_training_assets() {
-        // React app will be enqueued by main plugin class
+        // Enqueue main CSS
+        wp_enqueue_style(
+            'bewerbungstrainer-video-training',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/wordpress-api.css',
+            array(),
+            BEWERBUNGSTRAINER_VERSION
+        );
+
+        // Enqueue video training React app
+        wp_enqueue_script(
+            'bewerbungstrainer-video-training',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/video-training.js',
+            array(),
+            BEWERBUNGSTRAINER_VERSION,
+            true
+        );
+
+        // Pass configuration to JavaScript
+        wp_localize_script('bewerbungstrainer-video-training', 'bewerbungstrainerVideoTraining', array(
+            'apiUrl' => rest_url('bewerbungstrainer/v1'),
+            'nonce' => wp_create_nonce('wp_rest'),
+            'currentUser' => array(
+                'id' => get_current_user_id(),
+                'name' => wp_get_current_user()->display_name,
+            ),
+        ));
+
         // Add custom styles for shortcode wrapper
-        wp_add_inline_style('bewerbungstrainer-app', '
+        wp_add_inline_style('bewerbungstrainer-video-training', '
             .bewerbungstrainer-video-training-container {
                 width: 100%;
                 margin: 0 auto;
