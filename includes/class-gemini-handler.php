@@ -287,120 +287,173 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
     }
 
     /**
-     * Call Gemini API
+     * Check if an HTTP status code indicates a transient error that should be retried
+     *
+     * @param int $status_code HTTP status code
+     * @return bool True if the error is transient and should be retried
+     */
+    private function is_transient_error($status_code) {
+        // Transient errors that should be retried:
+        // 429 - Too Many Requests (rate limit)
+        // 500 - Internal Server Error
+        // 502 - Bad Gateway
+        // 503 - Service Unavailable (overloaded)
+        // 504 - Gateway Timeout
+        return in_array($status_code, array(429, 500, 502, 503, 504));
+    }
+
+    /**
+     * Call Gemini API with retry logic
      *
      * @param string $prompt Prompt for Gemini
      * @param string $api_key API key
      * @return string|WP_Error Response text or WP_Error on failure
      */
     private function call_gemini_api($prompt, $api_key) {
-        $url = $this->api_endpoint . '?key=' . $api_key;
+        $max_retries = 4;
+        $base_delay = 2; // Start with 2 seconds
 
-        error_log('Gemini API Endpoint: ' . $this->api_endpoint);
-        error_log('Full URL (with key): ' . substr($url, 0, 100) . '... (key hidden)');
+        for ($attempt = 0; $attempt <= $max_retries; $attempt++) {
+            if ($attempt > 0) {
+                $delay = $base_delay * pow(2, $attempt - 1); // Exponential backoff: 2s, 4s, 8s, 16s
+                error_log("Gemini API: Retry attempt $attempt after {$delay}s delay");
+                sleep($delay);
+            }
 
-        $body = array(
-            'contents' => array(
-                array(
-                    'parts' => array(
-                        array('text' => $prompt)
+            $url = $this->api_endpoint . '?key=' . $api_key;
+
+            if ($attempt === 0) {
+                error_log('Gemini API Endpoint: ' . $this->api_endpoint);
+                error_log('Full URL (with key): ' . substr($url, 0, 100) . '... (key hidden)');
+            }
+
+            $body = array(
+                'contents' => array(
+                    array(
+                        'parts' => array(
+                            array('text' => $prompt)
+                        )
                     )
+                ),
+                'generationConfig' => array(
+                    'temperature' => 0.7,
+                    'topK' => 40,
+                    'topP' => 0.95,
+                    'maxOutputTokens' => 16384,
                 )
-            ),
-            'generationConfig' => array(
-                'temperature' => 0.7,
-                'topK' => 40,
-                'topP' => 0.95,
-                'maxOutputTokens' => 16384,
-            )
-        );
-
-        error_log('Request body size: ' . strlen(json_encode($body)) . ' bytes');
-
-        $response = wp_remote_post($url, array(
-            'headers' => array(
-                'Content-Type' => 'application/json',
-            ),
-            'body' => json_encode($body),
-            'timeout' => 60,
-        ));
-
-        if (is_wp_error($response)) {
-            error_log('WordPress HTTP Error: ' . $response->get_error_message());
-            return $response;
-        }
-
-        $response_code = wp_remote_retrieve_response_code($response);
-        error_log('Gemini API Response Code: ' . $response_code);
-
-        if ($response_code !== 200) {
-            $error_body = wp_remote_retrieve_body($response);
-            error_log('Gemini API Error Response Body: ' . $error_body);
-            error_log('Gemini API Error (Code ' . $response_code . '): ' . $error_body);
-
-            // Try to parse error message from response
-            $error_data = json_decode($error_body, true);
-            $error_message = 'HTTP ' . $response_code;
-
-            if (isset($error_data['error']['message'])) {
-                $error_message .= ': ' . $error_data['error']['message'];
-            }
-
-            // Add helpful context for common errors
-            if ($response_code === 404) {
-                $error_message .= ' (Überprüfen Sie den API-Key und stellen Sie sicher, dass die Gemini API aktiviert ist)';
-            } elseif ($response_code === 403) {
-                $error_message .= ' (API-Key ungültig oder Berechtigungen fehlen)';
-            }
-
-            return new WP_Error(
-                'api_error',
-                __('Gemini API Fehler: ', 'bewerbungstrainer') . $error_message
             );
-        }
 
-        $response_body = wp_remote_retrieve_body($response);
-        error_log('Gemini API Response Body (first 500 chars): ' . substr($response_body, 0, 500));
+            if ($attempt === 0) {
+                error_log('Request body size: ' . strlen(json_encode($body)) . ' bytes');
+            }
 
-        $data = json_decode($response_body, true);
+            $response = wp_remote_post($url, array(
+                'headers' => array(
+                    'Content-Type' => 'application/json',
+                ),
+                'body' => json_encode($body),
+                'timeout' => 60,
+            ));
 
-        if ($data && isset($data['candidates'])) {
-            error_log('Found ' . count($data['candidates']) . ' candidates');
-            if (isset($data['candidates'][0])) {
-                error_log('Candidate 0 keys: ' . json_encode(array_keys($data['candidates'][0])));
+            if (is_wp_error($response)) {
+                error_log('WordPress HTTP Error: ' . $response->get_error_message());
 
-                // Check finishReason for issues
-                if (isset($data['candidates'][0]['finishReason'])) {
-                    $finish_reason = $data['candidates'][0]['finishReason'];
-                    error_log('Finish reason: ' . $finish_reason);
+                // If this is the last attempt, return the error
+                if ($attempt === $max_retries) {
+                    return $response;
+                }
 
-                    if ($finish_reason === 'MAX_TOKENS') {
-                        error_log('MAX_TOKENS hit. ThoughtsTokenCount: ' . ($data['usageMetadata']['thoughtsTokenCount'] ?? 'unknown'));
+                // Otherwise, retry
+                continue;
+            }
 
-                        // Check if we got any content despite MAX_TOKENS
-                        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-                            return new WP_Error(
-                                'max_tokens_exceeded',
-                                __('Die Antwort war zu lang. Das Modell hat die Token-Grenze erreicht, bevor eine Antwort generiert werden konnte. Bitte versuchen Sie es mit einer kürzeren Anfrage oder kontaktieren Sie den Support.', 'bewerbungstrainer')
-                            );
+            $response_code = wp_remote_retrieve_response_code($response);
+            error_log('Gemini API Response Code: ' . $response_code . ' (attempt ' . ($attempt + 1) . ')');
+
+            if ($response_code !== 200) {
+                $error_body = wp_remote_retrieve_body($response);
+                error_log('Gemini API Error Response Body: ' . $error_body);
+                error_log('Gemini API Error (Code ' . $response_code . '): ' . $error_body);
+
+                // Check if this is a transient error that should be retried
+                if ($this->is_transient_error($response_code) && $attempt < $max_retries) {
+                    error_log('Transient error detected, will retry...');
+                    continue;
+                }
+
+                // Try to parse error message from response
+                $error_data = json_decode($error_body, true);
+                $error_message = 'HTTP ' . $response_code;
+
+                if (isset($error_data['error']['message'])) {
+                    $error_message .= ': ' . $error_data['error']['message'];
+                }
+
+                // Add helpful context for common errors
+                if ($response_code === 404) {
+                    $error_message .= ' (Überprüfen Sie den API-Key und stellen Sie sicher, dass die Gemini API aktiviert ist)';
+                } elseif ($response_code === 403) {
+                    $error_message .= ' (API-Key ungültig oder Berechtigungen fehlen)';
+                } elseif ($response_code === 503) {
+                    $error_message .= ' (Service vorübergehend überlastet, bitte versuchen Sie es später erneut)';
+                }
+
+                return new WP_Error(
+                    'api_error',
+                    __('Gemini API Fehler: ', 'bewerbungstrainer') . $error_message
+                );
+            }
+
+            // Success! Process the response
+            $response_body = wp_remote_retrieve_body($response);
+            error_log('Gemini API Response Body (first 500 chars): ' . substr($response_body, 0, 500));
+
+            $data = json_decode($response_body, true);
+
+            if ($data && isset($data['candidates'])) {
+                error_log('Found ' . count($data['candidates']) . ' candidates');
+                if (isset($data['candidates'][0])) {
+                    error_log('Candidate 0 keys: ' . json_encode(array_keys($data['candidates'][0])));
+
+                    // Check finishReason for issues
+                    if (isset($data['candidates'][0]['finishReason'])) {
+                        $finish_reason = $data['candidates'][0]['finishReason'];
+                        error_log('Finish reason: ' . $finish_reason);
+
+                        if ($finish_reason === 'MAX_TOKENS') {
+                            error_log('MAX_TOKENS hit. ThoughtsTokenCount: ' . ($data['usageMetadata']['thoughtsTokenCount'] ?? 'unknown'));
+
+                            // Check if we got any content despite MAX_TOKENS
+                            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                                return new WP_Error(
+                                    'max_tokens_exceeded',
+                                    __('Die Antwort war zu lang. Das Modell hat die Token-Grenze erreicht, bevor eine Antwort generiert werden konnte. Bitte versuchen Sie es mit einer kürzeren Anfrage oder kontaktieren Sie den Support.', 'bewerbungstrainer')
+                                );
+                            }
                         }
                     }
                 }
             }
+
+            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                error_log('Expected path not found in response. Full response (first 1000 chars): ' . substr($response_body, 0, 1000));
+                return new WP_Error(
+                    'invalid_response',
+                    __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer')
+                );
+            }
+
+            $text = $data['candidates'][0]['content']['parts'][0]['text'];
+            error_log('Extracted text (first 200 chars): ' . substr($text, 0, 200));
+
+            return $text;
         }
 
-        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-            error_log('Expected path not found in response. Full response (first 1000 chars): ' . substr($response_body, 0, 1000));
-            return new WP_Error(
-                'invalid_response',
-                __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer')
-            );
-        }
-
-        $text = $data['candidates'][0]['content']['parts'][0]['text'];
-        error_log('Extracted text (first 200 chars): ' . substr($text, 0, 200));
-
-        return $text;
+        // Should never reach here, but just in case
+        return new WP_Error(
+            'api_error',
+            __('Gemini API Fehler: Maximale Anzahl von Wiederholungsversuchen erreicht', 'bewerbungstrainer')
+        );
     }
 
     /**
@@ -961,7 +1014,7 @@ Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text davor oder danach.";
     }
 
     /**
-     * Call Gemini API with video
+     * Call Gemini API with video and retry logic
      *
      * @param string $prompt Text prompt
      * @param string $video_uri Gemini video URI
@@ -969,105 +1022,141 @@ Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text davor oder danach.";
      * @return string|WP_Error Response or WP_Error
      */
     private function call_gemini_api_with_video($prompt, $video_uri, $api_key) {
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=' . $api_key;
+        $max_retries = 4;
+        $base_delay = 2; // Start with 2 seconds
 
-        $body = array(
-            'contents' => array(
-                array(
-                    'parts' => array(
-                        array('text' => $prompt),
-                        array('file_data' => array('file_uri' => $video_uri))
+        for ($attempt = 0; $attempt <= $max_retries; $attempt++) {
+            if ($attempt > 0) {
+                $delay = $base_delay * pow(2, $attempt - 1); // Exponential backoff: 2s, 4s, 8s, 16s
+                error_log("Gemini API (video): Retry attempt $attempt after {$delay}s delay");
+                sleep($delay);
+            }
+
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=' . $api_key;
+
+            $body = array(
+                'contents' => array(
+                    array(
+                        'parts' => array(
+                            array('text' => $prompt),
+                            array('file_data' => array('file_uri' => $video_uri))
+                        )
                     )
+                ),
+                'generationConfig' => array(
+                    'temperature' => 0.7,
+                    'topK' => 40,
+                    'topP' => 0.95,
+                    'maxOutputTokens' => 16384, // Increased to allow for complete video analysis responses
                 )
-            ),
-            'generationConfig' => array(
-                'temperature' => 0.7,
-                'topK' => 40,
-                'topP' => 0.95,
-                'maxOutputTokens' => 16384, // Increased to allow for complete video analysis responses
-            )
-        );
-
-        $response = wp_remote_post($url, array(
-            'headers' => array(
-                'Content-Type' => 'application/json',
-            ),
-            'body' => json_encode($body),
-            'timeout' => 120,
-        ));
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        $response_code = wp_remote_retrieve_response_code($response);
-        if ($response_code !== 200) {
-            $error_body = wp_remote_retrieve_body($response);
-            error_log('Gemini API Error (Code ' . $response_code . '): ' . $error_body);
-
-            // Try to parse error message from response
-            $error_data = json_decode($error_body, true);
-            $error_message = 'HTTP ' . $response_code;
-
-            if (isset($error_data['error']['message'])) {
-                $error_message .= ': ' . $error_data['error']['message'];
-            }
-
-            // Add helpful context for common errors
-            if ($response_code === 404) {
-                $error_message .= ' (Überprüfen Sie den API-Key und stellen Sie sicher, dass die Gemini API aktiviert ist)';
-            } elseif ($response_code === 403) {
-                $error_message .= ' (API-Key ungültig oder Berechtigungen fehlen)';
-            }
-
-            return new WP_Error(
-                'api_error',
-                __('Gemini API Fehler: ', 'bewerbungstrainer') . $error_message
             );
-        }
 
-        $response_body = wp_remote_retrieve_body($response);
-        error_log('Gemini API Response Body (first 500 chars): ' . substr($response_body, 0, 500));
+            $response = wp_remote_post($url, array(
+                'headers' => array(
+                    'Content-Type' => 'application/json',
+                ),
+                'body' => json_encode($body),
+                'timeout' => 120,
+            ));
 
-        $data = json_decode($response_body, true);
+            if (is_wp_error($response)) {
+                error_log('WordPress HTTP Error: ' . $response->get_error_message());
 
-        if ($data && isset($data['candidates'])) {
-            error_log('Found ' . count($data['candidates']) . ' candidates');
-            if (isset($data['candidates'][0])) {
-                error_log('Candidate 0 keys: ' . json_encode(array_keys($data['candidates'][0])));
+                // If this is the last attempt, return the error
+                if ($attempt === $max_retries) {
+                    return $response;
+                }
 
-                // Check finishReason for issues
-                if (isset($data['candidates'][0]['finishReason'])) {
-                    $finish_reason = $data['candidates'][0]['finishReason'];
-                    error_log('Finish reason: ' . $finish_reason);
+                // Otherwise, retry
+                continue;
+            }
 
-                    if ($finish_reason === 'MAX_TOKENS') {
-                        error_log('MAX_TOKENS hit. ThoughtsTokenCount: ' . ($data['usageMetadata']['thoughtsTokenCount'] ?? 'unknown'));
+            $response_code = wp_remote_retrieve_response_code($response);
+            error_log('Gemini API (video) Response Code: ' . $response_code . ' (attempt ' . ($attempt + 1) . ')');
 
-                        // Check if we got any content despite MAX_TOKENS
-                        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-                            return new WP_Error(
-                                'max_tokens_exceeded',
-                                __('Die Antwort war zu lang. Das Modell hat die Token-Grenze erreicht, bevor eine Antwort generiert werden konnte. Bitte versuchen Sie es mit einer kürzeren Anfrage oder kontaktieren Sie den Support.', 'bewerbungstrainer')
-                            );
+            if ($response_code !== 200) {
+                $error_body = wp_remote_retrieve_body($response);
+                error_log('Gemini API Error (Code ' . $response_code . '): ' . $error_body);
+
+                // Check if this is a transient error that should be retried
+                if ($this->is_transient_error($response_code) && $attempt < $max_retries) {
+                    error_log('Transient error detected, will retry...');
+                    continue;
+                }
+
+                // Try to parse error message from response
+                $error_data = json_decode($error_body, true);
+                $error_message = 'HTTP ' . $response_code;
+
+                if (isset($error_data['error']['message'])) {
+                    $error_message .= ': ' . $error_data['error']['message'];
+                }
+
+                // Add helpful context for common errors
+                if ($response_code === 404) {
+                    $error_message .= ' (Überprüfen Sie den API-Key und stellen Sie sicher, dass die Gemini API aktiviert ist)';
+                } elseif ($response_code === 403) {
+                    $error_message .= ' (API-Key ungültig oder Berechtigungen fehlen)';
+                } elseif ($response_code === 503) {
+                    $error_message .= ' (Service vorübergehend überlastet, bitte versuchen Sie es später erneut)';
+                }
+
+                return new WP_Error(
+                    'api_error',
+                    __('Gemini API Fehler: ', 'bewerbungstrainer') . $error_message
+                );
+            }
+
+            // Success! Process the response
+            $response_body = wp_remote_retrieve_body($response);
+            error_log('Gemini API Response Body (first 500 chars): ' . substr($response_body, 0, 500));
+
+            $data = json_decode($response_body, true);
+
+            if ($data && isset($data['candidates'])) {
+                error_log('Found ' . count($data['candidates']) . ' candidates');
+                if (isset($data['candidates'][0])) {
+                    error_log('Candidate 0 keys: ' . json_encode(array_keys($data['candidates'][0])));
+
+                    // Check finishReason for issues
+                    if (isset($data['candidates'][0]['finishReason'])) {
+                        $finish_reason = $data['candidates'][0]['finishReason'];
+                        error_log('Finish reason: ' . $finish_reason);
+
+                        if ($finish_reason === 'MAX_TOKENS') {
+                            error_log('MAX_TOKENS hit. ThoughtsTokenCount: ' . ($data['usageMetadata']['thoughtsTokenCount'] ?? 'unknown'));
+
+                            // Check if we got any content despite MAX_TOKENS
+                            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                                return new WP_Error(
+                                    'max_tokens_exceeded',
+                                    __('Die Antwort war zu lang. Das Modell hat die Token-Grenze erreicht, bevor eine Antwort generiert werden konnte. Bitte versuchen Sie es mit einer kürzeren Anfrage oder kontaktieren Sie den Support.', 'bewerbungstrainer')
+                                );
+                            }
                         }
                     }
                 }
             }
+
+            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                error_log('Expected path not found in response. Full response (first 1000 chars): ' . substr($response_body, 0, 1000));
+                return new WP_Error(
+                    'invalid_response',
+                    __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer')
+                );
+            }
+
+            $text = $data['candidates'][0]['content']['parts'][0]['text'];
+            error_log('Extracted text (first 200 chars): ' . substr($text, 0, 200));
+
+            return $text;
         }
 
-        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-            error_log('Expected path not found in response. Full response (first 1000 chars): ' . substr($response_body, 0, 1000));
-            return new WP_Error(
-                'invalid_response',
-                __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer')
-            );
-        }
-
-        $text = $data['candidates'][0]['content']['parts'][0]['text'];
-        error_log('Extracted text (first 200 chars): ' . substr($text, 0, 200));
-
-        return $text;
+        // Should never reach here, but just in case
+        return new WP_Error(
+            'api_error',
+            __('Gemini API Fehler: Maximale Anzahl von Wiederholungsversuchen erreicht', 'bewerbungstrainer')
+        );
     }
 
     /**
