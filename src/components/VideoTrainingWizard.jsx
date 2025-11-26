@@ -115,7 +115,16 @@ function VideoTrainingWizard({ onComplete }) {
    */
   const initializeDevices = async () => {
     try {
-      // Get available devices
+      // IMPORTANT: Request camera access FIRST to get permissions
+      // Otherwise enumerateDevices will return empty labels
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+      });
+
+      setCameraStream(stream);
+
+      // NOW get available devices (with proper labels)
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
       const audioDevices = devices.filter(d => d.kind === 'audioinput');
@@ -125,24 +134,30 @@ function VideoTrainingWizard({ onComplete }) {
         audio: audioDevices
       });
 
-      // Set default devices
-      if (videoDevices.length > 0) {
-        setSelectedDevices(prev => ({ ...prev, video: videoDevices[0].deviceId }));
+      // Set default devices to currently active ones
+      const videoTrack = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0];
+
+      if (videoTrack) {
+        const settings = videoTrack.getSettings();
+        setSelectedDevices(prev => ({ ...prev, video: settings.deviceId || '' }));
       }
-      if (audioDevices.length > 0) {
-        setSelectedDevices(prev => ({ ...prev, audio: audioDevices[0].deviceId }));
+      if (audioTrack) {
+        const settings = audioTrack.getSettings();
+        setSelectedDevices(prev => ({ ...prev, audio: settings.deviceId || '' }));
       }
 
-      // Request camera access
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: videoDevices[0]?.deviceId },
-        audio: { deviceId: audioDevices[0]?.deviceId }
-      });
-
-      setCameraStream(stream);
     } catch (error) {
       console.error('Error accessing devices:', error);
-      setErrors({ devices: 'Fehler beim Zugriff auf Kamera oder Mikrofon' });
+      let errorMessage = 'Fehler beim Zugriff auf Kamera oder Mikrofon';
+
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage = 'Zugriff auf Kamera/Mikrofon wurde verweigert. Bitte erlaube den Zugriff in deinen Browser-Einstellungen.';
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = 'Keine Kamera oder Mikrofon gefunden. Bitte stelle sicher, dass ein Gerät angeschlossen ist.';
+      }
+
+      setErrors({ devices: errorMessage });
     }
   };
 
@@ -360,8 +375,15 @@ function VideoTrainingWizard({ onComplete }) {
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-800">Deine Interviewfragen</h2>
           <p className="text-gray-600">
-            KarriereHeld hat {questions.length} Fragen für dich erstellt. Du kannst Fragen abwählen, wenn du möchtest.
+            KarriereHeld hat {questions.length} Fragen für dich erstellt. Alle Fragen sind bereits ausgewählt.
+            Du kannst Fragen abwählen, wenn du möchtest (mindestens 1 Frage muss ausgewählt bleiben).
           </p>
+
+          <div className="p-4 bg-ocean-50 border border-ocean-200 rounded-lg">
+            <p className="text-sm text-ocean-800">
+              <strong>{selectedQuestions.length}</strong> von <strong>{questions.length}</strong> Fragen ausgewählt
+            </p>
+          </div>
 
           <div className="space-y-3">
             {questions.map((q, index) => (
