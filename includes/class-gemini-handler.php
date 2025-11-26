@@ -773,20 +773,28 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
      * @return array|WP_Error Video data with URI or WP_Error on failure
      */
     private function upload_video_to_gemini($video_path, $api_key) {
+        error_log('=== UPLOAD VIDEO TO GEMINI ===');
+        error_log('Video path: ' . $video_path);
+        error_log('File exists: ' . (file_exists($video_path) ? 'YES' : 'NO'));
+
         // Read video file
         $video_content = file_get_contents($video_path);
 
         if ($video_content === false) {
+            error_log('ERROR: Failed to read video file');
             return new WP_Error(
                 'read_failed',
                 __('Fehler beim Lesen der Video-Datei.', 'bewerbungstrainer')
             );
         }
 
+        error_log('Video file read successfully, size: ' . strlen($video_content) . ' bytes');
+
         // Get mime type
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime_type = finfo_file($finfo, $video_path);
         finfo_close($finfo);
+        error_log('MIME type: ' . $mime_type);
 
         // Upload to Gemini File API
         $upload_url = 'https://generativelanguage.googleapis.com/upload/v1beta/files?key=' . $api_key;
@@ -801,6 +809,9 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
         $body .= $video_content . "\r\n";
         $body .= "--{$boundary}--\r\n";
 
+        error_log('Uploading to Gemini File API...');
+        error_log('Upload body size: ' . strlen($body) . ' bytes');
+
         $response = wp_remote_post($upload_url, array(
             'headers' => array(
                 'Content-Type' => 'multipart/related; boundary=' . $boundary,
@@ -811,28 +822,49 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
         ));
 
         if (is_wp_error($response)) {
+            error_log('ERROR: wp_remote_post returned WP_Error: ' . $response->get_error_message());
             return $response;
         }
 
         $response_code = wp_remote_retrieve_response_code($response);
+        error_log('Upload response code: ' . $response_code);
+
         if ($response_code !== 200) {
             $error_body = wp_remote_retrieve_body($response);
-            error_log('Gemini File Upload Error: ' . $error_body);
+            error_log('ERROR: Gemini File Upload failed');
+            error_log('Response code: ' . $response_code);
+            error_log('Response body: ' . $error_body);
+
+            // Try to parse error message
+            $error_data = json_decode($error_body, true);
+            $error_message = 'Video-Upload zu Gemini fehlgeschlagen (HTTP ' . $response_code . ')';
+
+            if (isset($error_data['error']['message'])) {
+                $error_message .= ': ' . $error_data['error']['message'];
+            }
+
             return new WP_Error(
                 'upload_failed',
-                __('Video-Upload zu Gemini fehlgeschlagen.', 'bewerbungstrainer')
+                __($error_message, 'bewerbungstrainer')
             );
         }
 
         $response_body = wp_remote_retrieve_body($response);
+        error_log('Upload response body (first 500 chars): ' . substr($response_body, 0, 500));
+
         $data = json_decode($response_body, true);
 
         if (!isset($data['file']['uri'])) {
+            error_log('ERROR: No file URI in response');
+            error_log('Response data keys: ' . json_encode(array_keys($data ?? array())));
             return new WP_Error(
                 'invalid_response',
                 __('Ungültige Antwort vom Gemini File Upload.', 'bewerbungstrainer')
             );
         }
+
+        error_log('Upload successful! File URI: ' . $data['file']['uri']);
+        error_log('=== END UPLOAD ===');
 
         return array(
             'uri' => $data['file']['uri'],

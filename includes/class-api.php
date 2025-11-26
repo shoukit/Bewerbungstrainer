@@ -1040,6 +1040,14 @@ class Bewerbungstrainer_API {
             );
         }
 
+        // Ensure database tables exist
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bewerbungstrainer_video_trainings';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+            error_log('Bewerbungstrainer: Video training table does not exist, creating tables...');
+            Bewerbungstrainer_Database::create_tables();
+        }
+
         // Create session
         $user_id = get_current_user_id();
         $session_id = wp_generate_uuid4();
@@ -1058,6 +1066,8 @@ class Bewerbungstrainer_API {
         $training_id = $this->db->create_video_training($data);
 
         if (!$training_id) {
+            error_log('Bewerbungstrainer: Failed to create video training session');
+            error_log('Bewerbungstrainer: Data sent: ' . print_r($data, true));
             return new WP_Error(
                 'creation_failed',
                 __('Fehler beim Erstellen der Video-Training-Sitzung.', 'bewerbungstrainer'),
@@ -1149,10 +1159,14 @@ class Bewerbungstrainer_API {
      * @return WP_REST_Response|WP_Error Response object
      */
     public function analyze_video_training($request) {
+        error_log('=== ANALYZE VIDEO TRAINING DEBUG ===');
         $training_id = intval($request['id']);
+        error_log('Training ID: ' . $training_id);
+
         $training = $this->db->get_video_training($training_id);
 
         if (!$training) {
+            error_log('ERROR: Video training not found');
             return new WP_Error(
                 'not_found',
                 __('Video-Training nicht gefunden.', 'bewerbungstrainer'),
@@ -1160,7 +1174,14 @@ class Bewerbungstrainer_API {
             );
         }
 
+        error_log('Training found: ' . json_encode(array(
+            'id' => $training->id,
+            'video_filename' => $training->video_filename,
+            'position' => $training->position,
+        )));
+
         if (empty($training->video_filename)) {
+            error_log('ERROR: No video uploaded');
             return new WP_Error(
                 'no_video',
                 __('Kein Video hochgeladen.', 'bewerbungstrainer'),
@@ -1170,8 +1191,10 @@ class Bewerbungstrainer_API {
 
         // Get video path
         $video_path = $this->video_handler->get_video_path($training->video_filename);
+        error_log('Video path: ' . $video_path);
 
         if (!$video_path) {
+            error_log('ERROR: Video path is empty');
             return new WP_Error(
                 'video_not_found',
                 __('Video-Datei nicht gefunden.', 'bewerbungstrainer'),
@@ -1179,30 +1202,58 @@ class Bewerbungstrainer_API {
             );
         }
 
+        if (!file_exists($video_path)) {
+            error_log('ERROR: Video file does not exist at path: ' . $video_path);
+            return new WP_Error(
+                'video_not_found',
+                __('Video-Datei nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        error_log('Video file exists, size: ' . filesize($video_path) . ' bytes');
+
         // Get questions
         $questions = json_decode($training->questions_json, true);
         $timeline = json_decode($training->timeline_json, true);
+        error_log('Questions count: ' . count($questions));
+        error_log('Timeline count: ' . count($timeline));
 
         // Analyze video with Gemini
-        $analysis = $this->gemini_handler->analyze_video_interview(
-            $video_path,
-            $questions,
-            $timeline,
-            array(
-                'position' => $training->position,
-                'company' => $training->company,
-                'experience_level' => $training->experience_level,
-                'name' => $training->name,
-            )
-        );
+        error_log('Starting Gemini analysis...');
+        try {
+            $analysis = $this->gemini_handler->analyze_video_interview(
+                $video_path,
+                $questions,
+                $timeline,
+                array(
+                    'position' => $training->position,
+                    'company' => $training->company,
+                    'experience_level' => $training->experience_level,
+                    'name' => $training->name,
+                )
+            );
+        } catch (Exception $e) {
+            error_log('EXCEPTION during analysis: ' . $e->getMessage());
+            error_log('Stack trace: ' . $e->getTraceAsString());
+            return new WP_Error(
+                'analysis_exception',
+                'Fehler bei der Analyse: ' . $e->getMessage(),
+                array('status' => 500)
+            );
+        }
 
         if (is_wp_error($analysis)) {
+            error_log('ERROR: Gemini analysis returned WP_Error: ' . $analysis->get_error_message());
+            error_log('Error code: ' . $analysis->get_error_code());
             return new WP_Error(
                 'analysis_failed',
                 $analysis->get_error_message(),
                 array('status' => 500)
             );
         }
+
+        error_log('Analysis completed successfully');
 
         // Update training with analysis
         $update_data = array(
@@ -1211,9 +1262,11 @@ class Bewerbungstrainer_API {
             'overall_score' => isset($analysis['overall_score']) ? $analysis['overall_score'] : null,
         );
 
+        error_log('Updating training with analysis data...');
         $updated = $this->db->update_video_training($training_id, $update_data);
 
         if (!$updated) {
+            error_log('ERROR: Failed to update training with analysis');
             return new WP_Error(
                 'update_failed',
                 __('Fehler beim Speichern der Analyse.', 'bewerbungstrainer'),
@@ -1221,8 +1274,10 @@ class Bewerbungstrainer_API {
             );
         }
 
+        error_log('Training updated successfully');
         $training = $this->db->get_video_training($training_id);
 
+        error_log('=== END DEBUG ===');
         return new WP_REST_Response(array(
             'success' => true,
             'data' => $this->format_video_training($training),
