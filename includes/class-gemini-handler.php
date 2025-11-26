@@ -20,7 +20,7 @@ class Bewerbungstrainer_Gemini_Handler {
     /**
      * Gemini API endpoint
      */
-    private $api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+    private $api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
     /**
      * Get singleton instance
@@ -817,7 +817,7 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
      * @return string|WP_Error Response or WP_Error
      */
     private function call_gemini_api_with_video($prompt, $video_uri, $api_key) {
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-vision:generateContent?key=' . $api_key;
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=' . $api_key;
 
         $body = array(
             'contents' => array(
