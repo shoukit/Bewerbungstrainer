@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { User, Briefcase, Building, ChevronRight, ChevronLeft, Loader2, Video, Mic, CheckCircle } from 'lucide-react';
+import { User, Briefcase, Building, ChevronRight, ChevronLeft, Loader2, Video, Mic, CheckCircle, Check } from 'lucide-react';
 import wordpressAPI from '../services/wordpress-api';
 
 /**
@@ -114,20 +114,37 @@ function VideoTrainingWizard({ onComplete }) {
    * Initialize camera and microphone
    */
   const initializeDevices = async () => {
+    console.log('🎥 Initializing devices...');
+
     try {
+      // Check if mediaDevices API is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('MediaDevices API not available in this browser');
+      }
+
       // IMPORTANT: Request camera access FIRST to get permissions
       // Otherwise enumerateDevices will return empty labels
+      console.log('🎥 Requesting camera and microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
       });
 
+      console.log('✅ Camera and microphone access granted');
+      console.log('📹 Video tracks:', stream.getVideoTracks().length);
+      console.log('🎤 Audio tracks:', stream.getAudioTracks().length);
+
       setCameraStream(stream);
 
       // NOW get available devices (with proper labels)
       const devices = await navigator.mediaDevices.enumerateDevices();
+      console.log('📱 All devices:', devices);
+
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
       const audioDevices = devices.filter(d => d.kind === 'audioinput');
+
+      console.log('📹 Video devices found:', videoDevices.length, videoDevices);
+      console.log('🎤 Audio devices found:', audioDevices.length, audioDevices);
 
       setAvailableDevices({
         video: videoDevices,
@@ -140,21 +157,33 @@ function VideoTrainingWizard({ onComplete }) {
 
       if (videoTrack) {
         const settings = videoTrack.getSettings();
-        setSelectedDevices(prev => ({ ...prev, video: settings.deviceId || '' }));
+        console.log('📹 Active video device:', settings.deviceId);
+        setSelectedDevices(prev => ({
+          ...prev,
+          video: settings.deviceId || (videoDevices[0]?.deviceId || '')
+        }));
       }
       if (audioTrack) {
         const settings = audioTrack.getSettings();
-        setSelectedDevices(prev => ({ ...prev, audio: settings.deviceId || '' }));
+        console.log('🎤 Active audio device:', settings.deviceId);
+        setSelectedDevices(prev => ({
+          ...prev,
+          audio: settings.deviceId || (audioDevices[0]?.deviceId || '')
+        }));
       }
 
+      console.log('✅ Device initialization complete');
+
     } catch (error) {
-      console.error('Error accessing devices:', error);
+      console.error('❌ Error accessing devices:', error);
       let errorMessage = 'Fehler beim Zugriff auf Kamera oder Mikrofon';
 
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         errorMessage = 'Zugriff auf Kamera/Mikrofon wurde verweigert. Bitte erlaube den Zugriff in deinen Browser-Einstellungen.';
       } else if (error.name === 'NotFoundError') {
         errorMessage = 'Keine Kamera oder Mikrofon gefunden. Bitte stelle sicher, dass ein Gerät angeschlossen ist.';
+      } else if (error.name === 'NotReadableError' || error.name === 'OverconstrainedError') {
+        errorMessage = 'Kamera/Mikrofon wird bereits von einer anderen Anwendung verwendet oder ist nicht verfügbar.';
       }
 
       setErrors({ devices: errorMessage });
@@ -209,6 +238,12 @@ function VideoTrainingWizard({ onComplete }) {
    * Change device
    */
   const changeDevice = async (type, deviceId) => {
+    // Only proceed if deviceId is valid
+    if (!deviceId || deviceId === '') {
+      console.warn('Invalid deviceId, skipping change');
+      return;
+    }
+
     setSelectedDevices(prev => ({ ...prev, [type]: deviceId }));
 
     if (cameraStream) {
@@ -218,8 +253,8 @@ function VideoTrainingWizard({ onComplete }) {
       const newAudioId = type === 'audio' ? deviceId : selectedDevices.audio;
 
       const constraints = {
-        video: newVideoId ? { deviceId: { exact: newVideoId } } : true,
-        audio: newAudioId ? { deviceId: { exact: newAudioId } } : true
+        video: (newVideoId && newVideoId !== '') ? { deviceId: { exact: newVideoId } } : true,
+        audio: (newAudioId && newAudioId !== '') ? { deviceId: { exact: newAudioId } } : true
       };
 
       try {
@@ -408,9 +443,7 @@ function VideoTrainingWizard({ onComplete }) {
                       : 'border-gray-400 bg-white'
                   }`}>
                     {selectedQuestions.includes(q.id) && (
-                      <svg className="w-4 h-4 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-                        <path d="M5 13l4 4L19 7"></path>
-                      </svg>
+                      <Check className="w-4 h-4 text-white stroke-[3]" />
                     )}
                   </div>
                   <div className="flex-1">
