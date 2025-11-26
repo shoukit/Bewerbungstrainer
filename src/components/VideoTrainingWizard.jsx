@@ -214,9 +214,12 @@ function VideoTrainingWizard({ onComplete }) {
     if (cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());
 
+      const newVideoId = type === 'video' ? deviceId : selectedDevices.video;
+      const newAudioId = type === 'audio' ? deviceId : selectedDevices.audio;
+
       const constraints = {
-        video: { deviceId: type === 'video' ? deviceId : selectedDevices.video },
-        audio: { deviceId: type === 'audio' ? deviceId : selectedDevices.audio }
+        video: newVideoId ? { deviceId: { exact: newVideoId } } : true,
+        audio: newAudioId ? { deviceId: { exact: newAudioId } } : true
       };
 
       try {
@@ -224,6 +227,7 @@ function VideoTrainingWizard({ onComplete }) {
         setCameraStream(newStream);
       } catch (error) {
         console.error('Error changing device:', error);
+        setErrors({ devices: 'Fehler beim Wechseln des Geräts: ' + error.message });
       }
     }
   };
@@ -352,16 +356,16 @@ function VideoTrainingWizard({ onComplete }) {
             <Button
               onClick={handleNext}
               disabled={loading}
-              className="bg-ocean-600 hover:bg-ocean-700 text-white px-6 py-3"
+              className="bg-ocean-600 hover:bg-ocean-700 text-white px-6 py-3 flex items-center"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Fragen werden generiert...
+                  <span>Fragen werden generiert...</span>
                 </>
               ) : (
                 <>
-                  Fragen generieren
+                  <span>Fragen generieren</span>
                   <ChevronRight className="w-5 h-5 ml-2" />
                 </>
               )}
@@ -392,18 +396,21 @@ function VideoTrainingWizard({ onComplete }) {
                 className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                   selectedQuestions.includes(q.id)
                     ? 'border-ocean-500 bg-ocean-50'
-                    : 'border-gray-200 bg-white'
+                    : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
                 onClick={() => toggleQuestion(q.id)}
               >
                 <div className="flex items-start">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-3 mt-0.5 ${
+                  {/* Checkbox */}
+                  <div className={`w-6 h-6 rounded border-2 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 ${
                     selectedQuestions.includes(q.id)
                       ? 'border-ocean-500 bg-ocean-500'
-                      : 'border-gray-300'
+                      : 'border-gray-400 bg-white'
                   }`}>
                     {selectedQuestions.includes(q.id) && (
-                      <CheckCircle className="w-4 h-4 text-white" />
+                      <svg className="w-4 h-4 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M5 13l4 4L19 7"></path>
+                      </svg>
                     )}
                   </div>
                   <div className="flex-1">
@@ -431,16 +438,16 @@ function VideoTrainingWizard({ onComplete }) {
             <Button
               onClick={handleBack}
               variant="outline"
-              className="px-6 py-3"
+              className="px-6 py-3 flex items-center"
             >
               <ChevronLeft className="w-5 h-5 mr-2" />
-              Zurück
+              <span>Zurück</span>
             </Button>
             <Button
               onClick={handleNext}
-              className="bg-ocean-600 hover:bg-ocean-700 text-white px-6 py-3"
+              className="bg-ocean-600 hover:bg-ocean-700 text-white px-6 py-3 flex items-center"
             >
-              Weiter
+              <span>Weiter</span>
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
@@ -523,17 +530,17 @@ function VideoTrainingWizard({ onComplete }) {
             <Button
               onClick={handleBack}
               variant="outline"
-              className="px-6 py-3"
+              className="px-6 py-3 flex items-center"
             >
               <ChevronLeft className="w-5 h-5 mr-2" />
-              Zurück
+              <span>Zurück</span>
             </Button>
             <Button
               onClick={handleStart}
-              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg font-semibold"
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg font-semibold flex items-center"
             >
               <Video className="w-5 h-5 mr-2" />
-              Aufnahme starten
+              <span>Aufnahme starten</span>
             </Button>
           </div>
         </div>
