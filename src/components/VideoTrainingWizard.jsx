@@ -123,17 +123,66 @@ function VideoTrainingWizard({ onComplete }) {
         throw new Error('MediaDevices API not available in this browser');
       }
 
-      // IMPORTANT: Request camera access FIRST to get permissions
-      // Otherwise enumerateDevices will return empty labels
+      // First, check what devices are available (without labels yet)
+      console.log('📱 Checking available devices...');
+      const initialDevices = await navigator.mediaDevices.enumerateDevices();
+      console.log('📱 Initial devices check:', initialDevices);
+
+      const hasVideo = initialDevices.some(d => d.kind === 'videoinput');
+      const hasAudio = initialDevices.some(d => d.kind === 'audioinput');
+
+      console.log('📹 Has video devices:', hasVideo);
+      console.log('🎤 Has audio devices:', hasAudio);
+
+      if (!hasVideo && !hasAudio) {
+        throw new Error('Keine Kamera oder Mikrofon gefunden. Bitte stelle sicher, dass Geräte angeschlossen sind.');
+      }
+
+      // IMPORTANT: Request camera access with appropriate constraints
+      // Try to get both, but allow for partial success
       console.log('🎥 Requesting camera and microphone access...');
       console.log('⚠️ Please allow camera and microphone access in your browser!');
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
+      let stream = null;
 
-      console.log('✅ Camera and microphone access granted');
+      // Try to get both video and audio
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: hasVideo,
+          audio: hasAudio
+        });
+        console.log('✅ Got both camera and microphone');
+      } catch (bothError) {
+        console.warn('⚠️ Could not get both devices, trying individually...', bothError);
+
+        // Try video only
+        if (hasVideo) {
+          try {
+            const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            console.log('✅ Got camera only');
+            stream = videoStream;
+          } catch (videoError) {
+            console.error('❌ Could not get camera:', videoError);
+          }
+        }
+
+        // Try audio only if we don't have a stream yet
+        if (!stream && hasAudio) {
+          try {
+            const audioStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+            console.log('✅ Got microphone only');
+            stream = audioStream;
+          } catch (audioError) {
+            console.error('❌ Could not get microphone:', audioError);
+          }
+        }
+
+        if (!stream) {
+          throw bothError; // Re-throw the original error if nothing worked
+        }
+      }
+
+      console.log('✅ Media access granted');
       console.log('📹 Video tracks:', stream.getVideoTracks().length);
       console.log('🎤 Audio tracks:', stream.getAudioTracks().length);
 
@@ -141,18 +190,13 @@ function VideoTrainingWizard({ onComplete }) {
 
       // NOW get available devices (with proper labels)
       const devices = await navigator.mediaDevices.enumerateDevices();
-      console.log('📱 All devices:', devices);
+      console.log('📱 All devices (with labels):', devices);
 
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
       const audioDevices = devices.filter(d => d.kind === 'audioinput');
 
       console.log('📹 Video devices found:', videoDevices.length, videoDevices);
       console.log('🎤 Audio devices found:', audioDevices.length, audioDevices);
-
-      // Check if we actually found devices
-      if (videoDevices.length === 0 || audioDevices.length === 0) {
-        console.warn('⚠️ Not all devices found - video:', videoDevices.length, 'audio:', audioDevices.length);
-      }
 
       setAvailableDevices({
         video: videoDevices,
@@ -180,6 +224,18 @@ function VideoTrainingWizard({ onComplete }) {
         }));
       }
 
+      // Show warning if missing devices
+      if (videoDevices.length === 0 || audioDevices.length === 0) {
+        const missingDevices = [];
+        if (videoDevices.length === 0) missingDevices.push('Kamera');
+        if (audioDevices.length === 0) missingDevices.push('Mikrofon');
+
+        setErrors({
+          devices: `⚠️ ${missingDevices.join(' und ')} nicht gefunden. Du kannst trotzdem fortfahren, aber die Aufnahmequalität könnte eingeschränkt sein.`,
+          showRetry: false
+        });
+      }
+
       console.log('✅ Device initialization complete');
 
     } catch (error) {
@@ -193,9 +249,13 @@ function VideoTrainingWizard({ onComplete }) {
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         errorMessage = 'Zugriff auf Kamera/Mikrofon wurde verweigert. Bitte klicke auf "Zulassen" im Browser-Dialog und versuche es erneut.';
       } else if (error.name === 'NotFoundError') {
-        errorMessage = 'Keine Kamera oder Mikrofon gefunden. Bitte stelle sicher, dass ein Gerät angeschlossen ist und nicht von einer anderen Anwendung verwendet wird.';
+        errorMessage = 'Keine Kamera oder Mikrofon gefunden. Mögliche Gründe:\n\n' +
+          '• Kein Gerät ist angeschlossen\n' +
+          '• Das Gerät wird von einer anderen Anwendung verwendet\n' +
+          '• Der Browser hat keinen Zugriff auf das Gerät\n\n' +
+          'Bitte überprüfe deine Geräte und Browser-Einstellungen.';
       } else if (error.name === 'NotReadableError' || error.name === 'OverconstrainedError') {
-        errorMessage = 'Kamera/Mikrofon wird bereits von einer anderen Anwendung verwendet oder ist nicht verfügbar. Bitte schließe andere Apps, die auf die Kamera/Mikrofon zugreifen.';
+        errorMessage = 'Kamera/Mikrofon wird bereits von einer anderen Anwendung verwendet oder ist nicht verfügbar. Bitte schließe andere Apps, die auf die Kamera/Mikrofon zugreifen (z.B. Zoom, Teams, Skype).';
       } else {
         errorMessage = `Fehler beim Zugriff auf Kamera/Mikrofon: ${error.message}`;
       }
@@ -570,8 +630,12 @@ function VideoTrainingWizard({ onComplete }) {
           </div>
 
           {errors.devices && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 mb-3">{errors.devices}</p>
+            <div className={`p-4 border rounded-lg ${
+              errors.showRetry ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'
+            }`}>
+              <p className={`mb-3 whitespace-pre-line ${
+                errors.showRetry ? 'text-red-700' : 'text-yellow-800'
+              }`}>{errors.devices}</p>
               {errors.showRetry && (
                 <Button
                   onClick={initializeDevices}
