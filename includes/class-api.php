@@ -1040,6 +1040,14 @@ class Bewerbungstrainer_API {
             );
         }
 
+        // Ensure database tables exist
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bewerbungstrainer_video_trainings';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+            error_log('Bewerbungstrainer: Video training table does not exist, creating tables...');
+            Bewerbungstrainer_Database::create_tables();
+        }
+
         // Create session
         $user_id = get_current_user_id();
         $session_id = wp_generate_uuid4();
@@ -1058,6 +1066,8 @@ class Bewerbungstrainer_API {
         $training_id = $this->db->create_video_training($data);
 
         if (!$training_id) {
+            error_log('Bewerbungstrainer: Failed to create video training session');
+            error_log('Bewerbungstrainer: Data sent: ' . print_r($data, true));
             return new WP_Error(
                 'creation_failed',
                 __('Fehler beim Erstellen der Video-Training-Sitzung.', 'bewerbungstrainer'),

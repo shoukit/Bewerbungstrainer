@@ -738,29 +738,33 @@ class Bewerbungstrainer_Database {
 
         $data = wp_parse_args($data, $defaults);
 
+        // Properly handle NULL values - only sanitize non-null values
+        $insert_data = array(
+            'user_id' => $data['user_id'],
+            'user_name' => $data['user_name'] !== null ? sanitize_text_field($data['user_name']) : null,
+            'session_id' => $data['session_id'],
+            'name' => $data['name'] !== null ? sanitize_text_field($data['name']) : null,
+            'position' => sanitize_text_field($data['position']),
+            'company' => $data['company'] !== null ? sanitize_text_field($data['company']) : null,
+            'experience_level' => $data['experience_level'],
+            'questions_json' => $data['questions_json'],
+            'timeline_json' => $data['timeline_json'],
+            'video_filename' => $data['video_filename'] !== null ? sanitize_file_name($data['video_filename']) : null,
+            'video_url' => $data['video_url'] !== null ? esc_url_raw($data['video_url']) : null,
+            'transcript' => $data['transcript'] !== null ? wp_kses_post($data['transcript']) : null,
+            'analysis_json' => $data['analysis_json'],
+            'overall_score' => $data['overall_score'],
+        );
+
         $result = $wpdb->insert(
             $this->table_video_trainings,
-            array(
-                'user_id' => $data['user_id'],
-                'user_name' => sanitize_text_field($data['user_name']),
-                'session_id' => $data['session_id'],
-                'name' => sanitize_text_field($data['name']),
-                'position' => sanitize_text_field($data['position']),
-                'company' => sanitize_text_field($data['company']),
-                'experience_level' => $data['experience_level'],
-                'questions_json' => $data['questions_json'],
-                'timeline_json' => $data['timeline_json'],
-                'video_filename' => sanitize_file_name($data['video_filename']),
-                'video_url' => esc_url_raw($data['video_url']),
-                'transcript' => wp_kses_post($data['transcript']),
-                'analysis_json' => $data['analysis_json'],
-                'overall_score' => $data['overall_score'],
-            ),
+            $insert_data,
             array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f')
         );
 
         if ($result === false) {
             error_log('Bewerbungstrainer: Failed to create video training - ' . $wpdb->last_error);
+            error_log('Bewerbungstrainer: Insert data: ' . print_r($insert_data, true));
             return false;
         }
 
