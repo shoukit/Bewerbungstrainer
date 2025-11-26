@@ -33,6 +33,11 @@ class Bewerbungstrainer_API {
     private $audio_handler;
 
     /**
+     * Video handler instance
+     */
+    private $video_handler;
+
+    /**
      * PDF exporter instance
      */
     private $pdf_exporter;
@@ -58,6 +63,7 @@ class Bewerbungstrainer_API {
     private function __construct() {
         $this->db = Bewerbungstrainer_Database::get_instance();
         $this->audio_handler = Bewerbungstrainer_Audio_Handler::get_instance();
+        $this->video_handler = Bewerbungstrainer_Video_Handler::get_instance();
         $this->pdf_exporter = Bewerbungstrainer_PDF_Exporter::get_instance();
         $this->gemini_handler = Bewerbungstrainer_Gemini_Handler::get_instance();
 
@@ -178,6 +184,57 @@ class Bewerbungstrainer_API {
             'methods' => 'GET',
             'callback' => array($this, 'admin_get_session'),
             'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // ===== Video Training Endpoints =====
+
+        // Generate interview questions
+        register_rest_route($this->namespace, '/video-training/generate-questions', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'generate_questions'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Create video training session
+        register_rest_route($this->namespace, '/video-training', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'create_video_training'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Upload video
+        register_rest_route($this->namespace, '/video-training/(?P<id>\d+)/upload', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'upload_video'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Trigger video analysis
+        register_rest_route($this->namespace, '/video-training/(?P<id>\d+)/analyze', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'analyze_video_training'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Get video training session
+        register_rest_route($this->namespace, '/video-training/(?P<id>\d+)', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_video_training'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Get all video trainings for user
+        register_rest_route($this->namespace, '/video-training', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_video_trainings'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Delete video training
+        register_rest_route($this->namespace, '/video-training/(?P<id>\d+)', array(
+            'methods' => 'DELETE',
+            'callback' => array($this, 'delete_video_training'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
         ));
     }
 
@@ -861,5 +918,365 @@ class Bewerbungstrainer_API {
             'success' => true,
             'data' => $this->format_session($session),
         ), 200);
+    }
+
+    /**
+     * ===== Video Training Endpoint Callbacks =====
+     */
+
+    /**
+     * Generate interview questions
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function generate_questions($request) {
+        $params = $request->get_json_params();
+
+        $position = isset($params['position']) ? sanitize_text_field($params['position']) : '';
+        $company = isset($params['company']) ? sanitize_text_field($params['company']) : '';
+        $experience_level = isset($params['experience_level']) ? sanitize_text_field($params['experience_level']) : 'professional';
+
+        if (empty($position)) {
+            return new WP_Error(
+                'missing_parameter',
+                __('Position ist erforderlich.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Generate questions using Gemini
+        $questions = $this->gemini_handler->generate_interview_questions($position, $company, $experience_level);
+
+        if (is_wp_error($questions)) {
+            return new WP_Error(
+                'generation_failed',
+                $questions->get_error_message(),
+                array('status' => 500)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'questions' => $questions,
+            ),
+        ), 200);
+    }
+
+    /**
+     * Create video training session
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function create_video_training($request) {
+        $params = $request->get_json_params();
+
+        $name = isset($params['name']) ? sanitize_text_field($params['name']) : null;
+        $position = isset($params['position']) ? sanitize_text_field($params['position']) : '';
+        $company = isset($params['company']) ? sanitize_text_field($params['company']) : null;
+        $experience_level = isset($params['experience_level']) ? sanitize_text_field($params['experience_level']) : 'professional';
+        $questions = isset($params['questions']) ? $params['questions'] : array();
+
+        if (empty($position)) {
+            return new WP_Error(
+                'missing_parameter',
+                __('Position ist erforderlich.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Create session
+        $user_id = get_current_user_id();
+        $session_id = wp_generate_uuid4();
+
+        $data = array(
+            'user_id' => $user_id,
+            'user_name' => $name,
+            'session_id' => $session_id,
+            'name' => $name,
+            'position' => $position,
+            'company' => $company,
+            'experience_level' => $experience_level,
+            'questions_json' => json_encode($questions),
+        );
+
+        $training_id = $this->db->create_video_training($data);
+
+        if (!$training_id) {
+            return new WP_Error(
+                'creation_failed',
+                __('Fehler beim Erstellen der Video-Training-Sitzung.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        $training = $this->db->get_video_training($training_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_video_training($training),
+        ), 201);
+    }
+
+    /**
+     * Upload video
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function upload_video($request) {
+        $training_id = intval($request['id']);
+        $training = $this->db->get_video_training($training_id);
+
+        if (!$training) {
+            return new WP_Error(
+                'not_found',
+                __('Video-Training nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get files from request
+        $files = $request->get_file_params();
+
+        if (!isset($files['video'])) {
+            return new WP_Error(
+                'no_file',
+                __('Keine Video-Datei hochgeladen.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Upload video
+        $result = $this->video_handler->upload_video($files['video'], $training->session_id);
+
+        if (is_wp_error($result)) {
+            return new WP_Error(
+                'upload_failed',
+                $result->get_error_message(),
+                array('status' => 500)
+            );
+        }
+
+        // Get timeline from request body
+        $params = $request->get_json_params();
+        $timeline = isset($params['timeline']) ? $params['timeline'] : array();
+
+        // Update training with video info
+        $update_data = array(
+            'video_filename' => $result['filename'],
+            'video_url' => $result['url'],
+            'timeline_json' => json_encode($timeline),
+        );
+
+        $updated = $this->db->update_video_training($training_id, $update_data);
+
+        if (!$updated) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Aktualisieren der Video-Training-Daten.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        $training = $this->db->get_video_training($training_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_video_training($training),
+        ), 200);
+    }
+
+    /**
+     * Analyze video training
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function analyze_video_training($request) {
+        $training_id = intval($request['id']);
+        $training = $this->db->get_video_training($training_id);
+
+        if (!$training) {
+            return new WP_Error(
+                'not_found',
+                __('Video-Training nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        if (empty($training->video_filename)) {
+            return new WP_Error(
+                'no_video',
+                __('Kein Video hochgeladen.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get video path
+        $video_path = $this->video_handler->get_video_path($training->video_filename);
+
+        if (!$video_path) {
+            return new WP_Error(
+                'video_not_found',
+                __('Video-Datei nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get questions
+        $questions = json_decode($training->questions_json, true);
+        $timeline = json_decode($training->timeline_json, true);
+
+        // Analyze video with Gemini
+        $analysis = $this->gemini_handler->analyze_video_interview(
+            $video_path,
+            $questions,
+            $timeline,
+            array(
+                'position' => $training->position,
+                'company' => $training->company,
+                'experience_level' => $training->experience_level,
+                'name' => $training->name,
+            )
+        );
+
+        if (is_wp_error($analysis)) {
+            return new WP_Error(
+                'analysis_failed',
+                $analysis->get_error_message(),
+                array('status' => 500)
+            );
+        }
+
+        // Update training with analysis
+        $update_data = array(
+            'transcript' => isset($analysis['transcript']) ? $analysis['transcript'] : null,
+            'analysis_json' => json_encode($analysis),
+            'overall_score' => isset($analysis['overall_score']) ? $analysis['overall_score'] : null,
+        );
+
+        $updated = $this->db->update_video_training($training_id, $update_data);
+
+        if (!$updated) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Speichern der Analyse.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        $training = $this->db->get_video_training($training_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_video_training($training),
+        ), 200);
+    }
+
+    /**
+     * Get video training session
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function get_video_training($request) {
+        $training_id = intval($request['id']);
+        $training = $this->db->get_video_training($training_id);
+
+        if (!$training) {
+            return new WP_Error(
+                'not_found',
+                __('Video-Training nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_video_training($training),
+        ), 200);
+    }
+
+    /**
+     * Get all video trainings for current user
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function get_video_trainings($request) {
+        $user_id = get_current_user_id();
+        $params = $request->get_params();
+
+        $args = array(
+            'limit' => isset($params['limit']) ? intval($params['limit']) : 50,
+            'offset' => isset($params['offset']) ? intval($params['offset']) : 0,
+            'orderby' => isset($params['orderby']) ? $params['orderby'] : 'created_at',
+            'order' => isset($params['order']) ? $params['order'] : 'DESC',
+        );
+
+        $trainings = $this->db->get_user_video_trainings($user_id, $args);
+        $formatted_trainings = array_map(array($this, 'format_video_training'), $trainings);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $formatted_trainings,
+        ), 200);
+    }
+
+    /**
+     * Delete video training
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function delete_video_training($request) {
+        $training_id = intval($request['id']);
+        $user_id = get_current_user_id();
+
+        $deleted = $this->db->delete_video_training($training_id, $user_id);
+
+        if (!$deleted) {
+            return new WP_Error(
+                'delete_failed',
+                __('Fehler beim Löschen des Video-Trainings.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => __('Video-Training erfolgreich gelöscht.', 'bewerbungstrainer'),
+        ), 200);
+    }
+
+    /**
+     * Format video training for API response
+     *
+     * @param object $training Training object from database
+     * @return array Formatted training data
+     */
+    private function format_video_training($training) {
+        return array(
+            'id' => (int) $training->id,
+            'user_id' => (int) $training->user_id,
+            'user_name' => $training->user_name,
+            'session_id' => $training->session_id,
+            'name' => $training->name,
+            'position' => $training->position,
+            'company' => $training->company,
+            'experience_level' => $training->experience_level,
+            'questions' => $training->questions_json ? json_decode($training->questions_json, true) : array(),
+            'timeline' => $training->timeline_json ? json_decode($training->timeline_json, true) : array(),
+            'video_filename' => $training->video_filename,
+            'video_url' => $training->video_url,
+            'transcript' => $training->transcript,
+            'analysis' => $training->analysis_json ? json_decode($training->analysis_json, true) : null,
+            'overall_score' => $training->overall_score ? (float) $training->overall_score : null,
+            'created_at' => $training->created_at,
+            'updated_at' => $training->updated_at,
+        );
     }
 }

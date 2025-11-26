@@ -375,4 +375,434 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
             'recommendations' => array(),
         );
     }
+
+    /**
+     * Generate interview questions based on position and experience level
+     *
+     * @param string $position Job position
+     * @param string $company Company name (optional)
+     * @param string $experience_level Experience level (student, entry, professional, senior)
+     * @return array|WP_Error Array of questions or WP_Error on failure
+     */
+    public function generate_interview_questions($position, $company = '', $experience_level = 'professional') {
+        // Get API key
+        $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
+
+        if (empty($api_key)) {
+            return new WP_Error(
+                'missing_api_key',
+                __('Gemini API Key ist nicht konfiguriert.', 'bewerbungstrainer')
+            );
+        }
+
+        // Build prompt
+        $prompt = $this->get_question_generation_prompt($position, $company, $experience_level);
+
+        // Call Gemini API
+        $response = $this->call_gemini_api($prompt, $api_key);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Parse response
+        $questions = $this->parse_questions_response($response);
+
+        return $questions;
+    }
+
+    /**
+     * Get prompt for question generation
+     *
+     * @param string $position Job position
+     * @param string $company Company name
+     * @param string $experience_level Experience level
+     * @return string Prompt
+     */
+    private function get_question_generation_prompt($position, $company, $experience_level) {
+        $company_info = !empty($company) ? " bei {$company}" : '';
+
+        $level_context = array(
+            'student' => 'Schüler/Abiturient ohne Berufserfahrung',
+            'entry' => 'Berufseinsteiger mit wenig Erfahrung',
+            'professional' => 'Berufserfahrener Professional',
+            'senior' => 'Senior-Level / Führungskraft',
+        );
+
+        $level_text = isset($level_context[$experience_level]) ? $level_context[$experience_level] : $level_context['professional'];
+
+        return "Du bist ein erfahrener Recruiter und Interviewtrainer. Erstelle 6-8 passende Interviewfragen für folgende Position:
+
+Position: {$position}{$company_info}
+Erfahrungslevel: {$level_text}
+
+Bitte erstelle eine ausgewogene Mischung aus:
+- 2-3 Fragen zur Motivation und zum Interesse an der Position/Firma
+- 2-3 fachliche/technische Fragen passend zur Position
+- 1-2 Fragen zu Soft Skills und Arbeitsweise
+- 1-2 situative/verhaltensbasierte Fragen
+
+Die Fragen sollten:
+- Realistisch und praxisnah sein
+- Zum Erfahrungslevel passen
+- Die Kandidaten zum Nachdenken anregen
+- Authentische Antworten fördern
+
+Gib die Fragen im folgenden JSON-Format zurück:
+{
+  \"questions\": [
+    {
+      \"id\": 1,
+      \"question\": \"Warum möchten Sie als {$position}{$company_info} arbeiten?\",
+      \"category\": \"motivation\",
+      \"difficulty\": \"easy\"
+    },
+    {
+      \"id\": 2,
+      \"question\": \"Beschreiben Sie eine Situation, in der...\",
+      \"category\": \"behavioral\",
+      \"difficulty\": \"medium\"
+    }
+  ]
+}
+
+Kategorien: motivation, technical, soft_skills, behavioral
+Schwierigkeit: easy, medium, hard";
+    }
+
+    /**
+     * Parse questions response from Gemini
+     *
+     * @param string $response Response from Gemini
+     * @return array Array of questions
+     */
+    private function parse_questions_response($response) {
+        // Try to extract JSON from response
+        $json_match = null;
+        if (preg_match('/\{[\s\S]*\}/', $response, $json_match)) {
+            $json_str = $json_match[0];
+            $data = json_decode($json_str, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && isset($data['questions'])) {
+                return $data['questions'];
+            }
+        }
+
+        // Fallback: Return empty array
+        return array();
+    }
+
+    /**
+     * Analyze video interview
+     *
+     * @param string $video_path Path to video file
+     * @param array $questions Array of interview questions
+     * @param array $timeline Timeline of question changes
+     * @param array $user_data User data (position, company, experience_level, name)
+     * @return array|WP_Error Analysis result or WP_Error on failure
+     */
+    public function analyze_video_interview($video_path, $questions, $timeline, $user_data) {
+        // Get API key
+        $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
+
+        if (empty($api_key)) {
+            return new WP_Error(
+                'missing_api_key',
+                __('Gemini API Key ist nicht konfiguriert.', 'bewerbungstrainer')
+            );
+        }
+
+        // Check if video file exists
+        if (!file_exists($video_path)) {
+            return new WP_Error(
+                'video_not_found',
+                __('Video-Datei nicht gefunden.', 'bewerbungstrainer')
+            );
+        }
+
+        // Upload video to Gemini and get transcript
+        $video_data = $this->upload_video_to_gemini($video_path, $api_key);
+
+        if (is_wp_error($video_data)) {
+            return $video_data;
+        }
+
+        // Build analysis prompt
+        $prompt = $this->get_video_analysis_prompt($questions, $user_data);
+
+        // Call Gemini API with video
+        $analysis = $this->call_gemini_api_with_video($prompt, $video_data['uri'], $api_key);
+
+        if (is_wp_error($analysis)) {
+            return $analysis;
+        }
+
+        // Parse analysis response
+        $result = $this->parse_video_analysis_response($analysis);
+
+        // Add transcript if available
+        if (isset($video_data['transcript'])) {
+            $result['transcript'] = $video_data['transcript'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get prompt for video analysis
+     *
+     * @param array $questions Interview questions
+     * @param array $user_data User data
+     * @return string Prompt
+     */
+    private function get_video_analysis_prompt($questions, $user_data) {
+        $questions_text = '';
+        foreach ($questions as $i => $q) {
+            $num = $i + 1;
+            $question_text = isset($q['question']) ? $q['question'] : $q;
+            $questions_text .= "{$num}. {$question_text}\n";
+        }
+
+        $name = isset($user_data['name']) ? $user_data['name'] : 'der Bewerber';
+        $position = isset($user_data['position']) ? $user_data['position'] : '';
+        $company = isset($user_data['company']) ? $user_data['company'] : '';
+
+        return "Du bist ein erfahrener Recruiter, Kommunikationscoach und Körpersprache-Experte.
+Du analysierst Video-Interviews neutral, professionell und konstruktiv.
+Deine Aufgabe ist es, eine klare und hilfreiche Bewertung für einen Bewerber zu erstellen, der ein Video-Interview geübt hat.
+
+KONTEXT:
+Bewerber: {$name}
+Position: {$position}" . (!empty($company) ? "\nFirma: {$company}" : "") . "
+
+GESTELLTE FRAGEN:
+{$questions_text}
+
+Bewerte das Video-Interview anhand der folgenden Kategorien:
+
+1. **Auftreten** - Wirkt die Person authentisch, professionell, sympathisch?
+2. **Selbstbewusstsein** - Stimme, Klarheit, Sicherheit, Blickkontakt
+3. **Körperhaltung & Körpersprache** - Haltung, Gestik, Mimik, Präsenz
+4. **Kommunikation** - Struktur, Verständlichkeit, Wortwahl, roter Faden
+5. **Eindruck der Professionalität** - Kleidung, Setting, Bild & Ton
+6. **Persönliche Wirkung** - Was bleibt hängen? Was überzeugt?
+7. **Stärken & positive Überraschungen**
+
+Erstelle für jede Kategorie:
+- Kurze Einschätzung
+- Konkrete Verbesserungspotenziale
+- Praktische Tipps, wie die Person ihren Eindruck im nächsten Video steigern kann
+
+Sei direkt, hilfreich und konstruktiv.
+
+Gib deine Bewertung im folgenden JSON-Format zurück:
+{
+  \"overall_score\": 75.5,
+  \"categories\": {
+    \"auftreten\": {
+      \"score\": 80,
+      \"einschaetzung\": \"...\",
+      \"verbesserungspotenziale\": [\"...\"],
+      \"praktische_tipps\": [\"...\"]
+    },
+    \"selbstbewusstsein\": {
+      \"score\": 75,
+      \"einschaetzung\": \"...\",
+      \"verbesserungspotenziale\": [\"...\"],
+      \"praktische_tipps\": [\"...\"]
+    },
+    \"koerpersprache\": {
+      \"score\": 70,
+      \"einschaetzung\": \"...\",
+      \"verbesserungspotenziale\": [\"...\"],
+      \"praktische_tipps\": [\"...\"]
+    },
+    \"kommunikation\": {
+      \"score\": 80,
+      \"einschaetzung\": \"...\",
+      \"verbesserungspotenziale\": [\"...\"],
+      \"praktische_tipps\": [\"...\"]
+    },
+    \"professionalitaet\": {
+      \"score\": 85,
+      \"einschaetzung\": \"...\",
+      \"verbesserungspotenziale\": [\"...\"],
+      \"praktische_tipps\": [\"...\"]
+    },
+    \"persoenliche_wirkung\": {
+      \"score\": 75,
+      \"einschaetzung\": \"...\",
+      \"verbesserungspotenziale\": [\"...\"],
+      \"praktische_tipps\": [\"...\"]
+    }
+  },
+  \"staerken_und_positive_ueberraschungen\": [\"...\"],
+  \"kurzfeedback_fuer_user\": \"...\"
+}";
+    }
+
+    /**
+     * Upload video to Gemini for analysis
+     *
+     * @param string $video_path Path to video file
+     * @param string $api_key API key
+     * @return array|WP_Error Video data with URI or WP_Error on failure
+     */
+    private function upload_video_to_gemini($video_path, $api_key) {
+        // Read video file
+        $video_content = file_get_contents($video_path);
+
+        if ($video_content === false) {
+            return new WP_Error(
+                'read_failed',
+                __('Fehler beim Lesen der Video-Datei.', 'bewerbungstrainer')
+            );
+        }
+
+        // Get mime type
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime_type = finfo_file($finfo, $video_path);
+        finfo_close($finfo);
+
+        // Upload to Gemini File API
+        $upload_url = 'https://generativelanguage.googleapis.com/upload/v1beta/files?key=' . $api_key;
+
+        $boundary = wp_generate_password(24, false);
+        $body = '';
+        $body .= "--{$boundary}\r\n";
+        $body .= "Content-Type: application/json; charset=UTF-8\r\n\r\n";
+        $body .= json_encode(array('file' => array('display_name' => basename($video_path)))) . "\r\n";
+        $body .= "--{$boundary}\r\n";
+        $body .= "Content-Type: {$mime_type}\r\n\r\n";
+        $body .= $video_content . "\r\n";
+        $body .= "--{$boundary}--\r\n";
+
+        $response = wp_remote_post($upload_url, array(
+            'headers' => array(
+                'Content-Type' => 'multipart/related; boundary=' . $boundary,
+                'X-Goog-Upload-Protocol' => 'multipart',
+            ),
+            'body' => $body,
+            'timeout' => 300,
+        ));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ($response_code !== 200) {
+            $error_body = wp_remote_retrieve_body($response);
+            error_log('Gemini File Upload Error: ' . $error_body);
+            return new WP_Error(
+                'upload_failed',
+                __('Video-Upload zu Gemini fehlgeschlagen.', 'bewerbungstrainer')
+            );
+        }
+
+        $response_body = wp_remote_retrieve_body($response);
+        $data = json_decode($response_body, true);
+
+        if (!isset($data['file']['uri'])) {
+            return new WP_Error(
+                'invalid_response',
+                __('Ungültige Antwort vom Gemini File Upload.', 'bewerbungstrainer')
+            );
+        }
+
+        return array(
+            'uri' => $data['file']['uri'],
+            'name' => $data['file']['name'],
+        );
+    }
+
+    /**
+     * Call Gemini API with video
+     *
+     * @param string $prompt Text prompt
+     * @param string $video_uri Gemini video URI
+     * @param string $api_key API key
+     * @return string|WP_Error Response or WP_Error
+     */
+    private function call_gemini_api_with_video($prompt, $video_uri, $api_key) {
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $api_key;
+
+        $body = array(
+            'contents' => array(
+                array(
+                    'parts' => array(
+                        array('text' => $prompt),
+                        array('file_data' => array('file_uri' => $video_uri))
+                    )
+                )
+            ),
+            'generationConfig' => array(
+                'temperature' => 0.7,
+                'topK' => 40,
+                'topP' => 0.95,
+                'maxOutputTokens' => 4096,
+            )
+        );
+
+        $response = wp_remote_post($url, array(
+            'headers' => array(
+                'Content-Type' => 'application/json',
+            ),
+            'body' => json_encode($body),
+            'timeout' => 120,
+        ));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ($response_code !== 200) {
+            $error_body = wp_remote_retrieve_body($response);
+            error_log('Gemini API Error: ' . $error_body);
+            return new WP_Error(
+                'api_error',
+                __('Gemini API Fehler: ', 'bewerbungstrainer') . $response_code
+            );
+        }
+
+        $response_body = wp_remote_retrieve_body($response);
+        $data = json_decode($response_body, true);
+
+        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+            return new WP_Error(
+                'invalid_response',
+                __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer')
+            );
+        }
+
+        return $data['candidates'][0]['content']['parts'][0]['text'];
+    }
+
+    /**
+     * Parse video analysis response
+     *
+     * @param string $response Response from Gemini
+     * @return array Parsed analysis
+     */
+    private function parse_video_analysis_response($response) {
+        // Try to extract JSON from response
+        $json_match = null;
+        if (preg_match('/\{[\s\S]*\}/', $response, $json_match)) {
+            $json_str = $json_match[0];
+            $analysis = json_decode($json_str, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && isset($analysis['overall_score'])) {
+                return $analysis;
+            }
+        }
+
+        // Fallback: Return basic structure
+        return array(
+            'overall_score' => 70.0,
+            'categories' => array(),
+            'staerken_und_positive_ueberraschungen' => array(),
+            'kurzfeedback_fuer_user' => $response,
+        );
+    }
 }

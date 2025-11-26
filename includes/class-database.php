@@ -28,6 +28,11 @@ class Bewerbungstrainer_Database {
     private $table_documents;
 
     /**
+     * Table name for video training sessions
+     */
+    private $table_video_trainings;
+
+    /**
      * Get singleton instance
      */
     public static function get_instance() {
@@ -44,6 +49,7 @@ class Bewerbungstrainer_Database {
         global $wpdb;
         $this->table_sessions = $wpdb->prefix . 'bewerbungstrainer_sessions';
         $this->table_documents = $wpdb->prefix . 'bewerbungstrainer_documents';
+        $this->table_video_trainings = $wpdb->prefix . 'bewerbungstrainer_video_trainings';
     }
 
     /**
@@ -101,8 +107,37 @@ class Bewerbungstrainer_Database {
 
         dbDelta($sql_documents);
 
-        // Update version - 1.2.0 adds user_name column for guest users
-        update_option('bewerbungstrainer_db_version', '1.2.0');
+        // Create video trainings table
+        $table_video_trainings = $wpdb->prefix . 'bewerbungstrainer_video_trainings';
+
+        $sql_video_trainings = "CREATE TABLE IF NOT EXISTS $table_video_trainings (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+            user_name varchar(255) DEFAULT NULL,
+            session_id varchar(255) NOT NULL,
+            name varchar(255) DEFAULT NULL,
+            position varchar(255) NOT NULL,
+            company varchar(255) DEFAULT NULL,
+            experience_level enum('student', 'entry', 'professional', 'senior') NOT NULL DEFAULT 'professional',
+            questions_json longtext DEFAULT NULL,
+            timeline_json longtext DEFAULT NULL,
+            video_filename varchar(255) DEFAULT NULL,
+            video_url text DEFAULT NULL,
+            transcript longtext DEFAULT NULL,
+            analysis_json longtext DEFAULT NULL,
+            overall_score decimal(5,2) DEFAULT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY user_id (user_id),
+            KEY session_id (session_id),
+            KEY created_at (created_at)
+        ) $charset_collate;";
+
+        dbDelta($sql_video_trainings);
+
+        // Update version - 1.3.0 adds video training table
+        update_option('bewerbungstrainer_db_version', '1.3.0');
     }
 
     /**
@@ -669,6 +704,257 @@ class Bewerbungstrainer_Database {
 
         if ($result === false) {
             error_log('Bewerbungstrainer: Failed to delete document - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Create a new video training session
+     *
+     * @param array $data Video training data
+     * @return int|false Session ID or false on failure
+     */
+    public function create_video_training($data) {
+        global $wpdb;
+
+        $defaults = array(
+            'user_id' => get_current_user_id(),
+            'user_name' => null,
+            'session_id' => wp_generate_uuid4(),
+            'name' => null,
+            'position' => '',
+            'company' => null,
+            'experience_level' => 'professional',
+            'questions_json' => null,
+            'timeline_json' => null,
+            'video_filename' => null,
+            'video_url' => null,
+            'transcript' => null,
+            'analysis_json' => null,
+            'overall_score' => null,
+        );
+
+        $data = wp_parse_args($data, $defaults);
+
+        $result = $wpdb->insert(
+            $this->table_video_trainings,
+            array(
+                'user_id' => $data['user_id'],
+                'user_name' => sanitize_text_field($data['user_name']),
+                'session_id' => $data['session_id'],
+                'name' => sanitize_text_field($data['name']),
+                'position' => sanitize_text_field($data['position']),
+                'company' => sanitize_text_field($data['company']),
+                'experience_level' => $data['experience_level'],
+                'questions_json' => $data['questions_json'],
+                'timeline_json' => $data['timeline_json'],
+                'video_filename' => sanitize_file_name($data['video_filename']),
+                'video_url' => esc_url_raw($data['video_url']),
+                'transcript' => wp_kses_post($data['transcript']),
+                'analysis_json' => $data['analysis_json'],
+                'overall_score' => $data['overall_score'],
+            ),
+            array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f')
+        );
+
+        if ($result === false) {
+            error_log('Bewerbungstrainer: Failed to create video training - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return $wpdb->insert_id;
+    }
+
+    /**
+     * Update a video training session
+     *
+     * @param int $training_id Training ID
+     * @param array $data Data to update
+     * @return bool True on success, false on failure
+     */
+    public function update_video_training($training_id, $data) {
+        global $wpdb;
+
+        $update_data = array();
+        $update_format = array();
+
+        if (isset($data['questions_json'])) {
+            $update_data['questions_json'] = $data['questions_json'];
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['timeline_json'])) {
+            $update_data['timeline_json'] = $data['timeline_json'];
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['video_filename'])) {
+            $update_data['video_filename'] = sanitize_file_name($data['video_filename']);
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['video_url'])) {
+            $update_data['video_url'] = esc_url_raw($data['video_url']);
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['transcript'])) {
+            $update_data['transcript'] = wp_kses_post($data['transcript']);
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['analysis_json'])) {
+            $update_data['analysis_json'] = $data['analysis_json'];
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['overall_score'])) {
+            $update_data['overall_score'] = $data['overall_score'];
+            $update_format[] = '%f';
+        }
+
+        if (empty($update_data)) {
+            return false;
+        }
+
+        $result = $wpdb->update(
+            $this->table_video_trainings,
+            $update_data,
+            array('id' => $training_id),
+            $update_format,
+            array('%d')
+        );
+
+        if ($result === false) {
+            error_log('Bewerbungstrainer: Failed to update video training - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get a video training session by ID
+     *
+     * @param int $training_id Training ID
+     * @return object|null Training data or null if not found
+     */
+    public function get_video_training($training_id) {
+        global $wpdb;
+
+        $training = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_video_trainings} WHERE id = %d",
+                $training_id
+            )
+        );
+
+        return $training;
+    }
+
+    /**
+     * Get a video training session by session ID (UUID)
+     *
+     * @param string $session_uuid Session UUID
+     * @return object|null Training data or null if not found
+     */
+    public function get_video_training_by_uuid($session_uuid) {
+        global $wpdb;
+
+        $training = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_video_trainings} WHERE session_id = %s",
+                $session_uuid
+            )
+        );
+
+        return $training;
+    }
+
+    /**
+     * Get all video training sessions for a user
+     *
+     * @param int $user_id User ID (default: current user)
+     * @param array $args Query arguments
+     * @return array Array of training objects
+     */
+    public function get_user_video_trainings($user_id = null, $args = array()) {
+        global $wpdb;
+
+        if ($user_id === null) {
+            $user_id = get_current_user_id();
+        }
+
+        $defaults = array(
+            'limit' => 50,
+            'offset' => 0,
+            'orderby' => 'created_at',
+            'order' => 'DESC',
+        );
+
+        $args = wp_parse_args($args, $defaults);
+
+        $allowed_orderby = array('id', 'created_at', 'updated_at', 'position', 'overall_score');
+        if (!in_array($args['orderby'], $allowed_orderby)) {
+            $args['orderby'] = 'created_at';
+        }
+
+        $args['order'] = strtoupper($args['order']) === 'ASC' ? 'ASC' : 'DESC';
+
+        $trainings = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_video_trainings}
+                WHERE user_id = %d
+                ORDER BY {$args['orderby']} {$args['order']}
+                LIMIT %d OFFSET %d",
+                $user_id,
+                $args['limit'],
+                $args['offset']
+            )
+        );
+
+        return $trainings;
+    }
+
+    /**
+     * Delete a video training session
+     *
+     * @param int $training_id Training ID
+     * @param int $user_id User ID (for security check)
+     * @return bool True on success, false on failure
+     */
+    public function delete_video_training($training_id, $user_id = null) {
+        global $wpdb;
+
+        if ($user_id === null) {
+            $user_id = get_current_user_id();
+        }
+
+        $training = $this->get_video_training($training_id);
+
+        if (!$training || (int) $training->user_id !== (int) $user_id) {
+            return false;
+        }
+
+        // Delete video file if exists
+        if (!empty($training->video_filename)) {
+            $video_handler = Bewerbungstrainer_Video_Handler::get_instance();
+            $video_handler->delete_video($training->video_filename);
+        }
+
+        $result = $wpdb->delete(
+            $this->table_video_trainings,
+            array(
+                'id' => $training_id,
+                'user_id' => $user_id,
+            ),
+            array('%d', '%d')
+        );
+
+        if ($result === false) {
+            error_log('Bewerbungstrainer: Failed to delete video training - ' . $wpdb->last_error);
             return false;
         }
 

@@ -60,6 +60,7 @@ class Bewerbungstrainer_Plugin {
         // Load base classes first
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-audio-handler.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-video-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-pdf-exporter.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
 
@@ -105,6 +106,20 @@ class Bewerbungstrainer_Plugin {
             $htaccess_content .= "    Allow from all\n";
             $htaccess_content .= "</FilesMatch>\n";
             file_put_contents($audio_dir . '/.htaccess', $htaccess_content);
+        }
+
+        // Create upload directory for videos
+        $video_dir = $upload_dir['basedir'] . '/bewerbungstrainer/videos';
+        if (!file_exists($video_dir)) {
+            wp_mkdir_p($video_dir);
+
+            // Add .htaccess for security
+            $htaccess_content = "Options -Indexes\n";
+            $htaccess_content .= "<FilesMatch '\.(mp4|webm|ogv|mov|avi)$'>\n";
+            $htaccess_content .= "    Order Allow,Deny\n";
+            $htaccess_content .= "    Allow from all\n";
+            $htaccess_content .= "</FilesMatch>\n";
+            file_put_contents($video_dir . '/.htaccess', $htaccess_content);
         }
 
         // Create upload directory for documents
