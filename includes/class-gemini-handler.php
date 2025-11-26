@@ -359,16 +359,29 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
         }
 
         $response_body = wp_remote_retrieve_body($response);
+        error_log('Gemini API Response Body (first 500 chars): ' . substr($response_body, 0, 500));
+
         $data = json_decode($response_body, true);
 
+        if ($data && isset($data['candidates'])) {
+            error_log('Found ' . count($data['candidates']) . ' candidates');
+            if (isset($data['candidates'][0])) {
+                error_log('Candidate 0 keys: ' . json_encode(array_keys($data['candidates'][0])));
+            }
+        }
+
         if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+            error_log('Expected path not found in response. Full response (first 1000 chars): ' . substr($response_body, 0, 1000));
             return new WP_Error(
                 'invalid_response',
                 __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer')
             );
         }
 
-        return $data['candidates'][0]['content']['parts'][0]['text'];
+        $text = $data['candidates'][0]['content']['parts'][0]['text'];
+        error_log('Extracted text (first 200 chars): ' . substr($text, 0, 200));
+
+        return $text;
     }
 
     /**
@@ -875,16 +888,29 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
         }
 
         $response_body = wp_remote_retrieve_body($response);
+        error_log('Gemini API Response Body (first 500 chars): ' . substr($response_body, 0, 500));
+
         $data = json_decode($response_body, true);
 
+        if ($data && isset($data['candidates'])) {
+            error_log('Found ' . count($data['candidates']) . ' candidates');
+            if (isset($data['candidates'][0])) {
+                error_log('Candidate 0 keys: ' . json_encode(array_keys($data['candidates'][0])));
+            }
+        }
+
         if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+            error_log('Expected path not found in response. Full response (first 1000 chars): ' . substr($response_body, 0, 1000));
             return new WP_Error(
                 'invalid_response',
                 __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer')
             );
         }
 
-        return $data['candidates'][0]['content']['parts'][0]['text'];
+        $text = $data['candidates'][0]['content']['parts'][0]['text'];
+        error_log('Extracted text (first 200 chars): ' . substr($text, 0, 200));
+
+        return $text;
     }
 
     /**
