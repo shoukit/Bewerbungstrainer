@@ -14,11 +14,15 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'src/main.jsx'),
+        'video-training': path.resolve(__dirname, 'src/video-training.jsx')
+      },
       output: {
         // Use fixed filenames for WordPress integration
-        entryFileNames: 'assets/index.js',
+        entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/index.[ext]'
+        assetFileNames: 'assets/[name].[ext]'
       }
     }
   },
