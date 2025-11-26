@@ -32,6 +32,7 @@ class Bewerbungstrainer_Shortcodes {
      */
     private function __construct() {
         add_shortcode('bewerbungstrainer_interview', array($this, 'interview_shortcode'));
+        add_shortcode('bewerbungstrainer_video_training', array($this, 'video_training_shortcode'));
         add_shortcode('bewerbungstrainer_uebungen', array($this, 'exercises_list_shortcode'));
         add_shortcode('bewerbungstrainer_dokumente', array($this, 'documents_shortcode'));
         // Alias for easier usage
@@ -57,6 +58,29 @@ class Bewerbungstrainer_Shortcodes {
             <div class="bewerbungstrainer-loading">
                 <div class="spinner"></div>
                 <p><?php esc_html_e('Bewerbungstrainer wird geladen...', 'bewerbungstrainer'); ?></p>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Video Training shortcode
+     *
+     * Usage: [bewerbungstrainer_video_training]
+     */
+    public function video_training_shortcode($atts) {
+        // Allow all users (logged in or not)
+        // Enqueue assets
+        $this->enqueue_video_training_assets();
+
+        // Return container div where React app will mount
+        ob_start();
+        ?>
+        <div id="bewerbungstrainer-video-training-app" class="bewerbungstrainer-video-training-container">
+            <div class="bewerbungstrainer-loading">
+                <div class="spinner"></div>
+                <p><?php esc_html_e('Video-Training wird geladen...', 'bewerbungstrainer'); ?></p>
             </div>
         </div>
         <?php
@@ -754,5 +778,36 @@ class Bewerbungstrainer_Shortcodes {
             'apiUrl' => rest_url('bewerbungstrainer/v1'),
             'nonce' => wp_create_nonce('wp_rest'),
         ));
+    }
+
+    /**
+     * Enqueue assets for video training shortcode
+     */
+    private function enqueue_video_training_assets() {
+        // React app will be enqueued by main plugin class
+        // Add custom styles for shortcode wrapper
+        wp_add_inline_style('bewerbungstrainer-app', '
+            .bewerbungstrainer-video-training-container {
+                width: 100%;
+                margin: 0 auto;
+            }
+            .bewerbungstrainer-loading {
+                text-align: center;
+                padding: 60px 20px;
+            }
+            .bewerbungstrainer-loading .spinner {
+                width: 50px;
+                height: 50px;
+                margin: 0 auto 20px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #3498db;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        ');
     }
 }
