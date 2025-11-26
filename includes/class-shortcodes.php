@@ -784,6 +784,13 @@ class Bewerbungstrainer_Shortcodes {
      * Enqueue assets for video training shortcode
      */
     private function enqueue_video_training_assets() {
+        // Only enqueue once per page load
+        static $enqueued = false;
+        if ($enqueued) {
+            return;
+        }
+        $enqueued = true;
+
         // Enqueue main CSS
         wp_enqueue_style(
             'bewerbungstrainer-video-training',
@@ -792,24 +799,34 @@ class Bewerbungstrainer_Shortcodes {
             BEWERBUNGSTRAINER_VERSION
         );
 
-        // Enqueue video training React app
-        wp_enqueue_script(
+        // Pass configuration to JavaScript via separate inline script
+        // This must load before the module, so we add it to the document directly
+        wp_add_inline_script(
+            'jquery', // Add to a script that loads early
+            'window.bewerbungstrainerVideoTraining = ' . wp_json_encode(array(
+                'apiUrl' => rest_url('bewerbungstrainer/v1'),
+                'nonce' => wp_create_nonce('wp_rest'),
+                'currentUser' => array(
+                    'id' => get_current_user_id(),
+                    'name' => wp_get_current_user()->display_name,
+                ),
+            )) . ';',
+            'after'
+        );
+
+        // Register and enqueue video training React app as ES module
+        wp_register_script(
             'bewerbungstrainer-video-training',
             BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/video-training.js',
-            array(),
+            array('jquery'), // Depend on jquery to ensure config loads first
             BEWERBUNGSTRAINER_VERSION,
             true
         );
 
-        // Pass configuration to JavaScript
-        wp_localize_script('bewerbungstrainer-video-training', 'bewerbungstrainerVideoTraining', array(
-            'apiUrl' => rest_url('bewerbungstrainer/v1'),
-            'nonce' => wp_create_nonce('wp_rest'),
-            'currentUser' => array(
-                'id' => get_current_user_id(),
-                'name' => wp_get_current_user()->display_name,
-            ),
-        ));
+        // Add type="module" attribute to script tag
+        add_filter('script_loader_tag', array($this, 'add_module_type_to_video_training_script'), 10, 3);
+
+        wp_enqueue_script('bewerbungstrainer-video-training');
 
         // Add custom styles for shortcode wrapper
         wp_add_inline_style('bewerbungstrainer-video-training', '
@@ -835,5 +852,22 @@ class Bewerbungstrainer_Shortcodes {
                 100% { transform: rotate(360deg); }
             }
         ');
+    }
+
+    /**
+     * Add type="module" attribute to video training script
+     *
+     * @param string $tag Script tag
+     * @param string $handle Script handle
+     * @param string $src Script source
+     * @return string Modified script tag
+     */
+    public function add_module_type_to_video_training_script($tag, $handle, $src) {
+        if ($handle === 'bewerbungstrainer-video-training') {
+            // Replace the opening <script tag to add type="module"
+            // This preserves any inline scripts WordPress adds
+            $tag = str_replace('<script ', '<script type="module" ', $tag);
+        }
+        return $tag;
     }
 }
