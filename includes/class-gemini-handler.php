@@ -719,7 +719,9 @@ Erstelle für jede Kategorie:
 
 Sei direkt, hilfreich und konstruktiv.
 
-Gib deine Bewertung im folgenden JSON-Format zurück:
+WICHTIG: Gib AUSSCHLIESSLICH ein gültiges JSON-Objekt zurück. Kein zusätzlicher Text, keine Markdown-Formatierung, nur reines JSON.
+
+Verwende exakt dieses JSON-Format:
 {
   \"overall_score\": 75.5,
   \"categories\": {
@@ -760,9 +762,11 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
       \"praktische_tipps\": [\"...\"]
     }
   },
-  \"staerken_und_positive_ueberraschungen\": [\"...\"],
-  \"kurzfeedback_fuer_user\": \"...\"
-}";
+  \"staerken_und_positive_ueberraschungen\": [\"Stärke 1\", \"Stärke 2\", \"Stärke 3\"],
+  \"kurzfeedback_fuer_user\": \"2-3 Sätze zusammenfassendes Feedback\"
+}
+
+Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text davor oder danach.";
     }
 
     /**
@@ -1073,23 +1077,60 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
      * @return array Parsed analysis
      */
     private function parse_video_analysis_response($response) {
-        // Try to extract JSON from response
-        $json_match = null;
-        if (preg_match('/\{[\s\S]*\}/', $response, $json_match)) {
-            $json_str = $json_match[0];
-            $analysis = json_decode($json_str, true);
+        error_log('=== PARSING VIDEO ANALYSIS RESPONSE ===');
+        error_log('Response length: ' . strlen($response) . ' chars');
+        error_log('Response preview (first 500 chars): ' . substr($response, 0, 500));
 
-            if (json_last_error() === JSON_ERROR_NONE && isset($analysis['overall_score'])) {
-                return $analysis;
-            }
+        $json_str = null;
+
+        // Method 1: Try to extract JSON from markdown code block (```json ... ```)
+        if (preg_match('/```(?:json)?\s*\n?(.*?)\n?```/s', $response, $matches)) {
+            error_log('Found JSON in markdown code block');
+            $json_str = trim($matches[1]);
+        }
+        // Method 2: Try to find raw JSON object
+        elseif (preg_match('/\{[\s\S]*\}/s', $response, $matches)) {
+            error_log('Found raw JSON object');
+            $json_str = $matches[0];
         }
 
-        // Fallback: Return basic structure
+        if ($json_str) {
+            error_log('Attempting to decode JSON...');
+            error_log('JSON string (first 500 chars): ' . substr($json_str, 0, 500));
+
+            $analysis = json_decode($json_str, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                error_log('JSON decoded successfully');
+
+                // Validate structure
+                if (isset($analysis['overall_score'])) {
+                    error_log('Valid analysis structure found');
+                    error_log('Overall score: ' . $analysis['overall_score']);
+                    error_log('Categories: ' . (isset($analysis['categories']) ? count($analysis['categories']) : 0));
+                    error_log('=== END PARSING (SUCCESS) ===');
+                    return $analysis;
+                } else {
+                    error_log('WARNING: JSON decoded but missing overall_score');
+                    error_log('Available keys: ' . implode(', ', array_keys($analysis)));
+                }
+            } else {
+                error_log('JSON decode error: ' . json_last_error_msg());
+                error_log('JSON error code: ' . json_last_error());
+            }
+        } else {
+            error_log('No JSON found in response');
+        }
+
+        // Fallback: Return basic structure with full response for debugging
+        error_log('Using fallback structure');
+        error_log('=== END PARSING (FALLBACK) ===');
         return array(
             'overall_score' => 70.0,
             'categories' => array(),
             'staerken_und_positive_ueberraschungen' => array(),
-            'kurzfeedback_fuer_user' => $response,
+            'kurzfeedback_fuer_user' => 'Die Analyse konnte nicht korrekt geparst werden. Bitte versuche es erneut.',
+            '_raw_response' => substr($response, 0, 1000), // For debugging, limit to 1000 chars
         );
     }
 }
