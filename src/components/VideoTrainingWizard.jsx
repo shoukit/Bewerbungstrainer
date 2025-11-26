@@ -517,7 +517,7 @@ function VideoTrainingWizard({ onComplete }) {
                       : 'border-gray-400 bg-white'
                   }`}>
                     {selectedQuestions.includes(q.id) && (
-                      <Check className="w-5 h-5 text-white stroke-[4] font-bold" strokeWidth={4} />
+                      <Check className="w-4 h-4 text-white" strokeWidth={3} />
                     )}
                   </div>
                   <div className="flex-1">
@@ -552,7 +552,7 @@ function VideoTrainingWizard({ onComplete }) {
             </Button>
             <Button
               onClick={handleNext}
-              className="bg-ocean-600 hover:bg-ocean-700 text-white px-6 py-3 flex items-center"
+              className="bg-ocean-600 hover:bg-ocean-700 !text-white px-6 py-3 flex items-center"
             >
               <span>Weiter</span>
               <ChevronRight className="w-5 h-5 ml-2" />
