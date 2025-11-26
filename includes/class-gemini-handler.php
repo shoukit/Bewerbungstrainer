@@ -19,8 +19,9 @@ class Bewerbungstrainer_Gemini_Handler {
 
     /**
      * Gemini API endpoint
+     * Using gemini-2.0-flash-exp to avoid thinking token issues
      */
-    private $api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    private $api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 
     /**
      * Get singleton instance
@@ -310,7 +311,7 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
                 'temperature' => 0.7,
                 'topK' => 40,
                 'topP' => 0.95,
-                'maxOutputTokens' => 8192,
+                'maxOutputTokens' => 16384,
             )
         );
 
@@ -367,6 +368,24 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
             error_log('Found ' . count($data['candidates']) . ' candidates');
             if (isset($data['candidates'][0])) {
                 error_log('Candidate 0 keys: ' . json_encode(array_keys($data['candidates'][0])));
+
+                // Check finishReason for issues
+                if (isset($data['candidates'][0]['finishReason'])) {
+                    $finish_reason = $data['candidates'][0]['finishReason'];
+                    error_log('Finish reason: ' . $finish_reason);
+
+                    if ($finish_reason === 'MAX_TOKENS') {
+                        error_log('MAX_TOKENS hit. ThoughtsTokenCount: ' . ($data['usageMetadata']['thoughtsTokenCount'] ?? 'unknown'));
+
+                        // Check if we got any content despite MAX_TOKENS
+                        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                            return new WP_Error(
+                                'max_tokens_exceeded',
+                                __('Die Antwort war zu lang. Das Modell hat die Token-Grenze erreicht, bevor eine Antwort generiert werden konnte. Bitte versuchen Sie es mit einer kürzeren Anfrage oder kontaktieren Sie den Support.', 'bewerbungstrainer')
+                            );
+                        }
+                    }
+                }
             }
         }
 
@@ -896,6 +915,24 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
             error_log('Found ' . count($data['candidates']) . ' candidates');
             if (isset($data['candidates'][0])) {
                 error_log('Candidate 0 keys: ' . json_encode(array_keys($data['candidates'][0])));
+
+                // Check finishReason for issues
+                if (isset($data['candidates'][0]['finishReason'])) {
+                    $finish_reason = $data['candidates'][0]['finishReason'];
+                    error_log('Finish reason: ' . $finish_reason);
+
+                    if ($finish_reason === 'MAX_TOKENS') {
+                        error_log('MAX_TOKENS hit. ThoughtsTokenCount: ' . ($data['usageMetadata']['thoughtsTokenCount'] ?? 'unknown'));
+
+                        // Check if we got any content despite MAX_TOKENS
+                        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                            return new WP_Error(
+                                'max_tokens_exceeded',
+                                __('Die Antwort war zu lang. Das Modell hat die Token-Grenze erreicht, bevor eine Antwort generiert werden konnte. Bitte versuchen Sie es mit einer kürzeren Anfrage oder kontaktieren Sie den Support.', 'bewerbungstrainer')
+                            );
+                        }
+                    }
+                }
             }
         }
 
