@@ -309,32 +309,35 @@ function VideoRecorder({ questions, cameraStream, trainingData, onComplete, onCa
         )}
       </div>
 
-      {/* Video preview */}
-      <div className="mb-6 bg-black rounded-lg overflow-hidden shadow-2xl">
-        <video
-          ref={videoPreviewRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full aspect-video"
-        />
-      </div>
-
-      {/* Question display */}
-      <div className="mb-6 p-6 bg-ocean-50 border-2 border-ocean-200 rounded-lg">
-        <div className="flex items-start justify-between mb-4">
-          <div className="text-sm font-semibold text-ocean-600">
-            Frage {currentQuestionIndex + 1} von {totalQuestions}
-          </div>
-          {currentQuestion.category && (
-            <span className="px-3 py-1 text-xs rounded-full bg-ocean-100 text-ocean-700">
-              {currentQuestion.category}
-            </span>
-          )}
+      {/* Video and Question - Side by Side on larger screens */}
+      <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Video preview */}
+        <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
+          <video
+            ref={videoPreviewRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full aspect-video"
+          />
         </div>
-        <p className="text-xl font-medium text-gray-800 leading-relaxed">
-          {currentQuestion.question}
-        </p>
+
+        {/* Question display */}
+        <div className="p-6 bg-ocean-50 border-2 border-ocean-200 rounded-lg flex flex-col justify-center">
+          <div className="flex items-start justify-between mb-4">
+            <div className="text-sm font-semibold text-ocean-600">
+              Frage {currentQuestionIndex + 1} von {totalQuestions}
+            </div>
+            {currentQuestion.category && (
+              <span className="px-3 py-1 text-xs rounded-full bg-ocean-100 text-ocean-700">
+                {currentQuestion.category}
+              </span>
+            )}
+          </div>
+          <p className="text-xl font-medium text-gray-800 leading-relaxed">
+            {currentQuestion.question}
+          </p>
+        </div>
       </div>
 
       {/* Controls */}
