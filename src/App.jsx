@@ -764,13 +764,6 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
     };
   }, [GEMINI_API_KEY]);
 
-  // Show wizard if user hasn't completed it yet
-  if (showWizard) {
-    console.log('🧙 [APP] Rendering UserWizard');
-    console.log('🧙 [APP] handleWizardComplete type:', typeof handleWizardComplete);
-    return <UserWizard onComplete={handleWizardComplete} />;
-  }
-
   console.log('🎨 [APP] Starting main render...');
   console.log('🎨 [APP] State at render time:', {
     showWizard,
@@ -855,6 +848,12 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
   }
 
   // ===== STANDARD MODE RENDERING =====
+  // For standard mode, show wizard first if needed
+  if (showWizard) {
+    console.log('🧙 [APP] Rendering UserWizard for standard mode');
+    return <UserWizard onComplete={handleWizardComplete} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-ocean-blue-100 via-ocean-blue-200 to-ocean-blue-300 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
@@ -869,6 +868,34 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
         <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/60">
           {/* Header */}
           <Header userName={userData?.user_name} position={userData?.position} company={userData?.company} />
+
+          {/* Mode Selector */}
+          <div className="px-6 pt-6 pb-0">
+            <div className="flex gap-3 p-1.5 bg-gradient-to-r from-slate-100 to-slate-50 rounded-2xl border border-slate-200">
+              <button
+                onClick={() => setAppMode('standard')}
+                className={`flex-1 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                  appMode === 'standard'
+                    ? 'bg-gradient-to-r from-ocean-blue-600 to-ocean-deep-600 text-white shadow-lg'
+                    : 'text-slate-600 hover:bg-white/50'
+                }`}
+              >
+                <Phone className="w-4 h-4 inline-block mr-2 mb-0.5" />
+                Standard Interview
+              </button>
+              <button
+                onClick={() => setAppMode('roleplay')}
+                className={`flex-1 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                  appMode === 'roleplay'
+                    ? 'bg-gradient-to-r from-teal-600 to-purple-600 text-white shadow-lg'
+                    : 'text-slate-600 hover:bg-white/50'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 inline-block mr-2 mb-0.5" />
+                Rollenspiel-Training
+              </button>
+            </div>
+          </div>
 
           {/* Main Content Area */}
           <div className="p-6 md:p-8 space-y-6">
@@ -932,31 +959,6 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                 </div>
               </div>
             )}
-
-            {/* Roleplay Mode Promotion Card */}
-            <div className="relative overflow-hidden rounded-2xl border-2 border-teal-200/60">
-              <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-blue-50 to-purple-50"></div>
-              <div className="relative p-5 flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold text-slate-900 mb-2 text-lg flex items-center gap-2">
-                    Neu: Rollenspiel-Training
-                  </p>
-                  <p className="text-sm text-slate-700 mb-4">
-                    Übe realistische Gesprächssituationen mit verschiedenen Szenarien und erhalte detailliertes Feedback zu deiner Performance.
-                  </p>
-                  <Button
-                    onClick={() => setAppMode('roleplay')}
-                    className="bg-gradient-to-r from-teal-600 to-purple-600 hover:from-teal-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Rollenspiel-Training starten
-                  </Button>
-                </div>
-              </div>
-            </div>
 
             {/* Instructions Card */}
             <div className="relative overflow-hidden rounded-2xl border-2 border-ocean-blue-200/60">
