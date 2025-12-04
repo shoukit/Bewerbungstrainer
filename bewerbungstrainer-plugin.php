@@ -236,6 +236,14 @@ class Bewerbungstrainer_Plugin {
             'elevenlabsApiKey' => get_option('bewerbungstrainer_elevenlabs_api_key', ''),
             'geminiApiKey' => get_option('bewerbungstrainer_gemini_api_key', ''),
         ));
+
+        // Add type="module" to script tag for ES6 module support
+        add_filter('script_loader_tag', function($tag, $handle, $src) {
+            if ('bewerbungstrainer-app' === $handle) {
+                $tag = '<script type="module" src="' . esc_url($src) . '"></script>';
+            }
+            return $tag;
+        }, 10, 3);
     }
 
     /**
