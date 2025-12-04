@@ -15,7 +15,7 @@ export default defineConfig({
     assetsDir: 'assets',
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'src/main.jsx'),
+        index: path.resolve(__dirname, 'src/main.jsx'),
         'video-training': path.resolve(__dirname, 'src/video-training.jsx')
       },
       output: {
