@@ -48,7 +48,7 @@ function App() {
   const [isWordPress, setIsWordPress] = useState(false);
 
   // Roleplay mode state
-  const [appMode, setAppMode] = useState('standard'); // 'standard' or 'roleplay'
+  const [appMode, setAppMode] = useState('roleplay'); // 'standard' or 'roleplay'
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [roleplayVariables, setRoleplayVariables] = useState({});
 
