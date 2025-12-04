@@ -4,6 +4,8 @@ import Header from './components/Header';
 import FeedbackModal from './components/FeedbackModal';
 import UserWizard from './components/UserWizard';
 import ConversationStyleSelector from './components/ConversationStyleSelector';
+import RoleplayDashboard from './components/RoleplayDashboard';
+import RoleplaySession from './components/RoleplaySession';
 import { Button } from './components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './components/ui/dialog';
 import { generateInterviewFeedback, generateAudioAnalysis, listAvailableModels } from './services/gemini';
@@ -44,6 +46,11 @@ function App() {
   // WordPress integration
   const [currentSession, setCurrentSession] = useState(null);
   const [isWordPress, setIsWordPress] = useState(false);
+
+  // Roleplay mode state
+  const [appMode, setAppMode] = useState('standard'); // 'standard' or 'roleplay'
+  const [selectedScenario, setSelectedScenario] = useState(null);
+  const [roleplayVariables, setRoleplayVariables] = useState({});
 
   console.log('🔧 [APP] State hooks initialized:', {
     showWizard,
@@ -798,6 +805,56 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
   console.log('🔍 [APP] Dialog component details:', Dialog);
   console.log('🔍 [APP] DialogContent component details:', DialogContent);
 
+  // ===== ROLEPLAY MODE HANDLERS =====
+  const handleSelectScenario = (scenario) => {
+    console.log('🎭 [APP] Scenario selected:', scenario);
+    setSelectedScenario(scenario);
+
+    // Extract variables from scenario
+    const variables = {};
+    if (scenario.variables_schema && Array.isArray(scenario.variables_schema)) {
+      scenario.variables_schema.forEach((varDef) => {
+        variables[varDef.key] = varDef.default || '';
+      });
+    }
+    setRoleplayVariables(variables);
+  };
+
+  const handleEndRoleplay = () => {
+    console.log('🎭 [APP] Roleplay ended');
+    setSelectedScenario(null);
+    setRoleplayVariables({});
+    setAppMode('standard');
+  };
+
+  const handleBackToDashboard = () => {
+    console.log('🎭 [APP] Back to standard mode');
+    setAppMode('standard');
+  };
+
+  // ===== ROLEPLAY MODE RENDERING =====
+  if (appMode === 'roleplay') {
+    if (selectedScenario) {
+      // Show active roleplay session
+      return (
+        <RoleplaySession
+          scenario={selectedScenario}
+          variables={roleplayVariables}
+          onEnd={handleEndRoleplay}
+        />
+      );
+    } else {
+      // Show roleplay dashboard (scenario selection)
+      return (
+        <RoleplayDashboard
+          onSelectScenario={handleSelectScenario}
+          onBack={handleBackToDashboard}
+        />
+      );
+    }
+  }
+
+  // ===== STANDARD MODE RENDERING =====
   return (
     <div className="min-h-screen bg-gradient-to-br from-ocean-blue-100 via-ocean-blue-200 to-ocean-blue-300 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}

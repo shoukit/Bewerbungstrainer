@@ -63,6 +63,7 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-video-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-pdf-exporter.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
 
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
@@ -158,6 +159,9 @@ class Bewerbungstrainer_Plugin {
 
         // Initialize database
         Bewerbungstrainer_Database::get_instance();
+
+        // Initialize roleplay scenarios
+        Bewerbungstrainer_Roleplay_Scenarios::get_instance();
 
         // Initialize REST API
         Bewerbungstrainer_API::get_instance();
