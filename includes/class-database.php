@@ -33,6 +33,11 @@ class Bewerbungstrainer_Database {
     private $table_video_trainings;
 
     /**
+     * Table name for roleplay sessions
+     */
+    private $table_roleplay_sessions;
+
+    /**
      * Get singleton instance
      */
     public static function get_instance() {
@@ -50,6 +55,7 @@ class Bewerbungstrainer_Database {
         $this->table_sessions = $wpdb->prefix . 'bewerbungstrainer_sessions';
         $this->table_documents = $wpdb->prefix . 'bewerbungstrainer_documents';
         $this->table_video_trainings = $wpdb->prefix . 'bewerbungstrainer_video_trainings';
+        $this->table_roleplay_sessions = $wpdb->prefix . 'bewerbungstrainer_roleplay_sessions';
     }
 
     /**
@@ -136,8 +142,35 @@ class Bewerbungstrainer_Database {
 
         dbDelta($sql_video_trainings);
 
-        // Update version - 1.3.0 adds video training table
-        update_option('bewerbungstrainer_db_version', '1.3.0');
+        // Create roleplay sessions table
+        $table_roleplay_sessions = $wpdb->prefix . 'bewerbungstrainer_roleplay_sessions';
+
+        $sql_roleplay_sessions = "CREATE TABLE IF NOT EXISTS $table_roleplay_sessions (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+            user_name varchar(255) DEFAULT NULL,
+            session_id varchar(255) NOT NULL,
+            scenario_id bigint(20) UNSIGNED DEFAULT NULL,
+            agent_id varchar(255) NOT NULL,
+            variables_json longtext DEFAULT NULL,
+            transcript longtext DEFAULT NULL,
+            feedback_json longtext DEFAULT NULL,
+            audio_analysis_json longtext DEFAULT NULL,
+            conversation_id varchar(255) DEFAULT NULL,
+            duration int DEFAULT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY user_id (user_id),
+            KEY session_id (session_id),
+            KEY scenario_id (scenario_id),
+            KEY created_at (created_at)
+        ) $charset_collate;";
+
+        dbDelta($sql_roleplay_sessions);
+
+        // Update version - 1.4.0 adds roleplay sessions table
+        update_option('bewerbungstrainer_db_version', '1.4.0');
     }
 
     /**
@@ -959,6 +992,286 @@ class Bewerbungstrainer_Database {
 
         if ($result === false) {
             error_log('Bewerbungstrainer: Failed to delete video training - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * ===== Roleplay Session Methods =====
+     */
+
+    /**
+     * Create a new roleplay session
+     *
+     * @param array $data Session data
+     * @return int|false Session ID or false on failure
+     */
+    public function create_roleplay_session($data) {
+        global $wpdb;
+
+        $defaults = array(
+            'user_id' => get_current_user_id(),
+            'user_name' => null,
+            'session_id' => wp_generate_uuid4(),
+            'scenario_id' => null,
+            'agent_id' => '',
+            'variables_json' => null,
+            'transcript' => null,
+            'feedback_json' => null,
+            'audio_analysis_json' => null,
+            'conversation_id' => null,
+            'duration' => null,
+        );
+
+        $data = wp_parse_args($data, $defaults);
+
+        $result = $wpdb->insert(
+            $this->table_roleplay_sessions,
+            array(
+                'user_id' => $data['user_id'],
+                'user_name' => sanitize_text_field($data['user_name']),
+                'session_id' => $data['session_id'],
+                'scenario_id' => $data['scenario_id'],
+                'agent_id' => sanitize_text_field($data['agent_id']),
+                'variables_json' => $data['variables_json'],
+                'transcript' => wp_kses_post($data['transcript']),
+                'feedback_json' => $data['feedback_json'],
+                'audio_analysis_json' => $data['audio_analysis_json'],
+                'conversation_id' => sanitize_text_field($data['conversation_id']),
+                'duration' => $data['duration'],
+            ),
+            array('%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d')
+        );
+
+        if ($result === false) {
+            error_log('Bewerbungstrainer: Failed to create roleplay session - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return $wpdb->insert_id;
+    }
+
+    /**
+     * Update a roleplay session
+     *
+     * @param int $session_id Session ID
+     * @param array $data Data to update
+     * @return bool True on success, false on failure
+     */
+    public function update_roleplay_session($session_id, $data) {
+        global $wpdb;
+
+        // Sanitize data
+        $update_data = array();
+        $update_format = array();
+
+        if (isset($data['agent_id'])) {
+            $update_data['agent_id'] = sanitize_text_field($data['agent_id']);
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['variables_json'])) {
+            $update_data['variables_json'] = $data['variables_json'];
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['transcript'])) {
+            $update_data['transcript'] = wp_kses_post($data['transcript']);
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['feedback_json'])) {
+            $update_data['feedback_json'] = $data['feedback_json'];
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['audio_analysis_json'])) {
+            $update_data['audio_analysis_json'] = $data['audio_analysis_json'];
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['conversation_id'])) {
+            $update_data['conversation_id'] = sanitize_text_field($data['conversation_id']);
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['duration'])) {
+            $update_data['duration'] = intval($data['duration']);
+            $update_format[] = '%d';
+        }
+
+        if (empty($update_data)) {
+            return false;
+        }
+
+        $result = $wpdb->update(
+            $this->table_roleplay_sessions,
+            $update_data,
+            array('id' => $session_id),
+            $update_format,
+            array('%d')
+        );
+
+        if ($result === false) {
+            error_log('Bewerbungstrainer: Failed to update roleplay session - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get a roleplay session by ID
+     *
+     * @param int $session_id Session ID
+     * @return object|null Session data or null if not found
+     */
+    public function get_roleplay_session($session_id) {
+        global $wpdb;
+
+        $session = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_roleplay_sessions} WHERE id = %d",
+                $session_id
+            )
+        );
+
+        return $session;
+    }
+
+    /**
+     * Get roleplay session by session ID (UUID)
+     *
+     * @param string $session_uuid Session UUID
+     * @return object|null Session data or null if not found
+     */
+    public function get_roleplay_session_by_uuid($session_uuid) {
+        global $wpdb;
+
+        $session = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_roleplay_sessions} WHERE session_id = %s",
+                $session_uuid
+            )
+        );
+
+        return $session;
+    }
+
+    /**
+     * Get all roleplay sessions for a user
+     *
+     * @param int $user_id User ID
+     * @param array $args Query arguments
+     * @return array Array of session objects
+     */
+    public function get_user_roleplay_sessions($user_id = null, $args = array()) {
+        global $wpdb;
+
+        if ($user_id === null) {
+            $user_id = get_current_user_id();
+        }
+
+        $defaults = array(
+            'limit' => 50,
+            'offset' => 0,
+            'orderby' => 'created_at',
+            'order' => 'DESC',
+            'scenario_id' => null,
+        );
+
+        $args = wp_parse_args($args, $defaults);
+
+        // Validate orderby
+        $allowed_orderby = array('id', 'created_at', 'updated_at', 'duration');
+        if (!in_array($args['orderby'], $allowed_orderby)) {
+            $args['orderby'] = 'created_at';
+        }
+
+        // Validate order
+        $args['order'] = strtoupper($args['order']) === 'ASC' ? 'ASC' : 'DESC';
+
+        // Build WHERE clause
+        $where = $wpdb->prepare("user_id = %d", $user_id);
+
+        if ($args['scenario_id']) {
+            $where .= $wpdb->prepare(" AND scenario_id = %d", $args['scenario_id']);
+        }
+
+        $sessions = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_roleplay_sessions}
+                WHERE {$where}
+                ORDER BY {$args['orderby']} {$args['order']}
+                LIMIT %d OFFSET %d",
+                $args['limit'],
+                $args['offset']
+            )
+        );
+
+        return $sessions;
+    }
+
+    /**
+     * Get roleplay sessions count for a user
+     *
+     * @param int $user_id User ID
+     * @param int $scenario_id Optional scenario ID filter
+     * @return int Count of sessions
+     */
+    public function get_user_roleplay_sessions_count($user_id = null, $scenario_id = null) {
+        global $wpdb;
+
+        if ($user_id === null) {
+            $user_id = get_current_user_id();
+        }
+
+        $where = $wpdb->prepare("user_id = %d", $user_id);
+
+        if ($scenario_id) {
+            $where .= $wpdb->prepare(" AND scenario_id = %d", $scenario_id);
+        }
+
+        $count = $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$this->table_roleplay_sessions} WHERE {$where}"
+        );
+
+        return (int) $count;
+    }
+
+    /**
+     * Delete a roleplay session
+     *
+     * @param int $session_id Session ID
+     * @param int $user_id User ID (for security check)
+     * @return bool True on success, false on failure
+     */
+    public function delete_roleplay_session($session_id, $user_id = null) {
+        global $wpdb;
+
+        if ($user_id === null) {
+            $user_id = get_current_user_id();
+        }
+
+        $session = $this->get_roleplay_session($session_id);
+
+        if (!$session || (int) $session->user_id !== (int) $user_id) {
+            return false;
+        }
+
+        $result = $wpdb->delete(
+            $this->table_roleplay_sessions,
+            array(
+                'id' => $session_id,
+                'user_id' => $user_id,
+            ),
+            array('%d', '%d')
+        );
+
+        if ($result === false) {
+            error_log('Bewerbungstrainer: Failed to delete roleplay session - ' . $wpdb->last_error);
             return false;
         }
 
