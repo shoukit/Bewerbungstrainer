@@ -10,7 +10,7 @@ import { Button } from './components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './components/ui/dialog';
 import { generateInterviewFeedback, generateAudioAnalysis, listAvailableModels } from './services/gemini';
 import wordpressAPI from './services/wordpress-api';
-import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff, Edit3, RotateCcw, Play, AlertCircle, TrendingUp, History, Settings, X } from 'lucide-react';
+import { MessageSquare, StopCircle, Mic, MicOff, Phone, PhoneOff, Edit3, RotateCcw, Play, AlertCircle, TrendingUp, History, Settings, X, Sparkles } from 'lucide-react';
 
 console.log('📦 [APP] App.jsx module loaded');
 console.log('📦 [APP] Imports loaded:', {
@@ -932,6 +932,31 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
                 </div>
               </div>
             )}
+
+            {/* Roleplay Mode Promotion Card */}
+            <div className="relative overflow-hidden rounded-2xl border-2 border-teal-200/60">
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-blue-50 to-purple-50"></div>
+              <div className="relative p-5 flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-slate-900 mb-2 text-lg flex items-center gap-2">
+                    Neu: Rollenspiel-Training
+                  </p>
+                  <p className="text-sm text-slate-700 mb-4">
+                    Übe realistische Gesprächssituationen mit verschiedenen Szenarien und erhalte detailliertes Feedback zu deiner Performance.
+                  </p>
+                  <Button
+                    onClick={() => setAppMode('roleplay')}
+                    className="bg-gradient-to-r from-teal-600 to-purple-600 hover:from-teal-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Rollenspiel-Training starten
+                  </Button>
+                </div>
+              </div>
+            </div>
 
             {/* Instructions Card */}
             <div className="relative overflow-hidden rounded-2xl border-2 border-ocean-blue-200/60">
