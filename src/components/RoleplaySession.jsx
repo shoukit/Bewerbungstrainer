@@ -34,6 +34,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const [startTime, setStartTime] = useState(null);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState(null);
+  const [isStarted, setIsStarted] = useState(false);
 
   // Transcript state
   const [transcript, setTranscript] = useState([]);
@@ -162,19 +163,19 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     };
   }, [conversation.status, startTime]);
 
-  // Start conversation on mount
+  // Start conversation on mount - REMOVED: Now manual start with button
   useEffect(() => {
-    if (!hasStartedRef.current && agentId && apiKey) {
-      hasStartedRef.current = true;
-      startConversation();
-    }
-
     return () => {
       if (conversation.status === 'connected') {
         conversation.endSession();
       }
     };
   }, []);
+
+  const handleStartCall = async () => {
+    setIsStarted(true);
+    await startConversation();
+  };
 
   const startConversation = async () => {
     try {
@@ -361,7 +362,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-6 relative">
+      <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-6 relative overflow-hidden">
 
         {/* Transcript Panel - Top Right (Collapsible) */}
         <AnimatePresence>
@@ -462,11 +463,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         </AnimatePresence>
 
         {/* CENTERED MAIN CONTENT - Interviewer Profile */}
-        <div className="flex items-start justify-center min-h-screen pt-6">
+        <div className="flex items-start justify-center h-full pt-6 overflow-hidden">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-2xl h-[calc(100vh-3rem)] flex flex-col"
+            className="w-full max-w-2xl h-full flex flex-col"
           >
             {/* Audio Visualizer - Above Profile */}
             {conversation.status === 'connected' && (
@@ -506,34 +507,36 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             )}
 
             {/* Status Bar - Above Button */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mt-8 mb-4 flex items-center justify-center gap-4"
-            >
-              <div className="flex items-center gap-2 text-slate-700">
-                {conversation.status === 'connecting' && (
-                  <>
-                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                    <span className="text-sm font-semibold">Verbinde...</span>
-                  </>
-                )}
-                {conversation.status === 'connected' && (
-                  <>
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-sm font-semibold">Verbunden</span>
-                  </>
-                )}
-              </div>
+            {isStarted && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="mt-8 mb-4 flex items-center justify-center gap-4"
+              >
+                <div className="flex items-center gap-2 text-slate-700">
+                  {conversation.status === 'connecting' && (
+                    <>
+                      <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                      <span className="text-sm font-semibold">Verbinde...</span>
+                    </>
+                  )}
+                  {conversation.status === 'connected' && (
+                    <>
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-sm font-semibold">Verbunden</span>
+                    </>
+                  )}
+                </div>
 
-              <div className="h-4 w-px bg-slate-300" />
+                <div className="h-4 w-px bg-slate-300" />
 
-              <div className="flex items-center gap-2 text-slate-600">
-                <Clock className="w-4 h-4" />
-                <span className="font-mono text-sm font-semibold">{formatDuration(duration)}</span>
-              </div>
-            </motion.div>
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Clock className="w-4 h-4" />
+                  <span className="font-mono text-sm font-semibold">{formatDuration(duration)}</span>
+                </div>
+              </motion.div>
+            )}
 
             {/* Action Button */}
             <motion.div
@@ -541,7 +544,19 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              {conversation.status === 'connected' ? (
+              {!isStarted ? (
+                // Green "Anrufen" button before starting
+                <Button
+                  onClick={handleStartCall}
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-base py-6 rounded-xl shadow-lg"
+                >
+                  <Mic className="w-5 h-5 mr-2" />
+                  {scenario.interviewer_profile?.name
+                    ? `${scenario.interviewer_profile.name} anrufen`
+                    : 'Anrufen'}
+                </Button>
+              ) : conversation.status === 'connected' ? (
                 <Button
                   onClick={() => setShowEndDialog(true)}
                   size="lg"
