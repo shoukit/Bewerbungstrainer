@@ -89,6 +89,27 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     };
   }, []);
 
+  /**
+   * Helper function to clean HTML from WordPress content
+   * Strips HTML tags and decodes HTML entities
+   */
+  const cleanHtmlContent = (html) => {
+    if (!html) return '';
+
+    // Create a temporary element to decode HTML entities and strip tags
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    // Replace <br> tags with newlines before stripping
+    temp.innerHTML = temp.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+
+    // Get text content (this strips all HTML tags and decodes entities)
+    const cleaned = temp.textContent || temp.innerText || '';
+
+    // Clean up extra whitespace
+    return cleaned.trim();
+  };
+
   const startConversation = async () => {
     try {
       setConnectionState('connecting');
@@ -149,16 +170,24 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         handleEndConversation();
       };
 
+      // Clean HTML from prompt (WordPress adds <p>, <br>, and HTML entities)
+      const cleanedPrompt = cleanHtmlContent(scenario.content || '');
+
+      console.log('🧹 [RoleplaySession] Cleaned prompt (removed HTML):');
+      console.log('   Original length:', (scenario.content || '').length);
+      console.log('   Cleaned length:', cleanedPrompt.length);
+      console.log('   Preview:', cleanedPrompt.substring(0, 200) + '...');
+
       // Start conversation
       const options = {
-        prompt: scenario.content || '', // System prompt from WordPress content
+        prompt: cleanedPrompt, // Use cleaned plain text prompt
         variables: variables,
         firstMessage: scenario.initial_message || 'Hallo! Lass uns mit dem Rollenspiel beginnen.',
       };
 
       console.log('🚀 [RoleplaySession] Starting conversation with options:');
       console.log('   Agent ID:', agentId);
-      console.log('   System Prompt:', options.prompt || '(empty)');
+      console.log('   System Prompt length:', options.prompt?.length || 0, 'characters');
       console.log('   First Message:', options.firstMessage);
       console.log('   Variables:', JSON.stringify(options.variables, null, 2));
 
