@@ -315,133 +315,173 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-4">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col md:flex-row"
-          style={{ height: 'calc(100vh - 100px)', maxHeight: '900px' }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="h-[calc(100vh-2rem)] flex gap-4"
         >
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
+          {/* LEFT PANEL - Interviewer Profile & Audio Visualizer */}
+          <div className="w-96 flex flex-col gap-4">
+            {/* Header Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
                   {conversation.status === 'connecting' && (
                     <>
-                      <Loader2 className="w-5 h-5 text-white animate-spin" />
-                      <span className="text-white font-semibold">Verbinde...</span>
+                      <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                      <span className="text-sm font-semibold text-slate-700">Verbinde...</span>
                     </>
                   )}
                   {conversation.status === 'connected' && (
                     <>
-                      <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-                      <span className="text-white font-semibold">Verbunden</span>
+                      <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-sm font-semibold text-slate-700">Verbunden</span>
                     </>
                   )}
                 </div>
 
-                <div className="h-6 w-px bg-white/30" />
-
-                <div className="flex items-center gap-2 text-white">
-                  <Clock className="w-4 h-4" />
-                  <span className="font-mono">{formatDuration(duration)}</span>
-                </div>
+                <Button
+                  onClick={() => setShowEndDialog(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:bg-red-50"
+                  disabled={conversation.status !== 'connected'}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Beenden
+                </Button>
               </div>
 
-              <Button
-                onClick={() => setShowEndDialog(true)}
-                variant="ghost"
-                className="text-white hover:bg-white/20"
-                disabled={conversation.status !== 'connected'}
-              >
-                <X className="w-5 h-5 mr-2" />
-                Beenden
-              </Button>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900 text-sm flex-1 truncate">{scenario.title}</h3>
+                <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getDifficultyColor(scenario.difficulty)}`}>
+                  {getDifficultyLabel(scenario.difficulty)}
+                </span>
+              </div>
+
+              <div className="mt-2 flex items-center gap-2 text-slate-600">
+                <Clock className="w-4 h-4" />
+                <span className="font-mono text-sm">{formatDuration(duration)}</span>
+              </div>
             </div>
 
-            {/* Scenario info */}
-            <div className="mt-3 flex items-center gap-3">
-              <h2 className="text-white font-bold text-lg">{scenario.title}</h2>
-              <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${getDifficultyColor(scenario.difficulty)}`}>
-                {getDifficultyLabel(scenario.difficulty)}
-              </span>
-            </div>
-          </div>
+            {/* Interviewer Profile */}
+            {scenario.interviewer_profile && scenario.interviewer_profile.name && (
+              <InterviewerProfile profile={scenario.interviewer_profile} />
+            )}
 
-          {/* Main Content */}
-          <div className="p-6 space-y-6" style={{ height: 'calc(100vh - 200px)', maxHeight: '600px' }}>
             {/* Audio Visualizer */}
-            <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-6 border border-slate-200">
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 flex-1 flex flex-col">
               <div className="text-center mb-4">
                 <div className="flex items-center justify-center gap-2 text-slate-700">
                   {conversation.status === 'connected' ? (
                     <>
                       <Mic className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold">Spreche frei mit dem Agent</span>
+                      <span className="font-semibold text-sm">Spreche frei mit dem Interviewer</span>
                     </>
                   ) : (
                     <>
                       <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                      <span className="font-semibold">Verbindung wird hergestellt...</span>
+                      <span className="font-semibold text-sm">Verbindung wird hergestellt...</span>
                     </>
                   )}
                 </div>
               </div>
 
-              <AudioVisualizer audioLevel={audioLevel} isActive={conversation.status === 'connected'} />
-            </div>
-
-            {/* Transcript */}
-            <div className="flex-1 overflow-hidden">
-              <div className="flex items-center gap-2 mb-3">
-                <MessageSquare className="w-5 h-5 text-slate-600" />
-                <h3 className="font-semibold text-slate-900">Live-Transkript</h3>
-              </div>
-
-              <div className="bg-slate-50 rounded-2xl p-4 h-64 overflow-y-auto space-y-3 border border-slate-200">
-                {transcript.length === 0 ? (
-                  <div className="text-center text-slate-500 py-8">
-                    <p className="text-sm">Das Gespräch wird hier live mitgeschrieben...</p>
-                  </div>
-                ) : (
-                  <AnimatePresence>
-                    {transcript.map((entry, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className={`flex gap-3 ${entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-                      >
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            entry.role === 'agent' ? 'bg-blue-100' : 'bg-teal-100'
-                          }`}
-                        >
-                          {entry.role === 'agent' ? (
-                            <Bot className="w-4 h-4 text-blue-600" />
-                          ) : (
-                            <User className="w-4 h-4 text-teal-600" />
-                          )}
-                        </div>
-
-                        <div
-                          className={`flex-1 px-4 py-2 rounded-2xl ${
-                            entry.role === 'agent'
-                              ? 'bg-white border border-slate-200'
-                              : 'bg-teal-600 text-white'
-                          }`}
-                        >
-                          <p className="text-sm">{entry.text}</p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                )}
+              <div className="flex-1 flex items-center justify-center">
+                <AudioVisualizer audioLevel={audioLevel} isActive={conversation.status === 'connected'} />
               </div>
             </div>
           </div>
+
+          {/* RIGHT PANEL - Transcript (Collapsible) */}
+          <AnimatePresence>
+            {showTranscript && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 'auto', opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="flex-1 bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden flex flex-col"
+              >
+                {/* Transcript Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white">
+                    <MessageSquare className="w-5 h-5" />
+                    <h3 className="font-bold text-lg">Live-Transkript</h3>
+                  </div>
+                  <Button
+                    onClick={() => setShowTranscript(false)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-white/20"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                {/* Transcript Content */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-3">
+                  {transcript.length === 0 ? (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center text-slate-500">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                        <p className="text-sm">Das Gespräch wird hier live mitgeschrieben...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <AnimatePresence>
+                      {transcript.map((entry, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, x: entry.role === 'user' ? 20 : -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                          className={`flex gap-3 ${entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                        >
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ${
+                              entry.role === 'agent' ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-teal-500 to-teal-600'
+                            }`}
+                          >
+                            {entry.role === 'agent' ? (
+                              <Bot className="w-5 h-5 text-white" />
+                            ) : (
+                              <User className="w-5 h-5 text-white" />
+                            )}
+                          </div>
+
+                          <div
+                            className={`flex-1 px-5 py-3 rounded-2xl shadow-sm ${
+                              entry.role === 'agent'
+                                ? 'bg-slate-50 border border-slate-200'
+                                : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
+                            }`}
+                          >
+                            <p className="text-sm leading-relaxed">{entry.text}</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Toggle Button (when transcript is hidden) */}
+          {!showTranscript && (
+            <motion.button
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              onClick={() => setShowTranscript(true)}
+              className="w-10 h-10 bg-white rounded-full shadow-lg border border-slate-200 flex items-center justify-center hover:bg-blue-50 transition-colors self-center"
+            >
+              <ChevronLeft className="w-5 h-5 text-blue-600" />
+            </motion.button>
+          )}
         </motion.div>
       </div>
 
