@@ -57,12 +57,44 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const apiKey = wordpressAPI.getElevenLabsApiKey();
   const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
 
+  // Build enhanced system prompt with interviewer profile
+  const buildSystemPrompt = () => {
+    let prompt = scenario.content || '';
+
+    // Add interviewer profile information to system prompt
+    if (scenario.interviewer_profile) {
+      prompt += '\n\n## Dein Profil als Interviewer:\n';
+
+      if (scenario.interviewer_profile.name) {
+        prompt += `\nDein Name: ${scenario.interviewer_profile.name}`;
+      }
+
+      if (scenario.interviewer_profile.role) {
+        prompt += `\nDeine Rolle: ${scenario.interviewer_profile.role}`;
+      }
+
+      if (scenario.interviewer_profile.properties) {
+        prompt += `\n\n### Deine Eigenschaften:\n${scenario.interviewer_profile.properties}`;
+      }
+
+      if (scenario.interviewer_profile.typical_objections) {
+        prompt += `\n\n### Typische Einwände, die du vorbringen solltest:\n${scenario.interviewer_profile.typical_objections}`;
+      }
+
+      if (scenario.interviewer_profile.important_questions) {
+        prompt += `\n\n### Wichtige Fragen, die du stellen solltest:\n${scenario.interviewer_profile.important_questions}`;
+      }
+    }
+
+    return prompt;
+  };
+
   // Use official @11labs/react SDK with overrides for system prompt and first message
   const conversation = useConversation({
     overrides: {
       agent: {
         prompt: {
-          prompt: scenario.content || '', // System prompt from scenario
+          prompt: buildSystemPrompt(), // Enhanced system prompt with profile
         },
         firstMessage: scenario.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
       },
@@ -316,28 +348,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-6 relative">
-        {/* Status Bar - Top Left */}
-        <div className="absolute top-6 left-6 z-10 flex items-center gap-4">
-          <div className="bg-white rounded-full shadow-lg border border-slate-200 px-4 py-2 flex items-center gap-2">
-            {conversation.status === 'connecting' && (
-              <>
-                <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                <span className="text-xs font-semibold text-slate-700">Verbinde...</span>
-              </>
-            )}
-            {conversation.status === 'connected' && (
-              <>
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs font-semibold text-slate-700">Verbunden</span>
-              </>
-            )}
-          </div>
-
-          <div className="bg-white rounded-full shadow-lg border border-slate-200 px-4 py-2 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-slate-600" />
-            <span className="font-mono text-xs font-semibold text-slate-700">{formatDuration(duration)}</span>
-          </div>
-        </div>
 
         {/* Transcript Panel - Top Right (Collapsible) */}
         <AnimatePresence>
@@ -385,17 +395,25 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         className={`flex gap-2 ${entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                       >
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
-                            entry.role === 'agent' ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-teal-500 to-teal-600'
-                          }`}
-                        >
-                          {entry.role === 'agent' ? (
-                            <Bot className="w-4 h-4 text-white" />
+                        {/* Avatar */}
+                        {entry.role === 'agent' ? (
+                          // Show interviewer photo if available
+                          scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
+                            <img
+                              src={scenario.interviewer_profile.image_url}
+                              alt={scenario.interviewer_profile.name || 'Interviewer'}
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-sm border-2 border-blue-200"
+                            />
                           ) : (
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
+                              <Bot className="w-4 h-4 text-white" />
+                            </div>
+                          )
+                        ) : (
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
                             <User className="w-4 h-4 text-white" />
-                          )}
-                        </div>
+                          </div>
+                        )}
 
                         <div
                           className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
@@ -467,12 +485,41 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
               </div>
             )}
 
+            {/* Status Bar - Above Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mt-8 mb-4 flex items-center justify-center gap-4"
+            >
+              <div className="flex items-center gap-2 text-slate-700">
+                {conversation.status === 'connecting' && (
+                  <>
+                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                    <span className="text-sm font-semibold">Verbinde...</span>
+                  </>
+                )}
+                {conversation.status === 'connected' && (
+                  <>
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-sm font-semibold">Verbunden</span>
+                  </>
+                )}
+              </div>
+
+              <div className="h-4 w-px bg-slate-300" />
+
+              <div className="flex items-center gap-2 text-slate-600">
+                <Clock className="w-4 h-4" />
+                <span className="font-mono text-sm font-semibold">{formatDuration(duration)}</span>
+              </div>
+            </motion.div>
+
             {/* Action Button */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mt-6"
             >
               {conversation.status === 'connected' ? (
                 <Button
