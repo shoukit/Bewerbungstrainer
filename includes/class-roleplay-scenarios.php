@@ -288,7 +288,13 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                                     Pflichtfeld
                                 </label>
                             </div>
-                            <div style="text-align: right;">
+                            <div>
+                                <label>
+                                    <input type="checkbox" name="roleplay_variables[${variableIndex}][user_input]" value="1" checked />
+                                    Von User abfragen
+                                </label>
+                            </div>
+                            <div style="grid-column: span 2; text-align: right;">
                                 <button type="button" class="button remove-variable" style="color: #a00;">Entfernen</button>
                             </div>
                         </div>
@@ -319,6 +325,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         $type = isset($variable['type']) ? $variable['type'] : 'text';
         $default = isset($variable['default']) ? $variable['default'] : '';
         $required = isset($variable['required']) ? $variable['required'] : false;
+        $user_input = isset($variable['user_input']) ? $variable['user_input'] : true; // Default to true for backward compatibility
         ?>
         <div class="roleplay-variable-row" style="margin-bottom: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
@@ -352,7 +359,14 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                         Pflichtfeld
                     </label>
                 </div>
-                <div style="text-align: right;">
+                <div>
+                    <label>
+                        <input type="checkbox" name="roleplay_variables[<?php echo $index; ?>][user_input]"
+                               value="1" <?php checked($user_input, true); ?> />
+                        Von User abfragen
+                    </label>
+                </div>
+                <div style="grid-column: span 2; text-align: right;">
                     <button type="button" class="button remove-variable" style="color: #a00;">Entfernen</button>
                 </div>
             </div>
@@ -414,7 +428,8 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                         'label' => sanitize_text_field($variable['label']),
                         'type' => in_array($variable['type'], array('text', 'number', 'textarea')) ? $variable['type'] : 'text',
                         'default' => isset($variable['default']) ? sanitize_text_field($variable['default']) : '',
-                        'required' => isset($variable['required']) && $variable['required'] === '1'
+                        'required' => isset($variable['required']) && $variable['required'] === '1',
+                        'user_input' => isset($variable['user_input']) && $variable['user_input'] === '1'
                     );
                 }
             }

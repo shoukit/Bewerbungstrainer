@@ -799,17 +799,10 @@ Bewerber: [Ihre Antworten wurden hier aufgezeichnet]
   console.log('🔍 [APP] DialogContent component details:', DialogContent);
 
   // ===== ROLEPLAY MODE HANDLERS =====
-  const handleSelectScenario = (scenario) => {
+  const handleSelectScenario = (scenario, variables = {}) => {
     console.log('🎭 [APP] Scenario selected:', scenario);
+    console.log('🎭 [APP] Variables received:', variables);
     setSelectedScenario(scenario);
-
-    // Extract variables from scenario
-    const variables = {};
-    if (scenario.variables_schema && Array.isArray(scenario.variables_schema)) {
-      scenario.variables_schema.forEach((varDef) => {
-        variables[varDef.key] = varDef.default || '';
-      });
-    }
     setRoleplayVariables(variables);
   };
 

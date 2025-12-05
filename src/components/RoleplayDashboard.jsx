@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
+import RoleplayVariablesDialog from './RoleplayVariablesDialog';
 
 const RoleplayDashboard = ({ onSelectScenario, onBack }) => {
   const [scenarios, setScenarios] = useState([]);
@@ -35,6 +36,10 @@ const RoleplayDashboard = ({ onSelectScenario, onBack }) => {
     description: '',
     difficulty: 'medium',
   });
+
+  // Variables dialog
+  const [selectedScenario, setSelectedScenario] = useState(null);
+  const [showVariablesDialog, setShowVariablesDialog] = useState(false);
 
   // Load scenarios on mount
   useEffect(() => {
@@ -59,6 +64,22 @@ const RoleplayDashboard = ({ onSelectScenario, onBack }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleScenarioClick = (scenario) => {
+    setSelectedScenario(scenario);
+    setShowVariablesDialog(true);
+  };
+
+  const handleVariablesSubmit = (variables) => {
+    console.log('📝 [RoleplayDashboard] Variables collected:', variables);
+    setShowVariablesDialog(false);
+    onSelectScenario(selectedScenario, variables);
+  };
+
+  const handleVariablesCancel = () => {
+    setShowVariablesDialog(false);
+    setSelectedScenario(null);
   };
 
   const filterScenarios = () => {
@@ -253,7 +274,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack }) => {
                 whileTap={{ scale: 0.98 }}
               >
                 <div
-                  onClick={() => onSelectScenario(scenario)}
+                  onClick={() => handleScenarioClick(scenario)}
                   className="bg-white rounded-3xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 cursor-pointer border border-slate-100 h-full flex flex-col"
                 >
                   {/* Difficulty Badge */}
@@ -396,6 +417,14 @@ const RoleplayDashboard = ({ onSelectScenario, onBack }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Variables Input Dialog */}
+      <RoleplayVariablesDialog
+        open={showVariablesDialog}
+        scenario={selectedScenario}
+        onSubmit={handleVariablesSubmit}
+        onCancel={handleVariablesCancel}
+      />
     </div>
   );
 };
