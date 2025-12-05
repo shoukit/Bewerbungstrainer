@@ -183,7 +183,8 @@ class ElevenLabsConvAIService {
         }
 
         console.log('[ElevenLabs ConvAI] 📤 Sending to ElevenLabs');
-        console.log('[ElevenLabs ConvAI] Variables:', options.variables);
+        console.log('[ElevenLabs ConvAI] Variables:', JSON.stringify(options.variables, null, 2));
+        console.log('[ElevenLabs ConvAI] Full message:', JSON.stringify(initMessage, null, 2));
 
         this.ws.send(JSON.stringify(initMessage));
         console.log('[ElevenLabs ConvAI] ✅ Init sent');
