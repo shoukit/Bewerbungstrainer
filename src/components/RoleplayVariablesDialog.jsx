@@ -17,11 +17,22 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
   useEffect(() => {
     if (scenario?.variables_schema) {
       const initialValues = {};
+
+      // Initialize ALL variables (both user_input=true and user_input=false)
       scenario.variables_schema.forEach((varDef) => {
         initialValues[varDef.key] = varDef.default || '';
       });
+
       setValues(initialValues);
       setErrors({});
+
+      // Log variable configuration
+      const userInputVars = scenario.variables_schema.filter(v => v.user_input !== false);
+      const autoFilledVars = scenario.variables_schema.filter(v => v.user_input === false);
+
+      console.log('📋 [RoleplayVariablesDialog] Variable configuration:');
+      console.log('   User input variables:', userInputVars.map(v => `${v.key} (${v.label})`));
+      console.log('   Auto-filled variables:', autoFilledVars.map(v => `${v.key}="${v.default}"`));
     }
   }, [scenario]);
 
@@ -42,9 +53,15 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
   };
 
   const handleSubmit = () => {
-    // Validate required fields
+    // Filter to only show variables that require user input
+    const userInputVariables = scenario.variables_schema.filter((varDef) => {
+      // If user_input is undefined (backward compatibility), default to true
+      return varDef.user_input !== false;
+    });
+
+    // Validate required fields (only for user input variables)
     const newErrors = {};
-    scenario.variables_schema.forEach((varDef) => {
+    userInputVariables.forEach((varDef) => {
       if (varDef.required && !values[varDef.key]?.trim()) {
         newErrors[varDef.key] = `${varDef.label} ist ein Pflichtfeld`;
       }
@@ -55,14 +72,46 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
       return;
     }
 
-    // Submit values
+    // Log what we're submitting
+    const userProvidedVars = {};
+    const autoFilledVars = {};
+
+    scenario.variables_schema.forEach((varDef) => {
+      if (varDef.user_input === false) {
+        autoFilledVars[varDef.key] = values[varDef.key];
+      } else {
+        userProvidedVars[varDef.key] = values[varDef.key];
+      }
+    });
+
+    console.log('✅ [RoleplayVariablesDialog] Submitting variables:');
+    console.log('   User-provided:', userProvidedVars);
+    console.log('   Auto-filled:', autoFilledVars);
+    console.log('   All variables:', values);
+
+    // Submit ALL values (both user-provided and auto-filled)
     onSubmit(values);
   };
+
+  // Filter to only show variables that require user input
+  const userInputVariables = scenario?.variables_schema?.filter((varDef) => {
+    // If user_input is undefined (backward compatibility), default to true
+    return varDef.user_input !== false;
+  }) || [];
 
   if (!scenario?.variables_schema || scenario.variables_schema.length === 0) {
     // No variables to collect, submit immediately
     if (open) {
       onSubmit({});
+    }
+    return null;
+  }
+
+  // If no variables require user input, submit immediately with auto-filled values
+  if (userInputVariables.length === 0) {
+    if (open) {
+      console.log('📋 [RoleplayVariablesDialog] No user input required, using auto-filled values:', values);
+      onSubmit(values);
     }
     return null;
   }
@@ -83,7 +132,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
         </DialogHeader>
 
         <div className="py-6 space-y-4">
-          {scenario.variables_schema.map((varDef) => (
+          {userInputVariables.map((varDef) => (
             <div key={varDef.key} className="space-y-2">
               <Label htmlFor={varDef.key} className="text-sm font-semibold">
                 {varDef.label}
