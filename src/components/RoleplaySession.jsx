@@ -128,10 +128,14 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     },
   });
 
-  // Auto-scroll to newest messages
+  // Auto-scroll to newest messages in transcript only
   useEffect(() => {
     if (transcriptEndRef.current) {
-      transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      transcriptEndRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest'
+      });
     }
   }, [transcript]);
 
@@ -463,11 +467,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         </AnimatePresence>
 
         {/* CENTERED MAIN CONTENT - Interviewer Profile */}
-        <div className="flex items-start justify-center h-full pt-6 overflow-hidden">
+        <div className="flex items-start justify-center h-full pt-6 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-2xl h-full flex flex-col"
+            className="w-full max-w-2xl min-h-full flex flex-col py-4"
           >
             {/* Audio Visualizer - Above Profile */}
             {conversation.status === 'connected' && (
