@@ -34,6 +34,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   // Transcript state
   const [transcript, setTranscript] = useState([]);
+  const [showTranscript, setShowTranscript] = useState(true); // Transcript panel visibility
 
   // End confirmation dialog
   const [showEndDialog, setShowEndDialog] = useState(false);
@@ -303,7 +304,8 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden"
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col md:flex-row"
+          style={{ height: 'calc(100vh - 100px)', maxHeight: '900px' }}
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-6 py-4">
