@@ -177,9 +177,9 @@ class ElevenLabsConvAIService {
           },
         };
 
-        // Add dynamic variables at agent level (not in llm_extra_body)
+        // Add dynamic variables at top agent level
         if (options.variables && Object.keys(options.variables).length > 0) {
-          initMessage.conversation_config_override.agent.prompt.dynamic_variables = options.variables;
+          initMessage.conversation_config_override.agent.dynamic_variables = options.variables;
         }
 
         console.log('[ElevenLabs ConvAI] 📤 Sending to ElevenLabs');
