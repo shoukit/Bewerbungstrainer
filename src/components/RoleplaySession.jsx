@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useConversation } from '@elevenlabs/react';
 import {
   Mic,
   MicOff,
@@ -17,7 +18,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import AudioVisualizer from './AudioVisualizer';
 import FeedbackModal from './FeedbackModal';
-import elevenlabsConvAI from '@/services/elevenlabs-convai';
 import {
   analyzeRoleplayTranscript,
   saveRoleplaySessionAnalysis,
@@ -26,18 +26,14 @@ import {
 import wordpressAPI from '@/services/wordpress-api';
 
 const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
-  // Connection state
-  const [connectionState, setConnectionState] = useState('idle'); // idle, connecting, connected, ended, error
-  const [error, setError] = useState(null);
-
   // Session data
   const [sessionId, setSessionId] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [duration, setDuration] = useState(0);
+  const [error, setError] = useState(null);
 
   // Transcript state
   const [transcript, setTranscript] = useState([]);
-  const [audioLevel, setAudioLevel] = useState(0);
 
   // End confirmation dialog
   const [showEndDialog, setShowEndDialog] = useState(false);
@@ -51,6 +47,39 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   // Refs
   const transcriptEndRef = useRef(null);
   const durationIntervalRef = useRef(null);
+  const conversationIdRef = useRef(null);
+  const hasStartedRef = useRef(false);
+
+  // Get API credentials
+  const apiKey = wordpressAPI.getElevenLabsApiKey();
+  const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
+
+  // Use official @11labs/react SDK - same as standard interview
+  const conversation = useConversation({
+    onConnect: () => {
+      console.log('✅ [RoleplaySession] Connected to ElevenLabs');
+      setStartTime(Date.now());
+    },
+    onDisconnect: () => {
+      console.log('ℹ️ [RoleplaySession] Disconnected from ElevenLabs');
+    },
+    onMessage: (message) => {
+      if (message.source === 'ai' || message.source === 'user') {
+        setTranscript((prev) => [
+          ...prev,
+          {
+            role: message.source === 'ai' ? 'agent' : 'user',
+            text: message.message,
+            timestamp: Date.now(),
+          },
+        ]);
+      }
+    },
+    onError: (err) => {
+      console.error('❌ [RoleplaySession] Error:', err);
+      setError(err.message || 'Ein Fehler ist aufgetreten.');
+    },
+  });
 
   // Scroll to bottom of transcript
   useEffect(() => {
@@ -59,7 +88,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   // Update duration every second
   useEffect(() => {
-    if (connectionState === 'connected' && startTime) {
+    if (conversation.status === 'connected' && startTime) {
       durationIntervalRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setDuration(elapsed);
@@ -75,54 +104,25 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         clearInterval(durationIntervalRef.current);
       }
     };
-  }, [connectionState, startTime]);
+  }, [conversation.status, startTime]);
 
   // Start conversation on mount
   useEffect(() => {
-    startConversation();
+    if (!hasStartedRef.current && agentId && apiKey) {
+      hasStartedRef.current = true;
+      startConversation();
+    }
 
-    // Cleanup on unmount
     return () => {
-      if (elevenlabsConvAI.isCurrentlyConnected()) {
-        elevenlabsConvAI.stopConversation();
+      if (conversation.status === 'connected') {
+        conversation.endSession();
       }
     };
   }, []);
 
-  /**
-   * Helper function to clean HTML from WordPress content
-   * Strips HTML tags and decodes HTML entities
-   */
-  const cleanHtmlContent = (html) => {
-    if (!html) return '';
-
-    // Create a temporary element to decode HTML entities and strip tags
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
-
-    // Replace <br> tags with newlines before stripping
-    temp.innerHTML = temp.innerHTML.replace(/<br\s*\/?>/gi, '\n');
-
-    // Get text content (this strips all HTML tags and decodes entities)
-    const cleaned = temp.textContent || temp.innerText || '';
-
-    // Clean up extra whitespace
-    return cleaned.trim();
-  };
-
   const startConversation = async () => {
     try {
-      setConnectionState('connecting');
       setError(null);
-      setStartTime(Date.now());
-
-      // Get API credentials
-      const apiKey = wordpressAPI.getElevenLabsApiKey();
-      const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
-
-      if (!apiKey || !agentId) {
-        throw new Error('ElevenLabs API Key oder Agent ID fehlt. Bitte kontaktiere den Administrator.');
-      }
 
       // Create session in database
       const currentUser = wordpressAPI.getCurrentUser();
@@ -136,79 +136,33 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
       const createdSession = await createRoleplaySession(sessionData);
       setSessionId(createdSession.id);
 
-      // Setup ElevenLabs callbacks
-      elevenlabsConvAI.onConnected = () => {
-        console.log('✅ [RoleplaySession] Connected to ElevenLabs');
-        setConnectionState('connected');
-      };
-
-      elevenlabsConvAI.onDisconnected = () => {
-        console.log('ℹ️ [RoleplaySession] Disconnected from ElevenLabs');
-        if (connectionState !== 'ended') {
-          setConnectionState('ended');
-        }
-      };
-
-      elevenlabsConvAI.onTranscript = (transcriptEntry) => {
-        console.log('📝 [RoleplaySession] Transcript:', transcriptEntry);
-        setTranscript((prev) => [...prev, transcriptEntry]);
-      };
-
-      elevenlabsConvAI.onAudioLevel = (level) => {
-        setAudioLevel(level);
-      };
-
-      elevenlabsConvAI.onError = (err) => {
-        console.error('❌ [RoleplaySession] ElevenLabs error:', err);
-        setError(err.message || 'Ein Fehler ist aufgetreten.');
-        setConnectionState('error');
-      };
-
-      elevenlabsConvAI.onEnd = () => {
-        console.log('🏁 [RoleplaySession] Conversation ended by agent');
-        handleEndConversation();
-      };
-
-      // Clean HTML from prompt (WordPress adds <p>, <br>, and HTML entities)
-      const cleanedPrompt = cleanHtmlContent(scenario.content || '');
-
-      // Start conversation
-      const options = {
-        prompt: cleanedPrompt, // Use cleaned plain text prompt
-        variables: variables,
-        firstMessage: scenario.initial_message || 'Hallo! Lass uns mit dem Rollenspiel beginnen.',
-      };
-
       console.log('🚀 [RoleplaySession] Starting:', agentId);
       console.log('🚀 [RoleplaySession] Variables:', variables);
 
-      await elevenlabsConvAI.startConversation(agentId, apiKey, options);
+      // Use official SDK - pass variables as dynamicVariables (same as standard interview)
+      conversationIdRef.current = await conversation.startSession({
+        agentId: agentId,
+        dynamicVariables: variables,  // THIS IS THE KEY - same as standard interview!
+      });
+
+      console.log('✅ [RoleplaySession] Session started:', conversationIdRef.current);
     } catch (err) {
-      console.error('❌ [RoleplaySession] Failed to start conversation:', err);
+      console.error('❌ [RoleplaySession] Failed to start:', err);
       setError(err.message || 'Verbindung fehlgeschlagen.');
-      setConnectionState('error');
     }
   };
 
   const handleEndConversation = async () => {
     setShowEndDialog(false);
-    setConnectionState('ended');
 
-    // Stop conversation
-    if (elevenlabsConvAI.isCurrentlyConnected()) {
-      elevenlabsConvAI.stopConversation();
+    if (conversation.status === 'connected') {
+      conversation.endSession();
     }
 
-    const finalTranscript = elevenlabsConvAI.getTranscript();
-    const conversationDuration = elevenlabsConvAI.getDuration();
-    const conversationId = elevenlabsConvAI.getConversationId();
-
-    console.log('🏁 [RoleplaySession] Conversation ended');
-    console.log('🏁 [RoleplaySession] Transcript entries:', finalTranscript.length);
-    console.log('🏁 [RoleplaySession] Duration:', conversationDuration, 'seconds');
+    console.log('🏁 [RoleplaySession] Ending conversation');
 
     // Check if transcript is empty
-    if (finalTranscript.length === 0) {
+    if (transcript.length === 0) {
       setError('Das Gespräch war zu kurz. Bitte versuche es erneut.');
       return;
     }
@@ -223,17 +177,17 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         variables: variables,
       };
 
-      const analysis = await analyzeRoleplayTranscript(finalTranscript, scenarioContext, null);
+      const analysis = await analyzeRoleplayTranscript(transcript, scenarioContext, null);
 
       // Save analysis to database
-      if (sessionId) {
+      if (sessionId && conversationIdRef.current) {
         await saveRoleplaySessionAnalysis(
           sessionId,
-          finalTranscript,
+          transcript,
           analysis.feedbackContent,
           analysis.audioAnalysisContent,
-          conversationDuration,
-          conversationId
+          duration,
+          conversationIdRef.current
         );
       }
 
@@ -289,7 +243,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   };
 
   // Error state
-  if (connectionState === 'error') {
+  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
         <motion.div
@@ -335,6 +289,8 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     );
   }
 
+  const audioLevel = conversation.isSpeaking ? 50 : 0;
+
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
@@ -348,13 +304,13 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  {connectionState === 'connecting' && (
+                  {conversation.status === 'connecting' && (
                     <>
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
                       <span className="text-white font-semibold">Verbinde...</span>
                     </>
                   )}
-                  {connectionState === 'connected' && (
+                  {conversation.status === 'connected' && (
                     <>
                       <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
                       <span className="text-white font-semibold">Verbunden</span>
@@ -374,7 +330,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                 onClick={() => setShowEndDialog(true)}
                 variant="ghost"
                 className="text-white hover:bg-white/20"
-                disabled={connectionState !== 'connected'}
+                disabled={conversation.status !== 'connected'}
               >
                 <X className="w-5 h-5 mr-2" />
                 Beenden
@@ -396,7 +352,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-6 border border-slate-200">
               <div className="text-center mb-4">
                 <div className="flex items-center justify-center gap-2 text-slate-700">
-                  {connectionState === 'connected' ? (
+                  {conversation.status === 'connected' ? (
                     <>
                       <Mic className="w-5 h-5 text-blue-600" />
                       <span className="font-semibold">Spreche frei mit dem Agent</span>
@@ -410,7 +366,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                 </div>
               </div>
 
-              <AudioVisualizer audioLevel={audioLevel} isActive={connectionState === 'connected'} />
+              <AudioVisualizer audioLevel={audioLevel} isActive={conversation.status === 'connected'} />
             </div>
 
             {/* Transcript */}
