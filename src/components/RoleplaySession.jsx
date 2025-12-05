@@ -34,6 +34,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   // Transcript state
   const [transcript, setTranscript] = useState([]);
+  const [showTranscript, setShowTranscript] = useState(true); // Transcript panel visibility
 
   // End confirmation dialog
   const [showEndDialog, setShowEndDialog] = useState(false);
