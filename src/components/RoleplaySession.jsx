@@ -53,18 +53,20 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const apiKey = wordpressAPI.getElevenLabsApiKey();
   const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
 
-  // Use official @11labs/react SDK with overrides for system prompt
+  // Use official @11labs/react SDK with overrides for system prompt and first message
   const conversation = useConversation({
     overrides: {
       agent: {
         prompt: {
           prompt: scenario.content || '', // System prompt from scenario
         },
+        firstMessage: scenario.first_message || 'Hallo! Ich freue mich auf unser Gespräch.',
       },
     },
     onConnect: () => {
       console.log('✅ [RoleplaySession] Connected to ElevenLabs');
       console.log('📝 [RoleplaySession] System prompt:', scenario.content?.substring(0, 100) + '...');
+      console.log('💬 [RoleplaySession] First message:', scenario.first_message);
       setStartTime(Date.now());
     },
     onDisconnect: () => {
