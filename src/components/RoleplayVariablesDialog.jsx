@@ -25,14 +25,6 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
 
       setValues(initialValues);
       setErrors({});
-
-      // Log variable configuration
-      const userInputVars = scenario.variables_schema.filter(v => v.user_input !== false);
-      const autoFilledVars = scenario.variables_schema.filter(v => v.user_input === false);
-
-      console.log('📋 [RoleplayVariablesDialog] Variable configuration:');
-      console.log('   User input variables:', userInputVars.map(v => `${v.key} (${v.label})`));
-      console.log('   Auto-filled variables:', autoFilledVars.map(v => `${v.key}="${v.default}"`));
     }
   }, [scenario]);
 
@@ -72,22 +64,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
       return;
     }
 
-    // Log what we're submitting
-    const userProvidedVars = {};
-    const autoFilledVars = {};
-
-    scenario.variables_schema.forEach((varDef) => {
-      if (varDef.user_input === false) {
-        autoFilledVars[varDef.key] = values[varDef.key];
-      } else {
-        userProvidedVars[varDef.key] = values[varDef.key];
-      }
-    });
-
-    console.log('✅ [RoleplayVariablesDialog] Submitting variables:');
-    console.log('   User-provided:', userProvidedVars);
-    console.log('   Auto-filled:', autoFilledVars);
-    console.log('   All variables:', values);
+    console.log('✅ [RoleplayVariablesDialog] Variables:', values);
 
     // Submit ALL values (both user-provided and auto-filled)
     onSubmit(values);
@@ -110,7 +87,6 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
   // If no variables require user input, submit immediately with auto-filled values
   if (userInputVariables.length === 0) {
     if (open) {
-      console.log('📋 [RoleplayVariablesDialog] No user input required, using auto-filled values:', values);
       onSubmit(values);
     }
     return null;

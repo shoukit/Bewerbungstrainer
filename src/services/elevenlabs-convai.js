@@ -177,21 +177,16 @@ class ElevenLabsConvAIService {
           },
         };
 
-        // Add dynamic variables if provided
-        if (options.variables) {
-          initMessage.conversation_config_override.agent.prompt.llm_extra_body = {
-            variables: options.variables,
-          };
+        // Add dynamic variables at agent level (not in llm_extra_body)
+        if (options.variables && Object.keys(options.variables).length > 0) {
+          initMessage.conversation_config_override.agent.prompt.dynamic_variables = options.variables;
         }
 
-        console.log('[ElevenLabs ConvAI] 📤 Sending initialization message to ElevenLabs:');
-        console.log('   System Prompt:', options.prompt || '(empty)');
-        console.log('   First Message:', options.firstMessage || '(empty)');
-        console.log('   Variables:', options.variables ? JSON.stringify(options.variables, null, 2) : '(none)');
-        console.log('   Full message:', JSON.stringify(initMessage, null, 2));
+        console.log('[ElevenLabs ConvAI] 📤 Sending to ElevenLabs');
+        console.log('[ElevenLabs ConvAI] Variables:', options.variables);
 
         this.ws.send(JSON.stringify(initMessage));
-        console.log('[ElevenLabs ConvAI] ✅ Initialization message sent');
+        console.log('[ElevenLabs ConvAI] ✅ Init sent');
 
         if (this.onConnected) {
           this.onConnected();
