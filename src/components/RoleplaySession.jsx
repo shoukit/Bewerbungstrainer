@@ -362,7 +362,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-6 relative">
+      <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-6 relative overflow-hidden">
 
         {/* Transcript Panel - Top Right (Collapsible) */}
         <AnimatePresence>
@@ -463,11 +463,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         </AnimatePresence>
 
         {/* CENTERED MAIN CONTENT - Interviewer Profile */}
-        <div className="flex items-start justify-center min-h-screen pt-6">
+        <div className="flex items-start justify-center h-full pt-6 overflow-hidden">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-2xl h-[calc(100vh-3rem)] flex flex-col"
+            className="w-full max-w-2xl h-full flex flex-col"
           >
             {/* Audio Visualizer - Above Profile */}
             {conversation.status === 'connected' && (
