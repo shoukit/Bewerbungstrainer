@@ -184,8 +184,14 @@ class ElevenLabsConvAIService {
           };
         }
 
+        console.log('[ElevenLabs ConvAI] 📤 Sending initialization message to ElevenLabs:');
+        console.log('   System Prompt:', options.prompt || '(empty)');
+        console.log('   First Message:', options.firstMessage || '(empty)');
+        console.log('   Variables:', options.variables ? JSON.stringify(options.variables, null, 2) : '(none)');
+        console.log('   Full message:', JSON.stringify(initMessage, null, 2));
+
         this.ws.send(JSON.stringify(initMessage));
-        console.log('[ElevenLabs ConvAI] Sent initialization message');
+        console.log('[ElevenLabs ConvAI] ✅ Initialization message sent');
 
         if (this.onConnected) {
           this.onConnected();
