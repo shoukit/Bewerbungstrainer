@@ -45,7 +45,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Refs
-  const transcriptEndRef = useRef(null);
   const durationIntervalRef = useRef(null);
   const conversationIdRef = useRef(null);
   const hasStartedRef = useRef(false);
@@ -54,10 +53,18 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const apiKey = wordpressAPI.getElevenLabsApiKey();
   const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
 
-  // Use official @11labs/react SDK - same as standard interview
+  // Use official @11labs/react SDK with overrides for system prompt
   const conversation = useConversation({
+    overrides: {
+      agent: {
+        prompt: {
+          prompt: scenario.content || '', // System prompt from scenario
+        },
+      },
+    },
     onConnect: () => {
       console.log('✅ [RoleplaySession] Connected to ElevenLabs');
+      console.log('📝 [RoleplaySession] System prompt:', scenario.content?.substring(0, 100) + '...');
       setStartTime(Date.now());
     },
     onDisconnect: () => {
@@ -81,10 +88,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     },
   });
 
-  // Scroll to bottom of transcript
-  useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [transcript]);
+  // Auto-scroll removed - users can manually scroll transcript
 
   // Update duration every second
   useEffect(() => {
@@ -414,7 +418,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                         </div>
                       </motion.div>
                     ))}
-                    <div ref={transcriptEndRef} />
                   </AnimatePresence>
                 )}
               </div>
