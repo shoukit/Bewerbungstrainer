@@ -135,6 +135,15 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'normal',
             'high'
         );
+
+        add_meta_box(
+            'roleplay_interviewer_profile',
+            __('Gesprächspartner-Profil', 'bewerbungstrainer'),
+            array($this, 'render_interviewer_profile_meta_box'),
+            self::POST_TYPE,
+            'normal',
+            'high'
+        );
     }
 
     /**
@@ -436,6 +445,26 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_feedback_prompt', sanitize_textarea_field($_POST['roleplay_feedback_prompt']));
         }
 
+        // Save interviewer profile
+        if (isset($_POST['roleplay_interviewer_name'])) {
+            update_post_meta($post_id, '_roleplay_interviewer_name', sanitize_text_field($_POST['roleplay_interviewer_name']));
+        }
+        if (isset($_POST['roleplay_interviewer_role'])) {
+            update_post_meta($post_id, '_roleplay_interviewer_role', sanitize_text_field($_POST['roleplay_interviewer_role']));
+        }
+        if (isset($_POST['roleplay_interviewer_image'])) {
+            update_post_meta($post_id, '_roleplay_interviewer_image', esc_url_raw($_POST['roleplay_interviewer_image']));
+        }
+        if (isset($_POST['roleplay_interviewer_properties'])) {
+            update_post_meta($post_id, '_roleplay_interviewer_properties', sanitize_textarea_field($_POST['roleplay_interviewer_properties']));
+        }
+        if (isset($_POST['roleplay_interviewer_objections'])) {
+            update_post_meta($post_id, '_roleplay_interviewer_objections', sanitize_textarea_field($_POST['roleplay_interviewer_objections']));
+        }
+        if (isset($_POST['roleplay_interviewer_questions'])) {
+            update_post_meta($post_id, '_roleplay_interviewer_questions', sanitize_textarea_field($_POST['roleplay_interviewer_questions']));
+        }
+
         // Save variables schema
         if (isset($_POST['roleplay_variables']) && is_array($_POST['roleplay_variables'])) {
             $variables = array();
@@ -518,7 +547,113 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'variables_schema' => $variables,
             'tags' => $tags,
             'created_at' => $post->post_date,
-            'updated_at' => $post->post_modified
+            'updated_at' => $post->post_modified,
+            'interviewer_profile' => array(
+                'name' => get_post_meta($post->ID, '_roleplay_interviewer_name', true),
+                'role' => get_post_meta($post->ID, '_roleplay_interviewer_role', true),
+                'image_url' => get_post_meta($post->ID, '_roleplay_interviewer_image', true),
+                'properties' => get_post_meta($post->ID, '_roleplay_interviewer_properties', true),
+                'typical_objections' => get_post_meta($post->ID, '_roleplay_interviewer_objections', true),
+                'important_questions' => get_post_meta($post->ID, '_roleplay_interviewer_questions', true),
+            )
         );
+    }
+
+    /**
+     * Render interviewer profile meta box
+     */
+    public function render_interviewer_profile_meta_box($post) {
+        // Get current values
+        $interviewer_name = get_post_meta($post->ID, '_roleplay_interviewer_name', true);
+        $interviewer_role = get_post_meta($post->ID, '_roleplay_interviewer_role', true);
+        $interviewer_image = get_post_meta($post->ID, '_roleplay_interviewer_image', true);
+        $interviewer_properties = get_post_meta($post->ID, '_roleplay_interviewer_properties', true);
+        $interviewer_objections = get_post_meta($post->ID, '_roleplay_interviewer_objections', true);
+        $interviewer_questions = get_post_meta($post->ID, '_roleplay_interviewer_questions', true);
+
+        ?>
+        <table class="form-table">
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_interviewer_name"><?php _e('Name des Gesprächspartners', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <input type="text" id="roleplay_interviewer_name" name="roleplay_interviewer_name"
+                           value="<?php echo esc_attr($interviewer_name); ?>"
+                           class="regular-text" />
+                    <p class="description">
+                        <?php _e('Wird als {{interviewer_name}} im Gespräch verfügbar', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_interviewer_role"><?php _e('Rolle/Position', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <input type="text" id="roleplay_interviewer_role" name="roleplay_interviewer_role"
+                           value="<?php echo esc_attr($interviewer_role); ?>"
+                           class="regular-text" />
+                    <p class="description">
+                        <?php _e('Wird als {{interviewer_role}} im Gespräch verfügbar', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_interviewer_image"><?php _e('Profilbild URL', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <input type="url" id="roleplay_interviewer_image" name="roleplay_interviewer_image"
+                           value="<?php echo esc_url($interviewer_image); ?>"
+                           class="large-text" />
+                    <p class="description">
+                        <?php _e('URL zum Profilbild des Gesprächspartners (wird im Frontend angezeigt)', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_interviewer_properties"><?php _e('Eigenschaften', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <textarea id="roleplay_interviewer_properties" name="roleplay_interviewer_properties"
+                              rows="4" class="large-text"><?php echo esc_textarea($interviewer_properties); ?></textarea>
+                    <p class="description">
+                        <?php _e('Charaktereigenschaften des Gesprächspartners (eine pro Zeile oder kommagetrennt)', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_interviewer_objections"><?php _e('Typische Einwände', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <textarea id="roleplay_interviewer_objections" name="roleplay_interviewer_objections"
+                              rows="4" class="large-text"><?php echo esc_textarea($interviewer_objections); ?></textarea>
+                    <p class="description">
+                        <?php _e('Typische Einwände oder kritische Fragen (eine pro Zeile)', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_interviewer_questions"><?php _e('Wichtige Fragen', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <textarea id="roleplay_interviewer_questions" name="roleplay_interviewer_questions"
+                              rows="4" class="large-text"><?php echo esc_textarea($interviewer_questions); ?></textarea>
+                    <p class="description">
+                        <?php _e('Wichtige Fragen, die der Gesprächspartner stellt (eine pro Zeile)', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+        <?php
     }
 }
