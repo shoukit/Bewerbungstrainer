@@ -134,6 +134,14 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     }
   }, [transcript]);
 
+  // Handle agent ending the call
+  useEffect(() => {
+    if (conversation.status === 'disconnected' && transcript.length > 0 && !isAnalyzing) {
+      console.log('🔔 [RoleplaySession] Agent ended the call - starting analysis');
+      handleEndConversation();
+    }
+  }, [conversation.status]);
+
   // Update duration every second
   useEffect(() => {
     if (conversation.status === 'connected' && startTime) {
@@ -454,11 +462,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         </AnimatePresence>
 
         {/* CENTERED MAIN CONTENT - Interviewer Profile */}
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-start justify-center min-h-screen pt-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-2xl"
+            className="w-full max-w-2xl h-[calc(100vh-3rem)] flex flex-col"
           >
             {/* Audio Visualizer - Above Profile */}
             {conversation.status === 'connected' && (
@@ -479,17 +487,21 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
             {/* Interviewer Profile Card */}
             {scenario.interviewer_profile && scenario.interviewer_profile.name ? (
-              <InterviewerProfile profile={scenario.interviewer_profile} />
+              <div className="flex-1 overflow-y-auto">
+                <InterviewerProfile profile={scenario.interviewer_profile} />
+              </div>
             ) : (
-              <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 mx-auto mb-4 flex items-center justify-center">
-                  <Bot className="w-12 h-12 text-white" />
+              <div className="flex-1 flex items-center justify-center">
+                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 mx-auto mb-4 flex items-center justify-center">
+                    <Bot className="w-12 h-12 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">{scenario.title}</h2>
+                  <p className="text-slate-600 text-sm mb-6">{scenario.description}</p>
+                  <span className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold ${getDifficultyColor(scenario.difficulty)}`}>
+                    {getDifficultyLabel(scenario.difficulty)}
+                  </span>
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">{scenario.title}</h2>
-                <p className="text-slate-600 text-sm mb-6">{scenario.description}</p>
-                <span className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold ${getDifficultyColor(scenario.difficulty)}`}>
-                  {getDifficultyLabel(scenario.difficulty)}
-                </span>
               </div>
             )}
 
@@ -537,6 +549,15 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                 >
                   <X className="w-5 h-5 mr-2" />
                   Gespräch beenden
+                </Button>
+              ) : conversation.status === 'disconnected' ? (
+                <Button
+                  disabled
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
+                >
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Gespräch wurde beendet...
                 </Button>
               ) : (
                 <Button
