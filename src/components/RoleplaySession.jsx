@@ -135,7 +135,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
       const createdSession = await createRoleplaySession(sessionData);
       setSessionId(createdSession.id);
-      console.log('✅ [RoleplaySession] Session created:', createdSession.id);
 
       // Setup ElevenLabs callbacks
       elevenlabsConvAI.onConnected = () => {
@@ -173,11 +172,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
       // Clean HTML from prompt (WordPress adds <p>, <br>, and HTML entities)
       const cleanedPrompt = cleanHtmlContent(scenario.content || '');
 
-      console.log('🧹 [RoleplaySession] Cleaned prompt (removed HTML):');
-      console.log('   Original length:', (scenario.content || '').length);
-      console.log('   Cleaned length:', cleanedPrompt.length);
-      console.log('   Preview:', cleanedPrompt.substring(0, 200) + '...');
-
       // Start conversation
       const options = {
         prompt: cleanedPrompt, // Use cleaned plain text prompt
@@ -185,11 +179,8 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         firstMessage: scenario.initial_message || 'Hallo! Lass uns mit dem Rollenspiel beginnen.',
       };
 
-      console.log('🚀 [RoleplaySession] Starting conversation with options:');
-      console.log('   Agent ID:', agentId);
-      console.log('   System Prompt length:', options.prompt?.length || 0, 'characters');
-      console.log('   First Message:', options.firstMessage);
-      console.log('   Variables:', JSON.stringify(options.variables, null, 2));
+      console.log('🚀 [RoleplaySession] Starting:', agentId);
+      console.log('🚀 [RoleplaySession] Variables:', variables);
 
       await elevenlabsConvAI.startConversation(agentId, apiKey, options);
     } catch (err) {
