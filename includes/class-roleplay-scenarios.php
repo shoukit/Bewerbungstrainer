@@ -149,6 +149,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         $initial_message = get_post_meta($post->ID, '_roleplay_initial_message', true);
         $difficulty = get_post_meta($post->ID, '_roleplay_difficulty', true);
         $description = get_post_meta($post->ID, '_roleplay_description', true);
+        $feedback_prompt = get_post_meta($post->ID, '_roleplay_feedback_prompt', true);
 
         ?>
         <table class="form-table">
@@ -201,6 +202,19 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                               rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea>
                     <p class="description">
                         <?php _e('Kurze Beschreibung des Szenarios (wird dem User angezeigt)', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_feedback_prompt"><?php _e('Feedback-Prompt für Gemini', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <textarea id="roleplay_feedback_prompt" name="roleplay_feedback_prompt"
+                              rows="10" class="large-text" style="font-family: monospace; font-size: 12px;"><?php echo esc_textarea($feedback_prompt); ?></textarea>
+                    <p class="description">
+                        <?php _e('Der Prompt für die KI-Bewertung nach dem Gespräch. Verwende ${transcript} als Platzhalter für das Transkript. Leer lassen für Standard-Prompt.', 'bewerbungstrainer'); ?>
                     </p>
                 </td>
             </tr>
@@ -415,6 +429,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         // Save description
         if (isset($_POST['roleplay_description'])) {
             update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($_POST['roleplay_description']));
+        }
+
+        // Save feedback prompt
+        if (isset($_POST['roleplay_feedback_prompt'])) {
+            update_post_meta($post_id, '_roleplay_feedback_prompt', sanitize_textarea_field($_POST['roleplay_feedback_prompt']));
         }
 
         // Save variables schema

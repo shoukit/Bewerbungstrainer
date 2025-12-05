@@ -45,7 +45,14 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
   try {
     // Generate feedback (transcript analysis)
     console.log('🎭 [Roleplay Feedback] Generating feedback...');
-    results.feedbackContent = await generateInterviewFeedback(formattedTranscript, geminiApiKey);
+
+    // Use custom feedback prompt from scenario if available
+    const customPrompt = scenarioContext.feedback_prompt || null;
+    if (customPrompt) {
+      console.log('🎭 [Roleplay Feedback] Using custom feedback prompt from scenario');
+    }
+
+    results.feedbackContent = await generateInterviewFeedback(formattedTranscript, geminiApiKey, customPrompt);
     console.log('✅ [Roleplay Feedback] Feedback generated successfully');
   } catch (error) {
     console.error('❌ [Roleplay Feedback] Failed to generate feedback:', error);

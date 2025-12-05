@@ -94,7 +94,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-purple-600 flex items-center justify-center">
@@ -107,9 +107,12 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-6 space-y-4">
+        <div className="py-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           {userInputVariables.map((varDef) => (
-            <div key={varDef.key} className="space-y-2">
+            <div
+              key={varDef.key}
+              className={`space-y-2 ${varDef.type === 'textarea' ? 'md:col-span-2' : 'col-span-1'}`}
+            >
               <Label htmlFor={varDef.key} className="text-sm font-semibold">
                 {varDef.label}
                 {varDef.required && <span className="text-red-500 ml-1">*</span>}

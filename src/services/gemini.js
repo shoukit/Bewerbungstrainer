@@ -39,7 +39,7 @@ export async function listAvailableModels(apiKey) {
  * @param {string} modelName - Optional model name (defaults to 'gemini-1.5-flash')
  * @returns {Promise<string>} - The generated feedback
  */
-export async function generateInterviewFeedback(transcript, apiKey, modelName = 'gemini-1.5-flash') {
+export async function generateInterviewFeedback(transcript, apiKey, modelName = 'gemini-1.5-flash', customPrompt = null) {
   console.log('🤖 [GEMINI] Starting feedback generation...');
 
   if (!apiKey) {
@@ -68,6 +68,7 @@ export async function generateInterviewFeedback(transcript, apiKey, modelName = 
 
   console.log(`🎯 [GEMINI] Primary model: ${modelName}`);
   console.log(`🎯 [GEMINI] Fallback models: ${modelsToTry.slice(1).join(', ')}`);
+  console.log(`📝 [GEMINI] Custom prompt: ${customPrompt ? 'Yes' : 'No (using default)'}`);
 
   let lastError = null;
 
@@ -83,7 +84,8 @@ export async function generateInterviewFeedback(transcript, apiKey, modelName = 
       console.log('✅ [GEMINI] Model instance created');
       console.log(`📡 [GEMINI] Model config:`, { model: currentModel });
 
-  const prompt = `Du bist ein professioneller Karriere-Coach. Analysiere das folgende Bewerbungsgespräch-Transkript und gib konstruktives Feedback in "Du"-Form.
+  // Use custom prompt if provided, otherwise use default prompt
+  const prompt = customPrompt ? customPrompt.replace('${transcript}', transcript) : `Du bist ein professioneller Karriere-Coach. Analysiere das folgende Bewerbungsgespräch-Transkript und gib konstruktives Feedback in "Du"-Form.
 
 SEHR WICHTIG: Bewerte AUSSCHLIESSLICH den BEWERBER/die BEWERBERIN!
 - Die Aussagen des Interviewers (z.B. "H. Müller", "Interviewer", oder ähnliche Kennzeichnungen) dienen NUR als Kontext für die Fragen.
