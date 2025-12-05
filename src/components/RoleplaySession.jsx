@@ -151,9 +151,16 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
       // Start conversation
       const options = {
+        prompt: scenario.content || '', // System prompt from WordPress content
         variables: variables,
         firstMessage: scenario.initial_message || 'Hallo! Lass uns mit dem Rollenspiel beginnen.',
       };
+
+      console.log('🚀 [RoleplaySession] Starting conversation with options:');
+      console.log('   Agent ID:', agentId);
+      console.log('   System Prompt:', options.prompt || '(empty)');
+      console.log('   First Message:', options.firstMessage);
+      console.log('   Variables:', JSON.stringify(options.variables, null, 2));
 
       await elevenlabsConvAI.startConversation(agentId, apiKey, options);
     } catch (err) {
