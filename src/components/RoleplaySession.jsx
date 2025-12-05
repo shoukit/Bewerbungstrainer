@@ -61,13 +61,13 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         prompt: {
           prompt: scenario.content || '', // System prompt from scenario
         },
-        firstMessage: scenario.first_message || 'Hallo! Ich freue mich auf unser Gespräch.',
+        firstMessage: scenario.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
       },
     },
     onConnect: () => {
       console.log('✅ [RoleplaySession] Connected to ElevenLabs');
       console.log('📝 [RoleplaySession] System prompt:', scenario.content?.substring(0, 100) + '...');
-      console.log('💬 [RoleplaySession] First message:', scenario.first_message);
+      console.log('💬 [RoleplaySession] First message:', scenario.initial_message);
       setStartTime(Date.now());
     },
     onDisconnect: () => {
