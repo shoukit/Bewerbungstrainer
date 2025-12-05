@@ -52,6 +52,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const durationIntervalRef = useRef(null);
   const conversationIdRef = useRef(null);
   const hasStartedRef = useRef(false);
+  const transcriptEndRef = useRef(null);
 
   // Get API credentials
   const apiKey = wordpressAPI.getElevenLabsApiKey();
@@ -126,7 +127,12 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     },
   });
 
-  // Auto-scroll removed - users can manually scroll transcript
+  // Auto-scroll to newest messages
+  useEffect(() => {
+    if (transcriptEndRef.current) {
+      transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [transcript]);
 
   // Update duration every second
   useEffect(() => {
@@ -357,7 +363,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 400, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute top-6 right-6 w-96 max-h-[calc(100vh-3rem)] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col z-20"
+              className="absolute top-6 right-6 w-96 h-[calc(100vh-3rem)] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col z-20"
             >
               {/* Transcript Header */}
               <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
@@ -426,6 +432,8 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                         </div>
                       </motion.div>
                     ))}
+                    {/* Auto-scroll anchor */}
+                    <div ref={transcriptEndRef} />
                   </AnimatePresence>
                 )}
               </div>

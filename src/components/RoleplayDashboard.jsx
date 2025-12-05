@@ -228,12 +228,6 @@ const RoleplayDashboard = ({ onSelectScenario, onBack }) => {
                 <option value="hard">Schwer</option>
               </select>
             </div>
-
-            {/* Custom scenario button */}
-            <Button onClick={() => setShowCustomDialog(true)} className="whitespace-nowrap">
-              <Plus className="w-4 h-4 mr-2" />
-              Eigenes Szenario
-            </Button>
           </div>
         </motion.div>
       </div>
@@ -244,9 +238,6 @@ const RoleplayDashboard = ({ onSelectScenario, onBack }) => {
           <div className="text-center py-12">
             <Sparkles className="w-12 h-12 text-slate-400 mx-auto mb-4" />
             <p className="text-slate-600">Keine Szenarien gefunden.</p>
-            <Button onClick={() => setShowCustomDialog(true)} className="mt-4">
-              Eigenes Szenario erstellen
-            </Button>
           </div>
         ) : (
           <motion.div
