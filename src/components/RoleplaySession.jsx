@@ -13,10 +13,13 @@ import {
   Clock,
   TrendingUp,
   MessageSquare,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import AudioVisualizer from './AudioVisualizer';
+import InterviewerProfile from './InterviewerProfile';
 import FeedbackModal from './FeedbackModal';
 import {
   analyzeRoleplayTranscript,
@@ -146,10 +149,22 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
       console.log('🚀 [RoleplaySession] Starting:', agentId);
       console.log('🚀 [RoleplaySession] Variables:', variables);
 
+      // Auto-inject interviewer variables from profile
+      const enhancedVariables = { ...variables };
+      if (scenario.interviewer_profile) {
+        if (scenario.interviewer_profile.name) {
+          enhancedVariables.interviewer_name = scenario.interviewer_profile.name;
+        }
+        if (scenario.interviewer_profile.role) {
+          enhancedVariables.interviewer_role = scenario.interviewer_profile.role;
+        }
+        console.log('✨ [RoleplaySession] Enhanced with interviewer variables:', enhancedVariables);
+      }
+
       // Use official SDK - pass variables as dynamicVariables (same as standard interview)
       conversationIdRef.current = await conversation.startSession({
         agentId: agentId,
-        dynamicVariables: variables,  // THIS IS THE KEY - same as standard interview!
+        dynamicVariables: enhancedVariables,
       });
 
       console.log('✅ [RoleplaySession] Session started:', conversationIdRef.current);
