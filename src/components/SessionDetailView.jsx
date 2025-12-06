@@ -31,7 +31,6 @@ import {
   getRoleplaySessionAudioUrl,
   getRoleplayScenario,
 } from '@/services/roleplay-feedback-adapter';
-import WaveSurfer from 'wavesurfer.js';
 
 console.log('📦 [SESSION_DETAIL] SessionDetailView module loaded');
 
@@ -56,8 +55,8 @@ const SessionDetailView = ({ session, onBack }) => {
   const [activeTranscriptIndex, setActiveTranscriptIndex] = useState(-1);
 
   // Refs
-  const waveformRef = useRef(null);
-  const wavesurferRef = useRef(null);
+  const audioRef = useRef(null);
+  const progressRef = useRef(null);
   const transcriptContainerRef = useRef(null);
 
   // Parse feedback and transcript
@@ -135,60 +134,44 @@ const SessionDetailView = ({ session, onBack }) => {
     }
   };
 
-  // Initialize WaveSurfer
+  // Initialize Audio Player
   useEffect(() => {
-    if (!waveformRef.current || !sessionData?.conversation_id) return;
+    if (!sessionData?.conversation_id) return;
 
     const audioUrl = getRoleplaySessionAudioUrl(sessionData.id);
-    console.log('🎵 [SESSION_DETAIL] Initializing WaveSurfer with URL:', audioUrl);
+    console.log('🎵 [SESSION_DETAIL] Initializing audio with URL:', audioUrl);
 
     setIsAudioLoading(true);
     setAudioError(null);
 
-    // Create WaveSurfer instance
-    const ws = WaveSurfer.create({
-      container: waveformRef.current,
-      waveColor: '#94a3b8',
-      progressColor: '#3b82f6',
-      cursorColor: '#1e40af',
-      cursorWidth: 2,
-      barWidth: 3,
-      barGap: 2,
-      barRadius: 3,
-      height: 80,
-      responsive: true,
-      normalize: true,
-      backend: 'WebAudio',
-    });
-
-    wavesurferRef.current = ws;
+    // Create native audio element
+    const audio = new Audio(audioUrl);
+    audioRef.current = audio;
 
     // Event listeners
-    ws.on('ready', () => {
-      console.log('✅ [SESSION_DETAIL] WaveSurfer ready');
-      setDuration(ws.getDuration());
+    audio.addEventListener('loadedmetadata', () => {
+      console.log('✅ [SESSION_DETAIL] Audio loaded');
+      setDuration(audio.duration);
       setIsAudioLoading(false);
     });
 
-    ws.on('audioprocess', () => {
-      setCurrentTime(ws.getCurrentTime());
+    audio.addEventListener('timeupdate', () => {
+      setCurrentTime(audio.currentTime);
     });
 
-    ws.on('play', () => setIsPlaying(true));
-    ws.on('pause', () => setIsPlaying(false));
-    ws.on('finish', () => setIsPlaying(false));
+    audio.addEventListener('play', () => setIsPlaying(true));
+    audio.addEventListener('pause', () => setIsPlaying(false));
+    audio.addEventListener('ended', () => setIsPlaying(false));
 
-    ws.on('error', (err) => {
-      console.error('❌ [SESSION_DETAIL] WaveSurfer error:', err);
+    audio.addEventListener('error', (err) => {
+      console.error('❌ [SESSION_DETAIL] Audio error:', err);
       setAudioError('Audio konnte nicht geladen werden. Möglicherweise ist die Aufnahme nicht verfügbar.');
       setIsAudioLoading(false);
     });
 
-    // Load audio
-    ws.load(audioUrl);
-
     return () => {
-      ws.destroy();
+      audio.pause();
+      audio.src = '';
     };
   }, [sessionData?.id, sessionData?.conversation_id]);
 
@@ -223,28 +206,32 @@ const SessionDetailView = ({ session, onBack }) => {
 
   // Audio controls
   const togglePlay = useCallback(() => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.playPause();
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
     }
-  }, []);
+  }, [isPlaying]);
 
   const toggleMute = useCallback(() => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.setMuted(!isMuted);
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
     }
   }, [isMuted]);
 
   const skipTo = useCallback((seconds) => {
-    if (wavesurferRef.current) {
-      const newTime = Math.max(0, Math.min(wavesurferRef.current.getCurrentTime() + seconds, duration));
-      wavesurferRef.current.seekTo(newTime / duration);
+    if (audioRef.current) {
+      const newTime = Math.max(0, Math.min(audioRef.current.currentTime + seconds, duration));
+      audioRef.current.currentTime = newTime;
     }
   }, [duration]);
 
   const seekToTime = useCallback((time) => {
-    if (wavesurferRef.current && duration > 0) {
-      wavesurferRef.current.seekTo(time / duration);
+    if (audioRef.current && duration > 0) {
+      audioRef.current.currentTime = time;
     }
   }, [duration]);
 
@@ -254,6 +241,16 @@ const SessionDetailView = ({ session, onBack }) => {
       seekToTime(entry.timestamp);
     }
   }, [parsedTranscript, seekToTime]);
+
+  // Handle progress bar click
+  const handleProgressClick = useCallback((e) => {
+    if (!progressRef.current || !duration) return;
+    const rect = progressRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    const newTime = percentage * duration;
+    seekToTime(newTime);
+  }, [duration, seekToTime]);
 
   // Format time
   const formatTime = (seconds) => {
@@ -387,43 +384,61 @@ const SessionDetailView = ({ session, onBack }) => {
                 Gesprächsaufnahme
               </h2>
 
-              {/* Waveform */}
+              {/* Progress Bar */}
               <div className="relative mb-4">
                 {isAudioLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-100 rounded-lg">
+                  <div className="flex items-center justify-center bg-slate-100 rounded-lg py-8">
                     <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                   </div>
                 )}
                 {audioError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-100 rounded-lg">
+                  <div className="flex items-center justify-center bg-slate-100 rounded-lg py-6">
                     <div className="text-center px-4">
                       <AlertCircle className="w-8 h-8 text-orange-500 mx-auto mb-2" />
                       <p className="text-sm text-slate-600">{audioError}</p>
                     </div>
                   </div>
                 )}
-                <div
-                  ref={waveformRef}
-                  className={`w-full rounded-lg bg-slate-100 ${
-                    audioError || isAudioLoading ? 'opacity-0' : ''
-                  }`}
-                  style={{ minHeight: '80px' }}
-                />
+                {!audioError && !isAudioLoading && (
+                  <div
+                    ref={progressRef}
+                    onClick={handleProgressClick}
+                    className="relative w-full h-12 bg-slate-100 rounded-lg cursor-pointer overflow-hidden group"
+                  >
+                    {/* Progress fill */}
+                    <div
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-100"
+                      style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
+                    />
 
-                {/* Timeline Markers */}
-                {!audioError && !isAudioLoading && timelineMarkers.length > 0 && (
-                  <div className="absolute inset-x-0 top-0 h-full pointer-events-none">
-                    {timelineMarkers.map((marker, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => seekToTime(marker.timestamp)}
-                        className={`absolute top-1 w-3 h-3 rounded-full cursor-pointer pointer-events-auto transform -translate-x-1/2 transition-transform hover:scale-125 ${getMarkerColor(
-                          marker.type
-                        )}`}
-                        style={{ left: `${marker.position}%` }}
-                        title={marker.text}
-                      />
-                    ))}
+                    {/* Hover indicator */}
+                    <div className="absolute inset-0 bg-blue-400 opacity-0 group-hover:opacity-10 transition-opacity" />
+
+                    {/* Timeline Markers */}
+                    {timelineMarkers.length > 0 && (
+                      <>
+                        {timelineMarkers.map((marker, idx) => (
+                          <button
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              seekToTime(marker.timestamp);
+                            }}
+                            className={`absolute top-1 w-3 h-3 rounded-full cursor-pointer transform -translate-x-1/2 transition-transform hover:scale-150 z-10 ${getMarkerColor(
+                              marker.type
+                            )}`}
+                            style={{ left: `${marker.position}%` }}
+                            title={marker.text}
+                          />
+                        ))}
+                      </>
+                    )}
+
+                    {/* Current position indicator */}
+                    <div
+                      className="absolute top-0 bottom-0 w-1 bg-blue-800 transform -translate-x-1/2"
+                      style={{ left: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
+                    />
                   </div>
                 )}
               </div>
