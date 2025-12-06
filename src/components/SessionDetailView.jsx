@@ -59,6 +59,7 @@ const SessionDetailView = ({ session, onBack }) => {
   const progressRef = useRef(null);
   const transcriptContainerRef = useRef(null);
   const transcriptEndRef = useRef(null);
+  const userSeekingRef = useRef(false); // Flag to prevent scrolling on user click
 
   // Parse feedback and transcript
   const parsedFeedback = useMemo(() => {
@@ -229,13 +230,9 @@ const SessionDetailView = ({ session, onBack }) => {
     if (activeIndex !== activeTranscriptIndex) {
       setActiveTranscriptIndex(activeIndex);
 
-      // Scroll to active entry
-      if (activeIndex >= 0 && transcriptContainerRef.current) {
-        const activeElement = transcriptContainerRef.current.children[activeIndex];
-        if (activeElement) {
-          activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }
+      // Only auto-scroll if audio is playing AND user didn't just click
+      // Skip scrolling entirely - user can scroll manually
+      // The highlighting is enough to show the active transcript item
     }
   }, [currentTime, parsedTranscript, activeTranscriptIndex]);
 
