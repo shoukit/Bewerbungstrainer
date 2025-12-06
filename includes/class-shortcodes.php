@@ -758,44 +758,61 @@ class Bewerbungstrainer_Shortcodes {
             }
 
             /* Session layout specific overrides */
-            .bewerbungstrainer-session-layout {
+            #bewerbungstrainer-app .bewerbungstrainer-session-layout {
                 display: block !important;
                 width: 100% !important;
             }
 
-            .bewerbungstrainer-session-layout > div {
+            #bewerbungstrainer-app .bewerbungstrainer-session-layout > div {
                 display: flex !important;
                 flex-direction: column !important;
             }
 
-            /* Hide side columns on mobile */
-            .bewerbungstrainer-session-layout > div > *:first-child,
-            .bewerbungstrainer-session-layout > div > *:last-child {
+            /* Hide side columns on mobile - use ID for higher specificity */
+            #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:first-child,
+            #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:last-child {
                 display: none !important;
             }
 
             /* Show center column on mobile */
-            .bewerbungstrainer-session-layout > div > *:nth-child(2) {
+            #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:nth-child(2) {
                 display: flex !important;
                 flex-direction: column !important;
             }
 
             @media (min-width: 1024px) {
-                .bewerbungstrainer-session-layout > div {
+                #bewerbungstrainer-app .bewerbungstrainer-session-layout > div {
                     display: grid !important;
                 }
 
                 /* Force side columns to be visible on desktop */
-                .bewerbungstrainer-session-layout > div > *:first-child,
-                .bewerbungstrainer-session-layout > div > *:last-child {
+                #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:first-child,
+                #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:last-child {
                     display: block !important;
                     min-width: 280px !important;
                 }
 
                 /* Center column should be flex */
-                .bewerbungstrainer-session-layout > div > *:nth-child(2) {
+                #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:nth-child(2) {
                     display: flex !important;
                     flex-direction: column !important;
+                }
+            }
+
+            /* Responsive helper classes - for elements that should show on mobile only */
+            .bewerbungstrainer-mobile-only {
+                display: flex !important;
+            }
+            .bewerbungstrainer-desktop-only {
+                display: none !important;
+            }
+
+            @media (min-width: 1024px) {
+                .bewerbungstrainer-mobile-only {
+                    display: none !important;
+                }
+                .bewerbungstrainer-desktop-only {
+                    display: block !important;
                 }
             }
 

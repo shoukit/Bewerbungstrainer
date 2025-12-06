@@ -481,7 +481,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                   {/* Profile Header with Status (Responsive: compact on mobile, full on desktop) */}
                   <div className="bg-gradient-to-r from-blue-600 to-teal-500 rounded-t-2xl px-4 lg:px-6 py-3 lg:py-4 shadow-xl">
                     {/* Mobile: Horizontal compact layout */}
-                    <div className="flex lg:hidden items-center gap-3 mb-2">
+                    <div className="bewerbungstrainer-mobile-only flex items-center gap-3 mb-2">
                       {scenario.interviewer_profile.image_url ? (
                         <img
                           src={scenario.interviewer_profile.image_url}
@@ -506,7 +506,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                     </div>
 
                     {/* Desktop: Centered vertical layout */}
-                    <div className="hidden lg:block">
+                    <div className="bewerbungstrainer-desktop-only">
                       <div className="flex items-center justify-center gap-4 mb-4">
                         {scenario.interviewer_profile.image_url ? (
                           <img
