@@ -113,12 +113,20 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     },
     onMessage: (message) => {
       if (message.source === 'ai' || message.source === 'user') {
+        // Calculate elapsed time since conversation started
+        const elapsedSeconds = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+        const minutes = Math.floor(elapsedSeconds / 60);
+        const seconds = elapsedSeconds % 60;
+        const timeLabel = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
         setTranscript((prev) => [
           ...prev,
           {
             role: message.source === 'ai' ? 'agent' : 'user',
             text: message.message,
             timestamp: Date.now(),
+            elapsedTime: elapsedSeconds, // Store seconds for later seeking
+            timeLabel: timeLabel, // Format: "00:12"
           },
         ]);
       }
@@ -546,24 +554,33 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         className={`flex gap-2 ${entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                       >
-                        {/* Avatar */}
-                        {entry.role === 'agent' ? (
-                          scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
-                            <img
-                              src={scenario.interviewer_profile.image_url}
-                              alt={scenario.interviewer_profile.name || 'Interviewer'}
-                              className="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-sm border-2 border-blue-200"
-                            />
+                        {/* Avatar with Timestamp */}
+                        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                          {entry.role === 'agent' ? (
+                            scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
+                              <img
+                                src={scenario.interviewer_profile.image_url}
+                                alt={scenario.interviewer_profile.name || 'Interviewer'}
+                                className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
+                                <Bot className="w-4 h-4 text-white" />
+                              </div>
+                            )
                           ) : (
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
-                              <Bot className="w-4 h-4 text-white" />
-                            </div>
-                          )
-                        ) : (
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
-                            <User className="w-4 h-4 text-white" />
-                          </div>
-                        )}
+                            <>
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
+                                <User className="w-4 h-4 text-white" />
+                              </div>
+                              {entry.timeLabel && (
+                                <span className="text-[10px] font-mono text-slate-400">
+                                  {entry.timeLabel}
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
 
                         <div
                           className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
