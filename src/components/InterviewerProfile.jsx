@@ -125,7 +125,6 @@ const InterviewerProfile = ({ profile }) => {
             💡 Für ein optimales Erlebnis empfiehlt sich die Nutzung von Kopfhörern mit Mikrofon.
           </p>
         </div>
-      </div>
     </div>
   );
 };
