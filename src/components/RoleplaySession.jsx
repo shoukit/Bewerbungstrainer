@@ -235,6 +235,8 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   const handleStartCall = async () => {
     setIsStarted(true);
+    // Set start time immediately when call begins
+    setStartTime(Date.now());
     await startConversation();
   };
 

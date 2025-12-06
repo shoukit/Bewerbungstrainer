@@ -528,8 +528,8 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl flex items-center gap-2">
             <Award className="w-6 h-6 text-blue-600" />
             Dein Bewerbungsgespräch-Feedback
@@ -539,11 +539,11 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-2">
+        <div className="flex-1 overflow-y-auto py-2">
           {renderFeedback()}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 pt-4 border-t">
           <Button onClick={onClose} className="w-full sm:w-auto">
             Schließen
           </Button>
