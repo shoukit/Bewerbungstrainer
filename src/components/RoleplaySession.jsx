@@ -56,6 +56,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(false);
   const [showTranscriptOnMobile, setShowTranscriptOnMobile] = useState(false);
   const [showProfileOnMobile, setShowProfileOnMobile] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   // Dynamic header height
   const [headerHeight, setHeaderHeight] = useState(80);
@@ -254,6 +255,15 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   // Prevent scroll to bottom on mount
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  // Track mobile/desktop state
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleStartCall = async () => {
@@ -456,18 +466,27 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   return (
     <>
-      <div style={{ minHeight: '600px', height: 'auto' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4">
+      <div style={{ minHeight: '600px', height: 'auto', overflow: 'hidden' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4">
         {/* RESPONSIVE LAYOUT: Mobile stacked, Desktop 3-column */}
-        <div className="w-full max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-[minmax(280px,320px)_minmax(400px,1fr)_minmax(280px,320px)] gap-3 lg:gap-5">
+        <div
+          className="w-full max-w-7xl mx-auto gap-3 lg:gap-5"
+          style={{
+            display: isMobile ? 'flex' : 'grid',
+            flexDirection: isMobile ? 'column' : undefined,
+            gridTemplateColumns: isMobile ? undefined : 'minmax(280px, 320px) minmax(400px, 1fr) minmax(280px, 320px)',
+          }}
+        >
 
-          {/* LEFT COLUMN - Coaching Panel (Desktop: sidebar, Mobile: hidden via CSS) */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bewerbungstrainer-side-column"
-          >
-            <CoachingPanel hints={scenario.coaching_hints} />
-          </motion.div>
+          {/* LEFT COLUMN - Coaching Panel (Desktop: sidebar, Mobile: hidden) */}
+          {!isMobile && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              style={{ minWidth: '280px' }}
+            >
+              <CoachingPanel hints={scenario.coaching_hints} />
+            </motion.div>
+          )}
 
           {/* CENTER COLUMN - Interviewer Profile (Responsive) */}
           <motion.div
@@ -482,54 +501,58 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                   {/* Profile Header with Status (Responsive: compact on mobile, full on desktop) */}
                   <div className="bg-gradient-to-r from-blue-600 to-teal-500 rounded-t-2xl px-4 lg:px-6 py-3 lg:py-4 shadow-xl">
                     {/* Mobile: Horizontal compact layout */}
-                    <div className="bewerbungstrainer-mobile-only flex items-center gap-3 mb-2">
-                      {scenario.interviewer_profile.image_url ? (
-                        <img
-                          src={scenario.interviewer_profile.image_url}
-                          alt={scenario.interviewer_profile.name}
-                          className="w-12 h-12 rounded-full border-2 border-white shadow-lg object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full border-2 border-white shadow-lg bg-white flex items-center justify-center">
-                          <User className="w-6 h-6 text-slate-400" />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <h2 className="text-lg font-bold text-white">
-                          {scenario.interviewer_profile.name}
-                        </h2>
-                        {scenario.interviewer_profile.role && (
-                          <p className="text-blue-100 text-xs font-medium">
-                            {scenario.interviewer_profile.role}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Desktop: Centered vertical layout */}
-                    <div className="bewerbungstrainer-desktop-only">
-                      <div className="flex items-center justify-center gap-4 mb-4">
+                    {isMobile && (
+                      <div className="flex items-center gap-3 mb-2">
                         {scenario.interviewer_profile.image_url ? (
                           <img
                             src={scenario.interviewer_profile.image_url}
                             alt={scenario.interviewer_profile.name}
-                            className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                            className="w-12 h-12 rounded-full border-2 border-white shadow-lg object-cover"
                           />
                         ) : (
-                          <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
-                            <User className="w-10 h-10 text-slate-400" />
+                          <div className="w-12 h-12 rounded-full border-2 border-white shadow-lg bg-white flex items-center justify-center">
+                            <User className="w-6 h-6 text-slate-400" />
                           </div>
                         )}
+                        <div className="flex-1">
+                          <h2 className="text-lg font-bold text-white">
+                            {scenario.interviewer_profile.name}
+                          </h2>
+                          {scenario.interviewer_profile.role && (
+                            <p className="text-blue-100 text-xs font-medium">
+                              {scenario.interviewer_profile.role}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <h2 className="text-2xl font-bold text-white text-center mb-1">
-                        {scenario.interviewer_profile.name}
-                      </h2>
-                      {scenario.interviewer_profile.role && (
-                        <p className="text-blue-100 text-center text-sm font-medium mb-3">
-                          {scenario.interviewer_profile.role}
-                        </p>
-                      )}
-                    </div>
+                    )}
+
+                    {/* Desktop: Centered vertical layout */}
+                    {!isMobile && (
+                      <div>
+                        <div className="flex items-center justify-center gap-4 mb-4">
+                          {scenario.interviewer_profile.image_url ? (
+                            <img
+                              src={scenario.interviewer_profile.image_url}
+                              alt={scenario.interviewer_profile.name}
+                              className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                              <User className="w-10 h-10 text-slate-400" />
+                            </div>
+                          )}
+                        </div>
+                        <h2 className="text-2xl font-bold text-white text-center mb-1">
+                          {scenario.interviewer_profile.name}
+                        </h2>
+                        {scenario.interviewer_profile.role && (
+                          <p className="text-blue-100 text-center text-sm font-medium mb-3">
+                            {scenario.interviewer_profile.role}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Status Badge on Card */}
                     {isStarted && (
@@ -601,7 +624,8 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                   </div>
 
                   {/* Profile Toggle Button (Mobile only) */}
-                  <div className="lg:hidden bg-white px-4 py-2">
+                  {isMobile && (
+                  <div className="bg-white px-4 py-2">
                     <button
                       onClick={() => setShowProfileOnMobile(!showProfileOnMobile)}
                       className="w-full flex items-center justify-between text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
@@ -610,10 +634,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                       <ChevronDown className={`w-4 h-4 transition-transform ${showProfileOnMobile ? 'rotate-180' : ''}`} />
                     </button>
                   </div>
+                  )}
 
                   {/* Scrollable Profile Content (Mobile: collapsible, Desktop: always visible) */}
                   <AnimatePresence>
-                    {(showProfileOnMobile || window.innerWidth >= 1024) && (
+                    {(showProfileOnMobile || !isMobile) && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
@@ -643,124 +668,128 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             </div>
           </motion.div>
 
-          {/* RIGHT COLUMN - Transcript Panel (Desktop only, Mobile hidden via CSS) */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bewerbungstrainer-side-column"
-          >
-            <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
-              {/* Transcript Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-white">
-                  <MessageSquare className="w-4 h-4" />
-                  <h3 className="font-bold text-sm">Live Transkript</h3>
-                </div>
-                <ChevronRight className="w-4 h-4 text-white" />
-              </div>
-
-              {/* Transcript Content - Scrollable */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {transcript.length === 0 ? (
-                  <div className="h-full flex items-center justify-center">
-                    <div className="text-center text-slate-500">
-                      <MessageSquare className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                      <p className="text-xs">Nachrichten werden während des Gesprächs angezeigt</p>
-                    </div>
+          {/* RIGHT COLUMN - Transcript Panel (Desktop only, Mobile hidden) */}
+          {!isMobile && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              style={{ minWidth: '280px' }}
+            >
+              <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+                {/* Transcript Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-white">
+                    <MessageSquare className="w-4 h-4" />
+                    <h3 className="font-bold text-sm">Live Transkript</h3>
                   </div>
-                ) : (
-                  <AnimatePresence>
-                    {transcript.map((entry, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className={`flex gap-2 ${entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-                      >
-                        {/* Avatar with Timestamp */}
-                        <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                          {entry.role === 'agent' ? (
-                            scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
-                              <img
-                                src={scenario.interviewer_profile.image_url}
-                                alt={scenario.interviewer_profile.name || 'Interviewer'}
-                                className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
-                                <Bot className="w-4 h-4 text-white" />
-                              </div>
-                            )
-                          ) : (
-                            <>
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
-                                <User className="w-4 h-4 text-white" />
-                              </div>
-                              {entry.timeLabel && (
-                                <span className="text-[10px] font-mono text-slate-400">
-                                  {entry.timeLabel}
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </div>
+                  <ChevronRight className="w-4 h-4 text-white" />
+                </div>
 
-                        <div
-                          className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
-                            entry.role === 'agent'
-                              ? 'bg-slate-50 border border-slate-200'
-                              : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
-                          }`}
+                {/* Transcript Content - Scrollable */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {transcript.length === 0 ? (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center text-slate-500">
+                        <MessageSquare className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                        <p className="text-xs">Nachrichten werden während des Gesprächs angezeigt</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <AnimatePresence>
+                      {transcript.map((entry, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                          className={`flex gap-2 ${entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                         >
-                          <p className="text-xs leading-relaxed">{entry.text}</p>
-                        </div>
-                      </motion.div>
-                    ))}
-                    {/* Auto-scroll anchor */}
-                    <div ref={transcriptEndRef} />
-                  </AnimatePresence>
-                )}
+                          {/* Avatar with Timestamp */}
+                          <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                            {entry.role === 'agent' ? (
+                              scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
+                                <img
+                                  src={scenario.interviewer_profile.image_url}
+                                  alt={scenario.interviewer_profile.name || 'Interviewer'}
+                                  className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
+                                  <Bot className="w-4 h-4 text-white" />
+                                </div>
+                              )
+                            ) : (
+                              <>
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
+                                  <User className="w-4 h-4 text-white" />
+                                </div>
+                                {entry.timeLabel && (
+                                  <span className="text-[10px] font-mono text-slate-400">
+                                    {entry.timeLabel}
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+
+                          <div
+                            className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
+                              entry.role === 'agent'
+                                ? 'bg-slate-50 border border-slate-200'
+                                : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
+                            }`}
+                          >
+                            <p className="text-xs leading-relaxed">{entry.text}</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                      {/* Auto-scroll anchor */}
+                      <div ref={transcriptEndRef} />
+                    </AnimatePresence>
+                  )}
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
         </div>
 
         {/* Mobile Floating Action Buttons */}
-        <div className="lg:hidden fixed bottom-4 right-4 flex flex-col gap-3 z-50">
-          {/* Coaching Button */}
-          <motion.button
-            onClick={() => setShowCoachingOnMobile(!showCoachingOnMobile)}
-            className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-teal-500 shadow-xl flex items-center justify-center text-white relative"
-            whileTap={{ scale: 0.95 }}
-          >
-            <Lightbulb className="w-6 h-6" />
-            {scenario.coaching_hints && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full text-xs font-bold flex items-center justify-center">
-                {scenario.coaching_hints.split('\n').filter(Boolean).length}
-              </span>
-            )}
-          </motion.button>
+        {isMobile && (
+          <div className="fixed bottom-4 right-4 flex flex-col gap-3 z-50">
+            {/* Coaching Button */}
+            <motion.button
+              onClick={() => setShowCoachingOnMobile(!showCoachingOnMobile)}
+              className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-teal-500 shadow-xl flex items-center justify-center text-white relative"
+              whileTap={{ scale: 0.95 }}
+            >
+              <Lightbulb className="w-6 h-6" />
+              {scenario.coaching_hints && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full text-xs font-bold flex items-center justify-center">
+                  {scenario.coaching_hints.split('\n').filter(Boolean).length}
+                </span>
+              )}
+            </motion.button>
 
-          {/* Transcript Button */}
-          <motion.button
-            onClick={() => setShowTranscriptOnMobile(!showTranscriptOnMobile)}
-            className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-teal-500 shadow-xl flex items-center justify-center text-white relative"
-            whileTap={{ scale: 0.95 }}
-          >
-            <MessageSquare className="w-6 h-6" />
-            {transcript.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs font-bold flex items-center justify-center">
-                {transcript.length}
-              </span>
-            )}
-          </motion.button>
-        </div>
+            {/* Transcript Button */}
+            <motion.button
+              onClick={() => setShowTranscriptOnMobile(!showTranscriptOnMobile)}
+              className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-teal-500 shadow-xl flex items-center justify-center text-white relative"
+              whileTap={{ scale: 0.95 }}
+            >
+              <MessageSquare className="w-6 h-6" />
+              {transcript.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs font-bold flex items-center justify-center">
+                  {transcript.length}
+                </span>
+              )}
+            </motion.button>
+          </div>
+        )}
 
         {/* Mobile Bottom Sheet - Coaching */}
         <AnimatePresence>
-          {showCoachingOnMobile && (
+          {showCoachingOnMobile && isMobile && (
             <>
               {/* Backdrop */}
               <motion.div
@@ -768,7 +797,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowCoachingOnMobile(false)}
-                className="lg:hidden fixed inset-0 bg-black/50 z-40"
+                className="fixed inset-0 bg-black/50 z-40"
               />
               {/* Sheet */}
               <motion.div
@@ -776,7 +805,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="lg:hidden fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl overflow-hidden"
+                className="fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl overflow-hidden"
               >
                 <div className="bg-white h-full overflow-y-auto">
                   <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
@@ -824,7 +853,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
         {/* Mobile Bottom Sheet - Transcript */}
         <AnimatePresence>
-          {showTranscriptOnMobile && (
+          {showTranscriptOnMobile && isMobile && (
             <>
               {/* Backdrop */}
               <motion.div
@@ -832,7 +861,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowTranscriptOnMobile(false)}
-                className="lg:hidden fixed inset-0 bg-black/50 z-40"
+                className="fixed inset-0 bg-black/50 z-40"
               />
               {/* Sheet */}
               <motion.div
@@ -840,7 +869,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="lg:hidden fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl overflow-hidden"
+                className="fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl overflow-hidden"
               >
                 <div className="bg-white h-full flex flex-col">
                   <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
