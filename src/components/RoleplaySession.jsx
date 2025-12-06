@@ -67,6 +67,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const hasStartedRef = useRef(false);
   const transcriptEndRef = useRef(null);
   const startTimeRef = useRef(null); // Ref for stable startTime access in callbacks
+  const lastMessageEndTimeRef = useRef(0); // Track when last message ended (for calculating start time)
 
   // Get API credentials
   const apiKey = wordpressAPI.getElevenLabsApiKey();
@@ -127,23 +128,34 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     },
     onMessage: (message) => {
       if (message.source === 'ai' || message.source === 'user') {
-        // Calculate elapsed time since conversation started (use ref for stable value)
         const currentStartTime = startTimeRef.current;
-        const elapsedSeconds = currentStartTime ? Math.floor((Date.now() - currentStartTime) / 1000) : 0;
-        const minutes = Math.floor(elapsedSeconds / 60);
-        const seconds = elapsedSeconds % 60;
+        const now = Date.now();
+
+        // Use the START time of this message (when the previous message ended)
+        // For the first message, this is 0
+        const messageStartSeconds = lastMessageEndTimeRef.current;
+
+        // Calculate when this message ends (current time)
+        const messageEndSeconds = currentStartTime ? Math.floor((now - currentStartTime) / 1000) : 0;
+
+        // Update the last message end time for the next message
+        lastMessageEndTimeRef.current = messageEndSeconds;
+
+        // Format the START time for display
+        const minutes = Math.floor(messageStartSeconds / 60);
+        const seconds = messageStartSeconds % 60;
         const timeLabel = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-        console.log('📝 [RoleplaySession] New message at', timeLabel, '- elapsedTime:', elapsedSeconds);
+        console.log('📝 [RoleplaySession] Message started at', timeLabel, '- elapsedTime:', messageStartSeconds, '(ended at', messageEndSeconds + 's)');
 
         setTranscript((prev) => [
           ...prev,
           {
             role: message.source === 'ai' ? 'agent' : 'user',
             text: message.message,
-            timestamp: Date.now(),
-            elapsedTime: elapsedSeconds, // Store seconds for later seeking
-            timeLabel: timeLabel, // Format: "00:12"
+            timestamp: now,
+            elapsedTime: messageStartSeconds, // Store START time in seconds for seeking
+            timeLabel: timeLabel, // Format: "00:12" - shows START time
           },
         ]);
       }

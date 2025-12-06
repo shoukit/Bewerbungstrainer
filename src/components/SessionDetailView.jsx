@@ -59,6 +59,7 @@ const SessionDetailView = ({ session, onBack }) => {
   const progressRef = useRef(null);
   const transcriptContainerRef = useRef(null);
   const transcriptEndRef = useRef(null);
+  const userSeekingRef = useRef(false); // Flag to prevent scrolling on user click
 
   // Parse feedback and transcript
   const parsedFeedback = useMemo(() => {
@@ -229,15 +230,30 @@ const SessionDetailView = ({ session, onBack }) => {
     if (activeIndex !== activeTranscriptIndex) {
       setActiveTranscriptIndex(activeIndex);
 
-      // Scroll to active entry
-      if (activeIndex >= 0 && transcriptContainerRef.current) {
-        const activeElement = transcriptContainerRef.current.children[activeIndex];
+      // Only auto-scroll when audio is PLAYING (not when user clicks to seek)
+      // This ensures the transcript box scrolls during playback but not on manual interaction
+      if (isPlaying && activeIndex >= 0 && transcriptContainerRef.current) {
+        const container = transcriptContainerRef.current;
+        const activeElement = container.children[activeIndex];
+
         if (activeElement) {
-          activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Calculate if element is outside visible area of the container
+          const containerRect = container.getBoundingClientRect();
+          const elementRect = activeElement.getBoundingClientRect();
+
+          // Only scroll if element is outside the visible area
+          if (elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom) {
+            // Scroll within container only (not the page)
+            const scrollTop = activeElement.offsetTop - container.offsetTop - (container.clientHeight / 2) + (activeElement.clientHeight / 2);
+            container.scrollTo({
+              top: Math.max(0, scrollTop),
+              behavior: 'smooth'
+            });
+          }
         }
       }
     }
-  }, [currentTime, parsedTranscript, activeTranscriptIndex]);
+  }, [currentTime, parsedTranscript, activeTranscriptIndex, isPlaying]);
 
   // Audio controls
   const togglePlay = useCallback(() => {
