@@ -757,6 +757,27 @@ class Bewerbungstrainer_Shortcodes {
                 max-width: none !important;
             }
 
+            /* Session layout specific overrides */
+            .bewerbungstrainer-session-layout {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .bewerbungstrainer-session-layout > div {
+                display: flex !important;
+            }
+
+            @media (min-width: 1024px) {
+                .bewerbungstrainer-session-layout > div {
+                    display: grid !important;
+                }
+            }
+
+            /* Ensure grid children are visible */
+            #bewerbungstrainer-app * {
+                box-sizing: border-box;
+            }
+
             .bewerbungstrainer-loading {
                 text-align: center;
                 padding: 60px 20px;
