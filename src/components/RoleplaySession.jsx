@@ -460,12 +460,10 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         {/* RESPONSIVE LAYOUT: Mobile stacked, Desktop 3-column */}
         <div className="w-full max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-[minmax(280px,320px)_minmax(400px,1fr)_minmax(280px,320px)] gap-3 lg:gap-5">
 
-          {/* LEFT COLUMN - Coaching Panel (Desktop: sidebar, Mobile: collapsible) */}
+          {/* LEFT COLUMN - Coaching Panel (Desktop: sidebar, Mobile: hidden via CSS) */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="hidden lg:block"
-            style={{ minWidth: '280px' }}
           >
             <CoachingPanel hints={scenario.coaching_hints} />
           </motion.div>
@@ -644,12 +642,10 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             </div>
           </motion.div>
 
-          {/* RIGHT COLUMN - Transcript Panel (Desktop only, Mobile uses bottom sheet) */}
+          {/* RIGHT COLUMN - Transcript Panel (Desktop only, Mobile hidden via CSS) */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="hidden lg:block"
-            style={{ minWidth: '280px' }}
           >
             <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
               {/* Transcript Header */}
