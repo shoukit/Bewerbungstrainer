@@ -465,6 +465,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="hidden lg:block"
+            style={{ minWidth: '280px' }}
           >
             <CoachingPanel hints={scenario.coaching_hints} />
           </motion.div>
@@ -648,6 +649,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             className="hidden lg:block"
+            style={{ minWidth: '280px' }}
           >
             <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
               {/* Transcript Header */}
