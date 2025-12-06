@@ -213,6 +213,45 @@ export async function getRoleplaySessionAnalysis(sessionId) {
 }
 
 /**
+ * Get all roleplay sessions for current user
+ *
+ * @param {object} params - Query parameters (limit, offset, scenario_id)
+ * @returns {Promise<object>} Sessions data with pagination
+ */
+export async function getRoleplaySessions(params = {}) {
+  console.log('📋 [Roleplay Feedback] Loading user sessions...');
+  console.log('📋 [Roleplay Feedback] Params:', params);
+
+  try {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = queryString ? `/roleplays/sessions?${queryString}` : '/roleplays/sessions';
+
+    const response = await wordpressAPI.request(endpoint, {
+      method: 'GET',
+    });
+
+    console.log('✅ [Roleplay Feedback] Sessions loaded successfully');
+    console.log('✅ [Roleplay Feedback] Sessions count:', response.data?.length || 0);
+
+    return response;
+  } catch (error) {
+    console.error('❌ [Roleplay Feedback] Failed to load sessions:', error);
+    throw new Error(`Fehler beim Laden der Sessions: ${error.message}`);
+  }
+}
+
+/**
+ * Get audio URL for a roleplay session (via proxy)
+ *
+ * @param {number} sessionId - Roleplay session ID
+ * @returns {string} Audio URL
+ */
+export function getRoleplaySessionAudioUrl(sessionId) {
+  const config = window.bewerbungstrainerConfig || { apiUrl: '/wp-json/bewerbungstrainer/v1' };
+  return `${config.apiUrl}/roleplays/sessions/${sessionId}/audio`;
+}
+
+/**
  * Create a new roleplay session
  *
  * @param {object} sessionData - Session data
