@@ -800,18 +800,18 @@ class Bewerbungstrainer_Shortcodes {
             }
 
             /* Responsive helper classes - for elements that should show on mobile only */
-            .bewerbungstrainer-mobile-only {
+            #bewerbungstrainer-app .bewerbungstrainer-mobile-only {
                 display: flex !important;
             }
-            .bewerbungstrainer-desktop-only {
+            #bewerbungstrainer-app .bewerbungstrainer-desktop-only {
                 display: none !important;
             }
 
             @media (min-width: 1024px) {
-                .bewerbungstrainer-mobile-only {
+                #bewerbungstrainer-app .bewerbungstrainer-mobile-only {
                     display: none !important;
                 }
-                .bewerbungstrainer-desktop-only {
+                #bewerbungstrainer-app .bewerbungstrainer-desktop-only {
                     display: block !important;
                 }
             }
