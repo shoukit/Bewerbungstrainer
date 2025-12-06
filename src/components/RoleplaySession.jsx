@@ -66,6 +66,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const conversationIdRef = useRef(null);
   const hasStartedRef = useRef(false);
   const transcriptEndRef = useRef(null);
+  const startTimeRef = useRef(null); // Ref for stable startTime access in callbacks
 
   // Get API credentials
   const apiKey = wordpressAPI.getElevenLabsApiKey();
@@ -117,18 +118,23 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
       console.log('✅ [RoleplaySession] Connected to ElevenLabs');
       console.log('📝 [RoleplaySession] System prompt:', scenario.content?.substring(0, 100) + '...');
       console.log('💬 [RoleplaySession] First message:', scenario.initial_message);
-      setStartTime(Date.now());
+      const now = Date.now();
+      setStartTime(now);
+      startTimeRef.current = now; // Also set ref for stable access in callbacks
     },
     onDisconnect: () => {
       console.log('ℹ️ [RoleplaySession] Disconnected from ElevenLabs');
     },
     onMessage: (message) => {
       if (message.source === 'ai' || message.source === 'user') {
-        // Calculate elapsed time since conversation started
-        const elapsedSeconds = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+        // Calculate elapsed time since conversation started (use ref for stable value)
+        const currentStartTime = startTimeRef.current;
+        const elapsedSeconds = currentStartTime ? Math.floor((Date.now() - currentStartTime) / 1000) : 0;
         const minutes = Math.floor(elapsedSeconds / 60);
         const seconds = elapsedSeconds % 60;
         const timeLabel = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        console.log('📝 [RoleplaySession] New message at', timeLabel, '- elapsedTime:', elapsedSeconds);
 
         setTranscript((prev) => [
           ...prev,
@@ -236,7 +242,9 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const handleStartCall = async () => {
     setIsStarted(true);
     // Set start time immediately when call begins
-    setStartTime(Date.now());
+    const now = Date.now();
+    setStartTime(now);
+    startTimeRef.current = now; // Also set ref for stable access
     await startConversation();
   };
 
