@@ -451,9 +451,9 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   return (
     <>
-      <div style={{ height: `calc(100vh - ${headerHeight}px)` }} className="bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4 overflow-hidden flex items-center justify-center">
+      <div style={{ minHeight: '600px', height: 'auto' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4">
         {/* RESPONSIVE LAYOUT: Mobile stacked, Desktop 3-column */}
-        <div className="h-full w-full max-w-[1320px] flex flex-col lg:grid lg:grid-cols-[320px_640px_320px] gap-3 lg:gap-5">
+        <div className="w-full max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-[minmax(280px,320px)_minmax(400px,1fr)_minmax(280px,320px)] gap-3 lg:gap-5">
 
           {/* LEFT COLUMN - Coaching Panel (Desktop: sidebar, Mobile: collapsible) */}
           <motion.div
@@ -468,7 +468,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex-1 lg:h-full flex flex-col overflow-hidden order-1 lg:order-none"
+            className="flex-1 flex flex-col min-h-[400px] order-1 lg:order-none"
           >
             {/* Profile Card with integrated status */}
             <div className="flex-1 overflow-y-auto">
