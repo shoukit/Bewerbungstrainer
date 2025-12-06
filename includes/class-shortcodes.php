@@ -720,13 +720,43 @@ class Bewerbungstrainer_Shortcodes {
      */
     private function enqueue_interview_assets() {
         // React app will be enqueued by main plugin class
-        // Add custom styles for shortcode wrapper
+        // Add custom styles for shortcode wrapper - override theme container styles
         wp_add_inline_style('bewerbungstrainer-app', '
+            /* Override theme container restrictions */
             .bewerbungstrainer-interview-container {
-                width: 100%;
-                max-width: 1200px;
-                margin: 0 auto;
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
             }
+
+            /* Ensure the React app takes full width */
+            #bewerbungstrainer-app {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+            }
+
+            /* Override Elementor/theme container constraints */
+            .elementor-widget-container:has(#bewerbungstrainer-app),
+            .elementor-element:has(#bewerbungstrainer-app),
+            .e-con:has(#bewerbungstrainer-app),
+            .entry-content:has(#bewerbungstrainer-app),
+            .page-content:has(#bewerbungstrainer-app),
+            article:has(#bewerbungstrainer-app) {
+                width: 100% !important;
+                max-width: none !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+
+            /* Hello Elementor specific overrides */
+            .site-main:has(#bewerbungstrainer-app) {
+                padding: 0 !important;
+                max-width: none !important;
+            }
+
             .bewerbungstrainer-loading {
                 text-align: center;
                 padding: 60px 20px;
