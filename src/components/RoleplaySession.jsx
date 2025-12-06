@@ -375,7 +375,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   return (
     <>
-      <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-4 overflow-hidden flex items-center justify-center">
+      <div style={{ height: 'calc(100vh - 80px)' }} className="bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-4 overflow-hidden flex items-center justify-center">
         {/* 3-COLUMN GRID LAYOUT - Fixed widths, centered */}
         <div className="h-full w-full max-w-[1320px] grid grid-cols-[320px_640px_320px] gap-5">
 
