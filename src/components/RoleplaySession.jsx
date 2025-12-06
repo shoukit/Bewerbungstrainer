@@ -449,6 +449,21 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   const audioLevel = conversation.isSpeaking ? 50 : 0;
 
+  // Debug: Log viewport info
+  useEffect(() => {
+    const logViewport = () => {
+      console.log('🖥️ [RoleplaySession] Viewport debug:', {
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+        isLgBreakpoint: window.innerWidth >= 1024,
+        devicePixelRatio: window.devicePixelRatio
+      });
+    };
+    logViewport();
+    window.addEventListener('resize', logViewport);
+    return () => window.removeEventListener('resize', logViewport);
+  }, []);
+
   return (
     <>
       <div style={{ minHeight: '600px', height: 'auto' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4">
@@ -456,11 +471,14 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         <div className="w-full max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-[minmax(280px,320px)_minmax(400px,1fr)_minmax(280px,320px)] gap-3 lg:gap-5">
 
           {/* LEFT COLUMN - Coaching Panel (Desktop: sidebar, Mobile: collapsible) */}
+          {/* DEBUG: Removed hidden class temporarily */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="hidden lg:block lg:h-full"
+            className="lg:block"
+            style={{ border: '3px solid red', minWidth: '280px' }}
           >
+            <div className="bg-red-100 p-2 text-xs text-red-800 font-bold">DEBUG: LEFT COLUMN</div>
             <CoachingPanel hints={scenario.coaching_hints} />
           </motion.div>
 
@@ -469,7 +487,9 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex-1 flex flex-col min-h-[400px] order-1 lg:order-none"
+            style={{ border: '3px solid green' }}
           >
+            <div className="bg-green-100 p-2 text-xs text-green-800 font-bold">DEBUG: CENTER COLUMN</div>
             {/* Profile Card with integrated status */}
             <div className="flex-1 overflow-y-auto">
               {scenario.interviewer_profile && scenario.interviewer_profile.name ? (
@@ -639,11 +659,14 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
           </motion.div>
 
           {/* RIGHT COLUMN - Transcript Panel (Desktop only, Mobile uses bottom sheet) */}
+          {/* DEBUG: Removed hidden class temporarily */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="hidden lg:block lg:h-full"
+            className="lg:block"
+            style={{ border: '3px solid blue', minWidth: '280px' }}
           >
+            <div className="bg-blue-100 p-2 text-xs text-blue-800 font-bold">DEBUG: RIGHT COLUMN</div>
             <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
               {/* Transcript Header */}
               <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
