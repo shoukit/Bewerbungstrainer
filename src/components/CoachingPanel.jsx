@@ -11,10 +11,6 @@ const CoachingPanel = ({ hints }) => {
 
   const hintsList = parseHints(hints);
 
-  if (hintsList.length === 0) {
-    return null;
-  }
-
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-full flex flex-col">
       {/* Header */}
@@ -26,7 +22,15 @@ const CoachingPanel = ({ hints }) => {
 
       {/* Hints List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {hintsList.map((hint, index) => (
+        {hintsList.length === 0 ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center text-slate-400">
+              <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p className="text-xs">Tipps erscheinen hier während des Gesprächs</p>
+            </div>
+          </div>
+        ) : (
+          hintsList.map((hint, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, x: -20 }}
@@ -41,7 +45,8 @@ const CoachingPanel = ({ hints }) => {
               <p className="text-sm text-slate-700 leading-relaxed">{hint}</p>
             </div>
           </motion.div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Footer hint */}

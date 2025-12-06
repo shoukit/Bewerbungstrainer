@@ -448,6 +448,49 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                     )}
                   </div>
 
+                  {/* Action Button - Between header and content */}
+                  <div className="bg-white px-4 py-3 shadow-xl">
+                    {!isStarted ? (
+                      <Button
+                        onClick={handleStartCall}
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-base py-6 rounded-xl shadow-lg"
+                      >
+                        <Mic className="w-5 h-5 mr-2" />
+                        {scenario.interviewer_profile?.name
+                          ? `${scenario.interviewer_profile.name} anrufen`
+                          : 'Anrufen'}
+                      </Button>
+                    ) : conversation.status === 'connected' ? (
+                      <Button
+                        onClick={() => setShowEndDialog(true)}
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold text-base py-6 rounded-xl shadow-lg"
+                      >
+                        <X className="w-5 h-5 mr-2" />
+                        Gespräch beenden
+                      </Button>
+                    ) : conversation.status === 'disconnected' ? (
+                      <Button
+                        disabled
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
+                      >
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Gespräch wurde beendet...
+                      </Button>
+                    ) : (
+                      <Button
+                        disabled
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-base py-6 rounded-xl shadow-lg opacity-50 cursor-not-allowed"
+                      >
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Verbindung wird hergestellt...
+                      </Button>
+                    )}
+                  </div>
+
                   {/* Scrollable Profile Content */}
                   <div className="flex-1 overflow-y-auto bg-white rounded-b-2xl shadow-xl">
                     <InterviewerProfile profile={scenario.interviewer_profile} />
@@ -468,54 +511,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                 </div>
               )}
             </div>
-
-            {/* Action Button - Fixed at bottom */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mt-4"
-            >
-              {!isStarted ? (
-                <Button
-                  onClick={handleStartCall}
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-base py-6 rounded-xl shadow-lg"
-                >
-                  <Mic className="w-5 h-5 mr-2" />
-                  {scenario.interviewer_profile?.name
-                    ? `${scenario.interviewer_profile.name} anrufen`
-                    : 'Anrufen'}
-                </Button>
-              ) : conversation.status === 'connected' ? (
-                <Button
-                  onClick={() => setShowEndDialog(true)}
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold text-base py-6 rounded-xl shadow-lg"
-                >
-                  <X className="w-5 h-5 mr-2" />
-                  Gespräch beenden
-                </Button>
-              ) : conversation.status === 'disconnected' ? (
-                <Button
-                  disabled
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
-                >
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Gespräch wurde beendet...
-                </Button>
-              ) : (
-                <Button
-                  disabled
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-base py-6 rounded-xl shadow-lg opacity-50 cursor-not-allowed"
-                >
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Verbindung wird hergestellt...
-                </Button>
-              )}
-            </motion.div>
           </motion.div>
 
           {/* RIGHT COLUMN - Transcript Panel */}
