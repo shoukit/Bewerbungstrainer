@@ -3,7 +3,8 @@ import { ChevronDown, ChevronUp, User } from 'lucide-react';
 
 /**
  * InterviewerProfile Component
- * Displays the interviewer's profile with collapsible sections
+ * Displays ONLY the collapsible sections (properties, objections, questions)
+ * Header is rendered in RoleplaySession.jsx
  */
 const InterviewerProfile = ({ profile }) => {
   const [expandedSections, setExpandedSections] = useState({
@@ -34,30 +35,8 @@ const InterviewerProfile = ({ profile }) => {
   const questions = parseList(profile.important_questions);
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-      {/* Header with Avatar */}
-      <div className="bg-gradient-to-r from-blue-500 to-teal-500 p-6 text-center">
-        <div className="flex justify-center mb-4">
-          {profile.image_url ? (
-            <img
-              src={profile.image_url}
-              alt={profile.name}
-              className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-slate-100 flex items-center justify-center">
-              <User className="w-12 h-12 text-slate-400" />
-            </div>
-          )}
-        </div>
-        <h3 className="text-2xl font-bold text-white mb-1">{profile.name}</h3>
-        {profile.role && (
-          <p className="text-blue-100 text-sm font-medium">{profile.role}</p>
-        )}
-      </div>
-
-      {/* Collapsible Sections */}
-      <div className="p-4 space-y-2">
+    <div className="p-4 space-y-2">
+      {/* NO HEADER - rendered in RoleplaySession.jsx */}
         {/* Properties Section */}
         {properties.length > 0 && (
           <div className="border border-slate-200 rounded-lg overflow-hidden">
