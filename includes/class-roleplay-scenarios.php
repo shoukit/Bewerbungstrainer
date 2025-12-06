@@ -144,6 +144,15 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'normal',
             'high'
         );
+
+        add_meta_box(
+            'roleplay_coaching_hints',
+            __('Coaching-Hinweise', 'bewerbungstrainer'),
+            array($this, 'render_coaching_hints_meta_box'),
+            self::POST_TYPE,
+            'normal',
+            'high'
+        );
     }
 
     /**
@@ -465,6 +474,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_interviewer_questions', sanitize_textarea_field($_POST['roleplay_interviewer_questions']));
         }
 
+        // Save coaching hints
+        if (isset($_POST['roleplay_coaching_hints'])) {
+            update_post_meta($post_id, '_roleplay_coaching_hints', sanitize_textarea_field($_POST['roleplay_coaching_hints']));
+        }
+
         // Save variables schema
         if (isset($_POST['roleplay_variables']) && is_array($_POST['roleplay_variables'])) {
             $variables = array();
@@ -555,7 +569,8 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 'properties' => get_post_meta($post->ID, '_roleplay_interviewer_properties', true),
                 'typical_objections' => get_post_meta($post->ID, '_roleplay_interviewer_objections', true),
                 'important_questions' => get_post_meta($post->ID, '_roleplay_interviewer_questions', true),
-            )
+            ),
+            'coaching_hints' => get_post_meta($post->ID, '_roleplay_coaching_hints', true),
         );
     }
 
@@ -650,6 +665,37 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                               rows="4" class="large-text"><?php echo esc_textarea($interviewer_questions); ?></textarea>
                     <p class="description">
                         <?php _e('Wichtige Fragen, die der Gesprächspartner stellt (eine pro Zeile)', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+        <?php
+    }
+
+    /**
+     * Render coaching hints meta box
+     */
+    public function render_coaching_hints_meta_box($post) {
+        // Get current values
+        $coaching_hints = get_post_meta($post->ID, '_roleplay_coaching_hints', true);
+
+        ?>
+        <table class="form-table">
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_coaching_hints"><?php _e('Coaching-Hinweise', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <textarea id="roleplay_coaching_hints" name="roleplay_coaching_hints"
+                              rows="8" class="large-text code"><?php echo esc_textarea($coaching_hints); ?></textarea>
+                    <p class="description">
+                        <?php _e('Hilfreiche Tipps und Hinweise für den Benutzer während des Rollenspiels (ein Hinweis pro Zeile). Diese werden im "Live Coaching" Panel angezeigt.', 'bewerbungstrainer'); ?>
+                    </p>
+                    <p class="description">
+                        <strong><?php _e('Beispiele:', 'bewerbungstrainer'); ?></strong><br>
+                        - Achten Sie auf eine klare Artikulation<br>
+                        - Nennen Sie konkrete Beispiele aus Ihrer Erfahrung<br>
+                        - Stellen Sie Rückfragen, wenn etwas unklar ist
                     </p>
                 </td>
             </tr>

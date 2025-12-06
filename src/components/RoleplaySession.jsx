@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import AudioVisualizer from './AudioVisualizer';
 import InterviewerProfile from './InterviewerProfile';
+import CoachingPanel from './CoachingPanel';
 import FeedbackModal from './FeedbackModal';
 import {
   analyzeRoleplayTranscript,
@@ -366,190 +367,108 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   return (
     <>
-      <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-6 relative overflow-hidden">
+      <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-4 overflow-hidden">
+        {/* 3-COLUMN GRID LAYOUT */}
+        <div className="h-full grid grid-cols-[320px_1fr_384px] gap-4">
 
-        {/* Transcript Panel - Top Right (Collapsible) */}
-        <AnimatePresence>
-          {showTranscript ? (
-            <motion.div
-              initial={{ x: 400, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 400, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute top-6 right-6 w-96 h-[calc(100vh-3rem)] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col z-20"
-            >
-              {/* Transcript Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-white">
-                  <MessageSquare className="w-4 h-4" />
-                  <h3 className="font-bold text-sm">Live Transkript</h3>
-                </div>
-                <Button
-                  onClick={() => setShowTranscript(false)}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/20 h-8 w-8 p-0"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
+          {/* LEFT COLUMN - Coaching Panel */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="h-full"
+          >
+            <CoachingPanel hints={scenario.coaching_hints} />
+          </motion.div>
 
-              {/* Transcript Content */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {transcript.length === 0 ? (
-                  <div className="h-full flex items-center justify-center">
-                    <div className="text-center text-slate-500">
-                      <MessageSquare className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                      <p className="text-xs">Nachrichten werden während des Gesprächs angezeigt</p>
-                    </div>
-                  </div>
-                ) : (
-                  <AnimatePresence>
-                    {transcript.map((entry, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className={`flex gap-2 ${entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-                      >
-                        {/* Avatar */}
-                        {entry.role === 'agent' ? (
-                          // Show interviewer photo if available
-                          scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
-                            <img
-                              src={scenario.interviewer_profile.image_url}
-                              alt={scenario.interviewer_profile.name || 'Interviewer'}
-                              className="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-sm border-2 border-blue-200"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
-                              <Bot className="w-4 h-4 text-white" />
-                            </div>
-                          )
-                        ) : (
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
-                            <User className="w-4 h-4 text-white" />
-                          </div>
-                        )}
-
-                        <div
-                          className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
-                            entry.role === 'agent'
-                              ? 'bg-slate-50 border border-slate-200'
-                              : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
-                          }`}
-                        >
-                          <p className="text-xs leading-relaxed">{entry.text}</p>
-                        </div>
-                      </motion.div>
-                    ))}
-                    {/* Auto-scroll anchor */}
-                    <div ref={transcriptEndRef} />
-                  </AnimatePresence>
-                )}
-              </div>
-            </motion.div>
-          ) : (
-            <motion.button
-              initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 20, opacity: 0 }}
-              onClick={() => setShowTranscript(true)}
-              className="absolute top-6 right-6 bg-white rounded-xl shadow-lg border border-slate-200 px-4 py-3 flex items-center gap-2 hover:bg-blue-50 transition-colors z-10 group"
-            >
-              <MessageSquare className="w-4 h-4 text-slate-600 group-hover:text-blue-600" />
-              <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-600">Live Transkript</span>
-              <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        {/* CENTERED MAIN CONTENT - Interviewer Profile */}
-        <div className="flex items-start justify-center h-full pt-6 overflow-y-auto">
+          {/* CENTER COLUMN - Interviewer Profile */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-2xl min-h-full flex flex-col py-4"
+            className="h-full flex flex-col overflow-hidden"
           >
-            {/* Audio Visualizer - Above Profile */}
-            {conversation.status === 'connected' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="mb-8"
-              >
-                <div className="flex justify-center mb-3">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Mic className="w-4 h-4" />
-                    <span className="text-sm font-medium">Spreche frei mit dem Interviewer</span>
+            {/* Profile Card with integrated status */}
+            <div className="flex-1 overflow-y-auto">
+              {scenario.interviewer_profile && scenario.interviewer_profile.name ? (
+                <div className="h-full flex flex-col">
+                  {/* Profile Header with Status */}
+                  <div className="bg-gradient-to-r from-blue-600 to-teal-500 rounded-t-2xl px-6 py-4 shadow-xl">
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                      {scenario.interviewer_profile.image_url ? (
+                        <img
+                          src={scenario.interviewer_profile.image_url}
+                          alt={scenario.interviewer_profile.name}
+                          className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                          <User className="w-10 h-10 text-slate-400" />
+                        </div>
+                      )}
+                    </div>
+                    <h2 className="text-2xl font-bold text-white text-center mb-1">
+                      {scenario.interviewer_profile.name}
+                    </h2>
+                    {scenario.interviewer_profile.role && (
+                      <p className="text-blue-100 text-center text-sm font-medium mb-3">
+                        {scenario.interviewer_profile.role}
+                      </p>
+                    )}
+
+                    {/* Status Badge on Card */}
+                    {isStarted && (
+                      <div className="flex items-center justify-center gap-3 pt-3 border-t border-white/20">
+                        <div className="flex items-center gap-2">
+                          {conversation.status === 'connecting' && (
+                            <>
+                              <Loader2 className="w-4 h-4 text-white animate-spin" />
+                              <span className="text-sm font-semibold text-white">Verbinde...</span>
+                            </>
+                          )}
+                          {conversation.status === 'connected' && (
+                            <>
+                              <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
+                              <span className="text-sm font-semibold text-white">Verbunden</span>
+                            </>
+                          )}
+                        </div>
+                        <div className="h-4 w-px bg-white/30" />
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-white" />
+                          <span className="font-mono text-sm font-semibold text-white">{formatDuration(duration)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Scrollable Profile Content */}
+                  <div className="flex-1 overflow-y-auto bg-white rounded-b-2xl shadow-xl">
+                    <InterviewerProfile profile={scenario.interviewer_profile} />
                   </div>
                 </div>
-                <AudioVisualizer audioLevel={audioLevel} isActive={conversation.status === 'connected'} />
-              </motion.div>
-            )}
-
-            {/* Interviewer Profile Card */}
-            {scenario.interviewer_profile && scenario.interviewer_profile.name ? (
-              <div className="flex-1 overflow-y-auto">
-                <InterviewerProfile profile={scenario.interviewer_profile} />
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 mx-auto mb-4 flex items-center justify-center">
-                    <Bot className="w-12 h-12 text-white" />
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 mx-auto mb-4 flex items-center justify-center">
+                      <Bot className="w-12 h-12 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">{scenario.title}</h2>
+                    <p className="text-slate-600 text-sm mb-6">{scenario.description}</p>
+                    <span className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold ${getDifficultyColor(scenario.difficulty)}`}>
+                      {getDifficultyLabel(scenario.difficulty)}
+                    </span>
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">{scenario.title}</h2>
-                  <p className="text-slate-600 text-sm mb-6">{scenario.description}</p>
-                  <span className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold ${getDifficultyColor(scenario.difficulty)}`}>
-                    {getDifficultyLabel(scenario.difficulty)}
-                  </span>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Status Bar - Above Button */}
-            {isStarted && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="mt-8 mb-4 flex items-center justify-center gap-4"
-              >
-                <div className="flex items-center gap-2 text-slate-700">
-                  {conversation.status === 'connecting' && (
-                    <>
-                      <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                      <span className="text-sm font-semibold">Verbinde...</span>
-                    </>
-                  )}
-                  {conversation.status === 'connected' && (
-                    <>
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-sm font-semibold">Verbunden</span>
-                    </>
-                  )}
-                </div>
-
-                <div className="h-4 w-px bg-slate-300" />
-
-                <div className="flex items-center gap-2 text-slate-600">
-                  <Clock className="w-4 h-4" />
-                  <span className="font-mono text-sm font-semibold">{formatDuration(duration)}</span>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Action Button */}
+            {/* Action Button - Fixed at bottom */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
+              className="mt-4"
             >
               {!isStarted ? (
-                // Green "Anrufen" button before starting
                 <Button
                   onClick={handleStartCall}
                   size="lg"
@@ -589,6 +508,80 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                 </Button>
               )}
             </motion.div>
+          </motion.div>
+
+          {/* RIGHT COLUMN - Transcript Panel */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="h-full"
+          >
+            <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+              {/* Transcript Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-white">
+                  <MessageSquare className="w-4 h-4" />
+                  <h3 className="font-bold text-sm">Live Transkript</h3>
+                </div>
+                <ChevronRight className="w-4 h-4 text-white" />
+              </div>
+
+              {/* Transcript Content - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {transcript.length === 0 ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center text-slate-500">
+                      <MessageSquare className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                      <p className="text-xs">Nachrichten werden während des Gesprächs angezeigt</p>
+                    </div>
+                  </div>
+                ) : (
+                  <AnimatePresence>
+                    {transcript.map((entry, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        className={`flex gap-2 ${entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                      >
+                        {/* Avatar */}
+                        {entry.role === 'agent' ? (
+                          scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
+                            <img
+                              src={scenario.interviewer_profile.image_url}
+                              alt={scenario.interviewer_profile.name || 'Interviewer'}
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-sm border-2 border-blue-200"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
+                              <Bot className="w-4 h-4 text-white" />
+                            </div>
+                          )
+                        ) : (
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
+                            <User className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+
+                        <div
+                          className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
+                            entry.role === 'agent'
+                              ? 'bg-slate-50 border border-slate-200'
+                              : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
+                          }`}
+                        >
+                          <p className="text-xs leading-relaxed">{entry.text}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                    {/* Auto-scroll anchor */}
+                    <div ref={transcriptEndRef} />
+                  </AnimatePresence>
+                )}
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>
