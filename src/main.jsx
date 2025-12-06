@@ -4,12 +4,10 @@ import './index.css'
 import App from './App.jsx'
 
 console.log('🚀 [MAIN] Script loaded - starting initialization');
-console.log('🚀 [MAIN] Document readyState:', document.readyState);
-console.log('🚀 [MAIN] Window location:', window.location.href);
-console.log('🚀 [MAIN] User agent:', navigator.userAgent);
 
 // Keep track of whether we've already mounted to prevent double mounting
 let hasAlreadyMounted = false;
+let reactRoot = null;
 
 // Initialize React app when DOM is ready
 function initReactApp() {
@@ -24,21 +22,26 @@ function initReactApp() {
 
   if (!rootElement) {
     console.error('❌ Bewerbungstrainer: Root element not found! Looking for #bewerbungstrainer-app or #root');
-    console.log('Document ready state:', document.readyState);
-    console.log('Available IDs:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
     return;
   }
 
-  // Check if element already has React root
-  if (rootElement._reactRootContainer || rootElement._reactRoot) {
-    console.warn('⚠️ Bewerbungstrainer: Root element already has a React root, clearing...');
-    rootElement.innerHTML = '';
+  // Check if element already has React root - skip re-mounting
+  if (rootElement._reactRootContainer || rootElement.__reactRoot || reactRoot) {
+    console.warn('⚠️ Bewerbungstrainer: Root element already has a React root, skipping re-mount...');
+    hasAlreadyMounted = true;
+    return;
   }
 
   try {
     console.log('✅ Bewerbungstrainer: Mounting React app on:', rootElement.id);
-    const root = createRoot(rootElement);
-    root.render(
+
+    // Clear loading content safely
+    while (rootElement.firstChild) {
+      rootElement.removeChild(rootElement.firstChild);
+    }
+
+    reactRoot = createRoot(rootElement);
+    reactRoot.render(
       <StrictMode>
         <App />
       </StrictMode>
@@ -52,20 +55,32 @@ function initReactApp() {
 
 // WordPress compatibility: Use multiple strategies to ensure DOM is ready
 function waitForDOMAndMount() {
-  // Strategy 1: If element is already available, mount immediately
+  // Use requestAnimationFrame to ensure we're not blocking the main thread
+  // and give other scripts time to initialize
+  const safeMount = () => {
+    requestAnimationFrame(() => {
+      try {
+        initReactApp();
+      } catch (error) {
+        console.error('❌ Bewerbungstrainer: Error during mount:', error);
+      }
+    });
+  };
+
+  // Strategy 1: If element is already available, mount after a small delay
   if (document.getElementById('bewerbungstrainer-app') || document.getElementById('root')) {
-    console.log('✅ Bewerbungstrainer: Element found immediately, mounting...');
-    initReactApp();
+    console.log('✅ Bewerbungstrainer: Element found immediately, scheduling mount...');
+    // Small delay to let other scripts initialize first
+    setTimeout(safeMount, 50);
     return;
   }
 
   // Strategy 2: Wait for DOMContentLoaded
   if (document.readyState === 'loading') {
     console.log('⏳ Bewerbungstrainer: Waiting for DOMContentLoaded...');
-    document.addEventListener('DOMContentLoaded', initReactApp);
+    document.addEventListener('DOMContentLoaded', () => setTimeout(safeMount, 50));
   } else {
     // Strategy 3: DOM is already loaded, but element might not be rendered yet
-    // Wait a bit for WordPress/page builders to render the shortcode
     console.log('⏳ Bewerbungstrainer: DOM loaded, waiting for element...');
 
     let attempts = 0;
@@ -77,11 +92,10 @@ function waitForDOMAndMount() {
       if (document.getElementById('bewerbungstrainer-app') || document.getElementById('root')) {
         clearInterval(checkInterval);
         console.log(`✅ Bewerbungstrainer: Element found after ${attempts * 100}ms`);
-        initReactApp();
+        setTimeout(safeMount, 50);
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval);
         console.error('❌ Bewerbungstrainer: Element not found after 5 seconds');
-        console.log('Available elements:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
       }
     }, 100);
   }
