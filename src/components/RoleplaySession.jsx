@@ -15,6 +15,7 @@ import {
   MessageSquare,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Lightbulb,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   // Mobile panel state
   const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(false);
   const [showTranscriptOnMobile, setShowTranscriptOnMobile] = useState(false);
+  const [showProfileOnMobile, setShowProfileOnMobile] = useState(true);
 
   // Dynamic header height
   const [headerHeight, setHeaderHeight] = useState(80);
@@ -226,6 +228,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
     };
   }, []);
 
+  // Prevent scroll to bottom on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const handleStartCall = async () => {
     setIsStarted(true);
     await startConversation();
@@ -363,6 +370,12 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
       default:
         return difficulty;
     }
+  };
+
+  // Parse coaching hints
+  const parseHints = (text) => {
+    if (!text) return [];
+    return text.split(/\n/).map(item => item.trim()).filter(Boolean);
   };
 
   // Error state
@@ -560,10 +573,31 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                     )}
                   </div>
 
-                  {/* Scrollable Profile Content (Hidden on mobile) */}
-                  <div className="hidden lg:block lg:flex-1 lg:overflow-y-auto bg-white rounded-b-2xl shadow-xl">
-                    <InterviewerProfile profile={scenario.interviewer_profile} />
+                  {/* Profile Toggle Button (Mobile only) */}
+                  <div className="lg:hidden bg-white px-4 py-2">
+                    <button
+                      onClick={() => setShowProfileOnMobile(!showProfileOnMobile)}
+                      className="w-full flex items-center justify-between text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
+                    >
+                      <span>Profil-Details</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showProfileOnMobile ? 'rotate-180' : ''}`} />
+                    </button>
                   </div>
+
+                  {/* Scrollable Profile Content (Mobile: collapsible, Desktop: always visible) */}
+                  <AnimatePresence>
+                    {(showProfileOnMobile || window.innerWidth >= 1024) && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="lg:flex-1 lg:overflow-y-auto bg-white lg:rounded-b-2xl shadow-xl overflow-hidden"
+                      >
+                        <InterviewerProfile profile={scenario.interviewer_profile} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               ) : (
                 <div className="h-full flex items-center justify-center">
@@ -730,8 +764,30 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="p-4">
-                    <CoachingPanel hints={scenario.coaching_hints} />
+                  <div className="p-4 space-y-3">
+                    {parseHints(scenario.coaching_hints).length === 0 ? (
+                      <div className="text-center text-slate-400 py-8">
+                        <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                        <p className="text-xs">Tipps erscheinen hier während des Gesprächs</p>
+                      </div>
+                    ) : (
+                      parseHints(scenario.coaching_hints).map((hint, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className="flex gap-3 items-start bg-blue-50 p-3 rounded-lg"
+                        >
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-100 to-teal-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Lightbulb className="w-3.5 h-3.5 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm text-slate-700 leading-relaxed">{hint}</p>
+                          </div>
+                        </motion.div>
+                      ))
+                    )}
                   </div>
                 </div>
               </motion.div>
