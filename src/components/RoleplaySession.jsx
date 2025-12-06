@@ -50,6 +50,14 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
   const [audioAnalysisContent, setAudioAnalysisContent] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Mobile panel state
+  const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(false);
+  const [showTranscriptOnMobile, setShowTranscriptOnMobile] = useState(false);
+
+  // Dynamic header height
+  const [headerHeight, setHeaderHeight] = useState(80);
+  const headerObserverRef = useRef(null);
+
   // Refs
   const durationIntervalRef = useRef(null);
   const conversationIdRef = useRef(null);
@@ -182,6 +190,38 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
       if (conversation.status === 'connected') {
         conversation.endSession();
       }
+    };
+  }, []);
+
+  // Dynamic header height calculation
+  useEffect(() => {
+    const measureHeaderHeight = () => {
+      const header = document.querySelector('header, .site-header, [role="banner"]');
+      if (header) {
+        const height = header.offsetHeight;
+        setHeaderHeight(height);
+      }
+    };
+
+    // Measure on mount
+    measureHeaderHeight();
+
+    // Observe header size changes
+    const header = document.querySelector('header, .site-header, [role="banner"]');
+    if (header) {
+      const resizeObserver = new ResizeObserver(measureHeaderHeight);
+      resizeObserver.observe(header);
+      headerObserverRef.current = resizeObserver;
+    }
+
+    // Also measure on window resize
+    window.addEventListener('resize', measureHeaderHeight);
+
+    return () => {
+      if (headerObserverRef.current) {
+        headerObserverRef.current.disconnect();
+      }
+      window.removeEventListener('resize', measureHeaderHeight);
     };
   }, []);
 
@@ -375,52 +415,80 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
 
   return (
     <>
-      <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-4 overflow-hidden flex items-center justify-center">
-        {/* 3-COLUMN GRID LAYOUT - Fixed widths, centered */}
-        <div className="h-full w-full max-w-[1320px] grid grid-cols-[320px_640px_320px] gap-5">
+      <div style={{ height: `calc(100vh - ${headerHeight}px)` }} className="bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4 overflow-hidden flex items-center justify-center">
+        {/* RESPONSIVE LAYOUT: Mobile stacked, Desktop 3-column */}
+        <div className="h-full w-full max-w-[1320px] flex flex-col lg:grid lg:grid-cols-[320px_640px_320px] gap-3 lg:gap-5">
 
-          {/* LEFT COLUMN - Coaching Panel */}
+          {/* LEFT COLUMN - Coaching Panel (Desktop: sidebar, Mobile: collapsible) */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="h-full"
+            className="hidden lg:block lg:h-full"
           >
             <CoachingPanel hints={scenario.coaching_hints} />
           </motion.div>
 
-          {/* CENTER COLUMN - Interviewer Profile */}
+          {/* CENTER COLUMN - Interviewer Profile (Responsive) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="h-full flex flex-col overflow-hidden"
+            className="flex-1 lg:h-full flex flex-col overflow-hidden order-1 lg:order-none"
           >
             {/* Profile Card with integrated status */}
             <div className="flex-1 overflow-y-auto">
               {scenario.interviewer_profile && scenario.interviewer_profile.name ? (
                 <div className="h-full flex flex-col">
-                  {/* Profile Header with Status */}
-                  <div className="bg-gradient-to-r from-blue-600 to-teal-500 rounded-t-2xl px-6 py-4 shadow-xl">
-                    <div className="flex items-center justify-center gap-4 mb-4">
+                  {/* Profile Header with Status (Responsive: compact on mobile, full on desktop) */}
+                  <div className="bg-gradient-to-r from-blue-600 to-teal-500 rounded-t-2xl px-4 lg:px-6 py-3 lg:py-4 shadow-xl">
+                    {/* Mobile: Horizontal compact layout */}
+                    <div className="flex lg:hidden items-center gap-3 mb-2">
                       {scenario.interviewer_profile.image_url ? (
                         <img
                           src={scenario.interviewer_profile.image_url}
                           alt={scenario.interviewer_profile.name}
-                          className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                          className="w-12 h-12 rounded-full border-2 border-white shadow-lg object-cover"
                         />
                       ) : (
-                        <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
-                          <User className="w-10 h-10 text-slate-400" />
+                        <div className="w-12 h-12 rounded-full border-2 border-white shadow-lg bg-white flex items-center justify-center">
+                          <User className="w-6 h-6 text-slate-400" />
                         </div>
                       )}
+                      <div className="flex-1">
+                        <h2 className="text-lg font-bold text-white">
+                          {scenario.interviewer_profile.name}
+                        </h2>
+                        {scenario.interviewer_profile.role && (
+                          <p className="text-blue-100 text-xs font-medium">
+                            {scenario.interviewer_profile.role}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <h2 className="text-2xl font-bold text-white text-center mb-1">
-                      {scenario.interviewer_profile.name}
-                    </h2>
-                    {scenario.interviewer_profile.role && (
-                      <p className="text-blue-100 text-center text-sm font-medium mb-3">
-                        {scenario.interviewer_profile.role}
-                      </p>
-                    )}
+
+                    {/* Desktop: Centered vertical layout */}
+                    <div className="hidden lg:block">
+                      <div className="flex items-center justify-center gap-4 mb-4">
+                        {scenario.interviewer_profile.image_url ? (
+                          <img
+                            src={scenario.interviewer_profile.image_url}
+                            alt={scenario.interviewer_profile.name}
+                            className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                            <User className="w-10 h-10 text-slate-400" />
+                          </div>
+                        )}
+                      </div>
+                      <h2 className="text-2xl font-bold text-white text-center mb-1">
+                        {scenario.interviewer_profile.name}
+                      </h2>
+                      {scenario.interviewer_profile.role && (
+                        <p className="text-blue-100 text-center text-sm font-medium mb-3">
+                          {scenario.interviewer_profile.role}
+                        </p>
+                      )}
+                    </div>
 
                     {/* Status Badge on Card */}
                     {isStarted && (
@@ -491,8 +559,8 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
                     )}
                   </div>
 
-                  {/* Scrollable Profile Content */}
-                  <div className="flex-1 overflow-y-auto bg-white rounded-b-2xl shadow-xl">
+                  {/* Scrollable Profile Content (Hidden on mobile) */}
+                  <div className="hidden lg:block lg:flex-1 lg:overflow-y-auto bg-white rounded-b-2xl shadow-xl">
                     <InterviewerProfile profile={scenario.interviewer_profile} />
                   </div>
                 </div>
@@ -513,11 +581,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             </div>
           </motion.div>
 
-          {/* RIGHT COLUMN - Transcript Panel */}
+          {/* RIGHT COLUMN - Transcript Panel (Desktop only, Mobile uses bottom sheet) */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="h-full"
+            className="hidden lg:block lg:h-full"
           >
             <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
               {/* Transcript Header */}
@@ -596,6 +664,178 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
             </div>
           </motion.div>
         </div>
+
+        {/* Mobile Floating Action Buttons */}
+        <div className="lg:hidden fixed bottom-4 right-4 flex flex-col gap-3 z-50">
+          {/* Coaching Button */}
+          <motion.button
+            onClick={() => setShowCoachingOnMobile(!showCoachingOnMobile)}
+            className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-teal-500 shadow-xl flex items-center justify-center text-white relative"
+            whileTap={{ scale: 0.95 }}
+          >
+            <Lightbulb className="w-6 h-6" />
+            {scenario.coaching_hints && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full text-xs font-bold flex items-center justify-center">
+                {scenario.coaching_hints.split('\n').filter(Boolean).length}
+              </span>
+            )}
+          </motion.button>
+
+          {/* Transcript Button */}
+          <motion.button
+            onClick={() => setShowTranscriptOnMobile(!showTranscriptOnMobile)}
+            className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-teal-500 shadow-xl flex items-center justify-center text-white relative"
+            whileTap={{ scale: 0.95 }}
+          >
+            <MessageSquare className="w-6 h-6" />
+            {transcript.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs font-bold flex items-center justify-center">
+                {transcript.length}
+              </span>
+            )}
+          </motion.button>
+        </div>
+
+        {/* Mobile Bottom Sheet - Coaching */}
+        <AnimatePresence>
+          {showCoachingOnMobile && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowCoachingOnMobile(false)}
+                className="lg:hidden fixed inset-0 bg-black/50 z-40"
+              />
+              {/* Sheet */}
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="lg:hidden fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl overflow-hidden"
+              >
+                <div className="bg-white h-full overflow-y-auto">
+                  <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-white">
+                      <Lightbulb className="w-5 h-5" />
+                      <h3 className="font-bold text-sm">Live Coaching</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowCoachingOnMobile(false)}
+                      className="text-white"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-4">
+                    <CoachingPanel hints={scenario.coaching_hints} />
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile Bottom Sheet - Transcript */}
+        <AnimatePresence>
+          {showTranscriptOnMobile && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowTranscriptOnMobile(false)}
+                className="lg:hidden fixed inset-0 bg-black/50 z-40"
+              />
+              {/* Sheet */}
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="lg:hidden fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl overflow-hidden"
+              >
+                <div className="bg-white h-full flex flex-col">
+                  <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-white">
+                      <MessageSquare className="w-5 h-5" />
+                      <h3 className="font-bold text-sm">Live Transkript</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowTranscriptOnMobile(false)}
+                      className="text-white"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {transcript.length === 0 ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="text-center text-slate-500">
+                          <MessageSquare className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                          <p className="text-xs">Nachrichten werden während des Gesprächs angezeigt</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <AnimatePresence>
+                        {transcript.map((entry, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            className={`flex gap-2 ${entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                          >
+                            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                              {entry.role === 'agent' ? (
+                                scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
+                                  <img
+                                    src={scenario.interviewer_profile.image_url}
+                                    alt={scenario.interviewer_profile.name || 'Interviewer'}
+                                    className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
+                                    <Bot className="w-4 h-4 text-white" />
+                                  </div>
+                                )
+                              ) : (
+                                <>
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
+                                    <User className="w-4 h-4 text-white" />
+                                  </div>
+                                  {entry.timeLabel && (
+                                    <span className="text-[10px] font-mono text-slate-400">
+                                      {entry.timeLabel}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                            <div
+                              className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
+                                entry.role === 'agent'
+                                  ? 'bg-slate-50 border border-slate-200'
+                                  : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
+                              }`}
+                            >
+                              <p className="text-xs leading-relaxed">{entry.text}</p>
+                            </div>
+                          </motion.div>
+                        ))}
+                        <div ref={transcriptEndRef} />
+                      </AnimatePresence>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* End Confirmation Dialog */}
