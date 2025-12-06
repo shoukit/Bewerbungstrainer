@@ -58,6 +58,7 @@ const SessionDetailView = ({ session, onBack }) => {
   const audioRef = useRef(null);
   const progressRef = useRef(null);
   const transcriptContainerRef = useRef(null);
+  const transcriptEndRef = useRef(null);
 
   // Parse feedback and transcript
   const parsedFeedback = useMemo(() => {
@@ -210,13 +211,14 @@ const SessionDetailView = ({ session, onBack }) => {
 
   // Update active transcript based on current time
   useEffect(() => {
-    if (!parsedTranscript.length || !currentTime) return;
+    if (!parsedTranscript.length || currentTime === undefined) return;
 
-    // Find the transcript entry closest to current time
+    // Find the transcript entry closest to current time (using elapsedTime in seconds)
     let activeIndex = -1;
     for (let i = 0; i < parsedTranscript.length; i++) {
       const entry = parsedTranscript[i];
-      const entryTime = entry.timestamp || 0;
+      // Use elapsedTime (seconds from conversation start)
+      const entryTime = entry.elapsedTime !== undefined ? entry.elapsedTime : 0;
       if (entryTime <= currentTime) {
         activeIndex = i;
       } else {
@@ -270,8 +272,9 @@ const SessionDetailView = ({ session, onBack }) => {
 
   const seekToTranscript = useCallback((index) => {
     const entry = parsedTranscript[index];
-    if (entry?.timestamp !== undefined) {
-      seekToTime(entry.timestamp);
+    // Use elapsedTime for seeking (seconds from conversation start)
+    if (entry?.elapsedTime !== undefined) {
+      seekToTime(entry.elapsedTime);
     }
   }, [parsedTranscript, seekToTime]);
 
@@ -558,56 +561,69 @@ const SessionDetailView = ({ session, onBack }) => {
               ) : (
                 <div
                   ref={transcriptContainerRef}
-                  className="space-y-3 max-h-96 overflow-y-auto pr-2"
+                  className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scroll-smooth"
                 >
                   {parsedTranscript.map((entry, idx) => {
                     const isActive = idx === activeTranscriptIndex;
                     const isAgent = entry.role === 'agent';
+                    // Use timeLabel if available, otherwise format elapsedTime
+                    const timeDisplay = entry.timeLabel || (entry.elapsedTime !== undefined
+                      ? `${Math.floor(entry.elapsedTime / 60).toString().padStart(2, '0')}:${(entry.elapsedTime % 60).toString().padStart(2, '0')}`
+                      : null);
 
                     return (
                       <motion.div
                         key={idx}
-                        initial={{ opacity: 0.7 }}
+                        initial={{ opacity: 0.8 }}
                         animate={{
-                          opacity: isActive ? 1 : 0.7,
-                          scale: isActive ? 1 : 0.98,
+                          opacity: isActive ? 1 : 0.8,
                         }}
-                        onClick={() => seekToTranscript(idx)}
-                        className={`flex gap-3 p-3 rounded-xl cursor-pointer transition-all ${
-                          isActive
-                            ? 'bg-blue-50 border-2 border-blue-200 shadow-sm'
-                            : 'hover:bg-slate-50 border-2 border-transparent'
-                        }`}
+                        onClick={() => {
+                          // Use elapsedTime for seeking (seconds from start)
+                          const seekTime = entry.elapsedTime !== undefined ? entry.elapsedTime : 0;
+                          seekToTime(seekTime);
+                        }}
+                        className={`flex gap-2 cursor-pointer transition-all ${
+                          entry.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                        } ${isActive ? 'scale-[1.01]' : 'hover:scale-[1.005]'}`}
                       >
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            isAgent
-                              ? 'bg-gradient-to-br from-purple-500 to-indigo-500'
-                              : 'bg-gradient-to-br from-blue-500 to-teal-500'
-                          }`}
-                        >
+                        {/* Avatar with Timestamp */}
+                        <div className="flex flex-col items-center gap-1 flex-shrink-0">
                           {isAgent ? (
-                            <Bot className="w-4 h-4 text-white" />
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
+                              <Bot className="w-4 h-4 text-white" />
+                            </div>
                           ) : (
-                            <User className="w-4 h-4 text-white" />
+                            <>
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
+                                <User className="w-4 h-4 text-white" />
+                              </div>
+                              {timeDisplay && (
+                                <span className="text-[10px] font-mono text-slate-400">
+                                  {timeDisplay}
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-semibold text-slate-600">
-                              {isAgent ? 'Interviewer' : 'Du'}
-                            </span>
-                            {entry.timestamp !== undefined && (
-                              <span className="text-xs text-slate-400">
-                                {formatTime(entry.timestamp)}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-slate-700 leading-relaxed">{entry.text}</p>
+
+                        {/* Message Bubble */}
+                        <div
+                          className={`flex-1 px-3 py-2 rounded-xl shadow-sm transition-all ${
+                            isAgent
+                              ? 'bg-slate-50 border border-slate-200'
+                              : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
+                          } ${isActive ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}
+                        >
+                          <p className={`text-xs leading-relaxed ${isAgent ? 'text-slate-700' : 'text-white'}`}>
+                            {entry.text}
+                          </p>
                         </div>
                       </motion.div>
                     );
                   })}
+                  {/* Auto-scroll anchor */}
+                  <div ref={transcriptEndRef} />
                 </div>
               )}
             </motion.div>
