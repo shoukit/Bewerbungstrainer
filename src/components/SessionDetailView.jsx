@@ -144,34 +144,67 @@ const SessionDetailView = ({ session, onBack }) => {
     setIsAudioLoading(true);
     setAudioError(null);
 
-    // Create native audio element
-    const audio = new Audio(audioUrl);
-    audioRef.current = audio;
+    // Get WordPress config for authentication
+    const config = window.bewerbungstrainerConfig || { nonce: '' };
 
-    // Event listeners
-    audio.addEventListener('loadedmetadata', () => {
-      console.log('✅ [SESSION_DETAIL] Audio loaded');
-      setDuration(audio.duration);
-      setIsAudioLoading(false);
-    });
+    // Fetch audio with authentication
+    fetch(audioUrl, {
+      method: 'GET',
+      headers: {
+        'X-WP-Nonce': config.nonce,
+      },
+      credentials: 'same-origin',
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        // Create object URL from blob
+        const objectUrl = URL.createObjectURL(blob);
+        const audio = new Audio(objectUrl);
+        audioRef.current = audio;
 
-    audio.addEventListener('timeupdate', () => {
-      setCurrentTime(audio.currentTime);
-    });
+        // Store object URL for cleanup
+        audio._objectUrl = objectUrl;
 
-    audio.addEventListener('play', () => setIsPlaying(true));
-    audio.addEventListener('pause', () => setIsPlaying(false));
-    audio.addEventListener('ended', () => setIsPlaying(false));
+        // Event listeners
+        audio.addEventListener('loadedmetadata', () => {
+          console.log('✅ [SESSION_DETAIL] Audio loaded');
+          setDuration(audio.duration);
+          setIsAudioLoading(false);
+        });
 
-    audio.addEventListener('error', (err) => {
-      console.error('❌ [SESSION_DETAIL] Audio error:', err);
-      setAudioError('Audio konnte nicht geladen werden. Möglicherweise ist die Aufnahme nicht verfügbar.');
-      setIsAudioLoading(false);
-    });
+        audio.addEventListener('timeupdate', () => {
+          setCurrentTime(audio.currentTime);
+        });
+
+        audio.addEventListener('play', () => setIsPlaying(true));
+        audio.addEventListener('pause', () => setIsPlaying(false));
+        audio.addEventListener('ended', () => setIsPlaying(false));
+
+        audio.addEventListener('error', (err) => {
+          console.error('❌ [SESSION_DETAIL] Audio playback error:', err);
+          setAudioError('Audio konnte nicht abgespielt werden.');
+          setIsAudioLoading(false);
+        });
+      })
+      .catch((err) => {
+        console.error('❌ [SESSION_DETAIL] Audio fetch error:', err);
+        setAudioError('Audio konnte nicht geladen werden. Möglicherweise ist die Aufnahme nicht verfügbar.');
+        setIsAudioLoading(false);
+      });
 
     return () => {
-      audio.pause();
-      audio.src = '';
+      if (audioRef.current) {
+        audioRef.current.pause();
+        if (audioRef.current._objectUrl) {
+          URL.revokeObjectURL(audioRef.current._objectUrl);
+        }
+        audioRef.current = null;
+      }
     };
   }, [sessionData?.id, sessionData?.conversation_id]);
 
