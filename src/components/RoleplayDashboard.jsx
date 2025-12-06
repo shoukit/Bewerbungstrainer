@@ -174,9 +174,9 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 py-4 lg:py-8 px-2 lg:px-4 overflow-x-hidden">
       {/* Header */}
-      <div className="max-w-6xl mx-auto mb-8">
+      <div className="max-w-6xl mx-auto mb-4 lg:mb-8 px-2">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -197,8 +197,8 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
                 <MessageSquare className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Rollenspiel-Training</h1>
-                <p className="text-slate-600">Wähle ein Szenario und übe realistische Gespräche</p>
+                <h1 className="text-xl lg:text-3xl font-bold text-slate-900">Rollenspiel-Training</h1>
+                <p className="text-sm lg:text-base text-slate-600">Wähle ein Szenario und übe realistische Gespräche</p>
               </div>
             </div>
 
@@ -248,7 +248,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
       </div>
 
       {/* Scenarios Grid */}
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto px-2">
         {filteredScenarios.length === 0 ? (
           <div className="text-center py-12">
             <Sparkles className="w-12 h-12 text-slate-400 mx-auto mb-4" />
@@ -256,7 +256,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
           </div>
         ) : (
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
             initial="hidden"
             animate="visible"
             variants={{
