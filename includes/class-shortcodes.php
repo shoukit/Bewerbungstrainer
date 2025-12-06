@@ -768,16 +768,9 @@ class Bewerbungstrainer_Shortcodes {
                 flex-direction: column !important;
             }
 
-            /* Hide side columns on mobile - use ID for higher specificity */
-            #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:first-child,
-            #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:last-child {
+            /* Hide side columns on mobile - using explicit class */
+            #bewerbungstrainer-app .bewerbungstrainer-side-column {
                 display: none !important;
-            }
-
-            /* Show center column on mobile */
-            #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:nth-child(2) {
-                display: flex !important;
-                flex-direction: column !important;
             }
 
             @media (min-width: 1024px) {
@@ -785,17 +778,10 @@ class Bewerbungstrainer_Shortcodes {
                     display: grid !important;
                 }
 
-                /* Force side columns to be visible on desktop */
-                #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:first-child,
-                #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:last-child {
+                /* Show side columns on desktop */
+                #bewerbungstrainer-app .bewerbungstrainer-side-column {
                     display: block !important;
                     min-width: 280px !important;
-                }
-
-                /* Center column should be flex */
-                #bewerbungstrainer-app .bewerbungstrainer-session-layout > div > *:nth-child(2) {
-                    display: flex !important;
-                    flex-direction: column !important;
                 }
             }
 
@@ -819,6 +805,42 @@ class Bewerbungstrainer_Shortcodes {
             /* Ensure grid children are visible */
             #bewerbungstrainer-app * {
                 box-sizing: border-box;
+            }
+
+            /* Dialog button styling - override Elementor defaults */
+            [data-radix-popper-content-wrapper] button,
+            [role="dialog"] button {
+                font-family: inherit !important;
+                font-size: 14px !important;
+                line-height: 1.5 !important;
+                padding: 8px 16px !important;
+                border-radius: 6px !important;
+                cursor: pointer !important;
+                transition: all 0.2s !important;
+            }
+
+            [data-radix-popper-content-wrapper] button[data-variant="outline"],
+            [role="dialog"] button[data-variant="outline"] {
+                background: transparent !important;
+                border: 1px solid #e2e8f0 !important;
+                color: #334155 !important;
+            }
+
+            [data-radix-popper-content-wrapper] button[data-variant="outline"]:hover,
+            [role="dialog"] button[data-variant="outline"]:hover {
+                background: #f1f5f9 !important;
+            }
+
+            [data-radix-popper-content-wrapper] button:not([data-variant]),
+            [role="dialog"] button:not([data-variant]) {
+                background: #0f172a !important;
+                border: 1px solid #0f172a !important;
+                color: white !important;
+            }
+
+            [data-radix-popper-content-wrapper] button:not([data-variant]):hover,
+            [role="dialog"] button:not([data-variant]):hover {
+                background: #1e293b !important;
             }
 
             .bewerbungstrainer-loading {
