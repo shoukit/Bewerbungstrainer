@@ -13,13 +13,14 @@ import {
   Award,
   Loader2,
   AlertCircle,
+  History,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import RoleplayVariablesDialog from './RoleplayVariablesDialog';
 
-const RoleplayDashboard = ({ onSelectScenario, onBack }) => {
+const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
   const [scenarios, setScenarios] = useState([]);
   const [filteredScenarios, setFilteredScenarios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -190,14 +191,28 @@ const RoleplayDashboard = ({ onSelectScenario, onBack }) => {
           )}
 
           {/* Title */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">Rollenspiel-Training</h1>
+                <p className="text-slate-600">Wähle ein Szenario und übe realistische Gespräche</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Rollenspiel-Training</h1>
-              <p className="text-slate-600">Wähle ein Szenario und übe realistische Gespräche</p>
-            </div>
+
+            {/* History Button */}
+            {onOpenHistory && (
+              <Button
+                variant="outline"
+                onClick={onOpenHistory}
+                className="flex items-center gap-2"
+              >
+                <History className="w-4 h-4" />
+                <span className="hidden sm:inline">Gesprächshistorie</span>
+              </Button>
+            )}
           </div>
 
           {/* Search and Filters */}
