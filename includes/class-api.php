@@ -304,6 +304,13 @@ class Bewerbungstrainer_API {
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
+        // Get session audio from ElevenLabs (proxy to avoid CORS)
+        register_rest_route($this->namespace, '/roleplays/sessions/(?P<id>\d+)/audio', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_session_audio'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
         // Generate ElevenLabs signed URL (SECURE - never expose API key!)
         register_rest_route($this->namespace, '/elevenlabs/signed-url', array(
             'methods' => 'POST',
@@ -1762,6 +1769,69 @@ class Bewerbungstrainer_API {
                 'offset' => $args['offset'],
             ),
         ), 200);
+    }
+
+    /**
+     * Get session audio from ElevenLabs (proxy to avoid CORS)
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function get_session_audio($request) {
+        $session_id = $request->get_param('id');
+
+        // Get session from database
+        $session = $this->db->get_roleplay_session($session_id);
+
+        if (!$session) {
+            return new WP_Error('session_not_found', 'Session nicht gefunden', array('status' => 404));
+        }
+
+        // Security check: Ensure user owns this session
+        if ((int) $session->user_id !== get_current_user_id()) {
+            return new WP_Error('unauthorized', 'Keine Berechtigung', array('status' => 403));
+        }
+
+        // Check if conversation_id exists
+        if (empty($session->conversation_id)) {
+            return new WP_Error('no_conversation_id', 'Keine ElevenLabs Conversation ID gefunden', array('status' => 400));
+        }
+
+        // Get ElevenLabs API key
+        $api_key = get_option('bewerbungstrainer_elevenlabs_api_key');
+        if (empty($api_key)) {
+            return new WP_Error('no_api_key', 'ElevenLabs API Key nicht konfiguriert', array('status' => 500));
+        }
+
+        // Fetch audio from ElevenLabs Conversation History API
+        $elevenlabs_url = 'https://api.elevenlabs.io/v1/convai/conversations/' . $session->conversation_id . '/audio';
+
+        $response = wp_remote_get($elevenlabs_url, array(
+            'headers' => array(
+                'xi-api-key' => $api_key,
+            ),
+            'timeout' => 30,
+        ));
+
+        if (is_wp_error($response)) {
+            return new WP_Error('fetch_failed', 'Audio konnte nicht von ElevenLabs geladen werden: ' . $response->get_error_message(), array('status' => 500));
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        if ($status_code !== 200) {
+            return new WP_Error('elevenlabs_error', 'ElevenLabs API Fehler (Status: ' . $status_code . ')', array('status' => $status_code));
+        }
+
+        // Get audio data
+        $audio_data = wp_remote_retrieve_body($response);
+        $content_type = wp_remote_retrieve_header($response, 'content-type');
+
+        // Stream audio back to client
+        header('Content-Type: ' . ($content_type ?: 'audio/mpeg'));
+        header('Content-Length: ' . strlen($audio_data));
+        header('Accept-Ranges: bytes');
+        echo $audio_data;
+        exit;
     }
 
     /**
