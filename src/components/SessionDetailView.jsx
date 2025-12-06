@@ -230,11 +230,30 @@ const SessionDetailView = ({ session, onBack }) => {
     if (activeIndex !== activeTranscriptIndex) {
       setActiveTranscriptIndex(activeIndex);
 
-      // Only auto-scroll if audio is playing AND user didn't just click
-      // Skip scrolling entirely - user can scroll manually
-      // The highlighting is enough to show the active transcript item
+      // Only auto-scroll when audio is PLAYING (not when user clicks to seek)
+      // This ensures the transcript box scrolls during playback but not on manual interaction
+      if (isPlaying && activeIndex >= 0 && transcriptContainerRef.current) {
+        const container = transcriptContainerRef.current;
+        const activeElement = container.children[activeIndex];
+
+        if (activeElement) {
+          // Calculate if element is outside visible area of the container
+          const containerRect = container.getBoundingClientRect();
+          const elementRect = activeElement.getBoundingClientRect();
+
+          // Only scroll if element is outside the visible area
+          if (elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom) {
+            // Scroll within container only (not the page)
+            const scrollTop = activeElement.offsetTop - container.offsetTop - (container.clientHeight / 2) + (activeElement.clientHeight / 2);
+            container.scrollTo({
+              top: Math.max(0, scrollTop),
+              behavior: 'smooth'
+            });
+          }
+        }
+      }
     }
-  }, [currentTime, parsedTranscript, activeTranscriptIndex]);
+  }, [currentTime, parsedTranscript, activeTranscriptIndex, isPlaying]);
 
   // Audio controls
   const togglePlay = useCallback(() => {
