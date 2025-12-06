@@ -32,6 +32,13 @@ import {
 import wordpressAPI from '@/services/wordpress-api';
 
 const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
+  // DEBUG: Log immediately when component function is called
+  console.log('🎬 [RoleplaySession] Component function called!', {
+    hasScenario: !!scenario,
+    scenarioTitle: scenario?.title,
+    viewportWidth: typeof window !== 'undefined' ? window.innerWidth : 'SSR'
+  });
+
   // Session data
   const [sessionId, setSessionId] = useState(null);
   const [startTime, setStartTime] = useState(null);
