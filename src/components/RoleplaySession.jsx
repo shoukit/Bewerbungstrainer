@@ -29,6 +29,7 @@ import {
   saveRoleplaySessionAnalysis,
   createRoleplaySession,
 } from '@/services/roleplay-feedback-adapter';
+import { downloadConversationAudio } from '@/services/elevenlabs';
 import wordpressAPI from '@/services/wordpress-api';
 
 const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
@@ -344,7 +345,31 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         variables: variables,
       };
 
-      const analysis = await analyzeRoleplayTranscript(transcript, scenarioContext, null);
+      // Try to download conversation audio from ElevenLabs for audio analysis
+      let audioBlob = null;
+      if (conversationIdRef.current) {
+        try {
+          console.log('🎵 [RoleplaySession] Downloading conversation audio for analysis...');
+          const elevenLabsApiKey = wordpressAPI.getElevenLabsApiKey();
+
+          if (elevenLabsApiKey) {
+            audioBlob = await downloadConversationAudio(
+              conversationIdRef.current,
+              elevenLabsApiKey
+            );
+            console.log('✅ [RoleplaySession] Audio downloaded successfully:', audioBlob.size, 'bytes');
+          } else {
+            console.warn('⚠️ [RoleplaySession] ElevenLabs API key not available, skipping audio analysis');
+          }
+        } catch (audioError) {
+          // Audio download failed - continue without audio analysis
+          console.warn('⚠️ [RoleplaySession] Could not download audio for analysis:', audioError.message);
+          console.warn('⚠️ [RoleplaySession] Make sure "Audio Saving" is enabled in ElevenLabs Agent settings');
+        }
+      }
+
+      // Run analysis (with or without audio)
+      const analysis = await analyzeRoleplayTranscript(transcript, scenarioContext, audioBlob);
 
       // Save analysis to database
       if (sessionId && conversationIdRef.current) {
