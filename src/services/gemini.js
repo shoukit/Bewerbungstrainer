@@ -295,8 +295,8 @@ Analysiere die Audio-Datei dieses Rollenspiels.
 
 WICHTIG - QUELLEN-TRENNUNG:
 Die Aufnahme enthält ZWEI Stimmen:
-1. Den INTERVIEWER (KI-Stimme, akzentfrei, stellt Fragen).
-2. Den BEWERBER (Mensch, antwortet).
+1. Den INTERVIEWER (KI-Stimme, akzentfrei, stellt Fragen). Die KI-Stimme ERÖFFNET das Gespräch.
+2. Den BEWERBER (Mensch, antwortet auf die Fragen des Interviewers).
 
 DEINE AUFGABE:
 Höre dir das gesamte Audio an, aber bewerte AUSSCHLIESSLICH die Stimme des BEWERBERS (2).
