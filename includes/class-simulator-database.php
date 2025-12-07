@@ -77,90 +77,97 @@ class Bewerbungstrainer_Simulator_Database {
 
         // Scenarios table - stores configurable scenario templates
         $table_scenarios = $wpdb->prefix . 'bewerbungstrainer_simulator_scenarios';
-        $sql_scenarios = "CREATE TABLE IF NOT EXISTS $table_scenarios (
-            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            title varchar(255) NOT NULL,
-            description text DEFAULT NULL,
-            icon varchar(50) DEFAULT 'briefcase',
-            difficulty enum('beginner', 'intermediate', 'advanced') DEFAULT 'intermediate',
-            category varchar(100) DEFAULT NULL,
-            system_prompt longtext NOT NULL,
-            question_generation_prompt longtext DEFAULT NULL,
-            feedback_prompt longtext DEFAULT NULL,
-            input_configuration longtext NOT NULL,
-            question_count_min tinyint UNSIGNED DEFAULT 8,
-            question_count_max tinyint UNSIGNED DEFAULT 12,
-            time_limit_per_question int DEFAULT 120,
-            allow_retry tinyint(1) DEFAULT 1,
-            is_active tinyint(1) DEFAULT 1,
-            sort_order int DEFAULT 0,
-            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY is_active (is_active),
-            KEY category (category),
-            KEY sort_order (sort_order)
+        $sql_scenarios = "CREATE TABLE IF NOT EXISTS `$table_scenarios` (
+            `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            `title` varchar(255) NOT NULL,
+            `description` text DEFAULT NULL,
+            `icon` varchar(50) DEFAULT 'briefcase',
+            `difficulty` varchar(20) DEFAULT 'intermediate',
+            `category` varchar(100) DEFAULT NULL,
+            `system_prompt` longtext NOT NULL,
+            `question_generation_prompt` longtext DEFAULT NULL,
+            `feedback_prompt` longtext DEFAULT NULL,
+            `input_configuration` longtext NOT NULL,
+            `question_count_min` tinyint UNSIGNED DEFAULT 8,
+            `question_count_max` tinyint UNSIGNED DEFAULT 12,
+            `time_limit_per_question` int DEFAULT 120,
+            `allow_retry` tinyint(1) DEFAULT 1,
+            `is_active` tinyint(1) DEFAULT 1,
+            `sort_order` int DEFAULT 0,
+            `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `is_active` (`is_active`),
+            KEY `category` (`category`),
+            KEY `sort_order` (`sort_order`)
         ) $charset_collate;";
 
         // Sessions table - stores user training sessions
         $table_sessions = $wpdb->prefix . 'bewerbungstrainer_simulator_sessions';
-        $sql_sessions = "CREATE TABLE IF NOT EXISTS $table_sessions (
-            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            user_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
-            user_name varchar(255) DEFAULT NULL,
-            session_id varchar(36) NOT NULL,
-            scenario_id bigint(20) UNSIGNED NOT NULL,
-            variables_json longtext DEFAULT NULL,
-            questions_json longtext DEFAULT NULL,
-            current_question_index int DEFAULT 0,
-            status enum('setup', 'in_progress', 'completed', 'abandoned') DEFAULT 'setup',
-            total_questions int DEFAULT 0,
-            completed_questions int DEFAULT 0,
-            overall_score decimal(5,2) DEFAULT NULL,
-            summary_feedback_json longtext DEFAULT NULL,
-            started_at datetime DEFAULT NULL,
-            completed_at datetime DEFAULT NULL,
-            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            UNIQUE KEY session_id (session_id),
-            KEY user_id (user_id),
-            KEY scenario_id (scenario_id),
-            KEY status (status),
-            KEY created_at (created_at)
+        $sql_sessions = "CREATE TABLE IF NOT EXISTS `$table_sessions` (
+            `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            `user_id` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+            `user_name` varchar(255) DEFAULT NULL,
+            `session_id` varchar(36) NOT NULL,
+            `scenario_id` bigint(20) UNSIGNED NOT NULL,
+            `variables_json` longtext DEFAULT NULL,
+            `questions_json` longtext DEFAULT NULL,
+            `current_question_index` int DEFAULT 0,
+            `status` varchar(20) DEFAULT 'setup',
+            `total_questions` int DEFAULT 0,
+            `completed_questions` int DEFAULT 0,
+            `overall_score` decimal(5,2) DEFAULT NULL,
+            `summary_feedback_json` longtext DEFAULT NULL,
+            `started_at` datetime DEFAULT NULL,
+            `completed_at` datetime DEFAULT NULL,
+            `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `session_id` (`session_id`),
+            KEY `user_id` (`user_id`),
+            KEY `scenario_id` (`scenario_id`),
+            KEY `status` (`status`),
+            KEY `created_at` (`created_at`)
         ) $charset_collate;";
 
         // Answers table - stores individual question-answer pairs with feedback
         $table_answers = $wpdb->prefix . 'bewerbungstrainer_simulator_answers';
-        $sql_answers = "CREATE TABLE IF NOT EXISTS $table_answers (
-            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            session_id bigint(20) UNSIGNED NOT NULL,
-            question_index int NOT NULL,
-            question_text text NOT NULL,
-            question_category varchar(100) DEFAULT NULL,
-            audio_filename varchar(255) DEFAULT NULL,
-            audio_url text DEFAULT NULL,
-            audio_duration_seconds int DEFAULT NULL,
-            transcript longtext DEFAULT NULL,
-            feedback_json longtext DEFAULT NULL,
-            audio_analysis_json longtext DEFAULT NULL,
-            content_score decimal(3,1) DEFAULT NULL,
-            delivery_score decimal(3,1) DEFAULT NULL,
-            overall_score decimal(3,1) DEFAULT NULL,
-            attempt_number int DEFAULT 1,
-            is_final_attempt tinyint(1) DEFAULT 1,
-            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY session_id (session_id),
-            KEY question_index (question_index),
-            KEY is_final_attempt (is_final_attempt)
+        $sql_answers = "CREATE TABLE IF NOT EXISTS `$table_answers` (
+            `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            `session_id` bigint(20) UNSIGNED NOT NULL,
+            `question_index` int NOT NULL,
+            `question_text` text NOT NULL,
+            `question_category` varchar(100) DEFAULT NULL,
+            `audio_filename` varchar(255) DEFAULT NULL,
+            `audio_url` text DEFAULT NULL,
+            `audio_duration_seconds` int DEFAULT NULL,
+            `transcript` longtext DEFAULT NULL,
+            `feedback_json` longtext DEFAULT NULL,
+            `audio_analysis_json` longtext DEFAULT NULL,
+            `content_score` decimal(3,1) DEFAULT NULL,
+            `delivery_score` decimal(3,1) DEFAULT NULL,
+            `overall_score` decimal(3,1) DEFAULT NULL,
+            `attempt_number` int DEFAULT 1,
+            `is_final_attempt` tinyint(1) DEFAULT 1,
+            `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `session_id` (`session_id`),
+            KEY `question_index` (`question_index`),
+            KEY `is_final_attempt` (`is_final_attempt`)
         ) $charset_collate;";
 
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql_scenarios);
-        dbDelta($sql_sessions);
-        dbDelta($sql_answers);
+        // Execute queries directly
+        $wpdb->query($sql_scenarios);
+        $wpdb->query($sql_sessions);
+        $wpdb->query($sql_answers);
+
+        // Log any errors
+        if ($wpdb->last_error) {
+            error_log('[SIMULATOR] Database error: ' . $wpdb->last_error);
+        } else {
+            error_log('[SIMULATOR] Tables created successfully');
+        }
 
         // Insert default scenarios if table is empty
         self::insert_default_scenarios();
