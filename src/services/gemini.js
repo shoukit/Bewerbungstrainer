@@ -231,14 +231,17 @@ async function audioFileToBase64(audioFile) {
 }
 
 /**
- * Analyzes audio of an interview to evaluate speech quality, nervousness, filler words, etc.
+ * Analyzes audio of an interview to evaluate ONLY paraverbal communication (speech quality, filler words, pacing, tonality).
+ * IMPORTANT: This function sends ONLY the audio file, NO transcript. This ensures filler words like "Ähm" are detected
+ * that might be filtered out by transcription services.
+ *
  * @param {File|Blob} audioFile - The audio file to analyze
  * @param {string} apiKey - Google Gemini API key
  * @param {string} modelName - Optional model name (defaults to 'gemini-1.5-flash')
- * @returns {Promise<string>} - The generated audio analysis feedback
+ * @returns {Promise<string>} - The generated audio analysis feedback (pure paraverbal analysis)
  */
 export async function generateAudioAnalysis(audioFile, apiKey, modelName = 'gemini-1.5-flash') {
-  console.log('🎙️ [GEMINI AUDIO] Starting audio analysis...');
+  console.log('🎙️ [GEMINI AUDIO] Starting PURE AUDIO analysis (no transcript)...');
 
   if (!apiKey) {
     console.error('❌ [GEMINI AUDIO] API key is missing');
@@ -286,84 +289,76 @@ export async function generateAudioAnalysis(audioFile, apiKey, modelName = 'gemi
       const model = genAI.getGenerativeModel({ model: currentModel });
       console.log('✅ [GEMINI AUDIO] Model instance created');
 
-      const prompt = `Du bist der Senior Coach der Karriere-Plattform "KarriereHeld".
-Deine Aufgabe: Analysiere das folgende Rollenspiel (Bewerbungsgespräch oder Vertriebsszenario) basierend auf der Audio-Aufnahme.
+      // NEW PROMPT: Pure audio/paraverbal analysis - NO content analysis
+      const prompt = `Du bist der Senior Voice & Rhetoric Coach der Karriere-Plattform "KarriereHeld".
+Deine Aufgabe: Analysiere die vorliegende AUDIO-AUFNAHME.
 
-ANALYSE-DIMENSIONEN:
+FOKUS:
+Analysiere ausschließlich die PARAVERBALE KOMMUNIKATION (Das "Wie").
+Ignoriere den inhaltlichen Sinn (Das "Was").
 
-A) INHALT & STRUKTUR (Text-Basis)
-- Wurde die STAR-Methode angewandt? (Situation, Task, Action, Result)
-- Gab es einen "Roten Faden"?
-- Wurden Fragen präzise beantwortet?
+ANALYSE-DIMENSIONEN MIT ZEITSTEMPELN:
 
-B) RHETORIK & SPRACHE (Text- & Audio-Basis)
-- Wortwahl (Positiv/Negativ, Weichmacher vs. Power-Wörter).
-- "Speech Cleanliness": Nutzung von Füllwörtern (Ähm, Halt, Eigentlich, Sozusagen).
+1. SPEECH CLEANLINESS (Füllwörter & Fluss)
+- Identifiziere akustische Füllsel ("Ähm", "Öh", "Mh").
+- Identifiziere sprachliche Füllwörter ("Halt", "Eigentlich", "Sozusagen").
+- Gib GENAUE Zeitstempel an, wann diese auftreten (Format MM:SS).
 
-C) PARAVERBALE KOMMUNIKATION (Audio-Basis)
-- Sprechtempo (Zu schnell/langsam?).
-- Betonung & Melodie (Monoton vs. Engagiert).
-- Pausenmanagement (Wirkungsvolle Stille vs. Verlegenheits-Pausen).
-- Selbstsicherheit im Tonfall.
+2. PACING (Tempo)
+- Wo wurde zu schnell (gehetzt) oder zu langsam (unsicher) gesprochen?
 
-D) PSYCHOLOGIE & WIRKUNG
-- Empathie, Aktives Zuhören, Sympathie-Faktor.
+3. TONALITY & CONFIDENCE (Wirkung)
+- Confidence Score: Wie sicher wirkt die Stimme insgesamt (0-100)?
+- Suche nach Highlights (besonders souverän) oder Lowlights (brüchige Stimme).
 
 OUTPUT FORMAT:
-Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Keine Markdown-Formatierung, kein Einleitungstext.
+Antworte NUR mit einem validen JSON-Objekt. Keine Markdown-Formatierung, kein Einleitungstext.
 
-JSON STRUKTUR VORGABE:
 {
-  "overall_analysis": {
-    "total_score": (0-100),
-    "summary_text": "Prägnante Zusammenfassung (max 3 Sätze).",
-    "top_strength": "Die stärkste Eigenschaft.",
-    "primary_weakness": "Das größte Wachstumspotenzial."
-  },
   "audio_metrics": {
-    "speech_cleanliness_score": (0-100, 100=keine Füllwörter),
-    "filler_words_detected": [
-      {"word": "Ähm/Öh", "count": (Zahl)},
-      {"word": "Halt/Eigentlich", "count": (Zahl)}
-    ],
+    "summary_text": "Kurzes Fazit zur stimmlichen Wirkung (max 2 Sätze).",
+    "confidence_score": (0-100),
+
+    "speech_cleanliness": {
+      "score": (0-100, 100=Perfekt sauber),
+      "filler_word_analysis": [
+        {
+          "word": "Ähm/Öh",
+          "count": (Totalanzahl),
+          "examples": [
+            {"timestamp": "00:12", "context": "Satzanfang"},
+            {"timestamp": "01:45", "context": "Nachdenken"}
+          ]
+        },
+        {
+          "word": "Eigentlich/Halt",
+          "count": (Totalanzahl),
+          "examples": [
+            {"timestamp": "00:32"}
+          ]
+        }
+      ],
+      "feedback": "Tipp zur Vermeidung."
+    },
+
     "pacing": {
       "rating": "zu_schnell" | "optimal" | "zu_langsam",
-      "feedback": "Kurzer Satz zum Tempo."
+      "perceived_wpm": "string (z.B. '~140 WPM')",
+      "issues_detected": [
+        {"timestamp": "02:10", "issue": "Sehr schnell, wirkt gehetzt"}
+      ],
+      "feedback": "Feedback zur Geschwindigkeit."
     },
+
     "tonality": {
       "rating": "monoton" | "natürlich" | "lebendig",
-      "feedback": "Kurzer Satz zur Betonung."
+      "highlights": [
+        {"timestamp": "00:05", "type": "positive", "note": "Sympathischer Einstieg"},
+        {"timestamp": "03:20", "type": "negative", "note": "Stimme wird brüchig"}
+      ],
+      "feedback": "Feedback zur Melodie."
     }
-  },
-  "categories": [
-    {
-      "id": "methodology",
-      "title": "Methodik & Inhalt",
-      "score": (0-100),
-      "items": [
-        {
-          "criterion": "Name des Kriteriums (z.B. STAR-Methode)",
-          "rating": (1-5),
-          "observation": "Was fiel auf?",
-          "quote_evidence": "Zitat aus dem Text (oder null)",
-          "improvement_suggestion": "Konkreter Besser-Mach-Tipp"
-        }
-      ]
-    },
-    {
-      "id": "rhetoric",
-      "title": "Rhetorik & Wirkung",
-      "score": (0-100),
-      "items": [
-        {
-          "criterion": "Wortwahl / Füllwörter",
-          "rating": (1-5),
-          "observation": "Bezug auf die Audio-Analyse.",
-          "improvement_suggestion": "Tipp zur Vermeidung."
-        }
-      ]
-    }
-  ]
+  }
 }
 
 JSON Analyse:`;

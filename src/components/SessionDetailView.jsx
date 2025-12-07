@@ -388,6 +388,31 @@ const SessionDetailView = ({ session, onBack }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Parse timestamp string (MM:SS) to seconds
+  const parseTimestamp = useCallback((timeString) => {
+    if (!timeString) return 0;
+    const parts = timeString.split(':');
+    if (parts.length === 2) {
+      const mins = parseInt(parts[0], 10) || 0;
+      const secs = parseInt(parts[1], 10) || 0;
+      return mins * 60 + secs;
+    }
+    return 0;
+  }, []);
+
+  // Handle jump to timestamp from AudioAnalysisDisplay
+  const handleJumpToTimestamp = useCallback((timeString) => {
+    const seconds = parseTimestamp(timeString);
+    console.log(`🎯 [SESSION_DETAIL] Jumping to timestamp: ${timeString} (${seconds}s)`);
+    seekToTime(seconds);
+    // Auto-play after jumping
+    if (audioRef.current && !isPlaying) {
+      audioRef.current.play().catch(err => {
+        console.warn('Could not auto-play:', err);
+      });
+    }
+  }, [parseTimestamp, seekToTime, isPlaying]);
+
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -745,6 +770,7 @@ const SessionDetailView = ({ session, onBack }) => {
                   }
                 }}
                 onCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                onJumpToTimestamp={handleJumpToTimestamp}
                 isCollapsed={isSidebarCollapsed}
               />
             </div>
