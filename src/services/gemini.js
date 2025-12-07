@@ -287,87 +287,85 @@ export async function generateAudioAnalysis(audioFile, apiKey, modelName = 'gemi
       const model = genAI.getGenerativeModel({ model: currentModel });
       console.log('✅ [GEMINI AUDIO] Model instance created');
 
-      const prompt = `Du bist ein professioneller Sprech- und Kommunikations-Coach. Analysiere die folgende Audio-Aufnahme eines Bewerbungsgesprächs.
+      const prompt = `Du bist der Senior Coach der Karriere-Plattform "KarriereHeld".
+Deine Aufgabe: Analysiere das folgende Rollenspiel (Bewerbungsgespräch oder Vertriebsszenario) basierend auf der Audio-Aufnahme.
 
-SEHR WICHTIG: Analysiere AUSSCHLIESSLICH die Sprechweise des BEWERBERS/der BEWERBERIN!
-- Die Stimme des Interviewers (z.B. "H. Müller") dient NUR als Kontext für die Fragen.
-- Dein gesamtes Feedback zur Sprechweise, alle Bewertungen und Verbesserungsvorschläge beziehen sich NUR auf die Stimme und Sprechweise des Bewerbers.
-- Analysiere NICHT die Sprechweise des Interviewers.
+ANALYSE-DIMENSIONEN:
 
-WICHTIG: Antworte NUR mit einem JSON-Objekt in folgendem Format (keine zusätzlichen Erklärungen):
+A) INHALT & STRUKTUR (Text-Basis)
+- Wurde die STAR-Methode angewandt? (Situation, Task, Action, Result)
+- Gab es einen "Roten Faden"?
+- Wurden Fragen präzise beantwortet?
 
+B) RHETORIK & SPRACHE (Text- & Audio-Basis)
+- Wortwahl (Positiv/Negativ, Weichmacher vs. Power-Wörter).
+- "Speech Cleanliness": Nutzung von Füllwörtern (Ähm, Halt, Eigentlich, Sozusagen).
+
+C) PARAVERBALE KOMMUNIKATION (Audio-Basis)
+- Sprechtempo (Zu schnell/langsam?).
+- Betonung & Melodie (Monoton vs. Engagiert).
+- Pausenmanagement (Wirkungsvolle Stille vs. Verlegenheits-Pausen).
+- Selbstsicherheit im Tonfall.
+
+D) PSYCHOLOGIE & WIRKUNG
+- Empathie, Aktives Zuhören, Sympathie-Faktor.
+
+OUTPUT FORMAT:
+Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Keine Markdown-Formatierung, kein Einleitungstext.
+
+JSON STRUKTUR VORGABE:
 {
-  "summary": "Kurze Zusammenfassung der Sprech-Performance (2-3 Sätze)",
-  "clarity": {
-    "rating": 7,
-    "feedback": "Detailliertes Feedback zur Deutlichkeit der Aussprache"
+  "overall_analysis": {
+    "total_score": (0-100),
+    "summary_text": "Prägnante Zusammenfassung (max 3 Sätze).",
+    "top_strength": "Die stärkste Eigenschaft.",
+    "primary_weakness": "Das größte Wachstumspotenzial."
   },
-  "pace": {
-    "rating": 6,
-    "feedback": "Feedback zur Sprechgeschwindigkeit (zu schnell/langsam/optimal)",
-    "wordsPerMinute": 150
+  "audio_metrics": {
+    "speech_cleanliness_score": (0-100, 100=keine Füllwörter),
+    "filler_words_detected": [
+      {"word": "Ähm/Öh", "count": (Zahl)},
+      {"word": "Halt/Eigentlich", "count": (Zahl)}
+    ],
+    "pacing": {
+      "rating": "zu_schnell" | "optimal" | "zu_langsam",
+      "feedback": "Kurzer Satz zum Tempo."
+    },
+    "tonality": {
+      "rating": "monoton" | "natürlich" | "lebendig",
+      "feedback": "Kurzer Satz zur Betonung."
+    }
   },
-  "fillerWords": {
-    "rating": 5,
-    "feedback": "Feedback zu Füllwörtern (ähm, äh, also, sozusagen, quasi, etc.)",
-    "count": 12,
-    "examples": ["ähm", "äh", "also"]
-  },
-  "nervousness": {
-    "rating": 6,
-    "feedback": "Einschätzung zu Nervosität (Zittern, unruhige Stimme, schnelles Sprechen)",
-    "indicators": ["Leichtes Zittern am Anfang", "Schnelles Sprechen bei schwierigen Fragen"]
-  },
-  "pauses": {
-    "rating": 7,
-    "feedback": "Feedback zur Nutzung von Pausen (zu viele/wenige, strategisch eingesetzt)",
-    "quality": "Pausen werden gut genutzt"
-  },
-  "tonalModulation": {
-    "rating": 6,
-    "feedback": "Feedback zur Variation in Tonhöhe und Betonung",
-    "quality": "Etwas monoton, mehr Variation würde helfen"
-  },
-  "confidence": {
-    "rating": 7,
-    "feedback": "Einschätzung der Selbstsicherheit basierend auf Stimmqualität",
-    "quality": "Überwiegend selbstsicher"
-  },
-  "volume": {
-    "rating": 8,
-    "feedback": "Lautstärke und Projektion der Stimme",
-    "quality": "Gut verständlich und angenehm"
-  },
-  "articulation": {
-    "rating": 7,
-    "feedback": "Wie klar werden einzelne Wörter ausgesprochen",
-    "quality": "Sehr klar, gute Artikulation"
-  },
-  "overallImprovement": [
-    "Konkreter Verbesserungsvorschlag 1",
-    "Konkreter Verbesserungsvorschlag 2",
-    "Konkreter Verbesserungsvorschlag 3"
-  ],
-  "strengths": [
-    "Stärke 1 der Sprechweise",
-    "Stärke 2 der Sprechweise"
+  "categories": [
+    {
+      "id": "methodology",
+      "title": "Methodik & Inhalt",
+      "score": (0-100),
+      "items": [
+        {
+          "criterion": "Name des Kriteriums (z.B. STAR-Methode)",
+          "rating": (1-5),
+          "observation": "Was fiel auf?",
+          "quote_evidence": "Zitat aus dem Text (oder null)",
+          "improvement_suggestion": "Konkreter Besser-Mach-Tipp"
+        }
+      ]
+    },
+    {
+      "id": "rhetoric",
+      "title": "Rhetorik & Wirkung",
+      "score": (0-100),
+      "items": [
+        {
+          "criterion": "Wortwahl / Füllwörter",
+          "rating": (1-5),
+          "observation": "Bezug auf die Audio-Analyse.",
+          "improvement_suggestion": "Tipp zur Vermeidung."
+        }
+      ]
+    }
   ]
 }
-
-Bewertungsskala: 1-10 (1=sehr schwach, 10=exzellent)
-
-Analysiere diese Aspekte der Sprache:
-- **Deutlichkeit**: Wie klar und verständlich wird gesprochen?
-- **Sprechgeschwindigkeit**: Zu schnell, zu langsam oder optimal?
-- **Füllwörter**: Wie häufig werden Füllwörter wie "ähm", "äh", "also", "sozusagen" verwendet?
-- **Nervosität**: Zeichen von Nervosität (Zittern, unruhige Stimme, Hektik)?
-- **Pausen**: Werden strategische Pausen eingesetzt oder gibt es zu viele Denkpausen?
-- **Tonmodulation**: Wird die Stimme variiert oder klingt sie monoton?
-- **Selbstsicherheit**: Klingt die Person selbstsicher und überzeugend?
-- **Lautstärke**: Ist die Lautstärke angemessen?
-- **Artikulation**: Wie deutlich werden einzelne Wörter ausgesprochen?
-
-Sei konstruktiv, ehrlich und motivierend. Fokussiere auf umsetzbare Verbesserungen und gib konkrete Beispiele.
 
 JSON Analyse:`;
 

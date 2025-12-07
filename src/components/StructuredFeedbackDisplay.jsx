@@ -13,6 +13,10 @@ import {
   Loader2,
   BarChart3,
   Zap,
+  Mic2,
+  Activity,
+  Volume2,
+  Gauge,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,9 +25,10 @@ import { cn } from '@/lib/utils';
  *
  * Displays Gemini feedback (feedback_json) for the Coaching tab:
  * - Summary with overall score
+ * - Audio & Voice metrics section (speech cleanliness, pacing, tonality)
  * - Top strength & primary weakness
  * - Rating criteria (communication, motivation, professionalism)
- * - Additional strengths, improvements, and tips
+ * - Category-based detailed feedback
  */
 
 /**
@@ -131,6 +136,192 @@ const RatingBar = ({ rating, maxRating = 10, showLabel = true }) => {
 };
 
 /**
+ * Speech Cleanliness Card Component
+ */
+const SpeechCleanlinessCard = ({ score, fillerWords = [] }) => {
+  const getBarColor = (pct) => {
+    if (pct >= 80) return 'bg-green-500';
+    if (pct >= 50) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
+  const getLabel = (pct) => {
+    if (pct >= 80) return { text: 'Sehr gut', color: 'text-green-600' };
+    if (pct >= 50) return { text: 'Okay', color: 'text-amber-600' };
+    return { text: 'Verbesserbar', color: 'text-red-600' };
+  };
+
+  const label = getLabel(score);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+          <Mic2 className="w-4 h-4 text-blue-600" />
+        </div>
+        <span className="text-xs font-semibold text-slate-700">Redefluss</span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-2">
+        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+          <motion.div
+            className={cn("h-full rounded-full", getBarColor(score))}
+            initial={{ width: 0 }}
+            animate={{ width: `${score}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+        </div>
+        <div className="flex justify-between items-center mt-1">
+          <span className={cn("text-xs font-medium", label.color)}>{label.text}</span>
+          <span className="text-xs text-slate-500">{score}%</span>
+        </div>
+      </div>
+
+      {/* Filler Word Tags */}
+      {fillerWords && fillerWords.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {fillerWords.map((fw, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600"
+            >
+              {fw.word} ({fw.count}x)
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Pacing Card Component (Sprechtempo)
+ */
+const PacingCard = ({ rating, feedback }) => {
+  // rating: "zu_schnell" | "optimal" | "zu_langsam"
+  const positions = {
+    zu_langsam: 15,
+    optimal: 50,
+    zu_schnell: 85,
+  };
+
+  const labels = {
+    zu_langsam: { text: 'Langsam', color: 'text-amber-600' },
+    optimal: { text: 'Optimal', color: 'text-green-600' },
+    zu_schnell: { text: 'Schnell', color: 'text-amber-600' },
+  };
+
+  const position = positions[rating] || 50;
+  const labelInfo = labels[rating] || labels.optimal;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
+          <Gauge className="w-4 h-4 text-purple-600" />
+        </div>
+        <span className="text-xs font-semibold text-slate-700">Sprechtempo</span>
+      </div>
+
+      {/* Slider Indicator */}
+      <div className="relative mb-2">
+        <div className="h-2 bg-gradient-to-r from-amber-200 via-green-300 to-amber-200 rounded-full" />
+        <motion.div
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-slate-800 rounded-full shadow-md"
+          initial={{ left: '50%' }}
+          animate={{ left: `${position}%` }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          style={{ marginLeft: '-8px' }}
+        />
+      </div>
+
+      {/* Labels */}
+      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+        <span>Langsam</span>
+        <span className="text-green-600 font-medium">Optimal</span>
+        <span>Schnell</span>
+      </div>
+
+      <p className={cn("text-xs font-medium text-center", labelInfo.color)}>
+        {labelInfo.text}
+      </p>
+      {feedback && (
+        <p className="text-[10px] text-slate-500 text-center mt-1 line-clamp-2">
+          {feedback}
+        </p>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Tonality Card Component (Betonung)
+ */
+const TonalityCard = ({ rating, feedback }) => {
+  // rating: "monoton" | "natürlich" | "lebendig"
+  const configs = {
+    monoton: {
+      icon: Activity,
+      label: 'Monoton',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-100',
+      bars: [20, 20, 20, 20, 20],
+    },
+    natürlich: {
+      icon: Activity,
+      label: 'Natürlich',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+      bars: [30, 50, 40, 60, 45],
+    },
+    lebendig: {
+      icon: Activity,
+      label: 'Lebendig',
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
+      bars: [20, 80, 40, 90, 60],
+    },
+  };
+
+  const config = configs[rating] || configs.natürlich;
+  const Icon = config.icon;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center", config.bgColor)}>
+          <Icon className={cn("w-4 h-4", config.color)} />
+        </div>
+        <span className="text-xs font-semibold text-slate-700">Betonung</span>
+      </div>
+
+      {/* Waveform Visualization */}
+      <div className="flex items-end justify-center gap-1 h-8 mb-2">
+        {config.bars.map((height, idx) => (
+          <motion.div
+            key={idx}
+            className={cn("w-2 rounded-full", config.bgColor)}
+            initial={{ height: 4 }}
+            animate={{ height: `${height}%` }}
+            transition={{ duration: 0.3, delay: idx * 0.1 }}
+          />
+        ))}
+      </div>
+
+      <p className={cn("text-xs font-medium text-center", config.color)}>
+        {config.label}
+      </p>
+      {feedback && (
+        <p className="text-[10px] text-slate-500 text-center mt-1 line-clamp-2">
+          {feedback}
+        </p>
+      )}
+    </div>
+  );
+};
+
+/**
  * Rating Criterion Card (Accordion style)
  */
 const CriterionCard = ({ label, rating, maxRating = 10, description, index }) => {
@@ -205,6 +396,97 @@ const CriterionCard = ({ label, rating, maxRating = 10, description, index }) =>
 };
 
 /**
+ * Category Item Card (for new format with categories)
+ */
+const CategoryItemCard = ({ item, index }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const rating = item.rating || 3;
+  const maxRating = 5;
+  const percentage = (rating / maxRating) * 100;
+
+  const getStatusIcon = (pct) => {
+    if (pct >= 80) return { icon: CheckCircle2, color: 'text-green-500' };
+    if (pct >= 40) return { icon: TrendingUp, color: 'text-amber-500' };
+    return { icon: AlertTriangle, color: 'text-red-500' };
+  };
+
+  const status = getStatusIcon(percentage);
+  const StatusIcon = status.icon;
+
+  const hasDetails = item.observation || item.quote_evidence || item.improvement_suggestion;
+
+  return (
+    <motion.div
+      className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+    >
+      <button
+        onClick={() => hasDetails && setIsExpanded(!isExpanded)}
+        disabled={!hasDetails}
+        className={cn(
+          "w-full px-4 py-3 flex items-center justify-between gap-3 transition-colors",
+          hasDetails ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"
+        )}
+      >
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <StatusIcon className={cn("w-5 h-5 flex-shrink-0", status.color)} />
+          <span className="font-medium text-slate-800 text-sm truncate">
+            {item.criterion}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="w-20">
+            <RatingBar rating={rating} maxRating={maxRating} />
+          </div>
+          {hasDetails && (
+            <motion.div
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="w-4 h-4 text-slate-400" />
+            </motion.div>
+          )}
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isExpanded && hasDetails && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 pt-1 border-t border-slate-100 space-y-2">
+              {item.observation && (
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {item.observation}
+                </p>
+              )}
+              {item.quote_evidence && (
+                <blockquote className="text-xs text-slate-500 italic border-l-2 border-slate-200 pl-2">
+                  "{item.quote_evidence}"
+                </blockquote>
+              )}
+              {item.improvement_suggestion && (
+                <div className="flex items-start gap-2 text-xs text-blue-700 bg-blue-50 rounded-lg p-2">
+                  <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span>{item.improvement_suggestion}</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+/**
  * Main StructuredFeedbackDisplay Component
  */
 function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
@@ -227,6 +509,9 @@ function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
     }
     return feedback;
   }, [feedback]);
+
+  // Determine if this is the new format (has overall_analysis) or old format (has rating)
+  const isNewFormat = data?.overall_analysis !== undefined;
 
   // Loading state
   if (isLoading) {
@@ -256,6 +541,140 @@ function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
     );
   }
 
+  // New format rendering
+  if (isNewFormat) {
+    const { overall_analysis, audio_metrics, categories } = data;
+    const overallScore = overall_analysis?.total_score || 0;
+
+    return (
+      <div className="space-y-5">
+        {/* Executive Summary */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          {/* Score + Summary */}
+          <div className="bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200 rounded-xl p-4">
+            <div className="flex items-center gap-4">
+              <ScoreRing score={overallScore} size="large" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2">
+                  <Award className="w-4 h-4 text-blue-600" />
+                  Gesamtbewertung
+                </h3>
+                {overall_analysis?.summary_text && (
+                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                    {overall_analysis.summary_text}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Audio & Voice Metrics Section */}
+          {audio_metrics && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-blue-600" />
+                Audio & Stimme
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <SpeechCleanlinessCard
+                  score={audio_metrics.speech_cleanliness_score || 0}
+                  fillerWords={audio_metrics.filler_words_detected}
+                />
+                <PacingCard
+                  rating={audio_metrics.pacing?.rating || 'optimal'}
+                  feedback={audio_metrics.pacing?.feedback}
+                />
+                <TonalityCard
+                  rating={audio_metrics.tonality?.rating || 'natürlich'}
+                  feedback={audio_metrics.tonality?.feedback}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {/* Highlight Cards */}
+          <div className="grid grid-cols-1 gap-3">
+            {overall_analysis?.top_strength && (
+              <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <ThumbsUp className="w-4 h-4 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                    Deine Superkraft
+                  </p>
+                  <p className="text-sm text-green-900 mt-0.5 leading-relaxed">
+                    {overall_analysis.top_strength}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {overall_analysis?.primary_weakness && (
+              <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <Target className="w-4 h-4 text-amber-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+                    Dein Trainingsfeld
+                  </p>
+                  <p className="text-sm text-amber-900 mt-0.5 leading-relaxed">
+                    {overall_analysis.primary_weakness}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Categories */}
+        {categories && categories.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-4"
+          >
+            {categories.map((category, catIdx) => (
+              <div key={category.id || catIdx}>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    {category.title}
+                  </h4>
+                  {category.score !== undefined && (
+                    <span className="text-xs font-semibold text-slate-500">
+                      {category.score}%
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {category.items?.map((item, itemIdx) => (
+                    <CategoryItemCard
+                      key={itemIdx}
+                      item={item}
+                      index={itemIdx}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </div>
+    );
+  }
+
+  // Old format rendering (backwards compatibility)
   // Calculate overall score (convert 1-10 to percentage)
   const overallScore = data.rating?.overall
     ? Math.round((data.rating.overall / 10) * 100)

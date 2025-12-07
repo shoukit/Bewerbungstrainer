@@ -32,7 +32,7 @@ import {
 import { downloadConversationAudio } from '@/services/elevenlabs';
 import wordpressAPI from '@/services/wordpress-api';
 
-const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
+const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession }) => {
   // Session data
   const [sessionId, setSessionId] = useState(null);
   const [startTime, setStartTime] = useState(null);
@@ -383,11 +383,28 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         );
       }
 
-      // Show feedback
-      setFeedbackContent(analysis.feedbackContent);
-      setAudioAnalysisContent(analysis.audioAnalysisContent);
+      // Navigate to session detail view
       setIsAnalyzing(false);
-      setShowFeedback(true);
+      if (onNavigateToSession && sessionId) {
+        // Create session object for navigation
+        const sessionForNavigation = {
+          id: sessionId,
+          scenario_id: scenario.id,
+          transcript: JSON.stringify(transcript),
+          feedback_json: analysis.feedbackContent,
+          audio_analysis_json: analysis.audioAnalysisContent,
+          duration: duration,
+          conversation_id: conversationIdRef.current,
+          created_at: new Date().toISOString(),
+        };
+        console.log('🚀 [RoleplaySession] Navigating to session analysis:', sessionId);
+        onNavigateToSession(sessionForNavigation);
+      } else {
+        // Fallback: Show feedback modal if onNavigateToSession not provided
+        setFeedbackContent(analysis.feedbackContent);
+        setAudioAnalysisContent(analysis.audioAnalysisContent);
+        setShowFeedback(true);
+      }
     } catch (err) {
       console.error('❌ [RoleplaySession] Analysis failed:', err);
       setError(err.message || 'Fehler bei der Analyse.');
