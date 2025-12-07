@@ -252,6 +252,113 @@ export function getRoleplaySessionAudioUrl(sessionId) {
 }
 
 /**
+ * Fetch audio blob for a roleplay session via WordPress proxy
+ * This is more reliable than direct ElevenLabs API as the proxy handles
+ * authentication and retries server-side.
+ *
+ * @param {number} sessionId - Roleplay session ID
+ * @param {number} maxRetries - Maximum retry attempts (default: 10)
+ * @param {number} retryDelayMs - Delay between retries in ms (default: 3000)
+ * @returns {Promise<Blob|null>} Audio blob or null if not available
+ */
+export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retryDelayMs = 3000) {
+  console.log('🎵 [Roleplay Feedback] Fetching audio via WordPress proxy...');
+  console.log(`🆔 [Roleplay Feedback] Session ID: ${sessionId}`);
+  console.log(`🔄 [Roleplay Feedback] Max retries: ${maxRetries}, delay: ${retryDelayMs}ms`);
+
+  const audioUrl = getRoleplaySessionAudioUrl(sessionId);
+  const config = window.bewerbungstrainerConfig || { nonce: '' };
+
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`📤 [Roleplay Feedback] Attempt ${attempt}/${maxRetries} - Fetching audio...`);
+
+      const response = await fetch(audioUrl, {
+        method: 'GET',
+        headers: {
+          'X-WP-Nonce': config.nonce,
+        },
+        credentials: 'same-origin',
+      });
+
+      console.log(`📥 [Roleplay Feedback] Response status: ${response.status}`);
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        console.log(`✅ [Roleplay Feedback] Audio fetched successfully on attempt ${attempt}`);
+        console.log(`📊 [Roleplay Feedback] Audio size: ${audioBlob.size} bytes`);
+        console.log(`🎵 [Roleplay Feedback] Audio type: ${audioBlob.type}`);
+
+        if (audioBlob.size === 0) {
+          console.warn('⚠️ [Roleplay Feedback] Audio blob is empty, retrying...');
+          if (attempt < maxRetries) {
+            await delay(retryDelayMs);
+            continue;
+          }
+          return null;
+        }
+
+        return audioBlob;
+      }
+
+      // 404 means audio not ready yet - retry
+      if (response.status === 404 && attempt < maxRetries) {
+        console.log(`⏳ [Roleplay Feedback] Audio not ready yet (404), waiting ${retryDelayMs}ms before retry...`);
+        await delay(retryDelayMs);
+        continue;
+      }
+
+      // Other errors
+      console.error(`❌ [Roleplay Feedback] Failed to fetch audio: HTTP ${response.status}`);
+      if (attempt < maxRetries) {
+        await delay(retryDelayMs);
+        continue;
+      }
+
+    } catch (error) {
+      console.error(`❌ [Roleplay Feedback] Error fetching audio on attempt ${attempt}:`, error);
+      if (attempt < maxRetries) {
+        await delay(retryDelayMs);
+        continue;
+      }
+    }
+  }
+
+  console.warn('⚠️ [Roleplay Feedback] All retry attempts failed, audio not available');
+  return null;
+}
+
+/**
+ * Update a roleplay session with conversation_id
+ *
+ * @param {number} sessionId - Roleplay session ID
+ * @param {string} conversationId - ElevenLabs conversation ID
+ * @returns {Promise<object>} Updated session data
+ */
+export async function updateRoleplaySessionConversationId(sessionId, conversationId) {
+  console.log('💾 [Roleplay Feedback] Updating session with conversation_id...');
+  console.log('💾 [Roleplay Feedback] Session ID:', sessionId);
+  console.log('💾 [Roleplay Feedback] Conversation ID:', conversationId);
+
+  try {
+    const response = await wordpressAPI.request(`/roleplays/sessions/${sessionId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        conversation_id: conversationId,
+      }),
+    });
+
+    console.log('✅ [Roleplay Feedback] Session conversation_id updated successfully');
+    return response.data;
+  } catch (error) {
+    console.error('❌ [Roleplay Feedback] Failed to update session conversation_id:', error);
+    throw new Error(`Fehler beim Aktualisieren der Session: ${error.message}`);
+  }
+}
+
+/**
  * Create a new roleplay session
  *
  * @param {object} sessionData - Session data

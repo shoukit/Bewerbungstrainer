@@ -150,9 +150,42 @@ const SessionDetailView = ({ session, onBack }) => {
       setIsLoading(true);
       setError(null);
 
-      // Load full session data
+      // Load full session data from API
       const fullSession = await getRoleplaySessionAnalysis(session.id);
-      setSessionData(fullSession);
+
+      // Merge API data with initial session data
+      // This preserves feedback_json and audio_analysis_json if they were
+      // passed during navigation (fixes race condition where API returns
+      // null before database save is complete)
+      setSessionData((prevData) => {
+        const merged = { ...fullSession };
+
+        // Preserve feedback_json if API returned null but we have it from navigation
+        if (!merged.feedback_json && prevData?.feedback_json) {
+          console.log('📌 [SESSION_DETAIL] Preserving feedback_json from navigation');
+          merged.feedback_json = prevData.feedback_json;
+        }
+
+        // Preserve audio_analysis_json if API returned null but we have it from navigation
+        if (!merged.audio_analysis_json && prevData?.audio_analysis_json) {
+          console.log('📌 [SESSION_DETAIL] Preserving audio_analysis_json from navigation');
+          merged.audio_analysis_json = prevData.audio_analysis_json;
+        }
+
+        // Preserve transcript if API returned null but we have it from navigation
+        if (!merged.transcript && prevData?.transcript) {
+          console.log('📌 [SESSION_DETAIL] Preserving transcript from navigation');
+          merged.transcript = prevData.transcript;
+        }
+
+        // Preserve conversation_id if API returned null but we have it from navigation
+        if (!merged.conversation_id && prevData?.conversation_id) {
+          console.log('📌 [SESSION_DETAIL] Preserving conversation_id from navigation');
+          merged.conversation_id = prevData.conversation_id;
+        }
+
+        return merged;
+      });
 
       // Load scenario info
       if (fullSession.scenario_id) {

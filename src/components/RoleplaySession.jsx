@@ -28,8 +28,9 @@ import {
   analyzeRoleplayTranscript,
   saveRoleplaySessionAnalysis,
   createRoleplaySession,
+  updateRoleplaySessionConversationId,
+  fetchRoleplaySessionAudio,
 } from '@/services/roleplay-feedback-adapter';
-import { downloadConversationAudio } from '@/services/elevenlabs';
 import wordpressAPI from '@/services/wordpress-api';
 
 const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession }) => {
@@ -345,30 +346,33 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
         variables: variables,
       };
 
-      // Try to download conversation audio from ElevenLabs for audio analysis
+      // Step 1: Save conversation_id to database first
+      // This is required so the WordPress proxy can fetch the audio
       let audioBlob = null;
-      if (conversationIdRef.current) {
+      if (sessionId && conversationIdRef.current) {
         try {
-          console.log('🎵 [RoleplaySession] Downloading conversation audio for analysis...');
-          const elevenLabsApiKey = wordpressAPI.getElevenLabsApiKey();
+          console.log('💾 [RoleplaySession] Saving conversation_id to database first...');
+          await updateRoleplaySessionConversationId(sessionId, conversationIdRef.current);
+          console.log('✅ [RoleplaySession] conversation_id saved');
 
-          if (elevenLabsApiKey) {
-            audioBlob = await downloadConversationAudio(
-              conversationIdRef.current,
-              elevenLabsApiKey
-            );
-            console.log('✅ [RoleplaySession] Audio downloaded successfully:', audioBlob.size, 'bytes');
+          // Step 2: Fetch audio via WordPress proxy
+          // The proxy uses the conversation_id we just saved to fetch from ElevenLabs
+          console.log('🎵 [RoleplaySession] Fetching audio via WordPress proxy...');
+          audioBlob = await fetchRoleplaySessionAudio(sessionId, 10, 3000);
+
+          if (audioBlob) {
+            console.log('✅ [RoleplaySession] Audio fetched successfully:', audioBlob.size, 'bytes');
           } else {
-            console.warn('⚠️ [RoleplaySession] ElevenLabs API key not available, skipping audio analysis');
+            console.warn('⚠️ [RoleplaySession] Audio not available, continuing without audio analysis');
           }
         } catch (audioError) {
-          // Audio download failed - continue without audio analysis
-          console.warn('⚠️ [RoleplaySession] Could not download audio for analysis:', audioError.message);
+          // Audio fetch failed - continue without audio analysis
+          console.warn('⚠️ [RoleplaySession] Could not fetch audio for analysis:', audioError.message);
           console.warn('⚠️ [RoleplaySession] Make sure "Audio Saving" is enabled in ElevenLabs Agent settings');
         }
       }
 
-      // Run analysis (with or without audio)
+      // Step 3: Run analysis (with or without audio)
       const analysis = await analyzeRoleplayTranscript(transcript, scenarioContext, audioBlob);
 
       // Save analysis to database
