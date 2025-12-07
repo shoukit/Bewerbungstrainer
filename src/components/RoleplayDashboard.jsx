@@ -206,23 +206,67 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
           <div className="flex flex-col md:flex-row gap-4 mt-6">
             {/* Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-10" />
+              <Search
+                className="absolute top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
+                style={{ left: '16px', color: '#94a3b8' }}
+              />
               <input
                 type="text"
                 placeholder="Szenarien durchsuchen..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 pl-12 pr-4 py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-900 shadow-sm placeholder:text-slate-400 hover:border-slate-300 focus:outline-none focus:border-ocean-blue-400 focus:ring-2 focus:ring-ocean-blue-100 transition-all duration-200"
+                style={{
+                  width: '100%',
+                  height: '44px',
+                  paddingLeft: '48px',
+                  paddingRight: '16px',
+                  borderRadius: '12px',
+                  border: '2px solid #e2e8f0',
+                  backgroundColor: 'white',
+                  color: '#1e293b',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                  outline: 'none',
+                  transition: 'all 0.2s',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#5FB3D8';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(95, 179, 216, 0.15)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
+                }}
               />
             </div>
 
             {/* Difficulty filter */}
             <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-slate-600" />
+              <Filter className="w-5 h-5" style={{ color: '#475569' }} />
               <select
                 value={difficultyFilter}
                 onChange={(e) => setDifficultyFilter(e.target.value)}
-                className="h-11 px-4 py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-900 shadow-sm cursor-pointer hover:border-slate-300 focus:outline-none focus:border-ocean-blue-400 focus:ring-2 focus:ring-ocean-blue-100 transition-all duration-200"
+                style={{
+                  height: '44px',
+                  padding: '8px 16px',
+                  borderRadius: '12px',
+                  border: '2px solid #e2e8f0',
+                  backgroundColor: 'white',
+                  color: '#1e293b',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  transition: 'all 0.2s',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#5FB3D8';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(95, 179, 216, 0.15)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
+                }}
               >
                 <option value="all">Alle Schwierigkeiten</option>
                 <option value="easy">Einfach</option>
