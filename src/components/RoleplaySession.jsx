@@ -520,7 +520,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             display: isMobile ? 'flex' : 'grid',
             flexDirection: isMobile ? 'column' : undefined,
             gridTemplateColumns: isMobile ? undefined : 'minmax(280px, 320px) minmax(400px, 1fr) minmax(280px, 320px)',
-            alignItems: isMobile ? undefined : 'start',
           }}
         >
 
@@ -529,7 +528,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              style={{ minWidth: '280px', maxHeight: '500px' }}
+              style={{ minWidth: '280px' }}
             >
               <CoachingPanel hints={scenario.coaching_hints} />
             </motion.div>
@@ -720,7 +719,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              style={{ minWidth: '280px', maxHeight: '500px' }}
+              style={{ minWidth: '280px' }}
             >
               <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
                 {/* Transcript Header */}
