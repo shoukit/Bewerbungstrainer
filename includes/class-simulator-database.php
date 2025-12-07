@@ -42,6 +42,29 @@ class Bewerbungstrainer_Simulator_Database {
         $this->table_scenarios = $wpdb->prefix . 'bewerbungstrainer_simulator_scenarios';
         $this->table_sessions = $wpdb->prefix . 'bewerbungstrainer_simulator_sessions';
         $this->table_answers = $wpdb->prefix . 'bewerbungstrainer_simulator_answers';
+
+        // Check if tables exist, create if not
+        $this->maybe_create_tables();
+    }
+
+    /**
+     * Check if tables exist and create them if not
+     */
+    private function maybe_create_tables() {
+        global $wpdb;
+
+        // Check if scenarios table exists
+        $table_exists = $wpdb->get_var(
+            $wpdb->prepare(
+                "SHOW TABLES LIKE %s",
+                $this->table_scenarios
+            )
+        );
+
+        if (!$table_exists) {
+            error_log('[SIMULATOR] Tables not found, creating...');
+            self::create_tables();
+        }
     }
 
     /**
