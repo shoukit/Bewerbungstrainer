@@ -889,13 +889,22 @@ Sei konstruktiv und motivierend. Verwende die "Du"-Form.';
 {$context}
 Generiere genau {$count} Interviewfragen.
 
-WICHTIG: Antworte NUR mit einem JSON-Array im folgenden Format:
+WICHTIG: Für JEDE Frage generiere auch 2-3 spezifische Tipps, die dem Bewerber helfen, diese konkrete Frage gut zu beantworten. Die Tipps sollen:
+- Konkret auf die jeweilige Frage zugeschnitten sein
+- Praktische Hinweise geben, was in der Antwort enthalten sein sollte
+- Beispielformulierungen oder Strukturvorschläge enthalten
+
+Antworte NUR mit einem JSON-Array im folgenden Format:
 [
   {
     \"index\": 0,
     \"question\": \"Die Interviewfrage\",
     \"category\": \"Kategorie (z.B. Einstieg, Motivation, Fachlich, Soft Skills)\",
-    \"estimated_answer_time\": 90
+    \"estimated_answer_time\": 90,
+    \"tips\": [
+      \"Tipp 1: Konkreter, hilfreicher Tipp für diese spezifische Frage\",
+      \"Tipp 2: Weiterer praktischer Hinweis mit Beispielformulierung\"
+    ]
   }
 ]
 
