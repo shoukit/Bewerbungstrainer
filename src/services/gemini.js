@@ -59,11 +59,10 @@ export async function generateInterviewFeedback(transcript, apiKey, modelName = 
 
   // List of model names to try (in order of preference)
   const modelsToTry = [
-    modelName,
-    'gemini-1.5-flash',
-    'gemini-pro',
-    'gemini-1.5-pro',
-    'gemini-2.0-flash-exp'
+    'gemini-2.0-flash-exp',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-pro-latest',
   ];
 
   console.log(`🎯 [GEMINI] Primary model: ${modelName}`);
@@ -260,10 +259,10 @@ export async function generateAudioAnalysis(audioFile, apiKey, modelName = 'gemi
   // List of model names to try (in order of preference)
   // Note: Audio analysis requires multimodal models
   const modelsToTry = [
-    modelName,
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gemini-2.0-flash-exp'
+    'gemini-2.0-flash-exp',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-pro-latest',
   ];
 
   console.log(`🎯 [GEMINI AUDIO] Primary model: ${modelName}`);
