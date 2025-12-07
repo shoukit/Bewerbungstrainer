@@ -7,6 +7,38 @@
 
 import { generateInterviewFeedback, generateAudioAnalysis } from './gemini.js';
 import wordpressAPI from './wordpress-api.js';
+import { decodeUnicodeEscapes } from '../utils/parseJSON.js';
+
+/**
+ * Recursively decode Unicode escapes in all string properties of an object
+ * Handles the case where backend returns strings like "Betriebszugehu00f6rigkeit"
+ *
+ * @param {any} data - Data to decode
+ * @returns {any} - Decoded data
+ */
+function decodeObjectStrings(data) {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  if (typeof data === 'string') {
+    return decodeUnicodeEscapes(data);
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(decodeObjectStrings);
+  }
+
+  if (typeof data === 'object') {
+    const decoded = {};
+    for (const key of Object.keys(data)) {
+      decoded[key] = decodeObjectStrings(data[key]);
+    }
+    return decoded;
+  }
+
+  return data;
+}
 
 /**
  * Analyze roleplay conversation transcript
@@ -419,7 +451,8 @@ export async function getRoleplayScenarios() {
     console.log('✅ [Roleplay Feedback] Scenarios loaded successfully');
     console.log('✅ [Roleplay Feedback] Scenarios count:', response.data.length);
 
-    return response.data;
+    // Decode Unicode escapes in scenario data (e.g., "u00f6" -> "ö")
+    return decodeObjectStrings(response.data);
   } catch (error) {
     console.error('❌ [Roleplay Feedback] Failed to load scenarios:', error);
     throw new Error(`Fehler beim Laden der Szenarien: ${error.message}`);
@@ -443,7 +476,8 @@ export async function getRoleplayScenario(scenarioId) {
 
     console.log('✅ [Roleplay Feedback] Scenario loaded successfully');
 
-    return response.data;
+    // Decode Unicode escapes in scenario data (e.g., "u00f6" -> "ö")
+    return decodeObjectStrings(response.data);
   } catch (error) {
     console.error('❌ [Roleplay Feedback] Failed to load scenario:', error);
     throw new Error(`Fehler beim Laden des Szenarios: ${error.message}`);

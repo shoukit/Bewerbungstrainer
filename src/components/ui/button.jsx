@@ -2,72 +2,174 @@
  * Button Component (shadcn/ui pattern)
  *
  * Professional button with ocean-theme colors and multiple variants.
- * Uses CVA for variant management.
+ * Uses INLINE STYLES to avoid WordPress/Elementor CSS conflicts.
  */
 
 import * as React from 'react';
-import { cva } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
-// =============================================================================
-// BUTTON VARIANTS - Ocean Theme
-// =============================================================================
+// Ocean theme colors - inline to avoid WordPress CSS conflicts
+const COLORS = {
+  blue: {
+    50: '#E8F4F8',
+    100: '#D1E9F1',
+    300: '#8BCCE3',
+    600: '#3A7FA7',
+    700: '#2D6485',
+    900: '#1a3d52',
+  },
+  teal: {
+    500: '#3DA389',
+    600: '#2E8A72',
+    700: '#247560',
+  },
+  slate: {
+    50: '#f8fafc',
+    100: '#f1f5f9',
+    700: '#334155',
+    900: '#0f172a',
+  },
+  red: { 600: '#dc2626', 700: '#b91c1c' },
+  green: { 600: '#16a34a', 700: '#15803d' },
+};
 
-const buttonVariants = cva(
-  // Base styles
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-teal-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
-  {
-    variants: {
-      variant: {
-        // Primary action - Ocean Blue gradient
-        default:
-          'bg-gradient-to-r from-ocean-blue-600 to-ocean-teal-600 text-white shadow-md hover:from-ocean-blue-700 hover:to-ocean-teal-700 hover:shadow-lg active:scale-[0.98]',
-        // Danger/Delete actions
-        destructive:
-          'bg-red-600 text-white shadow-sm hover:bg-red-700 active:scale-[0.98]',
-        // Secondary outlined button
-        outline:
-          'border-2 border-ocean-blue-300 bg-white text-ocean-blue-700 shadow-sm hover:bg-ocean-blue-50 hover:border-ocean-blue-400',
-        // Subtle secondary action
-        secondary:
-          'bg-ocean-blue-100 text-ocean-blue-900 shadow-sm hover:bg-ocean-blue-200',
-        // Minimal ghost button
-        ghost:
-          'text-slate-700 hover:bg-slate-100 hover:text-slate-900',
-        // Text link style
-        link:
-          'text-ocean-blue-600 underline-offset-4 hover:underline hover:text-ocean-blue-700',
-        // Success action
-        success:
-          'bg-green-600 text-white shadow-sm hover:bg-green-700 active:scale-[0.98]',
-      },
-      size: {
-        default: 'h-10 px-5 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-12 rounded-lg px-8 text-base',
-        icon: 'h-10 w-10',
-      },
+// Base styles shared by all buttons
+const baseStyles = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '8px',
+  whiteSpace: 'nowrap',
+  borderRadius: '8px',
+  fontSize: '14px',
+  fontWeight: 500,
+  transition: 'all 0.2s',
+  cursor: 'pointer',
+  border: 'none',
+  outline: 'none',
+};
+
+// Size configurations
+const sizeStyles = {
+  default: { height: '40px', padding: '8px 20px' },
+  sm: { height: '32px', padding: '4px 12px', fontSize: '12px', borderRadius: '6px' },
+  lg: { height: '48px', padding: '12px 32px', fontSize: '16px' },
+  icon: { height: '40px', width: '40px', padding: '0' },
+};
+
+// Variant configurations (normal and hover states)
+const variantStyles = {
+  default: {
+    normal: {
+      background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+      color: 'white',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
     },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
+    hover: {
+      background: `linear-gradient(90deg, ${COLORS.blue[700]} 0%, ${COLORS.teal[600]} 100%)`,
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
     },
-  }
-);
+  },
+  destructive: {
+    normal: {
+      backgroundColor: COLORS.red[600],
+      color: 'white',
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    },
+    hover: { backgroundColor: COLORS.red[700] },
+  },
+  outline: {
+    normal: {
+      border: `2px solid ${COLORS.blue[300]}`,
+      backgroundColor: 'white',
+      color: COLORS.blue[700],
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    },
+    hover: {
+      backgroundColor: COLORS.blue[50],
+      borderColor: COLORS.blue[600],
+    },
+  },
+  secondary: {
+    normal: {
+      backgroundColor: COLORS.blue[100],
+      color: COLORS.blue[900],
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    },
+    hover: { backgroundColor: COLORS.blue[300] },
+  },
+  ghost: {
+    normal: {
+      backgroundColor: 'transparent',
+      color: COLORS.slate[700],
+    },
+    hover: {
+      backgroundColor: COLORS.slate[100],
+      color: COLORS.slate[900],
+    },
+  },
+  link: {
+    normal: {
+      backgroundColor: 'transparent',
+      color: COLORS.blue[600],
+      textDecoration: 'none',
+    },
+    hover: {
+      textDecoration: 'underline',
+      color: COLORS.blue[700],
+    },
+  },
+  success: {
+    normal: {
+      backgroundColor: COLORS.green[600],
+      color: 'white',
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    },
+    hover: { backgroundColor: COLORS.green[700] },
+  },
+};
 
 // =============================================================================
 // BUTTON COMPONENT
 // =============================================================================
 
-const Button = React.forwardRef(({ className, variant, size, asChild = false, ...props }, ref) => {
+const Button = React.forwardRef(({
+  className,
+  variant = 'default',
+  size = 'default',
+  disabled = false,
+  style: customStyle,
+  children,
+  ...props
+}, ref) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const variantConfig = variantStyles[variant] || variantStyles.default;
+  const sizeConfig = sizeStyles[size] || sizeStyles.default;
+
+  const computedStyle = {
+    ...baseStyles,
+    ...sizeConfig,
+    ...variantConfig.normal,
+    ...(isHovered && !disabled ? variantConfig.hover : {}),
+    ...(disabled ? { opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' } : {}),
+    ...customStyle,
+  };
+
   return (
     <button
-      className={cn(buttonVariants({ variant, size, className }))}
       ref={ref}
+      style={computedStyle}
+      disabled={disabled}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       {...props}
-    />
+    >
+      {children}
+    </button>
   );
 });
 Button.displayName = 'Button';
 
-export { Button, buttonVariants };
+// Export colors for reuse
+export { Button, COLORS as BUTTON_COLORS };

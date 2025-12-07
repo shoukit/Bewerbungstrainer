@@ -6,17 +6,16 @@
  * - Tabs for "Coaching" and "Analysen"
  * - Coaching tab: Shows Gemini feedback (feedback_json) - content analysis
  * - Analysen tab: Shows audio analysis (audio_analysis_json) - speech metrics
+ *
+ * Uses inline styles to avoid WordPress/Elementor CSS conflicts.
  */
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy,
-  RotateCcw,
   MessageSquare,
   BarChart3,
-  Copy,
-  Check,
   ChevronRight,
   PanelRightClose,
 } from 'lucide-react';
@@ -24,6 +23,31 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import StructuredFeedbackDisplay from './StructuredFeedbackDisplay';
 import AudioAnalysisDisplay from './AudioAnalysisDisplay';
+
+// Ocean theme colors for inline styles
+const COLORS = {
+  blue: {
+    50: '#E8F4F8',
+    100: '#D1E9F1',
+    600: '#3A7FA7',
+    700: '#2D6485',
+  },
+  teal: {
+    50: '#E6F7F4',
+    600: '#2E8A72',
+    700: '#247560',
+  },
+  slate: {
+    50: '#f8fafc',
+    100: '#f1f5f9',
+    200: '#e2e8f0',
+    400: '#94a3b8',
+    500: '#64748b',
+    600: '#475569',
+    700: '#334155',
+  },
+  amber: { 300: '#fcd34d' },
+};
 
 const SessionSidebar = ({
   session,
@@ -38,7 +62,7 @@ const SessionSidebar = ({
   className,
 }) => {
   const [activeTab, setActiveTab] = useState('coaching');
-  const [copiedFeedback, setCopiedFeedback] = useState(false);
+  const [hoveredTab, setHoveredTab] = useState(null);
 
   // Calculate score from feedback
   const score = useMemo(() => {
@@ -48,31 +72,29 @@ const SessionSidebar = ({
     return null;
   }, [feedback]);
 
-  // Copy feedback to clipboard
-  const handleCopyFeedback = async () => {
-    if (!feedback) return;
-
-    try {
-      const text = JSON.stringify(feedback, null, 2);
-      await navigator.clipboard.writeText(text);
-      setCopiedFeedback(true);
-      setTimeout(() => setCopiedFeedback(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy feedback:', err);
-    }
-  };
-
   if (isCollapsed) {
     return (
       <motion.div
         initial={{ width: 0, opacity: 0 }}
         animate={{ width: 48, opacity: 1 }}
-        className="bg-white border-l border-slate-200 flex flex-col items-center py-4"
+        style={{
+          backgroundColor: 'white',
+          borderLeft: `1px solid ${COLORS.slate[200]}`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '16px 0',
+        }}
       >
-        <Button variant="ghost" size="icon" onClick={onCollapse} className="mb-4">
-          <ChevronRight className="w-4 h-4" />
+        <Button variant="ghost" size="icon" onClick={onCollapse} style={{ marginBottom: '16px' }}>
+          <ChevronRight style={{ width: '16px', height: '16px' }} />
         </Button>
-        <div className="writing-mode-vertical text-xs text-slate-500 font-medium">
+        <div style={{
+          writingMode: 'vertical-rl',
+          fontSize: '12px',
+          color: COLORS.slate[500],
+          fontWeight: 500,
+        }}>
           Feedback Panel
         </div>
       </motion.div>
@@ -83,97 +105,138 @@ const SessionSidebar = ({
     <motion.div
       initial={{ width: 0, opacity: 0 }}
       animate={{ width: '100%', opacity: 1 }}
-      className={cn(
-        'bg-white border-l border-slate-200 flex flex-col overflow-hidden',
-        'h-[calc(100vh-120px)] max-h-[800px]',
-        className
-      )}
+      style={{
+        backgroundColor: 'white',
+        borderLeft: `1px solid ${COLORS.slate[200]}`,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        height: 'calc(100vh - 120px)',
+        maxHeight: '800px',
+      }}
     >
-      {/* Header - Ocean Theme Gradient */}
-      <div className="bg-gradient-to-r from-ocean-blue-700 to-ocean-teal-600 px-4 py-4 flex-shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-300" />
-            <span className="text-white font-semibold text-sm">Rollenspiel abgeschlossen</span>
+      {/* Header - Ocean Theme Gradient with inline styles */}
+      <div style={{
+        background: `linear-gradient(90deg, ${COLORS.blue[700]} 0%, ${COLORS.teal[600]} 100%)`,
+        padding: '16px',
+        flexShrink: 0,
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '8px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Trophy style={{ width: '20px', height: '20px', color: COLORS.amber[300] }} />
+            <span style={{ color: 'white', fontWeight: 600, fontSize: '14px' }}>Rollenspiel abgeschlossen</span>
           </div>
           <Button
-            variant="secondary"
             size="sm"
             onClick={onRetry}
-            className="bg-white/15 hover:bg-white/25 text-white border-0 text-xs"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              color: 'white',
+              border: 'none',
+              fontSize: '12px',
+            }}
           >
             Erneut üben
           </Button>
         </div>
         {score !== null && (
-          <p className="text-ocean-blue-100 text-xs">
-            Ihre Punktzahl war <span className="text-white font-bold">{score}%</span>
+          <p style={{ color: COLORS.blue[100], fontSize: '12px', margin: 0 }}>
+            Ihre Punktzahl war <span style={{ color: 'white', fontWeight: 700 }}>{score}%</span>
           </p>
         )}
       </div>
 
-      {/* Tab Navigation - Ocean Theme */}
-      <div className="flex border-b border-slate-200 flex-shrink-0">
+      {/* Tab Navigation - Ocean Theme with inline styles */}
+      <div style={{
+        display: 'flex',
+        borderBottom: `1px solid ${COLORS.slate[200]}`,
+        flexShrink: 0,
+      }}>
         {/* Collapse Button */}
         <button
           onClick={onCollapse}
-          className="px-3 py-3 border-r border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+          style={{
+            padding: '12px',
+            borderRight: `1px solid ${COLORS.slate[200]}`,
+            color: COLORS.slate[400],
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = COLORS.slate[50];
+            e.currentTarget.style.color = COLORS.slate[600];
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.color = COLORS.slate[400];
+          }}
           title="Panel einklappen"
         >
-          <PanelRightClose className="w-4 h-4" />
+          <PanelRightClose style={{ width: '16px', height: '16px' }} />
         </button>
 
         {/* Coaching Tab */}
         <button
           onClick={() => setActiveTab('coaching')}
-          className={cn(
-            'flex-1 px-4 py-3 text-sm font-medium transition-all flex items-center justify-center gap-2',
-            activeTab === 'coaching'
-              ? 'text-ocean-blue-700 border-b-2 border-ocean-blue-600 bg-ocean-blue-50'
-              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-          )}
+          onMouseEnter={() => setHoveredTab('coaching')}
+          onMouseLeave={() => setHoveredTab(null)}
+          style={{
+            flex: 1,
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            backgroundColor: activeTab === 'coaching' ? COLORS.blue[50] : (hoveredTab === 'coaching' ? COLORS.slate[50] : 'transparent'),
+            color: activeTab === 'coaching' ? COLORS.blue[700] : (hoveredTab === 'coaching' ? COLORS.slate[700] : COLORS.slate[500]),
+            borderBottom: activeTab === 'coaching' ? `2px solid ${COLORS.blue[600]}` : '2px solid transparent',
+          }}
         >
-          <MessageSquare className="w-4 h-4" />
+          <MessageSquare style={{ width: '16px', height: '16px' }} />
           Coaching
         </button>
 
         {/* Analysen Tab */}
         <button
           onClick={() => setActiveTab('analysen')}
-          className={cn(
-            'flex-1 px-4 py-3 text-sm font-medium transition-all flex items-center justify-center gap-2',
-            activeTab === 'analysen'
-              ? 'text-ocean-teal-700 border-b-2 border-ocean-teal-600 bg-ocean-teal-50'
-              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-          )}
+          onMouseEnter={() => setHoveredTab('analysen')}
+          onMouseLeave={() => setHoveredTab(null)}
+          style={{
+            flex: 1,
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            backgroundColor: activeTab === 'analysen' ? COLORS.teal[50] : (hoveredTab === 'analysen' ? COLORS.slate[50] : 'transparent'),
+            color: activeTab === 'analysen' ? COLORS.teal[700] : (hoveredTab === 'analysen' ? COLORS.slate[700] : COLORS.slate[500]),
+            borderBottom: activeTab === 'analysen' ? `2px solid ${COLORS.teal[600]}` : '2px solid transparent',
+          }}
         >
-          <BarChart3 className="w-4 h-4" />
+          <BarChart3 style={{ width: '16px', height: '16px' }} />
           Analysen
         </button>
       </div>
 
-      {/* Copy Feedback Button */}
-      <div className="px-4 py-2 border-b border-slate-100 flex-shrink-0">
-        <button
-          onClick={handleCopyFeedback}
-          className="flex items-center gap-2 text-xs text-slate-500 hover:text-ocean-blue-600 transition-colors ml-auto"
-        >
-          {copiedFeedback ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-green-500" />
-              <span className="text-green-600">Kopiert!</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-3.5 h-3.5" />
-              <span>Feedback kopieren</span>
-            </>
-          )}
-        </button>
-      </div>
-
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div style={{ flex: 1, overflowY: 'auto' }}>
         <AnimatePresence mode="wait">
           {activeTab === 'coaching' && (
             <motion.div
@@ -182,7 +245,7 @@ const SessionSidebar = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              className="p-4"
+              style={{ padding: '16px' }}
             >
               <StructuredFeedbackDisplay feedback={feedback} isLoading={false} />
             </motion.div>
@@ -195,7 +258,7 @@ const SessionSidebar = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              className="p-4"
+              style={{ padding: '16px' }}
             >
               <AudioAnalysisDisplay
                 audioAnalysis={audioAnalysis}
@@ -207,20 +270,6 @@ const SessionSidebar = ({
         </AnimatePresence>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onRetry}
-            className="text-ocean-blue-600 hover:text-ocean-blue-700 hover:bg-ocean-blue-50"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Nochmal üben
-          </Button>
-        </div>
-      </div>
     </motion.div>
   );
 };
