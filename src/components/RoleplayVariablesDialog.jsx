@@ -97,7 +97,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-purple-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean-blue-500 to-ocean-teal-600 flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             {scenario.title}
@@ -155,7 +155,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
           </Button>
           <Button
             onClick={handleSubmit}
-            className="flex-1 bg-gradient-to-r from-teal-600 to-purple-600 hover:from-teal-700 hover:to-purple-700 text-white"
+            className="flex-1"
           >
             <Sparkles className="w-4 h-4 mr-2" />
             Rollenspiel starten

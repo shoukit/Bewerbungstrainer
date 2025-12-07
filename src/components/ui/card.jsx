@@ -17,10 +17,11 @@ const cardVariants = cva('rounded-xl border bg-white', {
   variants: {
     variant: {
       default: 'border-slate-200',
-      elevated: 'border-slate-200 shadow-lg',
-      outline: 'border-slate-300',
+      elevated: 'border-slate-200 shadow-xl',
+      outline: 'border-ocean-blue-200',
       ghost: 'border-transparent bg-transparent',
-      gradient: 'border-slate-200 bg-gradient-to-br from-slate-50 to-blue-50',
+      gradient: 'border-ocean-blue-100 bg-gradient-to-br from-ocean-blue-50 to-ocean-teal-50',
+      ocean: 'border-ocean-blue-200 bg-ocean-blue-50',
     },
     padding: {
       none: 'p-0',
