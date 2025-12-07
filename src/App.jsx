@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplaySession from './components/RoleplaySession';
 import SessionHistory from './components/SessionHistory';
@@ -15,11 +15,40 @@ const VIEWS = {
   SESSION_DETAIL: 'session_detail',
 };
 
+/**
+ * Detect WordPress header height
+ * Looks for common WP header elements and calculates total offset
+ */
+function getWPHeaderHeight() {
+  // Check for WP admin bar (32px when logged in)
+  const adminBar = document.getElementById('wpadminbar');
+  const adminBarHeight = adminBar ? adminBar.offsetHeight : 0;
+
+  // Check for theme header - try common selectors
+  const themeHeader =
+    document.querySelector('header.site-header') ||
+    document.querySelector('#masthead') ||
+    document.querySelector('.site-header') ||
+    document.querySelector('header');
+
+  // Only count theme header if it's outside our app container
+  let themeHeaderHeight = 0;
+  if (themeHeader) {
+    const appContainer = document.getElementById('bewerbungstrainer-app');
+    if (appContainer && !appContainer.contains(themeHeader)) {
+      themeHeaderHeight = themeHeader.offsetHeight;
+    }
+  }
+
+  return adminBarHeight + themeHeaderHeight;
+}
+
 function App() {
   console.log('🏗️ [APP] App component initialized');
 
   // Current view state
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
+  const [headerOffset, setHeaderOffset] = useState(0);
 
   // Roleplay state
   const [selectedScenario, setSelectedScenario] = useState(null);
@@ -27,6 +56,22 @@ function App() {
 
   // Session history state
   const [selectedSession, setSelectedSession] = useState(null);
+
+  // Detect WP header height on mount
+  useEffect(() => {
+    const updateHeaderOffset = () => {
+      const offset = getWPHeaderHeight();
+      console.log('📐 [APP] WP header offset:', offset);
+      setHeaderOffset(offset);
+    };
+
+    // Initial calculation (with delay to ensure DOM is ready)
+    setTimeout(updateHeaderOffset, 100);
+
+    // Recalculate on resize
+    window.addEventListener('resize', updateHeaderOffset);
+    return () => window.removeEventListener('resize', updateHeaderOffset);
+  }, []);
 
   // ===== NAVIGATION HANDLER =====
   const handleSidebarNavigate = (viewId) => {
@@ -142,6 +187,7 @@ function App() {
     <SidebarLayout
       activeView={currentView}
       onNavigate={handleSidebarNavigate}
+      headerOffset={headerOffset}
     >
       {renderContent()}
     </SidebarLayout>
