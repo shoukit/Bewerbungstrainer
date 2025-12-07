@@ -809,16 +809,24 @@ class Bewerbungstrainer_Shortcodes {
 
             /* Dialog button styling - override Elementor defaults */
             [data-radix-popper-content-wrapper] button,
-            [role="dialog"] button {
+            [role="dialog"] button,
+            #bewerbungstrainer-app button {
                 font-family: inherit !important;
                 font-size: 14px !important;
                 line-height: 1.5 !important;
-                padding: 8px 16px !important;
                 border-radius: 6px !important;
                 cursor: pointer !important;
                 transition: all 0.2s !important;
             }
 
+            /* Override Elementor red for all buttons in our app */
+            #bewerbungstrainer-app button:not(.bg-gradient-to-r):not(.bg-red-600):not(.bg-green-500):not(.bg-orange-500) {
+                border-color: #e2e8f0 !important;
+            }
+
+            /* Outline/Ghost buttons */
+            #bewerbungstrainer-app button[data-variant="outline"],
+            #bewerbungstrainer-app button[data-variant="ghost"],
             [data-radix-popper-content-wrapper] button[data-variant="outline"],
             [role="dialog"] button[data-variant="outline"] {
                 background: transparent !important;
@@ -826,11 +834,17 @@ class Bewerbungstrainer_Shortcodes {
                 color: #334155 !important;
             }
 
+            #bewerbungstrainer-app button[data-variant="outline"]:hover,
+            #bewerbungstrainer-app button[data-variant="ghost"]:hover,
             [data-radix-popper-content-wrapper] button[data-variant="outline"]:hover,
             [role="dialog"] button[data-variant="outline"]:hover {
                 background: #f1f5f9 !important;
+                border-color: #cbd5e1 !important;
             }
 
+            /* Default/Primary buttons */
+            #bewerbungstrainer-app button[data-variant="default"],
+            #bewerbungstrainer-app button:not([data-variant]):not(.bg-gradient-to-r):not([class*="bg-"]),
             [data-radix-popper-content-wrapper] button:not([data-variant]),
             [role="dialog"] button:not([data-variant]) {
                 background: #0f172a !important;
@@ -838,6 +852,7 @@ class Bewerbungstrainer_Shortcodes {
                 color: white !important;
             }
 
+            #bewerbungstrainer-app button[data-variant="default"]:hover,
             [data-radix-popper-content-wrapper] button:not([data-variant]):hover,
             [role="dialog"] button:not([data-variant]):hover {
                 background: #1e293b !important;

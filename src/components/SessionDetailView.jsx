@@ -606,9 +606,17 @@ const SessionDetailView = ({ session, onBack }) => {
                         {/* Avatar with Timestamp */}
                         <div className="flex flex-col items-center gap-1 flex-shrink-0">
                           {isAgent ? (
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
-                              <Bot className="w-4 h-4 text-white" />
-                            </div>
+                            scenario?.interviewer_profile?.image_url ? (
+                              <img
+                                src={scenario.interviewer_profile.image_url}
+                                alt={scenario.interviewer_profile.name || 'Interviewer'}
+                                className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
+                                <Bot className="w-4 h-4 text-white" />
+                              </div>
+                            )
                           ) : (
                             <>
                               <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
