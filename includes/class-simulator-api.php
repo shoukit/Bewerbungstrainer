@@ -167,7 +167,7 @@ class Bewerbungstrainer_Simulator_API {
 
         $scenarios = $this->db->get_scenarios($args);
 
-        // Format for frontend (without system prompts for list view)
+        // Format for frontend (include input_configuration for wizard)
         $formatted = array_map(function($scenario) {
             return array(
                 'id' => (int) $scenario->id,
@@ -176,6 +176,7 @@ class Bewerbungstrainer_Simulator_API {
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
                 'category' => $scenario->category,
+                'input_configuration' => $scenario->input_configuration,
                 'question_count_min' => (int) $scenario->question_count_min,
                 'question_count_max' => (int) $scenario->question_count_max,
                 'time_limit_per_question' => (int) $scenario->time_limit_per_question,
@@ -283,10 +284,12 @@ class Bewerbungstrainer_Simulator_API {
         return new WP_REST_Response(array(
             'success' => true,
             'data' => array(
-                'id' => (int) $session->id,
-                'session_id' => $session->session_id,
-                'scenario_id' => (int) $session->scenario_id,
-                'status' => $session->status,
+                'session' => array(
+                    'id' => (int) $session->id,
+                    'session_id' => $session->session_id,
+                    'scenario_id' => (int) $session->scenario_id,
+                    'status' => $session->status,
+                ),
             ),
         ), 201);
     }
@@ -369,9 +372,13 @@ class Bewerbungstrainer_Simulator_API {
             'started_at' => current_time('mysql'),
         ));
 
+        // Refresh session to get updated data
+        $session = $this->db->get_session($session_id);
+
         return new WP_REST_Response(array(
             'success' => true,
             'data' => array(
+                'session' => $this->format_session($session),
                 'questions' => $questions,
                 'total_questions' => count($questions),
             ),
