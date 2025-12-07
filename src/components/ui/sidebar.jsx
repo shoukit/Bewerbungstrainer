@@ -6,7 +6,6 @@ import {
   MessageSquare,
   History,
   GraduationCap,
-  Sparkles,
   Target,
 } from 'lucide-react';
 
@@ -132,10 +131,10 @@ const AppSidebar = ({
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontWeight: 700, color: OCEAN_COLORS.slate[900], fontSize: '14px', lineHeight: '1.2' }}>
-                  Bewerbungs
+                  Karriere
                 </span>
                 <span style={{ fontWeight: 700, color: OCEAN_COLORS.blue[600], fontSize: '14px', lineHeight: '1.2' }}>
-                  trainer
+                  Navigation
                 </span>
               </div>
             </motion.div>
@@ -162,35 +161,6 @@ const AppSidebar = ({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      {/* Main CTA Button */}
-      <div style={{ padding: '12px' }}>
-        <motion.button
-          onClick={() => onNavigate('dashboard')}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          style={{
-            width: '100%',
-            borderRadius: '12px',
-            fontWeight: 600,
-            fontSize: '14px',
-            background: `linear-gradient(90deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
-            color: 'white',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            padding: isCollapsed ? '12px' : '12px 16px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <Sparkles style={{ width: '20px', height: '20px' }} />
-          {!isCollapsed && <span>Üben</span>}
-        </motion.button>
       </div>
 
       {/* Navigation Items */}
