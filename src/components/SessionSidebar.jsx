@@ -31,6 +31,7 @@ const SessionSidebar = ({
   session,
   scenario,
   feedback,
+  audioAnalysis,
   coachingComments = [],
   onRetry,
   onCollapse,
@@ -407,6 +408,7 @@ const SessionSidebar = ({
               {/* Analysis Content */}
               <StructuredFeedbackDisplay
                 analysisData={analysisData}
+                audioAnalysis={audioAnalysis}
                 isLoading={!feedback}
               />
             </motion.div>
