@@ -317,7 +317,6 @@ function SessionDetailView({ session, onBack }) {
         session={sessionData}
         scenario={scenario}
         feedback={parsedFeedback}
-        onBack={onBack}
       />
 
       <div className="max-w-[1600px] mx-auto px-4 py-6">
