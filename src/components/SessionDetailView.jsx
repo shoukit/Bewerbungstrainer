@@ -154,6 +154,11 @@ const SessionDetailView = ({ session, onBack }) => {
       // Load full session data from API
       const fullSession = await getRoleplaySessionAnalysis(session.id);
 
+      // Debug: Log what the API returned
+      console.log('📡 [SESSION_DETAIL] API returned fullSession:', fullSession);
+      console.log('📡 [SESSION_DETAIL] API feedback_json:', fullSession?.feedback_json);
+      console.log('📡 [SESSION_DETAIL] API audio_analysis_json:', fullSession?.audio_analysis_json);
+
       // Merge API data with initial session data
       // This preserves feedback_json and audio_analysis_json if they were
       // passed during navigation (fixes race condition where API returns
@@ -184,6 +189,8 @@ const SessionDetailView = ({ session, onBack }) => {
           console.log('📌 [SESSION_DETAIL] Preserving conversation_id from navigation');
           merged.conversation_id = prevData.conversation_id;
         }
+
+        console.log('📡 [SESSION_DETAIL] Merged session data:', merged);
 
         return merged;
       });

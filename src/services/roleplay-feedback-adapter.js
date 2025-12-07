@@ -204,6 +204,9 @@ export async function getRoleplaySessionAnalysis(sessionId) {
     });
 
     console.log('✅ [Roleplay Feedback] Session analysis loaded successfully');
+    console.log('📡 [Roleplay Feedback] Raw API response:', response);
+    console.log('📡 [Roleplay Feedback] Response.data:', response.data);
+    console.log('📡 [Roleplay Feedback] feedback_json in response:', response.data?.feedback_json);
 
     return response.data;
   } catch (error) {
