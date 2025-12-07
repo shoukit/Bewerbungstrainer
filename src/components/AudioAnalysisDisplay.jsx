@@ -15,26 +15,31 @@ import {
   BarChart3,
   Loader2,
   ExternalLink,
+  Volume2,
+  Zap,
+  Music2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
  * AudioAnalysisDisplay Component
  *
- * Displays audio analysis (audio_analysis_json) for the Analysen tab:
- * - "Was gut gelaufen ist" (positive metrics)
- * - "Was hätte besser laufen können" (improvements)
- * - Expandable cards with details and tips
+ * Displays audio analysis (audio_analysis_json) for the Analysen tab.
+ * Supports both old format and new KarriereHeld format with:
+ * - overall_analysis
+ * - audio_metrics (speech_cleanliness_score, filler_words, pacing, tonality)
+ * - categories
  */
 
 /**
- * Metric Card Component
+ * Metric Card Component - Expandable card for metrics
  */
 const MetricCard = ({
   icon: Icon,
   label,
   value,
   valueLabel,
+  score,
   feedback,
   tip,
   tipLink,
@@ -45,14 +50,16 @@ const MetricCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const hasDetails = feedback || tip || examples?.length > 0;
 
+  // Determine color based on score
+  const getScoreColor = (score) => {
+    if (score >= 7) return 'text-green-600';
+    if (score >= 5) return 'text-amber-600';
+    return 'text-red-500';
+  };
+
   return (
     <motion.div
-      className={cn(
-        "border rounded-xl overflow-hidden",
-        isPositive
-          ? "bg-white border-slate-200"
-          : "bg-white border-slate-200"
-      )}
+      className="border rounded-xl overflow-hidden bg-white border-slate-200"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -76,19 +83,27 @@ const MetricCard = ({
           ) : (
             <div className="w-4" />
           )}
+          <Icon className={cn("w-4 h-4", isPositive ? "text-blue-500" : "text-amber-500")} />
           <span className="font-medium text-slate-800 text-sm">
             {label}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={cn(
-            "text-sm font-semibold",
-            isPositive ? "text-blue-600" : "text-amber-600"
-          )}>
-            {value}
-            {valueLabel && <span className="text-slate-400 font-normal ml-1">{valueLabel}</span>}
-          </span>
+          {score !== undefined && (
+            <span className={cn("text-sm font-bold", getScoreColor(score))}>
+              {score}/10
+            </span>
+          )}
+          {value && (
+            <span className={cn(
+              "text-sm font-semibold",
+              isPositive ? "text-blue-600" : "text-amber-600"
+            )}>
+              {value}
+              {valueLabel && <span className="text-slate-400 font-normal ml-1">{valueLabel}</span>}
+            </span>
+          )}
         </div>
       </button>
 
@@ -132,8 +147,9 @@ const MetricCard = ({
               {/* Examples */}
               {examples?.length > 0 && (
                 <div className="space-y-1">
+                  <p className="text-xs text-slate-500 font-medium">Beispiele:</p>
                   {examples.map((example, idx) => (
-                    <p key={idx} className="text-sm text-slate-500 italic">
+                    <p key={idx} className="text-sm text-slate-500 italic pl-2 border-l-2 border-slate-200">
                       "{example}"
                     </p>
                   ))}
@@ -148,12 +164,89 @@ const MetricCard = ({
 };
 
 /**
+ * Category Card for displaying category-based metrics (STAR, Aktives Zuhören, etc.)
+ */
+const CategoryCard = ({ category, index }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasInsights = category.insights?.length > 0;
+
+  return (
+    <motion.div
+      className="border rounded-xl overflow-hidden bg-white border-slate-200"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.1 }}
+    >
+      <button
+        onClick={() => hasInsights && setIsExpanded(!isExpanded)}
+        disabled={!hasInsights}
+        className={cn(
+          "w-full px-4 py-3 flex items-start gap-3 transition-colors text-left",
+          hasInsights ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"
+        )}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="font-semibold text-slate-800 text-sm flex items-center gap-2">
+              {hasInsights && (
+                <motion.div
+                  animate={{ rotate: isExpanded ? 90 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </motion.div>
+              )}
+              {category.name}
+            </span>
+            <span className={cn(
+              "text-sm font-bold",
+              category.score >= 4 ? "text-green-600" : category.score >= 2 ? "text-amber-600" : "text-red-500"
+            )}>
+              {category.score}/5
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            {category.feedback}
+          </p>
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isExpanded && hasInsights && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 pt-1 space-y-2 border-t border-slate-100">
+              <p className="text-xs text-slate-500 font-medium">Erkenntnisse:</p>
+              {category.insights.map((insight, idx) => (
+                <p key={idx} className="text-sm text-slate-600 pl-3 border-l-2 border-blue-200">
+                  {insight}
+                </p>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+/**
  * Main AudioAnalysisDisplay Component
  */
 function AudioAnalysisDisplay({ audioAnalysis, isLoading = false }) {
+  console.log('🎵 [AUDIO_DISPLAY] Received audioAnalysis:', audioAnalysis ? 'exists' : 'null', typeof audioAnalysis);
+
   // Parse JSON if needed
   const data = useMemo(() => {
-    if (!audioAnalysis) return null;
+    if (!audioAnalysis) {
+      console.log('🎵 [AUDIO_DISPLAY] No audioAnalysis provided');
+      return null;
+    }
     if (typeof audioAnalysis === 'string') {
       try {
         let jsonString = audioAnalysis.trim();
@@ -162,14 +255,21 @@ function AudioAnalysisDisplay({ audioAnalysis, isLoading = false }) {
         } else if (jsonString.startsWith('```')) {
           jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
         }
-        return JSON.parse(jsonString);
+        const parsed = JSON.parse(jsonString);
+        console.log('🎵 [AUDIO_DISPLAY] Parsed audio analysis:', parsed);
+        return parsed;
       } catch (e) {
-        console.error('Failed to parse audio analysis:', e);
+        console.error('🎵 [AUDIO_DISPLAY] Failed to parse audio analysis:', e);
         return null;
       }
     }
+    console.log('🎵 [AUDIO_DISPLAY] Audio analysis object:', audioAnalysis);
     return audioAnalysis;
   }, [audioAnalysis]);
+
+  // Check if this is the new KarriereHeld format
+  const isNewFormat = data?.audio_metrics !== undefined || data?.overall_analysis !== undefined;
+  console.log('🎵 [AUDIO_DISPLAY] Data:', data, 'isNewFormat:', isNewFormat);
 
   // Loading state
   if (isLoading) {
@@ -219,7 +319,136 @@ function AudioAnalysisDisplay({ audioAnalysis, isLoading = false }) {
     );
   }
 
-  // Build metrics lists
+  // NEW FORMAT: KarriereHeld audio analysis
+  if (isNewFormat) {
+    const audioMetrics = data.audio_metrics || {};
+
+    return (
+      <div className="space-y-5">
+        {/* Overall Analysis Summary */}
+        {data.overall_analysis && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 bg-gradient-to-br from-blue-50 to-slate-50 border border-blue-200 rounded-xl"
+          >
+            <h4 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+              <Volume2 className="w-4 h-4 text-blue-500" />
+              Gesamtbewertung Audio
+            </h4>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {data.overall_analysis}
+            </p>
+          </motion.div>
+        )}
+
+        {/* Audio Metrics Section */}
+        {(audioMetrics.speech_cleanliness_score !== undefined ||
+          audioMetrics.filler_words ||
+          audioMetrics.pacing ||
+          audioMetrics.tonality) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-blue-500" />
+              Stimmanalyse
+            </h4>
+            <div className="space-y-2">
+              {/* Speech Cleanliness Score */}
+              {audioMetrics.speech_cleanliness_score !== undefined && (
+                <MetricCard
+                  icon={Mic2}
+                  label="Redefluss"
+                  score={audioMetrics.speech_cleanliness_score}
+                  feedback={`Bewertung der Klarheit und Flüssigkeit deiner Sprache.`}
+                  isPositive={audioMetrics.speech_cleanliness_score >= 6}
+                  index={0}
+                />
+              )}
+
+              {/* Filler Words */}
+              {audioMetrics.filler_words && (
+                <MetricCard
+                  icon={MessageSquare}
+                  label="Füllwörter"
+                  value={`${audioMetrics.filler_words.count || 0} gefunden`}
+                  score={audioMetrics.filler_words.rating}
+                  feedback={audioMetrics.filler_words.list?.length > 0
+                    ? `Erkannte Füllwörter: ${audioMetrics.filler_words.list.join(', ')}`
+                    : 'Keine Füllwörter erkannt.'}
+                  tip={audioMetrics.filler_words.count > 3
+                    ? 'Versuche Füllwörter wie "ähm", "äh", "also" zu reduzieren.'
+                    : null}
+                  isPositive={audioMetrics.filler_words.rating >= 6}
+                  index={1}
+                />
+              )}
+
+              {/* Pacing */}
+              {audioMetrics.pacing && (
+                <MetricCard
+                  icon={Clock}
+                  label="Sprechtempo"
+                  value={audioMetrics.pacing.words_per_minute
+                    ? `${audioMetrics.pacing.words_per_minute} WpM`
+                    : audioMetrics.pacing.assessment}
+                  score={audioMetrics.pacing.rating}
+                  feedback={audioMetrics.pacing.assessment}
+                  tip={audioMetrics.pacing.rating < 6
+                    ? 'Ein optimales Sprechtempo liegt bei 120-150 Wörtern pro Minute.'
+                    : null}
+                  isPositive={audioMetrics.pacing.rating >= 6}
+                  index={2}
+                />
+              )}
+
+              {/* Tonality */}
+              {audioMetrics.tonality && (
+                <MetricCard
+                  icon={Music2}
+                  label="Betonung & Tonalität"
+                  value={audioMetrics.tonality.variety_score !== undefined
+                    ? `Varianz: ${audioMetrics.tonality.variety_score}/10`
+                    : null}
+                  score={audioMetrics.tonality.rating}
+                  feedback={audioMetrics.tonality.assessment}
+                  tip={audioMetrics.tonality.rating < 6
+                    ? 'Variiere deine Stimmlage und Betonung für mehr Ausdruckskraft.'
+                    : null}
+                  isPositive={audioMetrics.tonality.rating >= 6}
+                  index={3}
+                />
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Categories Section (STAR, Aktives Zuhören, etc.) */}
+        {data.categories?.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-500" />
+              Bewertungskriterien
+            </h4>
+            <div className="space-y-2">
+              {data.categories.map((category, idx) => (
+                <CategoryCard key={idx} category={category} index={idx} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </div>
+    );
+  }
+
+  // OLD FORMAT: Legacy audio analysis fields
   const positiveMetrics = [];
   const improvementMetrics = [];
 
@@ -311,7 +540,7 @@ function AudioAnalysisDisplay({ audioAnalysis, isLoading = false }) {
     });
   }
 
-  // Filler words
+  // Filler words (old format)
   if (data.fillerWords || data.fuellwoerter) {
     const fw = data.fillerWords || data.fuellwoerter;
     const count = typeof fw === 'object' ? fw.count : fw;
@@ -335,7 +564,7 @@ function AudioAnalysisDisplay({ audioAnalysis, isLoading = false }) {
     }
   }
 
-  // Pace
+  // Pace (old format)
   if (data.pace || data.tempo) {
     const p = data.pace || data.tempo;
     const wpm = typeof p === 'object' ? p.wordsPerMinute : p;

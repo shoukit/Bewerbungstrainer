@@ -458,7 +458,7 @@ const SessionDetailView = ({ session, onBack }) => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 pb-8">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={onBack} size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -489,10 +489,10 @@ const SessionDetailView = ({ session, onBack }) => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-[1600px] mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left Column - Audio Player & Transcript */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             {/* Audio Player Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -722,8 +722,8 @@ const SessionDetailView = ({ session, onBack }) => {
           </div>
 
           {/* Right Column - Feedback Sidebar */}
-          <div className={isSidebarCollapsed ? 'lg:col-span-1' : ''}>
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden sticky top-4">
+          <div className={cn("lg:col-span-2", isSidebarCollapsed && 'lg:col-span-1')}>
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden sticky top-20">
               <SessionSidebar
                 session={sessionData}
                 scenario={scenario}

@@ -88,7 +88,8 @@ const SessionSidebar = ({
       initial={{ width: 0, opacity: 0 }}
       animate={{ width: '100%', opacity: 1 }}
       className={cn(
-        "bg-white border-l border-slate-200 flex flex-col h-full overflow-hidden",
+        "bg-white border-l border-slate-200 flex flex-col overflow-hidden",
+        "h-[calc(100vh-120px)] max-h-[800px]", // Fixed height like Yoodli
         className
       )}
     >
