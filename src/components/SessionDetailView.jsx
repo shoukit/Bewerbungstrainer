@@ -31,6 +31,7 @@ import {
   getRoleplaySessionAudioUrl,
   getRoleplayScenario,
 } from '@/services/roleplay-feedback-adapter';
+import SessionSidebar from './SessionSidebar';
 
 console.log('📦 [SESSION_DETAIL] SessionDetailView module loaded');
 
@@ -53,6 +54,9 @@ const SessionDetailView = ({ session, onBack }) => {
   // Transcript state
   const [showFullFeedback, setShowFullFeedback] = useState(false);
   const [activeTranscriptIndex, setActiveTranscriptIndex] = useState(-1);
+
+  // Sidebar state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Refs
   const audioRef = useRef(null);
@@ -653,223 +657,26 @@ const SessionDetailView = ({ session, onBack }) => {
             </motion.div>
           </div>
 
-          {/* Right Column - Feedback Summary */}
-          <div className="space-y-6">
-            {/* Overall Score */}
-            {parsedFeedback?.rating && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-white rounded-2xl shadow-lg p-6"
-              >
-                <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-yellow-500" />
-                  Bewertung
-                </h2>
-
-                <div className="space-y-4">
-                  {parsedFeedback.rating.overall !== undefined && (
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">Gesamt</p>
-                      {renderRatingStars(parsedFeedback.rating.overall)}
-                    </div>
-                  )}
-                  {parsedFeedback.rating.communication !== undefined && (
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">Kommunikation</p>
-                      {renderRatingStars(parsedFeedback.rating.communication)}
-                    </div>
-                  )}
-                  {parsedFeedback.rating.professionalism !== undefined && (
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">Professionalität</p>
-                      {renderRatingStars(parsedFeedback.rating.professionalism)}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Summary */}
-            {parsedFeedback?.summary && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-blue-50 rounded-2xl shadow-lg p-6 border-l-4 border-blue-500"
-              >
-                <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  Gesamteindruck
-                </h3>
-                <p className="text-sm text-blue-800 leading-relaxed">{parsedFeedback.summary}</p>
-              </motion.div>
-            )}
-
-            {/* Strengths */}
-            {parsedFeedback?.strengths?.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.15 }}
-                className="bg-green-50 rounded-2xl shadow-lg p-6 border-l-4 border-green-500"
-              >
-                <h3 className="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Stärken
-                </h3>
-                <ul className="space-y-2">
-                  {parsedFeedback.strengths.slice(0, 3).map((strength, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-green-800">
-                      <span className="text-green-600 mt-0.5">•</span>
-                      <span>{strength}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-
-            {/* Improvements */}
-            {parsedFeedback?.improvements?.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-orange-50 rounded-2xl shadow-lg p-6 border-l-4 border-orange-500"
-              >
-                <h3 className="text-sm font-semibold text-orange-900 mb-3 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Verbesserungen
-                </h3>
-                <ul className="space-y-2">
-                  {parsedFeedback.improvements.slice(0, 3).map((improvement, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-orange-800">
-                      <span className="text-orange-600 mt-0.5">•</span>
-                      <span>{improvement}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-
-            {/* Tips */}
-            {parsedFeedback?.tips?.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.25 }}
-                className="bg-indigo-50 rounded-2xl shadow-lg p-6 border-l-4 border-indigo-500"
-              >
-                <h3 className="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
-                  <Lightbulb className="w-4 h-4" />
-                  Tipps
-                </h3>
-                <ul className="space-y-2">
-                  {parsedFeedback.tips.slice(0, 3).map((tip, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-indigo-800">
-                      <Target className="w-3 h-3 text-indigo-600 mt-1 flex-shrink-0" />
-                      <span>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-
-            {/* Show more button */}
-            {parsedFeedback && (
-              <Button
-                variant="outline"
-                onClick={() => setShowFullFeedback(!showFullFeedback)}
-                className="w-full"
-              >
-                {showFullFeedback ? (
-                  <>
-                    <ChevronUp className="w-4 h-4 mr-2" />
-                    Weniger anzeigen
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-4 h-4 mr-2" />
-                    Vollständiges Feedback
-                  </>
-                )}
-              </Button>
-            )}
+          {/* Right Column - Feedback Sidebar */}
+          <div className={isSidebarCollapsed ? 'lg:col-span-1' : ''}>
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden h-[calc(100vh-200px)] sticky top-24">
+              <SessionSidebar
+                session={sessionData}
+                scenario={scenario}
+                feedback={parsedFeedback}
+                coachingComments={[]}
+                onRetry={() => {
+                  // Navigate to retry the session
+                  if (scenario) {
+                    window.location.href = `?scenario=${scenario.id}`;
+                  }
+                }}
+                onCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                isCollapsed={isSidebarCollapsed}
+              />
+            </div>
           </div>
         </div>
-
-        {/* Full Feedback Modal/Expanded Section */}
-        <AnimatePresence>
-          {showFullFeedback && parsedFeedback && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-6 bg-white rounded-2xl shadow-lg p-6 overflow-hidden"
-            >
-              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <Award className="w-6 h-6 text-blue-600" />
-                Vollständiges Feedback
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* All Strengths */}
-                {parsedFeedback.strengths?.length > 0 && (
-                  <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
-                    <h3 className="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Alle Stärken
-                    </h3>
-                    <ul className="space-y-2">
-                      {parsedFeedback.strengths.map((strength, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-green-800">
-                          <span className="text-green-600 mt-0.5">•</span>
-                          <span>{strength}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* All Improvements */}
-                {parsedFeedback.improvements?.length > 0 && (
-                  <div className="p-4 bg-orange-50 border-l-4 border-orange-500 rounded-r-lg">
-                    <h3 className="text-sm font-semibold text-orange-900 mb-3 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4" />
-                      Alle Verbesserungen
-                    </h3>
-                    <ul className="space-y-2">
-                      {parsedFeedback.improvements.map((improvement, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-orange-800">
-                          <span className="text-orange-600 mt-0.5">•</span>
-                          <span>{improvement}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* All Tips */}
-                {parsedFeedback.tips?.length > 0 && (
-                  <div className="p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-r-lg md:col-span-2">
-                    <h3 className="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
-                      <Lightbulb className="w-4 h-4" />
-                      Alle Tipps
-                    </h3>
-                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {parsedFeedback.tips.map((tip, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-indigo-800">
-                          <Target className="w-3 h-3 text-indigo-600 mt-1 flex-shrink-0" />
-                          <span>{tip}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );
