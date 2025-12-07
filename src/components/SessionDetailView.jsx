@@ -67,6 +67,7 @@ const SessionDetailView = ({ session, onBack }) => {
 
   // Parse feedback and transcript
   const parsedFeedback = useMemo(() => {
+    console.log('📊 [SESSION_DETAIL] Parsing feedback_json:', sessionData?.feedback_json ? 'exists' : 'null');
     if (!sessionData?.feedback_json) return null;
     try {
       let jsonString = sessionData.feedback_json;
@@ -77,17 +78,22 @@ const SessionDetailView = ({ session, onBack }) => {
         } else if (jsonString.startsWith('```')) {
           jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
         }
-        return JSON.parse(jsonString);
+        const parsed = JSON.parse(jsonString);
+        console.log('✅ [SESSION_DETAIL] Feedback parsed successfully:', parsed);
+        return parsed;
       }
+      console.log('✅ [SESSION_DETAIL] Feedback already object:', jsonString);
       return jsonString;
     } catch (err) {
-      console.error('Failed to parse feedback:', err);
+      console.error('❌ [SESSION_DETAIL] Failed to parse feedback:', err);
+      console.error('❌ [SESSION_DETAIL] Raw feedback_json:', sessionData.feedback_json);
       return null;
     }
   }, [sessionData?.feedback_json]);
 
   // Parse audio analysis
   const parsedAudioAnalysis = useMemo(() => {
+    console.log('📊 [SESSION_DETAIL] Parsing audio_analysis_json:', sessionData?.audio_analysis_json ? 'exists' : 'null');
     if (!sessionData?.audio_analysis_json) return null;
     try {
       let jsonString = sessionData.audio_analysis_json;
@@ -98,11 +104,15 @@ const SessionDetailView = ({ session, onBack }) => {
         } else if (jsonString.startsWith('```')) {
           jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
         }
-        return JSON.parse(jsonString);
+        const parsed = JSON.parse(jsonString);
+        console.log('✅ [SESSION_DETAIL] Audio analysis parsed successfully:', parsed);
+        return parsed;
       }
+      console.log('✅ [SESSION_DETAIL] Audio analysis already object:', jsonString);
       return jsonString;
     } catch (err) {
-      console.error('Failed to parse audio analysis:', err);
+      console.error('❌ [SESSION_DETAIL] Failed to parse audio analysis:', err);
+      console.error('❌ [SESSION_DETAIL] Raw audio_analysis_json:', sessionData.audio_analysis_json);
       return null;
     }
   }, [sessionData?.audio_analysis_json]);
