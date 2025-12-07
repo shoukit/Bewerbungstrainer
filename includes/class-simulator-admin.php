@@ -60,8 +60,8 @@ class Bewerbungstrainer_Simulator_Admin {
     public function add_admin_menu() {
         // Main menu item
         add_menu_page(
-            'Skill Simulator',
-            'Skill Simulator',
+            'Szenario-Training',
+            'Szenario-Training',
             'manage_options',
             'simulator-scenarios',
             array($this, 'render_scenarios_page'),
@@ -336,7 +336,7 @@ class Bewerbungstrainer_Simulator_Admin {
         }
         ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline">Skill Simulator - Szenarien</h1>
+            <h1 class="wp-heading-inline">Szenario-Training - Szenarien</h1>
             <a href="<?php echo admin_url('admin.php?page=simulator-scenario-new'); ?>" class="page-title-action">Neues Szenario hinzufügen</a>
             <hr class="wp-header-end">
 

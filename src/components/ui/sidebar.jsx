@@ -41,18 +41,18 @@ const OCEAN_COLORS = {
  */
 const NAV_ITEMS = [
   {
-    id: 'dashboard',
-    label: 'Praxis-Training',
-    shortLabel: 'Training',
-    icon: MessageSquare,
-    description: 'Live Rollenspiel-Dialoge üben',
-  },
-  {
     id: 'simulator',
-    label: 'Skill Simulator',
-    shortLabel: 'Simulator',
+    label: 'Szenario-Training',
+    shortLabel: 'Szenario',
     icon: Target,
     description: 'Frage-Antwort Training mit KI-Feedback',
+  },
+  {
+    id: 'dashboard',
+    label: 'Live-Gespräche',
+    shortLabel: 'Live',
+    icon: MessageSquare,
+    description: 'Live Rollenspiel-Dialoge üben',
   },
   {
     id: 'history',
