@@ -13,7 +13,6 @@ import {
   Award,
   Loader2,
   AlertCircle,
-  History,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -151,9 +150,9 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-ocean-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Szenarien werden geladen...</p>
         </div>
       </div>
@@ -162,7 +161,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-900 mb-2">Fehler beim Laden</h2>
@@ -174,7 +173,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 py-4 lg:py-8 px-2 lg:px-4 overflow-x-hidden">
+    <div className="min-h-screen py-4 lg:py-8 px-2 lg:px-4 overflow-x-hidden">
       {/* Header */}
       <div className="max-w-6xl mx-auto mb-4 lg:mb-8 px-2">
         <motion.div
@@ -193,39 +192,27 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
           {/* Title */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ocean-blue-600 to-ocean-teal-500 flex items-center justify-center shadow-md">
                 <MessageSquare className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-3xl font-bold text-slate-900">Rollenspiel-Training</h1>
+                <h1 className="text-xl lg:text-3xl font-bold text-slate-900">Praxis-Training</h1>
                 <p className="text-sm lg:text-base text-slate-600">Wähle ein Szenario und übe realistische Gespräche</p>
               </div>
             </div>
-
-            {/* History Button */}
-            {onOpenHistory && (
-              <Button
-                variant="outline"
-                onClick={onOpenHistory}
-                className="flex items-center gap-2"
-              >
-                <History className="w-4 h-4" />
-                <span className="hidden sm:inline">Gesprächshistorie</span>
-              </Button>
-            )}
           </div>
 
           {/* Search and Filters */}
           <div className="flex flex-col md:flex-row gap-4 mt-6">
             {/* Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-10" />
               <input
                 type="text"
                 placeholder="Szenarien durchsuchen..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-11 pl-12 pr-4 py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-900 shadow-sm placeholder:text-slate-400 hover:border-slate-300 focus:outline-none focus:border-ocean-blue-400 focus:ring-2 focus:ring-ocean-blue-100 transition-all duration-200"
               />
             </div>
 
@@ -235,7 +222,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
               <select
                 value={difficultyFilter}
                 onChange={(e) => setDifficultyFilter(e.target.value)}
-                className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="h-11 px-4 py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-900 shadow-sm cursor-pointer hover:border-slate-300 focus:outline-none focus:border-ocean-blue-400 focus:ring-2 focus:ring-ocean-blue-100 transition-all duration-200"
               >
                 <option value="all">Alle Schwierigkeiten</option>
                 <option value="easy">Einfach</option>
@@ -329,7 +316,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 text-blue-600 text-sm font-semibold">
+                    <div className="flex items-center gap-1 text-ocean-blue-600 text-sm font-semibold">
                       <span>Starten</span>
                       <TrendingUp className="w-4 h-4" />
                     </div>

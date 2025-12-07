@@ -6,6 +6,30 @@
  */
 
 /**
+ * Decodes Unicode escape sequences that may appear in strings
+ * Handles cases where backend returns double-escaped Unicode (e.g., "u00f6" instead of "ö")
+ *
+ * @param {string} str - The string to decode
+ * @returns {string} - The decoded string
+ */
+export function decodeUnicodeEscapes(str) {
+  if (!str || typeof str !== 'string') return str;
+
+  // Match patterns like \u00f6 or u00f6 (with or without backslash)
+  return str
+    .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/(?<!\\)u([0-9a-fA-F]{4})/g, (match, hex) => {
+      // Only replace if it looks like a Unicode escape (not part of a word)
+      const charCode = parseInt(hex, 16);
+      // Only decode if it's a reasonable character (not control chars)
+      if (charCode >= 0x00A0 && charCode <= 0xFFFF) {
+        return String.fromCharCode(charCode);
+      }
+      return match;
+    });
+}
+
+/**
  * Strips markdown code block formatting from a string
  * Handles ```json, ```, and plain JSON
  *
@@ -62,7 +86,10 @@ export function safeParseJSON(input, options = {}) {
 
   try {
     // Strip code blocks and whitespace
-    const cleaned = stripCodeBlocks(input);
+    let cleaned = stripCodeBlocks(input);
+
+    // Decode any Unicode escape sequences
+    cleaned = decodeUnicodeEscapes(cleaned);
 
     // Parse JSON
     const parsed = JSON.parse(cleaned);
@@ -132,6 +159,7 @@ export function isNewAudioAnalysisFormat(data) {
 }
 
 export default {
+  decodeUnicodeEscapes,
   stripCodeBlocks,
   safeParseJSON,
   parseFeedbackJSON,

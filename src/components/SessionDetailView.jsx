@@ -282,9 +282,9 @@ function SessionDetailView({ session, onBack }) {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-ocean-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Gesprächsanalyse wird geladen...</p>
         </div>
       </div>
@@ -294,7 +294,7 @@ function SessionDetailView({ session, onBack }) {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-900 mb-2">Fehler beim Laden</h2>
@@ -311,7 +311,7 @@ function SessionDetailView({ session, onBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 pb-8">
+    <div className="min-h-screen pb-8">
       {/* Header */}
       <SessionHeader
         session={sessionData}
