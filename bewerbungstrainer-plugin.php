@@ -68,6 +68,7 @@ class Bewerbungstrainer_Plugin {
         // Load Simulator classes
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-api.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-admin.php';
 
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
@@ -190,6 +191,11 @@ class Bewerbungstrainer_Plugin {
         // Initialize Simulator
         Bewerbungstrainer_Simulator_Database::get_instance();
         Bewerbungstrainer_Simulator_API::get_instance();
+
+        // Initialize Simulator Admin (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_Simulator_Admin::get_instance();
+        }
 
         // Initialize audio handler
         Bewerbungstrainer_Audio_Handler::get_instance();
