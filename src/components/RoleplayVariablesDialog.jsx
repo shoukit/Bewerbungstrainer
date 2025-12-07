@@ -1,10 +1,131 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Sparkles } from 'lucide-react';
+
+/**
+ * Ocean theme colors
+ */
+const COLORS = {
+  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
+  teal: { 500: '#3DA389', 600: '#2E8A72' },
+  slate: { 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 700: '#334155', 900: '#0f172a' },
+  red: { 500: '#ef4444' },
+};
+
+/**
+ * Styled Input Component
+ */
+const StyledInput = ({ id, type, value, onChange, placeholder, hasError }) => {
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <input
+      id={id}
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      style={{
+        width: '100%',
+        height: '44px',
+        padding: '8px 16px',
+        borderRadius: '12px',
+        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? COLORS.blue[500] : COLORS.slate[200]}`,
+        backgroundColor: 'white',
+        color: COLORS.slate[900],
+        fontSize: '14px',
+        boxShadow: isFocused ? `0 0 0 3px rgba(74, 158, 201, 0.15)` : '0 1px 2px rgba(0, 0, 0, 0.05)',
+        outline: 'none',
+        transition: 'all 0.2s',
+      }}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+    />
+  );
+};
+
+/**
+ * Styled Textarea Component
+ */
+const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3 }) => {
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <textarea
+      id={id}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      rows={rows}
+      style={{
+        width: '100%',
+        minHeight: '100px',
+        padding: '12px 16px',
+        borderRadius: '12px',
+        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? COLORS.blue[500] : COLORS.slate[200]}`,
+        backgroundColor: 'white',
+        color: COLORS.slate[900],
+        fontSize: '14px',
+        boxShadow: isFocused ? `0 0 0 3px rgba(74, 158, 201, 0.15)` : '0 1px 2px rgba(0, 0, 0, 0.05)',
+        outline: 'none',
+        transition: 'all 0.2s',
+        resize: 'none',
+      }}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+    />
+  );
+};
+
+/**
+ * Styled Button Component
+ */
+const StyledButton = ({ onClick, variant = 'primary', children, className }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const baseStyle = {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '12px 24px',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    border: 'none',
+  };
+
+  const variantStyles = {
+    primary: {
+      background: isHovered
+        ? `linear-gradient(90deg, ${COLORS.blue[700]} 0%, ${COLORS.teal[600]} 100%)`
+        : `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+      color: 'white',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    },
+    outline: {
+      backgroundColor: isHovered ? '#f8fafc' : 'white',
+      color: COLORS.slate[700],
+      border: `2px solid ${COLORS.slate[200]}`,
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+    },
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      style={{ ...baseStyle, ...variantStyles[variant] }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={className}
+    >
+      {children}
+    </button>
+  );
+};
 
 /**
  * Dialog to collect variable values from the user before starting roleplay
@@ -64,8 +185,6 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
       return;
     }
 
-    console.log('✅ [RoleplayVariablesDialog] Variables:', values);
-
     // Submit ALL values (both user-provided and auto-filled)
     onSubmit(values);
   };
@@ -96,70 +215,94 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean-blue-500 to-ocean-teal-600 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+          <DialogTitle style={{ fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[600]} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Sparkles style={{ width: '20px', height: '20px', color: 'white' }} />
             </div>
-            {scenario.title}
+            <span style={{ color: COLORS.slate[900] }}>{scenario.title}</span>
           </DialogTitle>
-          <DialogDescription className="text-base pt-2">
+          <DialogDescription style={{ fontSize: '16px', paddingTop: '8px', color: COLORS.slate[600] }}>
             Bitte fülle die folgenden Informationen aus, um das Rollenspiel zu starten.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          style={{
+            padding: '24px 0',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '16px',
+          }}
+        >
           {userInputVariables.map((varDef) => (
             <div
               key={varDef.key}
-              className={`space-y-2 ${varDef.type === 'textarea' ? 'md:col-span-2' : 'col-span-1'}`}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                gridColumn: varDef.type === 'textarea' ? '1 / -1' : 'auto',
+              }}
             >
-              <Label htmlFor={varDef.key} className="text-sm font-semibold">
+              <label
+                htmlFor={varDef.key}
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: COLORS.slate[700],
+                }}
+              >
                 {varDef.label}
-                {varDef.required && <span className="text-red-500 ml-1">*</span>}
-              </Label>
+                {varDef.required && <span style={{ color: COLORS.red[500], marginLeft: '4px' }}>*</span>}
+              </label>
 
               {varDef.type === 'textarea' ? (
-                <Textarea
+                <StyledTextarea
                   id={varDef.key}
                   value={values[varDef.key] || ''}
                   onChange={(e) => handleChange(varDef.key, e.target.value)}
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
-                  className={errors[varDef.key] ? 'border-red-500' : ''}
+                  hasError={!!errors[varDef.key]}
                   rows={3}
                 />
               ) : (
-                <Input
+                <StyledInput
                   id={varDef.key}
                   type={varDef.type === 'number' ? 'number' : 'text'}
                   value={values[varDef.key] || ''}
                   onChange={(e) => handleChange(varDef.key, e.target.value)}
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
-                  className={errors[varDef.key] ? 'border-red-500' : ''}
+                  hasError={!!errors[varDef.key]}
                 />
               )}
 
               {errors[varDef.key] && (
-                <p className="text-sm text-red-500">{errors[varDef.key]}</p>
+                <p style={{ fontSize: '14px', color: COLORS.red[500], margin: 0 }}>
+                  {errors[varDef.key]}
+                </p>
               )}
             </div>
           ))}
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-3">
-          <Button
-            onClick={onCancel}
-            variant="outline"
-            className="flex-1 border-2"
-          >
+        <DialogFooter style={{ display: 'flex', flexDirection: 'row', gap: '12px', paddingTop: '16px' }}>
+          <StyledButton onClick={onCancel} variant="outline">
             Abbrechen
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            className="flex-1"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
+          </StyledButton>
+          <StyledButton onClick={handleSubmit} variant="primary">
+            <Sparkles style={{ width: '16px', height: '16px' }} />
             Rollenspiel starten
-          </Button>
+          </StyledButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

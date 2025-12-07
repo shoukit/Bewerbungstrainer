@@ -8,7 +8,33 @@ import {
   GraduationCap,
   Sparkles,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
+/**
+ * Ocean theme colors - defined as constants to avoid WordPress CSS conflicts
+ */
+const OCEAN_COLORS = {
+  blue: {
+    50: '#E8F4F8',
+    100: '#D1E9F1',
+    400: '#5FB3D8',
+    500: '#4A9EC9',
+    600: '#3A7FA7',
+    700: '#2D6485',
+  },
+  teal: {
+    500: '#3DA389',
+    600: '#2E8A72',
+  },
+  slate: {
+    50: '#f8fafc',
+    100: '#f1f5f9',
+    200: '#e2e8f0',
+    400: '#94a3b8',
+    600: '#475569',
+    700: '#334155',
+    900: '#0f172a',
+  },
+};
 
 /**
  * Navigation items configuration
@@ -34,35 +60,44 @@ const NAV_ITEMS = [
  * AppSidebar Component
  *
  * A collapsible sidebar navigation for the application.
- * Features smooth animations and ocean-theme styling.
+ * Uses inline styles for colors to avoid WordPress/Elementor CSS conflicts.
  */
 const AppSidebar = ({
   isCollapsed,
   onToggleCollapse,
   activeView,
   onNavigate,
-  className,
+  headerOffset = 0,
 }) => {
   return (
     <motion.aside
       initial={false}
-      animate={{
-        width: isCollapsed ? 72 : 280,
+      animate={{ width: isCollapsed ? 72 : 280 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      style={{
+        position: 'fixed',
+        left: 0,
+        top: headerOffset,
+        bottom: 0,
+        zIndex: 40,
+        backgroundColor: '#ffffff',
+        borderRight: `1px solid ${OCEAN_COLORS.slate[200]}`,
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
       }}
-      transition={{
-        duration: 0.3,
-        ease: [0.4, 0, 0.2, 1],
-      }}
-      className={cn(
-        'fixed left-0 top-0 bottom-0 z-40',
-        'bg-white border-r border-slate-200',
-        'flex flex-col',
-        'shadow-lg',
-        className
-      )}
     >
       {/* Header / Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100">
+      <div
+        style={{
+          height: '64px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          borderBottom: `1px solid ${OCEAN_COLORS.slate[100]}`,
+        }}
+      >
         <AnimatePresence mode="wait">
           {!isCollapsed ? (
             <motion.div
@@ -71,16 +106,27 @@ const AppSidebar = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2 }}
-              className="flex items-center gap-3"
+              style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean-blue-600 to-ocean-teal-500 flex items-center justify-center shadow-md">
-                <GraduationCap className="w-5 h-5 text-white" />
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '12px',
+                  background: `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                }}
+              >
+                <GraduationCap style={{ width: '20px', height: '20px', color: 'white' }} />
               </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-slate-900 text-sm leading-tight">
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontWeight: 700, color: OCEAN_COLORS.slate[900], fontSize: '14px', lineHeight: '1.2' }}>
                   Bewerbungs
                 </span>
-                <span className="font-bold text-ocean-blue-600 text-sm leading-tight">
+                <span style={{ fontWeight: 700, color: OCEAN_COLORS.blue[600], fontSize: '14px', lineHeight: '1.2' }}>
                   trainer
                 </span>
               </div>
@@ -92,139 +138,169 @@ const AppSidebar = ({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.2 }}
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean-blue-600 to-ocean-teal-500 flex items-center justify-center shadow-md mx-auto"
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                background: `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                margin: '0 auto',
+              }}
             >
-              <GraduationCap className="w-5 h-5 text-white" />
+              <GraduationCap style={{ width: '20px', height: '20px', color: 'white' }} />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
       {/* Main CTA Button */}
-      <div className="p-3">
+      <div style={{ padding: '12px' }}>
         <motion.button
           onClick={() => onNavigate('dashboard')}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={cn(
-            'w-full rounded-xl font-semibold transition-all duration-200',
-            'bg-gradient-to-r from-ocean-blue-600 to-ocean-teal-500',
-            'hover:from-ocean-blue-700 hover:to-ocean-teal-600',
-            'text-white shadow-md hover:shadow-lg',
-            'flex items-center justify-center gap-2',
-            isCollapsed ? 'p-3' : 'px-4 py-3'
-          )}
+          style={{
+            width: '100%',
+            borderRadius: '12px',
+            fontWeight: 600,
+            fontSize: '14px',
+            background: `linear-gradient(90deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+            color: 'white',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: isCollapsed ? '12px' : '12px 16px',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
         >
-          <Sparkles className="w-5 h-5" />
-          <AnimatePresence mode="wait">
-            {!isCollapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.2 }}
-                className="whitespace-nowrap overflow-hidden"
-              >
-                Üben
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <Sparkles style={{ width: '20px', height: '20px' }} />
+          {!isCollapsed && <span>Üben</span>}
         </motion.button>
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 px-3 py-2 space-y-1">
+      <nav style={{ flex: 1, padding: '8px 12px' }}>
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id ||
             (item.id === 'dashboard' && activeView === 'roleplay');
 
           return (
-            <motion.button
+            <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              whileHover={{ x: isCollapsed ? 0 : 4 }}
-              whileTap={{ scale: 0.98 }}
-              className={cn(
-                'w-full rounded-xl transition-all duration-200',
-                'flex items-center gap-3',
-                'group relative',
-                isCollapsed ? 'justify-center p-3' : 'px-4 py-3',
-                isActive
-                  ? 'bg-ocean-blue-50 text-ocean-blue-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              )}
+              style={{
+                width: '100%',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                position: 'relative',
+                padding: isCollapsed ? '12px' : '12px 16px',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                backgroundColor: isActive ? OCEAN_COLORS.blue[50] : 'transparent',
+                color: isActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[600],
+                fontWeight: isActive ? 600 : 400,
+                fontSize: '14px',
+                border: 'none',
+                cursor: 'pointer',
+                marginBottom: '4px',
+                transition: 'all 0.2s',
+                textAlign: 'left',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = OCEAN_COLORS.slate[50];
+                  e.currentTarget.style.color = OCEAN_COLORS.slate[900];
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = OCEAN_COLORS.slate[600];
+                }
+              }}
             >
-              <Icon
-                className={cn(
-                  'w-5 h-5 flex-shrink-0 transition-colors',
-                  isActive ? 'text-ocean-blue-600' : 'text-slate-400 group-hover:text-slate-600'
-                )}
-              />
-
-              <AnimatePresence mode="wait">
-                {!isCollapsed && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex flex-col items-start text-left overflow-hidden"
-                  >
-                    <span className="text-sm whitespace-nowrap">{item.label}</span>
-                    <span className="text-xs text-slate-400 whitespace-nowrap">
-                      {item.description}
-                    </span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Tooltip for collapsed state */}
-              {isCollapsed && (
-                <div
-                  className={cn(
-                    'absolute left-full ml-2 px-3 py-2 rounded-lg',
-                    'bg-slate-900 text-white text-sm',
-                    'opacity-0 group-hover:opacity-100 pointer-events-none',
-                    'transition-opacity duration-200',
-                    'whitespace-nowrap z-50'
-                  )}
-                >
-                  {item.label}
-                  <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
-                </div>
-              )}
-
-              {/* Active indicator */}
+              {/* Active indicator bar */}
               {isActive && (
-                <motion.div
-                  layoutId="activeIndicator"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-ocean-blue-600 rounded-r-full"
-                  transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '4px',
+                    height: '32px',
+                    backgroundColor: OCEAN_COLORS.blue[600],
+                    borderTopRightRadius: '9999px',
+                    borderBottomRightRadius: '9999px',
+                  }}
                 />
               )}
-            </motion.button>
+
+              <Icon
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  flexShrink: 0,
+                  color: isActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                }}
+              />
+
+              {!isCollapsed && (
+                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
+                  <span style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], whiteSpace: 'nowrap' }}>
+                    {item.description}
+                  </span>
+                </div>
+              )}
+            </button>
           );
         })}
       </nav>
 
       {/* Collapse Toggle Button */}
-      <div className="p-3 border-t border-slate-100">
+      <div style={{ padding: '12px', borderTop: `1px solid ${OCEAN_COLORS.slate[100]}` }}>
         <button
           onClick={onToggleCollapse}
-          className={cn(
-            'w-full rounded-xl p-3 transition-all duration-200',
-            'text-slate-400 hover:text-slate-600 hover:bg-slate-50',
-            'flex items-center gap-3',
-            isCollapsed ? 'justify-center' : 'justify-start'
-          )}
+          style={{
+            width: '100%',
+            borderRadius: '12px',
+            padding: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            justifyContent: isCollapsed ? 'center' : 'flex-start',
+            color: OCEAN_COLORS.slate[400],
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '14px',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = OCEAN_COLORS.slate[50];
+            e.currentTarget.style.color = OCEAN_COLORS.slate[600];
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.color = OCEAN_COLORS.slate[400];
+          }}
         >
           {isCollapsed ? (
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight style={{ width: '20px', height: '20px' }} />
           ) : (
             <>
-              <ChevronLeft className="w-5 h-5" />
-              <span className="text-sm">Einklappen</span>
+              <ChevronLeft style={{ width: '20px', height: '20px' }} />
+              <span>Einklappen</span>
             </>
           )}
         </button>
@@ -238,7 +314,7 @@ const AppSidebar = ({
  *
  * Layout wrapper that includes the sidebar and main content area.
  */
-const SidebarLayout = ({ children, activeView, onNavigate }) => {
+const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0 }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   // Check for saved preference
@@ -256,25 +332,28 @@ const SidebarLayout = ({ children, activeView, onNavigate }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div
+      style={{
+        minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
+      }}
+    >
       <AppSidebar
         isCollapsed={isCollapsed}
         onToggleCollapse={handleToggleCollapse}
         activeView={activeView}
         onNavigate={onNavigate}
+        headerOffset={headerOffset}
       />
 
       {/* Main Content */}
       <motion.main
         initial={false}
-        animate={{
-          marginLeft: isCollapsed ? 72 : 280,
+        animate={{ marginLeft: isCollapsed ? 72 : 280 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        style={{
+          minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
         }}
-        transition={{
-          duration: 0.3,
-          ease: [0.4, 0, 0.2, 1],
-        }}
-        className="min-h-screen"
       >
         {children}
       </motion.main>
@@ -282,4 +361,4 @@ const SidebarLayout = ({ children, activeView, onNavigate }) => {
   );
 };
 
-export { AppSidebar, SidebarLayout, NAV_ITEMS };
+export { AppSidebar, SidebarLayout, NAV_ITEMS, OCEAN_COLORS };
