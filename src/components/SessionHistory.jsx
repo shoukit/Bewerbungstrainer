@@ -216,7 +216,7 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
 
           {/* Title */}
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-500 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ocean-blue-600 to-ocean-teal-500 flex items-center justify-center">
               <History className="w-6 h-6 text-white" />
             </div>
             <div>
