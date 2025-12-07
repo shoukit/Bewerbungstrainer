@@ -17,30 +17,78 @@ const VIEWS = {
 
 /**
  * Detect WordPress header height
- * Looks for common WP header elements and calculates total offset
+ * Uses multiple methods to find the header offset
  */
 function getWPHeaderHeight() {
-  // Check for WP admin bar (32px when logged in)
-  const adminBar = document.getElementById('wpadminbar');
-  const adminBarHeight = adminBar ? adminBar.offsetHeight : 0;
+  const appContainer = document.getElementById('bewerbungstrainer-app');
 
-  // Check for theme header - try common selectors
-  const themeHeader =
-    document.querySelector('header.site-header') ||
-    document.querySelector('#masthead') ||
-    document.querySelector('.site-header') ||
-    document.querySelector('header');
+  // Method 1: Check what element is at the top center of the viewport
+  // This finds the header even if selectors don't match
+  const topElement = document.elementFromPoint(window.innerWidth / 2, 10);
+  if (topElement) {
+    // Walk up to find header/nav container
+    let current = topElement;
+    while (current && current !== document.body) {
+      const tagName = current.tagName?.toLowerCase();
+      const isHeader = tagName === 'header' ||
+                       tagName === 'nav' ||
+                       current.classList?.contains('site-header') ||
+                       current.classList?.contains('elementor-location-header') ||
+                       current.id === 'masthead';
 
-  // Only count theme header if it's outside our app container
-  let themeHeaderHeight = 0;
-  if (themeHeader) {
-    const appContainer = document.getElementById('bewerbungstrainer-app');
-    if (appContainer && !appContainer.contains(themeHeader)) {
-      themeHeaderHeight = themeHeader.offsetHeight;
+      if (isHeader && (!appContainer || !appContainer.contains(current))) {
+        const rect = current.getBoundingClientRect();
+        const headerBottom = rect.bottom;
+        console.log('📐 [HEADER] Found via elementFromPoint:', current.tagName, 'bottom:', headerBottom);
+        return Math.max(0, headerBottom);
+      }
+      current = current.parentElement;
     }
   }
 
-  return adminBarHeight + themeHeaderHeight;
+  // Method 2: Check for WP admin bar
+  const adminBar = document.getElementById('wpadminbar');
+  const adminBarHeight = adminBar ? adminBar.offsetHeight : 0;
+
+  // Method 3: Try various header selectors
+  const headerSelectors = [
+    'header.site-header',
+    '#masthead',
+    '.site-header',
+    '.elementor-location-header',
+    '[data-elementor-type="header"]',
+    '.ast-header-wrap', // Astra theme
+    '#starter-header', // Starter theme
+    '.header-wrapper',
+    'header',
+  ];
+
+  for (const selector of headerSelectors) {
+    const header = document.querySelector(selector);
+    if (header && (!appContainer || !appContainer.contains(header))) {
+      const rect = header.getBoundingClientRect();
+      // Use bottom of header (header might be at top:0 or have some offset)
+      const headerBottom = rect.bottom;
+      console.log('📐 [HEADER] Found with selector:', selector, 'bottom:', headerBottom);
+      return Math.max(adminBarHeight, headerBottom);
+    }
+  }
+
+  // Method 4: Check parent of app container
+  if (appContainer) {
+    let sibling = appContainer.previousElementSibling;
+    while (sibling) {
+      const rect = sibling.getBoundingClientRect();
+      if (rect.height > 30 && rect.top < 100) {
+        console.log('📐 [HEADER] Found sibling element, bottom:', rect.bottom);
+        return Math.max(adminBarHeight, rect.bottom);
+      }
+      sibling = sibling.previousElementSibling;
+    }
+  }
+
+  console.log('📐 [HEADER] No header found, using admin bar only:', adminBarHeight);
+  return adminBarHeight;
 }
 
 function App() {
@@ -62,15 +110,37 @@ function App() {
     const updateHeaderOffset = () => {
       const offset = getWPHeaderHeight();
       console.log('📐 [APP] WP header offset:', offset);
-      setHeaderOffset(offset);
+      if (offset > 0) {
+        setHeaderOffset(offset);
+        return true;
+      }
+      return false;
     };
 
-    // Initial calculation (with delay to ensure DOM is ready)
-    setTimeout(updateHeaderOffset, 100);
+    // Try multiple times to ensure DOM is ready
+    const tryUpdate = (attempts = 0) => {
+      if (updateHeaderOffset() || attempts >= 5) return;
+      setTimeout(() => tryUpdate(attempts + 1), 200);
+    };
 
-    // Recalculate on resize
+    // Initial calculation
+    requestAnimationFrame(() => {
+      setTimeout(() => tryUpdate(), 50);
+    });
+
+    // Also try after window load
+    const handleLoad = () => setTimeout(updateHeaderOffset, 100);
+    window.addEventListener('load', handleLoad);
+
+    // Recalculate on resize and scroll (header might be sticky)
     window.addEventListener('resize', updateHeaderOffset);
-    return () => window.removeEventListener('resize', updateHeaderOffset);
+    window.addEventListener('scroll', updateHeaderOffset, { passive: true });
+
+    return () => {
+      window.removeEventListener('load', handleLoad);
+      window.removeEventListener('resize', updateHeaderOffset);
+      window.removeEventListener('scroll', updateHeaderOffset);
+    };
   }, []);
 
   // ===== NAVIGATION HANDLER =====
