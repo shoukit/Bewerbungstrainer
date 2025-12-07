@@ -730,7 +730,7 @@ const SessionDetailView = ({ session, onBack }) => {
           </div>
 
           {/* Right Column - Feedback Sidebar */}
-          <div className={cn("lg:col-span-2", isSidebarCollapsed && 'lg:col-span-1')}>
+          <div className={cn("lg:col-span-2 self-start", isSidebarCollapsed && 'lg:col-span-1')}>
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden sticky top-20">
               <SessionSidebar
                 session={sessionData}

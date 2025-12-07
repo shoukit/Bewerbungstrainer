@@ -12,7 +12,7 @@ const CoachingPanel = ({ hints }) => {
   const hintsList = parseHints(hints);
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-full max-h-[calc(100vh-120px)] flex flex-col">
+    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-full flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center gap-2 flex-shrink-0">
         <Lightbulb className="w-5 h-5 text-white" />
