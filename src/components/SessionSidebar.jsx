@@ -1,3 +1,13 @@
+/**
+ * SessionSidebar Component
+ *
+ * A sidebar panel for the session detail view with:
+ * - Header showing completion status and score
+ * - Tabs for "Coaching" and "Analysen"
+ * - Coaching tab: Shows Gemini feedback (feedback_json) - content analysis
+ * - Analysen tab: Shows audio analysis (audio_analysis_json) - speech metrics
+ */
+
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,16 +24,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import StructuredFeedbackDisplay from './StructuredFeedbackDisplay';
 import AudioAnalysisDisplay from './AudioAnalysisDisplay';
-
-/**
- * SessionSidebar Component
- *
- * A sidebar panel for the session detail view with:
- * - Header showing completion status and score
- * - Tabs for "Coaching" and "Analysen"
- * - Coaching tab: Shows Gemini feedback (feedback_json) - content analysis
- * - Analysen tab: Shows audio analysis (audio_analysis_json) - speech metrics
- */
 
 const SessionSidebar = ({
   session,
@@ -69,12 +69,7 @@ const SessionSidebar = ({
         animate={{ width: 48, opacity: 1 }}
         className="bg-white border-l border-slate-200 flex flex-col items-center py-4"
       >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onCollapse}
-          className="mb-4"
-        >
+        <Button variant="ghost" size="icon" onClick={onCollapse} className="mb-4">
           <ChevronRight className="w-4 h-4" />
         </Button>
         <div className="writing-mode-vertical text-xs text-slate-500 font-medium">
@@ -89,37 +84,35 @@ const SessionSidebar = ({
       initial={{ width: 0, opacity: 0 }}
       animate={{ width: '100%', opacity: 1 }}
       className={cn(
-        "bg-white border-l border-slate-200 flex flex-col overflow-hidden",
-        "h-[calc(100vh-120px)] max-h-[800px]", // Fixed height like Yoodli
+        'bg-white border-l border-slate-200 flex flex-col overflow-hidden',
+        'h-[calc(100vh-120px)] max-h-[800px]',
         className
       )}
     >
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-4 flex-shrink-0">
+      {/* Header - Ocean Theme Gradient */}
+      <div className="bg-gradient-to-r from-ocean-blue-700 to-ocean-teal-600 px-4 py-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-400" />
-            <span className="text-white font-semibold text-sm">
-              Rollenspiel abgeschlossen
-            </span>
+            <Trophy className="w-5 h-5 text-amber-300" />
+            <span className="text-white font-semibold text-sm">Rollenspiel abgeschlossen</span>
           </div>
           <Button
             variant="secondary"
             size="sm"
             onClick={onRetry}
-            className="bg-white/10 hover:bg-white/20 text-white border-0 text-xs"
+            className="bg-white/15 hover:bg-white/25 text-white border-0 text-xs"
           >
             Erneut üben
           </Button>
         </div>
         {score !== null && (
-          <p className="text-slate-300 text-xs">
+          <p className="text-ocean-blue-100 text-xs">
             Ihre Punktzahl war <span className="text-white font-bold">{score}%</span>
           </p>
         )}
       </div>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation - Ocean Theme */}
       <div className="flex border-b border-slate-200 flex-shrink-0">
         {/* Collapse Button */}
         <button
@@ -130,28 +123,28 @@ const SessionSidebar = ({
           <PanelRightClose className="w-4 h-4" />
         </button>
 
-        {/* Coaching Tab - Shows Gemini content feedback */}
+        {/* Coaching Tab */}
         <button
           onClick={() => setActiveTab('coaching')}
           className={cn(
-            "flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2",
+            'flex-1 px-4 py-3 text-sm font-medium transition-all flex items-center justify-center gap-2',
             activeTab === 'coaching'
-              ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/50"
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              ? 'text-ocean-blue-700 border-b-2 border-ocean-blue-600 bg-ocean-blue-50'
+              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           )}
         >
           <MessageSquare className="w-4 h-4" />
           Coaching
         </button>
 
-        {/* Analysen Tab - Shows audio analysis */}
+        {/* Analysen Tab */}
         <button
           onClick={() => setActiveTab('analysen')}
           className={cn(
-            "flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2",
+            'flex-1 px-4 py-3 text-sm font-medium transition-all flex items-center justify-center gap-2',
             activeTab === 'analysen'
-              ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/50"
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              ? 'text-ocean-teal-700 border-b-2 border-ocean-teal-600 bg-ocean-teal-50'
+              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           )}
         >
           <BarChart3 className="w-4 h-4" />
@@ -163,7 +156,7 @@ const SessionSidebar = ({
       <div className="px-4 py-2 border-b border-slate-100 flex-shrink-0">
         <button
           onClick={handleCopyFeedback}
-          className="flex items-center gap-2 text-xs text-slate-500 hover:text-blue-600 transition-colors ml-auto"
+          className="flex items-center gap-2 text-xs text-slate-500 hover:text-ocean-blue-600 transition-colors ml-auto"
         >
           {copiedFeedback ? (
             <>
@@ -191,11 +184,7 @@ const SessionSidebar = ({
               transition={{ duration: 0.2 }}
               className="p-4"
             >
-              {/* Coaching Content - Shows Gemini feedback_json */}
-              <StructuredFeedbackDisplay
-                feedback={feedback}
-                isLoading={false}
-              />
+              <StructuredFeedbackDisplay feedback={feedback} isLoading={false} />
             </motion.div>
           )}
 
@@ -208,7 +197,6 @@ const SessionSidebar = ({
               transition={{ duration: 0.2 }}
               className="p-4"
             >
-              {/* Audio Analysis Content - Shows audio_analysis_json */}
               <AudioAnalysisDisplay
                 audioAnalysis={audioAnalysis}
                 isLoading={false}
@@ -226,7 +214,7 @@ const SessionSidebar = ({
             variant="ghost"
             size="sm"
             onClick={onRetry}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            className="text-ocean-blue-600 hover:text-ocean-blue-700 hover:bg-ocean-blue-50"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Nochmal üben
