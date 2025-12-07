@@ -10,7 +10,6 @@ import {
   MessageSquare,
   Loader2,
   AlertCircle,
-  ArrowLeft,
   Play,
   Star,
   TrendingUp,
@@ -177,10 +176,10 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
 
   if (isLoading && sessions.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Gesprächshistorie wird geladen...</p>
+          <Loader2 className="w-12 h-12 text-ocean-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Sessions werden geladen...</p>
         </div>
       </div>
     );
@@ -188,7 +187,7 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
 
   if (error && sessions.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-900 mb-2">Fehler beim Laden</h2>
@@ -200,7 +199,7 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       {/* Header */}
       <div className="max-w-5xl mx-auto mb-8">
         <motion.div
@@ -208,21 +207,15 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Back button */}
-          <Button variant="ghost" onClick={onBack} className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Zurück zum Dashboard
-          </Button>
-
           {/* Title */}
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ocean-blue-600 to-ocean-teal-500 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ocean-blue-600 to-ocean-teal-500 flex items-center justify-center shadow-md">
               <History className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Gesprächshistorie</h1>
+              <h1 className="text-3xl font-bold text-slate-900">Meine Sessions</h1>
               <p className="text-slate-600">
-                {pagination.total} {pagination.total === 1 ? 'Gespräch' : 'Gespräche'} gespeichert
+                {pagination.total} {pagination.total === 1 ? 'Übung' : 'Übungen'} gespeichert
               </p>
             </div>
           </div>
@@ -238,7 +231,7 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
                   setScenarioFilter(e.target.value);
                   setPagination((prev) => ({ ...prev, offset: 0 }));
                 }}
-                className="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="h-11 px-4 py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-900 shadow-sm cursor-pointer hover:border-slate-300 focus:outline-none focus:border-ocean-blue-400 focus:ring-2 focus:ring-ocean-blue-100 transition-all duration-200"
               >
                 <option value="all">Alle Szenarien</option>
                 {scenarios.map((scenario) => (
@@ -313,7 +306,7 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start gap-3 mb-2">
                           {/* Scenario icon */}
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean-blue-500 to-ocean-teal-400 flex items-center justify-center flex-shrink-0">
                             <MessageSquare className="w-5 h-5 text-white" />
                           </div>
                           <div className="min-w-0">
@@ -355,7 +348,7 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
                         )}
 
                         {/* View button */}
-                        <div className="flex items-center gap-1 text-blue-600 font-semibold">
+                        <div className="flex items-center gap-1 text-ocean-blue-600 font-semibold">
                           <span>Analyse</span>
                           <TrendingUp className="w-4 h-4" />
                         </div>

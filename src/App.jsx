@@ -3,6 +3,7 @@ import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplaySession from './components/RoleplaySession';
 import SessionHistory from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
+import { SidebarLayout } from './components/ui/sidebar';
 
 console.log('📦 [APP] App.jsx module loaded');
 
@@ -26,6 +27,21 @@ function App() {
 
   // Session history state
   const [selectedSession, setSelectedSession] = useState(null);
+
+  // ===== NAVIGATION HANDLER =====
+  const handleSidebarNavigate = (viewId) => {
+    console.log('🧭 [APP] Sidebar navigation to:', viewId);
+    switch (viewId) {
+      case 'dashboard':
+        setCurrentView(VIEWS.DASHBOARD);
+        break;
+      case 'history':
+        setCurrentView(VIEWS.HISTORY);
+        break;
+      default:
+        setCurrentView(VIEWS.DASHBOARD);
+    }
+  };
 
   // ===== ROLEPLAY HANDLERS =====
   const handleSelectScenario = (scenario, variables = {}) => {
@@ -74,43 +90,62 @@ function App() {
     setCurrentView(VIEWS.HISTORY);
   };
 
-  // ===== RENDERING =====
-  switch (currentView) {
-    case VIEWS.ROLEPLAY:
-      return (
-        <RoleplaySession
-          scenario={selectedScenario}
-          variables={roleplayVariables}
-          onEnd={handleEndRoleplay}
-          onNavigateToSession={handleNavigateToSession}
-        />
-      );
+  // ===== CONTENT RENDERING =====
+  const renderContent = () => {
+    switch (currentView) {
+      case VIEWS.ROLEPLAY:
+        return (
+          <RoleplaySession
+            scenario={selectedScenario}
+            variables={roleplayVariables}
+            onEnd={handleEndRoleplay}
+            onNavigateToSession={handleNavigateToSession}
+          />
+        );
 
-    case VIEWS.HISTORY:
-      return (
-        <SessionHistory
-          onBack={handleCloseHistory}
-          onSelectSession={handleSelectSession}
-        />
-      );
+      case VIEWS.HISTORY:
+        return (
+          <SessionHistory
+            onBack={handleCloseHistory}
+            onSelectSession={handleSelectSession}
+          />
+        );
 
-    case VIEWS.SESSION_DETAIL:
-      return (
-        <SessionDetailView
-          session={selectedSession}
-          onBack={handleCloseSessionDetail}
-        />
-      );
+      case VIEWS.SESSION_DETAIL:
+        return (
+          <SessionDetailView
+            session={selectedSession}
+            onBack={handleCloseSessionDetail}
+          />
+        );
 
-    case VIEWS.DASHBOARD:
-    default:
-      return (
-        <RoleplayDashboard
-          onSelectScenario={handleSelectScenario}
-          onOpenHistory={handleOpenHistory}
-        />
-      );
+      case VIEWS.DASHBOARD:
+      default:
+        return (
+          <RoleplayDashboard
+            onSelectScenario={handleSelectScenario}
+            onOpenHistory={handleOpenHistory}
+          />
+        );
+    }
+  };
+
+  // Full-screen views (no sidebar)
+  const isFullScreenView = currentView === VIEWS.ROLEPLAY;
+
+  if (isFullScreenView) {
+    return renderContent();
   }
+
+  // Views with sidebar
+  return (
+    <SidebarLayout
+      activeView={currentView}
+      onNavigate={handleSidebarNavigate}
+    >
+      {renderContent()}
+    </SidebarLayout>
+  );
 }
 
 export default App;
