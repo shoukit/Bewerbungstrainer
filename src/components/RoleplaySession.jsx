@@ -528,7 +528,8 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              style={{ minWidth: '280px' }}
+              style={{ minWidth: '280px', maxHeight: 'calc(100vh - 120px)' }}
+              className="sticky top-4 self-start"
             >
               <CoachingPanel hints={scenario.coaching_hints} />
             </motion.div>
@@ -719,11 +720,12 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              style={{ minWidth: '280px' }}
+              style={{ minWidth: '280px', maxHeight: 'calc(100vh - 120px)' }}
+              className="sticky top-4 self-start"
             >
-              <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+              <div className="h-full max-h-[calc(100vh-120px)] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
                 {/* Transcript Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
+                <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-2 text-white">
                     <MessageSquare className="w-4 h-4" />
                     <h3 className="font-bold text-sm">Live Transkript</h3>
@@ -732,7 +734,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                 </div>
 
                 {/* Transcript Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
                   {transcript.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center text-slate-500">
