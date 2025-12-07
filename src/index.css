@@ -134,3 +134,75 @@
 #bewerbungstrainer-app input {
   @apply transition-colors;
 }
+
+/* =============================================================================
+   COMPONENT CLASSES
+   Reusable patterns extracted from audio-analysis and session-detail components
+   ============================================================================= */
+
+@layer components {
+  /* Interactive button with scale effect */
+  .interactive-scale {
+    @apply transition-all duration-150 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  /* Card sections with consistent spacing */
+  .analysis-section {
+    @apply space-y-4;
+  }
+
+  /* Icon sizes - standardized across components */
+  .icon-xs {
+    @apply w-3 h-3;
+  }
+  .icon-sm {
+    @apply w-4 h-4;
+  }
+  .icon-md {
+    @apply w-5 h-5;
+  }
+  .icon-lg {
+    @apply w-6 h-6;
+  }
+
+  /* Text hierarchy */
+  .text-label {
+    @apply text-xs text-slate-500;
+  }
+  .text-body {
+    @apply text-sm text-slate-600 leading-relaxed;
+  }
+  .text-body-muted {
+    @apply text-xs text-slate-500 leading-relaxed;
+  }
+
+  /* Interactive list item (for clickable timestamps, filler words, etc.) */
+  .interactive-list-item {
+    @apply flex items-center gap-2 p-2 rounded-lg cursor-pointer
+           bg-white border border-slate-200
+           hover:bg-blue-50 hover:border-blue-300
+           transition-all duration-150;
+  }
+
+  /* Positive/Negative/Warning state backgrounds */
+  .state-positive {
+    @apply bg-green-50 border border-green-200 hover:bg-green-100;
+  }
+  .state-negative {
+    @apply bg-red-50 border border-red-200 hover:bg-red-100;
+  }
+  .state-warning {
+    @apply bg-amber-50 border border-amber-200 hover:bg-amber-100;
+  }
+  .state-info {
+    @apply bg-blue-50 border border-blue-200 hover:bg-blue-100;
+  }
+
+  /* Audio player progress bar */
+  .progress-bar {
+    @apply w-full h-2 bg-slate-200 rounded-full overflow-hidden cursor-pointer;
+  }
+  .progress-fill {
+    @apply h-full bg-gradient-to-r from-blue-500 to-teal-500 transition-all duration-100;
+  }
+}

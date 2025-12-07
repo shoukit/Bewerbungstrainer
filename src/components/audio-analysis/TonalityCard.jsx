@@ -8,7 +8,9 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Music2, CheckCircle2, AlertTriangle, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TONALITY_CONFIG } from '@/config/constants';
+import { TONALITY_CONFIG, INTERACTIVE_STATES } from '@/config/constants';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge, TimestampBadge } from '@/components/ui/badge';
 
 export function TonalityCard({ rating, highlights, feedback, onJumpToTimestamp }) {
   const config = TONALITY_CONFIG[rating] || TONALITY_CONFIG.natürlich;
@@ -21,7 +23,7 @@ export function TonalityCard({ rating, highlights, feedback, onJumpToTimestamp }
 
     for (let i = 0; i < 30; i++) {
       // Use deterministic "random" based on index to avoid re-renders
-      const pseudoRandom = Math.sin(i * 12.9898) * 43758.5453 % 1;
+      const pseudoRandom = ((Math.sin(i * 12.9898) * 43758.5453) % 1);
       const height = baseHeight + Math.sin(i * 0.5) * variance + pseudoRandom * (variance / 2);
       bars.push(Math.max(10, Math.min(100, height)));
     }
@@ -29,16 +31,15 @@ export function TonalityCard({ rating, highlights, feedback, onJumpToTimestamp }
   }, [rating, config.waveformVariance]);
 
   return (
-    <div className="p-4 bg-white border border-slate-200 rounded-xl">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Music2 className="w-4 h-4 text-purple-500" />
-          <span className="font-semibold text-slate-800 text-sm">Betonung & Melodie</span>
-        </div>
-        <span className={cn('text-xs font-medium px-2 py-1 rounded-full', config.bg, config.color)}>
+    <Card>
+      <CardHeader>
+        <CardTitle icon={Music2} iconColor="text-purple-500">
+          Betonung & Melodie
+        </CardTitle>
+        <Badge variant="default" className={cn(config.bg, config.color)}>
           {config.icon} {config.label}
-        </span>
-      </div>
+        </Badge>
+      </CardHeader>
 
       {/* Waveform visualization */}
       <div className="flex items-center justify-center gap-0.5 h-12 mb-3">
@@ -56,42 +57,36 @@ export function TonalityCard({ rating, highlights, feedback, onJumpToTimestamp }
       {/* Highlights - clickable timestamps */}
       {highlights && highlights.length > 0 && (
         <div className="space-y-1.5 mb-3">
-          {highlights.map((h, idx) => (
-            <button
-              key={idx}
-              onClick={() => onJumpToTimestamp?.(h.timestamp)}
-              className={cn(
-                'w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-all',
-                'hover:scale-[1.02] active:scale-[0.98]',
-                h.type === 'positive'
-                  ? 'bg-green-50 hover:bg-green-100 border border-green-200'
-                  : 'bg-red-50 hover:bg-red-100 border border-red-200'
-              )}
-            >
-              <span
+          {highlights.map((h, idx) => {
+            const stateStyle = h.type === 'positive' ? INTERACTIVE_STATES.positive : INTERACTIVE_STATES.negative;
+            return (
+              <button
+                key={idx}
+                onClick={() => onJumpToTimestamp?.(h.timestamp)}
                 className={cn(
-                  'font-mono text-xs px-1.5 py-0.5 rounded',
-                  h.type === 'positive' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                  'w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left',
+                  'interactive-scale',
+                  stateStyle.all
                 )}
               >
-                {h.timestamp}
-              </span>
-              {h.type === 'positive' ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-              ) : (
-                <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
-              )}
-              <span className="text-xs text-slate-700 flex-1 truncate">{h.note}</span>
-              <Play className="w-3 h-3 text-slate-400" />
-            </button>
-          ))}
+                <TimestampBadge variant={h.type === 'positive' ? 'positive' : 'negative'}>
+                  {h.timestamp}
+                </TimestampBadge>
+                {h.type === 'positive' ? (
+                  <CheckCircle2 className="icon-sm text-green-500 flex-shrink-0" />
+                ) : (
+                  <AlertTriangle className="icon-sm text-red-500 flex-shrink-0" />
+                )}
+                <span className="text-xs text-slate-700 flex-1 truncate">{h.note}</span>
+                <Play className="icon-xs text-slate-400" />
+              </button>
+            );
+          })}
         </div>
       )}
 
-      {feedback && (
-        <p className="text-xs text-slate-600 leading-relaxed">{feedback}</p>
-      )}
-    </div>
+      {feedback && <p className="text-body-muted">{feedback}</p>}
+    </Card>
   );
 }
 

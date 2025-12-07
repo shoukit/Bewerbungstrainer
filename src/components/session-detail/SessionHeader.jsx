@@ -7,6 +7,7 @@
 import React from 'react';
 import { ArrowLeft, Calendar, Clock, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * Format seconds to M:SS
@@ -41,7 +42,7 @@ export function SessionHeader({ session, scenario, feedback, onBack }) {
       <div className="max-w-[1600px] mx-auto px-4 py-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={onBack} size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="icon-sm mr-2" />
             Zurück
           </Button>
           <div className="flex-1 min-w-0">
@@ -50,18 +51,18 @@ export function SessionHeader({ session, scenario, feedback, onBack }) {
             </h1>
             <div className="flex items-center gap-4 text-sm text-slate-500">
               <span className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
+                <Calendar className="icon-sm" />
                 {formatDate(session?.created_at)}
               </span>
               <span className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
+                <Clock className="icon-sm" />
                 {formatDuration(session?.duration)}
               </span>
               {overallRating && (
-                <span className="flex items-center gap-1 text-yellow-600">
-                  <Star className="w-4 h-4 fill-yellow-400" />
+                <Badge variant="warning" className="flex items-center gap-1">
+                  <Star className="icon-sm fill-yellow-400" />
                   {overallRating}/10
-                </span>
+                </Badge>
               )}
             </div>
           </div>

@@ -229,6 +229,84 @@ export const TRANSCRIPT_CONFIG = {
 };
 
 // =============================================================================
+// INTERACTIVE STATE STYLES
+// =============================================================================
+
+/**
+ * Interactive state styles for buttons and clickable elements
+ * Use with cn() to conditionally apply styles
+ */
+export const INTERACTIVE_STATES = {
+  positive: {
+    base: 'bg-green-50 border border-green-200',
+    hover: 'hover:bg-green-100',
+    text: 'text-green-700',
+    icon: 'text-green-500',
+    // Combined for convenience
+    all: 'bg-green-50 border border-green-200 hover:bg-green-100',
+  },
+  negative: {
+    base: 'bg-red-50 border border-red-200',
+    hover: 'hover:bg-red-100',
+    text: 'text-red-700',
+    icon: 'text-red-500',
+    all: 'bg-red-50 border border-red-200 hover:bg-red-100',
+  },
+  warning: {
+    base: 'bg-amber-50 border border-amber-200',
+    hover: 'hover:bg-amber-100',
+    text: 'text-amber-700',
+    icon: 'text-amber-500',
+    all: 'bg-amber-50 border border-amber-200 hover:bg-amber-100',
+  },
+  info: {
+    base: 'bg-blue-50 border border-blue-200',
+    hover: 'hover:bg-blue-100',
+    text: 'text-blue-700',
+    icon: 'text-blue-500',
+    all: 'bg-blue-50 border border-blue-200 hover:bg-blue-100',
+  },
+  neutral: {
+    base: 'bg-white border border-slate-200',
+    hover: 'hover:bg-blue-50 hover:border-blue-300',
+    text: 'text-slate-700',
+    icon: 'text-slate-500',
+    all: 'bg-white border border-slate-200 hover:bg-blue-50 hover:border-blue-300',
+  },
+};
+
+/**
+ * Get interactive state styles by type
+ * @param {string} type - 'positive' | 'negative' | 'warning' | 'info' | 'neutral'
+ * @returns {object} - Style object
+ */
+export function getInteractiveState(type) {
+  return INTERACTIVE_STATES[type] || INTERACTIVE_STATES.neutral;
+}
+
+// =============================================================================
+// SPEAKER STYLES (for transcript)
+// =============================================================================
+
+/**
+ * Speaker-specific styles for transcript display
+ */
+export const SPEAKER_STYLES = {
+  agent: {
+    bg: 'bg-slate-50',
+    border: 'border-l-slate-400',
+    label: 'Interviewer',
+    labelColor: 'text-slate-600',
+  },
+  user: {
+    bg: 'bg-blue-50',
+    border: 'border-l-blue-400',
+    label: 'Bewerber',
+    labelColor: 'text-blue-600',
+  },
+};
+
+// =============================================================================
 // ERROR MESSAGES
 // =============================================================================
 
@@ -260,5 +338,8 @@ export default {
   UI_TIMING,
   AUDIO_CONFIG,
   TRANSCRIPT_CONFIG,
+  INTERACTIVE_STATES,
+  getInteractiveState,
+  SPEAKER_STYLES,
   ERROR_MESSAGES,
 };

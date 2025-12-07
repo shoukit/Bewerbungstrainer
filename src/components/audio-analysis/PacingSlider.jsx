@@ -9,24 +9,25 @@ import { motion } from 'framer-motion';
 import { Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PACING_CONFIG } from '@/config/constants';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export function PacingSlider({ rating, wpm, feedback }) {
   const config = PACING_CONFIG[rating] || PACING_CONFIG.optimal;
   const { position, isOptimal } = config;
 
   return (
-    <div className="p-4 bg-white border border-slate-200 rounded-xl">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Timer className="w-4 h-4 text-blue-500" />
-          <span className="font-semibold text-slate-800 text-sm">Sprechtempo</span>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle icon={Timer} iconColor="text-blue-500">
+          Sprechtempo
+        </CardTitle>
         {wpm && (
-          <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600">
+          <Badge variant="default" className="font-mono">
             {wpm}
-          </span>
+          </Badge>
         )}
-      </div>
+      </CardHeader>
 
       {/* Slider track */}
       <div className="relative h-8 mb-3">
@@ -54,12 +55,8 @@ export function PacingSlider({ rating, wpm, feedback }) {
         />
       </div>
 
-      {feedback && (
-        <p className="text-xs text-slate-600 mt-4 leading-relaxed">
-          {feedback}
-        </p>
-      )}
-    </div>
+      {feedback && <p className="text-body-muted mt-4">{feedback}</p>}
+    </Card>
   );
 }
 

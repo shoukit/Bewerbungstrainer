@@ -6,9 +6,12 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, ChevronRight, CheckCircle2, Lightbulb, Play } from 'lucide-react';
+import { MessageSquare, ChevronRight, CheckCircle2, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SCORE_THRESHOLDS, FILLER_WORD_THRESHOLDS } from '@/config/constants';
+import { SCORE_THRESHOLDS, FILLER_WORD_THRESHOLDS, INTERACTIVE_STATES } from '@/config/constants';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { FeedbackTip } from '@/components/ui/feedback-tip';
 
 /**
  * Get color class for filler word count
@@ -36,23 +39,18 @@ export function FillerWordCard({ fillerWordAnalysis, score, feedback, onJumpToTi
   const totalCount = fillerWordAnalysis?.reduce((sum, item) => sum + (item.count || 0), 0) || 0;
 
   return (
-    <div className="p-4 bg-white border border-slate-200 rounded-xl">
-      <div className="flex items-center justify-between mb-3">
+    <Card>
+      <CardHeader>
+        <CardTitle icon={MessageSquare} iconColor="text-orange-500">
+          Füllwörter
+        </CardTitle>
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-orange-500" />
-          <span className="font-semibold text-slate-800 text-sm">Füllwörter</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">
-            {totalCount}x gesamt
-          </span>
+          <Badge variant="default">{totalCount}x gesamt</Badge>
           {score !== undefined && (
-            <span className={cn('text-sm font-bold', getScoreColor(score))}>
-              {score}/100
-            </span>
+            <span className={cn('text-sm font-bold', getScoreColor(score))}>{score}/100</span>
           )}
         </div>
-      </div>
+      </CardHeader>
 
       {/* Filler word list */}
       {fillerWordAnalysis && fillerWordAnalysis.length > 0 ? (
@@ -69,7 +67,7 @@ export function FillerWordCard({ fillerWordAnalysis, score, feedback, onJumpToTi
                     animate={{ rotate: expandedWord === idx ? 90 : 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <ChevronRight className="icon-sm text-slate-400" />
                   </motion.div>
                   <span className="font-medium text-slate-700 text-sm">"{item.word}"</span>
                 </div>
@@ -89,7 +87,7 @@ export function FillerWordCard({ fillerWordAnalysis, score, feedback, onJumpToTi
                     className="overflow-hidden"
                   >
                     <div className="px-3 pb-3 pt-1 bg-slate-50 border-t border-slate-100">
-                      <p className="text-xs text-slate-500 mb-2">Klicke zum Anhören:</p>
+                      <p className="text-label mb-2">Klicke zum Anhören:</p>
                       <div className="flex flex-wrap gap-1.5">
                         {item.examples.map((example, exIdx) => (
                           <button
@@ -98,7 +96,10 @@ export function FillerWordCard({ fillerWordAnalysis, score, feedback, onJumpToTi
                               e.stopPropagation();
                               onJumpToTimestamp?.(example.timestamp);
                             }}
-                            className="inline-flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-all group"
+                            className={cn(
+                              'inline-flex items-center gap-1.5 px-2 py-1 rounded-md transition-all group',
+                              INTERACTIVE_STATES.neutral.all
+                            )}
                           >
                             <span className="font-mono text-xs text-blue-600 group-hover:text-blue-700">
                               {example.timestamp}
@@ -108,7 +109,7 @@ export function FillerWordCard({ fillerWordAnalysis, score, feedback, onJumpToTi
                                 ({example.context})
                               </span>
                             )}
-                            <Play className="w-3 h-3 text-blue-400 group-hover:text-blue-600" />
+                            <Play className="icon-xs text-blue-400 group-hover:text-blue-600" />
                           </button>
                         ))}
                       </div>
@@ -121,21 +122,14 @@ export function FillerWordCard({ fillerWordAnalysis, score, feedback, onJumpToTi
         </div>
       ) : (
         <div className="flex items-center gap-2 text-green-600 py-2">
-          <CheckCircle2 className="w-4 h-4" />
+          <CheckCircle2 className="icon-sm" />
           <span className="text-sm">Keine Füllwörter erkannt!</span>
         </div>
       )}
 
       {/* Tip */}
-      {feedback && (
-        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-start gap-2">
-            <Lightbulb className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-blue-800 leading-relaxed">{feedback}</p>
-          </div>
-        </div>
-      )}
-    </div>
+      {feedback && <FeedbackTip>{feedback}</FeedbackTip>}
+    </Card>
   );
 }
 
