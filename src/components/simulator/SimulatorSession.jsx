@@ -4,13 +4,19 @@ import {
   MicOff,
   Square,
   ChevronRight,
+  ChevronDown,
   RotateCcw,
   Clock,
   Loader2,
   AlertCircle,
   CheckCircle,
   X,
-  Volume2
+  Volume2,
+  Lightbulb,
+  Play,
+  Target,
+  MessageSquare,
+  ArrowLeft
 } from 'lucide-react';
 import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
@@ -442,12 +448,290 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled }) => {
 };
 
 /**
+ * Pre-Session View Component
+ * Shows preparation tips before starting the interview
+ */
+const PreSessionView = ({ scenario, variables, questions, onStart, onBack }) => {
+  // Tips for interview preparation
+  const generalTips = [
+    {
+      icon: Target,
+      title: 'Strukturiert antworten',
+      description: 'Nutze die STAR-Methode (Situation, Task, Action, Result) für Beispiele aus deiner Erfahrung.',
+    },
+    {
+      icon: Clock,
+      title: 'Zeit im Blick behalten',
+      description: `Du hast ${Math.round((scenario.time_limit_per_question || 120) / 60)} Minuten pro Frage. Antworte präzise, aber ausführlich genug.`,
+    },
+    {
+      icon: Mic,
+      title: 'Klar und deutlich sprechen',
+      description: 'Sprich in normalem Tempo. Kurze Pausen zum Nachdenken sind völlig in Ordnung.',
+    },
+    {
+      icon: MessageSquare,
+      title: 'Konkrete Beispiele nennen',
+      description: 'Belege deine Aussagen mit konkreten Beispielen und Zahlen wo möglich.',
+    },
+  ];
+
+  // Context-specific info from variables
+  const contextInfo = variables ? Object.entries(variables)
+    .filter(([key, value]) => value && value.trim && value.trim() !== '')
+    .map(([key, value]) => ({
+      label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      value: value
+    })) : [];
+
+  return (
+    <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <button
+          onClick={onBack}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 12px',
+            marginBottom: '16px',
+            border: 'none',
+            background: 'transparent',
+            color: COLORS.slate[600],
+            fontSize: '14px',
+            cursor: 'pointer',
+            borderRadius: '8px',
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
+          onMouseLeave={(e) => e.target.style.background = 'transparent'}
+        >
+          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          Zurück
+        </button>
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+        }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '16px',
+            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Lightbulb style={{ width: '32px', height: '32px', color: 'white' }} />
+          </div>
+          <div>
+            <h1 style={{
+              fontSize: '28px',
+              fontWeight: 700,
+              color: COLORS.slate[900],
+              margin: 0,
+            }}>
+              Vorbereitung
+            </h1>
+            <p style={{
+              fontSize: '16px',
+              color: COLORS.slate[600],
+              margin: '4px 0 0 0',
+            }}>
+              {scenario.title} • {questions.length} Fragen
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Context Info */}
+      {contextInfo.length > 0 && (
+        <div style={{
+          padding: '20px',
+          borderRadius: '16px',
+          backgroundColor: COLORS.blue[500] + '10',
+          marginBottom: '24px',
+        }}>
+          <h3 style={{
+            fontSize: '14px',
+            fontWeight: 600,
+            color: COLORS.blue[600],
+            margin: '0 0 12px 0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}>
+            Dein Profil
+          </h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+            {contextInfo.map((item, index) => (
+              <div key={index}>
+                <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>
+                  {item.label}
+                </span>
+                <span style={{ fontSize: '15px', fontWeight: 500, color: COLORS.slate[800] }}>
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tips Section */}
+      <div style={{
+        padding: '24px',
+        borderRadius: '16px',
+        backgroundColor: 'white',
+        border: `1px solid ${COLORS.slate[200]}`,
+        marginBottom: '24px',
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          marginBottom: '20px',
+        }}>
+          <Lightbulb style={{ width: '22px', height: '22px', color: COLORS.amber[500] }} />
+          <h2 style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            color: COLORS.slate[900],
+            margin: 0,
+          }}>
+            Tipps für dein Gespräch
+          </h2>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {generalTips.map((tip, index) => (
+            <div
+              key={index}
+              style={{
+                display: 'flex',
+                gap: '16px',
+                padding: '16px',
+                borderRadius: '12px',
+                backgroundColor: COLORS.slate[50],
+              }}
+            >
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                backgroundColor: COLORS.blue[500] + '15',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <tip.icon style={{ width: '22px', height: '22px', color: COLORS.blue[600] }} />
+              </div>
+              <div>
+                <h4 style={{
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  color: COLORS.slate[800],
+                  margin: '0 0 4px 0',
+                }}>
+                  {tip.title}
+                </h4>
+                <p style={{
+                  fontSize: '14px',
+                  color: COLORS.slate[600],
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}>
+                  {tip.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Session Info */}
+      <div style={{
+        padding: '16px 20px',
+        borderRadius: '12px',
+        backgroundColor: COLORS.slate[100],
+        marginBottom: '32px',
+        display: 'flex',
+        gap: '24px',
+        flexWrap: 'wrap',
+      }}>
+        <div>
+          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Fragen</span>
+          <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
+            {questions.length}
+          </span>
+        </div>
+        <div>
+          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Zeit pro Frage</span>
+          <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
+            {Math.round((scenario.time_limit_per_question || 120) / 60)} Min
+          </span>
+        </div>
+        <div>
+          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Wiederholen</span>
+          <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
+            {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
+          </span>
+        </div>
+        <div>
+          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Geschätzte Dauer</span>
+          <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
+            ~{Math.round((questions.length * (scenario.time_limit_per_question || 120)) / 60)} Min
+          </span>
+        </div>
+      </div>
+
+      {/* Start Button */}
+      <button
+        onClick={onStart}
+        style={{
+          width: '100%',
+          padding: '18px 32px',
+          borderRadius: '14px',
+          border: 'none',
+          background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+          color: 'white',
+          fontSize: '18px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          boxShadow: '0 4px 12px rgba(74, 158, 201, 0.3)',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.transform = 'translateY(-2px)';
+          e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.transform = 'none';
+          e.target.style.boxShadow = '0 4px 12px rgba(74, 158, 201, 0.3)';
+        }}
+      >
+        <Play style={{ width: '24px', height: '24px' }} />
+        Gespräch starten
+      </button>
+    </div>
+  );
+};
+
+/**
  * Simulator Session Component
  *
  * Main session interface with question display, audio recording,
  * and immediate feedback after each answer
  */
 const SimulatorSession = ({ session, questions, scenario, variables, onComplete, onExit }) => {
+  const [phase, setPhase] = useState('preparation'); // 'preparation' | 'interview'
   const [currentIndex, setCurrentIndex] = useState(session.current_question_index || 0);
   const [feedback, setFeedback] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -527,6 +811,23 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
       onExit();
     }
   };
+
+  const handleStartInterview = () => {
+    setPhase('interview');
+  };
+
+  // Show preparation view first
+  if (phase === 'preparation') {
+    return (
+      <PreSessionView
+        scenario={scenario}
+        variables={variables}
+        questions={questions}
+        onStart={handleStartInterview}
+        onBack={onExit}
+      />
+    );
+  }
 
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
