@@ -520,6 +520,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             display: isMobile ? 'flex' : 'grid',
             flexDirection: isMobile ? 'column' : undefined,
             gridTemplateColumns: isMobile ? undefined : 'minmax(280px, 320px) minmax(400px, 1fr) minmax(280px, 320px)',
+            alignItems: isMobile ? undefined : 'stretch',
           }}
         >
 
@@ -529,8 +530,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               style={{ minWidth: '280px' }}
+              className="relative"
             >
-              <CoachingPanel hints={scenario.coaching_hints} />
+              <div className="absolute inset-0">
+                <CoachingPanel hints={scenario.coaching_hints} />
+              </div>
             </motion.div>
           )}
 
@@ -720,8 +724,9 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               style={{ minWidth: '280px' }}
+              className="relative"
             >
-              <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+              <div className="absolute inset-0 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
                 {/* Transcript Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-2 text-white">
