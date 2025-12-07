@@ -268,6 +268,153 @@ class WordPressAPI {
             method: 'DELETE'
         });
     }
+
+    // ===== Skill Simulator API Methods =====
+
+    /**
+     * Get all simulator scenarios
+     */
+    async getSimulatorScenarios(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const endpoint = queryString ? `/simulator/scenarios?${queryString}` : '/simulator/scenarios';
+
+        return this.request(endpoint, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get specific simulator scenario
+     */
+    async getSimulatorScenario(scenarioId) {
+        return this.request(`/simulator/scenarios/${scenarioId}`, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Create simulator session
+     */
+    async createSimulatorSession(data) {
+        return this.request('/simulator/sessions', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Generate questions for simulator session
+     */
+    async generateSimulatorQuestions(sessionId) {
+        return this.request(`/simulator/sessions/${sessionId}/questions`, {
+            method: 'POST'
+        });
+    }
+
+    /**
+     * Submit answer with audio (using FormData)
+     */
+    async submitSimulatorAnswer(sessionId, audioBlob, questionIndex, questionText, questionCategory = null) {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'answer.webm');
+        formData.append('question_index', questionIndex);
+        formData.append('question_text', questionText);
+        if (questionCategory) {
+            formData.append('question_category', questionCategory);
+        }
+
+        const url = `${this.apiUrl}/simulator/sessions/${sessionId}/answer`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-WP-Nonce': this.nonce
+            },
+            credentials: 'same-origin',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return response.json();
+    }
+
+    /**
+     * Submit answer with base64 audio (alternative method)
+     */
+    async submitSimulatorAnswerBase64(sessionId, audioBase64, mimeType, questionIndex, questionText, questionCategory = null) {
+        return this.request(`/simulator/sessions/${sessionId}/answer`, {
+            method: 'POST',
+            body: JSON.stringify({
+                audio_base64: audioBase64,
+                audio_mime_type: mimeType,
+                question_index: questionIndex,
+                question_text: questionText,
+                question_category: questionCategory
+            })
+        });
+    }
+
+    /**
+     * Update simulator session
+     */
+    async updateSimulatorSession(sessionId, data) {
+        return this.request(`/simulator/sessions/${sessionId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Get simulator session
+     */
+    async getSimulatorSession(sessionId) {
+        return this.request(`/simulator/sessions/${sessionId}`, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get all simulator sessions for user
+     */
+    async getSimulatorSessions(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const endpoint = queryString ? `/simulator/sessions?${queryString}` : '/simulator/sessions';
+
+        return this.request(endpoint, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Delete simulator session
+     */
+    async deleteSimulatorSession(sessionId) {
+        return this.request(`/simulator/sessions/${sessionId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    /**
+     * Get simulator session answers
+     */
+    async getSimulatorSessionAnswers(sessionId) {
+        return this.request(`/simulator/sessions/${sessionId}/answers`, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Complete simulator session and get summary
+     */
+    async completeSimulatorSession(sessionId) {
+        return this.request(`/simulator/sessions/${sessionId}/complete`, {
+            method: 'POST'
+        });
+    }
 }
 
 // Export singleton instance

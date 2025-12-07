@@ -3,6 +3,7 @@ import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplaySession from './components/RoleplaySession';
 import SessionHistory from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
+import { SimulatorApp } from './components/simulator';
 import { SidebarLayout } from './components/ui/sidebar';
 
 console.log('📦 [APP] App.jsx module loaded');
@@ -11,6 +12,7 @@ console.log('📦 [APP] App.jsx module loaded');
 const VIEWS = {
   DASHBOARD: 'dashboard',
   ROLEPLAY: 'roleplay',
+  SIMULATOR: 'simulator',
   HISTORY: 'history',
   SESSION_DETAIL: 'session_detail',
 };
@@ -150,6 +152,9 @@ function App() {
       case 'dashboard':
         setCurrentView(VIEWS.DASHBOARD);
         break;
+      case 'simulator':
+        setCurrentView(VIEWS.SIMULATOR);
+        break;
       case 'history':
         setCurrentView(VIEWS.HISTORY);
         break;
@@ -217,6 +222,9 @@ function App() {
             onNavigateToSession={handleNavigateToSession}
           />
         );
+
+      case VIEWS.SIMULATOR:
+        return <SimulatorApp />;
 
       case VIEWS.HISTORY:
         return (

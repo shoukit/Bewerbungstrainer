@@ -7,6 +7,7 @@ import {
   History,
   GraduationCap,
   Sparkles,
+  Target,
 } from 'lucide-react';
 
 /**
@@ -46,6 +47,13 @@ const NAV_ITEMS = [
     shortLabel: 'Training',
     icon: MessageSquare,
     description: 'Live Rollenspiel-Dialoge üben',
+  },
+  {
+    id: 'simulator',
+    label: 'Skill Simulator',
+    shortLabel: 'Simulator',
+    icon: Target,
+    description: 'Frage-Antwort Training mit KI-Feedback',
   },
   {
     id: 'history',

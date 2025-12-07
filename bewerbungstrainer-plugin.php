@@ -65,6 +65,10 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
 
+        // Load Simulator classes
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-api.php';
+
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -92,6 +96,9 @@ class Bewerbungstrainer_Plugin {
     public function activate() {
         // Create database tables
         Bewerbungstrainer_Database::create_tables();
+
+        // Create simulator database tables
+        Bewerbungstrainer_Simulator_Database::create_tables();
 
         // Create upload directory for audio files
         $upload_dir = wp_upload_dir();
@@ -135,6 +142,20 @@ class Bewerbungstrainer_Plugin {
             wp_mkdir_p($pdfs_dir);
         }
 
+        // Create upload directory for simulator audio
+        $simulator_dir = $upload_dir['basedir'] . '/bewerbungstrainer/simulator';
+        if (!file_exists($simulator_dir)) {
+            wp_mkdir_p($simulator_dir);
+
+            // Add .htaccess for security
+            $htaccess_content = "Options -Indexes\n";
+            $htaccess_content .= "<FilesMatch '\.(webm|mp3|wav|ogg)$'>\n";
+            $htaccess_content .= "    Order Allow,Deny\n";
+            $htaccess_content .= "    Allow from all\n";
+            $htaccess_content .= "</FilesMatch>\n";
+            file_put_contents($simulator_dir . '/.htaccess', $htaccess_content);
+        }
+
         // Set default options
         add_option('bewerbungstrainer_version', BEWERBUNGSTRAINER_VERSION);
 
@@ -165,6 +186,10 @@ class Bewerbungstrainer_Plugin {
 
         // Initialize REST API
         Bewerbungstrainer_API::get_instance();
+
+        // Initialize Simulator
+        Bewerbungstrainer_Simulator_Database::get_instance();
+        Bewerbungstrainer_Simulator_API::get_instance();
 
         // Initialize audio handler
         Bewerbungstrainer_Audio_Handler::get_instance();
