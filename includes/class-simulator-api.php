@@ -889,13 +889,22 @@ Sei konstruktiv und motivierend. Verwende die "Du"-Form.';
 {$context}
 Generiere genau {$count} Interviewfragen.
 
-WICHTIG: Antworte NUR mit einem JSON-Array im folgenden Format:
+WICHTIG: Für JEDE Frage generiere auch 2-3 spezifische Tipps, die dem Bewerber helfen, diese konkrete Frage gut zu beantworten. Die Tipps sollen:
+- Konkret auf die jeweilige Frage zugeschnitten sein
+- Praktische Hinweise geben, was in der Antwort enthalten sein sollte
+- Beispielformulierungen oder Strukturvorschläge enthalten
+
+Antworte NUR mit einem JSON-Array im folgenden Format:
 [
   {
     \"index\": 0,
     \"question\": \"Die Interviewfrage\",
     \"category\": \"Kategorie (z.B. Einstieg, Motivation, Fachlich, Soft Skills)\",
-    \"estimated_answer_time\": 90
+    \"estimated_answer_time\": 90,
+    \"tips\": [
+      \"Tipp 1: Konkreter, hilfreicher Tipp für diese spezifische Frage\",
+      \"Tipp 2: Weiterer praktischer Hinweis mit Beispielformulierung\"
+    ]
   }
 ]
 
@@ -917,11 +926,19 @@ JSON Output:";
 
         return "Du bist ein professioneller Karriere-Coach und analysierst Audioantworten von Bewerbern.
 
+KRITISCH WICHTIG - TRANSKRIPTION:
+- Du MUSST das Audio EXAKT transkribieren - Wort für Wort was tatsächlich gesprochen wurde
+- ERFINDE NIEMALS Inhalte oder Antworten die nicht im Audio vorkommen
+- Wenn jemand nur \"Weiß ich nicht\" oder \"Keine Ahnung\" sagt, transkribiere GENAU DAS
+- Wenn das Audio unklar ist, schreibe \"[unverständlich]\" für unklare Teile
+- Eine kurze Antwort wie \"Ich weiß es nicht\" ist eine valide Transkription
+- HALLUZINIERE KEINE ausführlichen Antworten wenn der Sprecher das nicht gesagt hat
+
 AUFGABE:
-1. TRANSKRIBIERE die Audioantwort vollständig
-2. ANALYSIERE die Antwort inhaltlich bezüglich der gestellten Frage
+1. TRANSKRIBIERE die Audioantwort EXAKT wie gesprochen (keine Erfindungen!)
+2. ANALYSIERE die tatsächlich gegebene Antwort inhaltlich
 3. ANALYSIERE die Sprechweise (Füllwörter, Tempo, Klarheit)
-4. GEBE konstruktives Feedback
+4. GEBE konstruktives Feedback basierend auf dem was WIRKLICH gesagt wurde
 
 KONTEXT:
 - Szenario: {$scenario->title}
@@ -935,7 +952,7 @@ FRAGE DIE BEANTWORTET WURDE:
 WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
 
 {
-  \"transcript\": \"Vollständige Transkription der Audioantwort...\",
+  \"transcript\": \"EXAKTE Transkription was gesprochen wurde (z.B. 'Weiß ich grad nicht' wenn das gesagt wurde)\",
   \"feedback\": {
     \"summary\": \"Kurze Zusammenfassung der Antwortqualität (1-2 Sätze)\",
     \"strengths\": [

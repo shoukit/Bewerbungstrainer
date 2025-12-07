@@ -34,10 +34,12 @@ const COLORS = {
 };
 
 /**
- * Progress Bar Component
+ * Progress Bar with Navigation Component
  */
-const ProgressBar = ({ current, total }) => {
+const ProgressBarWithNav = ({ current, total, onPrev, onNext, answeredQuestions }) => {
   const progress = (current / total) * 100;
+  const isFirst = current === 1;
+  const isLast = current === total;
 
   return (
     <div style={{ marginBottom: '24px' }}>
@@ -59,6 +61,7 @@ const ProgressBar = ({ current, total }) => {
         backgroundColor: COLORS.slate[200],
         borderRadius: '4px',
         overflow: 'hidden',
+        marginBottom: '12px',
       }}>
         <div
           style={{
@@ -70,6 +73,173 @@ const ProgressBar = ({ current, total }) => {
           }}
         />
       </div>
+      {/* Navigation Buttons */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '12px',
+      }}>
+        <button
+          onClick={onPrev}
+          disabled={isFirst}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            border: `1px solid ${isFirst ? COLORS.slate[200] : COLORS.slate[300]}`,
+            backgroundColor: 'white',
+            color: isFirst ? COLORS.slate[400] : COLORS.slate[700],
+            fontSize: '14px',
+            fontWeight: 500,
+            cursor: isFirst ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <ArrowLeft style={{ width: '16px', height: '16px' }} />
+          Vorherige
+        </button>
+
+        {/* Question dots */}
+        <div style={{
+          display: 'flex',
+          gap: '6px',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          flex: 1,
+        }}>
+          {Array.from({ length: total }, (_, i) => {
+            const isAnswered = answeredQuestions.includes(i);
+            const isCurrent = i === current - 1;
+            return (
+              <div
+                key={i}
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: isCurrent
+                    ? COLORS.blue[500]
+                    : isAnswered
+                      ? COLORS.green[500]
+                      : COLORS.slate[300],
+                  transition: 'all 0.2s',
+                }}
+                title={`Frage ${i + 1}${isAnswered ? ' (beantwortet)' : ''}`}
+              />
+            );
+          })}
+        </div>
+
+        <button
+          onClick={onNext}
+          disabled={isLast}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            border: `1px solid ${isLast ? COLORS.slate[200] : COLORS.slate[300]}`,
+            backgroundColor: 'white',
+            color: isLast ? COLORS.slate[400] : COLORS.slate[700],
+            fontSize: '14px',
+            fontWeight: 500,
+            cursor: isLast ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          Nächste
+          <ChevronRight style={{ width: '16px', height: '16px' }} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Question Tips Accordion Component
+ */
+const QuestionTips = ({ tips }) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  if (!tips || tips.length === 0) return null;
+
+  return (
+    <div style={{
+      marginBottom: '24px',
+      borderRadius: '16px',
+      backgroundColor: 'white',
+      border: `1px solid ${COLORS.slate[200]}`,
+      overflow: 'hidden',
+    }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 20px',
+          border: 'none',
+          backgroundColor: 'transparent',
+          cursor: 'pointer',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Lightbulb style={{ width: '20px', height: '20px', color: COLORS.amber[500] }} />
+          <span style={{ fontSize: '15px', fontWeight: 600, color: COLORS.slate[800] }}>
+            Tipps
+          </span>
+        </div>
+        <ChevronDown style={{
+          width: '20px',
+          height: '20px',
+          color: COLORS.slate[500],
+          transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
+          transition: 'transform 0.2s',
+        }} />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          padding: '0 20px 20px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+        }}>
+          {tips.map((tip, index) => (
+            <div
+              key={index}
+              style={{
+                display: 'flex',
+                gap: '12px',
+                padding: '14px 16px',
+                borderRadius: '12px',
+                backgroundColor: COLORS.amber[100] + '50',
+              }}
+            >
+              <Lightbulb style={{
+                width: '18px',
+                height: '18px',
+                color: COLORS.amber[500],
+                flexShrink: 0,
+                marginTop: '2px',
+              }} />
+              <p style={{
+                fontSize: '14px',
+                color: COLORS.slate[700],
+                margin: 0,
+                lineHeight: 1.5,
+              }}>
+                {tip.replace(/^Tipp \d+:\s*/i, '')}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -486,30 +656,67 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack }) => 
 
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-      {/* Header */}
+      {/* Header with Start Button */}
       <div style={{ marginBottom: '32px' }}>
-        <button
-          onClick={onBack}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            marginBottom: '16px',
-            border: 'none',
-            background: 'transparent',
-            color: COLORS.slate[600],
-            fontSize: '14px',
-            cursor: 'pointer',
-            borderRadius: '8px',
-            transition: 'background 0.2s',
-          }}
-          onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
-          onMouseLeave={(e) => e.target.style.background = 'transparent'}
-        >
-          <ArrowLeft style={{ width: '18px', height: '18px' }} />
-          Zurück
-        </button>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '24px',
+        }}>
+          <button
+            onClick={onBack}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              border: 'none',
+              background: 'transparent',
+              color: COLORS.slate[600],
+              fontSize: '14px',
+              cursor: 'pointer',
+              borderRadius: '8px',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
+            onMouseLeave={(e) => e.target.style.background = 'transparent'}
+          >
+            <ArrowLeft style={{ width: '18px', height: '18px' }} />
+            Zurück
+          </button>
+
+          {/* Start Button - prominently placed at top */}
+          <button
+            onClick={onStart}
+            style={{
+              padding: '14px 28px',
+              borderRadius: '12px',
+              border: 'none',
+              background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 4px 12px rgba(74, 158, 201, 0.3)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'none';
+              e.target.style.boxShadow = '0 4px 12px rgba(74, 158, 201, 0.3)';
+            }}
+          >
+            <Play style={{ width: '20px', height: '20px' }} />
+            Gespräch starten
+          </button>
+        </div>
 
         <div style={{
           display: 'flex',
@@ -688,38 +895,6 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack }) => 
         </div>
       </div>
 
-      {/* Start Button */}
-      <button
-        onClick={onStart}
-        style={{
-          width: '100%',
-          padding: '18px 32px',
-          borderRadius: '14px',
-          border: 'none',
-          background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
-          color: 'white',
-          fontSize: '18px',
-          fontWeight: 600,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          boxShadow: '0 4px 12px rgba(74, 158, 201, 0.3)',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.transform = 'translateY(-2px)';
-          e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.transform = 'none';
-          e.target.style.boxShadow = '0 4px 12px rgba(74, 158, 201, 0.3)';
-        }}
-      >
-        <Play style={{ width: '24px', height: '24px' }} />
-        Gespräch starten
-      </button>
     </div>
   );
 };
@@ -738,9 +913,11 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [completedAnswers, setCompletedAnswers] = useState([]);
+  const [answeredQuestions, setAnsweredQuestions] = useState([]);
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
+  const isFirstQuestion = currentIndex === 0;
 
   const handleRecordingComplete = async (audioBlob) => {
     setIsSubmitting(true);
@@ -768,6 +945,11 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         ...prev.filter(a => a.questionIndex !== currentIndex),
         { questionIndex: currentIndex, feedback: response.data }
       ]);
+
+      // Track answered question
+      setAnsweredQuestions(prev =>
+        prev.includes(currentIndex) ? prev : [...prev, currentIndex]
+      );
 
     } catch (err) {
       console.error('Error submitting answer:', err);
@@ -814,6 +996,39 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
 
   const handleStartInterview = () => {
     setPhase('interview');
+  };
+
+  // Navigation handlers for skipping questions
+  const handleNavPrev = () => {
+    if (currentIndex > 0) {
+      setFeedback(null);
+      setShowFeedback(false);
+      setSubmitError(null);
+      setCurrentIndex(prev => prev - 1);
+    }
+  };
+
+  const handleNavNext = () => {
+    if (currentIndex < questions.length - 1) {
+      setFeedback(null);
+      setShowFeedback(false);
+      setSubmitError(null);
+      setCurrentIndex(prev => prev + 1);
+    }
+  };
+
+  const handleCompleteSession = async () => {
+    try {
+      const response = await wordpressAPI.completeSimulatorSession(session.id);
+      if (response.success) {
+        onComplete(response.data);
+      } else {
+        onComplete({ session: { ...session, status: 'completed' } });
+      }
+    } catch (err) {
+      console.error('Error completing session:', err);
+      onComplete({ session: { ...session, status: 'completed' } });
+    }
   };
 
   // Show preparation view first
@@ -884,14 +1099,25 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         </button>
       </div>
 
-      {/* Progress */}
-      <ProgressBar current={currentIndex + 1} total={questions.length} />
+      {/* Progress with Navigation */}
+      <ProgressBarWithNav
+        current={currentIndex + 1}
+        total={questions.length}
+        onPrev={handleNavPrev}
+        onNext={handleNavNext}
+        answeredQuestions={answeredQuestions}
+      />
 
       {/* Question */}
       <QuestionDisplay
         question={currentQuestion}
         questionNumber={currentIndex + 1}
       />
+
+      {/* Question-specific Tips */}
+      {currentQuestion.tips && currentQuestion.tips.length > 0 && !showFeedback && (
+        <QuestionTips tips={currentQuestion.tips} />
+      )}
 
       {/* Recording or Feedback */}
       {!showFeedback ? (
@@ -985,6 +1211,81 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           isLastQuestion={isLastQuestion}
         />
       )}
+
+      {/* Bottom Navigation */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: '24px',
+        paddingTop: '24px',
+        borderTop: `1px solid ${COLORS.slate[200]}`,
+      }}>
+        <button
+          onClick={handleNavPrev}
+          disabled={isFirstQuestion}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '12px 20px',
+            borderRadius: '10px',
+            border: `1px solid ${isFirstQuestion ? COLORS.slate[200] : COLORS.slate[300]}`,
+            backgroundColor: 'white',
+            color: isFirstQuestion ? COLORS.slate[400] : COLORS.slate[700],
+            fontSize: '14px',
+            fontWeight: 500,
+            cursor: isFirstQuestion ? 'not-allowed' : 'pointer',
+          }}
+        >
+          <ArrowLeft style={{ width: '16px', height: '16px' }} />
+          Vorherige Frage
+        </button>
+
+        {/* Complete button when all questions answered or on last question */}
+        {(answeredQuestions.length === questions.length || isLastQuestion) && (
+          <button
+            onClick={handleCompleteSession}
+            style={{
+              padding: '12px 24px',
+              borderRadius: '10px',
+              border: 'none',
+              background: `linear-gradient(90deg, ${COLORS.green[500]} 0%, ${COLORS.teal[500]} 100%)`,
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <CheckCircle style={{ width: '18px', height: '18px' }} />
+            Training abschließen
+          </button>
+        )}
+
+        <button
+          onClick={handleNavNext}
+          disabled={isLastQuestion}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '12px 20px',
+            borderRadius: '10px',
+            border: `1px solid ${isLastQuestion ? COLORS.slate[200] : COLORS.slate[300]}`,
+            backgroundColor: 'white',
+            color: isLastQuestion ? COLORS.slate[400] : COLORS.slate[700],
+            fontSize: '14px',
+            fontWeight: 500,
+            cursor: isLastQuestion ? 'not-allowed' : 'pointer',
+          }}
+        >
+          Nächste Frage
+          <ChevronRight style={{ width: '16px', height: '16px' }} />
+        </button>
+      </div>
 
       <style>{`
         @keyframes spin {
