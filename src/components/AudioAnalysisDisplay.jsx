@@ -337,7 +337,13 @@ function AudioAnalysisDisplay({ audioAnalysis, isLoading = false }) {
               Gesamtbewertung Audio
             </h4>
             <p className="text-sm text-slate-700 leading-relaxed">
-              {data.overall_analysis}
+              {/* Handle both string and object formats for overall_analysis */}
+              {typeof data.overall_analysis === 'string'
+                ? data.overall_analysis
+                : data.overall_analysis?.summary_text || data.overall_analysis?.summary ||
+                  (typeof data.overall_analysis === 'object'
+                    ? 'Audio-Analyse verfügbar'
+                    : String(data.overall_analysis))}
             </p>
           </motion.div>
         )}

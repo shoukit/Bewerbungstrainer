@@ -1672,6 +1672,9 @@ class Bewerbungstrainer_API {
             $params = $request->get_params();
         }
 
+        // Log incoming data for debugging
+        error_log('Bewerbungstrainer: Update session ' . $session_id . ' with params: ' . print_r(array_keys($params), true));
+
         // Prepare update data
         $update_data = array();
 
@@ -1680,11 +1683,47 @@ class Bewerbungstrainer_API {
         }
 
         if (isset($params['feedback_json'])) {
-            $update_data['feedback_json'] = $params['feedback_json'];
+            // Clean markdown wrappers before storing and ensure valid JSON
+            $feedback = $params['feedback_json'];
+            if (is_string($feedback)) {
+                $cleaned = $this->clean_json_string($feedback);
+                // Validate it's valid JSON
+                $test_decode = json_decode($cleaned, true);
+                if ($test_decode !== null) {
+                    // Store as clean JSON string
+                    $update_data['feedback_json'] = json_encode($test_decode, JSON_UNESCAPED_UNICODE);
+                    error_log('Bewerbungstrainer: Stored cleaned feedback_json');
+                } else {
+                    // Store as-is if we can't parse it
+                    $update_data['feedback_json'] = $feedback;
+                    error_log('Bewerbungstrainer: Could not parse feedback_json, storing raw: ' . substr($feedback, 0, 100));
+                }
+            } else {
+                // If it's already an array/object, encode it
+                $update_data['feedback_json'] = json_encode($feedback, JSON_UNESCAPED_UNICODE);
+            }
         }
 
         if (isset($params['audio_analysis_json'])) {
-            $update_data['audio_analysis_json'] = $params['audio_analysis_json'];
+            // Clean markdown wrappers before storing and ensure valid JSON
+            $audio = $params['audio_analysis_json'];
+            if (is_string($audio)) {
+                $cleaned = $this->clean_json_string($audio);
+                // Validate it's valid JSON
+                $test_decode = json_decode($cleaned, true);
+                if ($test_decode !== null) {
+                    // Store as clean JSON string
+                    $update_data['audio_analysis_json'] = json_encode($test_decode, JSON_UNESCAPED_UNICODE);
+                    error_log('Bewerbungstrainer: Stored cleaned audio_analysis_json');
+                } else {
+                    // Store as-is if we can't parse it
+                    $update_data['audio_analysis_json'] = $audio;
+                    error_log('Bewerbungstrainer: Could not parse audio_analysis_json, storing raw: ' . substr($audio, 0, 100));
+                }
+            } else {
+                // If it's already an array/object, encode it
+                $update_data['audio_analysis_json'] = json_encode($audio, JSON_UNESCAPED_UNICODE);
+            }
         }
 
         if (isset($params['conversation_id'])) {
@@ -1694,6 +1733,8 @@ class Bewerbungstrainer_API {
         if (isset($params['duration'])) {
             $update_data['duration'] = intval($params['duration']);
         }
+
+        error_log('Bewerbungstrainer: Update data keys: ' . print_r(array_keys($update_data), true));
 
         // Update session
         $result = $this->db->update_roleplay_session($session_id, $update_data);
@@ -1910,6 +1951,67 @@ class Bewerbungstrainer_API {
     }
 
     /**
+     * Clean JSON string by removing markdown code blocks
+     *
+     * Gemini API sometimes returns JSON wrapped in ```json ... ``` blocks.
+     * This function strips those wrappers to get clean JSON.
+     *
+     * @param string $json_string The JSON string that might have markdown wrappers
+     * @return string Clean JSON string
+     */
+    private function clean_json_string($json_string) {
+        if (empty($json_string)) {
+            return $json_string;
+        }
+
+        $cleaned = trim($json_string);
+
+        // Remove ```json or ``` prefix
+        if (strpos($cleaned, '```json') === 0) {
+            $cleaned = substr($cleaned, 7); // Remove ```json
+        } elseif (strpos($cleaned, '```') === 0) {
+            $cleaned = substr($cleaned, 3); // Remove ```
+        }
+
+        // Remove trailing ```
+        if (substr($cleaned, -3) === '```') {
+            $cleaned = substr($cleaned, 0, -3);
+        }
+
+        return trim($cleaned);
+    }
+
+    /**
+     * Safely decode JSON, handling markdown-wrapped responses
+     *
+     * @param string $json_string The JSON string to decode
+     * @return array|null Decoded array or null on failure
+     */
+    private function safe_json_decode($json_string) {
+        if (empty($json_string)) {
+            return null;
+        }
+
+        // First try to decode as-is
+        $decoded = json_decode($json_string, true);
+        if ($decoded !== null) {
+            return $decoded;
+        }
+
+        // If that failed, try cleaning the string first (remove markdown wrappers)
+        $cleaned = $this->clean_json_string($json_string);
+        $decoded = json_decode($cleaned, true);
+
+        if ($decoded !== null) {
+            return $decoded;
+        }
+
+        // Log error for debugging
+        error_log('Bewerbungstrainer: Failed to decode JSON - ' . substr($json_string, 0, 100) . '...');
+        return null;
+    }
+
+    /**
      * Format roleplay session for API response
      *
      * @param object $session Session object from database
@@ -1944,8 +2046,8 @@ class Bewerbungstrainer_API {
             'agent_id' => $session->agent_id,
             'variables' => $variables,
             'transcript' => $session->transcript,
-            'feedback_json' => $session->feedback_json ? json_decode($session->feedback_json, true) : null,
-            'audio_analysis_json' => $session->audio_analysis_json ? json_decode($session->audio_analysis_json, true) : null,
+            'feedback_json' => $this->safe_json_decode($session->feedback_json),
+            'audio_analysis_json' => $this->safe_json_decode($session->audio_analysis_json),
             'conversation_id' => $session->conversation_id,
             'duration' => $session->duration ? (int) $session->duration : null,
             'created_at' => $session->created_at,

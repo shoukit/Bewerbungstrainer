@@ -148,8 +148,15 @@ export async function saveRoleplaySessionAnalysis(
   duration = 0,
   conversationId = null
 ) {
-  console.log('💾 [Roleplay Feedback] Saving session analysis...');
+  console.log('💾 [Roleplay Feedback] ========= SAVING SESSION ANALYSIS =========');
   console.log('💾 [Roleplay Feedback] Session ID:', sessionId);
+  console.log('💾 [Roleplay Feedback] Conversation ID:', conversationId);
+  console.log('💾 [Roleplay Feedback] Duration:', duration);
+  console.log('💾 [Roleplay Feedback] feedbackJson type:', typeof feedbackJson);
+  console.log('💾 [Roleplay Feedback] feedbackJson length:', feedbackJson?.length || 0);
+  console.log('💾 [Roleplay Feedback] feedbackJson preview:', feedbackJson?.substring?.(0, 200) || 'null/undefined');
+  console.log('💾 [Roleplay Feedback] audioAnalysisJson type:', typeof audioAnalysisJson);
+  console.log('💾 [Roleplay Feedback] audioAnalysisJson length:', audioAnalysisJson?.length || 0);
 
   try {
     // Prepare transcript (ensure it's a string)
@@ -157,6 +164,7 @@ export async function saveRoleplaySessionAnalysis(
     if (Array.isArray(transcript)) {
       transcriptString = JSON.stringify(transcript);
     }
+    console.log('💾 [Roleplay Feedback] transcript entries:', Array.isArray(transcript) ? transcript.length : 'already string');
 
     // Prepare update data
     const updateData = {
@@ -173,17 +181,25 @@ export async function saveRoleplaySessionAnalysis(
       updateData.conversation_id = conversationId;
     }
 
+    console.log('💾 [Roleplay Feedback] Sending update data with keys:', Object.keys(updateData));
+    console.log('💾 [Roleplay Feedback] Full request body length:', JSON.stringify(updateData).length);
+
     // Update session via API
     const response = await wordpressAPI.request(`/roleplays/sessions/${sessionId}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
     });
 
-    console.log('✅ [Roleplay Feedback] Session analysis saved successfully');
+    console.log('✅ [Roleplay Feedback] API Response:', response);
+    console.log('✅ [Roleplay Feedback] Response.data:', response?.data);
+    console.log('✅ [Roleplay Feedback] Response feedback_json:', response?.data?.feedback_json ? 'present' : 'null');
+    console.log('💾 [Roleplay Feedback] ========= SAVE COMPLETE =========');
 
     return response.data;
   } catch (error) {
-    console.error('❌ [Roleplay Feedback] Failed to save session analysis:', error);
+    console.error('❌ [Roleplay Feedback] ========= SAVE FAILED =========');
+    console.error('❌ [Roleplay Feedback] Error:', error);
+    console.error('❌ [Roleplay Feedback] Error message:', error.message);
     throw new Error(`Fehler beim Speichern der Analyse: ${error.message}`);
   }
 }
