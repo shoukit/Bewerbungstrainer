@@ -289,56 +289,64 @@ export async function generateAudioAnalysis(audioFile, apiKey, modelName = 'gemi
       const model = genAI.getGenerativeModel({ model: currentModel });
       console.log('✅ [GEMINI AUDIO] Model instance created');
 
-      // NEW PROMPT: Pure audio/paraverbal analysis - NO content analysis
-      const prompt = `Du bist der Senior Voice & Rhetoric Coach der Karriere-Plattform "KarriereHeld".
-Deine Aufgabe: Analysiere die vorliegende AUDIO-AUFNAHME.
+      // PROMPT: Pure audio/paraverbal analysis - ONLY analyze the APPLICANT's voice
+      const prompt = `Du bist der Voice-Coach von "KarriereHeld".
+Analysiere die Audio-Datei dieses Rollenspiels.
 
-FOKUS:
-Analysiere ausschließlich die PARAVERBALE KOMMUNIKATION (Das "Wie").
-Ignoriere den inhaltlichen Sinn (Das "Was").
+WICHTIG - QUELLEN-TRENNUNG:
+Die Aufnahme enthält ZWEI Stimmen:
+1. Den INTERVIEWER (KI-Stimme, akzentfrei, stellt Fragen). Die KI-Stimme ERÖFFNET das Gespräch.
+2. Den BEWERBER (Mensch, antwortet auf die Fragen des Interviewers).
 
-ANALYSE-DIMENSIONEN MIT ZEITSTEMPELN:
+DEINE AUFGABE:
+Höre dir das gesamte Audio an, aber bewerte AUSSCHLIESSLICH die Stimme des BEWERBERS (2).
+Ignoriere alles, was der Interviewer sagt (Pausen, Tempo, Inhalt).
 
-1. SPEECH CLEANLINESS (Füllwörter & Fluss)
-- Identifiziere akustische Füllsel ("Ähm", "Öh", "Mh").
-- Identifiziere sprachliche Füllwörter ("Halt", "Eigentlich", "Sozusagen").
-- Gib GENAUE Zeitstempel an, wann diese auftreten (Format MM:SS).
+ANALYSE-DIMENSIONEN (NUR BEWERBER):
+
+1. SPEECH CLEANLINESS (Füllwörter)
+- Zähle "Ähm", "Öh", "Halt", "Eigentlich", "Sozusagen" beim Bewerber.
+- Gib GENAUE Zeitstempel an (Format MM:SS).
 
 2. PACING (Tempo)
-- Wo wurde zu schnell (gehetzt) oder zu langsam (unsicher) gesprochen?
+- Wie wirkt das Sprechtempo in den Antwort-Phasen? (Gehetzt vs. Souverän).
+- Notiere auffällige Stellen mit Zeitstempel.
 
-3. TONALITY & CONFIDENCE (Wirkung)
-- Confidence Score: Wie sicher wirkt die Stimme insgesamt (0-100)?
-- Suche nach Highlights (besonders souverän) oder Lowlights (brüchige Stimme).
+3. TONALITY (Betonung & Melodie)
+- Ist die Stimme monoton, natürlich oder lebendig?
+- Suche nach Highlights (souverän) oder Lowlights (unsicher/brüchig).
+
+4. CONFIDENCE (Wirkung)
+- Confidence Score (0-100): Wie sicher klingt der Bewerber insgesamt?
 
 OUTPUT FORMAT:
 Antworte NUR mit einem validen JSON-Objekt. Keine Markdown-Formatierung, kein Einleitungstext.
 
 {
   "audio_metrics": {
-    "summary_text": "Kurzes Fazit zur stimmlichen Wirkung (max 2 Sätze).",
+    "summary_text": "Kurzes Fazit zur Stimme des Bewerbers (max 2 Sätze).",
     "confidence_score": (0-100),
 
     "speech_cleanliness": {
       "score": (0-100, 100=Perfekt sauber),
       "filler_word_analysis": [
         {
-          "word": "Ähm/Öh",
-          "count": (Totalanzahl),
+          "word": "Ähm",
+          "count": (Anzahl),
           "examples": [
-            {"timestamp": "00:12", "context": "Satzanfang"},
-            {"timestamp": "01:45", "context": "Nachdenken"}
+            {"timestamp": "00:45", "context": "Satzanfang"},
+            {"timestamp": "01:20", "context": "Nachdenken"}
           ]
         },
         {
-          "word": "Eigentlich/Halt",
-          "count": (Totalanzahl),
+          "word": "Halt/Eigentlich",
+          "count": (Anzahl),
           "examples": [
             {"timestamp": "00:32"}
           ]
         }
       ],
-      "feedback": "Tipp zur Vermeidung."
+      "feedback": "Tipp zur Vermeidung von Füllwörtern."
     },
 
     "pacing": {
@@ -353,10 +361,10 @@ Antworte NUR mit einem validen JSON-Objekt. Keine Markdown-Formatierung, kein Ei
     "tonality": {
       "rating": "monoton" | "natürlich" | "lebendig",
       "highlights": [
-        {"timestamp": "00:05", "type": "positive", "note": "Sympathischer Einstieg"},
-        {"timestamp": "03:20", "type": "negative", "note": "Stimme wird brüchig"}
+        {"timestamp": "00:05", "type": "positive", "note": "Souveräner Einstieg"},
+        {"timestamp": "03:20", "type": "negative", "note": "Stimme wird unsicher"}
       ],
-      "feedback": "Feedback zur Melodie."
+      "feedback": "Feedback zur Melodie und Betonung."
     }
   }
 }
