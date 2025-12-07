@@ -617,7 +617,9 @@ function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
                     Deine Superkraft
                   </p>
                   <p className="text-sm text-green-900 mt-0.5 leading-relaxed">
-                    {overall_analysis.top_strength}
+                    {typeof overall_analysis.top_strength === 'string'
+                      ? overall_analysis.top_strength
+                      : overall_analysis.top_strength?.text || overall_analysis.top_strength?.description || JSON.stringify(overall_analysis.top_strength)}
                   </p>
                 </div>
               </div>
@@ -633,7 +635,9 @@ function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
                     Dein Trainingsfeld
                   </p>
                   <p className="text-sm text-amber-900 mt-0.5 leading-relaxed">
-                    {overall_analysis.primary_weakness}
+                    {typeof overall_analysis.primary_weakness === 'string'
+                      ? overall_analysis.primary_weakness
+                      : overall_analysis.primary_weakness?.text || overall_analysis.primary_weakness?.description || JSON.stringify(overall_analysis.primary_weakness)}
                   </p>
                 </div>
               </div>

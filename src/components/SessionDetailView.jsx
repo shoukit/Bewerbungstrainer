@@ -26,6 +26,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   getRoleplaySessionAnalysis,
   getRoleplaySessionAudioUrl,
@@ -153,6 +154,11 @@ const SessionDetailView = ({ session, onBack }) => {
       // Load full session data from API
       const fullSession = await getRoleplaySessionAnalysis(session.id);
 
+      // Debug: Log what the API returned
+      console.log('📡 [SESSION_DETAIL] API returned fullSession:', fullSession);
+      console.log('📡 [SESSION_DETAIL] API feedback_json:', fullSession?.feedback_json);
+      console.log('📡 [SESSION_DETAIL] API audio_analysis_json:', fullSession?.audio_analysis_json);
+
       // Merge API data with initial session data
       // This preserves feedback_json and audio_analysis_json if they were
       // passed during navigation (fixes race condition where API returns
@@ -183,6 +189,8 @@ const SessionDetailView = ({ session, onBack }) => {
           console.log('📌 [SESSION_DETAIL] Preserving conversation_id from navigation');
           merged.conversation_id = prevData.conversation_id;
         }
+
+        console.log('📡 [SESSION_DETAIL] Merged session data:', merged);
 
         return merged;
       });
@@ -458,7 +466,7 @@ const SessionDetailView = ({ session, onBack }) => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 pb-8">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={onBack} size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -489,10 +497,10 @@ const SessionDetailView = ({ session, onBack }) => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-[1600px] mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           {/* Left Column - Audio Player & Transcript */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             {/* Audio Player Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -722,8 +730,8 @@ const SessionDetailView = ({ session, onBack }) => {
           </div>
 
           {/* Right Column - Feedback Sidebar */}
-          <div className={isSidebarCollapsed ? 'lg:col-span-1' : ''}>
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden sticky top-4">
+          <div className={cn("lg:col-span-2 self-start", isSidebarCollapsed && 'lg:col-span-1')}>
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <SessionSidebar
                 session={sessionData}
                 scenario={scenario}
