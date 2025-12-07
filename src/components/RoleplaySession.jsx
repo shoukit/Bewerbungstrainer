@@ -29,9 +29,10 @@ import {
   saveRoleplaySessionAnalysis,
   createRoleplaySession,
 } from '@/services/roleplay-feedback-adapter';
+import { downloadConversationAudio } from '@/services/elevenlabs';
 import wordpressAPI from '@/services/wordpress-api';
 
-const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
+const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession }) => {
   // Session data
   const [sessionId, setSessionId] = useState(null);
   const [startTime, setStartTime] = useState(null);
@@ -344,7 +345,31 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         variables: variables,
       };
 
-      const analysis = await analyzeRoleplayTranscript(transcript, scenarioContext, null);
+      // Try to download conversation audio from ElevenLabs for audio analysis
+      let audioBlob = null;
+      if (conversationIdRef.current) {
+        try {
+          console.log('🎵 [RoleplaySession] Downloading conversation audio for analysis...');
+          const elevenLabsApiKey = wordpressAPI.getElevenLabsApiKey();
+
+          if (elevenLabsApiKey) {
+            audioBlob = await downloadConversationAudio(
+              conversationIdRef.current,
+              elevenLabsApiKey
+            );
+            console.log('✅ [RoleplaySession] Audio downloaded successfully:', audioBlob.size, 'bytes');
+          } else {
+            console.warn('⚠️ [RoleplaySession] ElevenLabs API key not available, skipping audio analysis');
+          }
+        } catch (audioError) {
+          // Audio download failed - continue without audio analysis
+          console.warn('⚠️ [RoleplaySession] Could not download audio for analysis:', audioError.message);
+          console.warn('⚠️ [RoleplaySession] Make sure "Audio Saving" is enabled in ElevenLabs Agent settings');
+        }
+      }
+
+      // Run analysis (with or without audio)
+      const analysis = await analyzeRoleplayTranscript(transcript, scenarioContext, audioBlob);
 
       // Save analysis to database
       if (sessionId && conversationIdRef.current) {
@@ -358,11 +383,28 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd }) => {
         );
       }
 
-      // Show feedback
-      setFeedbackContent(analysis.feedbackContent);
-      setAudioAnalysisContent(analysis.audioAnalysisContent);
+      // Navigate to session detail view
       setIsAnalyzing(false);
-      setShowFeedback(true);
+      if (onNavigateToSession && sessionId) {
+        // Create session object for navigation
+        const sessionForNavigation = {
+          id: sessionId,
+          scenario_id: scenario.id,
+          transcript: JSON.stringify(transcript),
+          feedback_json: analysis.feedbackContent,
+          audio_analysis_json: analysis.audioAnalysisContent,
+          duration: duration,
+          conversation_id: conversationIdRef.current,
+          created_at: new Date().toISOString(),
+        };
+        console.log('🚀 [RoleplaySession] Navigating to session analysis:', sessionId);
+        onNavigateToSession(sessionForNavigation);
+      } else {
+        // Fallback: Show feedback modal if onNavigateToSession not provided
+        setFeedbackContent(analysis.feedbackContent);
+        setAudioAnalysisContent(analysis.audioAnalysisContent);
+        setShowFeedback(true);
+      }
     } catch (err) {
       console.error('❌ [RoleplaySession] Analysis failed:', err);
       setError(err.message || 'Fehler bei der Analyse.');

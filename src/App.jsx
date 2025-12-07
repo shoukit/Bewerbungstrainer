@@ -43,6 +43,14 @@ function App() {
     setCurrentView(VIEWS.DASHBOARD);
   };
 
+  const handleNavigateToSession = (session) => {
+    console.log('🎭 [APP] Navigating to session analysis:', session.id);
+    setSelectedScenario(null);
+    setRoleplayVariables({});
+    setSelectedSession(session);
+    setCurrentView(VIEWS.SESSION_DETAIL);
+  };
+
   // ===== HISTORY HANDLERS =====
   const handleOpenHistory = () => {
     console.log('📜 [APP] Opening session history');
@@ -74,6 +82,7 @@ function App() {
           scenario={selectedScenario}
           variables={roleplayVariables}
           onEnd={handleEndRoleplay}
+          onNavigateToSession={handleNavigateToSession}
         />
       );
 

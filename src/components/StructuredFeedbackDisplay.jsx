@@ -6,36 +6,35 @@ import {
   ChevronDown,
   CheckCircle2,
   AlertTriangle,
-  Quote,
   Lightbulb,
   Sparkles,
   TrendingUp,
   Award,
-  Star,
   Loader2,
-  Mic2,
-  Volume2,
-  Timer,
-  Activity,
   BarChart3,
-  MessageSquare,
   Zap,
+  Mic2,
+  Activity,
+  Volume2,
+  Gauge,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
  * StructuredFeedbackDisplay Component
  *
- * Displays AI analysis feedback from Gemini in a structured format:
- * 1. Executive Summary (Total Score, Top Strength, Primary Weakness)
- * 2. Bewertungskriterien (Rating criteria with expandable details)
- * 3. Audio Analysis (Speech metrics if available)
+ * Displays Gemini feedback (feedback_json) for the Coaching tab:
+ * - Summary with overall score
+ * - Audio & Voice metrics section (speech cleanliness, pacing, tonality)
+ * - Top strength & primary weakness
+ * - Rating criteria (communication, motivation, professionalism)
+ * - Category-based detailed feedback
  */
 
 /**
  * Circular Score Ring Component
  */
-const ScoreRing = ({ score, size = 'large', maxScore = 100, className }) => {
+const ScoreRing = ({ score, size = 'large', maxScore = 100 }) => {
   const isLarge = size === 'large';
   const radius = isLarge ? 54 : 28;
   const strokeWidth = isLarge ? 8 : 4;
@@ -55,9 +54,9 @@ const ScoreRing = ({ score, size = 'large', maxScore = 100, className }) => {
   const colors = getScoreColor(percentage);
 
   return (
-    <div className={cn("relative inline-flex items-center justify-center", className)}>
+    <div className="relative inline-flex items-center justify-center">
       <svg
-        className={isLarge ? 'w-32 h-32' : 'w-16 h-16'}
+        className={isLarge ? 'w-28 h-28' : 'w-16 h-16'}
         viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
       >
         <circle
@@ -90,20 +89,17 @@ const ScoreRing = ({ score, size = 'large', maxScore = 100, className }) => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          {Math.round(score)}{maxScore === 10 ? '' : '%'}
+          {Math.round(score)}%
         </motion.span>
-        {maxScore === 10 && (
-          <span className="text-xs text-slate-400">/10</span>
-        )}
       </div>
     </div>
   );
 };
 
 /**
- * Rating Bar Component (1-5 or 1-10 scale)
+ * Rating Bar Component
  */
-const RatingBar = ({ rating, maxRating = 5, showLabel = true }) => {
+const RatingBar = ({ rating, maxRating = 10, showLabel = true }) => {
   const percentage = (rating / maxRating) * 100;
 
   const getBarColor = (pct) => {
@@ -140,9 +136,195 @@ const RatingBar = ({ rating, maxRating = 5, showLabel = true }) => {
 };
 
 /**
- * Feedback Criterion Card (Accordion style)
+ * Speech Cleanliness Card Component
  */
-const CriterionCard = ({ criterion, rating, maxRating = 5, observation, quote, suggestion, index }) => {
+const SpeechCleanlinessCard = ({ score, fillerWords = [] }) => {
+  const getBarColor = (pct) => {
+    if (pct >= 80) return 'bg-green-500';
+    if (pct >= 50) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
+  const getLabel = (pct) => {
+    if (pct >= 80) return { text: 'Sehr gut', color: 'text-green-600' };
+    if (pct >= 50) return { text: 'Okay', color: 'text-amber-600' };
+    return { text: 'Verbesserbar', color: 'text-red-600' };
+  };
+
+  const label = getLabel(score);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+          <Mic2 className="w-4 h-4 text-blue-600" />
+        </div>
+        <span className="text-xs font-semibold text-slate-700">Redefluss</span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-2">
+        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+          <motion.div
+            className={cn("h-full rounded-full", getBarColor(score))}
+            initial={{ width: 0 }}
+            animate={{ width: `${score}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+        </div>
+        <div className="flex justify-between items-center mt-1">
+          <span className={cn("text-xs font-medium", label.color)}>{label.text}</span>
+          <span className="text-xs text-slate-500">{score}%</span>
+        </div>
+      </div>
+
+      {/* Filler Word Tags */}
+      {fillerWords && fillerWords.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {fillerWords.map((fw, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600"
+            >
+              {fw.word} ({fw.count}x)
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Pacing Card Component (Sprechtempo)
+ */
+const PacingCard = ({ rating, feedback }) => {
+  // rating: "zu_schnell" | "optimal" | "zu_langsam"
+  const positions = {
+    zu_langsam: 15,
+    optimal: 50,
+    zu_schnell: 85,
+  };
+
+  const labels = {
+    zu_langsam: { text: 'Langsam', color: 'text-amber-600' },
+    optimal: { text: 'Optimal', color: 'text-green-600' },
+    zu_schnell: { text: 'Schnell', color: 'text-amber-600' },
+  };
+
+  const position = positions[rating] || 50;
+  const labelInfo = labels[rating] || labels.optimal;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
+          <Gauge className="w-4 h-4 text-purple-600" />
+        </div>
+        <span className="text-xs font-semibold text-slate-700">Sprechtempo</span>
+      </div>
+
+      {/* Slider Indicator */}
+      <div className="relative mb-2">
+        <div className="h-2 bg-gradient-to-r from-amber-200 via-green-300 to-amber-200 rounded-full" />
+        <motion.div
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-slate-800 rounded-full shadow-md"
+          initial={{ left: '50%' }}
+          animate={{ left: `${position}%` }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          style={{ marginLeft: '-8px' }}
+        />
+      </div>
+
+      {/* Labels */}
+      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+        <span>Langsam</span>
+        <span className="text-green-600 font-medium">Optimal</span>
+        <span>Schnell</span>
+      </div>
+
+      <p className={cn("text-xs font-medium text-center", labelInfo.color)}>
+        {labelInfo.text}
+      </p>
+      {feedback && (
+        <p className="text-[10px] text-slate-500 text-center mt-1 line-clamp-2">
+          {feedback}
+        </p>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Tonality Card Component (Betonung)
+ */
+const TonalityCard = ({ rating, feedback }) => {
+  // rating: "monoton" | "natürlich" | "lebendig"
+  const configs = {
+    monoton: {
+      icon: Activity,
+      label: 'Monoton',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-100',
+      bars: [20, 20, 20, 20, 20],
+    },
+    natürlich: {
+      icon: Activity,
+      label: 'Natürlich',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+      bars: [30, 50, 40, 60, 45],
+    },
+    lebendig: {
+      icon: Activity,
+      label: 'Lebendig',
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
+      bars: [20, 80, 40, 90, 60],
+    },
+  };
+
+  const config = configs[rating] || configs.natürlich;
+  const Icon = config.icon;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center", config.bgColor)}>
+          <Icon className={cn("w-4 h-4", config.color)} />
+        </div>
+        <span className="text-xs font-semibold text-slate-700">Betonung</span>
+      </div>
+
+      {/* Waveform Visualization */}
+      <div className="flex items-end justify-center gap-1 h-8 mb-2">
+        {config.bars.map((height, idx) => (
+          <motion.div
+            key={idx}
+            className={cn("w-2 rounded-full", config.bgColor)}
+            initial={{ height: 4 }}
+            animate={{ height: `${height}%` }}
+            transition={{ duration: 0.3, delay: idx * 0.1 }}
+          />
+        ))}
+      </div>
+
+      <p className={cn("text-xs font-medium text-center", config.color)}>
+        {config.label}
+      </p>
+      {feedback && (
+        <p className="text-[10px] text-slate-500 text-center mt-1 line-clamp-2">
+          {feedback}
+        </p>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Rating Criterion Card (Accordion style)
+ */
+const CriterionCard = ({ label, rating, maxRating = 10, description, index }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const percentage = (rating / maxRating) * 100;
 
@@ -155,7 +337,83 @@ const CriterionCard = ({ criterion, rating, maxRating = 5, observation, quote, s
   const status = getStatusIcon(percentage);
   const StatusIcon = status.icon;
 
-  const hasDetails = observation || quote || suggestion;
+  return (
+    <motion.div
+      className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+    >
+      <button
+        onClick={() => description && setIsExpanded(!isExpanded)}
+        disabled={!description}
+        className={cn(
+          "w-full px-4 py-3 flex items-center justify-between gap-3 transition-colors",
+          description ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"
+        )}
+      >
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <StatusIcon className={cn("w-5 h-5 flex-shrink-0", status.color)} />
+          <span className="font-medium text-slate-800 text-sm truncate">
+            {label}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="w-20">
+            <RatingBar rating={rating} maxRating={maxRating} />
+          </div>
+          {description && (
+            <motion.div
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="w-4 h-4 text-slate-400" />
+            </motion.div>
+          )}
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isExpanded && description && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 pt-1 border-t border-slate-100">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {description}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+/**
+ * Category Item Card (for new format with categories)
+ */
+const CategoryItemCard = ({ item, index }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const rating = item.rating || 3;
+  const maxRating = 5;
+  const percentage = (rating / maxRating) * 100;
+
+  const getStatusIcon = (pct) => {
+    if (pct >= 80) return { icon: CheckCircle2, color: 'text-green-500' };
+    if (pct >= 40) return { icon: TrendingUp, color: 'text-amber-500' };
+    return { icon: AlertTriangle, color: 'text-red-500' };
+  };
+
+  const status = getStatusIcon(percentage);
+  const StatusIcon = status.icon;
+
+  const hasDetails = item.observation || item.quote_evidence || item.improvement_suggestion;
 
   return (
     <motion.div
@@ -175,21 +433,14 @@ const CriterionCard = ({ criterion, rating, maxRating = 5, observation, quote, s
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <StatusIcon className={cn("w-5 h-5 flex-shrink-0", status.color)} />
           <span className="font-medium text-slate-800 text-sm truncate">
-            {criterion}
+            {item.criterion}
           </span>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="w-24 hidden sm:block">
+          <div className="w-20">
             <RatingBar rating={rating} maxRating={maxRating} />
           </div>
-          <span className={cn(
-            "text-sm font-bold sm:hidden",
-            percentage >= 80 ? "text-green-600" :
-            percentage >= 40 ? "text-amber-600" : "text-red-600"
-          )}>
-            {rating}/{maxRating}
-          </span>
           {hasDetails && (
             <motion.div
               animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -210,86 +461,22 @@ const CriterionCard = ({ criterion, rating, maxRating = 5, observation, quote, s
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 pt-1 space-y-3 border-t border-slate-100">
-              {observation && (
-                <div className="text-sm text-slate-600 leading-relaxed">
-                  {observation}
-                </div>
+            <div className="px-4 pb-4 pt-1 border-t border-slate-100 space-y-2">
+              {item.observation && (
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {item.observation}
+                </p>
               )}
-
-              {quote && (
-                <blockquote className="text-sm text-slate-500 italic bg-slate-50 p-3 rounded-lg border-l-4 border-slate-300">
-                  "{quote}"
+              {item.quote_evidence && (
+                <blockquote className="text-xs text-slate-500 italic border-l-2 border-slate-200 pl-2">
+                  "{item.quote_evidence}"
                 </blockquote>
               )}
-
-              {suggestion && (
-                <div className="flex gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                  <Lightbulb className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-amber-800">{suggestion}</p>
+              {item.improvement_suggestion && (
+                <div className="flex items-start gap-2 text-xs text-blue-700 bg-blue-50 rounded-lg p-2">
+                  <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span>{item.improvement_suggestion}</span>
                 </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
-
-/**
- * Audio Metric Card
- */
-const AudioMetricCard = ({ icon: Icon, label, rating, maxRating = 10, feedback, extra }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const percentage = (rating / maxRating) * 100;
-
-  return (
-    <motion.div
-      className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-3 py-2 flex items-center justify-between gap-2 hover:bg-slate-100 transition-colors"
-      >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <Icon className="w-4 h-4 text-slate-500 flex-shrink-0" />
-          <span className="text-xs font-medium text-slate-700 truncate">{label}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className={cn(
-            "text-xs font-bold",
-            percentage >= 70 ? "text-green-600" :
-            percentage >= 50 ? "text-amber-600" : "text-red-600"
-          )}>
-            {rating}/{maxRating}
-          </span>
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="w-3 h-3 text-slate-400" />
-          </motion.div>
-        </div>
-      </button>
-
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3 pt-1 border-t border-slate-200">
-              {feedback && (
-                <p className="text-xs text-slate-600 leading-relaxed">{feedback}</p>
-              )}
-              {extra && (
-                <p className="text-xs text-slate-500 mt-1">{extra}</p>
               )}
             </div>
           </motion.div>
@@ -302,44 +489,29 @@ const AudioMetricCard = ({ icon: Icon, label, rating, maxRating = 10, feedback, 
 /**
  * Main StructuredFeedbackDisplay Component
  */
-function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = false }) {
+function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
   // Parse JSON if needed
-  const feedback = useMemo(() => {
-    if (!analysisData) return null;
-    if (typeof analysisData === 'string') {
+  const data = useMemo(() => {
+    if (!feedback) return null;
+    if (typeof feedback === 'string') {
       try {
-        return JSON.parse(analysisData);
-      } catch {
+        let jsonString = feedback.trim();
+        if (jsonString.startsWith('```json')) {
+          jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
+        } else if (jsonString.startsWith('```')) {
+          jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
+        }
+        return JSON.parse(jsonString);
+      } catch (e) {
+        console.error('Failed to parse feedback:', e);
         return null;
       }
     }
-    // Check if it's the transformed format or original Gemini format
-    if (analysisData.overall_analysis) {
-      // It's already transformed - extract the original format
-      return {
-        summary: analysisData.overall_analysis.summary_text,
-        rating: {
-          overall: Math.round((analysisData.overall_analysis.total_score / 100) * 10),
-        },
-        strengths: analysisData.overall_analysis.top_strength ? [analysisData.overall_analysis.top_strength] : [],
-        improvements: analysisData.overall_analysis.primary_weakness ? [analysisData.overall_analysis.primary_weakness] : [],
-        categories: analysisData.categories,
-      };
-    }
-    return analysisData;
-  }, [analysisData]);
+    return feedback;
+  }, [feedback]);
 
-  const audio = useMemo(() => {
-    if (!audioAnalysis) return null;
-    if (typeof audioAnalysis === 'string') {
-      try {
-        return JSON.parse(audioAnalysis);
-      } catch {
-        return null;
-      }
-    }
-    return audioAnalysis;
-  }, [audioAnalysis]);
+  // Determine if this is the new format (has overall_analysis) or old format (has rating)
+  const isNewFormat = data?.overall_analysis !== undefined;
 
   // Loading state
   if (isLoading) {
@@ -351,31 +523,165 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
         >
           <Loader2 className="w-10 h-10 text-blue-600" />
         </motion.div>
-        <p className="mt-3 text-slate-600 text-sm">Analyse wird geladen...</p>
+        <p className="mt-3 text-slate-600 text-sm">Feedback wird geladen...</p>
       </div>
     );
   }
 
   // No data state
-  if (!feedback) {
+  if (!data) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <BarChart3 className="w-12 h-12 text-slate-200 mb-3" />
-        <p className="text-slate-500 text-sm">Keine Analysedaten verfügbar.</p>
+        <p className="text-slate-500 text-sm">Kein Feedback verfügbar.</p>
         <p className="text-slate-400 text-xs mt-1">
-          Die Analyse erscheint hier nach dem Gespräch.
+          Das Feedback erscheint hier nach dem Gespräch.
         </p>
       </div>
     );
   }
 
+  // New format rendering
+  if (isNewFormat) {
+    const { overall_analysis, audio_metrics, categories } = data;
+    const overallScore = overall_analysis?.total_score || 0;
+
+    return (
+      <div className="space-y-5">
+        {/* Executive Summary */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          {/* Score + Summary */}
+          <div className="bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200 rounded-xl p-4">
+            <div className="flex items-center gap-4">
+              <ScoreRing score={overallScore} size="large" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2">
+                  <Award className="w-4 h-4 text-blue-600" />
+                  Gesamtbewertung
+                </h3>
+                {overall_analysis?.summary_text && (
+                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                    {overall_analysis.summary_text}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Audio & Voice Metrics Section */}
+          {audio_metrics && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-blue-600" />
+                Audio & Stimme
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <SpeechCleanlinessCard
+                  score={audio_metrics.speech_cleanliness_score || 0}
+                  fillerWords={audio_metrics.filler_words_detected}
+                />
+                <PacingCard
+                  rating={audio_metrics.pacing?.rating || 'optimal'}
+                  feedback={audio_metrics.pacing?.feedback}
+                />
+                <TonalityCard
+                  rating={audio_metrics.tonality?.rating || 'natürlich'}
+                  feedback={audio_metrics.tonality?.feedback}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {/* Highlight Cards */}
+          <div className="grid grid-cols-1 gap-3">
+            {overall_analysis?.top_strength && (
+              <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <ThumbsUp className="w-4 h-4 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                    Deine Superkraft
+                  </p>
+                  <p className="text-sm text-green-900 mt-0.5 leading-relaxed">
+                    {overall_analysis.top_strength}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {overall_analysis?.primary_weakness && (
+              <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <Target className="w-4 h-4 text-amber-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+                    Dein Trainingsfeld
+                  </p>
+                  <p className="text-sm text-amber-900 mt-0.5 leading-relaxed">
+                    {overall_analysis.primary_weakness}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Categories */}
+        {categories && categories.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-4"
+          >
+            {categories.map((category, catIdx) => (
+              <div key={category.id || catIdx}>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    {category.title}
+                  </h4>
+                  {category.score !== undefined && (
+                    <span className="text-xs font-semibold text-slate-500">
+                      {category.score}%
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {category.items?.map((item, itemIdx) => (
+                    <CategoryItemCard
+                      key={itemIdx}
+                      item={item}
+                      index={itemIdx}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </div>
+    );
+  }
+
+  // Old format rendering (backwards compatibility)
   // Calculate overall score (convert 1-10 to percentage)
-  const overallScore = feedback.rating?.overall
-    ? Math.round((feedback.rating.overall / 10) * 100)
+  const overallScore = data.rating?.overall
+    ? Math.round((data.rating.overall / 10) * 100)
     : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Executive Summary */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -393,9 +699,9 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
                 <Award className="w-4 h-4 text-blue-600" />
                 Gesamtbewertung
               </h3>
-              {feedback.summary && (
+              {data.summary && (
                 <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                  {feedback.summary}
+                  {data.summary}
                 </p>
               )}
             </div>
@@ -404,7 +710,7 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
 
         {/* Highlight Cards */}
         <div className="grid grid-cols-1 gap-3">
-          {feedback.strengths?.[0] && (
+          {data.strengths?.[0] && (
             <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
               <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
                 <ThumbsUp className="w-4 h-4 text-green-600" />
@@ -414,13 +720,13 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
                   Deine Superkraft
                 </p>
                 <p className="text-sm text-green-900 mt-0.5 leading-relaxed">
-                  {feedback.strengths[0]}
+                  {data.strengths[0]}
                 </p>
               </div>
             </div>
           )}
 
-          {feedback.improvements?.[0] && (
+          {data.improvements?.[0] && (
             <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
               <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <Target className="w-4 h-4 text-amber-600" />
@@ -430,7 +736,7 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
                   Dein Trainingsfeld
                 </p>
                 <p className="text-sm text-amber-900 mt-0.5 leading-relaxed">
-                  {feedback.improvements[0]}
+                  {data.improvements[0]}
                 </p>
               </div>
             </div>
@@ -439,68 +745,53 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
       </motion.div>
 
       {/* Bewertungskriterien */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-600" />
-          Bewertungskriterien
-        </h4>
+      {data.rating && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-blue-600" />
+            Bewertungskriterien
+          </h4>
 
-        <div className="space-y-2">
-          {/* Rating criteria from Gemini */}
-          {feedback.rating?.communication !== undefined && (
-            <CriterionCard
-              criterion="Kommunikation"
-              rating={feedback.rating.communication}
-              maxRating={10}
-              observation="Wie klar und verständlich du dich ausdrückst."
-              index={0}
-            />
-          )}
-
-          {feedback.rating?.motivation !== undefined && (
-            <CriterionCard
-              criterion="Motivation"
-              rating={feedback.rating.motivation}
-              maxRating={10}
-              observation="Wie motiviert und engagiert du wirkst."
-              index={1}
-            />
-          )}
-
-          {feedback.rating?.professionalism !== undefined && (
-            <CriterionCard
-              criterion="Professionalität"
-              rating={feedback.rating.professionalism}
-              maxRating={10}
-              observation="Dein professionelles Auftreten."
-              index={2}
-            />
-          )}
-
-          {/* Categories from transformed data */}
-          {feedback.categories?.map((category, catIdx) => (
-            category.items?.map((item, itemIdx) => (
+          <div className="space-y-2">
+            {data.rating.communication !== undefined && (
               <CriterionCard
-                key={`${category.id}-${itemIdx}`}
-                criterion={item.criterion}
-                rating={item.rating}
-                maxRating={5}
-                observation={item.observation}
-                quote={item.quote_evidence}
-                suggestion={item.improvement_suggestion}
-                index={catIdx * 10 + itemIdx + 3}
+                label="Kommunikation"
+                rating={data.rating.communication}
+                maxRating={10}
+                description="Wie klar und verständlich du dich während des Gesprächs ausgedrückt hast."
+                index={0}
               />
-            ))
-          ))}
-        </div>
-      </motion.div>
+            )}
+
+            {data.rating.motivation !== undefined && (
+              <CriterionCard
+                label="Motivation"
+                rating={data.rating.motivation}
+                maxRating={10}
+                description="Wie motiviert und engagiert du während des Gesprächs gewirkt hast."
+                index={1}
+              />
+            )}
+
+            {data.rating.professionalism !== undefined && (
+              <CriterionCard
+                label="Professionalität"
+                rating={data.rating.professionalism}
+                maxRating={10}
+                description="Dein professionelles Auftreten und Verhalten im Gespräch."
+                index={2}
+              />
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* Additional Strengths */}
-      {feedback.strengths?.length > 1 && (
+      {data.strengths?.length > 1 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -512,7 +803,7 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
             Weitere Stärken
           </h4>
           <ul className="space-y-1.5">
-            {feedback.strengths.slice(1).map((strength, idx) => (
+            {data.strengths.slice(1).map((strength, idx) => (
               <li key={idx} className="flex items-start gap-2 text-xs text-green-700">
                 <span className="text-green-500 mt-0.5">•</span>
                 <span>{strength}</span>
@@ -523,7 +814,7 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
       )}
 
       {/* Additional Improvements */}
-      {feedback.improvements?.length > 1 && (
+      {data.improvements?.length > 1 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -532,10 +823,10 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
         >
           <h4 className="text-sm font-bold text-amber-800 mb-2 flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
-            Weitere Verbesserungen
+            Verbesserungspotential
           </h4>
           <ul className="space-y-1.5">
-            {feedback.improvements.slice(1).map((improvement, idx) => (
+            {data.improvements.slice(1).map((improvement, idx) => (
               <li key={idx} className="flex items-start gap-2 text-xs text-amber-700">
                 <span className="text-amber-500 mt-0.5">•</span>
                 <span>{improvement}</span>
@@ -546,7 +837,7 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
       )}
 
       {/* Tips */}
-      {feedback.tips?.length > 0 && (
+      {data.tips?.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -558,139 +849,13 @@ function StructuredFeedbackDisplay({ analysisData, audioAnalysis, isLoading = fa
             Praktische Tipps
           </h4>
           <ul className="space-y-1.5">
-            {feedback.tips.map((tip, idx) => (
+            {data.tips.map((tip, idx) => (
               <li key={idx} className="flex items-start gap-2 text-xs text-blue-700">
                 <Zap className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
                 <span>{tip}</span>
               </li>
             ))}
           </ul>
-        </motion.div>
-      )}
-
-      {/* Audio Analysis Section */}
-      {audio && !audio.error && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-            <Mic2 className="w-4 h-4 text-blue-600" />
-            Audio-Analyse
-          </h4>
-
-          {audio.summary && (
-            <p className="text-xs text-slate-600 mb-3 p-3 bg-slate-50 rounded-lg">
-              {audio.summary}
-            </p>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
-            {audio.clarity && (
-              <AudioMetricCard
-                icon={Volume2}
-                label="Deutlichkeit"
-                rating={audio.clarity.rating}
-                feedback={audio.clarity.feedback}
-              />
-            )}
-
-            {audio.pace && (
-              <AudioMetricCard
-                icon={Timer}
-                label="Tempo"
-                rating={audio.pace.rating}
-                feedback={audio.pace.feedback}
-                extra={audio.pace.wordsPerMinute ? `${audio.pace.wordsPerMinute} WpM` : null}
-              />
-            )}
-
-            {audio.fillerWords && (
-              <AudioMetricCard
-                icon={MessageSquare}
-                label="Füllwörter"
-                rating={audio.fillerWords.rating}
-                feedback={audio.fillerWords.feedback}
-                extra={audio.fillerWords.count ? `${audio.fillerWords.count} gefunden` : null}
-              />
-            )}
-
-            {audio.nervousness && (
-              <AudioMetricCard
-                icon={Activity}
-                label="Ruhe"
-                rating={audio.nervousness.rating}
-                feedback={audio.nervousness.feedback}
-              />
-            )}
-
-            {audio.confidence && (
-              <AudioMetricCard
-                icon={Award}
-                label="Selbstsicherheit"
-                rating={audio.confidence.rating}
-                feedback={audio.confidence.feedback}
-              />
-            )}
-
-            {audio.tonalModulation && (
-              <AudioMetricCard
-                icon={BarChart3}
-                label="Tonmodulation"
-                rating={audio.tonalModulation.rating}
-                feedback={audio.tonalModulation.feedback}
-              />
-            )}
-          </div>
-
-          {/* Audio Strengths */}
-          {audio.strengths?.length > 0 && (
-            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-xs font-semibold text-green-700 mb-1">Sprech-Stärken:</p>
-              <ul className="space-y-1">
-                {audio.strengths.map((s, idx) => (
-                  <li key={idx} className="text-xs text-green-600 flex items-start gap-1">
-                    <span>•</span>
-                    <span>{s}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Audio Improvements */}
-          {audio.overallImprovement?.length > 0 && (
-            <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs font-semibold text-amber-700 mb-1">Sprech-Tipps:</p>
-              <ul className="space-y-1">
-                {audio.overallImprovement.map((tip, idx) => (
-                  <li key={idx} className="text-xs text-amber-600 flex items-start gap-1">
-                    <span>•</span>
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </motion.div>
-      )}
-
-      {/* Audio Error State */}
-      {audio?.error && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="p-4 bg-orange-50 border border-orange-200 rounded-xl"
-        >
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-orange-800">Audio-Analyse nicht verfügbar</p>
-              <p className="text-xs text-orange-600 mt-1">{audio.summary}</p>
-            </div>
-          </div>
         </motion.div>
       )}
     </div>
