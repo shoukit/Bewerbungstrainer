@@ -498,7 +498,7 @@ const SessionDetailView = ({ session, onBack }) => {
       </div>
 
       <div className="max-w-[1600px] mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           {/* Left Column - Audio Player & Transcript */}
           <div className="lg:col-span-3 space-y-6">
             {/* Audio Player Card */}
