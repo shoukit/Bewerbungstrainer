@@ -33,6 +33,7 @@ const SessionSidebar = ({
   coachingComments = [],
   onRetry,
   onCollapse,
+  onJumpToTimestamp,
   isCollapsed = false,
   className,
 }) => {
@@ -211,6 +212,7 @@ const SessionSidebar = ({
               <AudioAnalysisDisplay
                 audioAnalysis={audioAnalysis}
                 isLoading={false}
+                onJumpToTimestamp={onJumpToTimestamp}
               />
             </motion.div>
           )}
