@@ -7,15 +7,13 @@ import {
   BarChart3,
   Copy,
   Check,
-  MoreVertical,
-  ChevronDown,
   ChevronRight,
   PanelRightClose,
-  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import StructuredFeedbackDisplay from './StructuredFeedbackDisplay';
+import AudioAnalysisDisplay from './AudioAnalysisDisplay';
 
 /**
  * SessionSidebar Component
@@ -23,8 +21,8 @@ import StructuredFeedbackDisplay from './StructuredFeedbackDisplay';
  * A sidebar panel for the session detail view with:
  * - Header showing completion status and score
  * - Tabs for "Coaching" and "Analysen"
- * - Coaching tab: Shows coach comments/feedback
- * - Analysen tab: Shows StructuredFeedbackDisplay
+ * - Coaching tab: Shows Gemini feedback (feedback_json) - content analysis
+ * - Analysen tab: Shows audio analysis (audio_analysis_json) - speech metrics
  */
 
 const SessionSidebar = ({
@@ -46,113 +44,7 @@ const SessionSidebar = ({
     if (feedback?.rating?.overall) {
       return Math.round((feedback.rating.overall / 10) * 100);
     }
-    if (feedback?.overall_analysis?.total_score) {
-      return feedback.overall_analysis.total_score;
-    }
     return null;
-  }, [feedback]);
-
-  // Transform feedback to StructuredFeedbackDisplay format if needed
-  const analysisData = useMemo(() => {
-    if (!feedback) return null;
-
-    // If already in correct format
-    if (feedback.overall_analysis && feedback.categories) {
-      return feedback;
-    }
-
-    // Transform from old format to new format
-    const transformedData = {
-      overall_analysis: {
-        total_score: feedback.rating?.overall ? Math.round((feedback.rating.overall / 10) * 100) : 50,
-        summary_text: feedback.summary || '',
-        top_strength: feedback.strengths?.[0] || null,
-        primary_weakness: feedback.improvements?.[0] || null,
-      },
-      categories: [],
-    };
-
-    // Create categories from available data
-    if (feedback.rating) {
-      const categoryItems = [];
-
-      if (feedback.rating.communication !== undefined) {
-        categoryItems.push({
-          criterion: 'Kommunikation',
-          rating: Math.round(feedback.rating.communication / 2),
-          observation: 'Deine Kommunikationsfähigkeiten während des Gesprächs.',
-          quote_evidence: null,
-          improvement_suggestion: feedback.improvements?.find(i =>
-            i.toLowerCase().includes('kommunikation') || i.toLowerCase().includes('sprache')
-          ) || null,
-        });
-      }
-
-      if (feedback.rating.professionalism !== undefined) {
-        categoryItems.push({
-          criterion: 'Professionalität',
-          rating: Math.round(feedback.rating.professionalism / 2),
-          observation: 'Dein professionelles Auftreten und Verhalten.',
-          quote_evidence: null,
-          improvement_suggestion: feedback.improvements?.find(i =>
-            i.toLowerCase().includes('profession') || i.toLowerCase().includes('auftreten')
-          ) || null,
-        });
-      }
-
-      if (feedback.rating.motivation !== undefined) {
-        categoryItems.push({
-          criterion: 'Motivation',
-          rating: Math.round(feedback.rating.motivation / 2),
-          observation: 'Wie motiviert und engagiert du gewirkt hast.',
-          quote_evidence: null,
-          improvement_suggestion: null,
-        });
-      }
-
-      if (categoryItems.length > 0) {
-        transformedData.categories.push({
-          id: 'gespraechsfuehrung',
-          title: 'Gesprächsführung',
-          score: feedback.rating.overall ? Math.round((feedback.rating.overall / 10) * 100) : 50,
-          items: categoryItems,
-        });
-      }
-    }
-
-    // Add strengths as a category
-    if (feedback.strengths?.length > 0) {
-      transformedData.categories.push({
-        id: 'staerken',
-        title: 'Stärken',
-        score: 85,
-        items: feedback.strengths.slice(0, 3).map((strength, idx) => ({
-          criterion: `Stärke ${idx + 1}`,
-          rating: 5,
-          observation: strength,
-          quote_evidence: null,
-          improvement_suggestion: null,
-        })),
-      });
-    }
-
-    // Add improvements as a category
-    if (feedback.improvements?.length > 0) {
-      transformedData.categories.push({
-        id: 'verbesserungen',
-        title: 'Verbesserungspotential',
-        score: 40,
-        items: feedback.improvements.slice(0, 3).map((improvement, idx) => ({
-          criterion: `Bereich ${idx + 1}`,
-          rating: 2,
-          observation: improvement,
-          quote_evidence: null,
-          improvement_suggestion: feedback.tips?.[idx] || null,
-        })),
-      });
-    }
-
-    return transformedData;
   }, [feedback]);
 
   // Copy feedback to clipboard
@@ -167,27 +59,6 @@ const SessionSidebar = ({
     } catch (err) {
       console.error('Failed to copy feedback:', err);
     }
-  };
-
-  // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
-
-  // Format time
-  const formatTime = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   if (isCollapsed) {
@@ -257,7 +128,7 @@ const SessionSidebar = ({
           <PanelRightClose className="w-4 h-4" />
         </button>
 
-        {/* Coaching Tab */}
+        {/* Coaching Tab - Shows Gemini content feedback */}
         <button
           onClick={() => setActiveTab('coaching')}
           className={cn(
@@ -269,19 +140,9 @@ const SessionSidebar = ({
         >
           <MessageSquare className="w-4 h-4" />
           Coaching
-          {coachingComments.length > 0 && (
-            <span className={cn(
-              "px-1.5 py-0.5 text-xs rounded-full",
-              activeTab === 'coaching'
-                ? "bg-blue-100 text-blue-700"
-                : "bg-slate-100 text-slate-600"
-            )}>
-              {coachingComments.length}
-            </span>
-          )}
         </button>
 
-        {/* Analysen Tab */}
+        {/* Analysen Tab - Shows audio analysis */}
         <button
           onClick={() => setActiveTab('analysen')}
           className={cn(
@@ -328,71 +189,11 @@ const SessionSidebar = ({
               transition={{ duration: 0.2 }}
               className="p-4"
             >
-              {/* Coaching Comments */}
-              {coachingComments.length === 0 ? (
-                <div className="text-center py-12">
-                  <MessageSquare className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-                  <p className="text-slate-500 text-sm">
-                    Noch keine Coaching-Kommentare vorhanden.
-                  </p>
-                  <p className="text-slate-400 text-xs mt-1">
-                    Kommentare von Coaches erscheinen hier.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {coachingComments.map((comment, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"
-                    >
-                      {/* Comment Header */}
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          {comment.author?.avatar ? (
-                            <img
-                              src={comment.author.avatar}
-                              alt={comment.author.name}
-                              className="w-10 h-10 rounded-full object-cover border-2 border-slate-200"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
-                              <User className="w-5 h-5 text-white" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-semibold text-slate-800 text-sm">
-                              {comment.author?.name || 'Coach'}
-                            </p>
-                            <p className="text-xs text-slate-400">
-                              {formatDate(comment.created_at)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-400">
-                            {formatTime(comment.created_at)}
-                          </span>
-                          <button className="text-slate-400 hover:text-slate-600">
-                            <MessageSquare className="w-4 h-4" />
-                          </button>
-                          <button className="text-slate-400 hover:text-slate-600">
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Comment Body */}
-                      <p className="text-sm text-slate-700 leading-relaxed">
-                        {comment.text || comment.content}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
+              {/* Coaching Content - Shows Gemini feedback_json */}
+              <StructuredFeedbackDisplay
+                feedback={feedback}
+                isLoading={false}
+              />
             </motion.div>
           )}
 
@@ -405,11 +206,10 @@ const SessionSidebar = ({
               transition={{ duration: 0.2 }}
               className="p-4"
             >
-              {/* Analysis Content */}
-              <StructuredFeedbackDisplay
-                analysisData={analysisData}
+              {/* Audio Analysis Content - Shows audio_analysis_json */}
+              <AudioAnalysisDisplay
                 audioAnalysis={audioAnalysis}
-                isLoading={!feedback}
+                isLoading={false}
               />
             </motion.div>
           )}
