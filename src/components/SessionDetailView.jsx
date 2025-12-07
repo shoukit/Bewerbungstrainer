@@ -86,6 +86,27 @@ const SessionDetailView = ({ session, onBack }) => {
     }
   }, [sessionData?.feedback_json]);
 
+  // Parse audio analysis
+  const parsedAudioAnalysis = useMemo(() => {
+    if (!sessionData?.audio_analysis_json) return null;
+    try {
+      let jsonString = sessionData.audio_analysis_json;
+      if (typeof jsonString === 'string') {
+        jsonString = jsonString.trim();
+        if (jsonString.startsWith('```json')) {
+          jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
+        } else if (jsonString.startsWith('```')) {
+          jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
+        }
+        return JSON.parse(jsonString);
+      }
+      return jsonString;
+    } catch (err) {
+      console.error('Failed to parse audio analysis:', err);
+      return null;
+    }
+  }, [sessionData?.audio_analysis_json]);
+
   const parsedTranscript = useMemo(() => {
     if (!sessionData?.transcript) return [];
     try {
@@ -659,11 +680,12 @@ const SessionDetailView = ({ session, onBack }) => {
 
           {/* Right Column - Feedback Sidebar */}
           <div className={isSidebarCollapsed ? 'lg:col-span-1' : ''}>
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden h-[calc(100vh-200px)] sticky top-24">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden sticky top-4">
               <SessionSidebar
                 session={sessionData}
                 scenario={scenario}
                 feedback={parsedFeedback}
+                audioAnalysis={parsedAudioAnalysis}
                 coachingComments={[]}
                 onRetry={() => {
                   // Navigate to retry the session
