@@ -1,0 +1,1179 @@
+<?php
+/**
+ * Simulator REST API Class
+ *
+ * Handles all REST API endpoints for the Skill Simulator feature
+ */
+
+// Exit if accessed directly
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class Bewerbungstrainer_Simulator_API {
+
+    /**
+     * Instance of this class
+     */
+    private static $instance = null;
+
+    /**
+     * API namespace
+     */
+    private $namespace = 'bewerbungstrainer/v1';
+
+    /**
+     * Database instance
+     */
+    private $db;
+
+    /**
+     * Audio handler instance
+     */
+    private $audio_handler;
+
+    /**
+     * Get singleton instance
+     */
+    public static function get_instance() {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Constructor
+     */
+    private function __construct() {
+        $this->db = Bewerbungstrainer_Simulator_Database::get_instance();
+        $this->audio_handler = Bewerbungstrainer_Audio_Handler::get_instance();
+
+        add_action('rest_api_init', array($this, 'register_routes'));
+    }
+
+    /**
+     * Register REST API routes
+     */
+    public function register_routes() {
+        // ===== Scenario Endpoints =====
+
+        // Get all scenarios
+        register_rest_route($this->namespace, '/simulator/scenarios', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_scenarios'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Get specific scenario
+        register_rest_route($this->namespace, '/simulator/scenarios/(?P<id>\d+)', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_scenario'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // ===== Session Endpoints =====
+
+        // Create simulator session
+        register_rest_route($this->namespace, '/simulator/sessions', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'create_session'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Generate questions for session
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)/questions', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'generate_questions'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Submit answer and get feedback
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)/answer', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'submit_answer'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Update session (status, progress)
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)', array(
+            'methods' => 'PUT',
+            'callback' => array($this, 'update_session'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Get specific session
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_session'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Get all sessions for user
+        register_rest_route($this->namespace, '/simulator/sessions', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_sessions'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Delete session
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)', array(
+            'methods' => 'DELETE',
+            'callback' => array($this, 'delete_session'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Get session answers
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)/answers', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_session_answers'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Complete session and generate summary
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)/complete', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'complete_session'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+    }
+
+    /**
+     * Permission callbacks
+     */
+    public function check_user_logged_in() {
+        return is_user_logged_in();
+    }
+
+    public function allow_all_users($request) {
+        return true;
+    }
+
+    // =========================================================================
+    // SCENARIO ENDPOINTS
+    // =========================================================================
+
+    /**
+     * Get all scenarios
+     */
+    public function get_scenarios($request) {
+        $params = $request->get_params();
+
+        $args = array(
+            'category' => isset($params['category']) ? $params['category'] : null,
+            'difficulty' => isset($params['difficulty']) ? $params['difficulty'] : null,
+            'is_active' => 1,
+        );
+
+        $scenarios = $this->db->get_scenarios($args);
+
+        // Format for frontend (without system prompts for list view)
+        $formatted = array_map(function($scenario) {
+            return array(
+                'id' => (int) $scenario->id,
+                'title' => $scenario->title,
+                'description' => $scenario->description,
+                'icon' => $scenario->icon,
+                'difficulty' => $scenario->difficulty,
+                'category' => $scenario->category,
+                'question_count_min' => (int) $scenario->question_count_min,
+                'question_count_max' => (int) $scenario->question_count_max,
+                'time_limit_per_question' => (int) $scenario->time_limit_per_question,
+                'allow_retry' => (bool) $scenario->allow_retry,
+            );
+        }, $scenarios);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array('scenarios' => $formatted),
+        ), 200);
+    }
+
+    /**
+     * Get specific scenario with full details
+     */
+    public function get_scenario($request) {
+        $scenario_id = intval($request['id']);
+        $scenario = $this->db->get_scenario($scenario_id);
+
+        if (!$scenario) {
+            return new WP_Error(
+                'not_found',
+                __('Szenario nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'id' => (int) $scenario->id,
+                'title' => $scenario->title,
+                'description' => $scenario->description,
+                'icon' => $scenario->icon,
+                'difficulty' => $scenario->difficulty,
+                'category' => $scenario->category,
+                'system_prompt' => $scenario->system_prompt,
+                'input_configuration' => $scenario->input_configuration,
+                'question_count_min' => (int) $scenario->question_count_min,
+                'question_count_max' => (int) $scenario->question_count_max,
+                'time_limit_per_question' => (int) $scenario->time_limit_per_question,
+                'allow_retry' => (bool) $scenario->allow_retry,
+            ),
+        ), 200);
+    }
+
+    // =========================================================================
+    // SESSION ENDPOINTS
+    // =========================================================================
+
+    /**
+     * Create a new simulator session
+     */
+    public function create_session($request) {
+        $params = $request->get_json_params();
+
+        if (empty($params)) {
+            $params = $request->get_params();
+        }
+
+        // Validate required fields
+        if (empty($params['scenario_id'])) {
+            return new WP_Error(
+                'missing_fields',
+                __('Szenario ist erforderlich.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Verify scenario exists
+        $scenario = $this->db->get_scenario($params['scenario_id']);
+        if (!$scenario) {
+            return new WP_Error(
+                'invalid_scenario',
+                __('Ungültiges Szenario.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // For non-logged-in users, user_name is optional but helpful
+        $user_id = get_current_user_id();
+
+        // Create session
+        $session_data = array(
+            'user_id' => $user_id,
+            'user_name' => isset($params['user_name']) ? $params['user_name'] : null,
+            'scenario_id' => $params['scenario_id'],
+            'variables_json' => isset($params['variables']) ? $params['variables'] : null,
+            'status' => 'setup',
+        );
+
+        $session_id = $this->db->create_session($session_data);
+
+        if (!$session_id) {
+            return new WP_Error(
+                'create_failed',
+                __('Fehler beim Erstellen der Sitzung.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        $session = $this->db->get_session($session_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'id' => (int) $session->id,
+                'session_id' => $session->session_id,
+                'scenario_id' => (int) $session->scenario_id,
+                'status' => $session->status,
+            ),
+        ), 201);
+    }
+
+    /**
+     * Generate questions for a session using Gemini
+     */
+    public function generate_questions($request) {
+        $session_id = intval($request['id']);
+        $session = $this->db->get_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'not_found',
+                __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get scenario
+        $scenario = $this->db->get_scenario($session->scenario_id);
+        if (!$scenario) {
+            return new WP_Error(
+                'scenario_not_found',
+                __('Szenario nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get API key
+        $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
+        if (empty($api_key)) {
+            return new WP_Error(
+                'missing_api_key',
+                __('Gemini API Key ist nicht konfiguriert.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Build prompt with variable interpolation
+        $variables = $session->variables_json ?: array();
+        $system_prompt = $this->interpolate_variables($scenario->system_prompt, $variables);
+        $question_prompt = $scenario->question_generation_prompt ?: $this->get_default_question_prompt();
+        $question_prompt = $this->interpolate_variables($question_prompt, $variables);
+
+        // Calculate question count
+        $question_count = rand($scenario->question_count_min, $scenario->question_count_max);
+
+        // Build full prompt
+        $full_prompt = $this->build_question_generation_prompt(
+            $system_prompt,
+            $question_prompt,
+            $variables,
+            $question_count
+        );
+
+        // Call Gemini API
+        $response = $this->call_gemini_api($full_prompt, $api_key);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Parse questions from response
+        $questions = $this->parse_questions_response($response);
+
+        if (empty($questions)) {
+            return new WP_Error(
+                'generation_failed',
+                __('Fehler beim Generieren der Fragen.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Update session with questions
+        $this->db->update_session($session_id, array(
+            'questions_json' => $questions,
+            'total_questions' => count($questions),
+            'status' => 'in_progress',
+            'started_at' => current_time('mysql'),
+        ));
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'questions' => $questions,
+                'total_questions' => count($questions),
+            ),
+        ), 200);
+    }
+
+    /**
+     * Submit an audio answer and get immediate feedback
+     */
+    public function submit_answer($request) {
+        $session_id = intval($request['id']);
+        $session = $this->db->get_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'not_found',
+                __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get parameters
+        $params = $request->get_params();
+        $question_index = isset($params['question_index']) ? intval($params['question_index']) : 0;
+        $question_text = isset($params['question_text']) ? $params['question_text'] : '';
+
+        // Handle audio file upload
+        $files = $request->get_file_params();
+        $audio_file = isset($files['audio']) ? $files['audio'] : null;
+
+        // Also check for base64 audio in body
+        $body_params = $request->get_json_params();
+        $audio_base64 = isset($body_params['audio_base64']) ? $body_params['audio_base64'] : null;
+
+        if (!$audio_file && !$audio_base64) {
+            return new WP_Error(
+                'missing_audio',
+                __('Audio-Datei ist erforderlich.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get API key
+        $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
+        if (empty($api_key)) {
+            return new WP_Error(
+                'missing_api_key',
+                __('Gemini API Key ist nicht konfiguriert.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Get scenario for feedback prompt
+        $scenario = $this->db->get_scenario($session->scenario_id);
+        $variables = $session->variables_json ?: array();
+
+        // Process audio - either file upload or base64
+        $audio_data = null;
+        $audio_url = null;
+        $audio_filename = null;
+
+        if ($audio_base64) {
+            // Handle base64 audio
+            $audio_data = base64_decode($audio_base64);
+            $mime_type = isset($body_params['audio_mime_type']) ? $body_params['audio_mime_type'] : 'audio/webm';
+
+            // Save to file
+            $upload_dir = wp_upload_dir();
+            $simulator_dir = $upload_dir['basedir'] . '/bewerbungstrainer/simulator/';
+
+            if (!file_exists($simulator_dir)) {
+                wp_mkdir_p($simulator_dir);
+            }
+
+            $audio_filename = 'sim_' . $session->session_id . '_q' . $question_index . '_' . time() . '.webm';
+            $audio_path = $simulator_dir . $audio_filename;
+
+            file_put_contents($audio_path, $audio_data);
+            $audio_url = $upload_dir['baseurl'] . '/bewerbungstrainer/simulator/' . $audio_filename;
+
+        } elseif ($audio_file) {
+            // Handle file upload
+            $upload_dir = wp_upload_dir();
+            $simulator_dir = $upload_dir['basedir'] . '/bewerbungstrainer/simulator/';
+
+            if (!file_exists($simulator_dir)) {
+                wp_mkdir_p($simulator_dir);
+            }
+
+            $audio_filename = 'sim_' . $session->session_id . '_q' . $question_index . '_' . time() . '.' . pathinfo($audio_file['name'], PATHINFO_EXTENSION);
+            $audio_path = $simulator_dir . $audio_filename;
+
+            move_uploaded_file($audio_file['tmp_name'], $audio_path);
+            $audio_url = $upload_dir['baseurl'] . '/bewerbungstrainer/simulator/' . $audio_filename;
+            $audio_data = file_get_contents($audio_path);
+            $mime_type = $audio_file['type'];
+        }
+
+        // Mark previous answers as not final (for retry)
+        $this->db->mark_previous_answers_not_final($session_id, $question_index);
+
+        // Get attempt number
+        $latest_answer = $this->db->get_latest_answer_for_question($session_id, $question_index);
+        $attempt_number = $latest_answer ? $latest_answer->attempt_number + 1 : 1;
+
+        // Build analysis prompt
+        $feedback_prompt = $scenario->feedback_prompt ?: $this->get_default_feedback_prompt();
+        $feedback_prompt = $this->interpolate_variables($feedback_prompt, $variables);
+
+        $analysis_prompt = $this->build_audio_analysis_prompt(
+            $question_text,
+            $scenario,
+            $variables,
+            $feedback_prompt
+        );
+
+        // Call Gemini with multimodal (audio + text)
+        $analysis_result = $this->call_gemini_multimodal($analysis_prompt, $audio_data, $mime_type ?? 'audio/webm', $api_key);
+
+        if (is_wp_error($analysis_result)) {
+            return $analysis_result;
+        }
+
+        // Parse analysis response
+        $parsed = $this->parse_audio_analysis_response($analysis_result);
+
+        // Create answer record
+        $answer_data = array(
+            'session_id' => $session_id,
+            'question_index' => $question_index,
+            'question_text' => $question_text,
+            'question_category' => isset($params['question_category']) ? $params['question_category'] : null,
+            'audio_filename' => $audio_filename,
+            'audio_url' => $audio_url,
+            'audio_duration_seconds' => isset($params['audio_duration']) ? intval($params['audio_duration']) : null,
+            'transcript' => $parsed['transcript'],
+            'feedback_json' => $parsed['feedback'],
+            'audio_analysis_json' => $parsed['audio_metrics'],
+            'content_score' => isset($parsed['feedback']['scores']['content']) ? $parsed['feedback']['scores']['content'] : null,
+            'delivery_score' => isset($parsed['feedback']['scores']['delivery']) ? $parsed['feedback']['scores']['delivery'] : null,
+            'overall_score' => isset($parsed['feedback']['scores']['overall']) ? $parsed['feedback']['scores']['overall'] : null,
+            'attempt_number' => $attempt_number,
+            'is_final_attempt' => 1,
+        );
+
+        $answer_id = $this->db->create_answer($answer_data);
+
+        if (!$answer_id) {
+            return new WP_Error(
+                'save_failed',
+                __('Fehler beim Speichern der Antwort.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Update session progress
+        $completed_count = count($this->db->get_session_answers($session_id, true));
+        $this->db->update_session($session_id, array(
+            'current_question_index' => $question_index,
+            'completed_questions' => $completed_count,
+        ));
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'answer_id' => $answer_id,
+                'transcript' => $parsed['transcript'],
+                'feedback' => $parsed['feedback'],
+                'audio_analysis' => $parsed['audio_metrics'],
+            ),
+        ), 200);
+    }
+
+    /**
+     * Update session
+     */
+    public function update_session($request) {
+        $session_id = intval($request['id']);
+        $session = $this->db->get_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'not_found',
+                __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        $params = $request->get_json_params();
+        if (empty($params)) {
+            $params = $request->get_params();
+        }
+
+        $update_data = array();
+
+        if (isset($params['status'])) {
+            $update_data['status'] = $params['status'];
+        }
+
+        if (isset($params['current_question_index'])) {
+            $update_data['current_question_index'] = intval($params['current_question_index']);
+        }
+
+        if (isset($params['completed_questions'])) {
+            $update_data['completed_questions'] = intval($params['completed_questions']);
+        }
+
+        if (!empty($update_data)) {
+            $this->db->update_session($session_id, $update_data);
+        }
+
+        $session = $this->db->get_session($session_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_session($session),
+        ), 200);
+    }
+
+    /**
+     * Get session
+     */
+    public function get_session($request) {
+        $session_id = intval($request['id']);
+        $session = $this->db->get_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'not_found',
+                __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_session($session),
+        ), 200);
+    }
+
+    /**
+     * Get all sessions for user
+     */
+    public function get_sessions($request) {
+        $params = $request->get_params();
+
+        $args = array(
+            'limit' => isset($params['limit']) ? intval($params['limit']) : 50,
+            'offset' => isset($params['offset']) ? intval($params['offset']) : 0,
+            'orderby' => isset($params['orderby']) ? $params['orderby'] : 'created_at',
+            'order' => isset($params['order']) ? $params['order'] : 'DESC',
+            'status' => isset($params['status']) ? $params['status'] : null,
+        );
+
+        $user_id = get_current_user_id();
+        $sessions = $this->db->get_user_sessions($user_id, $args);
+        $total = $this->db->get_user_sessions_count($user_id, $args['status']);
+
+        $formatted = array_map(array($this, 'format_session'), $sessions);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'sessions' => $formatted,
+                'pagination' => array(
+                    'page' => floor($args['offset'] / $args['limit']) + 1,
+                    'per_page' => $args['limit'],
+                    'total' => $total,
+                    'total_pages' => ceil($total / $args['limit']),
+                ),
+            ),
+        ), 200);
+    }
+
+    /**
+     * Delete session
+     */
+    public function delete_session($request) {
+        $session_id = intval($request['id']);
+        $user_id = get_current_user_id();
+
+        $result = $this->db->delete_session($session_id, $user_id);
+
+        if (!$result) {
+            return new WP_Error(
+                'delete_failed',
+                __('Fehler beim Löschen der Sitzung.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => __('Sitzung erfolgreich gelöscht.', 'bewerbungstrainer'),
+        ), 200);
+    }
+
+    /**
+     * Get answers for a session
+     */
+    public function get_session_answers($request) {
+        $session_id = intval($request['id']);
+        $session = $this->db->get_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'not_found',
+                __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        $answers = $this->db->get_session_answers($session_id, true);
+
+        $formatted = array_map(function($answer) {
+            return array(
+                'id' => (int) $answer->id,
+                'question_index' => (int) $answer->question_index,
+                'question_text' => $answer->question_text,
+                'question_category' => $answer->question_category,
+                'audio_url' => $answer->audio_url,
+                'audio_duration_seconds' => $answer->audio_duration_seconds ? (int) $answer->audio_duration_seconds : null,
+                'transcript' => $answer->transcript,
+                'feedback' => $answer->feedback_json,
+                'audio_analysis' => $answer->audio_analysis_json,
+                'content_score' => $answer->content_score ? (float) $answer->content_score : null,
+                'delivery_score' => $answer->delivery_score ? (float) $answer->delivery_score : null,
+                'overall_score' => $answer->overall_score ? (float) $answer->overall_score : null,
+                'attempt_number' => (int) $answer->attempt_number,
+                'created_at' => $answer->created_at,
+            );
+        }, $answers);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array('answers' => $formatted),
+        ), 200);
+    }
+
+    /**
+     * Complete session and generate summary
+     */
+    public function complete_session($request) {
+        $session_id = intval($request['id']);
+        $session = $this->db->get_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'not_found',
+                __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get all final answers
+        $answers = $this->db->get_session_answers($session_id, true);
+
+        // Calculate overall score
+        $total_score = 0;
+        $score_count = 0;
+
+        foreach ($answers as $answer) {
+            if ($answer->overall_score !== null) {
+                $total_score += (float) $answer->overall_score;
+                $score_count++;
+            }
+        }
+
+        $overall_score = $score_count > 0 ? round($total_score / $score_count, 2) : null;
+
+        // Generate summary feedback
+        $summary_feedback = array(
+            'total_questions' => (int) $session->total_questions,
+            'completed_questions' => count($answers),
+            'overall_score' => $overall_score,
+            'average_content_score' => $this->calculate_average_score($answers, 'content_score'),
+            'average_delivery_score' => $this->calculate_average_score($answers, 'delivery_score'),
+        );
+
+        // Update session
+        $this->db->update_session($session_id, array(
+            'status' => 'completed',
+            'completed_questions' => count($answers),
+            'overall_score' => $overall_score,
+            'summary_feedback_json' => $summary_feedback,
+            'completed_at' => current_time('mysql'),
+        ));
+
+        $session = $this->db->get_session($session_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'session' => $this->format_session($session),
+                'summary' => $summary_feedback,
+            ),
+        ), 200);
+    }
+
+    // =========================================================================
+    // HELPER METHODS
+    // =========================================================================
+
+    /**
+     * Format session for API response
+     */
+    private function format_session($session) {
+        return array(
+            'id' => (int) $session->id,
+            'session_id' => $session->session_id,
+            'scenario_id' => (int) $session->scenario_id,
+            'scenario_title' => $session->scenario_title,
+            'scenario_icon' => $session->scenario_icon,
+            'variables' => $session->variables_json,
+            'questions' => $session->questions_json,
+            'current_question_index' => (int) $session->current_question_index,
+            'status' => $session->status,
+            'total_questions' => (int) $session->total_questions,
+            'completed_questions' => (int) $session->completed_questions,
+            'overall_score' => $session->overall_score ? (float) $session->overall_score : null,
+            'summary_feedback' => $session->summary_feedback_json,
+            'started_at' => $session->started_at,
+            'completed_at' => $session->completed_at,
+            'created_at' => $session->created_at,
+        );
+    }
+
+    /**
+     * Calculate average score from answers
+     */
+    private function calculate_average_score($answers, $field) {
+        $total = 0;
+        $count = 0;
+
+        foreach ($answers as $answer) {
+            if ($answer->$field !== null) {
+                $total += (float) $answer->$field;
+                $count++;
+            }
+        }
+
+        return $count > 0 ? round($total / $count, 2) : null;
+    }
+
+    /**
+     * Interpolate variables in a string
+     */
+    private function interpolate_variables($string, $variables) {
+        if (!$variables) {
+            return $string;
+        }
+
+        foreach ($variables as $key => $value) {
+            // Handle ${key} format
+            $string = str_replace('${' . $key . '}', $value, $string);
+            // Handle {key} format
+            $string = str_replace('{' . $key . '}', $value, $string);
+        }
+
+        return $string;
+    }
+
+    /**
+     * Get default question generation prompt
+     */
+    private function get_default_question_prompt() {
+        return 'Generiere realistische Interviewfragen.
+
+Richtlinien:
+1. Beginne mit einer Einstiegsfrage
+2. Mische verschiedene Fragetypen
+3. Passe die Schwierigkeit an das Erfahrungslevel an
+4. Ende mit einer Frage nach offenen Punkten';
+    }
+
+    /**
+     * Get default feedback prompt
+     */
+    private function get_default_feedback_prompt() {
+        return 'Bewerte die Antwort.
+
+Fokussiere auf:
+- Inhaltliche Qualität
+- Struktur und Klarheit
+- Relevanz zur Frage
+- Konkrete Beispiele
+
+Sei konstruktiv und motivierend. Verwende die "Du"-Form.';
+    }
+
+    /**
+     * Build question generation prompt
+     */
+    private function build_question_generation_prompt($system_prompt, $question_prompt, $variables, $count) {
+        $context = '';
+        if ($variables) {
+            $context = "\n\nKontext:\n";
+            foreach ($variables as $key => $value) {
+                if ($value) {
+                    $context .= "- " . ucfirst(str_replace('_', ' ', $key)) . ": {$value}\n";
+                }
+            }
+        }
+
+        return "{$system_prompt}
+
+{$question_prompt}
+{$context}
+Generiere genau {$count} Interviewfragen.
+
+WICHTIG: Antworte NUR mit einem JSON-Array im folgenden Format:
+[
+  {
+    \"index\": 0,
+    \"question\": \"Die Interviewfrage\",
+    \"category\": \"Kategorie (z.B. Einstieg, Motivation, Fachlich, Soft Skills)\",
+    \"estimated_answer_time\": 90
+  }
+]
+
+JSON Output:";
+    }
+
+    /**
+     * Build audio analysis prompt
+     */
+    private function build_audio_analysis_prompt($question_text, $scenario, $variables, $feedback_prompt) {
+        $context = '';
+        if ($variables) {
+            foreach ($variables as $key => $value) {
+                if ($value) {
+                    $context .= "- " . ucfirst(str_replace('_', ' ', $key)) . ": {$value}\n";
+                }
+            }
+        }
+
+        return "Du bist ein professioneller Karriere-Coach und analysierst Audioantworten von Bewerbern.
+
+AUFGABE:
+1. TRANSKRIBIERE die Audioantwort vollständig
+2. ANALYSIERE die Antwort inhaltlich bezüglich der gestellten Frage
+3. ANALYSIERE die Sprechweise (Füllwörter, Tempo, Klarheit)
+4. GEBE konstruktives Feedback
+
+KONTEXT:
+- Szenario: {$scenario->title}
+{$context}
+
+FRAGE DIE BEANTWORTET WURDE:
+\"{$question_text}\"
+
+{$feedback_prompt}
+
+WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
+
+{
+  \"transcript\": \"Vollständige Transkription der Audioantwort...\",
+  \"feedback\": {
+    \"summary\": \"Kurze Zusammenfassung der Antwortqualität (1-2 Sätze)\",
+    \"strengths\": [
+      \"Stärke 1: Konkrete positive Beobachtung\",
+      \"Stärke 2: Was gut gemacht wurde\"
+    ],
+    \"improvements\": [
+      \"Verbesserung 1: Was besser gemacht werden könnte\",
+      \"Verbesserung 2: Konkreter Verbesserungsvorschlag\"
+    ],
+    \"tips\": [
+      \"Tipp 1: Konkreter, umsetzbarer Ratschlag\",
+      \"Tipp 2: Praktische Empfehlung\"
+    ],
+    \"scores\": {
+      \"content\": 7.5,
+      \"structure\": 8.0,
+      \"relevance\": 7.0,
+      \"delivery\": 7.5,
+      \"overall\": 7.5
+    }
+  },
+  \"audio_metrics\": {
+    \"speech_rate\": \"optimal\",
+    \"filler_words\": {
+      \"count\": 3,
+      \"words\": [\"ähm\", \"also\", \"halt\"],
+      \"severity\": \"niedrig\"
+    },
+    \"confidence_score\": 75,
+    \"clarity_score\": 80,
+    \"notes\": \"Optionale zusätzliche Beobachtungen zur Sprechweise\"
+  }
+}
+
+Bewertungsskala für Scores: 1-10 (1=sehr schwach, 10=exzellent)
+
+AUDIO ZUR ANALYSE:";
+    }
+
+    /**
+     * Call Gemini API (text only)
+     */
+    private function call_gemini_api($prompt, $api_key) {
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' . $api_key;
+
+        $body = array(
+            'contents' => array(
+                array(
+                    'parts' => array(
+                        array('text' => $prompt)
+                    )
+                )
+            ),
+            'generationConfig' => array(
+                'temperature' => 0.7,
+                'topK' => 40,
+                'topP' => 0.95,
+                'maxOutputTokens' => 8192,
+            )
+        );
+
+        $response = wp_remote_post($url, array(
+            'headers' => array('Content-Type' => 'application/json'),
+            'body' => json_encode($body),
+            'timeout' => 60,
+        ));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ($response_code !== 200) {
+            $error_body = wp_remote_retrieve_body($response);
+            error_log('Gemini API Error: ' . $error_body);
+            return new WP_Error(
+                'api_error',
+                __('Gemini API Fehler: ', 'bewerbungstrainer') . $response_code,
+                array('status' => 500)
+            );
+        }
+
+        $response_body = wp_remote_retrieve_body($response);
+        $data = json_decode($response_body, true);
+
+        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+            return new WP_Error(
+                'invalid_response',
+                __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        return $data['candidates'][0]['content']['parts'][0]['text'];
+    }
+
+    /**
+     * Call Gemini API with multimodal content (audio + text)
+     */
+    private function call_gemini_multimodal($prompt, $audio_data, $mime_type, $api_key) {
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' . $api_key;
+
+        // Convert audio to base64
+        $audio_base64 = base64_encode($audio_data);
+
+        $body = array(
+            'contents' => array(
+                array(
+                    'parts' => array(
+                        array('text' => $prompt),
+                        array(
+                            'inline_data' => array(
+                                'mime_type' => $mime_type,
+                                'data' => $audio_base64
+                            )
+                        )
+                    )
+                )
+            ),
+            'generationConfig' => array(
+                'temperature' => 0.7,
+                'topK' => 40,
+                'topP' => 0.95,
+                'maxOutputTokens' => 8192,
+            )
+        );
+
+        error_log('Simulator: Sending multimodal request to Gemini...');
+        error_log('Simulator: Audio size: ' . strlen($audio_data) . ' bytes');
+        error_log('Simulator: MIME type: ' . $mime_type);
+
+        $response = wp_remote_post($url, array(
+            'headers' => array('Content-Type' => 'application/json'),
+            'body' => json_encode($body),
+            'timeout' => 120,
+        ));
+
+        if (is_wp_error($response)) {
+            error_log('Simulator: Gemini request failed: ' . $response->get_error_message());
+            return $response;
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ($response_code !== 200) {
+            $error_body = wp_remote_retrieve_body($response);
+            error_log('Simulator: Gemini API Error (Code ' . $response_code . '): ' . $error_body);
+            return new WP_Error(
+                'api_error',
+                __('Gemini API Fehler: ', 'bewerbungstrainer') . $response_code,
+                array('status' => 500)
+            );
+        }
+
+        $response_body = wp_remote_retrieve_body($response);
+        $data = json_decode($response_body, true);
+
+        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+            error_log('Simulator: Invalid Gemini response structure');
+            return new WP_Error(
+                'invalid_response',
+                __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        error_log('Simulator: Gemini multimodal request successful');
+        return $data['candidates'][0]['content']['parts'][0]['text'];
+    }
+
+    /**
+     * Parse questions response from Gemini
+     */
+    private function parse_questions_response($response) {
+        // Try to extract JSON array from response
+        $json_match = null;
+
+        // Try to find JSON array
+        if (preg_match('/\[[\s\S]*\]/', $response, $json_match)) {
+            $json_str = $json_match[0];
+            $questions = json_decode($json_str, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && is_array($questions)) {
+                return $questions;
+            }
+        }
+
+        // Try to find JSON object with questions array
+        if (preg_match('/\{[\s\S]*"questions"[\s\S]*\}/', $response, $json_match)) {
+            $json_str = $json_match[0];
+            $data = json_decode($json_str, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && isset($data['questions'])) {
+                return $data['questions'];
+            }
+        }
+
+        error_log('Simulator: Failed to parse questions from response: ' . substr($response, 0, 500));
+        return array();
+    }
+
+    /**
+     * Parse audio analysis response from Gemini
+     */
+    private function parse_audio_analysis_response($response) {
+        // Default structure
+        $default = array(
+            'transcript' => '',
+            'feedback' => array(
+                'summary' => 'Feedback konnte nicht generiert werden.',
+                'strengths' => array(),
+                'improvements' => array(),
+                'tips' => array(),
+                'scores' => array(
+                    'content' => null,
+                    'structure' => null,
+                    'relevance' => null,
+                    'delivery' => null,
+                    'overall' => null
+                )
+            ),
+            'audio_metrics' => array(
+                'speech_rate' => 'unbekannt',
+                'filler_words' => array('count' => 0, 'words' => array()),
+                'confidence_score' => null,
+                'clarity_score' => null
+            )
+        );
+
+        // Try to extract JSON from response
+        $json_match = null;
+        if (preg_match('/\{[\s\S]*\}/', $response, $json_match)) {
+            $json_str = $json_match[0];
+            $parsed = json_decode($json_str, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return array(
+                    'transcript' => isset($parsed['transcript']) ? $parsed['transcript'] : $default['transcript'],
+                    'feedback' => isset($parsed['feedback']) ? $parsed['feedback'] : $default['feedback'],
+                    'audio_metrics' => isset($parsed['audio_metrics']) ? $parsed['audio_metrics'] : $default['audio_metrics'],
+                );
+            }
+        }
+
+        error_log('Simulator: Failed to parse audio analysis from response: ' . substr($response, 0, 500));
+        return $default;
+    }
+}

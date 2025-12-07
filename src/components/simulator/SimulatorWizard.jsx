@@ -1,0 +1,535 @@
+import React, { useState, useEffect } from 'react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  AlertCircle,
+  Sparkles,
+  CheckCircle,
+  Info
+} from 'lucide-react';
+import wordpressAPI from '@/services/wordpress-api';
+
+/**
+ * Ocean theme colors
+ */
+const COLORS = {
+  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
+  teal: { 500: '#3DA389', 600: '#2E8A72' },
+  slate: { 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+  red: { 500: '#ef4444', 100: '#fee2e2' },
+  green: { 500: '#22c55e', 100: '#dcfce7' },
+};
+
+/**
+ * Dynamic Form Field Component
+ * Renders appropriate input based on field type from input_configuration
+ */
+const DynamicFormField = ({ field, value, onChange, error }) => {
+  const baseInputStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '12px',
+    border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
+    fontSize: '15px',
+    color: COLORS.slate[900],
+    backgroundColor: 'white',
+    outline: 'none',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  };
+
+  const focusStyle = {
+    borderColor: COLORS.blue[500],
+    boxShadow: `0 0 0 3px rgba(74, 158, 201, 0.1)`,
+  };
+
+  const handleFocus = (e) => {
+    Object.assign(e.target.style, focusStyle);
+  };
+
+  const handleBlur = (e) => {
+    e.target.style.borderColor = error ? COLORS.red[500] : COLORS.slate[200];
+    e.target.style.boxShadow = 'none';
+  };
+
+  const renderInput = () => {
+    switch (field.type) {
+      case 'text':
+        return (
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => onChange(field.key, e.target.value)}
+            placeholder={field.placeholder || ''}
+            style={baseInputStyle}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          />
+        );
+
+      case 'textarea':
+        return (
+          <textarea
+            value={value || ''}
+            onChange={(e) => onChange(field.key, e.target.value)}
+            placeholder={field.placeholder || ''}
+            rows={4}
+            style={{
+              ...baseInputStyle,
+              resize: 'vertical',
+              minHeight: '100px',
+            }}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          />
+        );
+
+      case 'select':
+        return (
+          <select
+            value={value || field.default || ''}
+            onChange={(e) => onChange(field.key, e.target.value)}
+            style={{
+              ...baseInputStyle,
+              cursor: 'pointer',
+              appearance: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: 'right 12px center',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '20px',
+              paddingRight: '44px',
+            }}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          >
+            <option value="">Bitte wählen...</option>
+            {field.options?.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        );
+
+      case 'number':
+        return (
+          <input
+            type="number"
+            value={value || ''}
+            onChange={(e) => onChange(field.key, e.target.value)}
+            placeholder={field.placeholder || ''}
+            min={field.validation?.min}
+            max={field.validation?.max}
+            style={baseInputStyle}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          />
+        );
+
+      default:
+        return (
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => onChange(field.key, e.target.value)}
+            placeholder={field.placeholder || ''}
+            style={baseInputStyle}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          />
+        );
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: '20px' }}>
+      <label style={{
+        display: 'block',
+        marginBottom: '8px',
+        fontSize: '14px',
+        fontWeight: 600,
+        color: COLORS.slate[700],
+      }}>
+        {field.label}
+        {field.required && (
+          <span style={{ color: COLORS.red[500], marginLeft: '4px' }}>*</span>
+        )}
+      </label>
+      {renderInput()}
+      {error && (
+        <p style={{
+          marginTop: '6px',
+          fontSize: '13px',
+          color: COLORS.red[500],
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+        }}>
+          <AlertCircle style={{ width: '14px', height: '14px' }} />
+          {error}
+        </p>
+      )}
+      {field.hint && !error && (
+        <p style={{
+          marginTop: '6px',
+          fontSize: '13px',
+          color: COLORS.slate[500],
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+        }}>
+          <Info style={{ width: '14px', height: '14px' }} />
+          {field.hint}
+        </p>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Simulator Wizard Component
+ *
+ * Renders a dynamic form based on scenario's input_configuration
+ * and creates a session with the provided variables
+ */
+const SimulatorWizard = ({ scenario, onBack, onStart }) => {
+  const [formValues, setFormValues] = useState({});
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
+  // Parse input configuration
+  const inputConfig = React.useMemo(() => {
+    if (!scenario?.input_configuration) return [];
+
+    try {
+      const config = typeof scenario.input_configuration === 'string'
+        ? JSON.parse(scenario.input_configuration)
+        : scenario.input_configuration;
+
+      // Filter to only show user-input fields
+      return Array.isArray(config)
+        ? config.filter(field => field.user_input !== false)
+        : [];
+    } catch (e) {
+      console.error('Error parsing input_configuration:', e);
+      return [];
+    }
+  }, [scenario?.input_configuration]);
+
+  // Initialize form with default values
+  useEffect(() => {
+    const defaults = {};
+    inputConfig.forEach(field => {
+      if (field.default) {
+        defaults[field.key] = field.default;
+      }
+    });
+    setFormValues(defaults);
+  }, [inputConfig]);
+
+  const handleChange = (key, value) => {
+    setFormValues(prev => ({ ...prev, [key]: value }));
+    // Clear error when user starts typing
+    if (errors[key]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    inputConfig.forEach(field => {
+      const value = formValues[field.key];
+
+      // Required validation
+      if (field.required && (!value || value.trim() === '')) {
+        newErrors[field.key] = 'Dieses Feld ist erforderlich';
+        return;
+      }
+
+      // Skip further validation if empty and not required
+      if (!value || value.trim() === '') return;
+
+      // Validation rules
+      if (field.validation) {
+        const { minLength, maxLength, min, max, pattern } = field.validation;
+
+        if (minLength && value.length < minLength) {
+          newErrors[field.key] = `Mindestens ${minLength} Zeichen erforderlich`;
+        }
+        if (maxLength && value.length > maxLength) {
+          newErrors[field.key] = `Maximal ${maxLength} Zeichen erlaubt`;
+        }
+        if (min !== undefined && Number(value) < min) {
+          newErrors[field.key] = `Mindestens ${min}`;
+        }
+        if (max !== undefined && Number(value) > max) {
+          newErrors[field.key] = `Maximal ${max}`;
+        }
+        if (pattern && !new RegExp(pattern).test(value)) {
+          newErrors[field.key] = 'Ungültiges Format';
+        }
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 1. Create session with variables
+      const sessionResponse = await wordpressAPI.createSimulatorSession({
+        scenario_id: scenario.id,
+        variables: formValues,
+      });
+
+      if (!sessionResponse.success) {
+        throw new Error(sessionResponse.message || 'Fehler beim Erstellen der Session');
+      }
+
+      const session = sessionResponse.data.session;
+
+      // 2. Generate questions
+      const questionsResponse = await wordpressAPI.generateSimulatorQuestions(session.id);
+
+      if (!questionsResponse.success) {
+        throw new Error(questionsResponse.message || 'Fehler beim Generieren der Fragen');
+      }
+
+      // 3. Start the session
+      onStart({
+        session: questionsResponse.data.session,
+        questions: questionsResponse.data.questions,
+        scenario: scenario,
+        variables: formValues,
+      });
+
+    } catch (err) {
+      console.error('Error starting session:', err);
+      setSubmitError(err.message || 'Ein Fehler ist aufgetreten');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: '24px', maxWidth: '640px', margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <button
+          onClick={onBack}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 12px',
+            marginBottom: '16px',
+            border: 'none',
+            background: 'transparent',
+            color: COLORS.slate[600],
+            fontSize: '14px',
+            cursor: 'pointer',
+            borderRadius: '8px',
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
+          onMouseLeave={(e) => e.target.style.background = 'transparent'}
+        >
+          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          Zurück zur Übersicht
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '14px',
+            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Sparkles style={{ width: '28px', height: '28px', color: 'white' }} />
+          </div>
+          <div>
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: 700,
+              color: COLORS.slate[900],
+              margin: 0,
+            }}>
+              {scenario.title}
+            </h1>
+            <p style={{
+              fontSize: '14px',
+              color: COLORS.slate[600],
+              margin: '4px 0 0 0',
+            }}>
+              Konfiguriere dein Training
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Description Card */}
+      <div style={{
+        padding: '16px 20px',
+        borderRadius: '12px',
+        backgroundColor: COLORS.slate[100],
+        marginBottom: '24px',
+      }}>
+        <p style={{
+          fontSize: '14px',
+          color: COLORS.slate[700],
+          margin: 0,
+          lineHeight: 1.6,
+        }}>
+          {scenario.description}
+        </p>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit}>
+        {inputConfig.length > 0 ? (
+          inputConfig.map(field => (
+            <DynamicFormField
+              key={field.key}
+              field={field}
+              value={formValues[field.key]}
+              onChange={handleChange}
+              error={errors[field.key]}
+            />
+          ))
+        ) : (
+          <div style={{
+            padding: '24px',
+            textAlign: 'center',
+            color: COLORS.slate[500],
+          }}>
+            <CheckCircle style={{ width: '32px', height: '32px', marginBottom: '12px', opacity: 0.5 }} />
+            <p style={{ margin: 0 }}>Keine zusätzliche Konfiguration erforderlich.</p>
+          </div>
+        )}
+
+        {/* Session Info */}
+        <div style={{
+          padding: '16px 20px',
+          borderRadius: '12px',
+          backgroundColor: COLORS.blue[500] + '10',
+          marginTop: '24px',
+          marginBottom: '24px',
+          display: 'flex',
+          gap: '20px',
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Fragen</span>
+            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+              {scenario.question_count_min}-{scenario.question_count_max}
+            </span>
+          </div>
+          <div>
+            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Zeit pro Frage</span>
+            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+              {Math.round(scenario.time_limit_per_question / 60)} Min
+            </span>
+          </div>
+          <div>
+            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Wiederholen</span>
+            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+              {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
+            </span>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {submitError && (
+          <div style={{
+            padding: '12px 16px',
+            borderRadius: '12px',
+            backgroundColor: COLORS.red[100],
+            color: COLORS.red[500],
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <AlertCircle style={{ width: '18px', height: '18px' }} />
+            {submitError}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          style={{
+            width: '100%',
+            padding: '16px 24px',
+            borderRadius: '14px',
+            border: 'none',
+            background: isSubmitting
+              ? COLORS.slate[300]
+              : `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+            color: 'white',
+            fontSize: '16px',
+            fontWeight: 600,
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            boxShadow: isSubmitting ? 'none' : '0 4px 12px rgba(74, 158, 201, 0.3)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isSubmitting) {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'none';
+            e.target.style.boxShadow = isSubmitting ? 'none' : '0 4px 12px rgba(74, 158, 201, 0.3)';
+          }}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }} />
+              Fragen werden generiert...
+            </>
+          ) : (
+            <>
+              Training starten
+              <ArrowRight style={{ width: '20px', height: '20px' }} />
+            </>
+          )}
+        </button>
+      </form>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default SimulatorWizard;

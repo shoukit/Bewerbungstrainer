@@ -1,0 +1,698 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  Mic,
+  MicOff,
+  Square,
+  ChevronRight,
+  RotateCcw,
+  Clock,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  X,
+  Volume2
+} from 'lucide-react';
+import wordpressAPI from '@/services/wordpress-api';
+import ImmediateFeedback from './ImmediateFeedback';
+
+/**
+ * Ocean theme colors
+ */
+const COLORS = {
+  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
+  teal: { 500: '#3DA389', 600: '#2E8A72' },
+  slate: { 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+  red: { 500: '#ef4444', 100: '#fee2e2' },
+  green: { 500: '#22c55e', 100: '#dcfce7' },
+  amber: { 500: '#f59e0b', 100: '#fef3c7' },
+};
+
+/**
+ * Progress Bar Component
+ */
+const ProgressBar = ({ current, total }) => {
+  const progress = (current / total) * 100;
+
+  return (
+    <div style={{ marginBottom: '24px' }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '8px',
+      }}>
+        <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>
+          Frage {current} von {total}
+        </span>
+        <span style={{ fontSize: '14px', color: COLORS.slate[500] }}>
+          {Math.round(progress)}% abgeschlossen
+        </span>
+      </div>
+      <div style={{
+        height: '8px',
+        backgroundColor: COLORS.slate[200],
+        borderRadius: '4px',
+        overflow: 'hidden',
+      }}>
+        <div
+          style={{
+            height: '100%',
+            width: `${progress}%`,
+            background: `linear-gradient(90deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            borderRadius: '4px',
+            transition: 'width 0.3s ease',
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Question Display Component
+ */
+const QuestionDisplay = ({ question, questionNumber }) => {
+  return (
+    <div style={{
+      padding: '24px',
+      borderRadius: '16px',
+      backgroundColor: 'white',
+      border: `1px solid ${COLORS.slate[200]}`,
+      marginBottom: '24px',
+    }}>
+      <div style={{
+        display: 'inline-block',
+        padding: '4px 12px',
+        borderRadius: '20px',
+        backgroundColor: COLORS.blue[500] + '15',
+        color: COLORS.blue[600],
+        fontSize: '12px',
+        fontWeight: 600,
+        marginBottom: '12px',
+      }}>
+        {question.category || 'Frage'}
+      </div>
+      <p style={{
+        fontSize: '18px',
+        fontWeight: 500,
+        color: COLORS.slate[900],
+        margin: 0,
+        lineHeight: 1.5,
+      }}>
+        {question.question}
+      </p>
+      {question.estimated_answer_time && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          marginTop: '12px',
+          color: COLORS.slate[500],
+          fontSize: '13px',
+        }}>
+          <Clock style={{ width: '14px', height: '14px' }} />
+          Empfohlene Antwortzeit: ca. {Math.round(question.estimated_answer_time / 60)} Min
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Timer Component
+ */
+const Timer = ({ seconds, maxSeconds, isRecording }) => {
+  const formatTime = (s) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const progress = maxSeconds > 0 ? (seconds / maxSeconds) * 100 : 0;
+  const isWarning = progress > 75;
+  const isDanger = progress > 90;
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '12px 16px',
+      borderRadius: '12px',
+      backgroundColor: isDanger ? COLORS.red[100] : isWarning ? COLORS.amber[100] : COLORS.slate[100],
+    }}>
+      <Clock style={{
+        width: '20px',
+        height: '20px',
+        color: isDanger ? COLORS.red[500] : isWarning ? COLORS.amber[500] : COLORS.slate[600],
+      }} />
+      <span style={{
+        fontSize: '18px',
+        fontWeight: 600,
+        fontFamily: 'monospace',
+        color: isDanger ? COLORS.red[500] : isWarning ? COLORS.amber[500] : COLORS.slate[700],
+      }}>
+        {formatTime(seconds)}
+      </span>
+      <span style={{ fontSize: '14px', color: COLORS.slate[500] }}>
+        / {formatTime(maxSeconds)}
+      </span>
+    </div>
+  );
+};
+
+/**
+ * Audio Recorder Component
+ */
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const timerRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const streamRef = useRef(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopRecording(true);
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  // Auto-stop when time limit reached
+  useEffect(() => {
+    if (isRecording && seconds >= timeLimit) {
+      stopRecording();
+    }
+  }, [seconds, timeLimit, isRecording]);
+
+  const startRecording = async () => {
+    try {
+      setPermissionDenied(false);
+      audioChunksRef.current = [];
+      setSeconds(0);
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      // Set up audio analyzer for level visualization
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyserRef.current);
+      analyserRef.current.fftSize = 256;
+
+      // Start level monitoring
+      const updateLevel = () => {
+        if (analyserRef.current) {
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+          setAudioLevel(average / 255);
+        }
+        animationFrameRef.current = requestAnimationFrame(updateLevel);
+      };
+      updateLevel();
+
+      // Set up MediaRecorder
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : 'audio/mp4';
+
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        onRecordingComplete(audioBlob);
+      };
+
+      mediaRecorderRef.current.start(1000); // Collect data every second
+      setIsRecording(true);
+
+      // Start timer
+      timerRef.current = setInterval(() => {
+        setSeconds(prev => prev + 1);
+      }, 1000);
+
+    } catch (err) {
+      console.error('Error starting recording:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setPermissionDenied(true);
+      }
+    }
+  };
+
+  const stopRecording = (cleanup = false) => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    setIsRecording(false);
+    setAudioLevel(0);
+
+    if (!cleanup) {
+      // Reset for next recording
+      setSeconds(0);
+    }
+  };
+
+  if (permissionDenied) {
+    return (
+      <div style={{
+        padding: '24px',
+        borderRadius: '16px',
+        backgroundColor: COLORS.red[100],
+        textAlign: 'center',
+      }}>
+        <MicOff style={{ width: '48px', height: '48px', color: COLORS.red[500], marginBottom: '12px' }} />
+        <p style={{ color: COLORS.red[500], fontWeight: 600, margin: 0 }}>
+          Mikrofonzugriff verweigert
+        </p>
+        <p style={{ color: COLORS.slate[600], fontSize: '14px', marginTop: '8px' }}>
+          Bitte erlaube den Zugriff auf dein Mikrofon in den Browser-Einstellungen.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      padding: '24px',
+      borderRadius: '16px',
+      backgroundColor: 'white',
+      border: `1px solid ${COLORS.slate[200]}`,
+    }}>
+      {/* Timer */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+        <Timer seconds={seconds} maxSeconds={timeLimit} isRecording={isRecording} />
+      </div>
+
+      {/* Audio Level Visualization */}
+      {isRecording && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '4px',
+          height: '60px',
+          marginBottom: '24px',
+        }}>
+          {[...Array(20)].map((_, i) => {
+            const height = Math.max(8, Math.min(50, audioLevel * 100 * Math.random() * 2));
+            return (
+              <div
+                key={i}
+                style={{
+                  width: '6px',
+                  height: `${height}px`,
+                  backgroundColor: COLORS.blue[500],
+                  borderRadius: '3px',
+                  transition: 'height 0.1s ease',
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Recording Button */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+        {!isRecording ? (
+          <button
+            onClick={startRecording}
+            disabled={disabled}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              padding: '16px 32px',
+              borderRadius: '50px',
+              border: 'none',
+              background: disabled
+                ? COLORS.slate[300]
+                : `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: 600,
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              boxShadow: disabled ? 'none' : '0 4px 12px rgba(74, 158, 201, 0.3)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled) {
+                e.target.style.transform = 'scale(1.05)';
+                e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'scale(1)';
+              e.target.style.boxShadow = disabled ? 'none' : '0 4px 12px rgba(74, 158, 201, 0.3)';
+            }}
+          >
+            <Mic style={{ width: '24px', height: '24px' }} />
+            Aufnahme starten
+          </button>
+        ) : (
+          <button
+            onClick={() => stopRecording()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              padding: '16px 32px',
+              borderRadius: '50px',
+              border: 'none',
+              backgroundColor: COLORS.red[500],
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+              animation: 'pulse 2s infinite',
+            }}
+          >
+            <Square style={{ width: '20px', height: '20px' }} />
+            Aufnahme beenden
+          </button>
+        )}
+      </div>
+
+      {/* Recording Hint */}
+      {!isRecording && (
+        <p style={{
+          textAlign: 'center',
+          marginTop: '16px',
+          color: COLORS.slate[500],
+          fontSize: '14px',
+        }}>
+          Klicke auf den Button, um deine Antwort aufzunehmen
+        </p>
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.8; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+/**
+ * Simulator Session Component
+ *
+ * Main session interface with question display, audio recording,
+ * and immediate feedback after each answer
+ */
+const SimulatorSession = ({ session, questions, scenario, variables, onComplete, onExit }) => {
+  const [currentIndex, setCurrentIndex] = useState(session.current_question_index || 0);
+  const [feedback, setFeedback] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [completedAnswers, setCompletedAnswers] = useState([]);
+
+  const currentQuestion = questions[currentIndex];
+  const isLastQuestion = currentIndex === questions.length - 1;
+
+  const handleRecordingComplete = async (audioBlob) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Submit audio and get immediate feedback
+      const response = await wordpressAPI.submitSimulatorAnswer(
+        session.id,
+        audioBlob,
+        currentIndex,
+        currentQuestion.question,
+        currentQuestion.category
+      );
+
+      if (!response.success) {
+        throw new Error(response.message || 'Fehler beim Analysieren der Antwort');
+      }
+
+      setFeedback(response.data);
+      setShowFeedback(true);
+
+      // Track completed answer
+      setCompletedAnswers(prev => [
+        ...prev.filter(a => a.questionIndex !== currentIndex),
+        { questionIndex: currentIndex, feedback: response.data }
+      ]);
+
+    } catch (err) {
+      console.error('Error submitting answer:', err);
+      setSubmitError(err.message || 'Ein Fehler ist aufgetreten');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setFeedback(null);
+    setShowFeedback(false);
+    setSubmitError(null);
+  };
+
+  const handleNext = async () => {
+    setFeedback(null);
+    setShowFeedback(false);
+    setSubmitError(null);
+
+    if (isLastQuestion) {
+      // Complete the session
+      try {
+        const response = await wordpressAPI.completeSimulatorSession(session.id);
+        if (response.success) {
+          onComplete(response.data);
+        } else {
+          onComplete({ session: { ...session, status: 'completed' } });
+        }
+      } catch (err) {
+        console.error('Error completing session:', err);
+        onComplete({ session: { ...session, status: 'completed' } });
+      }
+    } else {
+      setCurrentIndex(prev => prev + 1);
+    }
+  };
+
+  const handleExitConfirm = () => {
+    if (window.confirm('Möchtest du das Training wirklich abbrechen? Dein bisheriger Fortschritt wird gespeichert.')) {
+      onExit();
+    }
+  };
+
+  return (
+    <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '24px',
+      }}>
+        <div>
+          <h1 style={{
+            fontSize: '20px',
+            fontWeight: 700,
+            color: COLORS.slate[900],
+            margin: 0,
+          }}>
+            {scenario.title}
+          </h1>
+          <p style={{
+            fontSize: '14px',
+            color: COLORS.slate[500],
+            margin: '4px 0 0 0',
+          }}>
+            Beantworte die Fragen mit deinem Mikrofon
+          </p>
+        </div>
+        <button
+          onClick={handleExitConfirm}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 12px',
+            border: `1px solid ${COLORS.slate[300]}`,
+            borderRadius: '8px',
+            backgroundColor: 'white',
+            color: COLORS.slate[600],
+            fontSize: '14px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.borderColor = COLORS.red[500];
+            e.target.style.color = COLORS.red[500];
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.borderColor = COLORS.slate[300];
+            e.target.style.color = COLORS.slate[600];
+          }}
+        >
+          <X style={{ width: '16px', height: '16px' }} />
+          Beenden
+        </button>
+      </div>
+
+      {/* Progress */}
+      <ProgressBar current={currentIndex + 1} total={questions.length} />
+
+      {/* Question */}
+      <QuestionDisplay
+        question={currentQuestion}
+        questionNumber={currentIndex + 1}
+      />
+
+      {/* Recording or Feedback */}
+      {!showFeedback ? (
+        <>
+          <AudioRecorder
+            onRecordingComplete={handleRecordingComplete}
+            timeLimit={scenario.time_limit_per_question || 120}
+            disabled={isSubmitting}
+          />
+
+          {/* Submitting State */}
+          {isSubmitting && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '32px',
+              marginTop: '24px',
+              borderRadius: '16px',
+              backgroundColor: COLORS.slate[100],
+            }}>
+              <Loader2 style={{
+                width: '48px',
+                height: '48px',
+                color: COLORS.blue[500],
+                animation: 'spin 1s linear infinite',
+              }} />
+              <p style={{
+                marginTop: '16px',
+                color: COLORS.slate[700],
+                fontSize: '16px',
+                fontWeight: 500,
+              }}>
+                Deine Antwort wird analysiert...
+              </p>
+              <p style={{
+                marginTop: '4px',
+                color: COLORS.slate[500],
+                fontSize: '14px',
+              }}>
+                Die KI transkribiert und bewertet deine Antwort
+              </p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {submitError && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '24px',
+              marginTop: '24px',
+              borderRadius: '16px',
+              backgroundColor: COLORS.red[100],
+            }}>
+              <AlertCircle style={{ width: '32px', height: '32px', color: COLORS.red[500] }} />
+              <p style={{
+                marginTop: '12px',
+                color: COLORS.red[500],
+                fontWeight: 600,
+              }}>
+                {submitError}
+              </p>
+              <button
+                onClick={handleRetry}
+                style={{
+                  marginTop: '16px',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: COLORS.red[500],
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Erneut versuchen
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <ImmediateFeedback
+          transcript={feedback.transcript}
+          feedback={feedback.feedback}
+          audioMetrics={feedback.audio_analysis}
+          onRetry={scenario.allow_retry ? handleRetry : null}
+          onNext={handleNext}
+          isLastQuestion={isLastQuestion}
+        />
+      )}
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default SimulatorSession;
