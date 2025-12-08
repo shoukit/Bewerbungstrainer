@@ -324,6 +324,110 @@ export const ERROR_MESSAGES = {
   JSON_PARSE_FAILED: 'Fehler beim Parsen der Antwort',
 };
 
+// =============================================================================
+// RHETORIK-GYM GAME CONFIGURATION
+// =============================================================================
+
+/**
+ * Game mode configurations
+ */
+export const GAME_CONFIG = {
+  KLASSIKER: {
+    id: 'klassiker',
+    duration: 60,
+    title: 'Der Klassiker',
+    subtitle: 'Elevator Pitch',
+  },
+  ZUFALL: {
+    id: 'zufall',
+    duration: 60,
+    title: 'Zufalls-Thema',
+    subtitle: 'Slot Machine',
+  },
+  STRESS: {
+    id: 'stress',
+    duration: 90,
+    title: 'Stress-Test',
+    subtitle: 'Überraschungsfrage',
+  },
+};
+
+/**
+ * Game score thresholds
+ */
+export const GAME_SCORE_THRESHOLDS = {
+  EXCELLENT: 90,
+  GOOD: 70,
+  MEDIUM: 50,
+  NEEDS_WORK: 30,
+};
+
+/**
+ * Filler word penalty per occurrence
+ */
+export const FILLER_WORD_PENALTY = 10;
+
+/**
+ * Pace penalty thresholds for game scoring
+ */
+export const GAME_PACE_THRESHOLDS = {
+  MIN_WPM: 100,  // Below this = too slow
+  MAX_WPM: 160,  // Above this = too fast
+  OPTIMAL_MIN: 120,
+  OPTIMAL_MAX: 150,
+};
+
+/**
+ * Get game score color scheme
+ * @param {number} score - Score from 0-100
+ * @returns {object} - Color scheme object
+ */
+export function getGameScoreColorScheme(score) {
+  if (score >= GAME_SCORE_THRESHOLDS.EXCELLENT) {
+    return {
+      gradient: 'from-green-500 to-emerald-600',
+      text: 'text-green-600',
+      bg: 'bg-green-50',
+      emoji: '🏆',
+      label: 'Ausgezeichnet',
+    };
+  }
+  if (score >= GAME_SCORE_THRESHOLDS.GOOD) {
+    return {
+      gradient: 'from-blue-500 to-blue-600',
+      text: 'text-blue-600',
+      bg: 'bg-blue-50',
+      emoji: '🌟',
+      label: 'Sehr gut',
+    };
+  }
+  if (score >= GAME_SCORE_THRESHOLDS.MEDIUM) {
+    return {
+      gradient: 'from-amber-500 to-orange-500',
+      text: 'text-amber-600',
+      bg: 'bg-amber-50',
+      emoji: '💪',
+      label: 'Gut',
+    };
+  }
+  if (score >= GAME_SCORE_THRESHOLDS.NEEDS_WORK) {
+    return {
+      gradient: 'from-orange-500 to-red-500',
+      text: 'text-orange-600',
+      bg: 'bg-orange-50',
+      emoji: '🎯',
+      label: 'Ausbaufähig',
+    };
+  }
+  return {
+    gradient: 'from-red-500 to-red-600',
+    text: 'text-red-600',
+    bg: 'bg-red-50',
+    emoji: '🔄',
+    label: 'Übung macht den Meister',
+  };
+}
+
 export default {
   GEMINI_MODELS,
   API_RETRY_CONFIG,
@@ -342,4 +446,9 @@ export default {
   getInteractiveState,
   SPEAKER_STYLES,
   ERROR_MESSAGES,
+  GAME_CONFIG,
+  GAME_SCORE_THRESHOLDS,
+  FILLER_WORD_PENALTY,
+  GAME_PACE_THRESHOLDS,
+  getGameScoreColorScheme,
 };

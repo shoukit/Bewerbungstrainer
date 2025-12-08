@@ -10,6 +10,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_MODELS, ERROR_MESSAGES } from '@/config/constants';
 import { getFeedbackPrompt, applyCustomPrompt } from '@/config/prompts/feedbackPrompt';
 import { getAudioAnalysisPrompt } from '@/config/prompts/audioAnalysisPrompt';
+import { getRhetoricGamePrompt } from '@/config/prompts/gamePrompts';
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -257,8 +258,84 @@ export async function generateAudioAnalysis(
   });
 }
 
+/**
+ * Analyzes audio for the Rhetorik-Gym game (Füllwort-Killer)
+ *
+ * OPTIMIZED FOR SPEED - focuses only on:
+ * - Filler word counting
+ * - Speech pace (WPM)
+ * - Basic transcription
+ *
+ * @param {File|Blob} audioFile - The audio file to analyze
+ * @param {string} apiKey - Google Gemini API key
+ * @param {string} topic - The topic the user spoke about
+ * @param {number} durationSeconds - Expected duration in seconds
+ * @returns {Promise<Object>} - Parsed analysis result with score, filler_count, etc.
+ */
+export async function analyzeRhetoricGame(
+  audioFile,
+  apiKey,
+  topic = 'Elevator Pitch',
+  durationSeconds = 60
+) {
+  // Validate audio file
+  if (!audioFile) {
+    console.error('❌ [GEMINI GAME] Audio file is missing');
+    throw new Error(ERROR_MESSAGES.AUDIO_FILE_MISSING);
+  }
+
+  console.log(`🎮 [GEMINI GAME] Starting rhetoric game analysis`);
+  console.log(`🎮 [GEMINI GAME] Topic: ${topic}`);
+  console.log(`🎮 [GEMINI GAME] File size: ${audioFile.size} bytes`);
+
+  // Convert audio to base64
+  const audioPart = await audioFileToBase64(audioFile);
+
+  // Build content array with optimized game prompt and audio
+  const prompt = getRhetoricGamePrompt(topic, durationSeconds);
+  const content = [prompt, audioPart];
+
+  const responseText = await callGeminiWithFallback({
+    apiKey,
+    content,
+    context: 'GAME',
+  });
+
+  // Parse JSON response
+  try {
+    // Clean up the response - remove markdown code blocks if present
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const result = JSON.parse(cleanedResponse);
+
+    console.log(`✅ [GEMINI GAME] Analysis complete - Score: ${result.score}`);
+
+    return {
+      score: Math.max(0, Math.min(100, result.score || 0)),
+      filler_count: result.filler_count || 0,
+      filler_words: result.filler_words || [],
+      words_per_minute: result.words_per_minute || 0,
+      transcript: result.transcript || '',
+      duration_estimate_seconds: result.duration_estimate_seconds || 0,
+      pace_feedback: result.pace_feedback || 'optimal',
+    };
+  } catch (parseError) {
+    console.error('❌ [GEMINI GAME] Failed to parse response:', parseError);
+    console.error('❌ [GEMINI GAME] Raw response:', responseText);
+
+    // Return a default error result
+    throw new Error(`${ERROR_MESSAGES.JSON_PARSE_FAILED}: ${parseError.message}`);
+  }
+}
+
 export default {
   listAvailableModels,
   generateInterviewFeedback,
   generateAudioAnalysis,
+  analyzeRhetoricGame,
 };

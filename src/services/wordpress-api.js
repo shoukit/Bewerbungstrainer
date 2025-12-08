@@ -415,6 +415,119 @@ class WordPressAPI {
             method: 'POST'
         });
     }
+
+    // ===== Rhetorik-Gym Game API Methods =====
+
+    /**
+     * Get all scenario templates
+     */
+    async getScenarioTemplates(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const endpoint = queryString ? `/game/templates?${queryString}` : '/game/templates';
+
+        return this.request(endpoint, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get specific scenario template
+     */
+    async getScenarioTemplate(templateId) {
+        return this.request(`/game/templates/${templateId}`, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get scenario categories
+     */
+    async getScenarioCategories() {
+        return this.request('/game/templates/categories', {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Create game session
+     */
+    async createGameSession(data) {
+        return this.request('/game/sessions', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Get user's game sessions
+     */
+    async getGameSessions(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const endpoint = queryString ? `/game/sessions?${queryString}` : '/game/sessions';
+
+        return this.request(endpoint, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get specific game session
+     */
+    async getGameSession(sessionId) {
+        return this.request(`/game/sessions/${sessionId}`, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Update game session
+     */
+    async updateGameSession(sessionId, data) {
+        return this.request(`/game/sessions/${sessionId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Delete game session
+     */
+    async deleteGameSession(sessionId) {
+        return this.request(`/game/sessions/${sessionId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    /**
+     * Get user's game stats
+     */
+    async getGameStats() {
+        return this.request('/game/stats', {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get leaderboard
+     */
+    async getGameLeaderboard(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const endpoint = queryString ? `/game/leaderboard?${queryString}` : '/game/leaderboard';
+
+        return this.request(endpoint, {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get user's highscore
+     */
+    async getGameHighscore(gameType = null) {
+        const params = gameType ? `?game_type=${gameType}` : '';
+        return this.request(`/game/highscore${params}`, {
+            method: 'GET'
+        });
+    }
 }
 
 // Export singleton instance

@@ -70,6 +70,10 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-admin.php';
 
+        // Load Game/Rhetorik-Gym classes
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-game-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-game-api.php';
+
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -100,6 +104,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create simulator database tables
         Bewerbungstrainer_Simulator_Database::create_tables();
+
+        // Create game database tables
+        Bewerbungstrainer_Game_Database::create_tables();
 
         // Create upload directory for audio files
         $upload_dir = wp_upload_dir();
@@ -196,6 +203,10 @@ class Bewerbungstrainer_Plugin {
         if (is_admin()) {
             Bewerbungstrainer_Simulator_Admin::get_instance();
         }
+
+        // Initialize Game/Rhetorik-Gym
+        Bewerbungstrainer_Game_Database::get_instance();
+        Bewerbungstrainer_Game_API::get_instance();
 
         // Initialize audio handler
         Bewerbungstrainer_Audio_Handler::get_instance();
