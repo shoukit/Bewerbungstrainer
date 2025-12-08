@@ -6,7 +6,6 @@ import {
   Presentation,
   Target,
   Mic,
-  ChevronRight,
   Loader2,
   AlertCircle,
   Sparkles
@@ -48,24 +47,16 @@ const COLORS = {
  */
 const ScenarioCard = ({ scenario, onSelect }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const IconComponent = ICON_MAP[scenario.icon] || Briefcase;
   const difficulty = DIFFICULTY_COLORS[scenario.difficulty] || DIFFICULTY_COLORS.intermediate;
 
-  // Handle resize for responsive layout
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handleClick = (e) => {
-    e.stopPropagation();
+  const handleClick = () => {
     onSelect(scenario);
   };
 
   return (
     <div
+      onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
@@ -80,6 +71,7 @@ const ScenarioCard = ({ scenario, onSelect }) => {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
+        cursor: 'pointer',
       }}
     >
       {/* Icon and Difficulty Row */}
@@ -112,56 +104,15 @@ const ScenarioCard = ({ scenario, onSelect }) => {
         </span>
       </div>
 
-      {/* Title Row with Button (Desktop) */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: isMobile ? 'flex-start' : 'center',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? '12px' : '16px',
+      {/* Title */}
+      <h3 style={{
+        fontSize: '18px',
+        fontWeight: 700,
+        color: COLORS.slate[900],
+        margin: 0,
       }}>
-        <h3 style={{
-          fontSize: '18px',
-          fontWeight: 700,
-          color: COLORS.slate[900],
-          margin: 0,
-        }}>
-          {scenario.title}
-        </h3>
-
-        {/* Start Button - inline on desktop */}
-        <button
-          onClick={handleClick}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '10px 16px',
-            borderRadius: '10px',
-            border: 'none',
-            background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            boxShadow: '0 2px 8px rgba(74, 158, 201, 0.3)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-1px)';
-            e.target.style.boxShadow = '0 4px 12px rgba(74, 158, 201, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'none';
-            e.target.style.boxShadow = '0 2px 8px rgba(74, 158, 201, 0.3)';
-          }}
-        >
-          <Mic style={{ width: '16px', height: '16px' }} />
-          Training starten
-          <ChevronRight style={{ width: '16px', height: '16px' }} />
-        </button>
-      </div>
+        {scenario.title}
+      </h3>
 
       {/* Description */}
       <p style={{
