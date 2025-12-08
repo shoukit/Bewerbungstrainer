@@ -18,15 +18,25 @@ const VIEWS = {
 };
 
 /**
+ * Get the WP admin bar height (if visible)
+ */
+function getAdminBarHeight() {
+  const adminBar = document.getElementById('wpadminbar');
+  return adminBar ? adminBar.offsetHeight : 0;
+}
+
+/**
  * Detect WordPress header height
- * Uses multiple methods to find the header offset
+ * Returns the sticky offset considering scroll position
+ * When WP header scrolls out of view, returns admin bar height only
  */
 function getWPHeaderHeight() {
   const appContainer = document.getElementById('bewerbungstrainer-app');
+  const adminBarHeight = getAdminBarHeight();
 
   // Method 1: Check what element is at the top center of the viewport
   // This finds the header even if selectors don't match
-  const topElement = document.elementFromPoint(window.innerWidth / 2, 10);
+  const topElement = document.elementFromPoint(window.innerWidth / 2, adminBarHeight + 10);
   if (topElement) {
     // Walk up to find header/nav container
     let current = topElement;
@@ -41,18 +51,17 @@ function getWPHeaderHeight() {
       if (isHeader && (!appContainer || !appContainer.contains(current))) {
         const rect = current.getBoundingClientRect();
         const headerBottom = rect.bottom;
-        console.log('📐 [HEADER] Found via elementFromPoint:', current.tagName, 'bottom:', headerBottom);
-        return Math.max(0, headerBottom);
+        // If header bottom is above admin bar, header is scrolled out
+        if (headerBottom <= adminBarHeight) {
+          return adminBarHeight;
+        }
+        return Math.max(adminBarHeight, headerBottom);
       }
       current = current.parentElement;
     }
   }
 
-  // Method 2: Check for WP admin bar
-  const adminBar = document.getElementById('wpadminbar');
-  const adminBarHeight = adminBar ? adminBar.offsetHeight : 0;
-
-  // Method 3: Try various header selectors
+  // Method 2: Try various header selectors
   const headerSelectors = [
     'header.site-header',
     '#masthead',
@@ -69,27 +78,31 @@ function getWPHeaderHeight() {
     const header = document.querySelector(selector);
     if (header && (!appContainer || !appContainer.contains(header))) {
       const rect = header.getBoundingClientRect();
-      // Use bottom of header (header might be at top:0 or have some offset)
       const headerBottom = rect.bottom;
-      console.log('📐 [HEADER] Found with selector:', selector, 'bottom:', headerBottom);
+      // If header bottom is at or above admin bar, header is scrolled out
+      if (headerBottom <= adminBarHeight) {
+        return adminBarHeight;
+      }
       return Math.max(adminBarHeight, headerBottom);
     }
   }
 
-  // Method 4: Check parent of app container
+  // Method 3: Check parent of app container
   if (appContainer) {
     let sibling = appContainer.previousElementSibling;
     while (sibling) {
       const rect = sibling.getBoundingClientRect();
       if (rect.height > 30 && rect.top < 100) {
-        console.log('📐 [HEADER] Found sibling element, bottom:', rect.bottom);
-        return Math.max(adminBarHeight, rect.bottom);
+        const headerBottom = rect.bottom;
+        if (headerBottom <= adminBarHeight) {
+          return adminBarHeight;
+        }
+        return Math.max(adminBarHeight, headerBottom);
       }
       sibling = sibling.previousElementSibling;
     }
   }
 
-  console.log('📐 [HEADER] No header found, using admin bar only:', adminBarHeight);
   return adminBarHeight;
 }
 
