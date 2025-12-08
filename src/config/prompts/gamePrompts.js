@@ -82,12 +82,25 @@ KRITISCHE REGELN:
 4. Transkribiere WÖRTLICH was gesagt wird - nichts hinzufügen
 
 DEINE AUFGABE (nur bei erkannter Sprache):
-1. Transkribiere EXAKT was gesprochen wird
-2. Zähle die GESAMTANZAHL der gesprochenen Wörter
-3. Zähle ALLE Füllwörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
-4. Berechne den Füllwort-Anteil (filler_count / total_words * 100)
-5. Schätze das Sprechtempo (Wörter pro Minute)
-6. BEWERTE DEN INHALT: Geht die Antwort auf das Thema/die Frage ein?
+
+SCHRITT 1 - TRANSKRIBIEREN:
+Transkribiere EXAKT was gesprochen wird.
+
+SCHRITT 2 - WÖRTER ZÄHLEN:
+Zähle ALLE Wörter im Transkript (inkl. Füllwörter).
+Beispiel: "Ich habe ähm gelernt dass" = 5 Wörter
+WICHTIG: total_words MUSS die tatsächliche Anzahl sein!
+
+SCHRITT 3 - FÜLLWÖRTER IDENTIFIZIEREN:
+Zähle diese Füllwörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
+
+SCHRITT 4 - BERECHNUNGEN:
+- filler_percentage = (filler_count / total_words) * 100
+- words_per_minute = (total_words / duration_estimate_seconds) * 60
+Beispiel: 28 Wörter in 34 Sekunden = (28/34)*60 = 49 WPM
+
+SCHRITT 5 - INHALT BEWERTEN:
+Geht die Antwort auf das Thema/die Frage ein?
 
 Bei Stille oder unverständlicher Audio: score = 0
 
@@ -129,26 +142,28 @@ OUTPUT FORMAT:
 Antworte NUR mit validem JSON. Keine Einleitung, kein Markdown.
 
 {
-  "score": (0-100, Summe aller Faktoren),
+  "score": 65,
   "score_breakdown": {
-    "words_score": (0-25),
-    "filler_score": (0-25),
-    "tempo_score": (0-10),
-    "content_score": (0-40)
+    "words_score": 10,
+    "filler_score": 20,
+    "tempo_score": 5,
+    "content_score": 30
   },
-  "total_words": (Gesamtanzahl gesprochener Wörter),
-  "filler_count": (Anzahl Füllwörter),
-  "filler_percentage": (Füllwörter in Prozent, z.B. 15.5),
-  "filler_words": [
-    {"word": "Ähm", "count": 2},
-    {"word": "Also", "count": 1}
-  ],
-  "words_per_minute": (geschätzte WPM, 0 bei Stille),
-  "transcript": "EXAKTE Transkription oder '[Keine Sprache erkannt]'",
-  "duration_estimate_seconds": (geschätzte Sprechdauer in Sekunden),
-  "pace_feedback": "optimal" | "zu_schnell" | "zu_langsam" | "keine_sprache",
-  "content_feedback": "Kurze Bewertung des Inhalts (1-2 Sätze, auf Deutsch)"
+  "total_words": 28,
+  "filler_count": 1,
+  "filler_percentage": 3.6,
+  "filler_words": [{"word": "Ähm", "count": 1}],
+  "words_per_minute": 49,
+  "transcript": "Die wichtigste Lektion...",
+  "duration_estimate_seconds": 34,
+  "pace_feedback": "zu_langsam",
+  "content_feedback": "Guter Bezug zum Thema mit konkreter Aussage."
 }
+
+WICHTIG - VALIDIERUNG:
+- total_words MUSS = Anzahl Wörter im Transkript sein
+- words_per_minute MUSS = (total_words / duration_estimate_seconds) * 60 sein
+- Prüfe deine Berechnungen!
 
 ANALYSE DER AUDIO-DATEI:`;
 }
