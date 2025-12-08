@@ -161,24 +161,80 @@ const countWords = (text) => {
 };
 
 /**
+ * Calculate filler count from filler_words array
+ */
+const calculateFillerCount = (fillerWords) => {
+  if (!fillerWords || !Array.isArray(fillerWords)) return 0;
+  return fillerWords.reduce((sum, fw) => sum + (fw.count || 0), 0);
+};
+
+/**
+ * Calculate all scores from raw data
+ */
+const calculateScores = (transcript, fillerWords, contentScore, actualDurationSeconds) => {
+  const totalWords = countWords(transcript);
+  const fillerCount = calculateFillerCount(fillerWords);
+  const fillerPercentage = totalWords > 0 ? (fillerCount / totalWords) * 100 : 0;
+  const wpm = actualDurationSeconds > 0 ? Math.round((totalWords / actualDurationSeconds) * 60) : 0;
+
+  // Word score (0-25)
+  let wordsScore = 0;
+  if (totalWords >= 60) wordsScore = 25;
+  else if (totalWords >= 40) wordsScore = 15;
+  else if (totalWords >= 20) wordsScore = 10;
+  else if (totalWords >= 10) wordsScore = 5;
+
+  // Filler score (0-25)
+  let fillerScore = 25;
+  if (fillerPercentage > 25) fillerScore = 0;
+  else if (fillerPercentage > 15) fillerScore = 10;
+  else if (fillerPercentage > 10) fillerScore = 15;
+  else if (fillerPercentage > 5) fillerScore = 20;
+
+  // Tempo score (0-10)
+  let tempoScore = 0;
+  let paceFeedback = 'keine_sprache';
+  if (totalWords > 0) {
+    if (wpm >= 100 && wpm <= 140) {
+      tempoScore = 10;
+      paceFeedback = 'optimal';
+    } else if ((wpm >= 80 && wpm < 100) || (wpm > 140 && wpm <= 160)) {
+      tempoScore = 5;
+      paceFeedback = wpm < 100 ? 'zu_langsam' : 'zu_schnell';
+    } else {
+      tempoScore = 0;
+      paceFeedback = wpm < 80 ? 'zu_langsam' : 'zu_schnell';
+    }
+  }
+
+  // Content score comes from AI (0-40), default to 0
+  const validContentScore = Math.min(40, Math.max(0, contentScore || 0));
+
+  const totalScore = wordsScore + fillerScore + tempoScore + validContentScore;
+
+  return {
+    total_words: totalWords,
+    filler_count: fillerCount,
+    filler_percentage: fillerPercentage,
+    words_per_minute: wpm,
+    pace_feedback: paceFeedback,
+    score: totalScore,
+    score_breakdown: {
+      words_score: wordsScore,
+      filler_score: fillerScore,
+      tempo_score: tempoScore,
+      content_score: validContentScore,
+    },
+  };
+};
+
+/**
  * Results display component
  */
 const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
   const feedback = getScoreFeedback(result.score);
   const isGoodScore = result.score >= 70;
   const isNoSpeech = result.pace_feedback === 'keine_sprache' || result.transcript === '[Keine Sprache erkannt]';
-
-  // Fallback: count words from transcript if total_words is missing or 0
-  const actualWordCount = result.total_words > 0
-    ? result.total_words
-    : countWords(result.transcript);
-
-  // Recalculate WPM if needed
-  const actualWPM = result.words_per_minute > 0 && result.total_words > 0
-    ? result.words_per_minute
-    : (actualWordCount > 0 && result.duration_estimate_seconds > 0)
-      ? Math.round((actualWordCount / result.duration_estimate_seconds) * 60)
-      : 0;
 
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -229,7 +285,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
             <MessageCircle style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Wörter</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{actualWordCount}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.total_words}</div>
           <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>gesprochen</div>
         </div>
 
@@ -250,11 +306,9 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
             <AlertTriangle style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Füllwörter</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.filler_count || 0}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.filler_count}</div>
           <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>
-            {actualWordCount > 0
-              ? `${((result.filler_count || 0) / actualWordCount * 100).toFixed(1)}%`
-              : '0%'}
+            {result.filler_percentage?.toFixed(1) || '0'}%
           </div>
         </div>
 
@@ -275,7 +329,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
             <Volume2 style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Tempo</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{actualWPM}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.words_per_minute}</div>
           <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>WPM</div>
         </div>
 
@@ -296,7 +350,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
             <Clock style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Sprechzeit</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.duration_estimate_seconds || 0}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.duration_seconds || 0}</div>
           <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>Sekunden</div>
         </div>
       </div>
@@ -475,6 +529,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
   const analyserRef = useRef(null);
   const audioContextRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const recordingStartTimeRef = useRef(null);
 
   const apiKey = wordpressAPI.getGeminiApiKey();
 
@@ -543,6 +598,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     setGameState(GAME_STATES.RECORDING);
     setTimeLeft(gameConfig.duration);
 
+    recordingStartTimeRef.current = Date.now();
     mediaRecorderRef.current.start();
 
     const updateAudioLevel = () => {
@@ -569,6 +625,11 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
 
   // Stop recording
   const stopRecording = useCallback(() => {
+    // Calculate actual recording duration
+    const actualDurationSeconds = recordingStartTimeRef.current
+      ? Math.round((Date.now() - recordingStartTimeRef.current) / 1000)
+      : gameConfig.duration;
+
     cleanup();
     setGameState(GAME_STATES.PROCESSING);
 
@@ -580,14 +641,32 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
       mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
 
       try {
-        const analysisResult = await analyzeRhetoricGame(
+        // AI only returns: transcript, filler_words, content_score, content_feedback
+        const aiResult = await analyzeRhetoricGame(
           audioBlob,
           apiKey,
           gameConfig.topic,
           gameConfig.duration
         );
 
-        setResult(analysisResult);
+        // Calculate all metrics ourselves
+        const calculatedScores = calculateScores(
+          aiResult.transcript,
+          aiResult.filler_words,
+          aiResult.content_score,
+          actualDurationSeconds
+        );
+
+        // Combine AI result with calculated scores
+        const fullResult = {
+          ...calculatedScores,
+          transcript: aiResult.transcript || '[Keine Sprache erkannt]',
+          filler_words: aiResult.filler_words || [],
+          content_feedback: aiResult.content_feedback || '',
+          duration_seconds: actualDurationSeconds,
+        };
+
+        setResult(fullResult);
         setGameState(GAME_STATES.RESULTS);
 
         // Save to database
@@ -595,12 +674,12 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
           await wordpressAPI.createGameSession({
             game_type: gameConfig.mode.id,
             topic: gameConfig.topic,
-            duration_seconds: gameConfig.duration,
-            score: analysisResult.score,
-            filler_count: analysisResult.filler_count,
-            words_per_minute: analysisResult.words_per_minute,
-            transcript: analysisResult.transcript,
-            analysis_json: JSON.stringify(analysisResult),
+            duration_seconds: actualDurationSeconds,
+            score: fullResult.score,
+            filler_count: fullResult.filler_count,
+            words_per_minute: fullResult.words_per_minute,
+            transcript: fullResult.transcript,
+            analysis_json: JSON.stringify(fullResult),
           });
         } catch (saveError) {
           console.error('Failed to save game session:', saveError);

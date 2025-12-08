@@ -61,111 +61,36 @@ export const STRESS_QUESTIONS = [
  * @returns {string} - The analysis prompt
  */
 export function getRhetoricGamePrompt(topic = 'Elevator Pitch', durationSeconds = 60) {
-  return `AUDIO-ANALYSE - Rhetorik-Spiel "Füllwort-Killer"
+  return `AUDIO-ANALYSE - Rhetorik-Spiel
 
-KONTEXT:
-- Thema: "${topic}"
-- Ziel-Dauer: ${durationSeconds} Sekunden
-- Dies ist ein SPIEL - schnelles, klares Feedback ist wichtig!
+THEMA: "${topic}"
+
+DEINE AUFGABE:
+1. TRANSKRIBIEREN: Schreibe EXAKT was gesprochen wird
+2. FÜLLWÖRTER FINDEN: Identifiziere diese Wörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
+3. INHALT BEWERTEN: Wie gut passt die Antwort zum Thema?
 
 KRITISCHE REGELN:
-1. Analysiere NUR das, was in der Audio-Datei TATSÄCHLICH gesprochen wird
-2. Wenn die Audio-Datei STILL ist oder nur Rauschen enthält:
-   - score: 0
-   - filler_count: 0
-   - filler_words: []
-   - words_per_minute: 0
-   - total_words: 0
-   - transcript: "[Keine Sprache erkannt]"
-   - pace_feedback: "keine_sprache"
-3. ERFINDE NIEMALS Inhalte oder Transkripte!
-4. Transkribiere WÖRTLICH was gesagt wird - nichts hinzufügen
+- ERFINDE NIEMALS Inhalte!
+- Bei Stille/Rauschen: transcript = "[Keine Sprache erkannt]"
+- Transkribiere WÖRTLICH - nichts hinzufügen oder weglassen
 
-DEINE AUFGABE (nur bei erkannter Sprache):
+INHALTSBEWERTUNG (content_score 0-40):
+- 0: Völlig am Thema vorbei / unverständlich / Stille
+- 10: Nur ansatzweise zum Thema
+- 20: Teilweise zum Thema, aber oberflächlich
+- 30: Gut zum Thema, mit Substanz
+- 40: Exzellent, strukturiert und überzeugend
 
-SCHRITT 1 - TRANSKRIBIEREN:
-Transkribiere EXAKT was gesprochen wird.
-
-SCHRITT 2 - WÖRTER ZÄHLEN:
-Zähle ALLE Wörter im Transkript (inkl. Füllwörter).
-Beispiel: "Ich habe ähm gelernt dass" = 5 Wörter
-WICHTIG: total_words MUSS die tatsächliche Anzahl sein!
-
-SCHRITT 3 - FÜLLWÖRTER IDENTIFIZIEREN:
-Zähle diese Füllwörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
-
-SCHRITT 4 - BERECHNUNGEN:
-- filler_percentage = (filler_count / total_words) * 100
-- words_per_minute = (total_words / duration_estimate_seconds) * 60
-Beispiel: 28 Wörter in 34 Sekunden = (28/34)*60 = 49 WPM
-
-SCHRITT 5 - INHALT BEWERTEN:
-Geht die Antwort auf das Thema/die Frage ein?
-
-Bei Stille oder unverständlicher Audio: score = 0
-
-SCORING - STRENG BEWERTEN:
-Erwartung für ${durationSeconds} Sekunden: ca. ${Math.round(durationSeconds * 2)} Wörter (bei normalem Tempo)
-
-Der Score setzt sich aus 4 Faktoren zusammen:
-
-1. WORTANZAHL (25% des Scores):
-   - < 10 Wörter: 0 Punkte
-   - < 20 Wörter: 5 Punkte
-   - < 40 Wörter: 10 Punkte
-   - < 60 Wörter: 15 Punkte
-   - >= 60 Wörter: 25 Punkte
-
-2. FÜLLWORT-ANTEIL (25% des Scores):
-   - > 25% Füllwörter: 0 Punkte
-   - 15-25% Füllwörter: 10 Punkte
-   - 10-15% Füllwörter: 15 Punkte
-   - 5-10% Füllwörter: 20 Punkte
-   - < 5% Füllwörter: 25 Punkte
-
-3. TEMPO (10% des Scores):
-   - Zu schnell (>160 WPM) oder zu langsam (<80 WPM): 0 Punkte
-   - Grenzwertig (140-160 oder 80-100 WPM): 5 Punkte
-   - Optimal (100-140 WPM): 10 Punkte
-
-4. INHALTLICHE RELEVANZ (40% des Scores):
-   - Geht die Antwort auf das Thema "${topic}" ein?
-   - Völlig am Thema vorbei / unverständlich: 0 Punkte
-   - Nur ansatzweise zum Thema: 10 Punkte
-   - Teilweise zum Thema, aber oberflächlich: 20 Punkte
-   - Gut zum Thema, mit Substanz: 30 Punkte
-   - Exzellent, strukturiert und überzeugend: 40 Punkte
-
-GESAMT-SCORE = Summe aller Faktoren (0-100 Punkte)
-
-OUTPUT FORMAT:
-Antworte NUR mit validem JSON. Keine Einleitung, kein Markdown.
-
+OUTPUT - NUR JSON, kein Markdown:
 {
-  "score": 65,
-  "score_breakdown": {
-    "words_score": 10,
-    "filler_score": 20,
-    "tempo_score": 5,
-    "content_score": 30
-  },
-  "total_words": 28,
-  "filler_count": 1,
-  "filler_percentage": 3.6,
+  "transcript": "Exakte Transkription oder [Keine Sprache erkannt]",
   "filler_words": [{"word": "Ähm", "count": 1}],
-  "words_per_minute": 49,
-  "transcript": "Die wichtigste Lektion...",
-  "duration_estimate_seconds": 34,
-  "pace_feedback": "zu_langsam",
-  "content_feedback": "Guter Bezug zum Thema mit konkreter Aussage."
+  "content_score": 30,
+  "content_feedback": "Kurzes Feedback zum Inhalt (1-2 Sätze, Deutsch)"
 }
 
-WICHTIG - VALIDIERUNG:
-- total_words MUSS = Anzahl Wörter im Transkript sein
-- words_per_minute MUSS = (total_words / duration_estimate_seconds) * 60 sein
-- Prüfe deine Berechnungen!
-
-ANALYSE DER AUDIO-DATEI:`;
+ANALYSE:`;
 }
 
 /**
