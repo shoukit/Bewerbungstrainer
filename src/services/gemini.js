@@ -313,16 +313,15 @@ export async function analyzeRhetoricGame(
 
     const result = JSON.parse(cleanedResponse);
 
-    console.log(`✅ [GEMINI GAME] Analysis complete - Score: ${result.score}`);
+    console.log(`✅ [GEMINI GAME] Analysis complete`);
+    console.log(`✅ [GEMINI GAME] Transcript: ${result.transcript?.substring(0, 50)}...`);
 
+    // Return simplified format - scoring is done locally
     return {
-      score: Math.max(0, Math.min(100, result.score || 0)),
-      filler_count: result.filler_count || 0,
+      transcript: result.transcript || '[Keine Sprache erkannt]',
       filler_words: result.filler_words || [],
-      words_per_minute: result.words_per_minute || 0,
-      transcript: result.transcript || '',
-      duration_estimate_seconds: result.duration_estimate_seconds || 0,
-      pace_feedback: result.pace_feedback || 'optimal',
+      content_score: Math.max(0, Math.min(40, result.content_score || 0)),
+      content_feedback: result.content_feedback || '',
     };
   } catch (parseError) {
     console.error('❌ [GEMINI GAME] Failed to parse response:', parseError);

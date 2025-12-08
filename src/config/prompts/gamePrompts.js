@@ -61,36 +61,46 @@ export const STRESS_QUESTIONS = [
  * @returns {string} - The analysis prompt
  */
 export function getRhetoricGamePrompt(topic = 'Elevator Pitch', durationSeconds = 60) {
-  return `AUDIO-ANALYSE - Rhetorik-Spiel
+  return `AUDIO-TRANSKRIPTION UND ANALYSE
 
 THEMA: "${topic}"
 
-DEINE AUFGABE:
-1. TRANSKRIBIEREN: Schreibe EXAKT was gesprochen wird
-2. FÜLLWÖRTER FINDEN: Identifiziere diese Wörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
-3. INHALT BEWERTEN: Wie gut passt die Antwort zum Thema?
+ABSOLUTE REGEL - KEINE HALLUZINATION:
+Du DARFST NUR transkribieren, was TATSÄCHLICH in der Audio-Datei gesprochen wird.
+- Bei Stille, Rauschen, oder unverständlichem Audio: transcript = "[Keine Sprache erkannt]"
+- Bei nur 1-2 Sekunden Audio ohne klare Sprache: transcript = "[Keine Sprache erkannt]"
+- ERFINDE NIEMALS Wörter, Sätze oder Inhalte!
+- Wenn du unsicher bist, ob etwas gesagt wurde: NICHT transkribieren!
 
-KRITISCHE REGELN:
-- ERFINDE NIEMALS Inhalte!
-- Bei Stille/Rauschen: transcript = "[Keine Sprache erkannt]"
-- Transkribiere WÖRTLICH - nichts hinzufügen oder weglassen
+DEINE AUFGABE (NUR bei klar erkennbarer Sprache):
+1. TRANSKRIBIEREN: Schreibe WÖRTLICH was gesprochen wird - nichts hinzufügen
+2. FÜLLWÖRTER: Finde diese Wörter im Transkript: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
+3. INHALT: Bewerte wie gut die Antwort zum Thema passt (0-40 Punkte)
 
-INHALTSBEWERTUNG (content_score 0-40):
-- 0: Völlig am Thema vorbei / unverständlich / Stille
+INHALTSBEWERTUNG (content_score):
+- 0: Keine Sprache / am Thema vorbei / unverständlich
 - 10: Nur ansatzweise zum Thema
 - 20: Teilweise zum Thema, aber oberflächlich
 - 30: Gut zum Thema, mit Substanz
 - 40: Exzellent, strukturiert und überzeugend
 
-OUTPUT - NUR JSON, kein Markdown:
+OUTPUT - NUR valides JSON:
 {
-  "transcript": "Exakte Transkription oder [Keine Sprache erkannt]",
-  "filler_words": [{"word": "Ähm", "count": 1}],
-  "content_score": 30,
-  "content_feedback": "Kurzes Feedback zum Inhalt (1-2 Sätze, Deutsch)"
+  "transcript": "[Keine Sprache erkannt]",
+  "filler_words": [],
+  "content_score": 0,
+  "content_feedback": "Keine Sprache erkannt."
 }
 
-ANALYSE:`;
+ODER bei erkannter Sprache:
+{
+  "transcript": "Das was tatsächlich gesagt wurde...",
+  "filler_words": [{"word": "Ähm", "count": 1}],
+  "content_score": 30,
+  "content_feedback": "Kurzes Feedback (1-2 Sätze)"
+}
+
+ANALYSE DER AUDIO-DATEI:`;
 }
 
 /**
