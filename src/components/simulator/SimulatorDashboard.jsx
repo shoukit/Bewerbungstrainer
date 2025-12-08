@@ -48,25 +48,35 @@ const COLORS = {
  */
 const ScenarioCard = ({ scenario, onSelect }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const IconComponent = ICON_MAP[scenario.icon] || Briefcase;
   const difficulty = DIFFICULTY_COLORS[scenario.difficulty] || DIFFICULTY_COLORS.intermediate;
 
+  // Handle resize for responsive layout
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    onSelect(scenario);
+  };
+
   return (
     <div
-      onClick={() => onSelect(scenario)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
         backgroundColor: 'white',
         borderRadius: '16px',
         padding: '24px',
-        cursor: 'pointer',
         border: `2px solid ${isHovered ? COLORS.blue[500] : COLORS.slate[200]}`,
         boxShadow: isHovered
           ? '0 10px 25px -5px rgba(74, 158, 201, 0.2), 0 8px 10px -6px rgba(74, 158, 201, 0.1)'
           : '0 1px 3px rgba(0, 0, 0, 0.1)',
         transition: 'all 0.3s ease',
-        transform: isHovered ? 'translateY(-4px)' : 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
@@ -102,26 +112,66 @@ const ScenarioCard = ({ scenario, onSelect }) => {
         </span>
       </div>
 
-      {/* Title and Description */}
-      <div>
+      {/* Title Row with Button (Desktop) */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: isMobile ? 'flex-start' : 'center',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '12px' : '16px',
+      }}>
         <h3 style={{
           fontSize: '18px',
           fontWeight: 700,
           color: COLORS.slate[900],
           margin: 0,
-          marginBottom: '8px'
         }}>
           {scenario.title}
         </h3>
-        <p style={{
-          fontSize: '14px',
-          color: COLORS.slate[600],
-          margin: 0,
-          lineHeight: 1.5
-        }}>
-          {scenario.description}
-        </p>
+
+        {/* Start Button - inline on desktop */}
+        <button
+          onClick={handleClick}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '10px 16px',
+            borderRadius: '10px',
+            border: 'none',
+            background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 8px rgba(74, 158, 201, 0.3)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'translateY(-1px)';
+            e.target.style.boxShadow = '0 4px 12px rgba(74, 158, 201, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'none';
+            e.target.style.boxShadow = '0 2px 8px rgba(74, 158, 201, 0.3)';
+          }}
+        >
+          <Mic style={{ width: '16px', height: '16px' }} />
+          Training starten
+          <ChevronRight style={{ width: '16px', height: '16px' }} />
+        </button>
       </div>
+
+      {/* Description */}
+      <p style={{
+        fontSize: '14px',
+        color: COLORS.slate[600],
+        margin: 0,
+        lineHeight: 1.5
+      }}>
+        {scenario.description}
+      </p>
 
       {/* Meta Info */}
       <div style={{
@@ -136,29 +186,6 @@ const ScenarioCard = ({ scenario, onSelect }) => {
         <span style={{ fontSize: '13px', color: COLORS.slate[400] }}>
           {Math.round(scenario.time_limit_per_question / 60)} Min/Frage
         </span>
-      </div>
-
-      {/* Start Button */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          padding: '12px',
-          borderRadius: '12px',
-          background: isHovered
-            ? `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`
-            : COLORS.slate[100],
-          color: isHovered ? 'white' : COLORS.slate[600],
-          fontSize: '14px',
-          fontWeight: 600,
-          transition: 'all 0.3s ease',
-        }}
-      >
-        <Mic style={{ width: '16px', height: '16px' }} />
-        Training starten
-        <ChevronRight style={{ width: '16px', height: '16px' }} />
       </div>
     </div>
   );
@@ -289,7 +316,7 @@ const SimulatorDashboard = ({ onSelectScenario }) => {
             color: COLORS.slate[900],
             margin: 0
           }}>
-            Skill Simulator
+            Szenario-Training
           </h1>
         </div>
         <p style={{
