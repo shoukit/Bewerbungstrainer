@@ -124,18 +124,15 @@ function App() {
   useEffect(() => {
     const updateHeaderOffset = () => {
       const offset = getWPHeaderHeight();
-      console.log('📐 [APP] WP header offset:', offset);
-      if (offset > 0) {
-        setHeaderOffset(offset);
-        return true;
-      }
-      return false;
+      setHeaderOffset(offset);
     };
 
-    // Try multiple times to ensure DOM is ready
+    // Initial calculation - try multiple times to ensure DOM is ready
     const tryUpdate = (attempts = 0) => {
-      if (updateHeaderOffset() || attempts >= 5) return;
-      setTimeout(() => tryUpdate(attempts + 1), 200);
+      updateHeaderOffset();
+      if (attempts < 5) {
+        setTimeout(() => tryUpdate(attempts + 1), 200);
+      }
     };
 
     // Initial calculation
