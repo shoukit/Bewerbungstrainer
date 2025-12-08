@@ -87,41 +87,55 @@ DEINE AUFGABE (nur bei erkannter Sprache):
 3. Zähle ALLE Füllwörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
 4. Berechne den Füllwort-Anteil (filler_count / total_words * 100)
 5. Schätze das Sprechtempo (Wörter pro Minute)
+6. BEWERTE DEN INHALT: Geht die Antwort auf das Thema/die Frage ein?
 
-WICHTIG:
-- KEINE inhaltliche Bewertung
-- KEINE Verbesserungsvorschläge
-- Bewerte NUR: Wortanzahl, Füllwörter, Tempo
-- Bei Stille oder unverständlicher Audio: score = 0
+Bei Stille oder unverständlicher Audio: score = 0
 
 SCORING - STRENG BEWERTEN:
 Erwartung für ${durationSeconds} Sekunden: ca. ${Math.round(durationSeconds * 2)} Wörter (bei normalem Tempo)
 
-1. WORTANZAHL (größter Faktor!):
-   - < 10 Wörter: Score maximal 10
-   - < 20 Wörter: Score maximal 25
-   - < 40 Wörter: Score maximal 50
-   - < 60 Wörter: -20 Punkte vom Basis-Score
-   - >= 60 Wörter: voller Basis-Score möglich
+Der Score setzt sich aus 4 Faktoren zusammen:
 
-2. FÜLLWORT-ANTEIL (Prozent der Gesamtwörter):
-   - > 25% Füllwörter: -40 Punkte
-   - 15-25% Füllwörter: -25 Punkte
-   - 10-15% Füllwörter: -15 Punkte
-   - 5-10% Füllwörter: -5 Punkte
-   - < 5% Füllwörter: keine Abzüge
+1. WORTANZAHL (25% des Scores):
+   - < 10 Wörter: 0 Punkte
+   - < 20 Wörter: 5 Punkte
+   - < 40 Wörter: 10 Punkte
+   - < 60 Wörter: 15 Punkte
+   - >= 60 Wörter: 25 Punkte
 
-3. TEMPO:
-   - Zu schnell (>160 WPM): -10 Punkte
-   - Zu langsam (<80 WPM bei genug Wörtern): -10 Punkte
+2. FÜLLWORT-ANTEIL (25% des Scores):
+   - > 25% Füllwörter: 0 Punkte
+   - 15-25% Füllwörter: 10 Punkte
+   - 10-15% Füllwörter: 15 Punkte
+   - 5-10% Füllwörter: 20 Punkte
+   - < 5% Füllwörter: 25 Punkte
 
-Minimum: 0 Punkte, Maximum: 100 Punkte
+3. TEMPO (10% des Scores):
+   - Zu schnell (>160 WPM) oder zu langsam (<80 WPM): 0 Punkte
+   - Grenzwertig (140-160 oder 80-100 WPM): 5 Punkte
+   - Optimal (100-140 WPM): 10 Punkte
+
+4. INHALTLICHE RELEVANZ (40% des Scores):
+   - Geht die Antwort auf das Thema "${topic}" ein?
+   - Völlig am Thema vorbei / unverständlich: 0 Punkte
+   - Nur ansatzweise zum Thema: 10 Punkte
+   - Teilweise zum Thema, aber oberflächlich: 20 Punkte
+   - Gut zum Thema, mit Substanz: 30 Punkte
+   - Exzellent, strukturiert und überzeugend: 40 Punkte
+
+GESAMT-SCORE = Summe aller Faktoren (0-100 Punkte)
 
 OUTPUT FORMAT:
 Antworte NUR mit validem JSON. Keine Einleitung, kein Markdown.
 
 {
-  "score": (0-100, STRENG nach obigen Regeln!),
+  "score": (0-100, Summe aller Faktoren),
+  "score_breakdown": {
+    "words_score": (0-25),
+    "filler_score": (0-25),
+    "tempo_score": (0-10),
+    "content_score": (0-40)
+  },
   "total_words": (Gesamtanzahl gesprochener Wörter),
   "filler_count": (Anzahl Füllwörter),
   "filler_percentage": (Füllwörter in Prozent, z.B. 15.5),
@@ -132,7 +146,8 @@ Antworte NUR mit validem JSON. Keine Einleitung, kein Markdown.
   "words_per_minute": (geschätzte WPM, 0 bei Stille),
   "transcript": "EXAKTE Transkription oder '[Keine Sprache erkannt]'",
   "duration_estimate_seconds": (geschätzte Sprechdauer in Sekunden),
-  "pace_feedback": "optimal" | "zu_schnell" | "zu_langsam" | "keine_sprache"
+  "pace_feedback": "optimal" | "zu_schnell" | "zu_langsam" | "keine_sprache",
+  "content_feedback": "Kurze Bewertung des Inhalts (1-2 Sätze, auf Deutsch)"
 }
 
 ANALYSE DER AUDIO-DATEI:`;

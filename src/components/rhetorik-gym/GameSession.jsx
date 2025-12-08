@@ -33,7 +33,7 @@ import wordpressAPI from '@/services/wordpress-api';
  * Ocean theme colors - consistent with other components
  */
 const COLORS = {
-  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
+  blue: { 50: '#eff6ff', 100: '#dbeafe', 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
   teal: { 500: '#3DA389', 600: '#2E8A72' },
   slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
   amber: { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 600: '#d97706' },
@@ -296,6 +296,35 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
               <FillerWordBadge key={index} word={fw.word} count={fw.count} />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Content Feedback */}
+      {result.content_feedback && result.transcript !== '[Keine Sprache erkannt]' && (
+        <div style={{
+          backgroundColor: COLORS.blue[50],
+          border: `1px solid ${COLORS.blue[100]}`,
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '24px',
+        }}>
+          <h4 style={{ fontWeight: 600, color: COLORS.blue[700], marginBottom: '8px', fontSize: '15px' }}>
+            Inhaltliche Bewertung
+          </h4>
+          <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0, lineHeight: 1.5 }}>
+            {result.content_feedback}
+          </p>
+          {result.score_breakdown && (
+            <div style={{
+              marginTop: '12px',
+              paddingTop: '12px',
+              borderTop: `1px solid ${COLORS.blue[100]}`,
+              fontSize: '13px',
+              color: COLORS.slate[500],
+            }}>
+              Inhalt: {result.score_breakdown.content_score}/40 Punkte
+            </div>
+          )}
         </div>
       )}
 
