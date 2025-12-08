@@ -516,12 +516,14 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
  * Main GameSession Component
  */
 const GameSession = ({ gameConfig, onBack, onComplete }) => {
-  const [gameState, setGameState] = useState(GAME_STATES.READY);
+  // Start directly with COUNTDOWN state - no intermediate "Ready?" screen
+  const [gameState, setGameState] = useState(GAME_STATES.COUNTDOWN);
   const [countdown, setCountdown] = useState(3);
   const [timeLeft, setTimeLeft] = useState(gameConfig.duration);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -550,7 +552,58 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     return cleanup;
   }, [cleanup]);
 
-  // Start countdown
+  // Auto-start countdown when component mounts
+  useEffect(() => {
+    if (!hasStarted) {
+      setHasStarted(true);
+      startCountdownOnMount();
+    }
+  }, [hasStarted]);
+
+  // Start countdown on mount - requests mic access and starts countdown
+  const startCountdownOnMount = async () => {
+    setGameState(GAME_STATES.COUNTDOWN);
+    setCountdown(3);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 256;
+      source.connect(analyserRef.current);
+
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4',
+      });
+
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      let count = 3;
+      const countdownInterval = setInterval(() => {
+        count--;
+        setCountdown(count);
+
+        if (count === 0) {
+          clearInterval(countdownInterval);
+          startRecording();
+        }
+      }, 1000);
+    } catch (err) {
+      console.error('Microphone access denied:', err);
+      setError('Bitte erlaube den Zugriff auf das Mikrofon, um zu spielen.');
+      setGameState(GAME_STATES.ERROR);
+    }
+  };
+
+  // Start countdown (for replay/retry)
   const startCountdown = useCallback(async () => {
     setGameState(GAME_STATES.COUNTDOWN);
     setCountdown(3);
@@ -702,7 +755,8 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     setResult(null);
     setError(null);
     setTimeLeft(gameConfig.duration);
-    setGameState(GAME_STATES.READY);
+    // Start countdown directly for replay
+    startCountdown();
   };
 
   const renderContent = () => {
