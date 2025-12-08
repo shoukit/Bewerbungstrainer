@@ -153,12 +153,32 @@ const FillerWordBadge = ({ word, count }) => (
 );
 
 /**
+ * Count words in a string
+ */
+const countWords = (text) => {
+  if (!text || text === '[Keine Sprache erkannt]') return 0;
+  return text.trim().split(/\s+/).filter(w => w.length > 0).length;
+};
+
+/**
  * Results display component
  */
 const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
   const feedback = getScoreFeedback(result.score);
   const isGoodScore = result.score >= 70;
   const isNoSpeech = result.pace_feedback === 'keine_sprache' || result.transcript === '[Keine Sprache erkannt]';
+
+  // Fallback: count words from transcript if total_words is missing or 0
+  const actualWordCount = result.total_words > 0
+    ? result.total_words
+    : countWords(result.transcript);
+
+  // Recalculate WPM if needed
+  const actualWPM = result.words_per_minute > 0 && result.total_words > 0
+    ? result.words_per_minute
+    : (actualWordCount > 0 && result.duration_estimate_seconds > 0)
+      ? Math.round((actualWordCount / result.duration_estimate_seconds) * 60)
+      : 0;
 
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -209,7 +229,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
             <MessageCircle style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Wörter</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.total_words || 0}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{actualWordCount}</div>
           <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>gesprochen</div>
         </div>
 
@@ -230,9 +250,11 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
             <AlertTriangle style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Füllwörter</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.filler_count}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.filler_count || 0}</div>
           <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>
-            {result.filler_percentage ? `${result.filler_percentage.toFixed(1)}%` : '0%'}
+            {actualWordCount > 0
+              ? `${((result.filler_count || 0) / actualWordCount * 100).toFixed(1)}%`
+              : '0%'}
           </div>
         </div>
 
@@ -253,7 +275,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
             <Volume2 style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Tempo</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.words_per_minute}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{actualWPM}</div>
           <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>WPM</div>
         </div>
 
@@ -299,8 +321,8 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
         </div>
       )}
 
-      {/* Content Feedback */}
-      {result.content_feedback && result.transcript !== '[Keine Sprache erkannt]' && (
+      {/* Score Breakdown */}
+      {!isNoSpeech && (
         <div style={{
           backgroundColor: COLORS.blue[50],
           border: `1px solid ${COLORS.blue[100]}`,
@@ -308,21 +330,42 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
           padding: '16px',
           marginBottom: '24px',
         }}>
-          <h4 style={{ fontWeight: 600, color: COLORS.blue[700], marginBottom: '8px', fontSize: '15px' }}>
-            Inhaltliche Bewertung
+          <h4 style={{ fontWeight: 600, color: COLORS.blue[700], marginBottom: '12px', fontSize: '15px' }}>
+            Bewertung im Detail
           </h4>
-          <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0, lineHeight: 1.5 }}>
-            {result.content_feedback}
-          </p>
+
+          {/* Score Breakdown Grid */}
           {result.score_breakdown && (
             <div style={{
-              marginTop: '12px',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '8px',
+              marginBottom: result.content_feedback ? '12px' : 0,
+            }}>
+              <div style={{ fontSize: '13px', color: COLORS.slate[600] }}>
+                📝 Wortanzahl: <strong>{result.score_breakdown.words_score || 0}/25</strong>
+              </div>
+              <div style={{ fontSize: '13px', color: COLORS.slate[600] }}>
+                🚫 Füllwörter: <strong>{result.score_breakdown.filler_score || 0}/25</strong>
+              </div>
+              <div style={{ fontSize: '13px', color: COLORS.slate[600] }}>
+                ⏱️ Tempo: <strong>{result.score_breakdown.tempo_score || 0}/10</strong>
+              </div>
+              <div style={{ fontSize: '13px', color: COLORS.slate[600] }}>
+                💡 Inhalt: <strong>{result.score_breakdown.content_score || 0}/40</strong>
+              </div>
+            </div>
+          )}
+
+          {/* Content Feedback Text */}
+          {result.content_feedback && (
+            <div style={{
               paddingTop: '12px',
               borderTop: `1px solid ${COLORS.blue[100]}`,
-              fontSize: '13px',
-              color: COLORS.slate[500],
             }}>
-              Inhalt: {result.score_breakdown.content_score}/40 Punkte
+              <p style={{ fontSize: '14px', color: COLORS.slate[700], margin: 0, lineHeight: 1.5 }}>
+                <strong>Inhaltliches Feedback:</strong> {result.content_feedback}
+              </p>
             </div>
           )}
         </div>
