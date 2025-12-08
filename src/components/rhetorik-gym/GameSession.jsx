@@ -6,30 +6,39 @@
  * - Audio recording
  * - Real-time visual feedback
  * - Result display with score
+ *
+ * Uses Ocean theme design consistent with other features.
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
-  MicOff,
   Square,
   Play,
   RotateCcw,
   ArrowLeft,
-  Trophy,
   AlertTriangle,
   Clock,
-  Target,
-  Zap,
   Volume2,
-  CheckCircle,
   XCircle,
+  CheckCircle,
 } from 'lucide-react';
 import { analyzeRhetoricGame } from '@/services/gemini';
 import { getScoreFeedback } from '@/config/prompts/gamePrompts';
 import wordpressAPI from '@/services/wordpress-api';
-import AudioVisualizer from '@/components/AudioVisualizer';
+
+/**
+ * Ocean theme colors - consistent with other components
+ */
+const COLORS = {
+  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
+  teal: { 500: '#3DA389', 600: '#2E8A72' },
+  slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+  amber: { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 600: '#d97706' },
+  green: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a' },
+  red: { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626' },
+};
 
 // Game states
 const GAME_STATES = {
@@ -49,18 +58,26 @@ const CountdownOverlay = ({ count }) => (
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
-    className="fixed inset-0 bg-slate-900/90 flex items-center justify-center z-50"
+    style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.9)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 50,
+    }}
   >
     <motion.div
       key={count}
       initial={{ scale: 0.5, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 1.5, opacity: 0 }}
-      className="text-white text-center"
+      style={{ color: 'white', textAlign: 'center' }}
     >
-      <div className="text-9xl font-bold mb-4">{count}</div>
-      <div className="text-2xl text-slate-300">
-        {count === 3 ? 'Mach dich bereit...' : count === 2 ? 'Durchatmen...' : 'Los geht\'s!'}
+      <div style={{ fontSize: '120px', fontWeight: 700, marginBottom: '16px' }}>{count}</div>
+      <div style={{ fontSize: '24px', color: COLORS.slate[400] }}>
+        {count === 3 ? 'Mach dich bereit...' : count === 2 ? 'Durchatmen...' : "Los geht's!"}
       </div>
     </motion.div>
   </motion.div>
@@ -75,17 +92,31 @@ const TimerDisplay = ({ seconds, total, isWarning }) => {
   const secs = seconds % 60;
 
   return (
-    <div className="relative">
-      <div className="text-6xl md:text-8xl font-mono font-bold text-center">
-        <span className={isWarning ? 'text-red-500' : 'text-slate-900'}>
-          {minutes}:{secs.toString().padStart(2, '0')}
-        </span>
+    <div>
+      <div style={{
+        fontSize: '64px',
+        fontWeight: 700,
+        fontFamily: 'monospace',
+        textAlign: 'center',
+        color: isWarning ? COLORS.red[500] : COLORS.slate[900],
+      }}>
+        {minutes}:{secs.toString().padStart(2, '0')}
       </div>
 
       {/* Progress bar */}
-      <div className="mt-4 h-2 bg-slate-200 rounded-full overflow-hidden">
+      <div style={{
+        marginTop: '16px',
+        height: '8px',
+        backgroundColor: COLORS.slate[200],
+        borderRadius: '4px',
+        overflow: 'hidden',
+      }}>
         <motion.div
-          className={`h-full ${isWarning ? 'bg-red-500' : 'bg-blue-500'}`}
+          style={{
+            height: '100%',
+            backgroundColor: isWarning ? COLORS.red[500] : COLORS.blue[500],
+            borderRadius: '4px',
+          }}
           initial={{ width: '100%' }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5 }}
@@ -96,33 +127,28 @@ const TimerDisplay = ({ seconds, total, isWarning }) => {
 };
 
 /**
- * Recording indicator component
- */
-const RecordingIndicator = ({ isRecording }) => (
-  <div className="flex items-center justify-center gap-3">
-    <motion.div
-      animate={{ scale: isRecording ? [1, 1.2, 1] : 1, opacity: isRecording ? 1 : 0.5 }}
-      transition={{ repeat: Infinity, duration: 1 }}
-      className={`w-4 h-4 rounded-full ${isRecording ? 'bg-red-500' : 'bg-slate-400'}`}
-    />
-    <span className={`font-medium ${isRecording ? 'text-red-600' : 'text-slate-500'}`}>
-      {isRecording ? 'Aufnahme läuft...' : 'Warte auf Start'}
-    </span>
-  </div>
-);
-
-/**
  * Filler word badge component
  */
 const FillerWordBadge = ({ word, count }) => (
-  <motion.div
-    initial={{ scale: 0 }}
-    animate={{ scale: 1 }}
-    className="px-3 py-1.5 bg-red-100 text-red-700 rounded-full text-sm font-medium flex items-center gap-1"
-  >
-    <span>"{word}"</span>
-    <span className="bg-red-200 px-1.5 rounded-full text-xs">{count}x</span>
-  </motion.div>
+  <span style={{
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px 12px',
+    backgroundColor: COLORS.red[100],
+    color: COLORS.red[600],
+    borderRadius: '20px',
+    fontSize: '14px',
+    fontWeight: 500,
+  }}>
+    "{word}"
+    <span style={{
+      backgroundColor: COLORS.red[200],
+      padding: '2px 6px',
+      borderRadius: '10px',
+      fontSize: '12px',
+    }}>{count}x</span>
+  </span>
 );
 
 /**
@@ -131,140 +157,184 @@ const FillerWordBadge = ({ word, count }) => (
 const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
   const feedback = getScoreFeedback(result.score);
   const isGoodScore = result.score >= 70;
+  const isNoSpeech = result.pace_feedback === 'keine_sprache' || result.transcript === '[Keine Sprache erkannt]';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto"
-    >
+    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
       {/* Score Card */}
-      <div className={`rounded-3xl p-8 mb-6 ${isGoodScore ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-orange-500 to-red-500'} text-white text-center`}>
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', delay: 0.2 }}
-          className="text-6xl mb-2"
-        >
-          {feedback.emoji}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="text-8xl font-bold mb-2">{result.score}</div>
-          <div className="text-xl text-white/90 mb-4">Punkte</div>
-          <p className="text-lg">{feedback.message}</p>
-        </motion.div>
+      <div style={{
+        borderRadius: '20px',
+        padding: '32px',
+        marginBottom: '24px',
+        background: isNoSpeech
+          ? `linear-gradient(135deg, ${COLORS.slate[600]} 0%, ${COLORS.slate[700]} 100%)`
+          : isGoodScore
+            ? `linear-gradient(135deg, ${COLORS.green[500]} 0%, ${COLORS.teal[500]} 100%)`
+            : `linear-gradient(135deg, ${COLORS.amber[500]} 0%, ${COLORS.amber[600]} 100%)`,
+        color: 'white',
+        textAlign: 'center',
+      }}>
+        <div style={{ fontSize: '48px', marginBottom: '8px' }}>
+          {isNoSpeech ? '🎤' : feedback.emoji}
+        </div>
+        <div style={{ fontSize: '72px', fontWeight: 700, marginBottom: '8px' }}>{result.score}</div>
+        <div style={{ fontSize: '18px', opacity: 0.9, marginBottom: '16px' }}>Punkte</div>
+        <p style={{ fontSize: '16px', margin: 0 }}>
+          {isNoSpeech ? 'Keine Sprache erkannt. Bitte sprich lauter ins Mikrofon.' : feedback.message}
+        </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-xl border border-slate-200 p-4"
-        >
-          <div className="flex items-center gap-2 text-red-600 mb-2">
-            <AlertTriangle className="w-5 h-5" />
-            <span className="font-medium">Füllwörter</span>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '16px',
+        marginBottom: '24px',
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '16px',
+          border: `1px solid ${COLORS.slate[200]}`,
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: COLORS.red[600],
+            marginBottom: '8px',
+          }}>
+            <AlertTriangle style={{ width: '18px', height: '18px' }} />
+            <span style={{ fontWeight: 500, fontSize: '14px' }}>Füllwörter</span>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{result.filler_count}</div>
-        </motion.div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: COLORS.slate[900] }}>{result.filler_count}</div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-xl border border-slate-200 p-4"
-        >
-          <div className="flex items-center gap-2 text-blue-600 mb-2">
-            <Volume2 className="w-5 h-5" />
-            <span className="font-medium">Tempo</span>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '16px',
+          border: `1px solid ${COLORS.slate[200]}`,
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: COLORS.blue[600],
+            marginBottom: '8px',
+          }}>
+            <Volume2 style={{ width: '18px', height: '18px' }} />
+            <span style={{ fontWeight: 500, fontSize: '14px' }}>Tempo</span>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{result.words_per_minute}</div>
-          <div className="text-sm text-slate-500">WPM</div>
-        </motion.div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: COLORS.slate[900] }}>{result.words_per_minute}</div>
+          <div style={{ fontSize: '12px', color: COLORS.slate[500] }}>WPM</div>
+        </div>
       </div>
 
       {/* Filler Words Detail */}
       {result.filler_words && result.filler_words.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white rounded-xl border border-slate-200 p-4 mb-6"
-        >
-          <h4 className="font-semibold text-slate-900 mb-3">Erkannte Füllwörter</h4>
-          <div className="flex flex-wrap gap-2">
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '16px',
+          border: `1px solid ${COLORS.slate[200]}`,
+          marginBottom: '24px',
+        }}>
+          <h4 style={{ fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px', fontSize: '15px' }}>
+            Erkannte Füllwörter
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {result.filler_words.map((fw, index) => (
               <FillerWordBadge key={index} word={fw.word} count={fw.count} />
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Pace Feedback */}
-      {result.pace_feedback && result.pace_feedback !== 'optimal' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6"
-        >
-          <div className="flex items-start gap-3">
-            <Zap className="w-5 h-5 text-amber-600 mt-0.5" />
-            <div>
-              <h4 className="font-semibold text-amber-800">Tempo-Hinweis</h4>
-              <p className="text-sm text-amber-700">
-                {result.pace_feedback === 'zu_schnell'
-                  ? 'Du sprichst etwas zu schnell. Versuche, bewusst langsamer und deutlicher zu sprechen.'
-                  : 'Du sprichst etwas zu langsam. Versuche, etwas mehr Energie in deine Präsentation zu legen.'}
-              </p>
-            </div>
-          </div>
-        </motion.div>
+      {result.pace_feedback && result.pace_feedback !== 'optimal' && result.pace_feedback !== 'keine_sprache' && (
+        <div style={{
+          backgroundColor: COLORS.amber[50],
+          border: `1px solid ${COLORS.amber[100]}`,
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '24px',
+        }}>
+          <h4 style={{ fontWeight: 600, color: COLORS.amber[600], marginBottom: '8px', fontSize: '15px' }}>
+            Tempo-Hinweis
+          </h4>
+          <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
+            {result.pace_feedback === 'zu_schnell'
+              ? 'Du sprichst etwas zu schnell. Versuche, bewusst langsamer und deutlicher zu sprechen.'
+              : 'Du sprichst etwas zu langsam. Versuche, etwas mehr Energie in deine Präsentation zu legen.'}
+          </p>
+        </div>
       )}
 
       {/* Transcript */}
-      {result.transcript && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="bg-slate-50 rounded-xl border border-slate-200 p-4 mb-8"
-        >
-          <h4 className="font-semibold text-slate-900 mb-3">Transkript</h4>
-          <p className="text-slate-600 text-sm leading-relaxed">{result.transcript}</p>
-        </motion.div>
+      {result.transcript && result.transcript !== '[Keine Sprache erkannt]' && (
+        <div style={{
+          backgroundColor: COLORS.slate[50],
+          borderRadius: '12px',
+          border: `1px solid ${COLORS.slate[200]}`,
+          padding: '16px',
+          marginBottom: '32px',
+        }}>
+          <h4 style={{ fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px', fontSize: '15px' }}>
+            Transkript
+          </h4>
+          <p style={{ fontSize: '14px', color: COLORS.slate[600], lineHeight: 1.6, margin: 0 }}>
+            {result.transcript}
+          </p>
+        </div>
       )}
 
       {/* Action Buttons */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="flex flex-col sm:flex-row gap-4"
-      >
+      <div style={{ display: 'flex', gap: '16px' }}>
         <button
           onClick={onPlayAgain}
-          className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-shadow"
+          style={{
+            flex: 1,
+            padding: '14px 24px',
+            borderRadius: '12px',
+            border: 'none',
+            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            color: 'white',
+            fontSize: '15px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
         >
-          <RotateCcw className="w-5 h-5" />
+          <RotateCcw style={{ width: '18px', height: '18px' }} />
           Nochmal spielen
         </button>
         <button
           onClick={onBack}
-          className="flex-1 px-6 py-4 bg-slate-100 text-slate-700 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors"
+          style={{
+            flex: 1,
+            padding: '14px 24px',
+            borderRadius: '12px',
+            border: `1px solid ${COLORS.slate[200]}`,
+            backgroundColor: 'white',
+            color: COLORS.slate[700],
+            fontSize: '15px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
         >
-          <ArrowLeft className="w-5 h-5" />
-          Zurück zur Auswahl
+          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          Zurück
         </button>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
@@ -310,18 +380,15 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     setGameState(GAME_STATES.COUNTDOWN);
     setCountdown(3);
 
-    // Request microphone access early
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Set up audio analysis
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContextRef.current.createMediaStreamSource(stream);
       analyserRef.current = audioContextRef.current.createAnalyser();
       analyserRef.current.fftSize = 256;
       source.connect(analyserRef.current);
 
-      // Set up media recorder
       mediaRecorderRef.current = new MediaRecorder(stream, {
         mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4',
       });
@@ -334,7 +401,6 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
         }
       };
 
-      // Countdown timer
       let count = 3;
       const countdownInterval = setInterval(() => {
         count--;
@@ -357,10 +423,8 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     setGameState(GAME_STATES.RECORDING);
     setTimeLeft(gameConfig.duration);
 
-    // Start recording
     mediaRecorderRef.current.start();
 
-    // Start audio level monitoring
     const updateAudioLevel = () => {
       if (analyserRef.current) {
         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
@@ -372,7 +436,6 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     };
     updateAudioLevel();
 
-    // Timer
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -389,16 +452,13 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     cleanup();
     setGameState(GAME_STATES.PROCESSING);
 
-    // Get the recorded audio
     mediaRecorderRef.current.onstop = async () => {
       const audioBlob = new Blob(audioChunksRef.current, {
         type: mediaRecorderRef.current.mimeType,
       });
 
-      // Stop all tracks
       mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
 
-      // Analyze the recording
       try {
         const analysisResult = await analyzeRhetoricGame(
           audioBlob,
@@ -410,16 +470,18 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
         setResult(analysisResult);
         setGameState(GAME_STATES.RESULTS);
 
-        // Save to database (if API is available)
+        // Save to database
         try {
-          // await wordpressAPI.saveGameSession({
-          //   game_type: gameConfig.mode.id,
-          //   topic: gameConfig.topic,
-          //   duration_seconds: gameConfig.duration,
-          //   score: analysisResult.score,
-          //   filler_count: analysisResult.filler_count,
-          //   analysis_json: JSON.stringify(analysisResult),
-          // });
+          await wordpressAPI.createGameSession({
+            game_type: gameConfig.mode.id,
+            topic: gameConfig.topic,
+            duration_seconds: gameConfig.duration,
+            score: analysisResult.score,
+            filler_count: analysisResult.filler_count,
+            words_per_minute: analysisResult.words_per_minute,
+            transcript: analysisResult.transcript,
+            analysis_json: JSON.stringify(analysisResult),
+          });
         } catch (saveError) {
           console.error('Failed to save game session:', saveError);
         }
@@ -433,12 +495,10 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     mediaRecorderRef.current.stop();
   }, [apiKey, gameConfig, cleanup]);
 
-  // Handle early stop
   const handleEarlyStop = () => {
     stopRecording();
   };
 
-  // Handle play again
   const handlePlayAgain = () => {
     setResult(null);
     setError(null);
@@ -446,36 +506,73 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     setGameState(GAME_STATES.READY);
   };
 
-  // Render based on game state
   const renderContent = () => {
     switch (gameState) {
       case GAME_STATES.READY:
         return (
-          <div className="text-center py-12">
-            <div className="max-w-xl mx-auto">
-              <div className="mb-8">
-                <div className="text-6xl mb-4">🎤</div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Bereit?</h2>
-                <p className="text-slate-600 mb-6">{gameConfig.topic}</p>
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full text-slate-600">
-                  <Clock className="w-4 h-4" />
-                  <span>{gameConfig.duration} Sekunden</span>
-                </div>
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ maxWidth: '500px', margin: '0 auto' }}>
+              <div style={{ fontSize: '64px', marginBottom: '24px' }}>🎤</div>
+              <h2 style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900], marginBottom: '12px' }}>
+                Bereit?
+              </h2>
+              <p style={{ fontSize: '16px', color: COLORS.slate[600], marginBottom: '24px', lineHeight: 1.6 }}>
+                {gameConfig.topic}
+              </p>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                backgroundColor: COLORS.slate[100],
+                borderRadius: '20px',
+                color: COLORS.slate[600],
+                fontSize: '14px',
+                marginBottom: '32px',
+              }}>
+                <Clock style={{ width: '16px', height: '16px' }} />
+                {gameConfig.duration} Sekunden
+              </div>
+
+              <div>
+                <button
+                  onClick={startCountdown}
+                  style={{
+                    padding: '16px 40px',
+                    borderRadius: '14px',
+                    border: 'none',
+                    background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                    color: 'white',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 4px 14px rgba(74, 158, 201, 0.4)',
+                  }}
+                >
+                  <Play style={{ width: '20px', height: '20px' }} />
+                  Aufnahme starten
+                </button>
               </div>
 
               <button
-                onClick={startCountdown}
-                className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-shadow flex items-center gap-3 mx-auto"
-              >
-                <Play className="w-6 h-6" />
-                Aufnahme starten
-              </button>
-
-              <button
                 onClick={onBack}
-                className="mt-6 text-slate-500 hover:text-slate-700 flex items-center gap-2 mx-auto"
+                style={{
+                  marginTop: '24px',
+                  padding: '10px 20px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: COLORS.slate[500],
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft style={{ width: '16px', height: '16px' }} />
                 Zurück zur Auswahl
               </button>
             </div>
@@ -484,9 +581,8 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
 
       case GAME_STATES.RECORDING:
         return (
-          <div className="text-center py-8">
-            <div className="max-w-xl mx-auto">
-              {/* Timer */}
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ maxWidth: '500px', margin: '0 auto' }}>
               <TimerDisplay
                 seconds={timeLeft}
                 total={gameConfig.duration}
@@ -494,35 +590,89 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
               />
 
               {/* Topic reminder */}
-              <div className="mt-8 mb-8 p-4 bg-slate-50 rounded-xl">
-                <p className="text-slate-600 text-sm">Dein Thema:</p>
-                <p className="font-medium text-slate-900">{gameConfig.topic}</p>
+              <div style={{
+                marginTop: '32px',
+                marginBottom: '32px',
+                padding: '16px',
+                backgroundColor: COLORS.slate[50],
+                borderRadius: '12px',
+              }}>
+                <p style={{ fontSize: '13px', color: COLORS.slate[500], marginBottom: '4px' }}>Dein Thema:</p>
+                <p style={{ fontSize: '15px', fontWeight: 500, color: COLORS.slate[900], margin: 0 }}>
+                  {gameConfig.topic}
+                </p>
               </div>
 
-              {/* Audio visualizer placeholder */}
-              <div className="mb-8">
+              {/* Audio visualizer */}
+              <div style={{ marginBottom: '32px' }}>
                 <motion.div
-                  className="h-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center"
-                  animate={{ opacity: 0.5 + audioLevel * 0.5 }}
+                  style={{
+                    height: '80px',
+                    background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  animate={{ opacity: 0.6 + audioLevel * 0.4 }}
                 >
                   <motion.div
-                    className="w-16 h-16 rounded-full bg-white/30 flex items-center justify-center"
+                    style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
                     animate={{ scale: 1 + audioLevel * 0.3 }}
                   >
-                    <Mic className="w-8 h-8 text-white" />
+                    <Mic style={{ width: '28px', height: '28px', color: 'white' }} />
                   </motion.div>
                 </motion.div>
               </div>
 
               {/* Recording indicator */}
-              <RecordingIndicator isRecording={true} />
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginBottom: '32px',
+              }}>
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], opacity: 1 }}
+                  transition={{ repeat: Infinity, duration: 1 }}
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    backgroundColor: COLORS.red[500],
+                  }}
+                />
+                <span style={{ fontWeight: 500, color: COLORS.red[600], fontSize: '14px' }}>
+                  Aufnahme läuft...
+                </span>
+              </div>
 
-              {/* Stop button */}
               <button
                 onClick={handleEarlyStop}
-                className="mt-8 px-6 py-3 bg-red-500 text-white rounded-xl font-semibold flex items-center gap-2 mx-auto hover:bg-red-600 transition-colors"
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  backgroundColor: COLORS.red[500],
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
               >
-                <Square className="w-5 h-5" />
+                <Square style={{ width: '16px', height: '16px' }} />
                 Aufnahme beenden
               </button>
             </div>
@@ -531,14 +681,23 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
 
       case GAME_STATES.PROCESSING:
         return (
-          <div className="text-center py-20">
+          <div style={{ textAlign: 'center', padding: '80px 20px' }}>
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-              className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6"
+              style={{
+                width: '56px',
+                height: '56px',
+                border: `4px solid ${COLORS.blue[500]}`,
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+                margin: '0 auto 24px',
+              }}
             />
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Analysiere deine Aufnahme...</h2>
-            <p className="text-slate-500">Der Füllwort-Killer zählt nach</p>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '8px' }}>
+              Analysiere deine Aufnahme...
+            </h2>
+            <p style={{ color: COLORS.slate[500] }}>Der Füllwort-Killer zählt nach</p>
           </div>
         );
 
@@ -553,26 +712,61 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
 
       case GAME_STATES.ERROR:
         return (
-          <div className="text-center py-12">
-            <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <XCircle className="w-8 h-8 text-red-500" />
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: COLORS.red[50],
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 24px',
+              }}>
+                <XCircle style={{ width: '32px', height: '32px', color: COLORS.red[500] }} />
               </div>
-              <h2 className="text-xl font-semibold text-slate-900 mb-2">Fehler</h2>
-              <p className="text-slate-600 mb-6">{error}</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px' }}>
+                Fehler
+              </h2>
+              <p style={{ color: COLORS.slate[600], marginBottom: '24px' }}>{error}</p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                 <button
                   onClick={handlePlayAgain}
-                  className="px-6 py-3 bg-blue-500 text-white rounded-xl font-semibold flex items-center gap-2 justify-center"
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
                 >
-                  <RotateCcw className="w-5 h-5" />
+                  <RotateCcw style={{ width: '16px', height: '16px' }} />
                   Erneut versuchen
                 </button>
                 <button
                   onClick={onBack}
-                  className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold flex items-center gap-2 justify-center"
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: '12px',
+                    border: `1px solid ${COLORS.slate[200]}`,
+                    backgroundColor: 'white',
+                    color: COLORS.slate[700],
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
                 >
-                  <ArrowLeft className="w-5 h-5" />
+                  <ArrowLeft style={{ width: '16px', height: '16px' }} />
                   Zurück
                 </button>
               </div>
@@ -586,7 +780,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
   };
 
   return (
-    <div className="min-h-screen pb-8">
+    <div style={{ minHeight: '100%', paddingBottom: '32px' }}>
       {/* Countdown overlay */}
       <AnimatePresence>
         {gameState === GAME_STATES.COUNTDOWN && (
@@ -594,26 +788,44 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
         )}
       </AnimatePresence>
 
-      {/* Header */}
+      {/* Header - only show when not recording */}
       {gameState !== GAME_STATES.COUNTDOWN && gameState !== GAME_STATES.RECORDING && (
-        <div className="px-6 py-4 border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-3xl mx-auto flex items-center justify-between">
+        <div style={{
+          padding: '16px 24px',
+          borderBottom: `1px solid ${COLORS.slate[200]}`,
+          backgroundColor: 'white',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}>
+          <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button
               onClick={onBack}
-              className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: COLORS.slate[600],
+                fontSize: '14px',
+                cursor: 'pointer',
+              }}
             >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">Zurück</span>
+              <ArrowLeft style={{ width: '18px', height: '18px' }} />
+              Zurück
             </button>
-            <h1 className="font-semibold text-slate-900">{gameConfig.mode.title}</h1>
-            <div className="w-20" /> {/* Spacer for centering */}
+            <h1 style={{ fontWeight: 600, color: COLORS.slate[900], fontSize: '16px', margin: 0 }}>
+              {gameConfig.mode.title}
+            </h1>
+            <div style={{ width: '60px' }} />
           </div>
         </div>
       )}
 
       {/* Main content */}
-      <div className="px-6 py-8">
-        <div className="max-w-3xl mx-auto">
+      <div style={{ padding: '24px' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           {renderContent()}
         </div>
       </div>

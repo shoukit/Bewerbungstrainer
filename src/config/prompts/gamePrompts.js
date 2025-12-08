@@ -61,24 +61,37 @@ export const STRESS_QUESTIONS = [
  * @returns {string} - The analysis prompt
  */
 export function getRhetoricGamePrompt(topic = 'Elevator Pitch', durationSeconds = 60) {
-  return `SCHNELLE ANALYSE - Rhetorik-Spiel "Füllwort-Killer"
+  return `AUDIO-ANALYSE - Rhetorik-Spiel "Füllwort-Killer"
 
 KONTEXT:
 - Thema: "${topic}"
 - Ziel-Dauer: ${durationSeconds} Sekunden
 - Dies ist ein SPIEL - schnelles, klares Feedback ist wichtig!
 
-DEINE EINZIGE AUFGABE:
-1. Zähle ALLE Füllwörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang)
-2. Schätze das Sprechtempo (Wörter pro Minute)
-3. Erstelle eine kurze Transkription
+KRITISCHE REGELN:
+1. Analysiere NUR das, was in der Audio-Datei TATSÄCHLICH gesprochen wird
+2. Wenn die Audio-Datei STILL ist oder nur Rauschen enthält:
+   - score: 0
+   - filler_count: 0
+   - filler_words: []
+   - words_per_minute: 0
+   - transcript: "[Keine Sprache erkannt]"
+   - pace_feedback: "keine_sprache"
+3. ERFINDE NIEMALS Inhalte oder Transkripte!
+4. Transkribiere WÖRTLICH was gesagt wird - nichts hinzufügen
+
+DEINE AUFGABE (nur bei erkannter Sprache):
+1. Transkribiere EXAKT was gesprochen wird
+2. Zähle ALLE Füllwörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
+3. Schätze das Sprechtempo (Wörter pro Minute)
 
 WICHTIG:
 - KEINE inhaltliche Bewertung
 - KEINE Verbesserungsvorschläge
 - NUR Füllwörter zählen und Tempo messen
+- Bei Stille oder unverständlicher Audio: score = 0
 
-SCORING:
+SCORING (nur bei erkannter Sprache):
 - Basis: 100 Punkte
 - Pro Füllwort: -10 Punkte
 - Zu schnell (>160 WPM): -10 Punkte
@@ -95,14 +108,13 @@ Antworte NUR mit validem JSON. Keine Einleitung, kein Markdown.
     {"word": "Ähm", "count": 2},
     {"word": "Also", "count": 1}
   ],
-  "words_per_minute": (geschätzte WPM),
-  "transcript": "Vollständige Transkription des Gesprochenen...",
+  "words_per_minute": (geschätzte WPM, 0 bei Stille),
+  "transcript": "EXAKTE Transkription oder '[Keine Sprache erkannt]'",
   "duration_estimate_seconds": (geschätzte Dauer),
-  "pace_feedback": "optimal" | "zu_schnell" | "zu_langsam"
+  "pace_feedback": "optimal" | "zu_schnell" | "zu_langsam" | "keine_sprache"
 }
 
-ANALYSE:`;
-}
+ANALYSE DER AUDIO-DATEI:`;
 
 /**
  * Quick feedback messages based on score

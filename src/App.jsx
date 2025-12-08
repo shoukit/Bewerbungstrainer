@@ -309,8 +309,8 @@ function App() {
     }
   };
 
-  // Full-screen views (no sidebar)
-  const isFullScreenView = currentView === VIEWS.ROLEPLAY || currentView === VIEWS.GYM_SESSION;
+  // Full-screen views (no sidebar) - only roleplay uses full screen for immersive experience
+  const isFullScreenView = currentView === VIEWS.ROLEPLAY;
 
   if (isFullScreenView) {
     return renderContent();
