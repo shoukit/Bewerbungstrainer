@@ -13,10 +13,33 @@ const COLORS = {
 };
 
 /**
+ * Scroll element into view for mobile keyboard
+ */
+const scrollIntoViewOnFocus = (e) => {
+  setTimeout(() => {
+    const element = e.target;
+    if (element) {
+      const fieldWrapper = element.closest('div');
+      if (fieldWrapper) {
+        fieldWrapper.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }
+  }, 300);
+};
+
+/**
  * Styled Input Component
  */
 const StyledInput = ({ id, type, value, onChange, placeholder, hasError }) => {
   const [isFocused, setIsFocused] = useState(false);
+
+  const handleFocus = (e) => {
+    setIsFocused(true);
+    scrollIntoViewOnFocus(e);
+  };
 
   return (
     <input
@@ -33,12 +56,12 @@ const StyledInput = ({ id, type, value, onChange, placeholder, hasError }) => {
         border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? COLORS.blue[500] : COLORS.slate[200]}`,
         backgroundColor: 'white',
         color: COLORS.slate[900],
-        fontSize: '14px',
+        fontSize: '16px', // Minimum 16px to prevent iOS zoom
         boxShadow: isFocused ? `0 0 0 3px rgba(74, 158, 201, 0.15)` : '0 1px 2px rgba(0, 0, 0, 0.05)',
         outline: 'none',
         transition: 'all 0.2s',
       }}
-      onFocus={() => setIsFocused(true)}
+      onFocus={handleFocus}
       onBlur={() => setIsFocused(false)}
     />
   );
@@ -49,6 +72,11 @@ const StyledInput = ({ id, type, value, onChange, placeholder, hasError }) => {
  */
 const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3 }) => {
   const [isFocused, setIsFocused] = useState(false);
+
+  const handleFocus = (e) => {
+    setIsFocused(true);
+    scrollIntoViewOnFocus(e);
+  };
 
   return (
     <textarea
@@ -65,13 +93,13 @@ const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3 }
         border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? COLORS.blue[500] : COLORS.slate[200]}`,
         backgroundColor: 'white',
         color: COLORS.slate[900],
-        fontSize: '14px',
+        fontSize: '16px', // Minimum 16px to prevent iOS zoom
         boxShadow: isFocused ? `0 0 0 3px rgba(74, 158, 201, 0.15)` : '0 1px 2px rgba(0, 0, 0, 0.05)',
         outline: 'none',
         transition: 'all 0.2s',
         resize: 'none',
       }}
-      onFocus={() => setIsFocused(true)}
+      onFocus={handleFocus}
       onBlur={() => setIsFocused(false)}
     />
   );
