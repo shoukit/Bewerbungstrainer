@@ -115,6 +115,7 @@ Antworte NUR mit validem JSON. Keine Einleitung, kein Markdown.
 }
 
 ANALYSE DER AUDIO-DATEI:`;
+}
 
 /**
  * Quick feedback messages based on score
