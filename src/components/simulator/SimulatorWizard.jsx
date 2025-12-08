@@ -31,7 +31,7 @@ const DynamicFormField = ({ field, value, onChange, error }) => {
     padding: '12px 16px',
     borderRadius: '12px',
     border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
-    fontSize: '15px',
+    fontSize: '16px', // Minimum 16px to prevent iOS zoom
     color: COLORS.slate[900],
     backgroundColor: 'white',
     outline: 'none',
@@ -45,6 +45,22 @@ const DynamicFormField = ({ field, value, onChange, error }) => {
 
   const handleFocus = (e) => {
     Object.assign(e.target.style, focusStyle);
+
+    // Scroll input into view on mobile when keyboard appears
+    // Use a delay to wait for the keyboard to fully open
+    setTimeout(() => {
+      const element = e.target;
+      if (element) {
+        // Get the parent container (the field wrapper)
+        const fieldWrapper = element.closest('div');
+        if (fieldWrapper) {
+          fieldWrapper.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }
+    }, 300);
   };
 
   const handleBlur = (e) => {
@@ -328,7 +344,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '640px', margin: '0 auto' }}>
+    <div style={{ padding: '24px', paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <button

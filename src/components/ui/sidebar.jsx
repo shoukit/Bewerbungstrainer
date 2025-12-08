@@ -319,6 +319,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
           padding: '0 16px',
           zIndex: 50,
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+          transition: 'top 0.15s ease-out',
         }}
       >
         {/* Logo */}
