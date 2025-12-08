@@ -23,6 +23,7 @@ import {
   Volume2,
   XCircle,
   CheckCircle,
+  MessageCircle,
 } from 'lucide-react';
 import { analyzeRhetoricGame } from '@/services/gemini';
 import { getScoreFeedback } from '@/config/prompts/gamePrompts';
@@ -184,50 +185,97 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
         </p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - 2x2 */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '16px',
+        gap: '12px',
         marginBottom: '24px',
       }}>
+        {/* Total Words */}
         <div style={{
           backgroundColor: 'white',
           borderRadius: '12px',
-          padding: '16px',
+          padding: '14px',
           border: `1px solid ${COLORS.slate[200]}`,
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            color: COLORS.red[600],
-            marginBottom: '8px',
+            gap: '6px',
+            color: COLORS.teal[600],
+            marginBottom: '6px',
           }}>
-            <AlertTriangle style={{ width: '18px', height: '18px' }} />
-            <span style={{ fontWeight: 500, fontSize: '14px' }}>Füllwörter</span>
+            <MessageCircle style={{ width: '16px', height: '16px' }} />
+            <span style={{ fontWeight: 500, fontSize: '13px' }}>Wörter</span>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: COLORS.slate[900] }}>{result.filler_count}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.total_words || 0}</div>
+          <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>gesprochen</div>
         </div>
 
+        {/* Filler Count */}
         <div style={{
           backgroundColor: 'white',
           borderRadius: '12px',
-          padding: '16px',
+          padding: '14px',
           border: `1px solid ${COLORS.slate[200]}`,
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            color: COLORS.blue[600],
-            marginBottom: '8px',
+            gap: '6px',
+            color: COLORS.red[600],
+            marginBottom: '6px',
           }}>
-            <Volume2 style={{ width: '18px', height: '18px' }} />
-            <span style={{ fontWeight: 500, fontSize: '14px' }}>Tempo</span>
+            <AlertTriangle style={{ width: '16px', height: '16px' }} />
+            <span style={{ fontWeight: 500, fontSize: '13px' }}>Füllwörter</span>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: COLORS.slate[900] }}>{result.words_per_minute}</div>
-          <div style={{ fontSize: '12px', color: COLORS.slate[500] }}>WPM</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.filler_count}</div>
+          <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>
+            {result.filler_percentage ? `${result.filler_percentage.toFixed(1)}%` : '0%'}
+          </div>
+        </div>
+
+        {/* Words Per Minute */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '14px',
+          border: `1px solid ${COLORS.slate[200]}`,
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: COLORS.blue[600],
+            marginBottom: '6px',
+          }}>
+            <Volume2 style={{ width: '16px', height: '16px' }} />
+            <span style={{ fontWeight: 500, fontSize: '13px' }}>Tempo</span>
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.words_per_minute}</div>
+          <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>WPM</div>
+        </div>
+
+        {/* Speaking Time */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '14px',
+          border: `1px solid ${COLORS.slate[200]}`,
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: COLORS.slate[600],
+            marginBottom: '6px',
+          }}>
+            <Clock style={{ width: '16px', height: '16px' }} />
+            <span style={{ fontWeight: 500, fontSize: '13px' }}>Sprechzeit</span>
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.duration_estimate_seconds || 0}</div>
+          <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>Sekunden</div>
         </div>
       </div>
 

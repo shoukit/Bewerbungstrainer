@@ -75,6 +75,7 @@ KRITISCHE REGELN:
    - filler_count: 0
    - filler_words: []
    - words_per_minute: 0
+   - total_words: 0
    - transcript: "[Keine Sprache erkannt]"
    - pace_feedback: "keine_sprache"
 3. ERFINDE NIEMALS Inhalte oder Transkripte!
@@ -82,35 +83,55 @@ KRITISCHE REGELN:
 
 DEINE AUFGABE (nur bei erkannter Sprache):
 1. Transkribiere EXAKT was gesprochen wird
-2. Zähle ALLE Füllwörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
-3. Schätze das Sprechtempo (Wörter pro Minute)
+2. Zähle die GESAMTANZAHL der gesprochenen Wörter
+3. Zähle ALLE Füllwörter: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
+4. Berechne den Füllwort-Anteil (filler_count / total_words * 100)
+5. Schätze das Sprechtempo (Wörter pro Minute)
 
 WICHTIG:
 - KEINE inhaltliche Bewertung
 - KEINE Verbesserungsvorschläge
-- NUR Füllwörter zählen und Tempo messen
+- Bewerte NUR: Wortanzahl, Füllwörter, Tempo
 - Bei Stille oder unverständlicher Audio: score = 0
 
-SCORING (nur bei erkannter Sprache):
-- Basis: 100 Punkte
-- Pro Füllwort: -10 Punkte
-- Zu schnell (>160 WPM): -10 Punkte
-- Zu langsam (<100 WPM): -10 Punkte
-- Minimum: 0 Punkte
+SCORING - STRENG BEWERTEN:
+Erwartung für ${durationSeconds} Sekunden: ca. ${Math.round(durationSeconds * 2)} Wörter (bei normalem Tempo)
+
+1. WORTANZAHL (größter Faktor!):
+   - < 10 Wörter: Score maximal 10
+   - < 20 Wörter: Score maximal 25
+   - < 40 Wörter: Score maximal 50
+   - < 60 Wörter: -20 Punkte vom Basis-Score
+   - >= 60 Wörter: voller Basis-Score möglich
+
+2. FÜLLWORT-ANTEIL (Prozent der Gesamtwörter):
+   - > 25% Füllwörter: -40 Punkte
+   - 15-25% Füllwörter: -25 Punkte
+   - 10-15% Füllwörter: -15 Punkte
+   - 5-10% Füllwörter: -5 Punkte
+   - < 5% Füllwörter: keine Abzüge
+
+3. TEMPO:
+   - Zu schnell (>160 WPM): -10 Punkte
+   - Zu langsam (<80 WPM bei genug Wörtern): -10 Punkte
+
+Minimum: 0 Punkte, Maximum: 100 Punkte
 
 OUTPUT FORMAT:
 Antworte NUR mit validem JSON. Keine Einleitung, kein Markdown.
 
 {
-  "score": (0-100),
-  "filler_count": (Anzahl),
+  "score": (0-100, STRENG nach obigen Regeln!),
+  "total_words": (Gesamtanzahl gesprochener Wörter),
+  "filler_count": (Anzahl Füllwörter),
+  "filler_percentage": (Füllwörter in Prozent, z.B. 15.5),
   "filler_words": [
     {"word": "Ähm", "count": 2},
     {"word": "Also", "count": 1}
   ],
   "words_per_minute": (geschätzte WPM, 0 bei Stille),
   "transcript": "EXAKTE Transkription oder '[Keine Sprache erkannt]'",
-  "duration_estimate_seconds": (geschätzte Dauer),
+  "duration_estimate_seconds": (geschätzte Sprechdauer in Sekunden),
   "pace_feedback": "optimal" | "zu_schnell" | "zu_langsam" | "keine_sprache"
 }
 
