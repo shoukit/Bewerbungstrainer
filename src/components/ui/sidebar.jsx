@@ -7,6 +7,8 @@ import {
   History,
   GraduationCap,
   Target,
+  Menu,
+  X,
 } from 'lucide-react';
 
 /**
@@ -288,19 +290,195 @@ const AppSidebar = ({
 };
 
 /**
+ * Mobile Navigation Component
+ * Shows a burger menu that opens a slide-out menu on mobile
+ */
+const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleNavigate = (id) => {
+    onNavigate(id);
+    setIsOpen(false);
+  };
+
+  return (
+    <>
+      {/* Mobile Header Bar */}
+      <div
+        style={{
+          position: 'fixed',
+          top: headerOffset,
+          left: 0,
+          right: 0,
+          height: '56px',
+          backgroundColor: 'white',
+          borderBottom: `1px solid ${OCEAN_COLORS.slate[200]}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          zIndex: 50,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+        }}
+      >
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              background: `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <GraduationCap style={{ width: '18px', height: '18px', color: 'white' }} />
+          </div>
+          <span style={{ fontWeight: 700, color: OCEAN_COLORS.slate[900], fontSize: '15px' }}>
+            Karriere Navigation
+          </span>
+        </div>
+
+        {/* Burger Menu Button */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: isOpen ? OCEAN_COLORS.slate[100] : 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          {isOpen ? (
+            <X style={{ width: '24px', height: '24px', color: OCEAN_COLORS.slate[700] }} />
+          ) : (
+            <Menu style={{ width: '24px', height: '24px', color: OCEAN_COLORS.slate[700] }} />
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              style={{
+                position: 'fixed',
+                top: headerOffset + 56,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                zIndex: 40,
+              }}
+            />
+
+            {/* Menu Panel */}
+            <motion.nav
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                position: 'fixed',
+                top: headerOffset + 56,
+                left: 0,
+                right: 0,
+                backgroundColor: 'white',
+                zIndex: 45,
+                padding: '8px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                borderBottomLeftRadius: '16px',
+                borderBottomRightRadius: '16px',
+              }}
+            >
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeView === item.id ||
+                  (item.id === 'dashboard' && activeView === 'roleplay');
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavigate(item.id)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      border: 'none',
+                      backgroundColor: isActive ? OCEAN_COLORS.blue[50] : 'transparent',
+                      color: isActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[700],
+                      fontSize: '15px',
+                      fontWeight: isActive ? 600 : 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    <Icon
+                      style={{
+                        width: '22px',
+                        height: '22px',
+                        color: isActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                      }}
+                    />
+                    <div>
+                      <div>{item.label}</div>
+                      <div style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], fontWeight: 400 }}>
+                        {item.description}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </motion.nav>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+/**
  * SidebarLayout Component
  *
  * Layout wrapper that includes the sidebar and main content area.
+ * Responsive: Shows sidebar on desktop, burger menu on mobile.
  */
 const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0 }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
 
-  // Check for saved preference
+  // Check for mobile and saved preference
   React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
     const saved = localStorage.getItem('sidebar-collapsed');
     if (saved !== null) {
       setIsCollapsed(JSON.parse(saved));
     }
+
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const handleToggleCollapse = () => {
@@ -309,6 +487,35 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0 }) =
     localStorage.setItem('sidebar-collapsed', JSON.stringify(newState));
   };
 
+  // Mobile Layout
+  if (isMobile) {
+    return (
+      <div
+        style={{
+          minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
+          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
+        }}
+      >
+        <MobileNavigation
+          activeView={activeView}
+          onNavigate={onNavigate}
+          headerOffset={headerOffset}
+        />
+
+        {/* Main Content with top padding for mobile header */}
+        <main
+          style={{
+            paddingTop: '56px',
+            minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
+          }}
+        >
+          {children}
+        </main>
+      </div>
+    );
+  }
+
+  // Desktop Layout
   return (
     <div
       style={{
