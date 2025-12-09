@@ -566,7 +566,11 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     setCountdown(3);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Use selected microphone if provided
+      const audioConstraints = gameConfig.selectedMicrophoneId
+        ? { deviceId: { exact: gameConfig.selectedMicrophoneId } }
+        : true;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
 
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContextRef.current.createMediaStreamSource(stream);
@@ -609,7 +613,11 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     setCountdown(3);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Use selected microphone if provided
+      const audioConstraints = gameConfig.selectedMicrophoneId
+        ? { deviceId: { exact: gameConfig.selectedMicrophoneId } }
+        : true;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
 
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContextRef.current.createMediaStreamSource(stream);
@@ -644,7 +652,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
       setError('Bitte erlaube den Zugriff auf das Mikrofon, um zu spielen.');
       setGameState(GAME_STATES.ERROR);
     }
-  }, []);
+  }, [gameConfig.selectedMicrophoneId]);
 
   // Start recording
   const startRecording = useCallback(() => {

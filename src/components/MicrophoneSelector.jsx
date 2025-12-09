@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, ChevronDown, Settings2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Mic, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
+
+/**
+ * Ocean theme colors - consistent with other components
+ */
+const COLORS = {
+  blue: { 50: '#E8F4F8', 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
+  teal: { 500: '#3DA389', 600: '#2E8A72' },
+  slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+  red: { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626' },
+  white: '#ffffff',
+};
 
 /**
  * MicrophoneSelector Component
@@ -12,8 +23,6 @@ const MicrophoneSelector = ({
   onDeviceChange,
   onTestClick,
   disabled = false,
-  compact = false,
-  className = ''
 }) => {
   const [devices, setDevices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,10 +38,7 @@ const MicrophoneSelector = ({
 
     try {
       // First request permission to access microphone
-      // This is needed to get device labels
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      // Stop the stream immediately - we just needed permission
       stream.getTracks().forEach(track => track.stop());
 
       // Now enumerate devices with labels
@@ -45,9 +51,7 @@ const MicrophoneSelector = ({
       } else {
         setDevices(audioInputs);
 
-        // If no device is selected, select the first one or default
         if (!selectedDeviceId && audioInputs.length > 0) {
-          // Find default device or use first one
           const defaultDevice = audioInputs.find(d => d.deviceId === 'default') || audioInputs[0];
           onDeviceChange?.(defaultDevice.deviceId);
         }
@@ -67,15 +71,10 @@ const MicrophoneSelector = ({
     }
   };
 
-  // Load devices on mount
   useEffect(() => {
     loadDevices();
 
-    // Listen for device changes
-    const handleDeviceChange = () => {
-      loadDevices();
-    };
-
+    const handleDeviceChange = () => loadDevices();
     navigator.mediaDevices?.addEventListener('devicechange', handleDeviceChange);
 
     return () => {
@@ -83,83 +82,82 @@ const MicrophoneSelector = ({
     };
   }, []);
 
-  /**
-   * Get display name for a device
-   */
   const getDeviceLabel = (device) => {
     if (device.label) {
-      // Clean up common device label patterns
       let label = device.label;
-      // Remove common prefixes
       label = label.replace(/^Default - /, '');
       label = label.replace(/^Kommunikation - /, '');
-      // Truncate if too long
-      if (label.length > 40) {
-        label = label.substring(0, 37) + '...';
+      label = label.replace(/^Standard - /, '');
+      if (label.length > 35) {
+        label = label.substring(0, 32) + '...';
       }
       return label;
     }
     return `Mikrofon ${devices.indexOf(device) + 1}`;
   };
 
-  /**
-   * Handle device selection
-   */
   const handleSelect = (deviceId) => {
     onDeviceChange?.(deviceId);
     setIsOpen(false);
   };
 
-  // Get currently selected device
   const selectedDevice = devices.find(d => d.deviceId === selectedDeviceId);
 
-  // Compact mode - just a small icon button
-  if (compact) {
-    return (
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        disabled={disabled || isLoading}
-        className={`relative p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
-        title="Mikrofon auswählen"
-      >
-        <Settings2 className="w-4 h-4 text-slate-600" />
-        {isOpen && (
-          <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
-            {/* Dropdown content same as below */}
-          </div>
-        )}
-      </button>
-    );
-  }
-
   return (
-    <div className={`relative ${className}`}>
-      {/* Main selector button */}
-      <div className="flex gap-2">
+    <div style={{ position: 'relative' }}>
+      {/* Main selector row */}
+      <div style={{ display: 'flex', gap: '12px' }}>
+        {/* Dropdown button */}
         <button
           onClick={() => !disabled && !isLoading && setIsOpen(!isOpen)}
           disabled={disabled || isLoading}
-          className={`flex-1 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border
-            ${error ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white hover:bg-slate-50'}
-            ${disabled || isLoading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
-            transition-all duration-200`}
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
+            backgroundColor: error ? COLORS.red[50] : COLORS.white,
+            cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
+            opacity: disabled || isLoading ? 0.6 : 1,
+            transition: 'all 0.2s',
+          }}
         >
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${error ? 'bg-red-100' : 'bg-gradient-to-br from-blue-500 to-teal-500'}`}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: error ? COLORS.red[100] : `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            }}>
               {error ? (
-                <AlertCircle className="w-5 h-5 text-red-500" />
+                <AlertCircle style={{ width: '22px', height: '22px', color: COLORS.red[500] }} />
               ) : (
-                <Mic className="w-5 h-5 text-white" />
+                <Mic style={{ width: '22px', height: '22px', color: COLORS.white }} />
               )}
             </div>
-            <div className="text-left">
-              <div className="text-xs text-slate-500 font-medium">Mikrofon</div>
-              <div className={`text-sm font-semibold ${error ? 'text-red-600' : 'text-slate-800'}`}>
-                {isLoading ? 'Lade...' : error ? error : selectedDevice ? getDeviceLabel(selectedDevice) : 'Mikrofon auswählen'}
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '12px', color: COLORS.slate[500], fontWeight: 500, marginBottom: '2px' }}>
+                Mikrofon
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: error ? COLORS.red[600] : COLORS.slate[800] }}>
+                {isLoading ? 'Lade...' : error ? error : selectedDevice ? getDeviceLabel(selectedDevice) : 'Bitte wählen'}
               </div>
             </div>
           </div>
-          <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown style={{
+            width: '20px',
+            height: '20px',
+            color: COLORS.slate[400],
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
+            transition: 'transform 0.2s',
+          }} />
         </button>
 
         {/* Test button */}
@@ -167,13 +165,21 @@ const MicrophoneSelector = ({
           <button
             onClick={onTestClick}
             disabled={disabled || isLoading || !selectedDeviceId}
-            className={`px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50
-              ${disabled || isLoading || !selectedDeviceId ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
-              transition-all duration-200 flex items-center gap-2`}
-            title="Mikrofon testen"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 20px',
+              borderRadius: '12px',
+              border: `2px solid ${COLORS.slate[200]}`,
+              backgroundColor: COLORS.white,
+              cursor: disabled || isLoading || !selectedDeviceId ? 'not-allowed' : 'pointer',
+              opacity: disabled || isLoading || !selectedDeviceId ? 0.5 : 1,
+              transition: 'all 0.2s',
+            }}
           >
-            <Mic className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-medium text-slate-700">Testen</span>
+            <Mic style={{ width: '18px', height: '18px', color: COLORS.blue[600] }} />
+            <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>Testen</span>
           </button>
         )}
 
@@ -181,10 +187,19 @@ const MicrophoneSelector = ({
         {error && (
           <button
             onClick={loadDevices}
-            className="px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all duration-200"
-            title="Erneut versuchen"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: `2px solid ${COLORS.slate[200]}`,
+              backgroundColor: COLORS.white,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
           >
-            <RefreshCw className="w-5 h-5 text-slate-600" />
+            <RefreshCw style={{ width: '20px', height: '20px', color: COLORS.slate[600] }} />
           </button>
         )}
       </div>
@@ -194,33 +209,91 @@ const MicrophoneSelector = ({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 40,
+            }}
           />
 
           {/* Dropdown */}
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-64 overflow-y-auto">
+          <div style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            left: 0,
+            right: 0,
+            backgroundColor: COLORS.white,
+            borderRadius: '12px',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+            border: `1px solid ${COLORS.slate[200]}`,
+            zIndex: 50,
+            overflow: 'hidden',
+            maxHeight: '280px',
+            overflowY: 'auto',
+          }}>
             {devices.map((device, index) => (
               <button
                 key={device.deviceId || index}
                 onClick={() => handleSelect(device.deviceId)}
-                className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-slate-50 transition-colors
-                  ${selectedDeviceId === device.deviceId ? 'bg-blue-50' : ''}`}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  border: 'none',
+                  backgroundColor: selectedDeviceId === device.deviceId ? COLORS.blue[50] : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedDeviceId !== device.deviceId) {
+                    e.currentTarget.style.backgroundColor = COLORS.slate[50];
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = selectedDeviceId === device.deviceId ? COLORS.blue[50] : 'transparent';
+                }}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center
-                  ${selectedDeviceId === device.deviceId ? 'bg-blue-600' : 'bg-slate-100'}`}>
-                  <Mic className={`w-4 h-4 ${selectedDeviceId === device.deviceId ? 'text-white' : 'text-slate-500'}`} />
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: selectedDeviceId === device.deviceId ? COLORS.blue[600] : COLORS.slate[100],
+                }}>
+                  <Mic style={{
+                    width: '18px',
+                    height: '18px',
+                    color: selectedDeviceId === device.deviceId ? COLORS.white : COLORS.slate[500],
+                  }} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-medium truncate ${selectedDeviceId === device.deviceId ? 'text-blue-700' : 'text-slate-800'}`}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: selectedDeviceId === device.deviceId ? COLORS.blue[700] : COLORS.slate[800],
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
                     {getDeviceLabel(device)}
                   </div>
                   {device.deviceId === 'default' && (
-                    <div className="text-xs text-slate-400">Systemstandard</div>
+                    <div style={{ fontSize: '12px', color: COLORS.slate[400] }}>Systemstandard</div>
                   )}
                 </div>
                 {selectedDeviceId === device.deviceId && (
-                  <div className="w-2 h-2 rounded-full bg-blue-600" />
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: COLORS.blue[600],
+                  }} />
                 )}
               </button>
             ))}

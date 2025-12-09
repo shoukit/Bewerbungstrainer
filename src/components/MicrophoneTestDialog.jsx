@@ -1,26 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Play, Square, X, Volume2, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Mic, Play, Square, Volume2, CheckCircle, AlertCircle, RefreshCw, X } from 'lucide-react';
+
+/**
+ * Ocean theme colors - consistent with other components
+ */
+const COLORS = {
+  blue: { 50: '#E8F4F8', 100: '#D1E9F1', 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
+  teal: { 500: '#3DA389', 600: '#2E8A72' },
+  slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+  red: { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626' },
+  green: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a' },
+  amber: { 500: '#f59e0b' },
+  white: '#ffffff',
+};
 
 /**
  * MicrophoneTestDialog Component
  *
  * A popup dialog for testing microphone recording quality.
  * Users can record a short audio clip and play it back to verify their microphone works.
- * No audio is sent to the backend - everything is local.
  */
 const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
-  // States
   const [status, setStatus] = useState('idle'); // idle | recording | recorded | playing
   const [audioLevel, setAudioLevel] = useState(0);
-  const [recordedBlob, setRecordedBlob] = useState(null);
   const [recordedUrl, setRecordedUrl] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState(null);
 
-  // Refs
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
@@ -30,21 +37,12 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
   const timerRef = useRef(null);
   const audioElementRef = useRef(null);
 
-  // Constants
-  const MAX_RECORDING_TIME = 10; // seconds
+  const MAX_RECORDING_TIME = 10;
 
-  /**
-   * Cleanup on unmount or close
-   */
   useEffect(() => {
-    return () => {
-      cleanup();
-    };
+    return () => cleanup();
   }, []);
 
-  /**
-   * Reset state when dialog opens
-   */
   useEffect(() => {
     if (isOpen) {
       resetState();
@@ -53,13 +51,9 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
     }
   }, [isOpen]);
 
-  /**
-   * Reset all state
-   */
   const resetState = () => {
     setStatus('idle');
     setAudioLevel(0);
-    setRecordedBlob(null);
     setRecordingTime(0);
     setError(null);
     if (recordedUrl) {
@@ -68,66 +62,38 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
     }
   };
 
-  /**
-   * Cleanup all resources
-   */
   const cleanup = () => {
-    // Stop recording timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-
-    // Stop animation frame
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
-
-    // Stop media recorder
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch (e) {}
+      try { mediaRecorderRef.current.stop(); } catch (e) {}
     }
-    mediaRecorderRef.current = null;
-
-    // Stop audio context
     if (audioContextRef.current) {
-      try {
-        audioContextRef.current.close();
-      } catch (e) {}
+      try { audioContextRef.current.close(); } catch (e) {}
       audioContextRef.current = null;
     }
-
-    // Stop stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-
-    // Stop audio playback
     if (audioElementRef.current) {
       audioElementRef.current.pause();
       audioElementRef.current.src = '';
     }
-
-    // Revoke object URL
-    if (recordedUrl) {
-      URL.revokeObjectURL(recordedUrl);
-    }
   };
 
-  /**
-   * Start recording
-   */
   const startRecording = async () => {
     try {
       setError(null);
       audioChunksRef.current = [];
       setRecordingTime(0);
 
-      // Get microphone access with specific device if provided
       const constraints = {
         audio: deviceId ? { deviceId: { exact: deviceId } } : true
       };
@@ -135,49 +101,26 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
 
-      // Setup audio analyzer for level visualization
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       analyserRef.current = audioContextRef.current.createAnalyser();
       const source = audioContextRef.current.createMediaStreamSource(stream);
       source.connect(analyserRef.current);
       analyserRef.current.fftSize = 256;
 
-      // Start level monitoring
-      const updateLevel = () => {
-        if (analyserRef.current && status === 'recording') {
-          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-          analyserRef.current.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-          setAudioLevel(average / 255);
-        }
-        if (status === 'recording') {
-          animationFrameRef.current = requestAnimationFrame(updateLevel);
-        }
-      };
-
-      // Setup MediaRecorder
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-          ? 'audio/webm'
-          : 'audio/mp4';
+        : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
 
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
 
       mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        setRecordedBlob(audioBlob);
-
-        // Create URL for playback
         const url = URL.createObjectURL(audioBlob);
         setRecordedUrl(url);
-
         setStatus('recorded');
         setAudioLevel(0);
       };
@@ -185,7 +128,18 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
       mediaRecorderRef.current.start(100);
       setStatus('recording');
 
-      // Start recording timer
+      // Level monitoring
+      const updateLevel = () => {
+        if (analyserRef.current) {
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+          setAudioLevel(average / 255);
+        }
+        animationFrameRef.current = requestAnimationFrame(updateLevel);
+      };
+      updateLevel();
+
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => {
           if (prev >= MAX_RECORDING_TIME - 1) {
@@ -196,78 +150,49 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
         });
       }, 1000);
 
-      // Start level monitoring after state is set
-      requestAnimationFrame(updateLevel);
-
     } catch (err) {
       console.error('Error starting recording:', err);
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Mikrofonzugriff verweigert. Bitte erlaube den Zugriff in den Browser-Einstellungen.');
+      if (err.name === 'NotAllowedError') {
+        setError('Mikrofonzugriff verweigert');
       } else if (err.name === 'NotFoundError') {
-        setError('Kein Mikrofon gefunden. Bitte schließe ein Mikrofon an.');
-      } else if (err.name === 'OverconstrainedError') {
-        setError('Das ausgewählte Mikrofon ist nicht verfügbar.');
+        setError('Kein Mikrofon gefunden');
       } else {
-        setError('Fehler beim Starten der Aufnahme: ' + err.message);
+        setError('Fehler beim Starten der Aufnahme');
       }
     }
   };
 
-  /**
-   * Stop recording
-   */
   const stopRecording = () => {
-    // Stop timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-
-    // Stop animation
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
-
-    // Stop audio context
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
-
-    // Stop media recorder (triggers onstop callback)
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
-
-    // Stop stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
   };
 
-  /**
-   * Play recorded audio
-   */
   const playRecording = () => {
     if (!recordedUrl) return;
-
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-    }
-
+    if (audioElementRef.current) audioElementRef.current.pause();
     audioElementRef.current = new Audio(recordedUrl);
-    audioElementRef.current.onended = () => {
-      setStatus('recorded');
-    };
+    audioElementRef.current.onended = () => setStatus('recorded');
     audioElementRef.current.play();
     setStatus('playing');
   };
 
-  /**
-   * Stop playback
-   */
   const stopPlayback = () => {
     if (audioElementRef.current) {
       audioElementRef.current.pause();
@@ -276,194 +201,346 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
     setStatus('recorded');
   };
 
-  /**
-   * Record again
-   */
   const recordAgain = () => {
-    if (recordedUrl) {
-      URL.revokeObjectURL(recordedUrl);
-    }
-    setRecordedBlob(null);
+    if (recordedUrl) URL.revokeObjectURL(recordedUrl);
     setRecordedUrl(null);
     setRecordingTime(0);
     setStatus('idle');
   };
 
-  /**
-   * Format time as MM:SS
-   */
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mic className="w-5 h-5 text-blue-600" />
-            Mikrofon testen
-          </DialogTitle>
-          <DialogDescription>
-            Nimm eine kurze Testaufnahme auf und höre sie dir an, um sicherzustellen, dass dein Mikrofon gut funktioniert.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="py-6">
-          {/* Error message */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          )}
-
-          {/* Recording visualization */}
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              {/* Main circle */}
-              <div className={`w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300
-                ${status === 'recording' ? 'bg-red-100' : status === 'playing' ? 'bg-green-100' : 'bg-slate-100'}`}>
-
-                {/* Audio level rings when recording */}
-                {status === 'recording' && (
-                  <>
-                    <motion.div
-                      className="absolute inset-0 rounded-full bg-red-200"
-                      animate={{ scale: [1, 1 + audioLevel * 0.3], opacity: [0.5, 0] }}
-                      transition={{ duration: 0.5, repeat: Infinity }}
-                    />
-                    <motion.div
-                      className="absolute inset-0 rounded-full bg-red-300"
-                      animate={{ scale: [1, 1 + audioLevel * 0.2], opacity: [0.3, 0] }}
-                      transition={{ duration: 0.3, repeat: Infinity, delay: 0.1 }}
-                    />
-                  </>
-                )}
-
-                {/* Playing animation */}
-                {status === 'playing' && (
-                  <motion.div
-                    className="absolute inset-0 rounded-full bg-green-200"
-                    animate={{ scale: [1, 1.1], opacity: [0.5, 0] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  />
-                )}
-
-                {/* Icon */}
-                {status === 'idle' && <Mic className="w-12 h-12 text-slate-400" />}
-                {status === 'recording' && <Mic className="w-12 h-12 text-red-500" />}
-                {status === 'recorded' && <CheckCircle className="w-12 h-12 text-green-500" />}
-                {status === 'playing' && <Volume2 className="w-12 h-12 text-green-600" />}
+    <AnimatePresence>
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }}
+      >
+        {/* Dialog */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: COLORS.white,
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '400px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Header */}
+          <div style={{
+            padding: '20px 24px',
+            borderBottom: `1px solid ${COLORS.slate[200]}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Mic style={{ width: '20px', height: '20px', color: COLORS.white }} />
               </div>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
+                  Mikrofon testen
+                </h2>
+                <p style={{ fontSize: '13px', color: COLORS.slate[500], margin: 0 }}>
+                  Prüfe deine Audioqualität
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                border: 'none',
+                backgroundColor: COLORS.slate[100],
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <X style={{ width: '18px', height: '18px', color: COLORS.slate[500] }} />
+            </button>
+          </div>
 
-              {/* Timer badge */}
+          {/* Content */}
+          <div style={{ padding: '32px 24px' }}>
+            {/* Error */}
+            {error && (
+              <div style={{
+                marginBottom: '24px',
+                padding: '16px',
+                backgroundColor: COLORS.red[50],
+                border: `1px solid ${COLORS.red[100]}`,
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              }}>
+                <AlertCircle style={{ width: '20px', height: '20px', color: COLORS.red[500] }} />
+                <p style={{ fontSize: '14px', color: COLORS.red[600], margin: 0 }}>{error}</p>
+              </div>
+            )}
+
+            {/* Visual indicator */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+              <div style={{ position: 'relative' }}>
+                <motion.div
+                  style={{
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
+                    backgroundColor: status === 'recording' ? COLORS.red[50] :
+                                     status === 'playing' ? COLORS.green[50] :
+                                     status === 'recorded' ? COLORS.green[50] : COLORS.slate[100],
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {status === 'recording' && (
+                    <motion.div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '50%',
+                        border: `3px solid ${COLORS.red[500]}`,
+                      }}
+                      animate={{ scale: [1, 1 + audioLevel * 0.3], opacity: [1, 0.3] }}
+                      transition={{ duration: 0.3, repeat: Infinity }}
+                    />
+                  )}
+                  {status === 'idle' && <Mic style={{ width: '48px', height: '48px', color: COLORS.slate[400] }} />}
+                  {status === 'recording' && <Mic style={{ width: '48px', height: '48px', color: COLORS.red[500] }} />}
+                  {status === 'recorded' && <CheckCircle style={{ width: '48px', height: '48px', color: COLORS.green[500] }} />}
+                  {status === 'playing' && <Volume2 style={{ width: '48px', height: '48px', color: COLORS.green[600] }} />}
+                </motion.div>
+
+                {status === 'recording' && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-8px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    padding: '4px 12px',
+                    backgroundColor: COLORS.red[500],
+                    color: COLORS.white,
+                    borderRadius: '20px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    fontFamily: 'monospace',
+                  }}>
+                    {recordingTime}s / {MAX_RECORDING_TIME}s
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Audio level bars during recording */}
+            {status === 'recording' && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '3px',
+                height: '40px',
+                marginBottom: '24px',
+              }}>
+                {[...Array(16)].map((_, i) => {
+                  const barHeight = Math.max(8, Math.min(40, audioLevel * 80 + Math.random() * 10));
+                  return (
+                    <motion.div
+                      key={i}
+                      style={{
+                        width: '4px',
+                        background: `linear-gradient(to top, ${COLORS.blue[500]}, ${COLORS.teal[500]})`,
+                        borderRadius: '2px',
+                      }}
+                      animate={{ height: barHeight }}
+                      transition={{ duration: 0.1 }}
+                    />
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Status text */}
+            <p style={{
+              textAlign: 'center',
+              fontSize: '15px',
+              color: COLORS.slate[600],
+              marginBottom: '24px',
+            }}>
+              {status === 'idle' && 'Klicke auf "Aufnahme starten" um dein Mikrofon zu testen.'}
+              {status === 'recording' && 'Sprich jetzt in dein Mikrofon...'}
+              {status === 'recorded' && 'Aufnahme fertig! Höre dir das Ergebnis an.'}
+              {status === 'playing' && 'Wiedergabe läuft...'}
+            </p>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              {status === 'idle' && (
+                <button
+                  onClick={startRecording}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '14px 28px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                    color: COLORS.white,
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Mic style={{ width: '18px', height: '18px' }} />
+                  Aufnahme starten
+                </button>
+              )}
+
               {status === 'recording' && (
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-red-500 text-white rounded-full text-sm font-mono">
-                  {formatTime(recordingTime)} / {formatTime(MAX_RECORDING_TIME)}
-                </div>
+                <button
+                  onClick={stopRecording}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '14px 28px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    backgroundColor: COLORS.red[500],
+                    color: COLORS.white,
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Square style={{ width: '18px', height: '18px' }} />
+                  Stoppen
+                </button>
+              )}
+
+              {status === 'recorded' && (
+                <>
+                  <button
+                    onClick={playRecording}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '14px 28px',
+                      borderRadius: '12px',
+                      border: 'none',
+                      background: `linear-gradient(135deg, ${COLORS.green[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                      color: COLORS.white,
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Play style={{ width: '18px', height: '18px' }} />
+                    Anhören
+                  </button>
+                  <button
+                    onClick={recordAgain}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '14px 20px',
+                      borderRadius: '12px',
+                      border: `2px solid ${COLORS.slate[200]}`,
+                      backgroundColor: COLORS.white,
+                      color: COLORS.slate[700],
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <RefreshCw style={{ width: '18px', height: '18px' }} />
+                    Nochmal
+                  </button>
+                </>
+              )}
+
+              {status === 'playing' && (
+                <>
+                  <button
+                    onClick={stopPlayback}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '14px 20px',
+                      borderRadius: '12px',
+                      border: `2px solid ${COLORS.slate[200]}`,
+                      backgroundColor: COLORS.white,
+                      color: COLORS.slate[700],
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Square style={{ width: '18px', height: '18px' }} />
+                    Stoppen
+                  </button>
+                  <button
+                    onClick={recordAgain}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '14px 20px',
+                      borderRadius: '12px',
+                      border: `2px solid ${COLORS.slate[200]}`,
+                      backgroundColor: COLORS.white,
+                      color: COLORS.slate[700],
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <RefreshCw style={{ width: '18px', height: '18px' }} />
+                    Nochmal
+                  </button>
+                </>
               )}
             </div>
           </div>
-
-          {/* Audio level bars when recording */}
-          {status === 'recording' && (
-            <div className="flex justify-center items-center gap-1 h-12 mb-6">
-              {[...Array(20)].map((_, i) => {
-                const height = Math.max(8, Math.min(40, audioLevel * 100 * (0.5 + Math.random() * 0.5)));
-                return (
-                  <motion.div
-                    key={i}
-                    className="w-2 bg-gradient-to-t from-blue-500 to-teal-400 rounded-full"
-                    animate={{ height }}
-                    transition={{ duration: 0.1 }}
-                  />
-                );
-              })}
-            </div>
-          )}
-
-          {/* Status text */}
-          <p className="text-center text-slate-600 mb-6">
-            {status === 'idle' && 'Klicke auf "Aufnahme starten" um deinen Test zu beginnen.'}
-            {status === 'recording' && 'Sprich jetzt in dein Mikrofon...'}
-            {status === 'recorded' && 'Aufnahme fertig! Höre dir das Ergebnis an.'}
-            {status === 'playing' && 'Wiedergabe läuft...'}
-          </p>
-
-          {/* Action buttons */}
-          <div className="flex justify-center gap-3">
-            {status === 'idle' && (
-              <Button
-                onClick={startRecording}
-                className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white px-6"
-              >
-                <Mic className="w-4 h-4 mr-2" />
-                Aufnahme starten
-              </Button>
-            )}
-
-            {status === 'recording' && (
-              <Button
-                onClick={stopRecording}
-                variant="destructive"
-                className="px-6"
-              >
-                <Square className="w-4 h-4 mr-2" />
-                Aufnahme stoppen
-              </Button>
-            )}
-
-            {status === 'recorded' && (
-              <>
-                <Button
-                  onClick={playRecording}
-                  className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-6"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Anhören
-                </Button>
-                <Button
-                  onClick={recordAgain}
-                  variant="outline"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Nochmal
-                </Button>
-              </>
-            )}
-
-            {status === 'playing' && (
-              <>
-                <Button
-                  onClick={stopPlayback}
-                  variant="outline"
-                >
-                  <Square className="w-4 h-4 mr-2" />
-                  Stoppen
-                </Button>
-                <Button
-                  onClick={recordAgain}
-                  variant="outline"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Nochmal
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end border-t pt-4">
-          <Button onClick={onClose} variant="outline">
-            Schließen
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

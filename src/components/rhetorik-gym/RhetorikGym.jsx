@@ -21,9 +21,12 @@ import {
   RefreshCw,
   Sparkles,
   MessageCircle,
+  Mic,
 } from 'lucide-react';
 import { GAME_MODES, getRandomTopic, getRandomStressQuestion } from '@/config/prompts/gamePrompts';
 import wordpressAPI from '@/services/wordpress-api';
+import MicrophoneSelector from '@/components/MicrophoneSelector';
+import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 
 /**
  * Ocean theme colors - consistent with other components
@@ -190,6 +193,8 @@ const StatsCard = ({ icon: Icon, label, value, color = 'blue' }) => {
 const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   const [topic, setTopic] = useState('');
   const [isSpinning, setIsSpinning] = useState(false);
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
   const IconComponent = ICON_MAP[mode.icon] || Rocket;
   const colors = MODE_COLORS[mode.id] || MODE_COLORS.klassiker;
 
@@ -226,6 +231,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
       mode,
       topic,
       duration: mode.duration,
+      selectedMicrophoneId,
     });
   };
 
@@ -397,11 +403,42 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           </AnimatePresence>
         </motion.div>
 
-        {/* Tips Section */}
+        {/* Microphone Selection */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
+          style={{
+            width: '100%',
+            backgroundColor: 'white',
+            borderRadius: '14px',
+            padding: '24px',
+            marginBottom: '24px',
+            border: `1px solid ${COLORS.slate[200]}`,
+          }}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            marginBottom: '16px',
+            color: COLORS.slate[700],
+          }}>
+            <Mic style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} />
+            <span style={{ fontWeight: 600, fontSize: '15px' }}>Mikrofon auswählen</span>
+          </div>
+          <MicrophoneSelector
+            selectedDeviceId={selectedMicrophoneId}
+            onDeviceChange={setSelectedMicrophoneId}
+            onTestClick={() => setShowMicrophoneTest(true)}
+          />
+        </motion.div>
+
+        {/* Tips Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
           style={{
             width: '100%',
             backgroundColor: COLORS.slate[50],
@@ -438,7 +475,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleStart}
@@ -472,6 +509,13 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* Microphone Test Dialog */}
+      <MicrophoneTestDialog
+        isOpen={showMicrophoneTest}
+        onClose={() => setShowMicrophoneTest(false)}
+        deviceId={selectedMicrophoneId}
+      />
     </div>
   );
 };

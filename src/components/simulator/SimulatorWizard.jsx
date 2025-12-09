@@ -6,9 +6,12 @@ import {
   AlertCircle,
   Sparkles,
   CheckCircle,
-  Info
+  Info,
+  Mic
 } from 'lucide-react';
 import wordpressAPI from '@/services/wordpress-api';
+import MicrophoneSelector from '@/components/MicrophoneSelector';
+import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 
 /**
  * Ocean theme colors
@@ -214,6 +217,10 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
+  // Microphone selection state
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
+
   // Parse input configuration
   const inputConfig = React.useMemo(() => {
     if (!scenario?.input_configuration) return [];
@@ -333,6 +340,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
         questions: questionsResponse.data.questions,
         scenario: scenario,
         variables: formValues,
+        selectedMicrophoneId: selectedMicrophoneId,
       });
 
     } catch (err) {
@@ -473,6 +481,37 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
           </div>
         </div>
 
+        {/* Microphone Selection */}
+        <div style={{
+          padding: '24px',
+          borderRadius: '16px',
+          backgroundColor: 'white',
+          border: `1px solid ${COLORS.slate[200]}`,
+          marginBottom: '24px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            marginBottom: '16px',
+          }}>
+            <Mic style={{ width: '22px', height: '22px', color: COLORS.blue[600] }} />
+            <h3 style={{
+              fontSize: '16px',
+              fontWeight: 600,
+              color: COLORS.slate[900],
+              margin: 0,
+            }}>
+              Mikrofon auswählen
+            </h3>
+          </div>
+          <MicrophoneSelector
+            selectedDeviceId={selectedMicrophoneId}
+            onDeviceChange={setSelectedMicrophoneId}
+            onTestClick={() => setShowMicrophoneTest(true)}
+          />
+        </div>
+
         {/* Error Message */}
         {submitError && (
           <div style={{
@@ -544,6 +583,13 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* Microphone Test Dialog */}
+      <MicrophoneTestDialog
+        isOpen={showMicrophoneTest}
+        onClose={() => setShowMicrophoneTest(false)}
+        deviceId={selectedMicrophoneId}
+      />
     </div>
   );
 };
