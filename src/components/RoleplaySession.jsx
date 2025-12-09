@@ -24,6 +24,8 @@ import AudioVisualizer from './AudioVisualizer';
 import InterviewerProfile from './InterviewerProfile';
 import CoachingPanel from './CoachingPanel';
 import FeedbackModal from './FeedbackModal';
+import MicrophoneSelector from './MicrophoneSelector';
+import MicrophoneTestDialog from './MicrophoneTestDialog';
 import {
   analyzeRoleplayTranscript,
   saveRoleplaySessionAnalysis,
@@ -40,6 +42,10 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState(null);
   const [isStarted, setIsStarted] = useState(false);
+
+  // Microphone selection state
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
   // Transcript state
   const [transcript, setTranscript] = useState([]);
@@ -630,13 +636,25 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                     )}
                   </div>
 
+                  {/* Microphone Selection - Before call starts */}
+                  {!isStarted && (
+                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
+                      <MicrophoneSelector
+                        selectedDeviceId={selectedMicrophoneId}
+                        onDeviceChange={setSelectedMicrophoneId}
+                        onTestClick={() => setShowMicrophoneTest(true)}
+                      />
+                    </div>
+                  )}
+
                   {/* Action Button - Between header and content */}
                   <div className="bg-white px-4 py-3 shadow-xl">
                     {!isStarted ? (
                       <Button
                         onClick={handleStartCall}
                         size="lg"
-                        className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-base py-6 rounded-xl shadow-lg"
+                        disabled={!selectedMicrophoneId}
+                        className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-base py-6 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Mic className="w-5 h-5 mr-2" />
                         {scenario.interviewer_profile?.name
@@ -1033,6 +1051,13 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
           isLoading={false}
         />
       )}
+
+      {/* Microphone Test Dialog */}
+      <MicrophoneTestDialog
+        isOpen={showMicrophoneTest}
+        onClose={() => setShowMicrophoneTest(false)}
+        deviceId={selectedMicrophoneId}
+      />
     </>
   );
 };

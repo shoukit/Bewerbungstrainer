@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
+import MicrophoneSelector from '@/components/MicrophoneSelector';
+import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 
 /**
  * Ocean theme colors
@@ -340,7 +342,7 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
 /**
  * Audio Recorder Component
  */
-const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled }) => {
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -380,7 +382,12 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled }) => {
       audioChunksRef.current = [];
       setSeconds(0);
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Use specific device if deviceId is provided
+      const audioConstraints = deviceId
+        ? { deviceId: { exact: deviceId } }
+        : true;
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
       streamRef.current = stream;
 
       // Set up audio analyzer for level visualization
@@ -621,7 +628,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled }) => {
  * Pre-Session View Component
  * Shows preparation tips before starting the interview
  */
-const PreSessionView = ({ scenario, variables, questions, onStart, onBack }) => {
+const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selectedMicrophoneId, onMicrophoneChange, onMicrophoneTest }) => {
   // Tips for interview preparation
   const generalTips = [
     {
@@ -859,6 +866,37 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack }) => 
         </div>
       </div>
 
+      {/* Microphone Selection */}
+      <div style={{
+        padding: '24px',
+        borderRadius: '16px',
+        backgroundColor: 'white',
+        border: `1px solid ${COLORS.slate[200]}`,
+        marginBottom: '24px',
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          marginBottom: '16px',
+        }}>
+          <Mic style={{ width: '22px', height: '22px', color: COLORS.blue[600] }} />
+          <h2 style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            color: COLORS.slate[900],
+            margin: 0,
+          }}>
+            Mikrofon auswählen
+          </h2>
+        </div>
+        <MicrophoneSelector
+          selectedDeviceId={selectedMicrophoneId}
+          onDeviceChange={onMicrophoneChange}
+          onTestClick={onMicrophoneTest}
+        />
+      </div>
+
       {/* Session Info */}
       <div style={{
         padding: '16px 20px',
@@ -914,6 +952,10 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   const [submitError, setSubmitError] = useState(null);
   const [completedAnswers, setCompletedAnswers] = useState([]);
   const [answeredQuestions, setAnsweredQuestions] = useState([]);
+
+  // Microphone selection state
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -1034,13 +1076,23 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   // Show preparation view first
   if (phase === 'preparation') {
     return (
-      <PreSessionView
-        scenario={scenario}
-        variables={variables}
-        questions={questions}
-        onStart={handleStartInterview}
-        onBack={onExit}
-      />
+      <>
+        <PreSessionView
+          scenario={scenario}
+          variables={variables}
+          questions={questions}
+          onStart={handleStartInterview}
+          onBack={onExit}
+          selectedMicrophoneId={selectedMicrophoneId}
+          onMicrophoneChange={setSelectedMicrophoneId}
+          onMicrophoneTest={() => setShowMicrophoneTest(true)}
+        />
+        <MicrophoneTestDialog
+          isOpen={showMicrophoneTest}
+          onClose={() => setShowMicrophoneTest(false)}
+          deviceId={selectedMicrophoneId}
+        />
+      </>
     );
   }
 
@@ -1126,6 +1178,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
             onRecordingComplete={handleRecordingComplete}
             timeLimit={scenario.time_limit_per_question || 120}
             disabled={isSubmitting}
+            deviceId={selectedMicrophoneId}
           />
 
           {/* Submitting State */}
