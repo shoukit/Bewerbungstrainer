@@ -278,9 +278,9 @@ const AppSidebar = ({
 
                 {!isCollapsed && (
                   <>
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-                      <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
-                      <span style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
+                      <span style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], whiteSpace: 'normal', lineHeight: 1.3 }}>
                         {item.description}
                       </span>
                     </div>
