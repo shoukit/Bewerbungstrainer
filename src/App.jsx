@@ -309,14 +309,7 @@ function App() {
     }
   };
 
-  // Full-screen views (no sidebar) - only roleplay uses full screen for immersive experience
-  const isFullScreenView = currentView === VIEWS.ROLEPLAY;
-
-  if (isFullScreenView) {
-    return renderContent();
-  }
-
-  // Views with sidebar
+  // All views now use the sidebar layout for consistent navigation
   return (
     <SidebarLayout
       activeView={currentView}
