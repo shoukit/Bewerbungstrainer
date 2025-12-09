@@ -4,6 +4,7 @@ import RoleplaySession from './components/RoleplaySession';
 import SessionHistory from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
 import { SimulatorApp } from './components/simulator';
+import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SidebarLayout } from './components/ui/sidebar';
 
 console.log('📦 [APP] App.jsx module loaded');
@@ -15,6 +16,9 @@ const VIEWS = {
   SIMULATOR: 'simulator',
   HISTORY: 'history',
   SESSION_DETAIL: 'session_detail',
+  GYM: 'gym',
+  GYM_KLASSIKER: 'gym_klassiker',
+  GYM_SESSION: 'gym_session',
 };
 
 /**
@@ -120,6 +124,9 @@ function App() {
   // Session history state
   const [selectedSession, setSelectedSession] = useState(null);
 
+  // Rhetorik-Gym state
+  const [gameConfig, setGameConfig] = useState(null);
+
   // Detect WP header height on mount
   useEffect(() => {
     const updateHeaderOffset = () => {
@@ -167,6 +174,10 @@ function App() {
         break;
       case 'history':
         setCurrentView(VIEWS.HISTORY);
+        break;
+      case 'gym':
+      case 'gym_klassiker':
+        setCurrentView(VIEWS.GYM_KLASSIKER);
         break;
       default:
         setCurrentView(VIEWS.DASHBOARD);
@@ -220,6 +231,24 @@ function App() {
     setCurrentView(VIEWS.HISTORY);
   };
 
+  // ===== RHETORIK-GYM HANDLERS =====
+  const handleStartGame = (config) => {
+    console.log('🎮 [APP] Starting game with config:', config);
+    setGameConfig(config);
+    setCurrentView(VIEWS.GYM_SESSION);
+  };
+
+  const handleGameBack = () => {
+    console.log('🎮 [APP] Returning to gym dashboard');
+    setGameConfig(null);
+    setCurrentView(VIEWS.GYM_KLASSIKER);
+  };
+
+  const handleGameComplete = (result) => {
+    console.log('🎮 [APP] Game completed with result:', result);
+    // Could navigate to a results view or stay in session
+  };
+
   // ===== CONTENT RENDERING =====
   const renderContent = () => {
     switch (currentView) {
@@ -235,6 +264,23 @@ function App() {
 
       case VIEWS.SIMULATOR:
         return <SimulatorApp />;
+
+      case VIEWS.GYM:
+      case VIEWS.GYM_KLASSIKER:
+        return (
+          <RhetorikGym
+            onStartGame={handleStartGame}
+          />
+        );
+
+      case VIEWS.GYM_SESSION:
+        return (
+          <GameSession
+            gameConfig={gameConfig}
+            onBack={handleGameBack}
+            onComplete={handleGameComplete}
+          />
+        );
 
       case VIEWS.HISTORY:
         return (
@@ -263,7 +309,7 @@ function App() {
     }
   };
 
-  // Full-screen views (no sidebar)
+  // Full-screen views (no sidebar) - only roleplay uses full screen for immersive experience
   const isFullScreenView = currentView === VIEWS.ROLEPLAY;
 
   if (isFullScreenView) {

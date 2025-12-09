@@ -3,12 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   MessageSquare,
   History,
   GraduationCap,
   Target,
   Menu,
   X,
+  Dumbbell,
+  Zap,
+  Shuffle,
+  Rocket,
 } from 'lucide-react';
 
 /**
@@ -57,6 +62,22 @@ const NAV_ITEMS = [
     description: 'Live Rollenspiel-Dialoge üben',
   },
   {
+    id: 'gym',
+    label: 'Rhetorik-Gym',
+    shortLabel: 'Gym',
+    icon: Dumbbell,
+    description: 'Spielerisch Rhetorik trainieren',
+    subItems: [
+      {
+        id: 'gym_klassiker',
+        label: 'Der Füllwort-Killer',
+        shortLabel: 'Klassiker',
+        icon: Rocket,
+        description: '60s Elevator Pitch',
+      },
+    ],
+  },
+  {
     id: 'history',
     label: 'Meine Sessions',
     shortLabel: 'Sessions',
@@ -78,6 +99,24 @@ const AppSidebar = ({
   onNavigate,
   headerOffset = 0,
 }) => {
+  const [expandedItems, setExpandedItems] = React.useState(['gym']); // Gym expanded by default
+
+  const toggleExpanded = (itemId) => {
+    setExpandedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const handleNavClick = (item) => {
+    if (item.subItems && !isCollapsed) {
+      toggleExpanded(item.id);
+    } else {
+      onNavigate(item.id);
+    }
+  };
+
   return (
     <motion.aside
       initial={false}
@@ -170,79 +209,162 @@ const AppSidebar = ({
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id ||
-            (item.id === 'dashboard' && activeView === 'roleplay');
+            (item.id === 'dashboard' && activeView === 'roleplay') ||
+            (item.id === 'gym' && activeView.startsWith('gym'));
+          const hasSubItems = item.subItems && item.subItems.length > 0;
+          const isExpanded = expandedItems.includes(item.id);
 
           return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              style={{
-                width: '100%',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                position: 'relative',
-                padding: isCollapsed ? '12px' : '12px 16px',
-                justifyContent: isCollapsed ? 'center' : 'flex-start',
-                backgroundColor: isActive ? OCEAN_COLORS.blue[50] : 'transparent',
-                color: isActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[600],
-                fontWeight: isActive ? 600 : 400,
-                fontSize: '14px',
-                border: 'none',
-                cursor: 'pointer',
-                marginBottom: '4px',
-                transition: 'all 0.2s',
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = OCEAN_COLORS.slate[50];
-                  e.currentTarget.style.color = OCEAN_COLORS.slate[900];
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = OCEAN_COLORS.slate[600];
-                }
-              }}
-            >
-              {/* Active indicator bar */}
-              {isActive && (
-                <div
+            <div key={item.id}>
+              <button
+                onClick={() => handleNavClick(item)}
+                style={{
+                  width: '100%',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  position: 'relative',
+                  padding: isCollapsed ? '12px' : '12px 16px',
+                  justifyContent: isCollapsed ? 'center' : 'flex-start',
+                  backgroundColor: isActive ? OCEAN_COLORS.blue[50] : 'transparent',
+                  color: isActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[600],
+                  fontWeight: isActive ? 600 : 400,
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  marginBottom: '4px',
+                  transition: 'all 0.2s',
+                  textAlign: 'left',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = OCEAN_COLORS.slate[50];
+                    e.currentTarget.style.color = OCEAN_COLORS.slate[900];
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = OCEAN_COLORS.slate[600];
+                  }
+                }}
+              >
+                {/* Active indicator bar */}
+                {isActive && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '4px',
+                      height: '32px',
+                      backgroundColor: OCEAN_COLORS.blue[600],
+                      borderTopRightRadius: '9999px',
+                      borderBottomRightRadius: '9999px',
+                    }}
+                  />
+                )}
+
+                <Icon
                   style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: '4px',
-                    height: '32px',
-                    backgroundColor: OCEAN_COLORS.blue[600],
-                    borderTopRightRadius: '9999px',
-                    borderBottomRightRadius: '9999px',
+                    width: '20px',
+                    height: '20px',
+                    flexShrink: 0,
+                    color: isActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
                   }}
                 />
-              )}
 
-              <Icon
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  flexShrink: 0,
-                  color: isActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
-                }}
-              />
+                {!isCollapsed && (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+                      <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
+                      <span style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], whiteSpace: 'nowrap' }}>
+                        {item.description}
+                      </span>
+                    </div>
+                    {hasSubItems && (
+                      <ChevronDown
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          color: OCEAN_COLORS.slate[400],
+                          transition: 'transform 0.2s',
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                        }}
+                      />
+                    )}
+                  </>
+                )}
+              </button>
 
-              {!isCollapsed && (
-                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                  <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
-                  <span style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], whiteSpace: 'nowrap' }}>
-                    {item.description}
-                  </span>
-                </div>
+              {/* Sub-items */}
+              {hasSubItems && !isCollapsed && (
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ overflow: 'hidden', marginLeft: '16px' }}
+                    >
+                      {item.subItems.map((subItem) => {
+                        const SubIcon = subItem.icon;
+                        const isSubActive = activeView === subItem.id;
+
+                        return (
+                          <button
+                            key={subItem.id}
+                            onClick={() => onNavigate(subItem.id)}
+                            style={{
+                              width: '100%',
+                              borderRadius: '10px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              padding: '10px 14px',
+                              backgroundColor: isSubActive ? OCEAN_COLORS.blue[50] : 'transparent',
+                              color: isSubActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[600],
+                              fontWeight: isSubActive ? 600 : 400,
+                              fontSize: '13px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              marginBottom: '2px',
+                              transition: 'all 0.2s',
+                              textAlign: 'left',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSubActive) {
+                                e.currentTarget.style.backgroundColor = OCEAN_COLORS.slate[50];
+                                e.currentTarget.style.color = OCEAN_COLORS.slate[900];
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSubActive) {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.color = OCEAN_COLORS.slate[600];
+                              }
+                            }}
+                          >
+                            <SubIcon
+                              style={{
+                                width: '16px',
+                                height: '16px',
+                                flexShrink: 0,
+                                color: isSubActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                              }}
+                            />
+                            <span style={{ whiteSpace: 'nowrap' }}>{subItem.label}</span>
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               )}
-            </button>
+            </div>
           );
         })}
       </nav>
@@ -295,10 +417,19 @@ const AppSidebar = ({
  */
 const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [expandedItems, setExpandedItems] = React.useState(['gym']);
 
   const handleNavigate = (id) => {
     onNavigate(id);
     setIsOpen(false);
+  };
+
+  const toggleExpanded = (itemId) => {
+    setExpandedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
   };
 
   return (
@@ -403,48 +534,107 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                 borderBottomLeftRadius: '16px',
                 borderBottomRightRadius: '16px',
+                maxHeight: '70vh',
+                overflowY: 'auto',
               }}
             >
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeView === item.id ||
-                  (item.id === 'dashboard' && activeView === 'roleplay');
+                  (item.id === 'dashboard' && activeView === 'roleplay') ||
+                  (item.id === 'gym' && activeView.startsWith('gym'));
+                const hasSubItems = item.subItems && item.subItems.length > 0;
+                const isExpanded = expandedItems.includes(item.id);
 
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavigate(item.id)}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '14px 16px',
-                      borderRadius: '12px',
-                      border: 'none',
-                      backgroundColor: isActive ? OCEAN_COLORS.blue[50] : 'transparent',
-                      color: isActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[700],
-                      fontSize: '15px',
-                      fontWeight: isActive ? 600 : 500,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      marginBottom: '4px',
-                    }}
-                  >
-                    <Icon
+                  <div key={item.id}>
+                    <button
+                      onClick={() => hasSubItems ? toggleExpanded(item.id) : handleNavigate(item.id)}
                       style={{
-                        width: '22px',
-                        height: '22px',
-                        color: isActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '14px 16px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        backgroundColor: isActive ? OCEAN_COLORS.blue[50] : 'transparent',
+                        color: isActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[700],
+                        fontSize: '15px',
+                        fontWeight: isActive ? 600 : 500,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        marginBottom: '4px',
                       }}
-                    />
-                    <div>
-                      <div>{item.label}</div>
-                      <div style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], fontWeight: 400 }}>
-                        {item.description}
+                    >
+                      <Icon
+                        style={{
+                          width: '22px',
+                          height: '22px',
+                          color: isActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div>{item.label}</div>
+                        <div style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], fontWeight: 400 }}>
+                          {item.description}
+                        </div>
                       </div>
-                    </div>
-                  </button>
+                      {hasSubItems && (
+                        <ChevronDown
+                          style={{
+                            width: '18px',
+                            height: '18px',
+                            color: OCEAN_COLORS.slate[400],
+                            transition: 'transform 0.2s',
+                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          }}
+                        />
+                      )}
+                    </button>
+
+                    {/* Sub-items for mobile */}
+                    {hasSubItems && isExpanded && (
+                      <div style={{ marginLeft: '20px', marginBottom: '8px' }}>
+                        {item.subItems.map((subItem) => {
+                          const SubIcon = subItem.icon;
+                          const isSubActive = activeView === subItem.id;
+
+                          return (
+                            <button
+                              key={subItem.id}
+                              onClick={() => handleNavigate(subItem.id)}
+                              style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '12px 14px',
+                                borderRadius: '10px',
+                                border: 'none',
+                                backgroundColor: isSubActive ? OCEAN_COLORS.blue[50] : 'transparent',
+                                color: isSubActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[600],
+                                fontSize: '14px',
+                                fontWeight: isSubActive ? 600 : 400,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                marginBottom: '4px',
+                              }}
+                            >
+                              <SubIcon
+                                style={{
+                                  width: '18px',
+                                  height: '18px',
+                                  color: isSubActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                                }}
+                              />
+                              <span>{subItem.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </motion.nav>
