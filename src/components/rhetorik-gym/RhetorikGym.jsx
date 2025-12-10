@@ -200,6 +200,11 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   const IconComponent = ICON_MAP[mode.icon] || Rocket;
   const colors = MODE_COLORS[mode.id] || MODE_COLORS.klassiker;
 
+  // Partner theming for primary CTA button
+  const { branding } = usePartner();
+  const buttonGradient = branding?.['--button-gradient'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+
   // Initialize topic
   useEffect(() => {
     if (mode.id === 'klassiker') {
@@ -426,7 +431,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
             marginBottom: '16px',
             color: COLORS.slate[700],
           }}>
-            <Mic style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} />
+            <Mic style={{ width: '20px', height: '20px', color: primaryAccent }} />
             <span style={{ fontWeight: 600, fontSize: '15px' }}>Mikrofon auswählen</span>
           </div>
           <MicrophoneSelector
@@ -487,7 +492,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
             padding: '18px 32px',
             borderRadius: '14px',
             border: 'none',
-            background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+            background: buttonGradient,
             color: 'white',
             fontSize: '17px',
             fontWeight: 700,
@@ -496,7 +501,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '12px',
-            boxShadow: `0 8px 20px ${colors.from}44`,
+            boxShadow: `0 8px 20px ${primaryAccent}44`,
           }}
         >
           <Play style={{ width: '22px', height: '22px' }} />

@@ -8,8 +8,9 @@ import { DEFAULT_BRANDING } from '@/config/partners';
  * Fallback theme colors
  */
 const COLORS = {
-  slate: { 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 700: '#334155', 900: '#0f172a' },
+  slate: { 50: '#f8fafc', 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 700: '#334155', 900: '#0f172a' },
   red: { 500: '#ef4444' },
+  blue: { 500: '#4a9ec9' }, // Default focus color - will be overridden by partner theming
 };
 
 /**
@@ -33,8 +34,9 @@ const scrollIntoViewOnFocus = (e) => {
 /**
  * Styled Input Component
  */
-const StyledInput = ({ id, type, value, onChange, placeholder, hasError }) => {
+const StyledInput = ({ id, type, value, onChange, placeholder, hasError, focusColor }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const theFocusColor = focusColor || COLORS.blue[500];
 
   const handleFocus = (e) => {
     setIsFocused(true);
@@ -53,11 +55,11 @@ const StyledInput = ({ id, type, value, onChange, placeholder, hasError }) => {
         height: '44px',
         padding: '8px 16px',
         borderRadius: '12px',
-        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? COLORS.blue[500] : COLORS.slate[200]}`,
+        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? theFocusColor : COLORS.slate[200]}`,
         backgroundColor: 'white',
         color: COLORS.slate[900],
         fontSize: '16px', // Minimum 16px to prevent iOS zoom
-        boxShadow: isFocused ? `0 0 0 3px rgba(74, 158, 201, 0.15)` : '0 1px 2px rgba(0, 0, 0, 0.05)',
+        boxShadow: isFocused ? `0 0 0 3px ${theFocusColor}26` : '0 1px 2px rgba(0, 0, 0, 0.05)',
         outline: 'none',
         transition: 'all 0.2s',
       }}
@@ -70,8 +72,9 @@ const StyledInput = ({ id, type, value, onChange, placeholder, hasError }) => {
 /**
  * Styled Textarea Component
  */
-const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3 }) => {
+const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3, focusColor }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const theFocusColor = focusColor || COLORS.blue[500];
 
   const handleFocus = (e) => {
     setIsFocused(true);
@@ -90,11 +93,11 @@ const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3 }
         minHeight: '100px',
         padding: '12px 16px',
         borderRadius: '12px',
-        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? COLORS.blue[500] : COLORS.slate[200]}`,
+        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? theFocusColor : COLORS.slate[200]}`,
         backgroundColor: 'white',
         color: COLORS.slate[900],
         fontSize: '16px', // Minimum 16px to prevent iOS zoom
-        boxShadow: isFocused ? `0 0 0 3px rgba(74, 158, 201, 0.15)` : '0 1px 2px rgba(0, 0, 0, 0.05)',
+        boxShadow: isFocused ? `0 0 0 3px ${theFocusColor}26` : '0 1px 2px rgba(0, 0, 0, 0.05)',
         outline: 'none',
         transition: 'all 0.2s',
         resize: 'none',
@@ -165,6 +168,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerGradientHover = branding?.['--button-gradient-hover'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
   // Initialize values with defaults when scenario changes
   useEffect(() => {
@@ -306,6 +310,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
                   hasError={!!errors[varDef.key]}
                   rows={3}
+                  focusColor={primaryAccent}
                 />
               ) : (
                 <StyledInput
@@ -315,6 +320,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                   onChange={(e) => handleChange(varDef.key, e.target.value)}
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
                   hasError={!!errors[varDef.key]}
+                  focusColor={primaryAccent}
                 />
               )}
 
