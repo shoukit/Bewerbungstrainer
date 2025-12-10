@@ -12,13 +12,13 @@ import {
 import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
- * Ocean theme colors
+ * Fallback theme colors
  */
 const COLORS = {
-  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
   slate: { 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
   red: { 500: '#ef4444', 100: '#fee2e2' },
   green: { 500: '#22c55e', 100: '#dcfce7' },
@@ -28,7 +28,9 @@ const COLORS = {
  * Dynamic Form Field Component
  * Renders appropriate input based on field type from input_configuration
  */
-const DynamicFormField = ({ field, value, onChange, error }) => {
+const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
+  const theFocusColor = focusColor || '#4a9ec9';
+
   const baseInputStyle = {
     width: '100%',
     padding: '12px 16px',
@@ -42,8 +44,8 @@ const DynamicFormField = ({ field, value, onChange, error }) => {
   };
 
   const focusStyle = {
-    borderColor: COLORS.blue[500],
-    boxShadow: `0 0 0 3px rgba(74, 158, 201, 0.1)`,
+    borderColor: theFocusColor,
+    boxShadow: `0 0 0 3px ${theFocusColor}1a`,
   };
 
   const handleFocus = (e) => {
@@ -221,6 +223,13 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+
   // Parse input configuration
   const inputConfig = React.useMemo(() => {
     if (!scenario?.input_configuration) return [];
@@ -383,7 +392,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
             width: '56px',
             height: '56px',
             borderRadius: '14px',
-            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -437,6 +446,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
               value={formValues[field.key]}
               onChange={handleChange}
               error={errors[field.key]}
+              focusColor={primaryAccent}
             />
           ))
         ) : (
@@ -454,7 +464,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
         <div style={{
           padding: '16px 20px',
           borderRadius: '12px',
-          backgroundColor: COLORS.blue[500] + '10',
+          backgroundColor: primaryAccentLight,
           marginTop: '24px',
           marginBottom: '24px',
           display: 'flex',
@@ -495,7 +505,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
             gap: '10px',
             marginBottom: '16px',
           }}>
-            <Mic style={{ width: '22px', height: '22px', color: COLORS.blue[600] }} />
+            <Mic style={{ width: '22px', height: '22px', color: primaryAccent }} />
             <h3 style={{
               fontSize: '16px',
               fontWeight: 600,
@@ -538,9 +548,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
             padding: '16px 24px',
             borderRadius: '14px',
             border: 'none',
-            background: isSubmitting
-              ? COLORS.slate[300]
-              : `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: isSubmitting ? COLORS.slate[300] : buttonGradient,
             color: 'white',
             fontSize: '16px',
             fontWeight: 600,
@@ -550,17 +558,17 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
             justifyContent: 'center',
             gap: '10px',
             transition: 'transform 0.2s, box-shadow 0.2s',
-            boxShadow: isSubmitting ? 'none' : '0 4px 12px rgba(74, 158, 201, 0.3)',
+            boxShadow: isSubmitting ? 'none' : `0 4px 12px ${primaryAccent}4d`,
           }}
           onMouseEnter={(e) => {
             if (!isSubmitting) {
               e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
+              e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
             }
           }}
           onMouseLeave={(e) => {
             e.target.style.transform = 'none';
-            e.target.style.boxShadow = isSubmitting ? 'none' : '0 4px 12px rgba(74, 158, 201, 0.3)';
+            e.target.style.boxShadow = isSubmitting ? 'none' : `0 4px 12px ${primaryAccent}4d`;
           }}
         >
           {isSubmitting ? (

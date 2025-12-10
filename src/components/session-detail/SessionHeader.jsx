@@ -7,12 +7,13 @@
 
 import React from 'react';
 import { Calendar, Clock, Star } from 'lucide-react';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
- * Theme colors
+ * Theme colors (slate/yellow only - blue from partner branding)
  */
 const COLORS = {
-  blue: { 50: '#E8F4F8', 100: '#D1E9F1' },
   slate: { 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 900: '#0f172a' },
   yellow: { 400: '#facc15', 500: '#eab308' },
 };
@@ -43,12 +44,16 @@ function formatDate(dateString) {
 }
 
 export function SessionHeader({ session, scenario, feedback }) {
+  // Partner theming
+  const { branding } = usePartner();
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+
   const overallRating = feedback?.rating?.overall;
 
   return (
     <div
       style={{
-        backgroundColor: COLORS.blue[50],
+        backgroundColor: primaryAccentLight,
         borderBottom: `1px solid ${COLORS.slate[200]}`,
         position: 'sticky',
         top: 0,

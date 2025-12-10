@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, User } from 'lucide-react';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
- * Ocean theme colors
+ * Theme colors (slate only - blue/teal from partner branding)
  */
 const COLORS = {
-  blue: { 50: '#E8F4F8', 100: '#D1E9F1', 200: '#B4DCE9', 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
   slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 500: '#64748b', 600: '#475569', 700: '#334155' },
 };
 
@@ -21,6 +21,11 @@ const InterviewerProfile = ({ profile }) => {
     objections: false,
     questions: false,
   });
+
+  // Partner theming
+  const { branding } = usePartner();
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -57,7 +62,7 @@ const InterviewerProfile = ({ profile }) => {
 
   const sectionButtonExpandedStyle = {
     ...sectionButtonStyle,
-    backgroundColor: COLORS.blue[50],
+    backgroundColor: primaryAccentLight,
   };
 
   const sectionContentStyle = {
@@ -74,7 +79,7 @@ const InterviewerProfile = ({ profile }) => {
             onClick={() => toggleSection('properties')}
             style={expandedSections.properties ? sectionButtonExpandedStyle : sectionButtonStyle}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[100]}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedSections.properties ? COLORS.blue[50] : COLORS.slate[50]}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedSections.properties ? primaryAccentLight : COLORS.slate[50]}
           >
             <span style={{ fontWeight: 600, color: COLORS.slate[700] }}>Eigenschaften</span>
             {expandedSections.properties ? (
@@ -100,7 +105,7 @@ const InterviewerProfile = ({ profile }) => {
             onClick={() => toggleSection('objections')}
             style={expandedSections.objections ? sectionButtonExpandedStyle : sectionButtonStyle}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[100]}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedSections.objections ? COLORS.blue[50] : COLORS.slate[50]}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedSections.objections ? primaryAccentLight : COLORS.slate[50]}
           >
             <span style={{ fontWeight: 600, color: COLORS.slate[700] }}>Typische Einwände</span>
             {expandedSections.objections ? (
@@ -131,7 +136,7 @@ const InterviewerProfile = ({ profile }) => {
             onClick={() => toggleSection('questions')}
             style={expandedSections.questions ? sectionButtonExpandedStyle : sectionButtonStyle}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[100]}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedSections.questions ? COLORS.blue[50] : COLORS.slate[50]}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedSections.questions ? primaryAccentLight : COLORS.slate[50]}
           >
             <span style={{ fontWeight: 600, color: COLORS.slate[700] }}>Wichtige Fragen</span>
             {expandedSections.questions ? (
@@ -159,11 +164,11 @@ const InterviewerProfile = ({ profile }) => {
       <div style={{
         marginTop: '16px',
         padding: '12px',
-        backgroundColor: COLORS.blue[50],
+        backgroundColor: primaryAccentLight,
         borderRadius: '8px',
-        border: `1px solid ${COLORS.blue[200]}`,
+        border: `1px solid ${primaryAccent}33`,
       }}>
-        <p style={{ fontSize: '12px', color: COLORS.blue[700], textAlign: 'center', margin: 0 }}>
+        <p style={{ fontSize: '12px', color: primaryAccent, textAlign: 'center', margin: 0 }}>
           💡 Für ein optimales Erlebnis empfiehlt sich die Nutzung von Kopfhörern mit Mikrofon.
         </p>
       </div>

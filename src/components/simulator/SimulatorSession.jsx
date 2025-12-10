@@ -22,14 +22,14 @@ import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
- * Ocean theme colors
+ * Fallback theme colors
  */
 const COLORS = {
-  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
-  slate: { 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+  slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
   red: { 500: '#ef4444', 100: '#fee2e2' },
   green: { 500: '#22c55e', 100: '#dcfce7' },
   amber: { 500: '#f59e0b', 100: '#fef3c7' },
@@ -38,7 +38,7 @@ const COLORS = {
 /**
  * Progress Bar with Navigation Component
  */
-const ProgressBarWithNav = ({ current, total, onPrev, onNext, answeredQuestions }) => {
+const ProgressBarWithNav = ({ current, total, onPrev, onNext, answeredQuestions, themedGradient, primaryAccent }) => {
   const progress = (current / total) * 100;
   const isFirst = current === 1;
   const isLast = current === total;
@@ -69,7 +69,7 @@ const ProgressBarWithNav = ({ current, total, onPrev, onNext, answeredQuestions 
           style={{
             height: '100%',
             width: `${progress}%`,
-            background: `linear-gradient(90deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: themedGradient,
             borderRadius: '4px',
             transition: 'width 0.3s ease',
           }}
@@ -123,7 +123,7 @@ const ProgressBarWithNav = ({ current, total, onPrev, onNext, answeredQuestions 
                   height: '10px',
                   borderRadius: '50%',
                   backgroundColor: isCurrent
-                    ? COLORS.blue[500]
+                    ? primaryAccent
                     : isAnswered
                       ? COLORS.green[500]
                       : COLORS.slate[300],
@@ -249,7 +249,7 @@ const QuestionTips = ({ tips }) => {
 /**
  * Question Display Component
  */
-const QuestionDisplay = ({ question, questionNumber }) => {
+const QuestionDisplay = ({ question, questionNumber, primaryAccent, primaryAccentLight }) => {
   return (
     <div style={{
       padding: '24px',
@@ -262,8 +262,8 @@ const QuestionDisplay = ({ question, questionNumber }) => {
         display: 'inline-block',
         padding: '4px 12px',
         borderRadius: '20px',
-        backgroundColor: COLORS.blue[500] + '15',
-        color: COLORS.blue[600],
+        backgroundColor: primaryAccentLight,
+        color: primaryAccent,
         fontSize: '12px',
         fontWeight: 600,
         marginBottom: '12px',
@@ -342,7 +342,7 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
 /**
  * Audio Recorder Component
  */
-const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId }) => {
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -528,7 +528,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId }) =
                 style={{
                   width: '6px',
                   height: `${height}px`,
-                  backgroundColor: COLORS.blue[500],
+                  backgroundColor: primaryAccent,
                   borderRadius: '3px',
                   transition: 'height 0.1s ease',
                 }}
@@ -552,25 +552,23 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId }) =
               padding: '16px 32px',
               borderRadius: '50px',
               border: 'none',
-              background: disabled
-                ? COLORS.slate[300]
-                : `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+              background: disabled ? COLORS.slate[300] : themedGradient,
               color: 'white',
               fontSize: '16px',
               fontWeight: 600,
               cursor: disabled ? 'not-allowed' : 'pointer',
-              boxShadow: disabled ? 'none' : '0 4px 12px rgba(74, 158, 201, 0.3)',
+              boxShadow: disabled ? 'none' : `0 4px 12px ${primaryAccent}4d`,
               transition: 'transform 0.2s, box-shadow 0.2s',
             }}
             onMouseEnter={(e) => {
               if (!disabled) {
                 e.target.style.transform = 'scale(1.05)';
-                e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
+                e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
               }
             }}
             onMouseLeave={(e) => {
               e.target.style.transform = 'scale(1)';
-              e.target.style.boxShadow = disabled ? 'none' : '0 4px 12px rgba(74, 158, 201, 0.3)';
+              e.target.style.boxShadow = disabled ? 'none' : `0 4px 12px ${primaryAccent}4d`;
             }}
           >
             <Mic style={{ width: '24px', height: '24px' }} />
@@ -628,7 +626,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId }) =
  * Pre-Session View Component
  * Shows preparation tips before starting the interview
  */
-const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selectedMicrophoneId, onMicrophoneChange, onMicrophoneTest }) => {
+const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selectedMicrophoneId, onMicrophoneChange, onMicrophoneTest, themedGradient, primaryAccent, primaryAccentLight }) => {
   // Tips for interview preparation
   const generalTips = [
     {
@@ -700,7 +698,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
               padding: '14px 28px',
               borderRadius: '12px',
               border: 'none',
-              background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+              background: themedGradient,
               color: 'white',
               fontSize: '16px',
               fontWeight: 600,
@@ -708,16 +706,16 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              boxShadow: '0 4px 12px rgba(74, 158, 201, 0.3)',
+              boxShadow: `0 4px 12px ${primaryAccent}4d`,
               transition: 'transform 0.2s, box-shadow 0.2s',
             }}
             onMouseEnter={(e) => {
               e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
+              e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
             }}
             onMouseLeave={(e) => {
               e.target.style.transform = 'none';
-              e.target.style.boxShadow = '0 4px 12px rgba(74, 158, 201, 0.3)';
+              e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
             }}
           >
             <Play style={{ width: '20px', height: '20px' }} />
@@ -734,7 +732,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
             width: '64px',
             height: '64px',
             borderRadius: '16px',
-            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: themedGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -766,13 +764,13 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
         <div style={{
           padding: '20px',
           borderRadius: '16px',
-          backgroundColor: COLORS.blue[500] + '10',
+          backgroundColor: primaryAccentLight,
           marginBottom: '24px',
         }}>
           <h3 style={{
             fontSize: '14px',
             fontWeight: 600,
-            color: COLORS.blue[600],
+            color: primaryAccent,
             margin: '0 0 12px 0',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
@@ -835,13 +833,13 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
                 width: '44px',
                 height: '44px',
                 borderRadius: '12px',
-                backgroundColor: COLORS.blue[500] + '15',
+                backgroundColor: primaryAccentLight,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <tip.icon style={{ width: '22px', height: '22px', color: COLORS.blue[600] }} />
+                <tip.icon style={{ width: '22px', height: '22px', color: primaryAccent }} />
               </div>
               <div>
                 <h4 style={{
@@ -880,7 +878,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
           gap: '10px',
           marginBottom: '16px',
         }}>
-          <Mic style={{ width: '22px', height: '22px', color: COLORS.blue[600] }} />
+          <Mic style={{ width: '22px', height: '22px', color: primaryAccent }} />
           <h2 style={{
             fontSize: '18px',
             fontWeight: 600,
@@ -956,6 +954,13 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   // Microphone selection state
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
+
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -1086,6 +1091,9 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           selectedMicrophoneId={selectedMicrophoneId}
           onMicrophoneChange={setSelectedMicrophoneId}
           onMicrophoneTest={() => setShowMicrophoneTest(true)}
+          themedGradient={buttonGradient}
+          primaryAccent={primaryAccent}
+          primaryAccentLight={primaryAccentLight}
         />
         <MicrophoneTestDialog
           isOpen={showMicrophoneTest}
@@ -1158,12 +1166,16 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         onPrev={handleNavPrev}
         onNext={handleNavNext}
         answeredQuestions={answeredQuestions}
+        themedGradient={buttonGradient}
+        primaryAccent={primaryAccent}
       />
 
       {/* Question */}
       <QuestionDisplay
         question={currentQuestion}
         questionNumber={currentIndex + 1}
+        primaryAccent={primaryAccent}
+        primaryAccentLight={primaryAccentLight}
       />
 
       {/* Question-specific Tips */}
@@ -1179,6 +1191,8 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
             timeLimit={scenario.time_limit_per_question || 120}
             disabled={isSubmitting}
             deviceId={selectedMicrophoneId}
+            themedGradient={buttonGradient}
+            primaryAccent={primaryAccent}
           />
 
           {/* Submitting State */}
@@ -1195,7 +1209,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               <Loader2 style={{
                 width: '48px',
                 height: '48px',
-                color: COLORS.blue[500],
+                color: primaryAccent,
                 animation: 'spin 1s linear infinite',
               }} />
               <p style={{
@@ -1303,7 +1317,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               padding: '12px 24px',
               borderRadius: '10px',
               border: 'none',
-              background: `linear-gradient(90deg, ${COLORS.green[500]} 0%, ${COLORS.teal[500]} 100%)`,
+              background: buttonGradient,
               color: 'white',
               fontSize: '14px',
               fontWeight: 600,
