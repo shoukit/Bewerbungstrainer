@@ -21,7 +21,7 @@ import RoleplayVariablesDialog from './RoleplayVariablesDialog';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 
-const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
+const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenticated, requireAuth, setPendingAction, pendingScenario, clearPendingScenario }) => {
   const [scenarios, setScenarios] = useState([]);
   const [filteredScenarios, setFilteredScenarios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +63,19 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
     filterScenarios();
   }, [scenarios, searchQuery, difficultyFilter, filterByPartner]);
 
+  // Handle pending scenario after login - automatically open variables dialog
+  useEffect(() => {
+    if (pendingScenario && isAuthenticated) {
+      console.log('🔐 [RoleplayDashboard] Processing pending scenario after login:', pendingScenario.title);
+      setSelectedScenario(pendingScenario);
+      setShowVariablesDialog(true);
+      // Clear the pending scenario
+      if (clearPendingScenario) {
+        clearPendingScenario();
+      }
+    }
+  }, [pendingScenario, isAuthenticated, clearPendingScenario]);
+
   const loadScenarios = async () => {
     try {
       setIsLoading(true);
@@ -79,6 +92,20 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
   };
 
   const handleScenarioClick = (scenario) => {
+    // Check authentication before allowing scenario selection
+    if (!isAuthenticated) {
+      console.log('🔐 [RoleplayDashboard] Auth required - storing pending action for scenario:', scenario.title);
+      // Store the scenario selection as pending action
+      setPendingAction({
+        type: 'SELECT_ROLEPLAY_SCENARIO',
+        scenario: scenario,
+        variables: {}, // Will be collected after login
+      });
+      // The requireAuth function will open the login modal
+      requireAuth(() => {}, null);
+      return;
+    }
+
     setSelectedScenario(scenario);
     setShowVariablesDialog(true);
   };

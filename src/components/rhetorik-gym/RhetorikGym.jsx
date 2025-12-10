@@ -534,7 +534,7 @@ const VIEWS = {
 /**
  * Main RhetorikGym Component
  */
-const RhetorikGym = ({ onStartGame }) => {
+const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingAction }) => {
   const [currentView, setCurrentView] = useState(VIEWS.MODES);
   const [selectedMode, setSelectedMode] = useState(null);
   const [userStats, setUserStats] = useState({
@@ -543,6 +543,9 @@ const RhetorikGym = ({ onStartGame }) => {
     avgScore: 0,
     totalPracticeTime: 0,
   });
+
+  // Pending mode for after login
+  const [pendingMode, setPendingMode] = useState(null);
 
   // Partner theming
   const { branding } = usePartner();
@@ -575,7 +578,30 @@ const RhetorikGym = ({ onStartGame }) => {
     }
   }, [currentView]);
 
+  // Handle pending mode after login - automatically open topic selection
+  useEffect(() => {
+    if (pendingMode && isAuthenticated) {
+      console.log('🔐 [RhetorikGym] Processing pending mode after login:', pendingMode.title);
+      setSelectedMode(pendingMode);
+      setCurrentView(VIEWS.TOPIC);
+      setPendingMode(null);
+    }
+  }, [pendingMode, isAuthenticated]);
+
   const handleSelectMode = (mode) => {
+    // Check authentication before allowing mode selection
+    if (!isAuthenticated) {
+      console.log('🔐 [RhetorikGym] Auth required - storing pending mode:', mode.title);
+      // Store the mode as pending
+      setPendingMode(mode);
+      // Open login modal
+      if (requireAuth) {
+        requireAuth(() => {}, null);
+      }
+      return;
+    }
+
+    // User is authenticated - proceed with selection
     setSelectedMode(mode);
     setCurrentView(VIEWS.TOPIC);
   };
