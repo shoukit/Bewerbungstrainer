@@ -203,6 +203,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   // Partner theming for primary CTA button
   const { branding } = usePartner();
   const buttonGradient = branding?.['--button-gradient'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
   // Initialize topic
@@ -296,12 +297,12 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
             width: '80px',
             height: '80px',
             borderRadius: '20px',
-            background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+            background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px',
-            boxShadow: `0 10px 30px ${colors.from}44`,
+            boxShadow: `0 10px 30px ${primaryAccent}44`,
           }}>
             <IconComponent style={{ width: '40px', height: '40px', color: 'white' }} />
           </div>
@@ -329,11 +330,11 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           transition={{ delay: 0.2 }}
           style={{
             width: '100%',
-            background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+            background: headerGradient,
             borderRadius: '20px',
             padding: '32px',
             marginBottom: '24px',
-            boxShadow: `0 20px 40px ${colors.from}33`,
+            boxShadow: `0 20px 40px ${primaryAccent}33`,
           }}
         >
           {/* Topic Label */}
