@@ -66,10 +66,9 @@ const MODE_COLORS = {
 /**
  * Game Mode Card Component
  */
-const GameModeCard = ({ mode, onSelect }) => {
+const GameModeCard = ({ mode, onSelect, headerGradient, headerText, primaryAccent }) => {
   const [isHovered, setIsHovered] = useState(false);
   const IconComponent = ICON_MAP[mode.icon] || Rocket;
-  const colors = MODE_COLORS[mode.id] || MODE_COLORS.klassiker;
 
   return (
     <motion.div
@@ -82,9 +81,9 @@ const GameModeCard = ({ mode, onSelect }) => {
         backgroundColor: 'white',
         borderRadius: '16px',
         padding: '24px',
-        border: `2px solid ${isHovered ? colors.from : COLORS.slate[200]}`,
+        border: `2px solid ${isHovered ? primaryAccent : COLORS.slate[200]}`,
         boxShadow: isHovered
-          ? `0 10px 25px -5px ${colors.from}33, 0 8px 10px -6px ${colors.from}22`
+          ? `0 10px 25px -5px ${primaryAccent}33, 0 8px 10px -6px ${primaryAccent}22`
           : '0 1px 3px rgba(0, 0, 0, 0.1)',
         transition: 'all 0.3s ease',
         cursor: 'pointer',
@@ -96,14 +95,14 @@ const GameModeCard = ({ mode, onSelect }) => {
           width: '56px',
           height: '56px',
           borderRadius: '14px',
-          background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+          background: headerGradient,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: '16px',
         }}
       >
-        <IconComponent style={{ width: '28px', height: '28px', color: 'white' }} />
+        <IconComponent style={{ width: '28px', height: '28px', color: headerText }} />
       </div>
 
       {/* Title */}
@@ -119,7 +118,7 @@ const GameModeCard = ({ mode, onSelect }) => {
       {/* Subtitle */}
       <div style={{
         fontSize: '13px',
-        color: colors.from,
+        color: primaryAccent,
         fontWeight: 600,
         marginBottom: '12px',
       }}>
@@ -155,14 +154,8 @@ const GameModeCard = ({ mode, onSelect }) => {
 /**
  * Stats Card Component
  */
-const StatsCard = ({ icon: Icon, label, value, color = 'blue' }) => {
-  const colorMap = {
-    blue: { bg: 'rgba(74, 158, 201, 0.1)', icon: COLORS.blue[500] },
-    amber: { bg: 'rgba(245, 158, 11, 0.1)', icon: COLORS.amber[500] },
-    green: { bg: 'rgba(34, 197, 94, 0.1)', icon: COLORS.green[500] },
-    teal: { bg: 'rgba(61, 163, 137, 0.1)', icon: COLORS.teal[500] },
-  };
-  const colors = colorMap[color] || colorMap.blue;
+const StatsCard = ({ icon: Icon, label, value, primaryAccent, primaryAccentLight }) => {
+  // Use branding colors for all stats cards
 
   return (
     <div style={{
@@ -175,13 +168,13 @@ const StatsCard = ({ icon: Icon, label, value, color = 'blue' }) => {
         width: '40px',
         height: '40px',
         borderRadius: '10px',
-        backgroundColor: colors.bg,
+        backgroundColor: primaryAccentLight,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: '12px',
       }}>
-        <Icon style={{ width: '20px', height: '20px', color: colors.icon }} />
+        <Icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
       </div>
       <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{value}</div>
       <div style={{ fontSize: '13px', color: COLORS.slate[500] }}>{label}</div>
@@ -555,6 +548,8 @@ const RhetorikGym = ({ onStartGame }) => {
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   // Load user stats - reload when returning to mode selection view
   useEffect(() => {
@@ -652,14 +647,16 @@ const RhetorikGym = ({ onStartGame }) => {
         {/* Stats Row */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '16px',
           marginBottom: '32px',
+          maxWidth: '900px',
+          margin: '0 auto 32px auto',
         }}>
-          <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} color="amber" />
-          <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} color="blue" />
-          <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} color="green" />
-          <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} color="teal" />
+          <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+          <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+          <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+          <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
         </div>
 
         {/* Section Title */}
@@ -668,6 +665,7 @@ const RhetorikGym = ({ onStartGame }) => {
           fontWeight: 600,
           color: COLORS.slate[800],
           marginBottom: '16px',
+          textAlign: 'center',
         }}>
           Wähle deinen Modus
         </h2>
@@ -675,14 +673,19 @@ const RhetorikGym = ({ onStartGame }) => {
         {/* Game Mode Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '24px',
+          maxWidth: '1000px',
+          margin: '0 auto',
         }}>
           {gameModes.map((mode) => (
             <GameModeCard
               key={mode.id}
               mode={mode}
               onSelect={handleSelectMode}
+              headerGradient={headerGradient}
+              headerText={headerText}
+              primaryAccent={primaryAccent}
             />
           ))}
         </div>
