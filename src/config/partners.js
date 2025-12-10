@@ -169,17 +169,21 @@ export function filterScenariosByPartner(scenarios, partner) {
     return scenarios;
   }
 
-  // Filter scenarios: keep only those whose ID or slug is in allowed modules
+  // Filter scenarios: keep only those whose ID, slug, or title matches allowed modules
   return scenarios.filter(scenario => {
-    const scenarioId = scenario.id?.toLowerCase() || '';
-    const scenarioSlug = scenario.slug?.toLowerCase() || '';
+    // Convert to strings and lowercase (id might be a number)
+    const scenarioId = String(scenario.id || '').toLowerCase();
+    const scenarioSlug = String(scenario.slug || '').toLowerCase();
+    const scenarioTitle = String(scenario.title || '').toLowerCase();
 
     return partner.modules.some(moduleId => {
-      const normalizedModuleId = moduleId.toLowerCase();
+      const normalizedModuleId = String(moduleId).toLowerCase();
       return scenarioId.includes(normalizedModuleId) ||
              scenarioSlug.includes(normalizedModuleId) ||
+             scenarioTitle.includes(normalizedModuleId) ||
              normalizedModuleId.includes(scenarioId) ||
-             normalizedModuleId.includes(scenarioSlug);
+             normalizedModuleId.includes(scenarioSlug) ||
+             normalizedModuleId.includes(scenarioTitle);
     });
   });
 }
