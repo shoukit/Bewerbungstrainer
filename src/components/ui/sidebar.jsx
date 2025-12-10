@@ -15,9 +15,11 @@ import {
   Shuffle,
   Rocket,
 } from 'lucide-react';
+import { usePartner } from '@/context/PartnerContext';
 
 /**
  * Ocean theme colors - defined as constants to avoid WordPress CSS conflicts
+ * These are the default colors used when no partner branding is active
  */
 const OCEAN_COLORS = {
   blue: {
@@ -41,6 +43,25 @@ const OCEAN_COLORS = {
     700: '#334155',
     900: '#0f172a',
   },
+};
+
+/**
+ * Helper to get themed colors from partner branding or fall back to defaults
+ */
+const getThemedColors = (branding) => {
+  if (!branding) return null;
+
+  return {
+    sidebarBg: branding['--sidebar-bg-color'] || OCEAN_COLORS.slate[50],
+    sidebarText: branding['--sidebar-text-color'] || OCEAN_COLORS.slate[900],
+    sidebarTextMuted: branding['--sidebar-text-muted'] || OCEAN_COLORS.slate[400],
+    sidebarActiveBg: branding['--sidebar-active-bg'] || OCEAN_COLORS.blue[50],
+    sidebarActiveText: branding['--sidebar-active-text'] || OCEAN_COLORS.blue[700],
+    sidebarHoverBg: branding['--sidebar-hover-bg'] || OCEAN_COLORS.slate[50],
+    primaryAccent: branding['--primary-accent'] || OCEAN_COLORS.blue[600],
+    borderColor: branding['--border-color'] || OCEAN_COLORS.slate[200],
+    borderColorLight: branding['--border-color-light'] || OCEAN_COLORS.slate[100],
+  };
 };
 
 /**
@@ -91,6 +112,7 @@ const NAV_ITEMS = [
  *
  * A collapsible sidebar navigation for the application.
  * Uses inline styles for colors to avoid WordPress/Elementor CSS conflicts.
+ * Supports white-label partner theming via PartnerContext.
  */
 const AppSidebar = ({
   isCollapsed,
@@ -100,6 +122,39 @@ const AppSidebar = ({
   headerOffset = 0,
 }) => {
   const [expandedItems, setExpandedItems] = React.useState(['gym']); // Gym expanded by default
+
+  // Get partner branding for theming
+  const { branding, isWhiteLabel, partnerName, logoUrl } = usePartner();
+  const themedColors = getThemedColors(branding);
+
+  // Determine colors based on whether we have partner branding
+  const colors = React.useMemo(() => {
+    if (themedColors) {
+      return {
+        sidebarBg: themedColors.sidebarBg,
+        sidebarText: themedColors.sidebarText,
+        sidebarTextMuted: themedColors.sidebarTextMuted,
+        activeBg: themedColors.sidebarActiveBg,
+        activeText: themedColors.sidebarActiveText,
+        hoverBg: themedColors.sidebarHoverBg,
+        primaryAccent: themedColors.primaryAccent,
+        borderColor: themedColors.borderColor,
+        borderColorLight: themedColors.borderColorLight,
+      };
+    }
+    // Default colors (no partner)
+    return {
+      sidebarBg: '#ffffff',
+      sidebarText: OCEAN_COLORS.slate[900],
+      sidebarTextMuted: OCEAN_COLORS.slate[400],
+      activeBg: OCEAN_COLORS.blue[50],
+      activeText: OCEAN_COLORS.blue[700],
+      hoverBg: OCEAN_COLORS.slate[50],
+      primaryAccent: OCEAN_COLORS.blue[600],
+      borderColor: OCEAN_COLORS.slate[200],
+      borderColorLight: OCEAN_COLORS.slate[100],
+    };
+  }, [themedColors]);
 
   const toggleExpanded = (itemId) => {
     setExpandedItems((prev) =>
@@ -128,8 +183,8 @@ const AppSidebar = ({
         top: headerOffset,
         bottom: 0,
         zIndex: 40,
-        backgroundColor: '#ffffff',
-        borderRight: `1px solid ${OCEAN_COLORS.slate[200]}`,
+        backgroundColor: colors.sidebarBg,
+        borderRight: `1px solid ${colors.borderColor}`,
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
@@ -143,7 +198,7 @@ const AppSidebar = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 16px',
-          borderBottom: `1px solid ${OCEAN_COLORS.slate[100]}`,
+          borderBottom: `1px solid ${colors.borderColorLight}`,
         }}
       >
         <AnimatePresence mode="wait">
@@ -156,27 +211,51 @@ const AppSidebar = ({
               transition={{ duration: 0.2 }}
               style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
             >
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '12px',
-                  background: `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                }}
-              >
-                <GraduationCap style={{ width: '20px', height: '20px', color: 'white' }} />
-              </div>
+              {/* Partner logo or default gradient logo */}
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={partnerName}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '12px',
+                    objectFit: 'contain',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '12px',
+                    background: isWhiteLabel
+                      ? colors.primaryAccent
+                      : `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  <GraduationCap style={{ width: '20px', height: '20px', color: 'white' }} />
+                </div>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontWeight: 700, color: OCEAN_COLORS.slate[900], fontSize: '14px', lineHeight: '1.2' }}>
-                  Karriere
-                </span>
-                <span style={{ fontWeight: 700, color: OCEAN_COLORS.blue[600], fontSize: '14px', lineHeight: '1.2' }}>
-                  Navigation
-                </span>
+                {isWhiteLabel ? (
+                  <span style={{ fontWeight: 700, color: colors.sidebarText, fontSize: '14px', lineHeight: '1.4' }}>
+                    {partnerName}
+                  </span>
+                ) : (
+                  <>
+                    <span style={{ fontWeight: 700, color: colors.sidebarText, fontSize: '14px', lineHeight: '1.2' }}>
+                      Karriere
+                    </span>
+                    <span style={{ fontWeight: 700, color: colors.primaryAccent, fontSize: '14px', lineHeight: '1.2' }}>
+                      Navigation
+                    </span>
+                  </>
+                )}
               </div>
             </motion.div>
           ) : (
@@ -190,15 +269,26 @@ const AppSidebar = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '12px',
-                background: `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+                background: isWhiteLabel
+                  ? colors.primaryAccent
+                  : `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 margin: '0 auto',
+                overflow: 'hidden',
               }}
             >
-              <GraduationCap style={{ width: '20px', height: '20px', color: 'white' }} />
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={partnerName}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              ) : (
+                <GraduationCap style={{ width: '20px', height: '20px', color: 'white' }} />
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -227,8 +317,8 @@ const AppSidebar = ({
                   position: 'relative',
                   padding: isCollapsed ? '12px' : '12px 16px',
                   justifyContent: isCollapsed ? 'center' : 'flex-start',
-                  backgroundColor: isActive ? OCEAN_COLORS.blue[50] : 'transparent',
-                  color: isActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[600],
+                  backgroundColor: isActive ? colors.activeBg : 'transparent',
+                  color: isActive ? colors.activeText : colors.sidebarText,
                   fontWeight: isActive ? 600 : 400,
                   fontSize: '14px',
                   border: 'none',
@@ -239,14 +329,14 @@ const AppSidebar = ({
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.backgroundColor = OCEAN_COLORS.slate[50];
-                    e.currentTarget.style.color = OCEAN_COLORS.slate[900];
+                    e.currentTarget.style.backgroundColor = colors.hoverBg;
+                    e.currentTarget.style.color = colors.sidebarText;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
                     e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = OCEAN_COLORS.slate[600];
+                    e.currentTarget.style.color = colors.sidebarText;
                   }
                 }}
               >
@@ -260,7 +350,7 @@ const AppSidebar = ({
                       transform: 'translateY(-50%)',
                       width: '4px',
                       height: '32px',
-                      backgroundColor: OCEAN_COLORS.blue[600],
+                      backgroundColor: colors.primaryAccent,
                       borderTopRightRadius: '9999px',
                       borderBottomRightRadius: '9999px',
                     }}
@@ -272,7 +362,7 @@ const AppSidebar = ({
                     width: '20px',
                     height: '20px',
                     flexShrink: 0,
-                    color: isActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                    color: isActive ? colors.primaryAccent : colors.sidebarTextMuted,
                   }}
                 />
 
@@ -280,7 +370,7 @@ const AppSidebar = ({
                   <>
                     <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, minWidth: 0 }}>
                       <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
-                      <span style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], whiteSpace: 'normal', lineHeight: 1.3 }}>
+                      <span style={{ fontSize: '12px', color: colors.sidebarTextMuted, whiteSpace: 'normal', lineHeight: 1.3 }}>
                         {item.description}
                       </span>
                     </div>
@@ -289,7 +379,7 @@ const AppSidebar = ({
                         style={{
                           width: '16px',
                           height: '16px',
-                          color: OCEAN_COLORS.slate[400],
+                          color: colors.sidebarTextMuted,
                           transition: 'transform 0.2s',
                           transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                         }}
@@ -325,8 +415,8 @@ const AppSidebar = ({
                               alignItems: 'center',
                               gap: '10px',
                               padding: '10px 14px',
-                              backgroundColor: isSubActive ? OCEAN_COLORS.blue[50] : 'transparent',
-                              color: isSubActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[600],
+                              backgroundColor: isSubActive ? colors.activeBg : 'transparent',
+                              color: isSubActive ? colors.activeText : colors.sidebarText,
                               fontWeight: isSubActive ? 600 : 400,
                               fontSize: '13px',
                               border: 'none',
@@ -337,14 +427,14 @@ const AppSidebar = ({
                             }}
                             onMouseEnter={(e) => {
                               if (!isSubActive) {
-                                e.currentTarget.style.backgroundColor = OCEAN_COLORS.slate[50];
-                                e.currentTarget.style.color = OCEAN_COLORS.slate[900];
+                                e.currentTarget.style.backgroundColor = colors.hoverBg;
+                                e.currentTarget.style.color = colors.sidebarText;
                               }
                             }}
                             onMouseLeave={(e) => {
                               if (!isSubActive) {
                                 e.currentTarget.style.backgroundColor = 'transparent';
-                                e.currentTarget.style.color = OCEAN_COLORS.slate[600];
+                                e.currentTarget.style.color = colors.sidebarText;
                               }
                             }}
                           >
@@ -353,7 +443,7 @@ const AppSidebar = ({
                                 width: '16px',
                                 height: '16px',
                                 flexShrink: 0,
-                                color: isSubActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                                color: isSubActive ? colors.primaryAccent : colors.sidebarTextMuted,
                               }}
                             />
                             <span style={{ whiteSpace: 'nowrap' }}>{subItem.label}</span>
@@ -370,7 +460,7 @@ const AppSidebar = ({
       </nav>
 
       {/* Collapse Toggle Button */}
-      <div style={{ padding: '12px', borderTop: `1px solid ${OCEAN_COLORS.slate[100]}` }}>
+      <div style={{ padding: '12px', borderTop: `1px solid ${colors.borderColorLight}` }}>
         <button
           onClick={onToggleCollapse}
           style={{
@@ -381,7 +471,7 @@ const AppSidebar = ({
             alignItems: 'center',
             gap: '12px',
             justifyContent: isCollapsed ? 'center' : 'flex-start',
-            color: OCEAN_COLORS.slate[400],
+            color: colors.sidebarTextMuted,
             backgroundColor: 'transparent',
             border: 'none',
             cursor: 'pointer',
@@ -389,12 +479,12 @@ const AppSidebar = ({
             transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = OCEAN_COLORS.slate[50];
-            e.currentTarget.style.color = OCEAN_COLORS.slate[600];
+            e.currentTarget.style.backgroundColor = colors.hoverBg;
+            e.currentTarget.style.color = colors.sidebarText;
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = OCEAN_COLORS.slate[400];
+            e.currentTarget.style.color = colors.sidebarTextMuted;
           }}
         >
           {isCollapsed ? (
@@ -414,10 +504,48 @@ const AppSidebar = ({
 /**
  * Mobile Navigation Component
  * Shows a burger menu that opens a slide-out menu on mobile
+ * Supports white-label partner theming via PartnerContext.
  */
 const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [expandedItems, setExpandedItems] = React.useState(['gym']);
+
+  // Get partner branding for theming
+  const { branding, isWhiteLabel, partnerName, logoUrl } = usePartner();
+  const themedColors = getThemedColors(branding);
+
+  // Determine colors based on whether we have partner branding
+  const colors = React.useMemo(() => {
+    if (themedColors) {
+      return {
+        headerBg: themedColors.sidebarBg,
+        headerText: themedColors.sidebarText,
+        headerTextMuted: themedColors.sidebarTextMuted,
+        menuBg: '#ffffff', // Menu panel stays white for readability
+        activeBg: themedColors.sidebarActiveBg,
+        activeText: themedColors.sidebarActiveText,
+        hoverBg: themedColors.sidebarHoverBg,
+        primaryAccent: themedColors.primaryAccent,
+        borderColor: themedColors.borderColor,
+        textMain: OCEAN_COLORS.slate[700],
+        textMuted: OCEAN_COLORS.slate[400],
+      };
+    }
+    // Default colors (no partner)
+    return {
+      headerBg: '#ffffff',
+      headerText: OCEAN_COLORS.slate[900],
+      headerTextMuted: OCEAN_COLORS.slate[400],
+      menuBg: '#ffffff',
+      activeBg: OCEAN_COLORS.blue[50],
+      activeText: OCEAN_COLORS.blue[700],
+      hoverBg: OCEAN_COLORS.slate[50],
+      primaryAccent: OCEAN_COLORS.blue[600],
+      borderColor: OCEAN_COLORS.slate[200],
+      textMain: OCEAN_COLORS.slate[700],
+      textMuted: OCEAN_COLORS.slate[400],
+    };
+  }, [themedColors]);
 
   const handleNavigate = (id) => {
     onNavigate(id);
@@ -442,8 +570,8 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
           left: 0,
           right: 0,
           height: '56px',
-          backgroundColor: 'white',
-          borderBottom: `1px solid ${OCEAN_COLORS.slate[200]}`,
+          backgroundColor: colors.headerBg,
+          borderBottom: `1px solid ${colors.borderColor}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -455,21 +583,36 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
       >
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              background: `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <GraduationCap style={{ width: '18px', height: '18px', color: 'white' }} />
-          </div>
-          <span style={{ fontWeight: 700, color: OCEAN_COLORS.slate[900], fontSize: '15px' }}>
-            Karriere Navigation
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={partnerName}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                objectFit: 'contain',
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: isWhiteLabel
+                  ? colors.primaryAccent
+                  : `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <GraduationCap style={{ width: '18px', height: '18px', color: 'white' }} />
+            </div>
+          )}
+          <span style={{ fontWeight: 700, color: colors.headerText, fontSize: '15px' }}>
+            {isWhiteLabel ? partnerName : 'Karriere Navigation'}
           </span>
         </div>
 
@@ -481,7 +624,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
             height: '40px',
             borderRadius: '10px',
             border: 'none',
-            backgroundColor: isOpen ? OCEAN_COLORS.slate[100] : 'transparent',
+            backgroundColor: isOpen ? colors.hoverBg : 'transparent',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -489,9 +632,9 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
           }}
         >
           {isOpen ? (
-            <X style={{ width: '24px', height: '24px', color: OCEAN_COLORS.slate[700] }} />
+            <X style={{ width: '24px', height: '24px', color: colors.headerText }} />
           ) : (
-            <Menu style={{ width: '24px', height: '24px', color: OCEAN_COLORS.slate[700] }} />
+            <Menu style={{ width: '24px', height: '24px', color: colors.headerText }} />
           )}
         </button>
       </div>
@@ -528,7 +671,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
                 top: headerOffset + 56,
                 left: 0,
                 right: 0,
-                backgroundColor: 'white',
+                backgroundColor: colors.menuBg,
                 zIndex: 45,
                 padding: '8px',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
@@ -558,8 +701,8 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
                         padding: '14px 16px',
                         borderRadius: '12px',
                         border: 'none',
-                        backgroundColor: isActive ? OCEAN_COLORS.blue[50] : 'transparent',
-                        color: isActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[700],
+                        backgroundColor: isActive ? colors.activeBg : 'transparent',
+                        color: isActive ? colors.activeText : colors.textMain,
                         fontSize: '15px',
                         fontWeight: isActive ? 600 : 500,
                         cursor: 'pointer',
@@ -571,12 +714,12 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
                         style={{
                           width: '22px',
                           height: '22px',
-                          color: isActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                          color: isActive ? colors.primaryAccent : colors.textMuted,
                         }}
                       />
                       <div style={{ flex: 1 }}>
                         <div>{item.label}</div>
-                        <div style={{ fontSize: '12px', color: OCEAN_COLORS.slate[400], fontWeight: 400 }}>
+                        <div style={{ fontSize: '12px', color: colors.textMuted, fontWeight: 400 }}>
                           {item.description}
                         </div>
                       </div>
@@ -585,7 +728,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
                           style={{
                             width: '18px',
                             height: '18px',
-                            color: OCEAN_COLORS.slate[400],
+                            color: colors.textMuted,
                             transition: 'transform 0.2s',
                             transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                           }}
@@ -612,8 +755,8 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
                                 padding: '12px 14px',
                                 borderRadius: '10px',
                                 border: 'none',
-                                backgroundColor: isSubActive ? OCEAN_COLORS.blue[50] : 'transparent',
-                                color: isSubActive ? OCEAN_COLORS.blue[700] : OCEAN_COLORS.slate[600],
+                                backgroundColor: isSubActive ? colors.activeBg : 'transparent',
+                                color: isSubActive ? colors.activeText : colors.textMain,
                                 fontSize: '14px',
                                 fontWeight: isSubActive ? 600 : 400,
                                 cursor: 'pointer',
@@ -625,7 +768,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
                                 style={{
                                   width: '18px',
                                   height: '18px',
-                                  color: isSubActive ? OCEAN_COLORS.blue[600] : OCEAN_COLORS.slate[400],
+                                  color: isSubActive ? colors.primaryAccent : colors.textMuted,
                                 }}
                               />
                               <span>{subItem.label}</span>
@@ -650,10 +793,15 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
  *
  * Layout wrapper that includes the sidebar and main content area.
  * Responsive: Shows sidebar on desktop, burger menu on mobile.
+ * Supports white-label partner theming via PartnerContext.
  */
 const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0 }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
+
+  // Get partner branding for background
+  const { branding } = usePartner();
+  const appBackground = branding?.['--app-bg-color'] || 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)';
 
   // Check for mobile and saved preference
   React.useEffect(() => {
@@ -684,7 +832,7 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0 }) =
       <div
         style={{
           minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
-          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
+          background: appBackground,
         }}
       >
         <MobileNavigation
@@ -711,7 +859,7 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0 }) =
     <div
       style={{
         minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
-        background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
+        background: appBackground,
       }}
     >
       <AppSidebar

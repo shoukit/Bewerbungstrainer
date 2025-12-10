@@ -6,6 +6,7 @@ import SessionDetailView from './components/SessionDetailView';
 import { SimulatorApp } from './components/simulator';
 import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SidebarLayout } from './components/ui/sidebar';
+import { PartnerProvider } from './context/PartnerContext';
 
 console.log('📦 [APP] App.jsx module loaded');
 
@@ -311,13 +312,15 @@ function App() {
 
   // All views now use the sidebar layout for consistent navigation
   return (
-    <SidebarLayout
-      activeView={currentView}
-      onNavigate={handleSidebarNavigate}
-      headerOffset={headerOffset}
-    >
-      {renderContent()}
-    </SidebarLayout>
+    <PartnerProvider>
+      <SidebarLayout
+        activeView={currentView}
+        onNavigate={handleSidebarNavigate}
+        headerOffset={headerOffset}
+      >
+        {renderContent()}
+      </SidebarLayout>
+    </PartnerProvider>
   );
 }
 

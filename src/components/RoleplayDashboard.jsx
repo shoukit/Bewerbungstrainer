@@ -18,12 +18,16 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import RoleplayVariablesDialog from './RoleplayVariablesDialog';
+import { usePartner } from '@/context/PartnerContext';
 
 const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
   const [scenarios, setScenarios] = useState([]);
   const [filteredScenarios, setFilteredScenarios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Partner context for white-label module filtering
+  const { filterScenarios: filterByPartner, isWhiteLabel, partnerName } = usePartner();
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,10 +50,10 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
     loadScenarios();
   }, []);
 
-  // Filter scenarios when search or filters change
+  // Filter scenarios when search, filters, or partner changes
   useEffect(() => {
     filterScenarios();
-  }, [scenarios, searchQuery, difficultyFilter]);
+  }, [scenarios, searchQuery, difficultyFilter, filterByPartner]);
 
   const loadScenarios = async () => {
     try {
@@ -83,7 +87,16 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
   };
 
   const filterScenarios = () => {
-    let filtered = [...scenarios];
+    // First, filter by partner's allowed modules (white-label filtering)
+    let filtered = filterByPartner([...scenarios]);
+
+    // Log filtering for debugging in white-label mode
+    if (isWhiteLabel) {
+      console.log('🏷️ [RoleplayDashboard] Partner filtering applied:', {
+        total: scenarios.length,
+        afterPartnerFilter: filtered.length,
+      });
+    }
 
     // Search filter
     if (searchQuery.trim()) {
