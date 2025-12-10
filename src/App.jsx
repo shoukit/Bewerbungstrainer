@@ -378,6 +378,8 @@ function AppContent() {
           <SessionHistory
             onBack={handleCloseHistory}
             onSelectSession={handleSelectSession}
+            isAuthenticated={isAuthenticated}
+            onLoginClick={openLoginModal}
           />
         );
 
