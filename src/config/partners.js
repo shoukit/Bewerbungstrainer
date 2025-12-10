@@ -294,6 +294,120 @@ export const MOCK_PARTNERS = {
     logo_url: null,
     modules: [],
   },
+
+  // Stärkentrainer (Olive/Green Theme) - staerkentrainer.de
+  'staerkentrainer': {
+    id: 'staerkentrainer',
+    slug: 'staerkentrainer',
+    name: 'Stärkentrainer',
+    branding: {
+      // App Background - leicht grünlich/neutral
+      '--app-bg-color': 'linear-gradient(135deg, #fafafa 0%, #f5f7f2 50%, #fafafa 100%)',
+
+      // Sidebar - dunkles Grau/Schwarz wie Navigation
+      '--sidebar-bg-color': '#2d2d2d',
+      '--sidebar-text-color': '#ffffff',
+      '--sidebar-text-muted': '#a3a3a3',
+      '--sidebar-active-bg': 'rgba(106, 128, 50, 0.2)',
+      '--sidebar-active-text': '#8aa83a',
+      '--sidebar-hover-bg': 'rgba(255, 255, 255, 0.1)',
+
+      // Cards
+      '--card-bg-color': '#ffffff',
+
+      // Primary Accent - Olive Grün
+      '--primary-accent': '#6a8032',
+      '--primary-accent-light': '#f0f4e8',
+      '--primary-accent-hover': '#556827',
+
+      // Buttons - Olive Gradient
+      '--button-gradient': 'linear-gradient(135deg, #8aa83a 0%, #6a8032 100%)',
+      '--button-gradient-hover': 'linear-gradient(135deg, #6a8032 0%, #556827 100%)',
+      '--button-solid': '#6a8032',
+      '--button-solid-hover': '#556827',
+      '--button-text': '#ffffff',
+
+      // Header Gradient - Olive
+      '--header-gradient': 'linear-gradient(135deg, #8aa83a 0%, #6a8032 100%)',
+      '--header-text': '#ffffff',
+
+      // Icons - Olive Töne
+      '--icon-primary': '#6a8032',
+      '--icon-secondary': '#8aa83a',
+      '--icon-muted': '#a3a3a3',
+
+      // Text
+      '--text-main': '#1a1a1a',
+      '--text-secondary': '#525252',
+      '--text-muted': '#a3a3a3',
+
+      // Borders
+      '--border-color': '#e5e5e5',
+      '--border-color-light': '#f5f5f5',
+
+      // Focus Ring
+      '--focus-ring': 'rgba(106, 128, 50, 0.3)',
+    },
+    logo_url: null,
+    modules: [],
+  },
+
+  // Joachim Simon Leadership ID (Petrol/Teal Theme) - joachimsimon.de
+  'leadership-id': {
+    id: 'leadership-id',
+    slug: 'leadership-id',
+    name: 'Joachim Simon - Leadership ID',
+    branding: {
+      // App Background - hell/neutral mit leichtem Blauton
+      '--app-bg-color': 'linear-gradient(135deg, #fafafa 0%, #f0f7f9 50%, #fafafa 100%)',
+
+      // Sidebar - Petrol/Teal wie im Menü
+      '--sidebar-bg-color': '#1a5f7a',
+      '--sidebar-text-color': '#ffffff',
+      '--sidebar-text-muted': '#8ecfe0',
+      '--sidebar-active-bg': 'rgba(255, 255, 255, 0.2)',
+      '--sidebar-active-text': '#ffffff',
+      '--sidebar-hover-bg': 'rgba(255, 255, 255, 0.1)',
+
+      // Cards
+      '--card-bg-color': '#ffffff',
+
+      // Primary Accent - Petrol
+      '--primary-accent': '#1a5f7a',
+      '--primary-accent-light': '#e0f2f7',
+      '--primary-accent-hover': '#134a5f',
+
+      // Buttons - Petrol Gradient
+      '--button-gradient': 'linear-gradient(135deg, #2980a8 0%, #1a5f7a 100%)',
+      '--button-gradient-hover': 'linear-gradient(135deg, #1a5f7a 0%, #134a5f 100%)',
+      '--button-solid': '#1a5f7a',
+      '--button-solid-hover': '#134a5f',
+      '--button-text': '#ffffff',
+
+      // Header Gradient - Petrol
+      '--header-gradient': 'linear-gradient(135deg, #2980a8 0%, #1a5f7a 100%)',
+      '--header-text': '#ffffff',
+
+      // Icons - Petrol Töne
+      '--icon-primary': '#1a5f7a',
+      '--icon-secondary': '#2980a8',
+      '--icon-muted': '#8ecfe0',
+
+      // Text
+      '--text-main': '#1a1a1a',
+      '--text-secondary': '#525252',
+      '--text-muted': '#9ca3af',
+
+      // Borders
+      '--border-color': '#e5e7eb',
+      '--border-color-light': '#f3f4f6',
+
+      // Focus Ring
+      '--focus-ring': 'rgba(26, 95, 122, 0.3)',
+    },
+    logo_url: null,
+    modules: [],
+  },
 };
 
 /**
