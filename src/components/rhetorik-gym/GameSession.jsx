@@ -732,7 +732,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
 
         // Save to database
         try {
-          await wordpressAPI.createGameSession({
+          const sessionData = {
             game_type: gameConfig.mode.id,
             topic: gameConfig.topic,
             duration_seconds: actualDurationSeconds,
@@ -741,9 +741,12 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
             words_per_minute: fullResult.words_per_minute,
             transcript: fullResult.transcript,
             analysis_json: JSON.stringify(fullResult),
-          });
+          };
+          console.log('🎮 [GameSession] Saving game session:', sessionData);
+          const saveResult = await wordpressAPI.createGameSession(sessionData);
+          console.log('🎮 [GameSession] Save result:', saveResult);
         } catch (saveError) {
-          console.error('Failed to save game session:', saveError);
+          console.error('🎮 [GameSession] Failed to save game session:', saveError);
         }
       } catch (analysisError) {
         console.error('Analysis failed:', analysisError);

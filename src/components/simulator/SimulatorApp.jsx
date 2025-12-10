@@ -142,7 +142,6 @@ const SimulatorApp = () => {
   return (
     <div style={{
       minHeight: '100%',
-      backgroundColor: '#f8fafc',
     }}>
       {renderView()}
     </div>

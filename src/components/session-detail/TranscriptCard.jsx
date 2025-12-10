@@ -74,7 +74,8 @@ export function TranscriptCard({
         ) : (
           <div
             ref={containerRef}
-            className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scroll-smooth"
+            className="space-y-3 overflow-y-auto pr-2 scroll-smooth"
+            style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '200px' }}
           >
             {transcript.map((entry, idx) => {
               const isActive = idx === activeIndex;

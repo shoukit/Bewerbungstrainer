@@ -543,11 +543,12 @@ const RhetorikGym = ({ onStartGame }) => {
     totalPracticeTime: 0,
   });
 
-  // Load user stats
+  // Load user stats - reload when returning to mode selection view
   useEffect(() => {
     const loadStats = async () => {
       try {
         const response = await wordpressAPI.getGameStats();
+        console.log('🎮 [RhetorikGym] Stats response:', response);
         if (response.success && response.data) {
           setUserStats({
             totalGames: response.data.total_games || 0,
@@ -560,8 +561,11 @@ const RhetorikGym = ({ onStartGame }) => {
         console.error('Failed to load stats:', error);
       }
     };
-    loadStats();
-  }, []);
+    // Load stats on mount and when returning to mode selection
+    if (currentView === VIEWS.MODES) {
+      loadStats();
+    }
+  }, [currentView]);
 
   const handleSelectMode = (mode) => {
     setSelectedMode(mode);

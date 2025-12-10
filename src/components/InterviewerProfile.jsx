@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, User } from 'lucide-react';
 
 /**
+ * Ocean theme colors
+ */
+const COLORS = {
+  blue: { 50: '#E8F4F8', 100: '#D1E9F1', 200: '#B4DCE9', 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
+  teal: { 500: '#3DA389', 600: '#2E8A72' },
+  slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 500: '#64748b', 600: '#475569', 700: '#334155' },
+};
+
+/**
  * InterviewerProfile Component
  * Displays ONLY the collapsible sections (properties, objections, questions)
  * Header is rendered in RoleplaySession.jsx
@@ -34,97 +43,130 @@ const InterviewerProfile = ({ profile }) => {
   const objections = parseList(profile.typical_objections);
   const questions = parseList(profile.important_questions);
 
+  const sectionButtonStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    backgroundColor: COLORS.slate[50],
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    transition: 'background-color 0.2s',
+  };
+
+  const sectionButtonExpandedStyle = {
+    ...sectionButtonStyle,
+    backgroundColor: COLORS.blue[50],
+  };
+
+  const sectionContentStyle = {
+    padding: '16px',
+    backgroundColor: 'white',
+  };
+
   return (
-    <div className="p-4 space-y-2">
-      {/* NO HEADER - rendered in RoleplaySession.jsx */}
-        {/* Properties Section */}
-        {properties.length > 0 && (
-          <div className="border border-slate-200 rounded-lg overflow-hidden">
-            <button
-              onClick={() => toggleSection('properties')}
-              className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-between"
-            >
-              <span className="font-semibold text-slate-700">Eigenschaften</span>
-              {expandedSections.properties ? (
-                <ChevronUp className="w-5 h-5 text-slate-500" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-slate-500" />
-              )}
-            </button>
-            {expandedSections.properties && (
-              <div className="p-4 bg-white">
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {properties.join(', ')}
-                </p>
-              </div>
+    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* Properties Section */}
+      {properties.length > 0 && (
+        <div style={{ border: `1px solid ${COLORS.slate[200]}`, borderRadius: '8px', overflow: 'hidden' }}>
+          <button
+            onClick={() => toggleSection('properties')}
+            style={expandedSections.properties ? sectionButtonExpandedStyle : sectionButtonStyle}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[100]}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedSections.properties ? COLORS.blue[50] : COLORS.slate[50]}
+          >
+            <span style={{ fontWeight: 600, color: COLORS.slate[700] }}>Eigenschaften</span>
+            {expandedSections.properties ? (
+              <ChevronUp style={{ width: '20px', height: '20px', color: COLORS.slate[500] }} />
+            ) : (
+              <ChevronDown style={{ width: '20px', height: '20px', color: COLORS.slate[500] }} />
             )}
-          </div>
-        )}
-
-        {/* Objections Section */}
-        {objections.length > 0 && (
-          <div className="border border-slate-200 rounded-lg overflow-hidden">
-            <button
-              onClick={() => toggleSection('objections')}
-              className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-between"
-            >
-              <span className="font-semibold text-slate-700">Typische Einwände</span>
-              {expandedSections.objections ? (
-                <ChevronUp className="w-5 h-5 text-slate-500" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-slate-500" />
-              )}
-            </button>
-            {expandedSections.objections && (
-              <div className="p-4 bg-white">
-                <ul className="space-y-2">
-                  {objections.map((objection, index) => (
-                    <li key={index} className="text-sm text-slate-600 flex items-start">
-                      <span className="mr-2">•</span>
-                      <span>{objection}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Questions Section */}
-        {questions.length > 0 && (
-          <div className="border border-slate-200 rounded-lg overflow-hidden">
-            <button
-              onClick={() => toggleSection('questions')}
-              className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-between"
-            >
-              <span className="font-semibold text-slate-700">Wichtige Fragen</span>
-              {expandedSections.questions ? (
-                <ChevronUp className="w-5 h-5 text-slate-500" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-slate-500" />
-              )}
-            </button>
-            {expandedSections.questions && (
-              <div className="p-4 bg-white">
-                <ul className="space-y-2">
-                  {questions.map((question, index) => (
-                    <li key={index} className="text-sm text-slate-600 flex items-start">
-                      <span className="mr-2">•</span>
-                      <span>{question}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Microphone Tip */}
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-xs text-blue-700 text-center">
-            💡 Für ein optimales Erlebnis empfiehlt sich die Nutzung von Kopfhörern mit Mikrofon.
-          </p>
+          </button>
+          {expandedSections.properties && (
+            <div style={sectionContentStyle}>
+              <p style={{ fontSize: '14px', color: COLORS.slate[600], lineHeight: 1.6, margin: 0 }}>
+                {properties.join(', ')}
+              </p>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Objections Section */}
+      {objections.length > 0 && (
+        <div style={{ border: `1px solid ${COLORS.slate[200]}`, borderRadius: '8px', overflow: 'hidden' }}>
+          <button
+            onClick={() => toggleSection('objections')}
+            style={expandedSections.objections ? sectionButtonExpandedStyle : sectionButtonStyle}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[100]}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedSections.objections ? COLORS.blue[50] : COLORS.slate[50]}
+          >
+            <span style={{ fontWeight: 600, color: COLORS.slate[700] }}>Typische Einwände</span>
+            {expandedSections.objections ? (
+              <ChevronUp style={{ width: '20px', height: '20px', color: COLORS.slate[500] }} />
+            ) : (
+              <ChevronDown style={{ width: '20px', height: '20px', color: COLORS.slate[500] }} />
+            )}
+          </button>
+          {expandedSections.objections && (
+            <div style={sectionContentStyle}>
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {objections.map((objection, index) => (
+                  <li key={index} style={{ fontSize: '14px', color: COLORS.slate[600], display: 'flex', alignItems: 'flex-start' }}>
+                    <span style={{ marginRight: '8px' }}>•</span>
+                    <span>{objection}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Questions Section */}
+      {questions.length > 0 && (
+        <div style={{ border: `1px solid ${COLORS.slate[200]}`, borderRadius: '8px', overflow: 'hidden' }}>
+          <button
+            onClick={() => toggleSection('questions')}
+            style={expandedSections.questions ? sectionButtonExpandedStyle : sectionButtonStyle}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[100]}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedSections.questions ? COLORS.blue[50] : COLORS.slate[50]}
+          >
+            <span style={{ fontWeight: 600, color: COLORS.slate[700] }}>Wichtige Fragen</span>
+            {expandedSections.questions ? (
+              <ChevronUp style={{ width: '20px', height: '20px', color: COLORS.slate[500] }} />
+            ) : (
+              <ChevronDown style={{ width: '20px', height: '20px', color: COLORS.slate[500] }} />
+            )}
+          </button>
+          {expandedSections.questions && (
+            <div style={sectionContentStyle}>
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {questions.map((question, index) => (
+                  <li key={index} style={{ fontSize: '14px', color: COLORS.slate[600], display: 'flex', alignItems: 'flex-start' }}>
+                    <span style={{ marginRight: '8px' }}>•</span>
+                    <span>{question}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Microphone Tip */}
+      <div style={{
+        marginTop: '16px',
+        padding: '12px',
+        backgroundColor: COLORS.blue[50],
+        borderRadius: '8px',
+        border: `1px solid ${COLORS.blue[200]}`,
+      }}>
+        <p style={{ fontSize: '12px', color: COLORS.blue[700], textAlign: 'center', margin: 0 }}>
+          💡 Für ein optimales Erlebnis empfiehlt sich die Nutzung von Kopfhörern mit Mikrofon.
+        </p>
+      </div>
     </div>
   );
 };
