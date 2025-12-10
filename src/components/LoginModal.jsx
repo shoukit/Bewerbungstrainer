@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { useAuth, usePartnerBranding } from '@/context/PartnerContext';
+import { usePartner } from '@/context/PartnerContext';
 
 /**
  * LoginModal Component
  * Modal dialog for user authentication via WordPress REST API
  */
 export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
-  const { login } = useAuth();
-  const { partnerName, branding } = usePartnerBranding();
+  const { login, branding, partnerName, logoUrl } = usePartner();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -19,6 +18,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const buttonGradient = branding?.['--button-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)';
   const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)';
   const focusRing = branding?.['--focus-ring'] || 'rgba(58, 127, 167, 0.3)';
+  const buttonText = branding?.['--button-text'] || '#ffffff';
+  const headerText = branding?.['--header-text'] || '#ffffff';
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -102,7 +103,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     borderRadius: '12px',
     outline: 'none',
     transition: 'all 0.2s ease',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#ffffff',
   };
 
   const inputFocusStyle = {
@@ -122,16 +123,22 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
         <div
-          className="px-6 py-5 text-white"
-          style={{ background: headerGradient }}
+          className="px-6 py-5"
+          style={{ background: headerGradient, color: headerText }}
         >
           <div className="flex items-center justify-between">
-            <h2 id="login-modal-title" className="text-xl font-semibold">
+            <h2 id="login-modal-title" className="text-xl font-semibold" style={{ color: headerText }}>
               Anmelden
             </h2>
             <button
               onClick={handleClose}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+              className="p-2 rounded-xl transition-colors"
+              style={{
+                color: headerText,
+                backgroundColor: 'transparent',
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
               aria-label="Schließen"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -139,7 +146,20 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               </svg>
             </button>
           </div>
-          <p className="text-sm text-white/80 mt-1">
+
+          {/* Logo (if configured) */}
+          {logoUrl && (
+            <div className="mt-3 mb-1">
+              <img
+                src={logoUrl}
+                alt={`${partnerName} Logo`}
+                className="h-10 max-w-[180px] object-contain"
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
+            </div>
+          )}
+
+          <p className="text-sm mt-1" style={{ color: headerText, opacity: 0.8 }}>
             Bei {partnerName} anmelden
           </p>
         </div>
@@ -171,7 +191,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               onBlur={(e) => {
                 e.target.style.borderColor = '#e2e8f0';
                 e.target.style.boxShadow = 'none';
-                e.target.style.backgroundColor = '#f8fafc';
+                e.target.style.backgroundColor = '#ffffff';
               }}
               placeholder="Ihr Benutzername"
               disabled={isLoading}
@@ -195,7 +215,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               onBlur={(e) => {
                 e.target.style.borderColor = '#e2e8f0';
                 e.target.style.boxShadow = 'none';
-                e.target.style.backgroundColor = '#f8fafc';
+                e.target.style.backgroundColor = '#ffffff';
               }}
               placeholder="Ihr Passwort"
               disabled={isLoading}
@@ -212,7 +232,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               padding: '14px 24px',
               fontSize: '16px',
               fontWeight: 600,
-              color: '#ffffff',
+              color: buttonText,
               background: isLoading ? '#94a3b8' : buttonGradient,
               border: 'none',
               borderRadius: '12px',
@@ -238,18 +258,18 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           >
             {isLoading ? (
               <>
-                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" style={{ color: buttonText }}>
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span>Wird angemeldet...</span>
+                <span style={{ color: buttonText }}>Wird angemeldet...</span>
               </>
             ) : (
               <>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: buttonText }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <span>Anmelden</span>
+                <span style={{ color: buttonText }}>Anmelden</span>
               </>
             )}
           </button>
