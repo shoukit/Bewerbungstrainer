@@ -27,6 +27,8 @@ import { GAME_MODES, getRandomTopic, getRandomStressQuestion } from '@/config/pr
 import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
  * Ocean theme colors - consistent with other components
@@ -543,6 +545,11 @@ const RhetorikGym = ({ onStartGame }) => {
     totalPracticeTime: 0,
   });
 
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+
   // Load user stats - reload when returning to mode selection view
   useEffect(() => {
     const loadStats = async () => {
@@ -609,12 +616,12 @@ const RhetorikGym = ({ onStartGame }) => {
             width: '48px',
             height: '48px',
             borderRadius: '14px',
-            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Dumbbell style={{ width: '24px', height: '24px', color: 'white' }} />
+            <Dumbbell style={{ width: '24px', height: '24px', color: headerText }} />
           </div>
           <h1 style={{
             fontSize: '28px',
