@@ -261,18 +261,35 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           >
             {isLoading ? (
               <>
-                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" style={{ color: sidebarTextColor }}>
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <svg
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    color: sidebarTextColor,
+                    animation: 'spin 1s linear infinite',
+                  }}
+                >
+                  <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span style={{ color: sidebarTextColor }}>Wird angemeldet...</span>
+                <span style={{ color: sidebarTextColor, fontSize: '16px', fontWeight: 600 }}>Wird angemeldet...</span>
               </>
             ) : (
               <>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: sidebarTextColor }}>
+                <svg
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke={sidebarTextColor}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                  }}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <span style={{ color: sidebarTextColor }}>Anmelden</span>
+                <span style={{ color: sidebarTextColor, fontSize: '16px', fontWeight: 600 }}>Anmelden</span>
               </>
             )}
           </button>
