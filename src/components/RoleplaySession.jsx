@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useConversation } from '@elevenlabs/react';
 import {
@@ -34,8 +34,38 @@ import {
   fetchRoleplaySessionAudio,
 } from '@/services/roleplay-feedback-adapter';
 import wordpressAPI from '@/services/wordpress-api';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession }) => {
+  // Partner branding
+  const { branding } = usePartner();
+
+  // Memoized themed styles
+  const themedStyles = useMemo(() => {
+    const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+    const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+    const iconPrimary = branding?.['--icon-primary'] || DEFAULT_BRANDING['--icon-primary'];
+    const iconSecondary = branding?.['--icon-secondary'] || DEFAULT_BRANDING['--icon-secondary'];
+    const appBgColor = branding?.['--app-bg-color'] || DEFAULT_BRANDING['--app-bg-color'];
+    const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+    const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+
+    return {
+      headerGradient,
+      headerText,
+      iconPrimary,
+      iconSecondary,
+      appBgColor,
+      primaryAccent,
+      primaryAccentLight,
+      // User message bubble gradient (keep teal for user distinction)
+      userBubbleGradient: 'linear-gradient(to bottom right, #14b8a6, #0d9488)',
+      // Agent avatar gradient
+      agentAvatarGradient: headerGradient,
+    };
+  }, [branding]);
+
   // Session data
   const [sessionId, setSessionId] = useState(null);
   const [startTime, setStartTime] = useState(null);
@@ -496,13 +526,14 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center"
         >
-          <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" style={{ color: themedStyles.iconPrimary }} />
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Feedback wird generiert...</h2>
           <p className="text-slate-600">Das kann einen Moment dauern</p>
           <div className="mt-6">
             <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-blue-600 to-teal-500"
+                className="h-full"
+                style={{ background: themedStyles.headerGradient }}
                 initial={{ width: '0%' }}
                 animate={{ width: '100%' }}
                 transition={{ duration: 3, repeat: Infinity }}
@@ -555,7 +586,10 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
               {scenario.interviewer_profile && scenario.interviewer_profile.name ? (
                 <div className="h-full flex flex-col">
                   {/* Profile Header with Status (Responsive: compact on mobile, full on desktop) */}
-                  <div className="bg-gradient-to-r from-blue-600 to-teal-500 rounded-t-2xl px-4 lg:px-6 py-3 lg:py-4 shadow-xl">
+                  <div
+                    style={{ background: themedStyles.headerGradient }}
+                    className="rounded-t-2xl px-4 lg:px-6 py-3 lg:py-4 shadow-xl"
+                  >
                     {/* Mobile: Horizontal compact layout */}
                     {isMobile && (
                       <div className="flex items-center gap-3 mb-2">
@@ -722,8 +756,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
               ) : (
                 <div className="h-full flex items-center justify-center">
                   <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 mx-auto mb-4 flex items-center justify-center">
-                      <Bot className="w-12 h-12 text-white" />
+                    <div
+                      className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center"
+                      style={{ background: themedStyles.headerGradient }}
+                    >
+                      <Bot className="w-12 h-12" style={{ color: themedStyles.headerText }} />
                     </div>
                     <h2 className="text-2xl font-bold text-slate-900 mb-2">{scenario.title}</h2>
                     <p className="text-slate-600 text-sm mb-6">{scenario.description}</p>
@@ -746,12 +783,15 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             >
               <div className="absolute inset-0 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
                 {/* Transcript Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between flex-shrink-0">
-                  <div className="flex items-center gap-2 text-white">
+                <div
+                  style={{ background: themedStyles.headerGradient }}
+                  className="px-4 py-3 flex items-center justify-between flex-shrink-0"
+                >
+                  <div className="flex items-center gap-2" style={{ color: themedStyles.headerText }}>
                     <MessageSquare className="w-4 h-4" />
                     <h3 className="font-bold text-sm">Live Transkript</h3>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white" />
+                  <ChevronRight className="w-4 h-4" style={{ color: themedStyles.headerText }} />
                 </div>
 
                 {/* Transcript Content - Scrollable */}
@@ -784,8 +824,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                                   className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
                                 />
                               ) : (
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
-                                  <Bot className="w-4 h-4 text-white" />
+                                <div
+                                  className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
+                                  style={{ background: themedStyles.headerGradient }}
+                                >
+                                  <Bot className="w-4 h-4" style={{ color: themedStyles.headerText }} />
                                 </div>
                               )
                             ) : (
@@ -829,12 +872,13 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             {/* Coaching Button */}
             <motion.button
               onClick={() => setShowCoachingOnMobile(!showCoachingOnMobile)}
-              className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-teal-500 shadow-xl flex items-center justify-center text-white relative"
+              style={{ background: themedStyles.headerGradient, color: themedStyles.headerText }}
+              className="w-14 h-14 rounded-full shadow-xl flex items-center justify-center relative"
               whileTap={{ scale: 0.95 }}
             >
               <Lightbulb className="w-6 h-6" />
               {scenario.coaching_hints && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full text-xs font-bold flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full text-xs font-bold flex items-center justify-center text-white">
                   {scenario.coaching_hints.split('\n').filter(Boolean).length}
                 </span>
               )}
@@ -843,12 +887,13 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             {/* Transcript Button */}
             <motion.button
               onClick={() => setShowTranscriptOnMobile(!showTranscriptOnMobile)}
-              className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-teal-500 shadow-xl flex items-center justify-center text-white relative"
+              style={{ background: themedStyles.headerGradient, color: themedStyles.headerText }}
+              className="w-14 h-14 rounded-full shadow-xl flex items-center justify-center relative"
               whileTap={{ scale: 0.95 }}
             >
               <MessageSquare className="w-6 h-6" />
               {transcript.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs font-bold flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs font-bold flex items-center justify-center text-white">
                   {transcript.length}
                 </span>
               )}
@@ -877,14 +922,17 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                 className="fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl overflow-hidden"
               >
                 <div className="bg-white h-full overflow-y-auto">
-                  <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-white">
+                  <div
+                    style={{ background: themedStyles.headerGradient }}
+                    className="sticky top-0 px-4 py-3 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2" style={{ color: themedStyles.headerText }}>
                       <Lightbulb className="w-5 h-5" />
                       <h3 className="font-bold text-sm">Live Coaching</h3>
                     </div>
                     <button
                       onClick={() => setShowCoachingOnMobile(false)}
-                      className="text-white"
+                      style={{ color: themedStyles.headerText }}
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -902,10 +950,14 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="flex gap-3 items-start bg-blue-50 p-3 rounded-lg"
+                          className="flex gap-3 items-start p-3 rounded-lg"
+                          style={{ backgroundColor: themedStyles.primaryAccentLight }}
                         >
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-100 to-teal-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Lightbulb className="w-3.5 h-3.5 text-blue-600" />
+                          <div
+                            className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                            style={{ backgroundColor: themedStyles.primaryAccentLight }}
+                          >
+                            <Lightbulb className="w-3.5 h-3.5" style={{ color: themedStyles.iconPrimary }} />
                           </div>
                           <div className="flex-1">
                             <p className="text-sm text-slate-700 leading-relaxed">{hint}</p>
@@ -941,14 +993,17 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                 className="fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl overflow-hidden"
               >
                 <div className="bg-white h-full flex flex-col">
-                  <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-white">
+                  <div
+                    style={{ background: themedStyles.headerGradient }}
+                    className="px-4 py-3 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2" style={{ color: themedStyles.headerText }}>
                       <MessageSquare className="w-5 h-5" />
                       <h3 className="font-bold text-sm">Live Transkript</h3>
                     </div>
                     <button
                       onClick={() => setShowTranscriptOnMobile(false)}
-                      className="text-white"
+                      style={{ color: themedStyles.headerText }}
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -981,8 +1036,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                                     className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
                                   />
                                 ) : (
-                                  <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
-                                    <Bot className="w-4 h-4 text-white" />
+                                  <div
+                                    className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
+                                    style={{ background: themedStyles.headerGradient }}
+                                  >
+                                    <Bot className="w-4 h-4" style={{ color: themedStyles.headerText }} />
                                   </div>
                                 )
                               ) : (

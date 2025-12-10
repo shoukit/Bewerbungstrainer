@@ -96,6 +96,44 @@ export function usePartnerTheming() {
     borderLight: {
       borderColor: getVar('--border-color-light'),
     },
+
+    // Icon styles
+    iconPrimary: {
+      color: getVar('--icon-primary'),
+    },
+
+    iconSecondary: {
+      color: getVar('--icon-secondary'),
+    },
+
+    iconMuted: {
+      color: getVar('--icon-muted'),
+    },
+
+    // Header/gradient styles
+    headerGradient: {
+      background: getVar('--header-gradient'),
+    },
+
+    headerText: {
+      color: getVar('--header-text'),
+    },
+
+    // Button styles
+    buttonGradient: {
+      background: getVar('--button-gradient'),
+      color: getVar('--button-text'),
+    },
+
+    buttonSolid: {
+      backgroundColor: getVar('--button-solid'),
+      color: getVar('--button-text'),
+    },
+
+    // Focus ring
+    focusRing: {
+      boxShadow: `0 0 0 3px ${getVar('--focus-ring')}`,
+    },
   }), [branding]);
 
   /**

@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import RoleplayVariablesDialog from './RoleplayVariablesDialog';
 import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
   const [scenarios, setScenarios] = useState([]);
@@ -27,7 +28,14 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
   const [error, setError] = useState(null);
 
   // Partner context for white-label module filtering
-  const { filterScenarios: filterByPartner, isWhiteLabel, partnerName } = usePartner();
+  const { filterScenarios: filterByPartner, isWhiteLabel, partnerName, branding } = usePartner();
+
+  // Get themed styles
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const iconPrimary = branding?.['--icon-primary'] || DEFAULT_BRANDING['--icon-primary'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const focusRing = branding?.['--focus-ring'] || DEFAULT_BRANDING['--focus-ring'];
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,8 +213,11 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
           {/* Title */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ocean-blue-600 to-ocean-teal-500 flex items-center justify-center shadow-md">
-                <MessageSquare className="w-6 h-6 text-white" />
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md"
+                style={{ background: headerGradient }}
+              >
+                <MessageSquare className="w-6 h-6" style={{ color: headerText }} />
               </div>
               <div>
                 <h1 className="text-xl lg:text-3xl font-bold text-slate-900">Praxis-Training</h1>
@@ -243,8 +254,8 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
                   transition: 'all 0.2s',
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#5FB3D8';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(95, 179, 216, 0.15)';
+                  e.target.style.borderColor = primaryAccent;
+                  e.target.style.boxShadow = `0 0 0 3px ${focusRing}`;
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = '#e2e8f0';
@@ -255,7 +266,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
 
             {/* Difficulty filter */}
             <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5" style={{ color: '#475569' }} />
+              <Filter className="w-5 h-5" style={{ color: iconPrimary }} />
               <select
                 value={difficultyFilter}
                 onChange={(e) => setDifficultyFilter(e.target.value)}
@@ -273,8 +284,8 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
                   transition: 'all 0.2s',
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#5FB3D8';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(95, 179, 216, 0.15)';
+                  e.target.style.borderColor = primaryAccent;
+                  e.target.style.boxShadow = `0 0 0 3px ${focusRing}`;
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = '#e2e8f0';
