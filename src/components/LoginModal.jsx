@@ -18,9 +18,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const buttonGradient = branding?.['--button-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)';
   const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)';
   const focusRing = branding?.['--focus-ring'] || 'rgba(58, 127, 167, 0.3)';
-  const buttonText = branding?.['--button-text'] || '#ffffff';
   const headerText = branding?.['--header-text'] || '#ffffff';
-  const sidebarTextColor = branding?.['--sidebar-text-color'] || '#ffffff';
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -158,7 +156,6 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                   height: '8.5rem',
                   maxWidth: '100%',
                   objectFit: 'contain',
-                  filter: 'brightness(0) invert(1)'
                 }}
               />
             </div>
@@ -237,7 +234,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               padding: '14px 24px',
               fontSize: '16px',
               fontWeight: 600,
-              color: sidebarTextColor,
+              color: '#ffffff',
               background: isLoading ? '#94a3b8' : buttonGradient,
               border: 'none',
               borderRadius: '12px',
@@ -263,18 +260,18 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           >
             {isLoading ? (
               <>
-                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" style={{ color: sidebarTextColor }}>
+                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" style={{ color: '#ffffff' }}>
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span style={{ color: sidebarTextColor }}>Wird angemeldet...</span>
+                <span style={{ color: '#ffffff' }}>Wird angemeldet...</span>
               </>
             ) : (
               <>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: sidebarTextColor }}>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#ffffff' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <span style={{ color: sidebarTextColor }}>Anmelden</span>
+                <span style={{ color: '#ffffff' }}>Anmelden</span>
               </>
             )}
           </button>
