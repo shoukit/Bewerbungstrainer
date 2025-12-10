@@ -19,6 +19,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
+import { useToast } from '@/components/Toast';
 
 /**
  * Ocean theme colors - defined as constants to avoid WordPress CSS conflicts
@@ -130,7 +131,14 @@ const AppSidebar = ({
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl } = usePartner();
   const { user, isAuthenticated, logout } = useAuth();
+  const { showSuccess } = useToast();
   const themedColors = getThemedColors(branding);
+
+  // Handle logout with toast notification
+  const handleLogout = async () => {
+    await logout();
+    showSuccess('Sie wurden erfolgreich abgemeldet', 3000);
+  };
 
   // Determine colors based on whether we have partner branding
   const colors = React.useMemo(() => {
@@ -511,7 +519,7 @@ const AppSidebar = ({
               </div>
             )}
             <button
-              onClick={logout}
+              onClick={handleLogout}
               style={{
                 width: '100%',
                 borderRadius: '12px',
@@ -632,7 +640,14 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl } = usePartner();
   const { user, isAuthenticated, logout } = useAuth();
+  const { showSuccess } = useToast();
   const themedColors = getThemedColors(branding);
+
+  // Handle logout with toast notification
+  const handleLogout = async () => {
+    await logout();
+    showSuccess('Sie wurden erfolgreich abgemeldet', 3000);
+  };
 
   // Determine colors based on whether we have partner branding
   const colors = React.useMemo(() => {
@@ -947,7 +962,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                     </div>
                     <button
                       onClick={() => {
-                        logout();
+                        handleLogout();
                         setIsOpen(false);
                       }}
                       style={{

@@ -7,12 +7,18 @@ import { useAuth, usePartnerBranding } from '@/context/PartnerContext';
  */
 export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const { login } = useAuth();
-  const { partnerName } = usePartnerBranding();
+  const { partnerName, branding } = usePartnerBranding();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get brand colors from partner branding
+  const primaryAccent = branding?.['--primary-accent'] || '#3A7FA7';
+  const buttonGradient = branding?.['--button-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)';
+  const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)';
+  const focusRing = branding?.['--focus-ring'] || 'rgba(58, 127, 167, 0.3)';
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -87,6 +93,24 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     return null;
   }
 
+  // Input field styles
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    fontSize: '15px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    outline: 'none',
+    transition: 'all 0.2s ease',
+    backgroundColor: '#f8fafc',
+  };
+
+  const inputFocusStyle = {
+    borderColor: primaryAccent,
+    boxShadow: `0 0 0 3px ${focusRing}`,
+    backgroundColor: '#ffffff',
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -95,11 +119,11 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       aria-modal="true"
       aria-labelledby="login-modal-title"
     >
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
         <div
-          className="px-6 py-4 text-white"
-          style={{ background: 'var(--header-gradient, linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%))' }}
+          className="px-6 py-5 text-white"
+          style={{ background: headerGradient }}
         >
           <div className="flex items-center justify-between">
             <h2 id="login-modal-title" className="text-xl font-semibold">
@@ -107,7 +131,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             </h2>
             <button
               onClick={handleClose}
-              className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
               aria-label="Schließen"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -121,10 +145,10 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Error message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-3">
               <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -134,7 +158,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
 
           {/* Username field */}
           <div>
-            <label htmlFor="login-username" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="login-username" className="block text-sm font-medium text-gray-700 mb-2">
               Benutzername oder E-Mail
             </label>
             <input
@@ -142,7 +166,13 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               id="login-username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary-accent,#3A7FA7)] focus:border-transparent outline-none transition-all"
+              style={inputStyle}
+              onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e2e8f0';
+                e.target.style.boxShadow = 'none';
+                e.target.style.backgroundColor = '#f8fafc';
+              }}
               placeholder="Ihr Benutzername"
               disabled={isLoading}
               autoComplete="username"
@@ -152,7 +182,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
 
           {/* Password field */}
           <div>
-            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-2">
               Passwort
             </label>
             <input
@@ -160,7 +190,13 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               id="login-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary-accent,#3A7FA7)] focus:border-transparent outline-none transition-all"
+              style={inputStyle}
+              onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e2e8f0';
+                e.target.style.boxShadow = 'none';
+                e.target.style.backgroundColor = '#f8fafc';
+              }}
               placeholder="Ihr Passwort"
               disabled={isLoading}
               autoComplete="current-password"
@@ -171,9 +207,33 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              background: isLoading ? '#94a3b8' : 'var(--button-gradient, linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%))',
+              width: '100%',
+              padding: '14px 24px',
+              fontSize: '16px',
+              fontWeight: 600,
+              color: '#ffffff',
+              background: isLoading ? '#94a3b8' : buttonGradient,
+              border: 'none',
+              borderRadius: '12px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              transition: 'all 0.2s ease',
+              opacity: isLoading ? 0.7 : 1,
+              boxShadow: isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)',
+            }}
+            onMouseEnter={(e) => {
+              if (!isLoading) {
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.boxShadow = '0 6px 20px rgba(58, 127, 167, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)';
             }}
           >
             {isLoading ? (
@@ -195,7 +255,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           </button>
 
           {/* Help text */}
-          <p className="text-xs text-center text-gray-500 mt-4">
+          <p className="text-xs text-center text-gray-500 pt-2">
             Verwenden Sie Ihre WordPress-Zugangsdaten zur Anmeldung.
           </p>
         </form>

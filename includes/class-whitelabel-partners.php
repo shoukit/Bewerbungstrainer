@@ -140,6 +140,9 @@ class Bewerbungstrainer_Whitelabel_Partners {
         // Save meta data
         add_action('save_post_' . $this->post_type, array($this, 'save_meta_data'), 10, 2);
 
+        // Pre-populate defaults for new partners
+        add_action('wp_insert_post', array($this, 'prepopulate_defaults'), 10, 3);
+
         // Register REST API routes
         add_action('rest_api_init', array($this, 'register_rest_routes'));
 
@@ -270,12 +273,28 @@ class Bewerbungstrainer_Whitelabel_Partners {
     }
 
     /**
+     * Gradient fields configuration (field => array of default start/end colors)
+     */
+    private $gradient_fields = array(
+        '--app-bg-color' => array('start' => '#f8fafc', 'end' => '#f0fdfa', 'mid' => '#eff6ff'),
+        '--button-gradient' => array('start' => '#3A7FA7', 'end' => '#3DA389'),
+        '--button-gradient-hover' => array('start' => '#2D6485', 'end' => '#2E8A72'),
+        '--header-gradient' => array('start' => '#3A7FA7', 'end' => '#3DA389'),
+    );
+
+    /**
      * Render Branding Meta Box with Color Pickers
      */
     public function render_branding_meta_box($post) {
         $saved_branding = get_post_meta($post->ID, '_partner_branding', true);
         if (!is_array($saved_branding)) {
             $saved_branding = array();
+        }
+
+        // Get gradient colors (stored separately)
+        $saved_gradients = get_post_meta($post->ID, '_partner_gradient_colors', true);
+        if (!is_array($saved_gradients)) {
+            $saved_gradients = array();
         }
 
         // Group CSS variables by category
@@ -323,8 +342,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
         ?>
         <div class="partner-branding-container">
             <p class="description" style="margin-bottom: 15px;">
-                Konfigurieren Sie die Farben für diesen Partner. Leere Felder verwenden die Standardwerte.<br>
-                <strong>Tipp:</strong> Für Gradients verwenden Sie das Format: <code>linear-gradient(135deg, #farbe1 0%, #farbe2 100%)</code>
+                Konfigurieren Sie die Farben für diesen Partner. Leere Felder verwenden die Standardwerte.
             </p>
 
             <div class="branding-actions" style="margin-bottom: 15px;">
@@ -345,23 +363,59 @@ class Bewerbungstrainer_Whitelabel_Partners {
                                 $value = isset($saved_branding[$field]) ? $saved_branding[$field] : '';
                                 $default = isset($this->default_branding[$field]) ? $this->default_branding[$field] : '';
                                 $label = isset($this->branding_labels[$field]) ? $this->branding_labels[$field] : $field;
-                                $is_gradient = strpos($default, 'gradient') !== false || strpos($default, 'rgba') !== false;
+                                $is_gradient = isset($this->gradient_fields[$field]);
                                 $field_id = 'branding_' . str_replace(array('-', ' '), '_', $field);
                                 ?>
                                 <tr>
                                     <th style="width: 180px;">
-                                        <label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($label); ?></label>
+                                        <label><?php echo esc_html($label); ?></label>
                                         <br><code style="font-size: 10px; color: #666;"><?php echo esc_html($field); ?></code>
                                     </th>
                                     <td>
                                         <?php if ($is_gradient): ?>
-                                            <input type="text"
+                                            <?php
+                                            $gradient_defaults = $this->gradient_fields[$field];
+                                            $saved_start = isset($saved_gradients[$field]['start']) ? $saved_gradients[$field]['start'] : '';
+                                            $saved_end = isset($saved_gradients[$field]['end']) ? $saved_gradients[$field]['end'] : '';
+                                            $has_mid = isset($gradient_defaults['mid']);
+                                            $saved_mid = isset($saved_gradients[$field]['mid']) ? $saved_gradients[$field]['mid'] : '';
+                                            ?>
+                                            <div class="gradient-picker-container" data-field="<?php echo esc_attr($field); ?>" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-start;">
+                                                <div style="flex: 1; min-width: 120px;">
+                                                    <label style="font-size: 12px; font-weight: 500; display: block; margin-bottom: 5px;">Startfarbe</label>
+                                                    <input type="text"
+                                                           name="partner_gradient[<?php echo esc_attr($field); ?>][start]"
+                                                           value="<?php echo esc_attr($saved_start); ?>"
+                                                           class="gradient-color-start"
+                                                           data-default-color="<?php echo esc_attr($gradient_defaults['start']); ?>" />
+                                                </div>
+                                                <?php if ($has_mid): ?>
+                                                <div style="flex: 1; min-width: 120px;">
+                                                    <label style="font-size: 12px; font-weight: 500; display: block; margin-bottom: 5px;">Mitte</label>
+                                                    <input type="text"
+                                                           name="partner_gradient[<?php echo esc_attr($field); ?>][mid]"
+                                                           value="<?php echo esc_attr($saved_mid); ?>"
+                                                           class="gradient-color-mid"
+                                                           data-default-color="<?php echo esc_attr($gradient_defaults['mid']); ?>" />
+                                                </div>
+                                                <?php endif; ?>
+                                                <div style="flex: 1; min-width: 120px;">
+                                                    <label style="font-size: 12px; font-weight: 500; display: block; margin-bottom: 5px;">Endfarbe</label>
+                                                    <input type="text"
+                                                           name="partner_gradient[<?php echo esc_attr($field); ?>][end]"
+                                                           value="<?php echo esc_attr($saved_end); ?>"
+                                                           class="gradient-color-end"
+                                                           data-default-color="<?php echo esc_attr($gradient_defaults['end']); ?>" />
+                                                </div>
+                                            </div>
+                                            <div class="gradient-preview" data-field="<?php echo esc_attr($field); ?>" style="margin-top: 10px; height: 40px; border-radius: 8px; background: <?php echo esc_attr($value ?: $default); ?>; border: 1px solid #ddd;"></div>
+                                            <input type="hidden"
                                                    id="<?php echo esc_attr($field_id); ?>"
                                                    name="partner_branding[<?php echo esc_attr($field); ?>]"
                                                    value="<?php echo esc_attr($value); ?>"
-                                                   class="large-text branding-gradient-field"
-                                                   placeholder="<?php echo esc_attr($default); ?>" />
-                                            <div class="gradient-preview" style="margin-top: 5px; height: 30px; border-radius: 4px; background: <?php echo esc_attr($value ?: $default); ?>; border: 1px solid #ddd;"></div>
+                                                   class="gradient-value-field"
+                                                   data-field="<?php echo esc_attr($field); ?>"
+                                                   data-has-mid="<?php echo $has_mid ? '1' : '0'; ?>" />
                                         <?php else: ?>
                                             <input type="text"
                                                    id="<?php echo esc_attr($field_id); ?>"
@@ -382,7 +436,29 @@ class Bewerbungstrainer_Whitelabel_Partners {
 
         <script>
         jQuery(document).ready(function($) {
-            // Initialize color pickers
+            // Function to update gradient value from color pickers
+            function updateGradientValue($container) {
+                var field = $container.data('field');
+                var $valueField = $('input.gradient-value-field[data-field="' + field + '"]');
+                var $preview = $('.gradient-preview[data-field="' + field + '"]');
+                var hasMid = $valueField.data('has-mid') === 1;
+
+                var startColor = $container.find('.gradient-color-start').val() || $container.find('.gradient-color-start').data('default-color');
+                var endColor = $container.find('.gradient-color-end').val() || $container.find('.gradient-color-end').data('default-color');
+
+                var gradient;
+                if (hasMid) {
+                    var midColor = $container.find('.gradient-color-mid').val() || $container.find('.gradient-color-mid').data('default-color');
+                    gradient = 'linear-gradient(135deg, ' + startColor + ' 0%, ' + midColor + ' 50%, ' + endColor + ' 100%)';
+                } else {
+                    gradient = 'linear-gradient(135deg, ' + startColor + ' 0%, ' + endColor + ' 100%)';
+                }
+
+                $valueField.val(gradient);
+                $preview.css('background', gradient);
+            }
+
+            // Initialize color pickers for regular fields
             $('.branding-color-field').wpColorPicker({
                 change: function(event, ui) {
                     $(this).val(ui.color.toString());
@@ -392,10 +468,26 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 }
             });
 
-            // Update gradient previews on input
-            $('.branding-gradient-field').on('input', function() {
-                var value = $(this).val() || $(this).attr('placeholder');
-                $(this).siblings('.gradient-preview').css('background', value);
+            // Initialize color pickers for gradient start/mid/end colors
+            $('.gradient-color-start, .gradient-color-mid, .gradient-color-end').each(function() {
+                var $input = $(this);
+                var $container = $input.closest('.gradient-picker-container');
+
+                $input.wpColorPicker({
+                    change: function(event, ui) {
+                        $(this).val(ui.color.toString());
+                        updateGradientValue($container);
+                    },
+                    clear: function() {
+                        $(this).val('');
+                        updateGradientValue($container);
+                    }
+                });
+            });
+
+            // Initial gradient update
+            $('.gradient-picker-container').each(function() {
+                updateGradientValue($(this));
             });
 
             // Toggle categories
@@ -422,13 +514,19 @@ class Bewerbungstrainer_Whitelabel_Partners {
             // Reset to defaults
             $('#reset-to-defaults').on('click', function() {
                 if (confirm('Alle Farbwerte auf Standardwerte zurücksetzen?')) {
+                    // Reset regular color fields
                     $('.branding-color-field').each(function() {
                         $(this).val('').wpColorPicker('color', '');
                     });
-                    $('.branding-gradient-field').each(function() {
-                        $(this).val('');
-                        var defaultVal = $(this).attr('placeholder');
-                        $(this).siblings('.gradient-preview').css('background', defaultVal);
+
+                    // Reset gradient color pickers
+                    $('.gradient-color-start, .gradient-color-mid, .gradient-color-end').each(function() {
+                        $(this).val('').wpColorPicker('color', '');
+                    });
+
+                    // Update gradient previews
+                    $('.gradient-picker-container').each(function() {
+                        updateGradientValue($(this));
                     });
                 }
             });
@@ -620,6 +718,31 @@ class Bewerbungstrainer_Whitelabel_Partners {
             update_post_meta($post_id, '_partner_branding', $branding);
         }
 
+        // Save gradient colors (for easier editing later)
+        if (isset($_POST['partner_gradient']) && is_array($_POST['partner_gradient'])) {
+            $gradients = array();
+            foreach ($_POST['partner_gradient'] as $field => $colors) {
+                $field = sanitize_text_field($field);
+                $gradients[$field] = array();
+
+                if (isset($colors['start']) && !empty(trim($colors['start']))) {
+                    $gradients[$field]['start'] = sanitize_hex_color($colors['start']);
+                }
+                if (isset($colors['mid']) && !empty(trim($colors['mid']))) {
+                    $gradients[$field]['mid'] = sanitize_hex_color($colors['mid']);
+                }
+                if (isset($colors['end']) && !empty(trim($colors['end']))) {
+                    $gradients[$field]['end'] = sanitize_hex_color($colors['end']);
+                }
+
+                // Remove empty arrays
+                if (empty($gradients[$field])) {
+                    unset($gradients[$field]);
+                }
+            }
+            update_post_meta($post_id, '_partner_gradient_colors', $gradients);
+        }
+
         // Save logo
         if (isset($_POST['partner_logo_id'])) {
             $logo_id = absint($_POST['partner_logo_id']);
@@ -643,6 +766,46 @@ class Bewerbungstrainer_Whitelabel_Partners {
         if (isset($_POST['partner_custom_scenarios'])) {
             update_post_meta($post_id, '_partner_custom_scenarios', sanitize_textarea_field($_POST['partner_custom_scenarios']));
         }
+    }
+
+    /**
+     * Pre-populate default branding values for new partners
+     * Only runs when a new partner is created (not on updates)
+     */
+    public function prepopulate_defaults($post_id, $post, $update) {
+        // Only for our post type
+        if ($post->post_type !== $this->post_type) {
+            return;
+        }
+
+        // Only for new posts, not updates
+        if ($update) {
+            return;
+        }
+
+        // Skip auto-drafts
+        if ($post->post_status === 'auto-draft') {
+            return;
+        }
+
+        // Check if branding already exists (shouldn't for new posts, but safety check)
+        $existing_branding = get_post_meta($post_id, '_partner_branding', true);
+        if (!empty($existing_branding) && is_array($existing_branding)) {
+            return;
+        }
+
+        // Save default branding values to database
+        update_post_meta($post_id, '_partner_branding', $this->default_branding);
+
+        // Also save default gradient colors for easier editing
+        $default_gradient_colors = array();
+        foreach ($this->gradient_fields as $field => $colors) {
+            $default_gradient_colors[$field] = $colors;
+        }
+        update_post_meta($post_id, '_partner_gradient_colors', $default_gradient_colors);
+
+        // Set default modules (empty = all allowed)
+        update_post_meta($post_id, '_partner_modules', array());
     }
 
     /**

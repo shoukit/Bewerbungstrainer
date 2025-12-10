@@ -8,6 +8,7 @@ import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider } from './context/PartnerContext';
 import { LoginModal, useLoginModal } from './components/LoginModal';
+import { ToastProvider } from './components/Toast';
 
 console.log('📦 [APP] App.jsx module loaded');
 
@@ -319,24 +320,26 @@ function App() {
   // All views now use the sidebar layout for consistent navigation
   return (
     <PartnerProvider>
-      <SidebarLayout
-        activeView={currentView}
-        onNavigate={handleSidebarNavigate}
-        headerOffset={headerOffset}
-        onLoginClick={openLoginModal}
-      >
-        {renderContent()}
-      </SidebarLayout>
+      <ToastProvider>
+        <SidebarLayout
+          activeView={currentView}
+          onNavigate={handleSidebarNavigate}
+          headerOffset={headerOffset}
+          onLoginClick={openLoginModal}
+        >
+          {renderContent()}
+        </SidebarLayout>
 
-      {/* Login Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={closeLoginModal}
-        onLoginSuccess={(user) => {
-          console.log('✅ [APP] User logged in:', user.displayName);
-          // Optionally refresh the page or update state
-        }}
-      />
+        {/* Login Modal */}
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={closeLoginModal}
+          onLoginSuccess={(user) => {
+            console.log('✅ [APP] User logged in:', user.displayName);
+            // Optionally refresh the page or update state
+          }}
+        />
+      </ToastProvider>
     </PartnerProvider>
   );
 }
