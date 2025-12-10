@@ -11,6 +11,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import wordpressAPI from '@/services/wordpress-api';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
  * Icon mapping for scenarios
@@ -25,7 +27,7 @@ const ICON_MAP = {
 };
 
 /**
- * Difficulty badge colors
+ * Difficulty badge colors (semantic - keep as is)
  */
 const DIFFICULTY_COLORS = {
   beginner: { bg: 'rgba(34, 197, 94, 0.15)', text: '#16a34a', label: 'Einsteiger' },
@@ -34,18 +36,16 @@ const DIFFICULTY_COLORS = {
 };
 
 /**
- * Ocean theme colors
+ * Fallback theme colors
  */
 const COLORS = {
-  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
   slate: { 100: '#f1f5f9', 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
 };
 
 /**
  * Scenario Card Component
  */
-const ScenarioCard = ({ scenario, onSelect }) => {
+const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryAccent }) => {
   const [isHovered, setIsHovered] = useState(false);
   const IconComponent = ICON_MAP[scenario.icon] || Briefcase;
   const difficulty = DIFFICULTY_COLORS[scenario.difficulty] || DIFFICULTY_COLORS.intermediate;
@@ -63,9 +63,9 @@ const ScenarioCard = ({ scenario, onSelect }) => {
         backgroundColor: 'white',
         borderRadius: '16px',
         padding: '24px',
-        border: `2px solid ${isHovered ? COLORS.blue[500] : COLORS.slate[200]}`,
+        border: `2px solid ${isHovered ? primaryAccent : COLORS.slate[200]}`,
         boxShadow: isHovered
-          ? '0 10px 25px -5px rgba(74, 158, 201, 0.2), 0 8px 10px -6px rgba(74, 158, 201, 0.1)'
+          ? `0 10px 25px -5px ${primaryAccent}33, 0 8px 10px -6px ${primaryAccent}22`
           : '0 1px 3px rgba(0, 0, 0, 0.1)',
         transition: 'all 0.3s ease',
         display: 'flex',
@@ -81,14 +81,14 @@ const ScenarioCard = ({ scenario, onSelect }) => {
             width: '56px',
             height: '56px',
             borderRadius: '14px',
-            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: themedGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 6px -1px rgba(74, 158, 201, 0.3)',
+            boxShadow: `0 4px 6px -1px ${primaryAccent}4D`,
           }}
         >
-          <IconComponent style={{ width: '28px', height: '28px', color: 'white' }} />
+          <IconComponent style={{ width: '28px', height: '28px', color: themedText }} />
         </div>
         <span
           style={{
@@ -148,6 +148,11 @@ const ScenarioCard = ({ scenario, onSelect }) => {
  * Displays available training scenarios in a grid layout
  */
 const SimulatorDashboard = ({ onSelectScenario }) => {
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const [scenarios, setScenarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -294,6 +299,9 @@ const SimulatorDashboard = ({ onSelectScenario }) => {
             key={scenario.id}
             scenario={scenario}
             onSelect={onSelectScenario}
+            themedGradient={headerGradient}
+            themedText={headerText}
+            primaryAccent={primaryAccent}
           />
         ))}
       </div>

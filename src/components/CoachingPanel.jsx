@@ -1,8 +1,18 @@
 import React from 'react';
 import { Lightbulb, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 const CoachingPanel = ({ hints }) => {
+  // Get partner branding for header gradient
+  const { branding } = usePartner();
+
+  // Get themed values
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const iconPrimary = branding?.['--icon-primary'] || DEFAULT_BRANDING['--icon-primary'];
+  const iconSecondary = branding?.['--icon-secondary'] || DEFAULT_BRANDING['--icon-secondary'];
   // Parse hints (newline or comma separated)
   const parseHints = (text) => {
     if (!text) return [];
@@ -14,10 +24,13 @@ const CoachingPanel = ({ hints }) => {
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-full flex flex-col">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-4 py-3 flex items-center gap-2 flex-shrink-0">
-        <Lightbulb className="w-5 h-5 text-white" />
-        <h3 className="font-bold text-white text-sm">Live Coaching</h3>
-        <ChevronRight className="w-4 h-4 text-white ml-auto" />
+      <div
+        style={{ background: headerGradient }}
+        className="px-4 py-3 flex items-center gap-2 flex-shrink-0"
+      >
+        <Lightbulb className="w-5 h-5" style={{ color: headerText }} />
+        <h3 className="font-bold text-sm" style={{ color: headerText }}>Live Coaching</h3>
+        <ChevronRight className="w-4 h-4 ml-auto" style={{ color: headerText }} />
       </div>
 
       {/* Hints List */}
@@ -38,8 +51,13 @@ const CoachingPanel = ({ hints }) => {
             transition={{ delay: index * 0.1 }}
             className="flex gap-3 items-start"
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-100 to-teal-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Lightbulb className="w-3.5 h-3.5 text-blue-600" />
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+              style={{
+                background: `linear-gradient(to bottom right, ${branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light']}, ${branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light']})`
+              }}
+            >
+              <Lightbulb className="w-3.5 h-3.5" style={{ color: iconPrimary }} />
             </div>
             <div className="flex-1">
               <p className="text-sm text-slate-700 leading-relaxed">{hint}</p>

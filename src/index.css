@@ -30,6 +30,39 @@
     --chart-3: 202 35% 38%;
     --chart-4: 178 50% 45%;
     --chart-5: 188 45% 60%;
+
+    /* ========================================
+       White-Label Partner Theming Variables
+       These can be overridden by PartnerContext
+       ======================================== */
+
+    /* App background - gradient or solid color */
+    --app-bg-color: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%);
+
+    /* Sidebar colors */
+    --sidebar-bg-color: #ffffff;
+    --sidebar-text-color: #0f172a;
+    --sidebar-text-muted: #94a3b8;
+    --sidebar-active-bg: #E8F4F8;
+    --sidebar-active-text: #2D6485;
+    --sidebar-hover-bg: #f8fafc;
+
+    /* Card colors */
+    --card-bg-color: #ffffff;
+
+    /* Primary accent - buttons, links, highlights */
+    --primary-accent: #3A7FA7;
+    --primary-accent-light: #E8F4F8;
+    --primary-accent-hover: #2D6485;
+
+    /* Text colors */
+    --text-main: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+
+    /* Border colors */
+    --border-color: #e2e8f0;
+    --border-color-light: #f1f5f9;
   }
 
   .dark {

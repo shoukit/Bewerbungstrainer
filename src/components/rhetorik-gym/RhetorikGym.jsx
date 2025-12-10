@@ -27,6 +27,8 @@ import { GAME_MODES, getRandomTopic, getRandomStressQuestion } from '@/config/pr
 import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
  * Ocean theme colors - consistent with other components
@@ -197,6 +199,11 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
   const IconComponent = ICON_MAP[mode.icon] || Rocket;
   const colors = MODE_COLORS[mode.id] || MODE_COLORS.klassiker;
+
+  // Partner theming for primary CTA button
+  const { branding } = usePartner();
+  const buttonGradient = branding?.['--button-gradient'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
   // Initialize topic
   useEffect(() => {
@@ -424,7 +431,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
             marginBottom: '16px',
             color: COLORS.slate[700],
           }}>
-            <Mic style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} />
+            <Mic style={{ width: '20px', height: '20px', color: primaryAccent }} />
             <span style={{ fontWeight: 600, fontSize: '15px' }}>Mikrofon auswählen</span>
           </div>
           <MicrophoneSelector
@@ -485,7 +492,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
             padding: '18px 32px',
             borderRadius: '14px',
             border: 'none',
-            background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+            background: buttonGradient,
             color: 'white',
             fontSize: '17px',
             fontWeight: 700,
@@ -494,7 +501,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '12px',
-            boxShadow: `0 8px 20px ${colors.from}44`,
+            boxShadow: `0 8px 20px ${primaryAccent}44`,
           }}
         >
           <Play style={{ width: '22px', height: '22px' }} />
@@ -542,6 +549,11 @@ const RhetorikGym = ({ onStartGame }) => {
     avgScore: 0,
     totalPracticeTime: 0,
   });
+
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
 
   // Load user stats - reload when returning to mode selection view
   useEffect(() => {
@@ -609,12 +621,12 @@ const RhetorikGym = ({ onStartGame }) => {
             width: '48px',
             height: '48px',
             borderRadius: '14px',
-            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Dumbbell style={{ width: '24px', height: '24px', color: 'white' }} />
+            <Dumbbell style={{ width: '24px', height: '24px', color: headerText }} />
           </div>
           <h1 style={{
             fontSize: '28px',

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Mic, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
- * Ocean theme colors - consistent with other components
+ * Fallback theme colors
  */
 const COLORS = {
-  blue: { 50: '#E8F4F8', 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
   slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
   red: { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626' },
   white: '#ffffff',
@@ -28,6 +28,13 @@ const MicrophoneSelector = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   /**
    * Request microphone permission and enumerate devices
@@ -134,12 +141,12 @@ const MicrophoneSelector = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: error ? COLORS.red[100] : `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+              background: error ? COLORS.red[100] : headerGradient,
             }}>
               {error ? (
                 <AlertCircle style={{ width: '22px', height: '22px', color: COLORS.red[500] }} />
               ) : (
-                <Mic style={{ width: '22px', height: '22px', color: COLORS.white }} />
+                <Mic style={{ width: '22px', height: '22px', color: headerText }} />
               )}
             </div>
             <div style={{ textAlign: 'left' }}>
@@ -178,7 +185,7 @@ const MicrophoneSelector = ({
               transition: 'all 0.2s',
             }}
           >
-            <Mic style={{ width: '18px', height: '18px', color: COLORS.blue[600] }} />
+            <Mic style={{ width: '18px', height: '18px', color: primaryAccent }} />
             <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>Testen</span>
           </button>
         )}
@@ -244,7 +251,7 @@ const MicrophoneSelector = ({
                   alignItems: 'center',
                   gap: '12px',
                   border: 'none',
-                  backgroundColor: selectedDeviceId === device.deviceId ? COLORS.blue[50] : 'transparent',
+                  backgroundColor: selectedDeviceId === device.deviceId ? primaryAccentLight : 'transparent',
                   cursor: 'pointer',
                   transition: 'background-color 0.15s',
                 }}
@@ -254,7 +261,7 @@ const MicrophoneSelector = ({
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = selectedDeviceId === device.deviceId ? COLORS.blue[50] : 'transparent';
+                  e.currentTarget.style.backgroundColor = selectedDeviceId === device.deviceId ? primaryAccentLight : 'transparent';
                 }}
               >
                 <div style={{
@@ -264,7 +271,7 @@ const MicrophoneSelector = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: selectedDeviceId === device.deviceId ? COLORS.blue[600] : COLORS.slate[100],
+                  backgroundColor: selectedDeviceId === device.deviceId ? primaryAccent : COLORS.slate[100],
                 }}>
                   <Mic style={{
                     width: '18px',
@@ -276,7 +283,7 @@ const MicrophoneSelector = ({
                   <div style={{
                     fontSize: '14px',
                     fontWeight: 500,
-                    color: selectedDeviceId === device.deviceId ? COLORS.blue[700] : COLORS.slate[800],
+                    color: selectedDeviceId === device.deviceId ? primaryAccent : COLORS.slate[800],
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -292,7 +299,7 @@ const MicrophoneSelector = ({
                     width: '8px',
                     height: '8px',
                     borderRadius: '50%',
-                    backgroundColor: COLORS.blue[600],
+                    backgroundColor: primaryAccent,
                   }} />
                 )}
               </button>

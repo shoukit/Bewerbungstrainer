@@ -3,10 +3,13 @@
  *
  * Professional button with ocean-theme colors and multiple variants.
  * Uses INLINE STYLES to avoid WordPress/Elementor CSS conflicts.
+ * Supports white-label partner theming via PartnerContext.
  */
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 // Ocean theme colors - inline to avoid WordPress CSS conflicts
 const COLORS = {
@@ -57,76 +60,105 @@ const sizeStyles = {
   icon: { height: '40px', width: '40px', padding: '0' },
 };
 
-// Variant configurations (normal and hover states)
-const variantStyles = {
-  default: {
-    normal: {
-      background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
-      color: 'white',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+/**
+ * Get variant styles based on branding configuration
+ */
+const getVariantStyles = (branding) => {
+  // Use branding values or fall back to defaults
+  const buttonGradient = branding?.['--button-gradient'] || DEFAULT_BRANDING['--button-gradient'];
+  const buttonGradientHover = branding?.['--button-gradient-hover'] || DEFAULT_BRANDING['--button-gradient-hover'];
+  const buttonSolid = branding?.['--button-solid'] || DEFAULT_BRANDING['--button-solid'];
+  const buttonSolidHover = branding?.['--button-solid-hover'] || DEFAULT_BRANDING['--button-solid-hover'];
+  const buttonText = branding?.['--button-text'] || DEFAULT_BRANDING['--button-text'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentHover = branding?.['--primary-accent-hover'] || DEFAULT_BRANDING['--primary-accent-hover'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+
+  return {
+    default: {
+      normal: {
+        background: buttonGradient,
+        color: buttonText,
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      },
+      hover: {
+        background: buttonGradientHover,
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+      },
     },
-    hover: {
-      background: `linear-gradient(90deg, ${COLORS.blue[700]} 0%, ${COLORS.teal[600]} 100%)`,
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+    solid: {
+      normal: {
+        backgroundColor: buttonSolid,
+        color: buttonText,
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      },
+      hover: {
+        backgroundColor: buttonSolidHover,
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+      },
     },
-  },
-  destructive: {
-    normal: {
-      backgroundColor: COLORS.red[600],
-      color: 'white',
-      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    destructive: {
+      normal: {
+        backgroundColor: COLORS.red[600],
+        color: 'white',
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      },
+      hover: { backgroundColor: COLORS.red[700] },
     },
-    hover: { backgroundColor: COLORS.red[700] },
-  },
-  outline: {
-    normal: {
-      border: `2px solid ${COLORS.blue[300]}`,
-      backgroundColor: 'white',
-      color: COLORS.blue[700],
-      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    outline: {
+      normal: {
+        border: `2px solid ${primaryAccent}`,
+        backgroundColor: 'white',
+        color: primaryAccent,
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      },
+      hover: {
+        backgroundColor: primaryAccentLight,
+        borderColor: primaryAccentHover,
+        color: primaryAccentHover,
+      },
     },
-    hover: {
-      backgroundColor: COLORS.blue[50],
-      borderColor: COLORS.blue[600],
+    secondary: {
+      normal: {
+        backgroundColor: primaryAccentLight,
+        color: primaryAccent,
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      },
+      hover: {
+        backgroundColor: primaryAccent,
+        color: buttonText,
+      },
     },
-  },
-  secondary: {
-    normal: {
-      backgroundColor: COLORS.blue[100],
-      color: COLORS.blue[900],
-      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    ghost: {
+      normal: {
+        backgroundColor: 'transparent',
+        color: COLORS.slate[700],
+      },
+      hover: {
+        backgroundColor: COLORS.slate[100],
+        color: COLORS.slate[900],
+      },
     },
-    hover: { backgroundColor: COLORS.blue[300] },
-  },
-  ghost: {
-    normal: {
-      backgroundColor: 'transparent',
-      color: COLORS.slate[700],
+    link: {
+      normal: {
+        backgroundColor: 'transparent',
+        color: primaryAccent,
+        textDecoration: 'none',
+      },
+      hover: {
+        textDecoration: 'underline',
+        color: primaryAccentHover,
+      },
     },
-    hover: {
-      backgroundColor: COLORS.slate[100],
-      color: COLORS.slate[900],
+    success: {
+      normal: {
+        backgroundColor: COLORS.green[600],
+        color: 'white',
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      },
+      hover: { backgroundColor: COLORS.green[700] },
     },
-  },
-  link: {
-    normal: {
-      backgroundColor: 'transparent',
-      color: COLORS.blue[600],
-      textDecoration: 'none',
-    },
-    hover: {
-      textDecoration: 'underline',
-      color: COLORS.blue[700],
-    },
-  },
-  success: {
-    normal: {
-      backgroundColor: COLORS.green[600],
-      color: 'white',
-      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-    },
-    hover: { backgroundColor: COLORS.green[700] },
-  },
+  };
 };
 
 // =============================================================================
@@ -143,6 +175,12 @@ const Button = React.forwardRef(({
   ...props
 }, ref) => {
   const [isHovered, setIsHovered] = useState(false);
+
+  // Get partner branding
+  const { branding } = usePartner();
+
+  // Memoize variant styles based on branding
+  const variantStyles = useMemo(() => getVariantStyles(branding), [branding]);
 
   const variantConfig = variantStyles[variant] || variantStyles.default;
   const sizeConfig = sizeStyles[size] || sizeStyles.default;
