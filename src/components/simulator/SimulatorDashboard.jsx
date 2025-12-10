@@ -40,6 +40,8 @@ const DIFFICULTY_COLORS = {
  */
 const COLORS = {
   slate: { 100: '#f1f5f9', 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+  blue: { 500: '#4A9EC9' },
+  teal: { 500: '#3DA389' },
 };
 
 /**
@@ -195,7 +197,7 @@ const SimulatorDashboard = ({ onSelectScenario }) => {
           style={{
             width: '48px',
             height: '48px',
-            color: COLORS.blue[500],
+            color: primaryAccent,
             animation: 'spin 1s linear infinite'
           }}
         />
@@ -232,7 +234,7 @@ const SimulatorDashboard = ({ onSelectScenario }) => {
             padding: '12px 24px',
             borderRadius: '12px',
             border: 'none',
-            background: COLORS.blue[500],
+            background: primaryAccent,
             color: 'white',
             fontSize: '14px',
             fontWeight: 600,
@@ -259,12 +261,12 @@ const SimulatorDashboard = ({ onSelectScenario }) => {
             width: '48px',
             height: '48px',
             borderRadius: '14px',
-            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Sparkles style={{ width: '24px', height: '24px', color: 'white' }} />
+            <Sparkles style={{ width: '24px', height: '24px', color: headerText }} />
           </div>
           <h1 style={{
             fontSize: '28px',

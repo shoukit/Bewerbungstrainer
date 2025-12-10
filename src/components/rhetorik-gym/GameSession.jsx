@@ -28,17 +28,18 @@ import {
 import { analyzeRhetoricGame } from '@/services/gemini';
 import { getScoreFeedback } from '@/config/prompts/gamePrompts';
 import wordpressAPI from '@/services/wordpress-api';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
- * Ocean theme colors - consistent with other components
+ * Fallback theme colors
  */
 const COLORS = {
-  blue: { 50: '#eff6ff', 100: '#dbeafe', 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
   slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
   amber: { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 600: '#d97706' },
   green: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a' },
-  red: { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626' },
+  red: { 50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 500: '#ef4444', 600: '#dc2626' },
+  teal: { 500: '#3DA389', 600: '#2E8A72' },
 };
 
 // Game states
@@ -87,7 +88,7 @@ const CountdownOverlay = ({ count }) => (
 /**
  * Timer display component
  */
-const TimerDisplay = ({ seconds, total, isWarning }) => {
+const TimerDisplay = ({ seconds, total, isWarning, primaryAccent }) => {
   const progress = (seconds / total) * 100;
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -115,7 +116,7 @@ const TimerDisplay = ({ seconds, total, isWarning }) => {
         <motion.div
           style={{
             height: '100%',
-            backgroundColor: isWarning ? COLORS.red[500] : COLORS.blue[500],
+            backgroundColor: isWarning ? COLORS.red[500] : primaryAccent,
             borderRadius: '4px',
           }}
           initial={{ width: '100%' }}
@@ -231,7 +232,7 @@ const calculateScores = (transcript, fillerWords, contentScore, actualDurationSe
 /**
  * Results display component
  */
-const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
+const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAccent, primaryAccentLight }) => {
   const feedback = getScoreFeedback(result.score);
   const isGoodScore = result.score >= 70;
   const isNoSpeech = result.pace_feedback === 'keine_sprache' || result.transcript === '[Keine Sprache erkannt]';
@@ -323,7 +324,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            color: COLORS.blue[600],
+            color: primaryAccent,
             marginBottom: '6px',
           }}>
             <Volume2 style={{ width: '16px', height: '16px' }} />
@@ -378,13 +379,13 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
       {/* Score Breakdown */}
       {!isNoSpeech && (
         <div style={{
-          backgroundColor: COLORS.blue[50],
-          border: `1px solid ${COLORS.blue[100]}`,
+          backgroundColor: primaryAccentLight,
+          border: `1px solid ${primaryAccent}26`,
           borderRadius: '12px',
           padding: '16px',
           marginBottom: '24px',
         }}>
-          <h4 style={{ fontWeight: 600, color: COLORS.blue[700], marginBottom: '12px', fontSize: '15px' }}>
+          <h4 style={{ fontWeight: 600, color: primaryAccent, marginBottom: '12px', fontSize: '15px' }}>
             Bewertung im Detail
           </h4>
 
@@ -415,7 +416,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
           {result.content_feedback && (
             <div style={{
               paddingTop: '12px',
-              borderTop: `1px solid ${COLORS.blue[100]}`,
+              borderTop: `1px solid ${primaryAccent}26`,
             }}>
               <p style={{ fontSize: '14px', color: COLORS.slate[700], margin: 0, lineHeight: 1.5 }}>
                 <strong>Inhaltliches Feedback:</strong> {result.content_feedback}
@@ -472,7 +473,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
             padding: '14px 24px',
             borderRadius: '12px',
             border: 'none',
-            background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: buttonGradient,
             color: 'white',
             fontSize: '15px',
             fontWeight: 600,
@@ -524,6 +525,13 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
   const [error, setError] = useState(null);
   const [audioLevel, setAudioLevel] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
+
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -805,7 +813,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                     padding: '16px 40px',
                     borderRadius: '14px',
                     border: 'none',
-                    background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                    background: buttonGradient,
                     color: 'white',
                     fontSize: '16px',
                     fontWeight: 600,
@@ -813,7 +821,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '10px',
-                    boxShadow: '0 4px 14px rgba(74, 158, 201, 0.4)',
+                    boxShadow: `0 4px 14px ${primaryAccent}66`,
                   }}
                 >
                   <Play style={{ width: '20px', height: '20px' }} />
@@ -851,6 +859,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                 seconds={timeLeft}
                 total={gameConfig.duration}
                 isWarning={timeLeft <= 10}
+                primaryAccent={primaryAccent}
               />
 
               {/* Topic reminder */}
@@ -872,7 +881,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                 <motion.div
                   style={{
                     height: '80px',
-                    background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                    background: buttonGradient,
                     borderRadius: '16px',
                     display: 'flex',
                     alignItems: 'center',
@@ -952,7 +961,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
               style={{
                 width: '56px',
                 height: '56px',
-                border: `4px solid ${COLORS.blue[500]}`,
+                border: `4px solid ${primaryAccent}`,
                 borderTopColor: 'transparent',
                 borderRadius: '50%',
                 margin: '0 auto 24px',
@@ -971,6 +980,9 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
             result={result}
             onPlayAgain={handlePlayAgain}
             onBack={onBack}
+            buttonGradient={buttonGradient}
+            primaryAccent={primaryAccent}
+            primaryAccentLight={primaryAccentLight}
           />
         );
 
@@ -1001,7 +1013,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                     padding: '12px 24px',
                     borderRadius: '12px',
                     border: 'none',
-                    background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                    background: buttonGradient,
                     color: 'white',
                     fontSize: '14px',
                     fontWeight: 600,

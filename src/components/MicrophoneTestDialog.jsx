@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Play, Square, Volume2, CheckCircle, AlertCircle, RefreshCw, X } from 'lucide-react';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
- * Ocean theme colors - consistent with other components
+ * Fallback theme colors
  */
 const COLORS = {
-  blue: { 50: '#E8F4F8', 100: '#D1E9F1', 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
   slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
   red: { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626' },
   green: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a' },
@@ -27,6 +27,11 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
   const [recordedUrl, setRecordedUrl] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState(null);
+
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -257,7 +262,7 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                background: headerGradient,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -381,7 +386,7 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                       key={i}
                       style={{
                         width: '4px',
-                        background: `linear-gradient(to top, ${COLORS.blue[500]}, ${COLORS.teal[500]})`,
+                        background: buttonGradient,
                         borderRadius: '2px',
                       }}
                       animate={{ height: barHeight }}
@@ -417,7 +422,7 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                     padding: '14px 28px',
                     borderRadius: '12px',
                     border: 'none',
-                    background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                    background: buttonGradient,
                     color: COLORS.white,
                     fontSize: '15px',
                     fontWeight: 600,
@@ -462,7 +467,7 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                       padding: '14px 28px',
                       borderRadius: '12px',
                       border: 'none',
-                      background: `linear-gradient(135deg, ${COLORS.green[500]} 0%, ${COLORS.teal[500]} 100%)`,
+                      background: buttonGradient,
                       color: COLORS.white,
                       fontSize: '15px',
                       fontWeight: 600,

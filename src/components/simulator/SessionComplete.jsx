@@ -9,13 +9,13 @@ import {
   Clock,
   Target
 } from 'lucide-react';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
- * Ocean theme colors
+ * Fallback theme colors
  */
 const COLORS = {
-  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
   slate: { 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
   green: { 500: '#22c55e', 100: '#dcfce7' },
   amber: { 500: '#f59e0b', 100: '#fef3c7' },
@@ -24,10 +24,10 @@ const COLORS = {
 /**
  * Score Badge for Summary
  */
-const SummaryScore = ({ score, label }) => {
+const SummaryScore = ({ score, label, primaryAccent }) => {
   const getScoreColor = (s) => {
     if (s >= 8) return COLORS.green[500];
-    if (s >= 6) return COLORS.blue[500];
+    if (s >= 6) return primaryAccent;
     if (s >= 4) return COLORS.amber[500];
     return '#ef4444';
   };
@@ -62,7 +62,7 @@ const SummaryScore = ({ score, label }) => {
 /**
  * Stat Item
  */
-const StatItem = ({ icon: Icon, value, label }) => (
+const StatItem = ({ icon: Icon, value, label, primaryAccent }) => (
   <div style={{
     display: 'flex',
     alignItems: 'center',
@@ -71,7 +71,7 @@ const StatItem = ({ icon: Icon, value, label }) => (
     backgroundColor: COLORS.slate[100],
     borderRadius: '10px',
   }}>
-    <Icon style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} />
+    <Icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
     <div>
       <div style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>{value}</div>
       <div style={{ fontSize: '12px', color: COLORS.slate[500] }}>{label}</div>
@@ -85,6 +85,13 @@ const StatItem = ({ icon: Icon, value, label }) => (
  * Displays summary after completing all questions
  */
 const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) => {
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+
   // Parse summary feedback if it's a string
   const summaryFeedback = session.summary_feedback_json
     ? (typeof session.summary_feedback_json === 'string'
@@ -116,12 +123,12 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
           width: '80px',
           height: '80px',
           borderRadius: '50%',
-          background: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.teal[500]} 100%)`,
+          background: headerGradient,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           margin: '0 auto 16px',
-          boxShadow: '0 8px 24px rgba(74, 158, 201, 0.3)',
+          boxShadow: `0 8px 24px ${primaryAccent}4d`,
         }}>
           <Trophy style={{ width: '40px', height: '40px', color: 'white' }} />
         </div>
@@ -155,17 +162,17 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
           width: '120px',
           height: '120px',
           borderRadius: '50%',
-          border: `6px solid ${COLORS.blue[500]}`,
+          border: `6px solid ${primaryAccent}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           margin: '0 auto 16px',
-          backgroundColor: COLORS.blue[500] + '10',
+          backgroundColor: primaryAccentLight,
         }}>
           <span style={{
             fontSize: '48px',
             fontWeight: 700,
-            color: COLORS.blue[600],
+            color: primaryAccent,
           }}>
             {overallScore.toFixed(1)}
           </span>
@@ -190,16 +197,19 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
           icon={CheckCircle}
           value={`${session.completed_questions || session.total_questions}/${session.total_questions}`}
           label="Fragen"
+          primaryAccent={primaryAccent}
         />
         <StatItem
           icon={Target}
           value={summaryFeedback?.average_content_score?.toFixed(1) || '-'}
           label="Ø Inhalt"
+          primaryAccent={primaryAccent}
         />
         <StatItem
           icon={Star}
           value={summaryFeedback?.average_delivery_score?.toFixed(1) || '-'}
           label="Ø Präsentation"
+          primaryAccent={primaryAccent}
         />
       </div>
 
@@ -211,10 +221,10 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
           gap: '12px',
           marginBottom: '24px',
         }}>
-          <SummaryScore score={summaryFeedback.scores.content} label="Inhalt" />
-          <SummaryScore score={summaryFeedback.scores.structure} label="Struktur" />
-          <SummaryScore score={summaryFeedback.scores.relevance} label="Relevanz" />
-          <SummaryScore score={summaryFeedback.scores.delivery} label="Präsentation" />
+          <SummaryScore score={summaryFeedback.scores.content} label="Inhalt" primaryAccent={primaryAccent} />
+          <SummaryScore score={summaryFeedback.scores.structure} label="Struktur" primaryAccent={primaryAccent} />
+          <SummaryScore score={summaryFeedback.scores.relevance} label="Relevanz" primaryAccent={primaryAccent} />
+          <SummaryScore score={summaryFeedback.scores.delivery} label="Präsentation" primaryAccent={primaryAccent} />
         </div>
       )}
 
@@ -300,8 +310,8 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
             transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
-            e.target.style.borderColor = COLORS.blue[500];
-            e.target.style.color = COLORS.blue[600];
+            e.target.style.borderColor = primaryAccent;
+            e.target.style.color = primaryAccent;
           }}
           onMouseLeave={(e) => {
             e.target.style.borderColor = COLORS.slate[300];
@@ -322,21 +332,21 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
             padding: '14px 24px',
             borderRadius: '12px',
             border: 'none',
-            background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: buttonGradient,
             color: 'white',
             fontSize: '15px',
             fontWeight: 600,
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(74, 158, 201, 0.3)',
+            boxShadow: `0 4px 12px ${primaryAccent}4d`,
             transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
             e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
+            e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
           }}
           onMouseLeave={(e) => {
             e.target.style.transform = 'none';
-            e.target.style.boxShadow = '0 4px 12px rgba(74, 158, 201, 0.3)';
+            e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
           }}
         >
           <RotateCcw style={{ width: '18px', height: '18px' }} />

@@ -23,20 +23,11 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import StructuredFeedbackDisplay from './StructuredFeedbackDisplay';
 import AudioAnalysisDisplay from './AudioAnalysisDisplay';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
-// Ocean theme colors for inline styles
+// Fallback theme colors for inline styles
 const COLORS = {
-  blue: {
-    50: '#E8F4F8',
-    100: '#D1E9F1',
-    600: '#3A7FA7',
-    700: '#2D6485',
-  },
-  teal: {
-    50: '#E6F7F4',
-    600: '#2E8A72',
-    700: '#247560',
-  },
   slate: {
     50: '#f8fafc',
     100: '#f1f5f9',
@@ -63,6 +54,12 @@ const SessionSidebar = ({
 }) => {
   const [activeTab, setActiveTab] = useState('coaching');
   const [hoveredTab, setHoveredTab] = useState(null);
+
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   // Calculate score from feedback
   const score = useMemo(() => {
@@ -115,9 +112,9 @@ const SessionSidebar = ({
         maxHeight: '800px',
       }}
     >
-      {/* Header - Ocean Theme Gradient with inline styles */}
+      {/* Header - Partner Theme Gradient with inline styles */}
       <div style={{
-        background: `linear-gradient(90deg, ${COLORS.blue[700]} 0%, ${COLORS.teal[600]} 100%)`,
+        background: headerGradient,
         padding: '16px',
         flexShrink: 0,
       }}>
@@ -145,7 +142,7 @@ const SessionSidebar = ({
           </Button>
         </div>
         {score !== null && (
-          <p style={{ color: COLORS.blue[100], fontSize: '12px', margin: 0 }}>
+          <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '12px', margin: 0 }}>
             Ihre Punktzahl war <span style={{ color: 'white', fontWeight: 700 }}>{score}%</span>
           </p>
         )}
@@ -199,9 +196,9 @@ const SessionSidebar = ({
             border: 'none',
             cursor: 'pointer',
             transition: 'all 0.2s',
-            backgroundColor: activeTab === 'coaching' ? COLORS.blue[50] : (hoveredTab === 'coaching' ? COLORS.slate[50] : 'transparent'),
-            color: activeTab === 'coaching' ? COLORS.blue[700] : (hoveredTab === 'coaching' ? COLORS.slate[700] : COLORS.slate[500]),
-            borderBottom: activeTab === 'coaching' ? `2px solid ${COLORS.blue[600]}` : '2px solid transparent',
+            backgroundColor: activeTab === 'coaching' ? primaryAccentLight : (hoveredTab === 'coaching' ? COLORS.slate[50] : 'transparent'),
+            color: activeTab === 'coaching' ? primaryAccent : (hoveredTab === 'coaching' ? COLORS.slate[700] : COLORS.slate[500]),
+            borderBottom: activeTab === 'coaching' ? `2px solid ${primaryAccent}` : '2px solid transparent',
           }}
         >
           <MessageSquare style={{ width: '16px', height: '16px' }} />
@@ -225,9 +222,9 @@ const SessionSidebar = ({
             border: 'none',
             cursor: 'pointer',
             transition: 'all 0.2s',
-            backgroundColor: activeTab === 'analysen' ? COLORS.teal[50] : (hoveredTab === 'analysen' ? COLORS.slate[50] : 'transparent'),
-            color: activeTab === 'analysen' ? COLORS.teal[700] : (hoveredTab === 'analysen' ? COLORS.slate[700] : COLORS.slate[500]),
-            borderBottom: activeTab === 'analysen' ? `2px solid ${COLORS.teal[600]}` : '2px solid transparent',
+            backgroundColor: activeTab === 'analysen' ? primaryAccentLight : (hoveredTab === 'analysen' ? COLORS.slate[50] : 'transparent'),
+            color: activeTab === 'analysen' ? primaryAccent : (hoveredTab === 'analysen' ? COLORS.slate[700] : COLORS.slate[500]),
+            borderBottom: activeTab === 'analysen' ? `2px solid ${primaryAccent}` : '2px solid transparent',
           }}
         >
           <BarChart3 style={{ width: '16px', height: '16px' }} />

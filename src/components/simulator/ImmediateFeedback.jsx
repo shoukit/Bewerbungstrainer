@@ -12,13 +12,13 @@ import {
   ChevronUp,
   Trophy
 } from 'lucide-react';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
- * Ocean theme colors
+ * Fallback theme colors
  */
 const COLORS = {
-  blue: { 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
   slate: { 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
   red: { 500: '#ef4444', 100: '#fee2e2' },
   green: { 500: '#22c55e', 100: '#dcfce7' },
@@ -29,10 +29,10 @@ const COLORS = {
 /**
  * Score Badge Component
  */
-const ScoreBadge = ({ score, label, size = 'normal' }) => {
+const ScoreBadge = ({ score, label, size = 'normal', primaryAccent }) => {
   const getScoreColor = (s) => {
     if (s >= 8) return COLORS.green[500];
-    if (s >= 6) return COLORS.blue[500];
+    if (s >= 6) return primaryAccent;
     if (s >= 4) return COLORS.amber[500];
     return COLORS.red[500];
   };
@@ -79,7 +79,7 @@ const ScoreBadge = ({ score, label, size = 'normal' }) => {
 /**
  * Collapsible Section Component
  */
-const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true }) => {
+const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true, primaryAccent }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
@@ -104,7 +104,7 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true })
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Icon style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} />
+          <Icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
           <span style={{ fontSize: '15px', fontWeight: 600, color: COLORS.slate[800] }}>
             {title}
           </span>
@@ -131,11 +131,11 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true })
 /**
  * Feedback List Item
  */
-const FeedbackItem = ({ text, type }) => {
+const FeedbackItem = ({ text, type, primaryAccent, primaryAccentLight }) => {
   const config = {
     strength: { icon: ThumbsUp, color: COLORS.green[500], bg: COLORS.green[100] },
     improvement: { icon: AlertTriangle, color: COLORS.amber[500], bg: COLORS.amber[100] },
-    tip: { icon: Lightbulb, color: COLORS.blue[500], bg: COLORS.blue[500] + '15' },
+    tip: { icon: Lightbulb, color: primaryAccent, bg: primaryAccentLight },
   };
 
   const { icon: Icon, color, bg } = config[type] || config.tip;
@@ -319,6 +319,12 @@ const ImmediateFeedback = ({
   onNext,
   isLastQuestion,
 }) => {
+  // Partner theming
+  const { branding } = usePartner();
+  const buttonGradient = branding?.['--button-gradient'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+
   // Parse feedback if it's a string
   const parsedFeedback = typeof feedback === 'string' ? JSON.parse(feedback) : feedback;
 
@@ -342,6 +348,7 @@ const ImmediateFeedback = ({
           score={parsedFeedback?.scores?.overall}
           label="Gesamt"
           size="large"
+          primaryAccent={primaryAccent}
         />
         <div style={{ flex: 1 }}>
           <h3 style={{
@@ -374,14 +381,14 @@ const ImmediateFeedback = ({
           backgroundColor: 'white',
           borderRadius: '12px',
         }}>
-          <ScoreBadge score={parsedFeedback.scores.content} label="Inhalt" />
-          <ScoreBadge score={parsedFeedback.scores.structure} label="Struktur" />
-          <ScoreBadge score={parsedFeedback.scores.relevance} label="Relevanz" />
+          <ScoreBadge score={parsedFeedback.scores.content} label="Inhalt" primaryAccent={primaryAccent} />
+          <ScoreBadge score={parsedFeedback.scores.structure} label="Struktur" primaryAccent={primaryAccent} />
+          <ScoreBadge score={parsedFeedback.scores.relevance} label="Relevanz" primaryAccent={primaryAccent} />
         </div>
       )}
 
       {/* Transcript */}
-      <CollapsibleSection title="Transkript" icon={MessageSquare} defaultOpen={true}>
+      <CollapsibleSection title="Transkript" icon={MessageSquare} defaultOpen={true} primaryAccent={primaryAccent}>
         <div style={{
           padding: '16px',
           borderRadius: '10px',
@@ -397,34 +404,34 @@ const ImmediateFeedback = ({
 
       {/* Strengths */}
       {parsedFeedback?.strengths?.length > 0 && (
-        <CollapsibleSection title="Stärken" icon={ThumbsUp} defaultOpen={true}>
+        <CollapsibleSection title="Stärken" icon={ThumbsUp} defaultOpen={true} primaryAccent={primaryAccent}>
           {parsedFeedback.strengths.map((strength, i) => (
-            <FeedbackItem key={i} text={strength} type="strength" />
+            <FeedbackItem key={i} text={strength} type="strength" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
           ))}
         </CollapsibleSection>
       )}
 
       {/* Improvements */}
       {parsedFeedback?.improvements?.length > 0 && (
-        <CollapsibleSection title="Verbesserungen" icon={AlertTriangle} defaultOpen={true}>
+        <CollapsibleSection title="Verbesserungen" icon={AlertTriangle} defaultOpen={true} primaryAccent={primaryAccent}>
           {parsedFeedback.improvements.map((improvement, i) => (
-            <FeedbackItem key={i} text={improvement} type="improvement" />
+            <FeedbackItem key={i} text={improvement} type="improvement" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
           ))}
         </CollapsibleSection>
       )}
 
       {/* Tips */}
       {parsedFeedback?.tips?.length > 0 && (
-        <CollapsibleSection title="Tipps" icon={Lightbulb} defaultOpen={false}>
+        <CollapsibleSection title="Tipps" icon={Lightbulb} defaultOpen={false} primaryAccent={primaryAccent}>
           {parsedFeedback.tips.map((tip, i) => (
-            <FeedbackItem key={i} text={tip} type="tip" />
+            <FeedbackItem key={i} text={tip} type="tip" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
           ))}
         </CollapsibleSection>
       )}
 
       {/* Audio Metrics */}
       {audioMetrics && (
-        <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={false}>
+        <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={false} primaryAccent={primaryAccent}>
           <AudioMetricsDisplay metrics={audioMetrics} />
         </CollapsibleSection>
       )}
@@ -454,8 +461,8 @@ const ImmediateFeedback = ({
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
-              e.target.style.borderColor = COLORS.blue[500];
-              e.target.style.color = COLORS.blue[600];
+              e.target.style.borderColor = primaryAccent;
+              e.target.style.color = primaryAccent;
             }}
             onMouseLeave={(e) => {
               e.target.style.borderColor = COLORS.slate[300];
@@ -475,21 +482,21 @@ const ImmediateFeedback = ({
             padding: '14px 24px',
             borderRadius: '12px',
             border: 'none',
-            background: `linear-gradient(90deg, ${COLORS.blue[600]} 0%, ${COLORS.teal[500]} 100%)`,
+            background: buttonGradient,
             color: 'white',
             fontSize: '15px',
             fontWeight: 600,
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(74, 158, 201, 0.3)',
+            boxShadow: `0 4px 12px ${primaryAccent}4d`,
             transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
             e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 6px 16px rgba(74, 158, 201, 0.4)';
+            e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
           }}
           onMouseLeave={(e) => {
             e.target.style.transform = 'none';
-            e.target.style.boxShadow = '0 4px 12px rgba(74, 158, 201, 0.3)';
+            e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
           }}
         >
           {isLastQuestion ? (
