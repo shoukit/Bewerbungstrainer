@@ -1,9 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   getPartnerIdFromUrl,
   getPartnerConfig,
+  fetchPartnerConfig,
   filterScenariosByPartner,
   isModuleAllowed,
+  loginUser,
+  logoutUser,
+  getCurrentUser,
   DEFAULT_BRANDING,
 } from '@/config/partners';
 
@@ -15,34 +19,85 @@ const PartnerContext = createContext(null);
 
 /**
  * PartnerProvider Component
- * Wraps the app and provides partner configuration to all children
+ * Wraps the app and provides partner configuration and authentication to all children
  */
 export function PartnerProvider({ children }) {
   const [partner, setPartner] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize partner from URL on mount
+  // Authentication state
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Initialize partner from URL on mount - now fetches from API
   useEffect(() => {
-    const initializePartner = () => {
+    const initializePartner = async () => {
       const partnerId = getPartnerIdFromUrl();
       console.log('🏷️ [PartnerContext] Partner ID from URL:', partnerId);
 
-      if (partnerId) {
-        const partnerConfig = getPartnerConfig(partnerId);
+      try {
+        // Try to fetch from API first
+        const partnerConfig = await fetchPartnerConfig(partnerId);
+
         if (partnerConfig) {
           console.log('🏷️ [PartnerContext] Partner loaded:', partnerConfig.name);
           setPartner(partnerConfig);
-        } else {
+        } else if (partnerId) {
+          // API returned nothing and we had a partner ID - log warning
           console.warn('🏷️ [PartnerContext] Partner not found:', partnerId);
+        } else {
+          console.log('🏷️ [PartnerContext] No partner specified, using default branding');
         }
-      } else {
-        console.log('🏷️ [PartnerContext] No partner specified, using default branding');
+      } catch (error) {
+        console.error('🏷️ [PartnerContext] Error loading partner config:', error);
+
+        // Fallback to mock if API fails
+        if (partnerId) {
+          const mockConfig = getPartnerConfig(partnerId);
+          if (mockConfig) {
+            console.log('🏷️ [PartnerContext] Using mock fallback:', mockConfig.name);
+            setPartner(mockConfig);
+          }
+        }
       }
 
       setIsLoading(false);
     };
 
     initializePartner();
+  }, []);
+
+  // Initialize authentication state from WordPress config
+  useEffect(() => {
+    const initializeAuth = async () => {
+      // Check if user is already logged in via WordPress
+      const wpConfig = window.bewerbungstrainerConfig;
+      if (wpConfig?.currentUser?.id && wpConfig.currentUser.id > 0) {
+        console.log('🔐 [PartnerContext] User from WordPress config:', wpConfig.currentUser.name);
+        setUser({
+          id: wpConfig.currentUser.id,
+          displayName: wpConfig.currentUser.name,
+          firstName: wpConfig.currentUser.firstName,
+        });
+        setIsAuthenticated(true);
+      } else {
+        // Try to get current user from API (in case cookies are set but config wasn't updated)
+        try {
+          const apiUser = await getCurrentUser();
+          if (apiUser) {
+            console.log('🔐 [PartnerContext] User from API:', apiUser.displayName);
+            setUser(apiUser);
+            setIsAuthenticated(true);
+          }
+        } catch (error) {
+          console.log('🔐 [PartnerContext] No authenticated user');
+        }
+      }
+      setAuthLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   // Apply CSS variables when partner changes
@@ -110,6 +165,66 @@ export function PartnerProvider({ children }) {
     return !!partner;
   };
 
+  /**
+   * Handle user login
+   * @param {string} username - Username or email
+   * @param {string} password - Password
+   * @returns {Promise<Object>} Result with success status and user or error
+   */
+  const handleLogin = useCallback(async (username, password) => {
+    console.log('🔐 [PartnerContext] Attempting login...');
+
+    const result = await loginUser(username, password);
+
+    if (result.success) {
+      setUser(result.user);
+      setIsAuthenticated(true);
+      console.log('✅ [PartnerContext] Login successful:', result.user.displayName);
+    } else {
+      console.warn('⚠️ [PartnerContext] Login failed:', result.error);
+    }
+
+    return result;
+  }, []);
+
+  /**
+   * Handle user logout
+   * @returns {Promise<Object>} Result with success status
+   */
+  const handleLogout = useCallback(async () => {
+    console.log('🔐 [PartnerContext] Logging out...');
+
+    const result = await logoutUser();
+
+    // Always clear local state, even if API call fails
+    setUser(null);
+    setIsAuthenticated(false);
+    console.log('✅ [PartnerContext] Logout completed');
+
+    return result;
+  }, []);
+
+  /**
+   * Refresh user data from API
+   */
+  const refreshUser = useCallback(async () => {
+    try {
+      const apiUser = await getCurrentUser();
+      if (apiUser) {
+        setUser(apiUser);
+        setIsAuthenticated(true);
+        return apiUser;
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ [PartnerContext] Failed to refresh user:', error);
+      return null;
+    }
+  }, []);
+
   const contextValue = {
     // Partner data
     partner,
@@ -126,6 +241,14 @@ export function PartnerProvider({ children }) {
     branding: partner?.branding || DEFAULT_BRANDING,
     logoUrl: partner?.logo_url || null,
     partnerName: partner?.name || 'Karriereheld',
+
+    // Authentication
+    user,
+    isAuthenticated,
+    authLoading,
+    login: handleLogin,
+    logout: handleLogout,
+    refreshUser,
   };
 
   return (
@@ -154,6 +277,22 @@ export function usePartner() {
 export function usePartnerBranding() {
   const { branding, isWhiteLabel, partnerName } = usePartner();
   return { branding, isWhiteLabel, partnerName };
+}
+
+/**
+ * useAuth Hook
+ * Convenience hook for accessing authentication state and methods
+ */
+export function useAuth() {
+  const { user, isAuthenticated, authLoading, login, logout, refreshUser } = usePartner();
+  return {
+    user,
+    isAuthenticated,
+    isLoading: authLoading,
+    login,
+    logout,
+    refreshUser,
+  };
 }
 
 export default PartnerContext;

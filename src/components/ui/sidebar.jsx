@@ -14,8 +14,12 @@ import {
   Zap,
   Shuffle,
   Rocket,
+  User,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
+import { usePartner, useAuth } from '@/context/PartnerContext';
+import { useToast } from '@/components/Toast';
 
 /**
  * Ocean theme colors - defined as constants to avoid WordPress CSS conflicts
@@ -120,12 +124,21 @@ const AppSidebar = ({
   activeView,
   onNavigate,
   headerOffset = 0,
+  onLoginClick,
 }) => {
   const [expandedItems, setExpandedItems] = React.useState(['gym']); // Gym expanded by default
 
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl } = usePartner();
+  const { user, isAuthenticated, logout } = useAuth();
+  const { showSuccess } = useToast();
   const themedColors = getThemedColors(branding);
+
+  // Handle logout with toast notification
+  const handleLogout = async () => {
+    await logout();
+    showSuccess('Sie wurden erfolgreich abgemeldet', 3000);
+  };
 
   // Determine colors based on whether we have partner branding
   const colors = React.useMemo(() => {
@@ -459,8 +472,122 @@ const AppSidebar = ({
         })}
       </nav>
 
-      {/* Collapse Toggle Button */}
+      {/* User Section */}
       <div style={{ padding: '12px', borderTop: `1px solid ${colors.borderColorLight}` }}>
+        {isAuthenticated && user ? (
+          // Logged in user
+          <div style={{ marginBottom: '8px' }}>
+            {!isCollapsed && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '10px',
+                  borderRadius: '12px',
+                  backgroundColor: colors.borderColorLight,
+                  marginBottom: '8px',
+                }}
+              >
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    backgroundColor: colors.primaryAccent,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    flexShrink: 0,
+                  }}
+                >
+                  {(user.firstName || user.displayName || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{ fontWeight: 600, fontSize: '14px', color: colors.sidebarText, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {user.displayName || user.firstName || 'Benutzer'}
+                  </div>
+                  {user.email && (
+                    <div style={{ fontSize: '12px', color: colors.sidebarTextMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.email}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                borderRadius: '12px',
+                padding: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                color: colors.sidebarTextMuted,
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '13px',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                e.currentTarget.style.color = '#dc2626';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = colors.sidebarTextMuted;
+              }}
+              title="Abmelden"
+            >
+              <LogOut style={{ width: '18px', height: '18px', flexShrink: 0 }} />
+              {!isCollapsed && <span>Abmelden</span>}
+            </button>
+          </div>
+        ) : (
+          // Not logged in
+          <button
+            onClick={onLoginClick}
+            style={{
+              width: '100%',
+              borderRadius: '12px',
+              padding: '10px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              color: colors.primaryAccent,
+              backgroundColor: 'transparent',
+              border: `1px solid ${colors.primaryAccent}`,
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 500,
+              transition: 'all 0.2s',
+              marginBottom: '8px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = colors.primaryAccent;
+              e.currentTarget.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = colors.primaryAccent;
+            }}
+            title="Anmelden"
+          >
+            <LogIn style={{ width: '18px', height: '18px', flexShrink: 0 }} />
+            {!isCollapsed && <span>Anmelden</span>}
+          </button>
+        )}
+      </div>
+
+      {/* Collapse Toggle Button */}
+      <div style={{ padding: '0 12px 12px 12px' }}>
         <button
           onClick={onToggleCollapse}
           style={{
@@ -506,13 +633,21 @@ const AppSidebar = ({
  * Shows a burger menu that opens a slide-out menu on mobile
  * Supports white-label partner theming via PartnerContext.
  */
-const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
+const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginClick }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [expandedItems, setExpandedItems] = React.useState(['gym']);
 
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl } = usePartner();
+  const { user, isAuthenticated, logout } = useAuth();
+  const { showSuccess } = useToast();
   const themedColors = getThemedColors(branding);
+
+  // Handle logout with toast notification
+  const handleLogout = async () => {
+    await logout();
+    showSuccess('Sie wurden erfolgreich abgemeldet', 3000);
+  };
 
   // Determine colors based on whether we have partner branding
   const colors = React.useMemo(() => {
@@ -780,6 +915,106 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
                   </div>
                 );
               })}
+
+              {/* User Section in Mobile Menu */}
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: `1px solid ${colors.borderColor}` }}>
+                {isAuthenticated && user ? (
+                  // Logged in user
+                  <>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        backgroundColor: colors.activeBg,
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: colors.primaryAccent,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          fontWeight: 600,
+                          fontSize: '16px',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {(user.firstName || user.displayName || 'U').charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: '15px', color: colors.textMain }}>
+                          {user.displayName || user.firstName || 'Benutzer'}
+                        </div>
+                        {user.email && (
+                          <div style={{ fontSize: '13px', color: colors.textMuted }}>
+                            {user.email}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsOpen(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        color: '#dc2626',
+                        fontSize: '15px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <LogOut style={{ width: '20px', height: '20px' }} />
+                      <span>Abmelden</span>
+                    </button>
+                  </>
+                ) : (
+                  // Not logged in
+                  <button
+                    onClick={() => {
+                      if (onLoginClick) {
+                        onLoginClick();
+                      }
+                      setIsOpen(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      border: `2px solid ${colors.primaryAccent}`,
+                      backgroundColor: 'transparent',
+                      color: colors.primaryAccent,
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <LogIn style={{ width: '20px', height: '20px' }} />
+                    <span>Anmelden</span>
+                  </button>
+                )}
+              </div>
             </motion.nav>
           </>
         )}
@@ -795,7 +1030,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0 }) => {
  * Responsive: Shows sidebar on desktop, burger menu on mobile.
  * Supports white-label partner theming via PartnerContext.
  */
-const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0 }) => {
+const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onLoginClick }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
 
@@ -839,6 +1074,7 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0 }) =
           activeView={activeView}
           onNavigate={onNavigate}
           headerOffset={headerOffset}
+          onLoginClick={onLoginClick}
         />
 
         {/* Main Content with top padding for mobile header */}
@@ -868,6 +1104,7 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0 }) =
         activeView={activeView}
         onNavigate={onNavigate}
         headerOffset={headerOffset}
+        onLoginClick={onLoginClick}
       />
 
       {/* Main Content */}

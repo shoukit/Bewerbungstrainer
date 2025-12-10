@@ -7,6 +7,9 @@
  * - branding: CSS color configuration (see DEFAULT_BRANDING for all options)
  * - logo_url: Optional URL to partner's logo
  * - modules: Array of allowed scenario IDs (only these will be shown)
+ *
+ * Configuration is now fetched from WordPress backend via REST API:
+ * GET /wp-json/karriereheld/v1/config?partner_slug=xxx
  */
 
 /**
@@ -488,3 +491,218 @@ export function filterScenariosByPartner(scenarios, partner) {
 }
 
 export default MOCK_PARTNERS;
+
+/**
+ * Get the WordPress REST API base URL
+ * Uses bewerbungstrainerConfig if available, otherwise derives from current URL
+ */
+function getApiBaseUrl() {
+  // Use WordPress-provided config if available
+  if (typeof window !== 'undefined' && window.bewerbungstrainerConfig?.apiUrl) {
+    // bewerbungstrainerConfig.apiUrl is for bewerbungstrainer/v1
+    // We need karriereheld/v1, so derive the base and add our namespace
+    const apiUrl = window.bewerbungstrainerConfig.apiUrl;
+    const baseUrl = apiUrl.replace('/bewerbungstrainer/v1', '');
+    return `${baseUrl}/karriereheld/v1`;
+  }
+
+  // Fallback: derive from current URL
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    return `${origin}/wp-json/karriereheld/v1`;
+  }
+
+  return '/wp-json/karriereheld/v1';
+}
+
+/**
+ * Fetch partner configuration from WordPress REST API
+ * @param {string|null} partnerId - Partner slug from URL parameter
+ * @returns {Promise<Object>} Partner configuration object
+ */
+export async function fetchPartnerConfig(partnerId) {
+  const apiUrl = getApiBaseUrl();
+  const endpoint = partnerId
+    ? `${apiUrl}/config?partner_slug=${encodeURIComponent(partnerId)}`
+    : `${apiUrl}/config`;
+
+  console.log('🌐 [Partners] Fetching config from:', endpoint);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'same-origin', // Include cookies for authentication
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      console.log('✅ [Partners] Config loaded from API:', result.data.name);
+      return result.data;
+    }
+
+    // If API returns but no data, use mock as fallback
+    console.warn('⚠️ [Partners] API returned no data, using mock fallback');
+    return getPartnerConfig(partnerId) || null;
+
+  } catch (error) {
+    console.error('❌ [Partners] Failed to fetch config from API:', error.message);
+
+    // Fallback to mock partners for development/testing
+    const mockPartner = getPartnerConfig(partnerId);
+    if (mockPartner) {
+      console.log('📦 [Partners] Using mock fallback:', mockPartner.name);
+      return mockPartner;
+    }
+
+    return null;
+  }
+}
+
+/**
+ * Login user via WordPress REST API
+ * @param {string} username - Username or email
+ * @param {string} password - Password
+ * @returns {Promise<Object>} Login result with user data or error
+ */
+export async function loginUser(username, password) {
+  const apiUrl = getApiBaseUrl();
+  const endpoint = `${apiUrl}/login`;
+
+  console.log('🔐 [Partners] Attempting login for:', username);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'same-origin', // Important for cookie-based auth
+      body: JSON.stringify({ username, password }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      console.log('✅ [Partners] Login successful:', result.data.user.displayName);
+
+      // Update the nonce in bewerbungstrainerConfig if a new one was returned
+      if (result.data.nonce && window.bewerbungstrainerConfig) {
+        window.bewerbungstrainerConfig.nonce = result.data.nonce;
+        window.bewerbungstrainerConfig.currentUser = {
+          id: result.data.user.id,
+          name: result.data.user.displayName,
+          firstName: result.data.user.firstName,
+        };
+      }
+
+      return {
+        success: true,
+        user: result.data.user,
+        nonce: result.data.nonce,
+      };
+    }
+
+    // Login failed
+    console.warn('⚠️ [Partners] Login failed:', result.error?.message);
+    return {
+      success: false,
+      error: result.error?.message || 'Login fehlgeschlagen',
+    };
+
+  } catch (error) {
+    console.error('❌ [Partners] Login request failed:', error.message);
+    return {
+      success: false,
+      error: 'Verbindungsfehler. Bitte versuchen Sie es erneut.',
+    };
+  }
+}
+
+/**
+ * Logout user via WordPress REST API
+ * @returns {Promise<Object>} Logout result
+ */
+export async function logoutUser() {
+  const apiUrl = getApiBaseUrl();
+  const endpoint = `${apiUrl}/logout`;
+
+  console.log('🚪 [Partners] Logging out...');
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'same-origin',
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      console.log('✅ [Partners] Logout successful');
+
+      // Clear user from bewerbungstrainerConfig
+      if (window.bewerbungstrainerConfig) {
+        window.bewerbungstrainerConfig.currentUser = {
+          id: 0,
+          name: '',
+          firstName: '',
+        };
+      }
+    }
+
+    return result;
+
+  } catch (error) {
+    console.error('❌ [Partners] Logout request failed:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get current user from WordPress REST API
+ * @returns {Promise<Object|null>} User data or null if not logged in
+ */
+export async function getCurrentUser() {
+  const apiUrl = getApiBaseUrl();
+  const endpoint = `${apiUrl}/user`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // Include nonce for WordPress REST API authentication
+        ...(window.bewerbungstrainerConfig?.nonce && {
+          'X-WP-Nonce': window.bewerbungstrainerConfig.nonce,
+        }),
+      },
+      credentials: 'same-origin',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data?.user) {
+      return result.data.user;
+    }
+
+    return null;
+
+  } catch (error) {
+    console.error('❌ [Partners] Failed to get current user:', error.message);
+    return null;
+  }
+}
