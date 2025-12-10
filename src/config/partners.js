@@ -237,6 +237,63 @@ export const MOCK_PARTNERS = {
     logo_url: null,
     modules: [],
   },
+
+  // En Garde Verhandlungstraining (Orange/Charcoal Theme)
+  'engarde-training': {
+    id: 'engarde-training',
+    slug: 'engarde-training',
+    name: 'En Garde Verhandlungstraining',
+    branding: {
+      // App Background - hell/neutral
+      '--app-bg-color': 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 50%, #fafafa 100%)',
+
+      // Sidebar - dunkles Charcoal
+      '--sidebar-bg-color': '#333333',
+      '--sidebar-text-color': '#ffffff',
+      '--sidebar-text-muted': '#9ca3af',
+      '--sidebar-active-bg': 'rgba(234, 88, 12, 0.2)',
+      '--sidebar-active-text': '#f97316',
+      '--sidebar-hover-bg': 'rgba(255, 255, 255, 0.1)',
+
+      // Cards
+      '--card-bg-color': '#ffffff',
+
+      // Primary Accent - Orange
+      '--primary-accent': '#ea580c',
+      '--primary-accent-light': '#fff7ed',
+      '--primary-accent-hover': '#c2410c',
+
+      // Buttons - Orange
+      '--button-gradient': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+      '--button-gradient-hover': 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+      '--button-solid': '#ea580c',
+      '--button-solid-hover': '#c2410c',
+      '--button-text': '#ffffff',
+
+      // Header Gradient - Orange
+      '--header-gradient': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+      '--header-text': '#ffffff',
+
+      // Icons - Orange Töne
+      '--icon-primary': '#ea580c',
+      '--icon-secondary': '#f97316',
+      '--icon-muted': '#9ca3af',
+
+      // Text
+      '--text-main': '#1f2937',
+      '--text-secondary': '#4b5563',
+      '--text-muted': '#9ca3af',
+
+      // Borders
+      '--border-color': '#e5e7eb',
+      '--border-color-light': '#f3f4f6',
+
+      // Focus Ring
+      '--focus-ring': 'rgba(234, 88, 12, 0.3)',
+    },
+    logo_url: null,
+    modules: [],
+  },
 };
 
 /**
