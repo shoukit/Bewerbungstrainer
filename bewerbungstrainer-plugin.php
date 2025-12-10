@@ -74,6 +74,9 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-game-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-game-api.php';
 
+        // Load White-Label Partners class
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whitelabel-partners.php';
+
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -207,6 +210,9 @@ class Bewerbungstrainer_Plugin {
         // Initialize Game/Rhetorik-Gym
         Bewerbungstrainer_Game_Database::get_instance();
         Bewerbungstrainer_Game_API::get_instance();
+
+        // Initialize White-Label Partners
+        Bewerbungstrainer_Whitelabel_Partners::get_instance();
 
         // Initialize audio handler
         Bewerbungstrainer_Audio_Handler::get_instance();
