@@ -560,9 +560,9 @@ const AppSidebar = ({
               alignItems: 'center',
               gap: '10px',
               justifyContent: isCollapsed ? 'center' : 'flex-start',
-              color: colors.primaryAccent,
+              color: colors.sidebarText,
               backgroundColor: 'transparent',
-              border: `1px solid ${colors.primaryAccent}`,
+              border: `1px solid ${colors.borderColor}`,
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: 500,
@@ -570,12 +570,10 @@ const AppSidebar = ({
               marginBottom: '8px',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = colors.primaryAccent;
-              e.currentTarget.style.color = '#ffffff';
+              e.currentTarget.style.backgroundColor = colors.hoverBg;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = colors.primaryAccent;
             }}
             title="Anmelden"
           >
@@ -1001,9 +999,9 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                       gap: '12px',
                       padding: '14px 16px',
                       borderRadius: '12px',
-                      border: `2px solid ${colors.primaryAccent}`,
+                      border: `1px solid ${colors.borderColor}`,
                       backgroundColor: 'transparent',
-                      color: colors.primaryAccent,
+                      color: colors.textMain,
                       fontSize: '15px',
                       fontWeight: 600,
                       cursor: 'pointer',
