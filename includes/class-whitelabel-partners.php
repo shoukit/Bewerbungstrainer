@@ -809,6 +809,342 @@ class Bewerbungstrainer_Whitelabel_Partners {
     }
 
     /**
+     * Import initial partner configurations from MOCK_PARTNERS
+     * This runs once during plugin activation
+     * Will NOT overwrite existing partners
+     */
+    public static function import_initial_partners() {
+        // Check if import has already been done
+        if (get_option('bewerbungstrainer_partners_imported', false)) {
+            return;
+        }
+
+        // Define all MOCK_PARTNERS from src/config/partners.js
+        $mock_partners = array(
+            // Demo Partner 1: Vertriebstrainer Mueller (Amber/Gold Theme)
+            'vertriebs-mueller' => array(
+                'name' => 'Vertriebsakademie Müller',
+                'slug' => 'vertriebs-mueller',
+                'description' => 'Demo Partner mit Amber/Gold Theme',
+                'branding' => array(
+                    '--app-bg-color' => 'linear-gradient(135deg, #fef3c7 0%, #fff7ed 50%, #fffbeb 100%)',
+                    '--sidebar-bg-color' => '#1e3a5f',
+                    '--sidebar-text-color' => '#ffffff',
+                    '--sidebar-text-muted' => '#94a3b8',
+                    '--sidebar-active-bg' => 'rgba(251, 191, 36, 0.2)',
+                    '--sidebar-active-text' => '#fbbf24',
+                    '--sidebar-hover-bg' => 'rgba(255, 255, 255, 0.1)',
+                    '--card-bg-color' => '#ffffff',
+                    '--primary-accent' => '#d97706',
+                    '--primary-accent-light' => '#fef3c7',
+                    '--primary-accent-hover' => '#b45309',
+                    '--button-gradient' => 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    '--button-gradient-hover' => 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                    '--button-solid' => '#d97706',
+                    '--button-solid-hover' => '#b45309',
+                    '--button-text' => '#ffffff',
+                    '--header-gradient' => 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    '--header-text' => '#ffffff',
+                    '--icon-primary' => '#d97706',
+                    '--icon-secondary' => '#f59e0b',
+                    '--icon-muted' => '#a8a29e',
+                    '--text-main' => '#1c1917',
+                    '--text-secondary' => '#57534e',
+                    '--text-muted' => '#a8a29e',
+                    '--border-color' => '#e7e5e4',
+                    '--border-color-light' => '#f5f5f4',
+                    '--focus-ring' => 'rgba(217, 119, 6, 0.3)',
+                ),
+                'gradient_colors' => array(
+                    '--app-bg-color' => array('start' => '#fef3c7', 'mid' => '#fff7ed', 'end' => '#fffbeb'),
+                    '--button-gradient' => array('start' => '#f59e0b', 'end' => '#d97706'),
+                    '--button-gradient-hover' => array('start' => '#d97706', 'end' => '#b45309'),
+                    '--header-gradient' => array('start' => '#f59e0b', 'end' => '#d97706'),
+                ),
+                'modules' => array(),
+            ),
+
+            // Demo Partner 2: Sales Academy Pro (Emerald/Green Theme)
+            'sales-academy-pro' => array(
+                'name' => 'Sales Academy Pro',
+                'slug' => 'sales-academy-pro',
+                'description' => 'Demo Partner mit Emerald/Green Theme',
+                'branding' => array(
+                    '--app-bg-color' => 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%)',
+                    '--sidebar-bg-color' => '#064e3b',
+                    '--sidebar-text-color' => '#ffffff',
+                    '--sidebar-text-muted' => '#a7f3d0',
+                    '--sidebar-active-bg' => 'rgba(52, 211, 153, 0.2)',
+                    '--sidebar-active-text' => '#34d399',
+                    '--sidebar-hover-bg' => 'rgba(255, 255, 255, 0.1)',
+                    '--card-bg-color' => '#ffffff',
+                    '--primary-accent' => '#059669',
+                    '--primary-accent-light' => '#d1fae5',
+                    '--primary-accent-hover' => '#047857',
+                    '--button-gradient' => 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    '--button-gradient-hover' => 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    '--button-solid' => '#059669',
+                    '--button-solid-hover' => '#047857',
+                    '--button-text' => '#ffffff',
+                    '--header-gradient' => 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    '--header-text' => '#ffffff',
+                    '--icon-primary' => '#059669',
+                    '--icon-secondary' => '#10b981',
+                    '--icon-muted' => '#6ee7b7',
+                    '--text-main' => '#022c22',
+                    '--text-secondary' => '#065f46',
+                    '--text-muted' => '#6ee7b7',
+                    '--border-color' => '#a7f3d0',
+                    '--border-color-light' => '#d1fae5',
+                    '--focus-ring' => 'rgba(5, 150, 105, 0.3)',
+                ),
+                'gradient_colors' => array(
+                    '--app-bg-color' => array('start' => '#f0fdf4', 'mid' => '#ecfdf5', 'end' => '#f0fdfa'),
+                    '--button-gradient' => array('start' => '#10b981', 'end' => '#059669'),
+                    '--button-gradient-hover' => array('start' => '#059669', 'end' => '#047857'),
+                    '--header-gradient' => array('start' => '#10b981', 'end' => '#059669'),
+                ),
+                'modules' => array(),
+            ),
+
+            // Demo Partner 3: TechSales Institute (Purple/Violet Theme)
+            'techsales-institute' => array(
+                'name' => 'TechSales Institute',
+                'slug' => 'techsales-institute',
+                'description' => 'Demo Partner mit Purple/Violet Theme',
+                'branding' => array(
+                    '--app-bg-color' => 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 50%, #ede9fe 100%)',
+                    '--sidebar-bg-color' => '#3b0764',
+                    '--sidebar-text-color' => '#ffffff',
+                    '--sidebar-text-muted' => '#c4b5fd',
+                    '--sidebar-active-bg' => 'rgba(167, 139, 250, 0.2)',
+                    '--sidebar-active-text' => '#a78bfa',
+                    '--sidebar-hover-bg' => 'rgba(255, 255, 255, 0.1)',
+                    '--card-bg-color' => '#ffffff',
+                    '--primary-accent' => '#7c3aed',
+                    '--primary-accent-light' => '#ede9fe',
+                    '--primary-accent-hover' => '#6d28d9',
+                    '--button-gradient' => 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    '--button-gradient-hover' => 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+                    '--button-solid' => '#7c3aed',
+                    '--button-solid-hover' => '#6d28d9',
+                    '--button-text' => '#ffffff',
+                    '--header-gradient' => 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    '--header-text' => '#ffffff',
+                    '--icon-primary' => '#7c3aed',
+                    '--icon-secondary' => '#8b5cf6',
+                    '--icon-muted' => '#a78bfa',
+                    '--text-main' => '#1e1b4b',
+                    '--text-secondary' => '#4c1d95',
+                    '--text-muted' => '#a78bfa',
+                    '--border-color' => '#ddd6fe',
+                    '--border-color-light' => '#ede9fe',
+                    '--focus-ring' => 'rgba(124, 58, 237, 0.3)',
+                ),
+                'gradient_colors' => array(
+                    '--app-bg-color' => array('start' => '#faf5ff', 'mid' => '#f3e8ff', 'end' => '#ede9fe'),
+                    '--button-gradient' => array('start' => '#8b5cf6', 'end' => '#7c3aed'),
+                    '--button-gradient-hover' => array('start' => '#7c3aed', 'end' => '#6d28d9'),
+                    '--header-gradient' => array('start' => '#8b5cf6', 'end' => '#7c3aed'),
+                ),
+                'modules' => array(),
+            ),
+
+            // En Garde Verhandlungstraining (Orange/Charcoal Theme)
+            'engarde-training' => array(
+                'name' => 'En Garde Verhandlungstraining',
+                'slug' => 'engarde-training',
+                'description' => 'Orange/Charcoal Theme für Verhandlungstraining',
+                'branding' => array(
+                    '--app-bg-color' => 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 50%, #fafafa 100%)',
+                    '--sidebar-bg-color' => '#333333',
+                    '--sidebar-text-color' => '#ffffff',
+                    '--sidebar-text-muted' => '#9ca3af',
+                    '--sidebar-active-bg' => 'rgba(234, 88, 12, 0.2)',
+                    '--sidebar-active-text' => '#f97316',
+                    '--sidebar-hover-bg' => 'rgba(255, 255, 255, 0.1)',
+                    '--card-bg-color' => '#ffffff',
+                    '--primary-accent' => '#ea580c',
+                    '--primary-accent-light' => '#fff7ed',
+                    '--primary-accent-hover' => '#c2410c',
+                    '--button-gradient' => 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                    '--button-gradient-hover' => 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                    '--button-solid' => '#ea580c',
+                    '--button-solid-hover' => '#c2410c',
+                    '--button-text' => '#ffffff',
+                    '--header-gradient' => 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                    '--header-text' => '#ffffff',
+                    '--icon-primary' => '#ea580c',
+                    '--icon-secondary' => '#f97316',
+                    '--icon-muted' => '#9ca3af',
+                    '--text-main' => '#1f2937',
+                    '--text-secondary' => '#4b5563',
+                    '--text-muted' => '#9ca3af',
+                    '--border-color' => '#e5e7eb',
+                    '--border-color-light' => '#f3f4f6',
+                    '--focus-ring' => 'rgba(234, 88, 12, 0.3)',
+                ),
+                'gradient_colors' => array(
+                    '--app-bg-color' => array('start' => '#fafafa', 'mid' => '#f5f5f5', 'end' => '#fafafa'),
+                    '--button-gradient' => array('start' => '#f97316', 'end' => '#ea580c'),
+                    '--button-gradient-hover' => array('start' => '#ea580c', 'end' => '#c2410c'),
+                    '--header-gradient' => array('start' => '#f97316', 'end' => '#ea580c'),
+                ),
+                'modules' => array(),
+            ),
+
+            // Stärkentrainer (Olive/Green Theme) - staerkentrainer.de
+            'staerkentrainer' => array(
+                'name' => 'Stärkentrainer',
+                'slug' => 'staerkentrainer',
+                'description' => 'Olive/Green Theme für Stärkentrainer',
+                'branding' => array(
+                    '--app-bg-color' => 'linear-gradient(135deg, #fafafa 0%, #f5f7f2 50%, #fafafa 100%)',
+                    '--sidebar-bg-color' => '#2d2d2d',
+                    '--sidebar-text-color' => '#ffffff',
+                    '--sidebar-text-muted' => '#a3a3a3',
+                    '--sidebar-active-bg' => 'rgba(106, 128, 50, 0.2)',
+                    '--sidebar-active-text' => '#8aa83a',
+                    '--sidebar-hover-bg' => 'rgba(255, 255, 255, 0.1)',
+                    '--card-bg-color' => '#ffffff',
+                    '--primary-accent' => '#6a8032',
+                    '--primary-accent-light' => '#f0f4e8',
+                    '--primary-accent-hover' => '#556827',
+                    '--button-gradient' => 'linear-gradient(135deg, #8aa83a 0%, #6a8032 100%)',
+                    '--button-gradient-hover' => 'linear-gradient(135deg, #6a8032 0%, #556827 100%)',
+                    '--button-solid' => '#6a8032',
+                    '--button-solid-hover' => '#556827',
+                    '--button-text' => '#ffffff',
+                    '--header-gradient' => 'linear-gradient(135deg, #8aa83a 0%, #6a8032 100%)',
+                    '--header-text' => '#ffffff',
+                    '--icon-primary' => '#6a8032',
+                    '--icon-secondary' => '#8aa83a',
+                    '--icon-muted' => '#a3a3a3',
+                    '--text-main' => '#1a1a1a',
+                    '--text-secondary' => '#525252',
+                    '--text-muted' => '#a3a3a3',
+                    '--border-color' => '#e5e5e5',
+                    '--border-color-light' => '#f5f5f5',
+                    '--focus-ring' => 'rgba(106, 128, 50, 0.3)',
+                ),
+                'gradient_colors' => array(
+                    '--app-bg-color' => array('start' => '#fafafa', 'mid' => '#f5f7f2', 'end' => '#fafafa'),
+                    '--button-gradient' => array('start' => '#8aa83a', 'end' => '#6a8032'),
+                    '--button-gradient-hover' => array('start' => '#6a8032', 'end' => '#556827'),
+                    '--header-gradient' => array('start' => '#8aa83a', 'end' => '#6a8032'),
+                ),
+                'modules' => array(),
+            ),
+
+            // Joachim Simon Leadership ID (Petrol/Teal Theme) - joachimsimon.de
+            'leadership-id' => array(
+                'name' => 'Joachim Simon - Leadership ID',
+                'slug' => 'leadership-id',
+                'description' => 'Petrol/Teal Theme für Leadership ID',
+                'branding' => array(
+                    '--app-bg-color' => 'linear-gradient(135deg, #fafafa 0%, #f0f7f9 50%, #fafafa 100%)',
+                    '--sidebar-bg-color' => '#1a5f7a',
+                    '--sidebar-text-color' => '#ffffff',
+                    '--sidebar-text-muted' => '#8ecfe0',
+                    '--sidebar-active-bg' => 'rgba(255, 255, 255, 0.2)',
+                    '--sidebar-active-text' => '#ffffff',
+                    '--sidebar-hover-bg' => 'rgba(255, 255, 255, 0.1)',
+                    '--card-bg-color' => '#ffffff',
+                    '--primary-accent' => '#1a5f7a',
+                    '--primary-accent-light' => '#e0f2f7',
+                    '--primary-accent-hover' => '#134a5f',
+                    '--button-gradient' => 'linear-gradient(135deg, #2980a8 0%, #1a5f7a 100%)',
+                    '--button-gradient-hover' => 'linear-gradient(135deg, #1a5f7a 0%, #134a5f 100%)',
+                    '--button-solid' => '#1a5f7a',
+                    '--button-solid-hover' => '#134a5f',
+                    '--button-text' => '#ffffff',
+                    '--header-gradient' => 'linear-gradient(135deg, #2980a8 0%, #1a5f7a 100%)',
+                    '--header-text' => '#ffffff',
+                    '--icon-primary' => '#1a5f7a',
+                    '--icon-secondary' => '#2980a8',
+                    '--icon-muted' => '#8ecfe0',
+                    '--text-main' => '#1a1a1a',
+                    '--text-secondary' => '#525252',
+                    '--text-muted' => '#9ca3af',
+                    '--border-color' => '#e5e7eb',
+                    '--border-color-light' => '#f3f4f6',
+                    '--focus-ring' => 'rgba(26, 95, 122, 0.3)',
+                ),
+                'gradient_colors' => array(
+                    '--app-bg-color' => array('start' => '#fafafa', 'mid' => '#f0f7f9', 'end' => '#fafafa'),
+                    '--button-gradient' => array('start' => '#2980a8', 'end' => '#1a5f7a'),
+                    '--button-gradient-hover' => array('start' => '#1a5f7a', 'end' => '#134a5f'),
+                    '--header-gradient' => array('start' => '#2980a8', 'end' => '#1a5f7a'),
+                ),
+                'modules' => array(),
+            ),
+        );
+
+        $imported_count = 0;
+
+        foreach ($mock_partners as $slug => $partner_data) {
+            // Check if partner already exists by slug
+            $existing = get_posts(array(
+                'post_type' => 'whitelabel_partner',
+                'post_status' => 'any',
+                'meta_query' => array(
+                    array(
+                        'key' => '_partner_slug',
+                        'value' => $slug,
+                    ),
+                ),
+                'posts_per_page' => 1,
+            ));
+
+            // Also check by post_name
+            if (empty($existing)) {
+                $existing = get_posts(array(
+                    'post_type' => 'whitelabel_partner',
+                    'post_status' => 'any',
+                    'name' => $slug,
+                    'posts_per_page' => 1,
+                ));
+            }
+
+            // Skip if partner already exists
+            if (!empty($existing)) {
+                continue;
+            }
+
+            // Create new partner post
+            $post_id = wp_insert_post(array(
+                'post_type' => 'whitelabel_partner',
+                'post_title' => $partner_data['name'],
+                'post_name' => $slug,
+                'post_status' => 'publish',
+            ));
+
+            if (is_wp_error($post_id) || !$post_id) {
+                continue;
+            }
+
+            // Save meta data
+            update_post_meta($post_id, '_partner_slug', $slug);
+            update_post_meta($post_id, '_partner_description', $partner_data['description']);
+            update_post_meta($post_id, '_partner_branding', $partner_data['branding']);
+            update_post_meta($post_id, '_partner_gradient_colors', $partner_data['gradient_colors']);
+            update_post_meta($post_id, '_partner_modules', $partner_data['modules']);
+
+            $imported_count++;
+        }
+
+        // Mark import as done
+        update_option('bewerbungstrainer_partners_imported', true);
+
+        // Log the import
+        if ($imported_count > 0) {
+            error_log("Bewerbungstrainer: Imported {$imported_count} initial partner configurations.");
+        }
+
+        return $imported_count;
+    }
+
+    /**
      * Sanitize CSS value (colors, gradients, rgba)
      */
     private function sanitize_css_value($value) {

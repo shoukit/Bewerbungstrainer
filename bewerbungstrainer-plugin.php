@@ -153,6 +153,9 @@ class Bewerbungstrainer_Plugin {
             wp_mkdir_p($pdfs_dir);
         }
 
+        // Import initial partner configurations (only runs once)
+        Bewerbungstrainer_Whitelabel_Partners::import_initial_partners();
+
         // Create upload directory for simulator audio
         $simulator_dir = $upload_dir['basedir'] . '/bewerbungstrainer/simulator';
         if (!file_exists($simulator_dir)) {
