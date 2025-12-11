@@ -70,10 +70,12 @@ const getThemedColors = (branding) => {
 
 /**
  * Navigation items configuration
+ * moduleId maps to WordPress partner module IDs for filtering
  */
 const NAV_ITEMS = [
   {
     id: 'simulator',
+    moduleId: 'simulator', // Maps to WordPress module
     label: 'Szenario-Training',
     shortLabel: 'Szenario',
     icon: Target,
@@ -81,6 +83,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'dashboard',
+    moduleId: 'roleplay', // Maps to WordPress module (Live-Gespräche = roleplay)
     label: 'Live-Gespräche',
     shortLabel: 'Live',
     icon: MessageSquare,
@@ -88,6 +91,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'gym',
+    moduleId: 'gym', // Maps to WordPress module
     label: 'Rhetorik-Gym',
     shortLabel: 'Gym',
     icon: Dumbbell,
@@ -104,6 +108,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'history',
+    moduleId: 'history', // Maps to WordPress module
     label: 'Meine Sessions',
     shortLabel: 'Sessions',
     icon: History,
@@ -129,10 +134,19 @@ const AppSidebar = ({
   const [expandedItems, setExpandedItems] = React.useState(['gym']); // Gym expanded by default
 
   // Get partner branding for theming
-  const { branding, isWhiteLabel, partnerName, logoUrl } = usePartner();
+  const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
   const { user, isAuthenticated, logout } = useAuth();
   const { showSuccess } = useToast();
   const themedColors = getThemedColors(branding);
+
+  // Filter nav items based on partner module configuration
+  const filteredNavItems = React.useMemo(() => {
+    return NAV_ITEMS.filter(item => {
+      // Use moduleId if available, otherwise fall back to item id
+      const moduleToCheck = item.moduleId || item.id;
+      return checkModuleAllowed(moduleToCheck);
+    });
+  }, [checkModuleAllowed]);
 
   // Handle logout with toast notification
   const handleLogout = async () => {
@@ -309,7 +323,7 @@ const AppSidebar = ({
 
       {/* Navigation Items */}
       <nav style={{ flex: 1, padding: '8px 12px' }}>
-        {NAV_ITEMS.map((item) => {
+        {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id ||
             (item.id === 'dashboard' && activeView === 'roleplay') ||
@@ -638,10 +652,18 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
   const [expandedItems, setExpandedItems] = React.useState(['gym']);
 
   // Get partner branding for theming
-  const { branding, isWhiteLabel, partnerName, logoUrl } = usePartner();
+  const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
   const { user, isAuthenticated, logout } = useAuth();
   const { showSuccess } = useToast();
   const themedColors = getThemedColors(branding);
+
+  // Filter nav items based on partner module configuration
+  const filteredNavItems = React.useMemo(() => {
+    return NAV_ITEMS.filter(item => {
+      const moduleToCheck = item.moduleId || item.id;
+      return checkModuleAllowed(moduleToCheck);
+    });
+  }, [checkModuleAllowed]);
 
   // Handle logout with toast notification
   const handleLogout = async () => {
@@ -816,7 +838,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                 overflowY: 'auto',
               }}
             >
-              {NAV_ITEMS.map((item) => {
+              {filteredNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeView === item.id ||
                   (item.id === 'dashboard' && activeView === 'roleplay') ||

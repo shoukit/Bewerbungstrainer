@@ -6,11 +6,86 @@ import SessionDetailView from './components/SessionDetailView';
 import { SimulatorApp } from './components/simulator';
 import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SidebarLayout } from './components/ui/sidebar';
-import { PartnerProvider } from './context/PartnerContext';
+import { PartnerProvider, usePartner } from './context/PartnerContext';
 import { LoginModal, useLoginModal } from './components/LoginModal';
 import { ToastProvider } from './components/Toast';
+import { Loader2 } from 'lucide-react';
 
 console.log('📦 [APP] App.jsx module loaded');
+
+/**
+ * Loading Spinner Component
+ * Shown while partner branding is being loaded
+ */
+const BrandingLoadingSpinner = () => {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f8fafc',
+        zIndex: 9999,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px',
+        }}
+      >
+        <Loader2
+          style={{
+            width: '48px',
+            height: '48px',
+            color: '#3A7FA7',
+            animation: 'spin 1s linear infinite',
+          }}
+        />
+        <p
+          style={{
+            fontSize: '16px',
+            color: '#64748b',
+            fontWeight: 500,
+            margin: 0,
+          }}
+        >
+          Trainingscenter wird geladen...
+        </p>
+      </div>
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </div>
+  );
+};
+
+/**
+ * App Content Wrapper
+ * Handles loading state and renders main app or spinner
+ */
+const AppContent = ({ children }) => {
+  const { isLoading } = usePartner();
+
+  if (isLoading) {
+    return <BrandingLoadingSpinner />;
+  }
+
+  return children;
+};
 
 // View constants
 const VIEWS = {
@@ -321,24 +396,26 @@ function App() {
   return (
     <PartnerProvider>
       <ToastProvider>
-        <SidebarLayout
-          activeView={currentView}
-          onNavigate={handleSidebarNavigate}
-          headerOffset={headerOffset}
-          onLoginClick={openLoginModal}
-        >
-          {renderContent()}
-        </SidebarLayout>
+        <AppContent>
+          <SidebarLayout
+            activeView={currentView}
+            onNavigate={handleSidebarNavigate}
+            headerOffset={headerOffset}
+            onLoginClick={openLoginModal}
+          >
+            {renderContent()}
+          </SidebarLayout>
 
-        {/* Login Modal */}
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={closeLoginModal}
-          onLoginSuccess={(user) => {
-            console.log('✅ [APP] User logged in:', user.displayName);
-            // Optionally refresh the page or update state
-          }}
-        />
+          {/* Login Modal */}
+          <LoginModal
+            isOpen={isLoginModalOpen}
+            onClose={closeLoginModal}
+            onLoginSuccess={(user) => {
+              console.log('✅ [APP] User logged in:', user.displayName);
+              // Optionally refresh the page or update state
+            }}
+          />
+        </AppContent>
       </ToastProvider>
     </PartnerProvider>
   );
