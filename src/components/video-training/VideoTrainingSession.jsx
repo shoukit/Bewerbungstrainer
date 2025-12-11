@@ -266,28 +266,32 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     try {
       // Create video blob
       const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
-      const base64Video = await blobToBase64(videoBlob);
-
       const config = window.bewerbungstrainerConfig || {};
 
-      // Upload video
-      console.log('[VIDEO TRAINING] Uploading video...');
+      // Use FormData for file upload (avoids 413 error with large files)
+      const formData = new FormData();
+      formData.append('video', videoBlob, `video_${session.id}.webm`);
+      formData.append('video_duration', recordingTime.toString());
+      formData.append('timeline', JSON.stringify(timeline));
+
+      // Upload video using FormData
+      console.log('[VIDEO TRAINING] Uploading video (size: ' + (videoBlob.size / 1024 / 1024).toFixed(2) + ' MB)...');
       const uploadResponse = await fetch(`${config.apiUrl}/video-training/sessions/${session.id}/video`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-WP-Nonce': config.nonce,
+          // Don't set Content-Type - browser will set it with boundary for FormData
         },
-        body: JSON.stringify({
-          video_base64: base64Video.split(',')[1], // Remove data URL prefix
-          video_mime_type: 'video/webm',
-          video_duration: recordingTime,
-          timeline: timeline,
-        }),
+        body: formData,
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Fehler beim Hochladen des Videos');
+        const errorText = await uploadResponse.text();
+        console.error('[VIDEO TRAINING] Upload failed:', uploadResponse.status, errorText);
+        if (uploadResponse.status === 413) {
+          throw new Error('Das Video ist zu groß zum Hochladen. Bitte versuche eine kürzere Aufnahme.');
+        }
+        throw new Error('Fehler beim Hochladen des Videos. Status: ' + uploadResponse.status);
       }
 
       const uploadData = await uploadResponse.json();
@@ -544,50 +548,124 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
           </div>
 
           {/* Controls */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '20px' }}>
-            {!isRecording ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
+            {/* Recording button */}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {!isRecording ? (
+                <button
+                  onClick={startRecording}
+                  disabled={!stream}
+                  style={{
+                    padding: '14px 28px',
+                    borderRadius: '12px',
+                    background: stream ? '#ef4444' : '#94a3b8',
+                    color: '#fff',
+                    border: 'none',
+                    cursor: stream ? 'pointer' : 'not-allowed',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: stream ? '0 4px 14px rgba(239, 68, 68, 0.4)' : 'none',
+                  }}
+                >
+                  <Video size={20} />
+                  Aufnahme starten
+                </button>
+              ) : (
+                <button
+                  onClick={stopRecording}
+                  style={{
+                    padding: '14px 28px',
+                    borderRadius: '12px',
+                    background: '#f1f5f9',
+                    color: '#0f172a',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                  }}
+                >
+                  <StopCircle size={20} color="#ef4444" />
+                  Aufnahme pausieren
+                </button>
+              )}
+            </div>
+
+            {/* Navigation buttons - always visible */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {/* Previous button - only show if enable_navigation and not first question */}
+              {scenario?.enable_navigation && currentQuestionIndex > 0 && (
+                <button
+                  onClick={goToPrevQuestion}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    background: '#fff',
+                    border: '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                    color: '#0f172a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '14px',
+                  }}
+                >
+                  <ChevronLeft size={18} />
+                  Vorherige
+                </button>
+              )}
+
+              {/* Next button - only show if enable_navigation and not last question */}
+              {scenario?.enable_navigation && currentQuestionIndex < questions.length - 1 && (
+                <button
+                  onClick={goToNextQuestion}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    background: primaryAccent,
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                  }}
+                >
+                  Nächste
+                  <ChevronRight size={18} />
+                </button>
+              )}
+
+              {/* Finish button - always visible */}
               <button
-                onClick={startRecording}
-                disabled={!stream}
+                onClick={finishRecording}
+                disabled={recordedChunks.length === 0}
                 style={{
-                  padding: '14px 28px',
-                  borderRadius: '12px',
-                  background: stream ? '#ef4444' : '#94a3b8',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  background: recordedChunks.length === 0 ? '#94a3b8' : '#22c55e',
+                  border: 'none',
+                  cursor: recordedChunks.length === 0 ? 'not-allowed' : 'pointer',
                   color: '#fff',
-                  border: 'none',
-                  cursor: stream ? 'pointer' : 'not-allowed',
-                  fontSize: '16px',
-                  fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px',
-                  boxShadow: stream ? '0 4px 14px rgba(239, 68, 68, 0.4)' : 'none',
-                }}
-              >
-                <Video size={20} />
-                Aufnahme starten
-              </button>
-            ) : (
-              <button
-                onClick={stopRecording}
-                style={{
-                  padding: '14px 28px',
-                  borderRadius: '12px',
-                  background: '#f1f5f9',
-                  color: '#0f172a',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '16px',
+                  gap: '6px',
+                  fontSize: '14px',
                   fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
+                  boxShadow: recordedChunks.length > 0 ? '0 4px 14px rgba(34, 197, 94, 0.3)' : 'none',
                 }}
               >
-                <StopCircle size={20} color="#ef4444" />
-                Aufnahme pausieren
+                <Check size={18} />
+                Training abschließen
               </button>
-            )}
+            </div>
           </div>
         </div>
 
@@ -644,75 +722,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
           {/* Tips */}
           {scenario?.enable_tips && currentQuestion?.tips && (
             <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} />
-          )}
-
-          {/* Navigation */}
-          {scenario?.enable_navigation && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
-              <button
-                onClick={goToPrevQuestion}
-                disabled={currentQuestionIndex === 0}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  background: currentQuestionIndex === 0 ? '#f1f5f9' : '#fff',
-                  border: '1px solid #e2e8f0',
-                  cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer',
-                  color: currentQuestionIndex === 0 ? '#94a3b8' : '#0f172a',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                }}
-              >
-                <ChevronLeft size={18} />
-                Vorherige
-              </button>
-
-              {currentQuestionIndex < questions.length - 1 ? (
-                <button
-                  onClick={goToNextQuestion}
-                  style={{
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    background: primaryAccent,
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                  }}
-                >
-                  Nächste
-                  <ChevronRight size={18} />
-                </button>
-              ) : (
-                <button
-                  onClick={finishRecording}
-                  disabled={recordedChunks.length === 0}
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    background: recordedChunks.length === 0 ? '#94a3b8' : '#22c55e',
-                    border: 'none',
-                    cursor: recordedChunks.length === 0 ? 'not-allowed' : 'pointer',
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    boxShadow: recordedChunks.length > 0 ? '0 4px 14px rgba(34, 197, 94, 0.3)' : 'none',
-                  }}
-                >
-                  <Check size={18} />
-                  Training abschließen
-                </button>
-              )}
-            </div>
           )}
         </div>
       </div>

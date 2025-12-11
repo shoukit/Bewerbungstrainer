@@ -98,6 +98,12 @@ class Bewerbungstrainer_Plugin {
         // Initialize components
         add_action('plugins_loaded', array($this, 'init'));
 
+        // Increase upload limits for video training API
+        add_filter('upload_size_limit', array($this, 'increase_upload_size_limit'));
+
+        // Try to increase PHP limits for video uploads
+        add_action('rest_api_init', array($this, 'set_video_upload_limits'));
+
         // Enqueue scripts and styles
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
@@ -191,6 +197,33 @@ class Bewerbungstrainer_Plugin {
     public function deactivate() {
         // Flush rewrite rules
         flush_rewrite_rules();
+    }
+
+    /**
+     * Increase WordPress upload size limit for video uploads
+     *
+     * @param int $bytes Current limit in bytes
+     * @return int New limit in bytes (500MB)
+     */
+    public function increase_upload_size_limit($bytes) {
+        return 524288000; // 500 MB
+    }
+
+    /**
+     * Set PHP limits for video uploads
+     * Note: These may be overridden by server configuration (nginx, .htaccess)
+     */
+    public function set_video_upload_limits() {
+        // Only apply to video-training API endpoints
+        $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        if (strpos($request_uri, '/video-training/') !== false) {
+            // Try to increase PHP limits (may not work on all servers)
+            @ini_set('upload_max_filesize', '500M');
+            @ini_set('post_max_size', '512M');
+            @ini_set('max_execution_time', '600');
+            @ini_set('max_input_time', '600');
+            @ini_set('memory_limit', '512M');
+        }
     }
 
     /**

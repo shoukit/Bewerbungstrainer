@@ -224,6 +224,9 @@ function AppContent() {
   // Pending scenario for video training (needs to trigger selection after login)
   const [pendingVideoTrainingScenario, setPendingVideoTrainingScenario] = useState(null);
 
+  // Reset key for video training - increments to trigger reset to dashboard
+  const [videoTrainingResetKey, setVideoTrainingResetKey] = useState(0);
+
   /**
    * Execute a pending action after successful login
    */
@@ -331,6 +334,8 @@ function AppContent() {
         setCurrentView(VIEWS.SIMULATOR);
         break;
       case 'video_training':
+        // Reset the video training module to dashboard when clicking sidebar
+        setVideoTrainingResetKey(prev => prev + 1);
         setCurrentView(VIEWS.VIDEO_TRAINING);
         break;
       case 'history':
@@ -435,6 +440,7 @@ function AppContent() {
       case VIEWS.VIDEO_TRAINING:
         return (
           <VideoTrainingApp
+            key={videoTrainingResetKey}
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}

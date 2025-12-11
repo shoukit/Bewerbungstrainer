@@ -126,7 +126,17 @@ const DynamicFormField = ({ field, value, onChange, error, primaryAccent }) => {
  * VideoTrainingWizard - Configuration view before starting
  */
 const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
-  const [variables, setVariables] = useState({});
+  // Initialize variables with default values from input configuration
+  const [variables, setVariables] = useState(() => {
+    const inputConfig = scenario?.input_configuration || [];
+    const initialVars = {};
+    inputConfig.forEach((field) => {
+      if (field.default) {
+        initialVars[field.key] = field.default;
+      }
+    });
+    return initialVars;
+  });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
