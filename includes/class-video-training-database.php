@@ -64,6 +64,28 @@ class Bewerbungstrainer_Video_Training_Database {
             error_log('[VIDEO TRAINING] Tables not found, creating...');
             self::create_tables();
         }
+
+        // Run migrations for existing installations
+        $this->run_migrations();
+    }
+
+    /**
+     * Run database migrations for existing installations
+     */
+    private function run_migrations() {
+        $current_version = get_option('bewerbungstrainer_video_training_migration_version', '0');
+
+        // Migration 1: Enable navigation for Elevator Pitch scenarios
+        if (version_compare($current_version, '1.0.1', '<')) {
+            global $wpdb;
+            $wpdb->update(
+                $this->table_scenarios,
+                array('enable_navigation' => 1),
+                array('scenario_type' => 'pitch', 'enable_navigation' => 0)
+            );
+            error_log('[VIDEO TRAINING] Migration 1.0.1: Enabled navigation for pitch scenarios');
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.1');
+        }
     }
 
     /**
@@ -398,10 +420,17 @@ Gib konkretes, umsetzbares Feedback.',
             'time_limit_per_question' => 60,
             'total_time_limit' => 300,
             'enable_tips' => 1,
-            'enable_navigation' => 0,
+            'enable_navigation' => 1,
             'is_active' => 1,
             'sort_order' => 3
         ));
+
+        // Migrate existing Elevator Pitch scenarios to enable navigation
+        $wpdb->update(
+            $table,
+            array('enable_navigation' => 1),
+            array('scenario_type' => 'pitch', 'enable_navigation' => 0)
+        );
     }
 
     // =========================================================================
