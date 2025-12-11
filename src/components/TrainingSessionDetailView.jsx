@@ -376,6 +376,10 @@ const TranscriptEntry = ({ entry, index, primaryAccent }) => {
 const AnswerCard = ({ answer, index, primaryAccent }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const feedback = answer.feedback ? (typeof answer.feedback === 'string' ? JSON.parse(answer.feedback) : answer.feedback) : null;
+  const audioMetrics = answer.audio_analysis ? (typeof answer.audio_analysis === 'string' ? JSON.parse(answer.audio_analysis) : answer.audio_analysis) : null;
+
+  // Check if no speech was detected
+  const isNoSpeech = answer.transcript === '[Keine Sprache erkannt]' || audioMetrics?.speech_rate === 'keine_sprache';
 
   return (
     <motion.div
@@ -396,9 +400,9 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
             {answer.question_text || `Frage ${index + 1}`}
           </h4>
         </div>
-        {answer.overall_score && (
-          <span style={{ fontSize: '16px', fontWeight: 700, color: getScoreColor(answer.overall_score, 10, primaryAccent) }}>
-            {answer.overall_score.toFixed(1)}
+        {answer.overall_score !== null && answer.overall_score !== undefined && (
+          <span style={{ fontSize: '16px', fontWeight: 700, color: isNoSpeech ? COLORS.slate[400] : getScoreColor(answer.overall_score, 10, primaryAccent) }}>
+            {isNoSpeech ? '–' : answer.overall_score.toFixed(1)}
           </span>
         )}
         <ChevronDown size={18} color={COLORS.slate[400]} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
@@ -408,6 +412,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
         {isExpanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
             <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${COLORS.slate[200]}`, paddingTop: '16px' }}>
+              {/* Audio Player */}
               {answer.audio_url && (
                 <div style={{ marginBottom: '16px' }}>
                   <h5 style={{ fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -416,27 +421,170 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                   <AudioPlayer audioUrl={answer.audio_url} primaryAccent={primaryAccent} />
                 </div>
               )}
+
+              {/* Transcript */}
               {answer.transcript && (
                 <div style={{ marginBottom: '16px' }}>
                   <h5 style={{ fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <FileText size={14} color={primaryAccent} /> Transkript
                   </h5>
-                  <p style={{ fontSize: '13px', color: COLORS.slate[600], lineHeight: 1.6, background: COLORS.slate[50], padding: '12px 16px', borderRadius: '10px', margin: 0, fontStyle: 'italic' }}>
+                  <p style={{
+                    fontSize: '13px',
+                    color: isNoSpeech ? COLORS.slate[400] : COLORS.slate[600],
+                    lineHeight: 1.6,
+                    background: COLORS.slate[50],
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    margin: 0,
+                    fontStyle: 'italic'
+                  }}>
                     "{answer.transcript}"
                   </p>
                 </div>
               )}
-              {feedback?.summary && <p style={{ fontSize: '13px', color: COLORS.slate[600], lineHeight: 1.5, marginBottom: '12px' }}>{feedback.summary}</p>}
-              {feedback?.strengths?.length > 0 && (
-                <div style={{ marginBottom: '12px' }}>
-                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: COLORS.green[500], marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={12} /> Stärken</h6>
-                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>{feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
+
+              {/* Scores Grid - nur anzeigen wenn Sprache erkannt wurde */}
+              {feedback?.scores && !isNoSpeech && (
+                <div style={{ marginBottom: '16px' }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Star size={14} color={primaryAccent} /> Bewertung
+                  </h5>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                    {[
+                      { key: 'content', label: 'Inhalt' },
+                      { key: 'structure', label: 'Struktur' },
+                      { key: 'relevance', label: 'Relevanz' },
+                      { key: 'delivery', label: 'Präsentation' },
+                      { key: 'overall', label: 'Gesamt' },
+                    ].map(({ key, label }) => {
+                      const score = feedback.scores[key];
+                      return (
+                        <div key={key} style={{
+                          padding: '10px 8px',
+                          background: key === 'overall' ? `${primaryAccent}15` : COLORS.slate[50],
+                          borderRadius: '8px',
+                          textAlign: 'center',
+                          border: key === 'overall' ? `1px solid ${primaryAccent}30` : 'none',
+                        }}>
+                          <div style={{
+                            fontSize: '16px',
+                            fontWeight: 700,
+                            color: score != null ? getScoreColor(score, 10, primaryAccent) : COLORS.slate[400],
+                          }}>
+                            {score != null ? score.toFixed(1) : '-'}
+                          </div>
+                          <div style={{ fontSize: '10px', color: COLORS.slate[500], marginTop: '2px' }}>
+                            {label}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
+
+              {/* Summary */}
+              {feedback?.summary && <p style={{ fontSize: '13px', color: COLORS.slate[600], lineHeight: 1.5, marginBottom: '12px' }}>{feedback.summary}</p>}
+
+              {/* Strengths */}
+              {feedback?.strengths?.length > 0 && !isNoSpeech && (
+                <div style={{ marginBottom: '12px' }}>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: COLORS.green[500], marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CheckCircle size={12} /> Stärken
+                  </h6>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>
+                    {feedback.strengths.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {/* Improvements */}
               {feedback?.improvements?.length > 0 && (
-                <div>
-                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: COLORS.amber[500], marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><Lightbulb size={12} /> Tipps</h6>
-                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>{feedback.improvements.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                <div style={{ marginBottom: '12px' }}>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: COLORS.amber[500], marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <AlertCircle size={12} /> Verbesserungspotenzial
+                  </h6>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>
+                    {feedback.improvements.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {/* Tips */}
+              {feedback?.tips?.length > 0 && !isNoSpeech && (
+                <div style={{ marginBottom: '12px' }}>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: primaryAccent, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Lightbulb size={12} /> Tipps
+                  </h6>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>
+                    {feedback.tips.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {/* Audio Metrics - nur anzeigen wenn Sprache erkannt wurde */}
+              {audioMetrics && !isNoSpeech && (
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: `1px solid ${COLORS.slate[200]}` }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Mic size={14} color={primaryAccent} /> Sprechanalyse
+                  </h5>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                    {/* Speech Rate */}
+                    {audioMetrics.speech_rate && (
+                      <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Sprechtempo</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700], textTransform: 'capitalize' }}>
+                          {audioMetrics.speech_rate === 'optimal' ? '✓ Optimal' : audioMetrics.speech_rate === 'zu_schnell' ? '⚡ Zu schnell' : audioMetrics.speech_rate === 'zu_langsam' ? '🐢 Zu langsam' : audioMetrics.speech_rate}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Filler Words */}
+                    {audioMetrics.filler_words && (
+                      <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Füllwörter</div>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          color: audioMetrics.filler_words.count <= 2 ? COLORS.green[500] : audioMetrics.filler_words.count <= 5 ? COLORS.amber[500] : COLORS.red[500]
+                        }}>
+                          {audioMetrics.filler_words.count || 0} erkannt
+                        </div>
+                        {audioMetrics.filler_words.words?.length > 0 && (
+                          <div style={{ fontSize: '11px', color: COLORS.slate[500], marginTop: '4px' }}>
+                            {audioMetrics.filler_words.words.slice(0, 5).join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Confidence Score */}
+                    {audioMetrics.confidence_score != null && (
+                      <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Selbstsicherheit</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.confidence_score, 100, primaryAccent) }}>
+                          {audioMetrics.confidence_score}%
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Clarity Score */}
+                    {audioMetrics.clarity_score != null && (
+                      <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Klarheit</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.clarity_score, 100, primaryAccent) }}>
+                          {audioMetrics.clarity_score}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notes */}
+                  {audioMetrics.notes && (
+                    <p style={{ fontSize: '12px', color: COLORS.slate[500], marginTop: '10px', fontStyle: 'italic' }}>
+                      {audioMetrics.notes}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
