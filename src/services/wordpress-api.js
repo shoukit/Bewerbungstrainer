@@ -18,7 +18,14 @@ class WordPressAPI {
         };
 
         this.apiUrl = this.config.apiUrl;
-        this.nonce = this.config.nonce;
+        // Note: nonce is now read dynamically via getNonce() to support login/logout
+    }
+
+    /**
+     * Get current nonce (always read from config to support dynamic updates after login)
+     */
+    getNonce() {
+        return window.bewerbungstrainerConfig?.nonce || this.config.nonce || '';
     }
 
     /**
@@ -30,7 +37,7 @@ class WordPressAPI {
         const defaultOptions = {
             headers: {
                 'Content-Type': 'application/json',
-                'X-WP-Nonce': this.nonce
+                'X-WP-Nonce': this.getNonce()
             },
             credentials: 'same-origin'
         };
@@ -224,7 +231,7 @@ class WordPressAPI {
         return this.request(`/video-training/${trainingId}/upload`, {
             method: 'POST',
             headers: {
-                'X-WP-Nonce': this.nonce
+                'X-WP-Nonce': this.getNonce()
             },
             body: formData
         });
@@ -328,7 +335,7 @@ class WordPressAPI {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'X-WP-Nonce': this.nonce
+                'X-WP-Nonce': this.getNonce()
             },
             credentials: 'same-origin',
             body: formData
