@@ -985,7 +985,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         /* Single Column Layout for Feedback View */
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', justifyContent: 'flex-end' }}>
             {scenario.allow_retry && (
               <button
                 onClick={handleRetry}
