@@ -319,12 +319,12 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         }).then(r => r.json()).catch(() => ({ data: [] })),
       ]);
 
-      setRoleplaySessions(roleplayData.data || []);
-      setSimulatorSessions(simulatorData.data || []);
-      setVideoSessions(videoData.data || []);
-      setRoleplayScenarios(roleplayScenariosData || []);
-      setSimulatorScenarios(simulatorScenariosData.data || []);
-      setVideoScenarios(videoScenariosData.data || []);
+      setRoleplaySessions(Array.isArray(roleplayData?.data) ? roleplayData.data : []);
+      setSimulatorSessions(Array.isArray(simulatorData?.data) ? simulatorData.data : []);
+      setVideoSessions(Array.isArray(videoData?.data) ? videoData.data : []);
+      setRoleplayScenarios(Array.isArray(roleplayScenariosData) ? roleplayScenariosData : (Array.isArray(roleplayScenariosData?.data) ? roleplayScenariosData.data : []));
+      setSimulatorScenarios(Array.isArray(simulatorScenariosData?.data) ? simulatorScenariosData.data : []);
+      setVideoScenarios(Array.isArray(videoScenariosData?.data) ? videoScenariosData.data : []);
     } catch (err) {
       console.error('Failed to load sessions:', err);
       setError(err.message || 'Fehler beim Laden der Daten');
