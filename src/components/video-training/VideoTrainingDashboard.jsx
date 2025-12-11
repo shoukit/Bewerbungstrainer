@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { motion } from 'framer-motion';
 
 // Icon mapping for scenarios
@@ -161,10 +162,9 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
     setError(null);
 
     try {
-      const config = window.bewerbungstrainerConfig || {};
-      const response = await fetch(`${config.apiUrl}/video-training/scenarios`, {
+      const response = await fetch(`${getWPApiUrl()}/video-training/scenarios`, {
         headers: {
-          'X-WP-Nonce': config.nonce,
+          'X-WP-Nonce': getWPNonce(),
         },
       });
 

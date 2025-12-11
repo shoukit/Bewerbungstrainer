@@ -6,7 +6,7 @@
  */
 
 import { generateInterviewFeedback, generateAudioAnalysis } from './gemini.js';
-import wordpressAPI from './wordpress-api.js';
+import wordpressAPI, { getWPNonce } from './wordpress-api.js';
 import { decodeUnicodeEscapes } from '../utils/parseJSON.js';
 
 /**
@@ -318,7 +318,6 @@ export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retr
   console.log(`🔄 [Roleplay Feedback] Max retries: ${maxRetries}, delay: ${retryDelayMs}ms`);
 
   const audioUrl = getRoleplaySessionAudioUrl(sessionId);
-  const config = window.bewerbungstrainerConfig || { nonce: '' };
 
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -329,7 +328,7 @@ export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retr
       const response = await fetch(audioUrl, {
         method: 'GET',
         headers: {
-          'X-WP-Nonce': config.nonce,
+          'X-WP-Nonce': getWPNonce(),
         },
         credentials: 'same-origin',
       });

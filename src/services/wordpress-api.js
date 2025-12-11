@@ -540,3 +540,19 @@ class WordPressAPI {
 // Export singleton instance
 const wordpressAPI = new WordPressAPI();
 export default wordpressAPI;
+
+/**
+ * Get current WordPress REST API nonce
+ * Always reads fresh from window.bewerbungstrainerConfig to support login/logout
+ * Use this for any direct fetch calls outside of WordPressAPI
+ */
+export function getWPNonce() {
+    return window.bewerbungstrainerConfig?.nonce || '';
+}
+
+/**
+ * Get WordPress API base URL
+ */
+export function getWPApiUrl() {
+    return window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+}

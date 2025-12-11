@@ -25,6 +25,7 @@ import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-f
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import TrainingSessionDetailView from './TrainingSessionDetailView';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 
 console.log('📦 [SESSION_HISTORY] SessionHistory module loaded');
 
@@ -304,7 +305,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     setError(null);
 
     try {
-      const config = window.bewerbungstrainerConfig || {};
+      // Get fresh nonce and API URL for each request
+      const apiUrl = getWPApiUrl();
 
       // Load all sessions in parallel
       const [
@@ -318,22 +320,22 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         // Roleplay sessions
         getRoleplaySessions({ limit: 50 }).catch(() => ({ data: [] })),
         // Simulator sessions
-        fetch(`${config.apiUrl}/simulator/sessions?limit=50`, {
-          headers: { 'X-WP-Nonce': config.nonce },
+        fetch(`${apiUrl}/simulator/sessions?limit=50`, {
+          headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Video training sessions
-        fetch(`${config.apiUrl}/video-training/sessions?limit=50`, {
-          headers: { 'X-WP-Nonce': config.nonce },
+        fetch(`${apiUrl}/video-training/sessions?limit=50`, {
+          headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Roleplay scenarios
         getRoleplayScenarios().catch(() => []),
         // Simulator scenarios
-        fetch(`${config.apiUrl}/simulator/scenarios`, {
-          headers: { 'X-WP-Nonce': config.nonce },
+        fetch(`${apiUrl}/simulator/scenarios`, {
+          headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Video scenarios
-        fetch(`${config.apiUrl}/video-training/scenarios`, {
-          headers: { 'X-WP-Nonce': config.nonce },
+        fetch(`${apiUrl}/video-training/scenarios`, {
+          headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
       ]);
 

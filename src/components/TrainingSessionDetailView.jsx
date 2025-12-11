@@ -36,6 +36,7 @@ import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 
 // =============================================================================
 // CONSTANTS
@@ -331,12 +332,11 @@ const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
     }
 
     const audioUrl = getRoleplaySessionAudioUrl(sessionId);
-    const config = window.bewerbungstrainerConfig || { nonce: '' };
 
     setIsLoading(true);
     setError(null);
 
-    fetch(audioUrl, { headers: { 'X-WP-Nonce': config.nonce }, credentials: 'same-origin' })
+    fetch(audioUrl, { headers: { 'X-WP-Nonce': getWPNonce() }, credentials: 'same-origin' })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.blob(); })
       .then((blob) => {
         const objectUrl = URL.createObjectURL(blob);
@@ -757,9 +757,8 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
   const loadSimulatorAnswers = async () => {
     try {
       setIsLoading(true);
-      const config = window.bewerbungstrainerConfig || {};
-      const response = await fetch(`${config.apiUrl}/simulator/sessions/${session.id}/answers`, {
-        headers: { 'X-WP-Nonce': config.nonce },
+      const response = await fetch(`${getWPApiUrl()}/simulator/sessions/${session.id}/answers`, {
+        headers: { 'X-WP-Nonce': getWPNonce() },
       });
       const data = await response.json();
       if (data.success && data.data?.answers) setAnswers(data.data.answers);
