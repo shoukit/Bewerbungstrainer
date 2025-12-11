@@ -152,10 +152,10 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   const themedText = branding?.headerText || '#ffffff';
   const primaryAccent = branding?.primaryAccent || '#3A7FA7';
 
-  // Fetch scenarios on mount
+  // Fetch scenarios on mount and when authentication changes
   useEffect(() => {
     fetchScenarios();
-  }, []);
+  }, [isAuthenticated]);
 
   const fetchScenarios = async () => {
     setIsLoading(true);

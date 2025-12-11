@@ -22,10 +22,16 @@ class WordPressAPI {
     }
 
     /**
-     * Get current nonce (always read from config to support dynamic updates after login)
+     * Get current nonce (always read from window.bewerbungstrainerConfig to support dynamic updates after login)
+     * IMPORTANT: Never cache the nonce - always read fresh from the global config
      */
     getNonce() {
-        return window.bewerbungstrainerConfig?.nonce || this.config.nonce || '';
+        // Always read directly from the global config - this is updated after login
+        const nonce = window.bewerbungstrainerConfig?.nonce || '';
+        if (!nonce) {
+            console.warn('[WordPressAPI] No nonce available - user may not be logged in');
+        }
+        return nonce;
     }
 
     /**

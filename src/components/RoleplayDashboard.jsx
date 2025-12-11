@@ -53,10 +53,10 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [showVariablesDialog, setShowVariablesDialog] = useState(false);
 
-  // Load scenarios on mount
+  // Load scenarios on mount and when authentication changes
   useEffect(() => {
     loadScenarios();
-  }, []);
+  }, [isAuthenticated]);
 
   // Filter scenarios when search, filters, or partner changes
   useEffect(() => {
