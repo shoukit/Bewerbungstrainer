@@ -778,7 +778,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
       `}</style>
 
       {/* Back button */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto 24px' }}>
         <button
           onClick={onBack}
           style={{
@@ -792,19 +792,6 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
         >
           <ArrowLeft size={18} />
           Zurück zur Übersicht
-        </button>
-        <button
-          onClick={onBack}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
-            borderRadius: '10px', background: COLORS.red[100], border: 'none',
-            cursor: 'pointer', fontSize: '14px', fontWeight: 500, color: COLORS.red[500],
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#fecaca'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = COLORS.red[100]; }}
-        >
-          Abbrechen
         </button>
       </div>
 
@@ -1009,16 +996,6 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
                 </div>
               )}
             </motion.div>
-          )}
-
-          {/* Placeholder when no analysis data */}
-          {isSimulator && !summaryFeedback && answers.length > 0 && (
-            <div style={{ background: COLORS.slate[100], borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
-              <Star size={32} color={COLORS.slate[400]} style={{ margin: '0 auto 12px' }} />
-              <p style={{ fontSize: '14px', color: COLORS.slate[500], margin: 0 }}>
-                Die Gesamtauswertung wird nach Abschluss des Trainings angezeigt.
-              </p>
-            </div>
           )}
 
           {/* Roleplay Feedback */}
