@@ -93,10 +93,12 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
   const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   // Parse summary feedback if it's a string
-  const summaryFeedback = session.summary_feedback_json
-    ? (typeof session.summary_feedback_json === 'string'
-        ? JSON.parse(session.summary_feedback_json)
-        : session.summary_feedback_json)
+  // Backend returns summary_feedback, not summary_feedback_json
+  const rawSummary = session.summary_feedback || session.summary_feedback_json;
+  const summaryFeedback = rawSummary
+    ? (typeof rawSummary === 'string'
+        ? JSON.parse(rawSummary)
+        : rawSummary)
     : null;
 
   const overallScore = session.overall_score || summaryFeedback?.overall_score || 0;
@@ -174,7 +176,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
             fontWeight: 700,
             color: primaryAccent,
           }}>
-            {overallScore.toFixed(1)}
+            {overallScore ? overallScore.toFixed(1) : '-'}
           </span>
         </div>
         <p style={{
@@ -182,7 +184,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
           color: COLORS.slate[500],
           margin: 0,
         }}>
-          Gesamtbewertung (von 10)
+          {overallScore ? 'Gesamtbewertung (von 10)' : 'Keine Fragen beantwortet'}
         </p>
       </div>
 
@@ -195,7 +197,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
       }}>
         <StatItem
           icon={CheckCircle}
-          value={`${session.completed_questions || session.total_questions}/${session.total_questions}`}
+          value={`${session.completed_questions ?? 0}/${session.total_questions || '-'}`}
           label="Fragen"
           primaryAccent={primaryAccent}
         />
