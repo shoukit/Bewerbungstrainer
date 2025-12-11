@@ -208,6 +208,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   if (loading) {
     return (
       <div style={{
+        minHeight: '60vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -239,6 +240,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   if (error) {
     return (
       <div style={{
+        minHeight: '60vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

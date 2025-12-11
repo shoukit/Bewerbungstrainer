@@ -551,9 +551,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
         <div style={{ textAlign: 'center' }}>
-          <Loader2 style={{ width: '48px', height: '48px', color: primaryAccent, animation: 'spin 1s linear infinite' }} />
+          <Loader2 style={{ width: '48px', height: '48px', color: primaryAccent, animation: 'spin 1s linear infinite', margin: '0 auto' }} />
           <p style={{ color: '#64748b', marginTop: '16px' }}>Sessions werden geladen...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

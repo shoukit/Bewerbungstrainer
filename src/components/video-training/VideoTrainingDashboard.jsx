@@ -206,22 +206,24 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   // Loading state
   if (isLoading) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div
-          style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            border: '3px solid #e2e8f0',
-            borderTopColor: primaryAccent,
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px',
-          }}
-        />
-        <p style={{ color: '#64748b' }}>Szenarien werden geladen...</p>
-        <style>
-          {`@keyframes spin { to { transform: rotate(360deg); } }`}
-        </style>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              border: '3px solid #e2e8f0',
+              borderTopColor: primaryAccent,
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px',
+            }}
+          />
+          <p style={{ color: '#64748b' }}>Szenarien werden geladen...</p>
+          <style>
+            {`@keyframes spin { to { transform: rotate(360deg); } }`}
+          </style>
+        </div>
       </div>
     );
   }
@@ -229,24 +231,26 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   // Error state
   if (error) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <AlertCircle size={48} color="#ef4444" style={{ marginBottom: '16px' }} />
-        <h3 style={{ color: '#0f172a', marginBottom: '8px' }}>Fehler beim Laden</h3>
-        <p style={{ color: '#64748b', marginBottom: '16px' }}>{error}</p>
-        <button
-          onClick={fetchScenarios}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '8px',
-            background: primaryAccent,
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: 500,
-          }}
-        >
-          Erneut versuchen
-        </button>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <AlertCircle size={48} color="#ef4444" style={{ margin: '0 auto 16px' }} />
+          <h3 style={{ color: '#0f172a', marginBottom: '8px' }}>Fehler beim Laden</h3>
+          <p style={{ color: '#64748b', marginBottom: '16px' }}>{error}</p>
+          <button
+            onClick={fetchScenarios}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '8px',
+              background: primaryAccent,
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 500,
+            }}
+          >
+            Erneut versuchen
+          </button>
+        </div>
       </div>
     );
   }
