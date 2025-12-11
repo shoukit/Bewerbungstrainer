@@ -407,14 +407,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Handle session click
   const handleSessionClick = (session) => {
-    if (activeTab === TABS.ROLEPLAY) {
-      onSelectSession(session);
-    } else {
-      // For simulator and video, show the training detail view
-      console.log('Session clicked:', activeTab, session);
-      setSelectedTrainingSession(session);
-      setSelectedSessionType(activeTab);
-    }
+    // Use unified TrainingSessionDetailView for all session types
+    console.log('Session clicked:', activeTab, session);
+    setSelectedTrainingSession(session);
+    setSelectedSessionType(activeTab);
   };
 
   // Handle back from detail view

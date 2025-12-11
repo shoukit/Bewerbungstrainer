@@ -29,9 +29,13 @@ import {
   Loader2,
   SkipBack,
   SkipForward,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScenario } from '@/services/roleplay-feedback-adapter';
+import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
 
 // =============================================================================
 // CONSTANTS
@@ -232,6 +236,141 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
 };
 
 /**
+ * Roleplay Audio Player - Full session audio player
+ */
+const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!conversationId) {
+      setIsLoading(false);
+      setError('Keine Audio-Aufnahme verfügbar');
+      return;
+    }
+
+    const audioUrl = getRoleplaySessionAudioUrl(sessionId);
+    const config = window.bewerbungstrainerConfig || { nonce: '' };
+
+    setIsLoading(true);
+    setError(null);
+
+    fetch(audioUrl, { headers: { 'X-WP-Nonce': config.nonce }, credentials: 'same-origin' })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.blob(); })
+      .then((blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const audio = new Audio(objectUrl);
+        audioRef.current = audio;
+        audio._objectUrl = objectUrl;
+
+        audio.addEventListener('loadedmetadata', () => { setDuration(audio.duration); setIsLoading(false); });
+        audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
+        audio.addEventListener('play', () => setIsPlaying(true));
+        audio.addEventListener('pause', () => setIsPlaying(false));
+        audio.addEventListener('ended', () => setIsPlaying(false));
+        audio.addEventListener('error', () => { setError('Audio konnte nicht abgespielt werden.'); setIsLoading(false); });
+      })
+      .catch(() => { setError('Audio nicht verfügbar.'); setIsLoading(false); });
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        if (audioRef.current._objectUrl) URL.revokeObjectURL(audioRef.current._objectUrl);
+        audioRef.current = null;
+      }
+    };
+  }, [sessionId, conversationId]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const togglePlay = () => { if (audioRef.current) isPlaying ? audioRef.current.pause() : audioRef.current.play(); };
+  const toggleMute = () => { if (audioRef.current) { audioRef.current.muted = !isMuted; setIsMuted(!isMuted); } };
+  const skip = (seconds) => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.currentTime + seconds, duration)); };
+  const handleSeek = (e) => { const rect = e.currentTarget.getBoundingClientRect(); const percent = (e.clientX - rect.left) / rect.width; if (audioRef.current) audioRef.current.currentTime = percent * duration; };
+
+  if (isLoading) {
+    return (
+      <div style={{ background: COLORS.slate[100], borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+        <Loader2 size={24} color={primaryAccent} style={{ animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+        <p style={{ fontSize: '13px', color: COLORS.slate[500], marginTop: '8px' }}>Audio wird geladen...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ background: COLORS.slate[100], borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+        <AlertCircle size={24} color={COLORS.slate[400]} style={{ margin: '0 auto' }} />
+        <p style={{ fontSize: '13px', color: COLORS.slate[500], marginTop: '8px' }}>{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${COLORS.slate[200]}` }}>
+      <h3 style={{ fontSize: '15px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Mic size={18} color={primaryAccent} /> Gesprächsaufnahme
+      </h3>
+      {/* Progress bar */}
+      <div onClick={handleSeek} style={{ height: '8px', background: COLORS.slate[200], borderRadius: '4px', cursor: 'pointer', marginBottom: '16px' }}>
+        <div style={{ width: `${(currentTime / duration) * 100 || 0}%`, height: '100%', background: primaryAccent, borderRadius: '4px', transition: 'width 0.1s' }} />
+      </div>
+      {/* Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+        <button onClick={() => skip(-10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: COLORS.slate[500] }}>
+          <SkipBack size={20} />
+        </button>
+        <button onClick={togglePlay} style={{ width: '48px', height: '48px', borderRadius: '50%', background: primaryAccent, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+          {isPlaying ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: '2px' }} />}
+        </button>
+        <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: COLORS.slate[500] }}>
+          <SkipForward size={20} />
+        </button>
+        <button onClick={toggleMute} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: COLORS.slate[500], marginLeft: 'auto' }}>
+          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+        </button>
+      </div>
+      <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '13px', color: COLORS.slate[500] }}>
+        {formatTime(currentTime)} / {formatTime(duration)}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Transcript Entry Component for roleplay conversations
+ */
+const TranscriptEntry = ({ entry, index, primaryAccent }) => {
+  const isUser = entry.role === 'user';
+  return (
+    <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+      <div style={{
+        width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+        background: isUser ? primaryAccent : COLORS.slate[300],
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <User size={16} color={isUser ? '#fff' : COLORS.slate[600]} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: '12px', fontWeight: 600, color: isUser ? primaryAccent : COLORS.slate[500], marginBottom: '4px' }}>
+          {isUser ? 'Du' : 'Interviewer'}
+        </div>
+        <p style={{ fontSize: '14px', color: COLORS.slate[700], lineHeight: 1.6, margin: 0 }}>{entry.text || entry.message}</p>
+      </div>
+    </div>
+  );
+};
+
+/**
  * Expandable answer card for simulator sessions
  */
 const AnswerCard = ({ answer, index, primaryAccent }) => {
@@ -370,13 +509,20 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Roleplay-specific state
+  const [roleplayData, setRoleplayData] = useState(null);
+  const [roleplayScenario, setRoleplayScenario] = useState(scenario);
+
   const isVideo = type === 'video';
   const isSimulator = type === 'simulator';
+  const isRoleplay = type === 'roleplay';
 
-  // Load answers for simulator sessions
+  // Load data based on session type
   useEffect(() => {
     if (isSimulator && session?.id) {
       loadSimulatorAnswers();
+    } else if (isRoleplay && session?.id) {
+      loadRoleplayData();
     } else {
       setIsLoading(false);
     }
@@ -400,6 +546,33 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
     }
   };
 
+  const loadRoleplayData = async () => {
+    try {
+      setIsLoading(true);
+      const fullSession = await getRoleplaySessionAnalysis(session.id);
+      setRoleplayData({
+        ...session,
+        ...fullSession,
+        feedback: parseFeedbackJSON(fullSession.feedback_json || session.feedback_json),
+        audioAnalysis: parseAudioAnalysisJSON(fullSession.audio_analysis_json || session.audio_analysis_json),
+        transcript: parseTranscriptJSON(fullSession.transcript || session.transcript),
+      });
+
+      // Load scenario if not provided
+      if (!scenario && fullSession.scenario_id) {
+        try {
+          const scenarioData = await getRoleplayScenario(fullSession.scenario_id);
+          setRoleplayScenario(scenarioData);
+        } catch (e) { console.warn('Could not load scenario:', e); }
+      }
+    } catch (err) {
+      console.error('Failed to load roleplay data:', err);
+      setError('Fehler beim Laden der Gesprächsdaten');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Parse session data
   const summaryFeedback = session?.summary_feedback_json
     ? (typeof session.summary_feedback_json === 'string' ? JSON.parse(session.summary_feedback_json) : session.summary_feedback_json)
@@ -407,8 +580,17 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
 
   const categoryScores = session?.category_scores || [];
   const analysis = session?.analysis || {};
-  const overallScore = session?.overall_score || summaryFeedback?.overall_score || 0;
-  const maxScore = isSimulator ? 10 : 100;
+
+  // Get overall score based on type
+  const getOverallScore = () => {
+    if (isRoleplay && roleplayData?.feedback?.rating?.overall) {
+      return roleplayData.feedback.rating.overall;
+    }
+    return session?.overall_score || summaryFeedback?.overall_score || 0;
+  };
+
+  const overallScore = getOverallScore();
+  const maxScore = isSimulator || isRoleplay ? 10 : 100;
 
   // Loading state
   if (isLoading) {
@@ -498,13 +680,13 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
               <ScoreGauge score={overallScore} maxScore={maxScore} size={100} primaryAccent="#fff" />
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.9 }}>
-                  {isVideo ? <Video size={16} /> : <Target size={16} />}
+                  {isVideo ? <Video size={16} /> : isRoleplay ? <MessageSquare size={16} /> : <Target size={16} />}
                   <span style={{ fontSize: '13px', fontWeight: 500 }}>
-                    {isVideo ? 'Video-Training' : 'Szenario-Training'}
+                    {isVideo ? 'Video-Training' : isRoleplay ? 'Live-Gespräch' : 'Szenario-Training'}
                   </span>
                 </div>
                 <h1 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0' }}>
-                  {scenario?.title || session?.scenario_title || 'Training'}
+                  {(isRoleplay ? roleplayScenario?.title : scenario?.title) || session?.scenario_title || session?.position || 'Training'}
                 </h1>
                 <p style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 8px 0', opacity: 0.9 }}>
                   {getGradeLabel(overallScore, maxScore)}
@@ -553,6 +735,32 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
               <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px' }}>Keine Antworten vorhanden</h3>
               <p style={{ color: COLORS.slate[500] }}>Diese Session wurde möglicherweise nicht abgeschlossen.</p>
             </div>
+          )}
+
+          {/* Roleplay Audio Player */}
+          {isRoleplay && roleplayData && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ marginBottom: '20px' }}>
+              <RoleplayAudioPlayer sessionId={session.id} conversationId={roleplayData.conversation_id} primaryAccent={primaryAccent} />
+            </motion.div>
+          )}
+
+          {/* Roleplay Transcript */}
+          {isRoleplay && roleplayData?.transcript?.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${COLORS.slate[200]}` }}
+            >
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={18} color={primaryAccent} /> Gesprächsverlauf
+              </h3>
+              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                {roleplayData.transcript.map((entry, index) => (
+                  <TranscriptEntry key={index} entry={entry} index={index} primaryAccent={primaryAccent} />
+                ))}
+              </div>
+            </motion.div>
           )}
         </div>
 
@@ -661,6 +869,85 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
               <Star size={32} color={COLORS.slate[400]} style={{ margin: '0 auto 12px' }} />
               <p style={{ fontSize: '14px', color: COLORS.slate[500], margin: 0 }}>
                 Die Gesamtauswertung wird nach Abschluss des Trainings angezeigt.
+              </p>
+            </div>
+          )}
+
+          {/* Roleplay Feedback */}
+          {isRoleplay && roleplayData?.feedback && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+              {/* Rating Scores */}
+              {roleplayData.feedback.rating && (
+                <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${COLORS.slate[200]}`, marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '15px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Star size={16} color={primaryAccent} /> Bewertungskriterien
+                  </h4>
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    {Object.entries(roleplayData.feedback.rating)
+                      .filter(([key]) => key !== 'overall')
+                      .map(([key, value]) => (
+                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                          <div style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: COLORS.slate[700], textTransform: 'capitalize' }}>
+                            {key.replace(/_/g, ' ')}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '80px', height: '6px', background: COLORS.slate[200], borderRadius: '3px' }}>
+                              <div style={{ width: `${(value / 10) * 100}%`, height: '100%', background: getScoreColor(value, 10, primaryAccent), borderRadius: '3px' }} />
+                            </div>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(value, 10, primaryAccent), minWidth: '35px' }}>
+                              {value}/10
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Strengths */}
+              {roleplayData.feedback.strengths?.length > 0 && (
+                <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${COLORS.slate[200]}`, marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.green[500], marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <CheckCircle size={16} /> Deine Stärken
+                  </h4>
+                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                    {roleplayData.feedback.strengths.map((item, i) => (
+                      <li key={i} style={{ fontSize: '13px', color: COLORS.slate[600], marginBottom: '8px', lineHeight: 1.5 }}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Improvements */}
+              {roleplayData.feedback.improvements?.length > 0 && (
+                <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${COLORS.slate[200]}`, marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.amber[500], marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Lightbulb size={16} /> Verbesserungspotenzial
+                  </h4>
+                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                    {roleplayData.feedback.improvements.map((item, i) => (
+                      <li key={i} style={{ fontSize: '13px', color: COLORS.slate[600], marginBottom: '8px', lineHeight: 1.5 }}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Summary */}
+              {roleplayData.feedback.summary && (
+                <div style={{ background: COLORS.slate[100], borderRadius: '16px', padding: '20px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '10px' }}>Zusammenfassung</h4>
+                  <p style={{ fontSize: '13px', color: COLORS.slate[600], lineHeight: 1.6, margin: 0 }}>{roleplayData.feedback.summary}</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Roleplay Empty State */}
+          {isRoleplay && !roleplayData?.feedback && (
+            <div style={{ background: COLORS.slate[100], borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+              <AlertCircle size={32} color={COLORS.slate[400]} style={{ margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '14px', color: COLORS.slate[500], margin: 0 }}>
+                Keine Analyse verfügbar für dieses Gespräch.
               </p>
             </div>
           )}
