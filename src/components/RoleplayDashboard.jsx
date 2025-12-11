@@ -21,7 +21,7 @@ import RoleplayVariablesDialog from './RoleplayVariablesDialog';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 
-const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
+const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenticated, requireAuth, setPendingAction, pendingScenario, clearPendingScenario }) => {
   const [scenarios, setScenarios] = useState([]);
   const [filteredScenarios, setFilteredScenarios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +63,19 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
     filterScenarios();
   }, [scenarios, searchQuery, difficultyFilter, filterByPartner]);
 
+  // Handle pending scenario after login - automatically open variables dialog
+  useEffect(() => {
+    if (pendingScenario && isAuthenticated) {
+      console.log('🔐 [RoleplayDashboard] Processing pending scenario after login:', pendingScenario.title);
+      setSelectedScenario(pendingScenario);
+      setShowVariablesDialog(true);
+      // Clear the pending scenario
+      if (clearPendingScenario) {
+        clearPendingScenario();
+      }
+    }
+  }, [pendingScenario, isAuthenticated, clearPendingScenario]);
+
   const loadScenarios = async () => {
     try {
       setIsLoading(true);
@@ -79,6 +92,20 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
   };
 
   const handleScenarioClick = (scenario) => {
+    // Check authentication before allowing scenario selection
+    if (!isAuthenticated) {
+      console.log('🔐 [RoleplayDashboard] Auth required - storing pending action for scenario:', scenario.title);
+      // Store the scenario selection as pending action
+      setPendingAction({
+        type: 'SELECT_ROLEPLAY_SCENARIO',
+        scenario: scenario,
+        variables: {}, // Will be collected after login
+      });
+      // The requireAuth function will open the login modal
+      requireAuth(() => {}, null);
+      return;
+    }
+
     setSelectedScenario(scenario);
     setShowVariablesDialog(true);
   };
@@ -211,19 +238,43 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory }) => {
           )}
 
           {/* Title */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
+          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '12px'
+            }}>
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md"
-                style={{ background: headerGradient }}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '14px',
+                  background: headerGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <MessageSquare className="w-6 h-6" style={{ color: headerText }} />
+                <MessageSquare style={{ width: '24px', height: '24px', color: headerText }} />
               </div>
-              <div>
-                <h1 className="text-xl lg:text-3xl font-bold text-slate-900">Praxis-Training</h1>
-                <p className="text-sm lg:text-base text-slate-600">Wähle ein Szenario und übe realistische Gespräche</p>
-              </div>
+              <h1 style={{
+                fontSize: '28px',
+                fontWeight: 700,
+                color: '#0f172a',
+                margin: 0
+              }}>
+                Praxis-Training
+              </h1>
             </div>
+            <p style={{
+              fontSize: '16px',
+              color: '#475569',
+              maxWidth: '600px',
+              margin: '0 auto'
+            }}>
+              Wähle ein Szenario und übe realistische Gespräche
+            </p>
           </div>
 
           {/* Search and Filters */}

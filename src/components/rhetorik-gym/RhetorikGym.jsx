@@ -66,10 +66,9 @@ const MODE_COLORS = {
 /**
  * Game Mode Card Component
  */
-const GameModeCard = ({ mode, onSelect }) => {
+const GameModeCard = ({ mode, onSelect, headerGradient, headerText, primaryAccent }) => {
   const [isHovered, setIsHovered] = useState(false);
   const IconComponent = ICON_MAP[mode.icon] || Rocket;
-  const colors = MODE_COLORS[mode.id] || MODE_COLORS.klassiker;
 
   return (
     <motion.div
@@ -82,9 +81,9 @@ const GameModeCard = ({ mode, onSelect }) => {
         backgroundColor: 'white',
         borderRadius: '16px',
         padding: '24px',
-        border: `2px solid ${isHovered ? colors.from : COLORS.slate[200]}`,
+        border: `2px solid ${isHovered ? primaryAccent : COLORS.slate[200]}`,
         boxShadow: isHovered
-          ? `0 10px 25px -5px ${colors.from}33, 0 8px 10px -6px ${colors.from}22`
+          ? `0 10px 25px -5px ${primaryAccent}33, 0 8px 10px -6px ${primaryAccent}22`
           : '0 1px 3px rgba(0, 0, 0, 0.1)',
         transition: 'all 0.3s ease',
         cursor: 'pointer',
@@ -96,14 +95,14 @@ const GameModeCard = ({ mode, onSelect }) => {
           width: '56px',
           height: '56px',
           borderRadius: '14px',
-          background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+          background: headerGradient,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: '16px',
         }}
       >
-        <IconComponent style={{ width: '28px', height: '28px', color: 'white' }} />
+        <IconComponent style={{ width: '28px', height: '28px', color: headerText }} />
       </div>
 
       {/* Title */}
@@ -119,7 +118,7 @@ const GameModeCard = ({ mode, onSelect }) => {
       {/* Subtitle */}
       <div style={{
         fontSize: '13px',
-        color: colors.from,
+        color: primaryAccent,
         fontWeight: 600,
         marginBottom: '12px',
       }}>
@@ -155,14 +154,8 @@ const GameModeCard = ({ mode, onSelect }) => {
 /**
  * Stats Card Component
  */
-const StatsCard = ({ icon: Icon, label, value, color = 'blue' }) => {
-  const colorMap = {
-    blue: { bg: 'rgba(74, 158, 201, 0.1)', icon: COLORS.blue[500] },
-    amber: { bg: 'rgba(245, 158, 11, 0.1)', icon: COLORS.amber[500] },
-    green: { bg: 'rgba(34, 197, 94, 0.1)', icon: COLORS.green[500] },
-    teal: { bg: 'rgba(61, 163, 137, 0.1)', icon: COLORS.teal[500] },
-  };
-  const colors = colorMap[color] || colorMap.blue;
+const StatsCard = ({ icon: Icon, label, value, primaryAccent, primaryAccentLight }) => {
+  // Use branding colors for all stats cards
 
   return (
     <div style={{
@@ -175,13 +168,13 @@ const StatsCard = ({ icon: Icon, label, value, color = 'blue' }) => {
         width: '40px',
         height: '40px',
         borderRadius: '10px',
-        backgroundColor: colors.bg,
+        backgroundColor: primaryAccentLight,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: '12px',
       }}>
-        <Icon style={{ width: '20px', height: '20px', color: colors.icon }} />
+        <Icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
       </div>
       <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{value}</div>
       <div style={{ fontSize: '13px', color: COLORS.slate[500] }}>{label}</div>
@@ -203,6 +196,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   // Partner theming for primary CTA button
   const { branding } = usePartner();
   const buttonGradient = branding?.['--button-gradient'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
   // Initialize topic
@@ -296,12 +290,12 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
             width: '80px',
             height: '80px',
             borderRadius: '20px',
-            background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+            background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px',
-            boxShadow: `0 10px 30px ${colors.from}44`,
+            boxShadow: `0 10px 30px ${primaryAccent}44`,
           }}>
             <IconComponent style={{ width: '40px', height: '40px', color: 'white' }} />
           </div>
@@ -329,11 +323,11 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           transition={{ delay: 0.2 }}
           style={{
             width: '100%',
-            background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+            background: headerGradient,
             borderRadius: '20px',
             padding: '32px',
             marginBottom: '24px',
-            boxShadow: `0 20px 40px ${colors.from}33`,
+            boxShadow: `0 20px 40px ${primaryAccent}33`,
           }}
         >
           {/* Topic Label */}
@@ -540,7 +534,7 @@ const VIEWS = {
 /**
  * Main RhetorikGym Component
  */
-const RhetorikGym = ({ onStartGame }) => {
+const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingAction }) => {
   const [currentView, setCurrentView] = useState(VIEWS.MODES);
   const [selectedMode, setSelectedMode] = useState(null);
   const [userStats, setUserStats] = useState({
@@ -550,10 +544,15 @@ const RhetorikGym = ({ onStartGame }) => {
     totalPracticeTime: 0,
   });
 
+  // Pending mode for after login
+  const [pendingMode, setPendingMode] = useState(null);
+
   // Partner theming
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   // Load user stats - reload when returning to mode selection view
   useEffect(() => {
@@ -579,7 +578,30 @@ const RhetorikGym = ({ onStartGame }) => {
     }
   }, [currentView]);
 
+  // Handle pending mode after login - automatically open topic selection
+  useEffect(() => {
+    if (pendingMode && isAuthenticated) {
+      console.log('🔐 [RhetorikGym] Processing pending mode after login:', pendingMode.title);
+      setSelectedMode(pendingMode);
+      setCurrentView(VIEWS.TOPIC);
+      setPendingMode(null);
+    }
+  }, [pendingMode, isAuthenticated]);
+
   const handleSelectMode = (mode) => {
+    // Check authentication before allowing mode selection
+    if (!isAuthenticated) {
+      console.log('🔐 [RhetorikGym] Auth required - storing pending mode:', mode.title);
+      // Store the mode as pending
+      setPendingMode(mode);
+      // Open login modal
+      if (requireAuth) {
+        requireAuth(() => {}, null);
+      }
+      return;
+    }
+
+    // User is authenticated - proceed with selection
     setSelectedMode(mode);
     setCurrentView(VIEWS.TOPIC);
   };
@@ -651,14 +673,16 @@ const RhetorikGym = ({ onStartGame }) => {
         {/* Stats Row */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '16px',
           marginBottom: '32px',
+          maxWidth: '900px',
+          margin: '0 auto 32px auto',
         }}>
-          <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} color="amber" />
-          <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} color="blue" />
-          <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} color="green" />
-          <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} color="teal" />
+          <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+          <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+          <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+          <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
         </div>
 
         {/* Section Title */}
@@ -667,6 +691,7 @@ const RhetorikGym = ({ onStartGame }) => {
           fontWeight: 600,
           color: COLORS.slate[800],
           marginBottom: '16px',
+          textAlign: 'center',
         }}>
           Wähle deinen Modus
         </h2>
@@ -674,14 +699,19 @@ const RhetorikGym = ({ onStartGame }) => {
         {/* Game Mode Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '24px',
+          maxWidth: '1000px',
+          margin: '0 auto',
         }}>
           {gameModes.map((mode) => (
             <GameModeCard
               key={mode.id}
               mode={mode}
               onSelect={handleSelectMode}
+              headerGradient={headerGradient}
+              headerText={headerText}
+              primaryAccent={primaryAccent}
             />
           ))}
         </div>
