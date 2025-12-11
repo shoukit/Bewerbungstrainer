@@ -320,6 +320,7 @@ const ImmediateFeedback = ({
   onNext,
   onComplete,
   isLastQuestion,
+  hideButtons = false,
 }) => {
   // Partner theming
   const { branding } = usePartner();
@@ -438,49 +439,74 @@ const ImmediateFeedback = ({
         </CollapsibleSection>
       )}
 
-      {/* Action Buttons */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        marginTop: '24px',
-        justifyContent: 'flex-end',
-        flexWrap: 'wrap',
-      }}>
-        {onRetry && (
-          <button
-            onClick={onRetry}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '14px 24px',
-              borderRadius: '12px',
-              border: `2px solid ${COLORS.slate[300]}`,
-              backgroundColor: 'white',
-              color: COLORS.slate[700],
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.borderColor = primaryAccent;
-              e.target.style.color = primaryAccent;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.borderColor = COLORS.slate[300];
-              e.target.style.color = COLORS.slate[700];
-            }}
-          >
-            <RotateCcw style={{ width: '18px', height: '18px' }} />
-            Nochmal versuchen
-          </button>
-        )}
+      {/* Action Buttons - only show when not hidden */}
+      {!hideButtons && (
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          marginTop: '24px',
+          justifyContent: 'flex-end',
+          flexWrap: 'wrap',
+        }}>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '14px 24px',
+                borderRadius: '12px',
+                border: `2px solid ${COLORS.slate[300]}`,
+                backgroundColor: 'white',
+                color: COLORS.slate[700],
+                fontSize: '15px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = primaryAccent;
+                e.target.style.color = primaryAccent;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = COLORS.slate[300];
+                e.target.style.color = COLORS.slate[700];
+              }}
+            >
+              <RotateCcw style={{ width: '18px', height: '18px' }} />
+              Nochmal versuchen
+            </button>
+          )}
 
-        {/* Training beenden - only when not last question */}
-        {!isLastQuestion && onComplete && (
+          {/* Training beenden - only when not last question */}
+          {!isLastQuestion && onComplete && (
+            <button
+              onClick={onComplete}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '14px 24px',
+                borderRadius: '12px',
+                border: 'none',
+                backgroundColor: '#22c55e',
+                color: 'white',
+                fontSize: '15px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(34, 197, 94, 0.3)',
+                transition: 'all 0.2s',
+              }}
+            >
+              <Check style={{ width: '18px', height: '18px' }} />
+              Training beenden
+            </button>
+          )}
+
+          {/* Nächste Frage / Training abschließen */}
           <button
-            onClick={onComplete}
+            onClick={isLastQuestion ? onComplete : onNext}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -488,60 +514,37 @@ const ImmediateFeedback = ({
               padding: '14px 24px',
               borderRadius: '12px',
               border: 'none',
-              backgroundColor: '#22c55e',
+              background: buttonGradient,
               color: 'white',
               fontSize: '15px',
               fontWeight: 600,
               cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(34, 197, 94, 0.3)',
+              boxShadow: `0 4px 12px ${primaryAccent}4d`,
               transition: 'all 0.2s',
             }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'none';
+              e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
+            }}
           >
-            <Check style={{ width: '18px', height: '18px' }} />
-            Training beenden
+            {isLastQuestion ? (
+              <>
+                <Trophy style={{ width: '18px', height: '18px' }} />
+                Training abschließen
+              </>
+            ) : (
+              <>
+                Nächste Frage
+                <ChevronRight style={{ width: '18px', height: '18px' }} />
+              </>
+            )}
           </button>
-        )}
-
-        {/* Nächste Frage / Training abschließen */}
-        <button
-          onClick={isLastQuestion ? onComplete : onNext}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '14px 24px',
-            borderRadius: '12px',
-            border: 'none',
-            background: buttonGradient,
-            color: 'white',
-            fontSize: '15px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: `0 4px 12px ${primaryAccent}4d`,
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'none';
-            e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
-          }}
-        >
-          {isLastQuestion ? (
-            <>
-              <Trophy style={{ width: '18px', height: '18px' }} />
-              Training abschließen
-            </>
-          ) : (
-            <>
-              Nächste Frage
-              <ChevronRight style={{ width: '18px', height: '18px' }} />
-            </>
-          )}
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

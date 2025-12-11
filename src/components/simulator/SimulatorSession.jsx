@@ -927,24 +927,49 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#0f172a' }}>
           {scenario?.title}
         </h1>
-        <button
-          onClick={handleCancelSession}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '8px',
-            background: '#f1f5f9',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: '#64748b',
-            fontSize: '14px',
-          }}
-        >
-          <X size={16} />
-          Abbrechen
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Training beenden - nur wenn Feedback angezeigt wird und nicht letzte Frage */}
+          {showFeedback && !isLastQuestion && (
+            <button
+              onClick={handleCompleteSession}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                background: '#22c55e',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
+              }}
+            >
+              <Check size={16} />
+              Training beenden
+            </button>
+          )}
+          <button
+            onClick={handleCancelSession}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              background: '#f1f5f9',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#64748b',
+              fontSize: '14px',
+            }}
+          >
+            <X size={16} />
+            Abbrechen
+          </button>
+        </div>
       </div>
 
       {/* Progress */}
@@ -959,16 +984,60 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         {/* Left Column - Recording */}
         <div>
+          {/* Action Buttons - Above feedback */}
+          {showFeedback && (
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+              {scenario.allow_retry && (
+                <button
+                  onClick={handleRetry}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 20px',
+                    borderRadius: '10px',
+                    border: `2px solid ${COLORS.slate[300]}`,
+                    backgroundColor: 'white',
+                    color: COLORS.slate[700],
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <RotateCcw size={16} />
+                  Nochmal versuchen
+                </button>
+              )}
+              <button
+                onClick={isLastQuestion ? handleCompleteSession : handleNext}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: buttonGradient,
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: `0 4px 12px ${primaryAccent}4d`,
+                }}
+              >
+                {isLastQuestion ? 'Training abschließen' : 'Nächste Frage'}
+                {!isLastQuestion && <ChevronRight size={16} />}
+              </button>
+            </div>
+          )}
+
           {/* Show feedback or recorder */}
           {showFeedback ? (
             <ImmediateFeedback
               transcript={feedback.transcript}
               feedback={feedback.feedback}
               audioMetrics={feedback.audio_analysis}
-              onRetry={scenario.allow_retry ? handleRetry : null}
-              onNext={handleNext}
-              onComplete={handleCompleteSession}
-              isLastQuestion={isLastQuestion}
+              hideButtons={true}
             />
           ) : (
             <AudioRecorder
