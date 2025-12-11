@@ -105,9 +105,19 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
   const status = getStatus();
   const isCompleted = status === 'completed';
 
-  const getScoreBadgeStyle = (score) => {
-    if (!score) return { background: '#f1f5f9', color: '#64748b' };
-    const numScore = parseFloat(score);
+  // Convert score to percentage (0-100) for consistent display
+  const getScoreAsPercent = () => {
+    if (score === null) return null;
+    // Roleplay scores are 0-10, convert to percentage
+    if (type === TABS.ROLEPLAY) return score * 10;
+    return score;
+  };
+
+  const scorePercent = getScoreAsPercent();
+
+  const getScoreBadgeStyle = (scoreVal) => {
+    if (!scoreVal && scoreVal !== 0) return { background: '#f1f5f9', color: '#64748b' };
+    const numScore = parseFloat(scoreVal);
     if (numScore >= 80) return { background: '#dcfce7', color: '#166534' };
     if (numScore >= 60) return { background: '#fef9c3', color: '#854d0e' };
     return { background: '#fee2e2', color: '#991b1b' };
@@ -224,7 +234,7 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
             )}
 
             {/* Score badge */}
-            {score !== null && (
+            {scorePercent !== null && (
               <span style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -233,10 +243,10 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
                 borderRadius: '20px',
                 fontSize: '14px',
                 fontWeight: 600,
-                ...getScoreBadgeStyle(score),
+                ...getScoreBadgeStyle(scorePercent),
               }}>
                 <Star size={14} />
-                {type === TABS.ROLEPLAY ? `${score}/10` : `${Math.round(score)}%`}
+                {Math.round(scorePercent)}%
               </span>
             )}
 
