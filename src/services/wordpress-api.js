@@ -40,10 +40,14 @@ class WordPressAPI {
     async request(endpoint, options = {}) {
         const url = `${this.apiUrl}${endpoint}`;
 
+        // Always get fresh nonce at request time
+        const currentNonce = this.getNonce();
+        console.log(`🔐 [WordPressAPI] Request to ${endpoint} with nonce: ${currentNonce?.substring(0, 10)}...`);
+
         const defaultOptions = {
             headers: {
                 'Content-Type': 'application/json',
-                'X-WP-Nonce': this.getNonce()
+                'X-WP-Nonce': currentNonce
             },
             credentials: 'same-origin'
         };
