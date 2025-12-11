@@ -181,13 +181,11 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load scenarios when authenticated (skip if not logged in to avoid 403 errors)
+  // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
-    if (isAuthenticated) {
-      console.log('🔄 [SimulatorDashboard] Loading scenarios (authenticated)');
-      loadScenarios();
-    }
-  }, [isAuthenticated]);
+    console.log('🔄 [SimulatorDashboard] Loading scenarios...');
+    loadScenarios();
+  }, []);
 
   const loadScenarios = async () => {
     try {

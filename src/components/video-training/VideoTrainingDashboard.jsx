@@ -152,13 +152,11 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   const themedText = branding?.headerText || '#ffffff';
   const primaryAccent = branding?.primaryAccent || '#3A7FA7';
 
-  // Fetch scenarios when authenticated (skip if not logged in to avoid 403 errors)
+  // Fetch scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
-    if (isAuthenticated) {
-      console.log('🔄 [VideoTrainingDashboard] Loading scenarios (authenticated)');
-      fetchScenarios();
-    }
-  }, [isAuthenticated]);
+    console.log('🔄 [VideoTrainingDashboard] Loading scenarios...');
+    fetchScenarios();
+  }, []);
 
   const fetchScenarios = async () => {
     setIsLoading(true);

@@ -53,13 +53,11 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [showVariablesDialog, setShowVariablesDialog] = useState(false);
 
-  // Load scenarios when authenticated (skip if not logged in to avoid 403 errors)
+  // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
-    if (isAuthenticated) {
-      console.log('🔄 [RoleplayDashboard] Loading scenarios (authenticated)');
-      loadScenarios();
-    }
-  }, [isAuthenticated]);
+    console.log('🔄 [RoleplayDashboard] Loading scenarios...');
+    loadScenarios();
+  }, []);
 
   // Filter scenarios when search, filters, or partner changes
   useEffect(() => {
