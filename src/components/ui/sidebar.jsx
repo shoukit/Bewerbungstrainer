@@ -17,6 +17,7 @@ import {
   User,
   LogIn,
   LogOut,
+  Video,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/Toast';
@@ -80,6 +81,14 @@ const NAV_ITEMS = [
     shortLabel: 'Szenario',
     icon: Target,
     description: 'Frage-Antwort Training mit KI-Feedback',
+  },
+  {
+    id: 'video_training',
+    moduleId: 'video_training', // Maps to WordPress module
+    label: 'Video-Training',
+    shortLabel: 'Video',
+    icon: Video,
+    description: 'Video-Aufnahme mit KI-Analyse',
   },
   {
     id: 'dashboard',

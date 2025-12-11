@@ -4,6 +4,7 @@ import RoleplaySession from './components/RoleplaySession';
 import SessionHistory from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
 import { SimulatorApp } from './components/simulator';
+import { VideoTrainingApp } from './components/video-training';
 import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner } from './context/PartnerContext';
@@ -78,6 +79,7 @@ const VIEWS = {
   DASHBOARD: 'dashboard',
   ROLEPLAY: 'roleplay',
   SIMULATOR: 'simulator',
+  VIDEO_TRAINING: 'video_training',
   HISTORY: 'history',
   SESSION_DETAIL: 'session_detail',
   GYM: 'gym',
@@ -219,6 +221,9 @@ function AppContent() {
   // Pending game mode for RhetorikGym (needs to trigger mode selection after login)
   const [pendingGymMode, setPendingGymMode] = useState(null);
 
+  // Pending scenario for video training (needs to trigger selection after login)
+  const [pendingVideoTrainingScenario, setPendingVideoTrainingScenario] = useState(null);
+
   /**
    * Execute a pending action after successful login
    */
@@ -247,6 +252,11 @@ function AppContent() {
         // Store the mode - RhetorikGym will handle it
         setPendingGymMode(action.mode);
         setCurrentView(VIEWS.GYM_KLASSIKER);
+        break;
+      case 'SELECT_VIDEO_TRAINING_SCENARIO':
+        // Store the scenario - VideoTrainingApp will handle it
+        setPendingVideoTrainingScenario(action.scenario);
+        setCurrentView(VIEWS.VIDEO_TRAINING);
         break;
       default:
         console.warn('Unknown pending action type:', action.type);
@@ -319,6 +329,9 @@ function AppContent() {
         break;
       case 'simulator':
         setCurrentView(VIEWS.SIMULATOR);
+        break;
+      case 'video_training':
+        setCurrentView(VIEWS.VIDEO_TRAINING);
         break;
       case 'history':
         setCurrentView(VIEWS.HISTORY);
@@ -416,6 +429,17 @@ function AppContent() {
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+          />
+        );
+
+      case VIEWS.VIDEO_TRAINING:
+        return (
+          <VideoTrainingApp
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+            pendingScenario={pendingVideoTrainingScenario}
+            clearPendingScenario={() => setPendingVideoTrainingScenario(null)}
           />
         );
 
