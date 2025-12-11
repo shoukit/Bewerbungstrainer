@@ -19,6 +19,9 @@ import {
   LogOut,
   Video,
   LayoutDashboard,
+  Shield,
+  Users,
+  Settings,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/Toast';
@@ -136,6 +139,50 @@ const NAV_ITEMS = [
 ];
 
 /**
+ * Admin navigation items - only visible to WordPress admins
+ */
+const ADMIN_NAV_ITEMS = [
+  {
+    id: 'admin',
+    label: 'Administration',
+    shortLabel: 'Admin',
+    icon: Shield,
+    description: 'Inhalte verwalten',
+    adminOnly: true,
+    subItems: [
+      {
+        id: 'admin_roleplays',
+        label: 'Live-Gespräche',
+        shortLabel: 'Roleplays',
+        icon: MessageSquare,
+        description: 'Roleplay-Szenarien verwalten',
+      },
+      {
+        id: 'admin_simulator',
+        label: 'Szenario-Training',
+        shortLabel: 'Simulator',
+        icon: Target,
+        description: 'Simulator-Szenarien verwalten',
+      },
+      {
+        id: 'admin_video',
+        label: 'Video-Training',
+        shortLabel: 'Video',
+        icon: Video,
+        description: 'Video-Trainings verwalten',
+      },
+      {
+        id: 'admin_partners',
+        label: 'Partner-Branding',
+        shortLabel: 'Partner',
+        icon: Users,
+        description: 'White-Label Partner verwalten',
+      },
+    ],
+  },
+];
+
+/**
  * AppSidebar Component
  *
  * A collapsible sidebar navigation for the application.
@@ -154,20 +201,27 @@ const AppSidebar = ({
 
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { showSuccess } = useToast();
   const themedColors = getThemedColors(branding);
 
   // Filter nav items based on partner module configuration
   const filteredNavItems = React.useMemo(() => {
-    return NAV_ITEMS.filter(item => {
+    const regularItems = NAV_ITEMS.filter(item => {
       // Always show items marked as alwaysVisible
       if (item.alwaysVisible) return true;
       // Use moduleId if available, otherwise fall back to item id
       const moduleToCheck = item.moduleId || item.id;
       return checkModuleAllowed(moduleToCheck);
     });
-  }, [checkModuleAllowed]);
+
+    // Add admin items if user is admin
+    if (isAdmin) {
+      return [...regularItems, ...ADMIN_NAV_ITEMS];
+    }
+
+    return regularItems;
+  }, [checkModuleAllowed, isAdmin]);
 
   // Handle logout with toast notification
   const handleLogout = async () => {
@@ -343,17 +397,47 @@ const AppSidebar = ({
       </div>
 
       {/* Navigation Items */}
-      <nav style={{ flex: 1, padding: '8px 12px' }}>
-        {filteredNavItems.map((item) => {
+      <nav style={{ flex: 1, padding: '8px 12px', overflowY: 'auto' }}>
+        {filteredNavItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = activeView === item.id ||
             (item.id === 'dashboard' && activeView === 'roleplay') ||
-            (item.id === 'gym' && activeView.startsWith('gym'));
+            (item.id === 'gym' && activeView.startsWith('gym')) ||
+            (item.id === 'admin' && activeView.startsWith('admin'));
           const hasSubItems = item.subItems && item.subItems.length > 0;
           const isExpanded = expandedItems.includes(item.id);
+          const isAdminItem = item.adminOnly;
 
           return (
             <div key={item.id}>
+              {/* Separator before admin section */}
+              {isAdminItem && (
+                <div
+                  style={{
+                    margin: '12px 0',
+                    padding: isCollapsed ? '0' : '0 4px',
+                    borderTop: `1px solid ${colors.borderColor}`,
+                  }}
+                >
+                  {!isCollapsed && (
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: colors.sidebarTextMuted,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        marginTop: '12px',
+                        marginBottom: '8px',
+                        paddingLeft: '12px',
+                      }}
+                    >
+                      Admin
+                    </span>
+                  )}
+                </div>
+              )}
               <button
                 onClick={() => handleNavClick(item)}
                 style={{
@@ -671,17 +755,24 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
 
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { showSuccess } = useToast();
   const themedColors = getThemedColors(branding);
 
   // Filter nav items based on partner module configuration
   const filteredNavItems = React.useMemo(() => {
-    return NAV_ITEMS.filter(item => {
+    const regularItems = NAV_ITEMS.filter(item => {
       const moduleToCheck = item.moduleId || item.id;
       return checkModuleAllowed(moduleToCheck);
     });
-  }, [checkModuleAllowed]);
+
+    // Add admin items if user is admin
+    if (isAdmin) {
+      return [...regularItems, ...ADMIN_NAV_ITEMS];
+    }
+
+    return regularItems;
+  }, [checkModuleAllowed, isAdmin]);
 
   // Handle logout with toast notification
   const handleLogout = async () => {
@@ -860,12 +951,39 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                 const Icon = item.icon;
                 const isActive = activeView === item.id ||
                   (item.id === 'dashboard' && activeView === 'roleplay') ||
-                  (item.id === 'gym' && activeView.startsWith('gym'));
+                  (item.id === 'gym' && activeView.startsWith('gym')) ||
+                  (item.id === 'admin' && activeView.startsWith('admin'));
                 const hasSubItems = item.subItems && item.subItems.length > 0;
                 const isExpanded = expandedItems.includes(item.id);
+                const isAdminItem = item.adminOnly;
 
                 return (
                   <div key={item.id}>
+                    {/* Separator before admin section */}
+                    {isAdminItem && (
+                      <div
+                        style={{
+                          margin: '12px 8px',
+                          borderTop: `1px solid ${colors.borderColor}`,
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: colors.textMuted,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            marginTop: '12px',
+                            marginBottom: '8px',
+                            paddingLeft: '8px',
+                          }}
+                        >
+                          Admin
+                        </span>
+                      </div>
+                    )}
                     <button
                       onClick={() => hasSubItems ? toggleExpanded(item.id) : handleNavigate(item.id)}
                       style={{

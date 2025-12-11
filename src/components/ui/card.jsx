@@ -80,6 +80,15 @@ const CardTitle = React.forwardRef(({ className, size, icon: Icon, iconColor, ch
 CardTitle.displayName = 'CardTitle';
 
 // =============================================================================
+// CARD DESCRIPTION
+// =============================================================================
+
+const CardDescription = React.forwardRef(({ className, ...props }, ref) => (
+  <p ref={ref} className={cn('text-sm text-slate-500', className)} {...props} />
+));
+CardDescription.displayName = 'CardDescription';
+
+// =============================================================================
 // CARD CONTENT
 // =============================================================================
 
@@ -101,4 +110,4 @@ CardFooter.displayName = 'CardFooter';
 // EXPORTS
 // =============================================================================
 
-export { Card, CardHeader, CardTitle, CardContent, CardFooter, cardVariants };
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, cardVariants };
