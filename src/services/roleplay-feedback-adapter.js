@@ -6,7 +6,7 @@
  */
 
 import { generateInterviewFeedback, generateAudioAnalysis } from './gemini.js';
-import wordpressAPI, { getWPNonce } from './wordpress-api.js';
+import wordpressAPI, { getWPNonce, getWPApiUrl } from './wordpress-api.js';
 import { decodeUnicodeEscapes } from '../utils/parseJSON.js';
 
 /**
@@ -443,15 +443,25 @@ export async function getRoleplayScenarios() {
   console.log('📋 [Roleplay Feedback] Loading scenarios...');
 
   try {
-    const response = await wordpressAPI.request('/roleplays', {
-      method: 'GET',
+    // Use direct fetch like VideoTrainingDashboard (no Content-Type header for GET)
+    const response = await fetch(`${getWPApiUrl()}/roleplays`, {
+      headers: {
+        'X-WP-Nonce': getWPNonce(),
+      },
+      credentials: 'same-origin',
     });
 
+    if (!response.ok) {
+      throw new Error('Fehler beim Laden der Szenarien');
+    }
+
+    const data = await response.json();
+
     console.log('✅ [Roleplay Feedback] Scenarios loaded successfully');
-    console.log('✅ [Roleplay Feedback] Scenarios count:', response.data.length);
+    console.log('✅ [Roleplay Feedback] Scenarios count:', data.data?.length || 0);
 
     // Decode Unicode escapes in scenario data (e.g., "u00f6" -> "ö")
-    return decodeObjectStrings(response.data);
+    return decodeObjectStrings(data.data || []);
   } catch (error) {
     console.error('❌ [Roleplay Feedback] Failed to load scenarios:', error);
     throw new Error(`Fehler beim Laden der Szenarien: ${error.message}`);

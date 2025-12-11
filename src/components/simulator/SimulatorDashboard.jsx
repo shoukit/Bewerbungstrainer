@@ -10,7 +10,7 @@ import {
   AlertCircle,
   Sparkles
 } from 'lucide-react';
-import wordpressAPI from '@/services/wordpress-api';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 
@@ -194,10 +194,22 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
       setLoading(true);
       setError(null);
 
-      const response = await wordpressAPI.getSimulatorScenarios();
+      // Use direct fetch like VideoTrainingDashboard (no Content-Type header for GET)
+      const response = await fetch(`${getWPApiUrl()}/simulator/scenarios`, {
+        headers: {
+          'X-WP-Nonce': getWPNonce(),
+        },
+        credentials: 'same-origin',
+      });
 
-      if (response.success && response.data?.scenarios) {
-        setScenarios(response.data.scenarios);
+      if (!response.ok) {
+        throw new Error('Fehler beim Laden der Szenarien');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.scenarios) {
+        setScenarios(data.data.scenarios);
       } else {
         throw new Error('Keine Szenarien gefunden');
       }
