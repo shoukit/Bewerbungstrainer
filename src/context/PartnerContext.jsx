@@ -177,6 +177,10 @@ export function PartnerProvider({ children }) {
     const result = await loginUser(username, password);
 
     if (result.success) {
+      // Small delay to ensure browser processes the auth cookie before state updates
+      // This prevents race condition where API calls are made before cookie is set
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       setUser(result.user);
       setIsAuthenticated(true);
       console.log('✅ [PartnerContext] Login successful:', result.user.displayName);

@@ -577,6 +577,7 @@ export async function loginUser(username, password) {
   const endpoint = `${apiUrl}/login`;
 
   console.log('🔐 [Partners] Attempting login for:', username);
+  console.log('🔐 [Partners] Current nonce before login:', window.bewerbungstrainerConfig?.nonce?.substring(0, 10) + '...');
 
   try {
     const response = await fetch(endpoint, {
@@ -592,15 +593,21 @@ export async function loginUser(username, password) {
 
     if (response.ok && result.success) {
       console.log('✅ [Partners] Login successful:', result.data.user.displayName);
+      console.log('🔑 [Partners] Nonce returned from server:', result.data.nonce ? 'YES' : 'NO');
 
       // Update the nonce in bewerbungstrainerConfig if a new one was returned
       if (result.data.nonce && window.bewerbungstrainerConfig) {
+        console.log('🔑 [Partners] Updating nonce to:', result.data.nonce.substring(0, 10) + '...');
         window.bewerbungstrainerConfig.nonce = result.data.nonce;
         window.bewerbungstrainerConfig.currentUser = {
           id: result.data.user.id,
           name: result.data.user.displayName,
           firstName: result.data.user.firstName,
         };
+        console.log('✅ [Partners] Nonce updated successfully');
+      } else if (!result.data.nonce) {
+        console.warn('⚠️ [Partners] Server did not return a new nonce! API calls may fail.');
+        console.warn('⚠️ [Partners] Current nonce:', window.bewerbungstrainerConfig?.nonce?.substring(0, 10) + '...');
       }
 
       return {
