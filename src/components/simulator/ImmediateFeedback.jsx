@@ -10,7 +10,8 @@ import {
   Mic,
   ChevronDown,
   ChevronUp,
-  Trophy
+  Trophy,
+  Check
 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -317,6 +318,7 @@ const ImmediateFeedback = ({
   audioMetrics,
   onRetry,
   onNext,
+  onComplete,
   isLastQuestion,
 }) => {
   // Partner theming
@@ -442,6 +444,7 @@ const ImmediateFeedback = ({
         gap: '12px',
         marginTop: '24px',
         justifyContent: 'flex-end',
+        flexWrap: 'wrap',
       }}>
         {onRetry && (
           <button
@@ -473,8 +476,35 @@ const ImmediateFeedback = ({
             Nochmal versuchen
           </button>
         )}
+
+        {/* Training beenden - only when not last question */}
+        {!isLastQuestion && onComplete && (
+          <button
+            onClick={onComplete}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '14px 24px',
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: '#22c55e',
+              color: 'white',
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(34, 197, 94, 0.3)',
+              transition: 'all 0.2s',
+            }}
+          >
+            <Check style={{ width: '18px', height: '18px' }} />
+            Training beenden
+          </button>
+        )}
+
+        {/* Nächste Frage / Training abschließen */}
         <button
-          onClick={onNext}
+          onClick={isLastQuestion ? onComplete : onNext}
           style={{
             display: 'flex',
             alignItems: 'center',

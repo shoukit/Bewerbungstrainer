@@ -967,6 +967,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               audioMetrics={feedback.audio_analysis}
               onRetry={scenario.allow_retry ? handleRetry : null}
               onNext={handleNext}
+              onComplete={handleCompleteSession}
               isLastQuestion={isLastQuestion}
             />
           ) : (
@@ -1021,38 +1022,15 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
             </div>
           )}
 
-          {/* Navigation Buttons - Below Recording (like VideoTraining) */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '20px' }}>
-            {/* Previous button */}
-            {!isFirstQuestion && (
+          {/* Navigation Buttons - Only "Training beenden" when questions answered */}
+          {!showFeedback && answeredQuestions.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
               <button
-                onClick={handlePrev}
+                onClick={handleCompleteSession}
                 style={{
-                  padding: '10px 16px',
+                  padding: '10px 20px',
                   borderRadius: '8px',
-                  background: '#fff',
-                  border: '1px solid #e2e8f0',
-                  cursor: 'pointer',
-                  color: '#0f172a',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                }}
-              >
-                <ChevronLeft size={18} />
-                Vorherige Frage
-              </button>
-            )}
-
-            {/* Next button */}
-            {!isLastQuestion && (
-              <button
-                onClick={handleNext}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  background: primaryAccent,
+                  background: '#22c55e',
                   border: 'none',
                   cursor: 'pointer',
                   color: '#fff',
@@ -1060,36 +1038,15 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                   alignItems: 'center',
                   gap: '6px',
                   fontSize: '14px',
-                  fontWeight: 500,
+                  fontWeight: 600,
+                  boxShadow: '0 4px 14px rgba(34, 197, 94, 0.3)',
                 }}
               >
-                Nächste Frage
-                <ChevronRight size={18} />
+                <Check size={18} />
+                Training beenden
               </button>
-            )}
-
-            {/* Finish button - always active */}
-            <button
-              onClick={handleCompleteSession}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '8px',
-                background: '#22c55e',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '14px',
-                fontWeight: 600,
-                boxShadow: '0 4px 14px rgba(34, 197, 94, 0.3)',
-              }}
-            >
-              <Check size={18} />
-              Training beenden
-            </button>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column - Question and Tips */}
