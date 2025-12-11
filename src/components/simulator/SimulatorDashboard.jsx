@@ -149,13 +149,35 @@ const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryA
  *
  * Displays available training scenarios in a grid layout
  */
-const SimulatorDashboard = ({ onSelectScenario }) => {
+const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario }) => {
   // Partner theming
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const [scenarios, setScenarios] = useState([]);
+
+  /**
+   * Handle scenario selection with auth check
+   */
+  const handleSelectScenario = (scenario) => {
+    // Check authentication before allowing scenario selection
+    if (!isAuthenticated) {
+      console.log('🔐 [SimulatorDashboard] Auth required - storing pending scenario:', scenario.title);
+      // Store the scenario as pending
+      if (setPendingScenario) {
+        setPendingScenario(scenario);
+      }
+      // Open login modal
+      if (requireAuth) {
+        requireAuth(() => {}, null);
+      }
+      return;
+    }
+
+    // User is authenticated - proceed with selection
+    onSelectScenario(scenario);
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -300,7 +322,7 @@ const SimulatorDashboard = ({ onSelectScenario }) => {
           <ScenarioCard
             key={scenario.id}
             scenario={scenario}
-            onSelect={onSelectScenario}
+            onSelect={handleSelectScenario}
             themedGradient={headerGradient}
             themedText={headerText}
             primaryAccent={primaryAccent}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import SimulatorDashboard from './SimulatorDashboard';
 import SimulatorWizard from './SimulatorWizard';
 import SimulatorSession from './SimulatorSession';
@@ -23,13 +23,26 @@ const VIEWS = {
  * 3. Session (training with Q&A)
  * 4. Complete (summary)
  */
-const SimulatorApp = () => {
+const SimulatorApp = ({ isAuthenticated, requireAuth, setPendingAction }) => {
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [activeSession, setActiveSession] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [variables, setVariables] = useState({});
   const [completedSession, setCompletedSession] = useState(null);
+
+  // Track pending scenario for after login
+  const [pendingScenario, setPendingScenario] = useState(null);
+
+  // Handle pending scenario after login - automatically open wizard
+  useEffect(() => {
+    if (pendingScenario && isAuthenticated) {
+      console.log('🔐 [SimulatorApp] Processing pending scenario after login:', pendingScenario.title);
+      setSelectedScenario(pendingScenario);
+      setCurrentView(VIEWS.WIZARD);
+      setPendingScenario(null);
+    }
+  }, [pendingScenario, isAuthenticated]);
 
   /**
    * Handle scenario selection from dashboard
@@ -96,6 +109,9 @@ const SimulatorApp = () => {
         return (
           <SimulatorDashboard
             onSelectScenario={handleSelectScenario}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingScenario={setPendingScenario}
           />
         );
 
@@ -134,6 +150,9 @@ const SimulatorApp = () => {
         return (
           <SimulatorDashboard
             onSelectScenario={handleSelectScenario}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingScenario={setPendingScenario}
           />
         );
     }

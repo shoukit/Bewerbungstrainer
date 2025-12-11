@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplaySession from './components/RoleplaySession';
 import SessionHistory from './components/SessionHistory';
@@ -71,20 +71,6 @@ const BrandingLoadingSpinner = () => {
       </style>
     </div>
   );
-};
-
-/**
- * App Content Wrapper
- * Handles loading state and renders main app or spinner
- */
-const AppContent = ({ children }) => {
-  const { isLoading } = usePartner();
-
-  if (isLoading) {
-    return <BrandingLoadingSpinner />;
-  }
-
-  return children;
 };
 
 // View constants
@@ -188,8 +174,19 @@ function getWPHeaderHeight() {
   return adminBarHeight;
 }
 
-function App() {
+/**
+ * AppContent - Inner component with access to auth context
+ */
+function AppContent() {
   console.log('🏗️ [APP] App component initialized');
+
+  // Auth context and loading state
+  const { isAuthenticated, authLoading, isLoading } = usePartner();
+
+  // Show loading spinner while branding is loading
+  if (isLoading) {
+    return <BrandingLoadingSpinner />;
+  }
 
   // Current view state
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
@@ -209,6 +206,74 @@ function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
+
+  // Pending action state - stores action to execute after successful login
+  const [pendingAction, setPendingAction] = useState(null);
+
+  // Pending scenario for roleplay (needs variables collection after login)
+  const [pendingRoleplayScenario, setPendingRoleplayScenario] = useState(null);
+
+  // Pending scenario for simulator (needs to trigger selection after login)
+  const [pendingSimulatorScenario, setPendingSimulatorScenario] = useState(null);
+
+  // Pending game mode for RhetorikGym (needs to trigger mode selection after login)
+  const [pendingGymMode, setPendingGymMode] = useState(null);
+
+  /**
+   * Execute a pending action after successful login
+   */
+  const executePendingAction = useCallback((action) => {
+    if (!action) return;
+
+    console.log('🔐 [APP] Executing pending action:', action.type);
+
+    switch (action.type) {
+      case 'SELECT_ROLEPLAY_SCENARIO':
+        // Store the scenario - RoleplayDashboard will open the variables dialog
+        setPendingRoleplayScenario(action.scenario);
+        // Stay on dashboard view (already there)
+        setCurrentView(VIEWS.DASHBOARD);
+        break;
+      case 'SELECT_SIMULATOR_SCENARIO':
+        // Store the scenario - SimulatorDashboard will handle it
+        setPendingSimulatorScenario(action.scenario);
+        setCurrentView(VIEWS.SIMULATOR);
+        break;
+      case 'START_GYM_GAME':
+        setGameConfig(action.config);
+        setCurrentView(VIEWS.GYM_SESSION);
+        break;
+      case 'SELECT_GYM_MODE':
+        // Store the mode - RhetorikGym will handle it
+        setPendingGymMode(action.mode);
+        setCurrentView(VIEWS.GYM_KLASSIKER);
+        break;
+      default:
+        console.warn('Unknown pending action type:', action.type);
+    }
+  }, []);
+
+  /**
+   * Require authentication - either execute action immediately or store it for after login
+   * @param {Function} action - The action callback to execute
+   * @param {Object} actionData - Data to store for pending action (optional, for cross-component actions)
+   * @returns {boolean} - True if authenticated and action was executed
+   */
+  const requireAuth = useCallback((action, actionData = null) => {
+    if (isAuthenticated) {
+      // User is logged in - execute action immediately
+      action();
+      return true;
+    }
+
+    // User not logged in - store pending action and show login modal
+    console.log('🔐 [APP] Auth required - storing pending action');
+    if (actionData) {
+      setPendingAction(actionData);
+    }
+    openLoginModal();
+    return false;
+  }, [isAuthenticated]);
 
   // Detect WP header height on mount
   useEffect(() => {
@@ -346,13 +411,22 @@ function App() {
         );
 
       case VIEWS.SIMULATOR:
-        return <SimulatorApp />;
+        return (
+          <SimulatorApp
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+          />
+        );
 
       case VIEWS.GYM:
       case VIEWS.GYM_KLASSIKER:
         return (
           <RhetorikGym
             onStartGame={handleStartGame}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
           />
         );
 
@@ -370,6 +444,8 @@ function App() {
           <SessionHistory
             onBack={handleCloseHistory}
             onSelectSession={handleSelectSession}
+            isAuthenticated={isAuthenticated}
+            onLoginClick={openLoginModal}
           />
         );
 
@@ -387,6 +463,11 @@ function App() {
           <RoleplayDashboard
             onSelectScenario={handleSelectScenario}
             onOpenHistory={handleOpenHistory}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+            pendingScenario={pendingRoleplayScenario}
+            clearPendingScenario={() => setPendingRoleplayScenario(null)}
           />
         );
     }
@@ -394,28 +475,46 @@ function App() {
 
   // All views now use the sidebar layout for consistent navigation
   return (
+    <>
+      <SidebarLayout
+        activeView={currentView}
+        onNavigate={handleSidebarNavigate}
+        headerOffset={headerOffset}
+        onLoginClick={openLoginModal}
+      >
+        {renderContent()}
+      </SidebarLayout>
+
+      {/* Login Modal */}
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => {
+            closeLoginModal();
+            // Clear pending action if user cancels login
+            setPendingAction(null);
+          }}
+          onLoginSuccess={(user) => {
+            console.log('✅ [APP] User logged in:', user.displayName);
+            // Execute pending action if there was one
+            if (pendingAction) {
+              console.log('🔐 [APP] Executing pending action after login:', pendingAction.type);
+              executePendingAction(pendingAction);
+              setPendingAction(null);
+            }
+          }}
+        />
+    </>
+  );
+}
+
+/**
+ * App - Main wrapper with providers
+ */
+function App() {
+  return (
     <PartnerProvider>
       <ToastProvider>
-        <AppContent>
-          <SidebarLayout
-            activeView={currentView}
-            onNavigate={handleSidebarNavigate}
-            headerOffset={headerOffset}
-            onLoginClick={openLoginModal}
-          >
-            {renderContent()}
-          </SidebarLayout>
-
-          {/* Login Modal */}
-          <LoginModal
-            isOpen={isLoginModalOpen}
-            onClose={closeLoginModal}
-            onLoginSuccess={(user) => {
-              console.log('✅ [APP] User logged in:', user.displayName);
-              // Optionally refresh the page or update state
-            }}
-          />
-        </AppContent>
+        <AppContent />
       </ToastProvider>
     </PartnerProvider>
   );

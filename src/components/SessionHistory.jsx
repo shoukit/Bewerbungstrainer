@@ -15,14 +15,24 @@ import {
   TrendingUp,
   Filter,
   RefreshCw,
+  LogIn,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 console.log('📦 [SESSION_HISTORY] SessionHistory module loaded');
 
-const SessionHistory = ({ onBack, onSelectSession }) => {
+const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick }) => {
   console.log('🏗️ [SESSION_HISTORY] SessionHistory component initialized');
+
+  // Partner branding
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const focusRing = branding?.['--focus-ring'] || DEFAULT_BRANDING['--focus-ring'];
 
   const [sessions, setSessions] = useState([]);
   const [scenarios, setScenarios] = useState([]);
@@ -37,15 +47,21 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
   // Filters
   const [scenarioFilter, setScenarioFilter] = useState('all');
 
-  // Load sessions and scenarios on mount
+  // Load sessions and scenarios on mount (only if authenticated)
   useEffect(() => {
-    loadData();
-  }, []);
+    if (isAuthenticated) {
+      loadData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]);
 
-  // Reload when pagination or filter changes
+  // Reload when pagination or filter changes (only if authenticated)
   useEffect(() => {
-    loadSessions();
-  }, [pagination.offset, scenarioFilter]);
+    if (isAuthenticated) {
+      loadSessions();
+    }
+  }, [pagination.offset, scenarioFilter, isAuthenticated]);
 
   const loadData = async () => {
     try {
@@ -174,11 +190,125 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
   const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
   const totalPages = Math.ceil(pagination.total / pagination.limit);
 
+  // Show login required screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div style={{ padding: '24px' }}>
+        {/* Header - same style as other modules */}
+        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '12px',
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '14px',
+              background: headerGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <History style={{ width: '24px', height: '24px', color: headerText }} />
+            </div>
+            <h1 style={{
+              fontSize: '28px',
+              fontWeight: 700,
+              color: '#0f172a',
+              margin: 0,
+            }}>
+              Meine Sessions
+            </h1>
+          </div>
+          <p style={{
+            fontSize: '16px',
+            color: '#475569',
+            maxWidth: '600px',
+            margin: '0 auto',
+          }}>
+            Hier findest du deine gespeicherten Übungen und Fortschritte
+          </p>
+        </div>
+
+        {/* Login required message */}
+        <div style={{
+          maxWidth: '500px',
+          margin: '60px auto',
+          textAlign: 'center',
+          padding: '40px',
+          backgroundColor: 'white',
+          borderRadius: '20px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+        }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '16px',
+            background: headerGradient,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+          }}>
+            <LogIn style={{ width: '32px', height: '32px', color: headerText }} />
+          </div>
+          <h2 style={{
+            fontSize: '22px',
+            fontWeight: 700,
+            color: '#0f172a',
+            marginBottom: '12px',
+          }}>
+            Anmeldung erforderlich
+          </h2>
+          <p style={{
+            fontSize: '15px',
+            color: '#64748b',
+            marginBottom: '24px',
+            lineHeight: 1.6,
+          }}>
+            Um deine gespeicherten Sessions zu sehen, musst du dich zuerst anmelden.
+          </p>
+          <button
+            onClick={onLoginClick}
+            style={{
+              padding: '14px 32px',
+              borderRadius: '12px',
+              border: 'none',
+              background: headerGradient,
+              color: headerText,
+              fontSize: '16px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: `0 4px 12px ${primaryAccent}44`,
+              transition: 'transform 0.2s, box-shadow 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = `0 6px 16px ${primaryAccent}55`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = `0 4px 12px ${primaryAccent}44`;
+            }}
+          >
+            <LogIn style={{ width: '20px', height: '20px' }} />
+            Jetzt anmelden
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading && sessions.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-ocean-blue-600 animate-spin mx-auto mb-4" />
+          <Loader2 style={{ width: '48px', height: '48px', color: primaryAccent }} className="animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Sessions werden geladen...</p>
         </div>
       </div>
@@ -199,61 +329,99 @@ const SessionHistory = ({ onBack, onSelectSession }) => {
   }
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      {/* Header */}
+    <div style={{ padding: '24px' }}>
+      {/* Header - centered style like Szenario-Training */}
+      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '12px',
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            background: headerGradient,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <History style={{ width: '24px', height: '24px', color: headerText }} />
+          </div>
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: 700,
+            color: '#0f172a',
+            margin: 0,
+          }}>
+            Meine Sessions
+          </h1>
+        </div>
+        <p style={{
+          fontSize: '16px',
+          color: '#475569',
+          maxWidth: '600px',
+          margin: '0 auto',
+        }}>
+          {pagination.total} {pagination.total === 1 ? 'Übung' : 'Übungen'} gespeichert
+        </p>
+      </div>
+
+      {/* Filters */}
       <div className="max-w-5xl mx-auto mb-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {/* Title */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ocean-blue-600 to-ocean-teal-500 flex items-center justify-center shadow-md">
-              <History className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Meine Sessions</h1>
-              <p className="text-slate-600">
-                {pagination.total} {pagination.total === 1 ? 'Übung' : 'Übungen'} gespeichert
-              </p>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mt-6">
-            {/* Scenario filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-slate-600" />
-              <select
-                value={scenarioFilter}
-                onChange={(e) => {
-                  setScenarioFilter(e.target.value);
-                  setPagination((prev) => ({ ...prev, offset: 0 }));
-                }}
-                className="h-11 px-4 py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-900 shadow-sm cursor-pointer hover:border-slate-300 focus:outline-none focus:border-ocean-blue-400 focus:ring-2 focus:ring-ocean-blue-100 transition-all duration-200"
-              >
-                <option value="all">Alle Szenarien</option>
-                {scenarios.map((scenario) => (
-                  <option key={scenario.id} value={scenario.id}>
-                    {scenario.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Refresh button */}
-            <Button
-              variant="outline"
-              onClick={loadSessions}
-              disabled={isLoading}
-              className="ml-auto"
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Scenario filter */}
+          <div className="flex items-center gap-2">
+            <Filter style={{ width: '20px', height: '20px', color: primaryAccent }} />
+            <select
+              value={scenarioFilter}
+              onChange={(e) => {
+                setScenarioFilter(e.target.value);
+                setPagination((prev) => ({ ...prev, offset: 0 }));
+              }}
+              style={{
+                height: '44px',
+                padding: '8px 16px',
+                borderRadius: '12px',
+                border: '2px solid #e2e8f0',
+                backgroundColor: 'white',
+                color: '#1e293b',
+                fontSize: '14px',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                cursor: 'pointer',
+                outline: 'none',
+                transition: 'all 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = primaryAccent;
+                e.target.style.boxShadow = `0 0 0 3px ${focusRing}`;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e2e8f0';
+                e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
+              }}
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Aktualisieren
-            </Button>
+              <option value="all">Alle Szenarien</option>
+              {scenarios.map((scenario) => (
+                <option key={scenario.id} value={scenario.id}>
+                  {scenario.title}
+                </option>
+              ))}
+            </select>
           </div>
-        </motion.div>
+
+          {/* Refresh button */}
+          <Button
+            variant="outline"
+            onClick={loadSessions}
+            disabled={isLoading}
+            className="ml-auto"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Aktualisieren
+          </Button>
+        </div>
       </div>
 
       {/* Sessions List */}

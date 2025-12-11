@@ -499,7 +499,8 @@ const AppSidebar = ({
                   gap: '10px',
                   padding: '10px',
                   borderRadius: '12px',
-                  backgroundColor: colors.borderColorLight,
+                  backgroundColor: 'transparent',
+                  border: `1px solid ${colors.borderColor}`,
                   marginBottom: '8px',
                 }}
               >
@@ -525,7 +526,7 @@ const AppSidebar = ({
                     {user.displayName || user.firstName || 'Benutzer'}
                   </div>
                   {user.email && (
-                    <div style={{ fontSize: '12px', color: colors.sidebarTextMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '12px', color: colors.sidebarText, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {user.email}
                     </div>
                   )}
@@ -542,7 +543,7 @@ const AppSidebar = ({
                 alignItems: 'center',
                 gap: '10px',
                 justifyContent: isCollapsed ? 'center' : 'flex-start',
-                color: colors.sidebarTextMuted,
+                color: colors.sidebarText,
                 backgroundColor: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
@@ -550,12 +551,10 @@ const AppSidebar = ({
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-                e.currentTarget.style.color = '#dc2626';
+                e.currentTarget.style.backgroundColor = colors.hoverBg;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = colors.sidebarTextMuted;
               }}
               title="Abmelden"
             >
@@ -575,9 +574,9 @@ const AppSidebar = ({
               alignItems: 'center',
               gap: '10px',
               justifyContent: isCollapsed ? 'center' : 'flex-start',
-              color: colors.primaryAccent,
+              color: colors.sidebarText,
               backgroundColor: 'transparent',
-              border: `1px solid ${colors.primaryAccent}`,
+              border: `1px solid ${colors.borderColor}`,
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: 500,
@@ -585,12 +584,10 @@ const AppSidebar = ({
               marginBottom: '8px',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = colors.primaryAccent;
-              e.currentTarget.style.color = '#ffffff';
+              e.currentTarget.style.backgroundColor = colors.hoverBg;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = colors.primaryAccent;
             }}
             title="Anmelden"
           >
@@ -950,7 +947,8 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                         gap: '12px',
                         padding: '12px 16px',
                         borderRadius: '12px',
-                        backgroundColor: colors.activeBg,
+                        backgroundColor: 'transparent',
+                        border: `1px solid ${colors.borderColor}`,
                         marginBottom: '8px',
                       }}
                     >
@@ -976,7 +974,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                           {user.displayName || user.firstName || 'Benutzer'}
                         </div>
                         {user.email && (
-                          <div style={{ fontSize: '13px', color: colors.textMuted }}>
+                          <div style={{ fontSize: '13px', color: colors.textMain, opacity: 0.7 }}>
                             {user.email}
                           </div>
                         )}
@@ -996,7 +994,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                         borderRadius: '12px',
                         border: 'none',
                         backgroundColor: 'transparent',
-                        color: '#dc2626',
+                        color: colors.textMain,
                         fontSize: '15px',
                         fontWeight: 500,
                         cursor: 'pointer',
@@ -1023,9 +1021,9 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                       gap: '12px',
                       padding: '14px 16px',
                       borderRadius: '12px',
-                      border: `2px solid ${colors.primaryAccent}`,
+                      border: `1px solid ${colors.borderColor}`,
                       backgroundColor: 'transparent',
-                      color: colors.primaryAccent,
+                      color: colors.textMain,
                       fontSize: '15px',
                       fontWeight: 600,
                       cursor: 'pointer',
