@@ -29,16 +29,20 @@ const COLORS = {
 
 /**
  * Score Badge Component
+ * Now displays scores on scale of 100 (converts from scale of 10)
  */
 const ScoreBadge = ({ score, label, size = 'normal', primaryAccent }) => {
+  // Convert from scale of 10 to scale of 100
+  const score100 = score != null ? score * 10 : null;
+
   const getScoreColor = (s) => {
-    if (s >= 8) return COLORS.green[500];
-    if (s >= 6) return primaryAccent;
-    if (s >= 4) return COLORS.amber[500];
+    if (s >= 80) return COLORS.green[500];
+    if (s >= 60) return primaryAccent;
+    if (s >= 40) return COLORS.amber[500];
     return COLORS.red[500];
   };
 
-  const color = getScoreColor(score);
+  const color = getScoreColor(score100);
   const isLarge = size === 'large';
 
   return (
@@ -63,7 +67,7 @@ const ScoreBadge = ({ score, label, size = 'normal', primaryAccent }) => {
           fontWeight: 700,
           color: color,
         }}>
-          {score?.toFixed(1) || '-'}
+          {score100 != null ? Math.round(score100) : '-'}
         </span>
       </div>
       <span style={{

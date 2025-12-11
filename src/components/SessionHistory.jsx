@@ -108,8 +108,11 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
   // Convert score to percentage (0-100) for consistent display
   const getScoreAsPercent = () => {
     if (score === null) return null;
-    // Roleplay scores are 0-10, convert to percentage
-    if (type === TABS.ROLEPLAY) return score * 10;
+    // Simulator and Roleplay scores are 0-10, convert to percentage
+    if (type === TABS.SIMULATOR || type === TABS.ROLEPLAY) {
+      return score <= 10 ? score * 10 : score;
+    }
+    // Video scores are already 0-100
     return score;
   };
 

@@ -23,16 +23,20 @@ const COLORS = {
 
 /**
  * Score Badge for Summary
+ * Displays scores on scale of 100 (converts from scale of 10)
  */
 const SummaryScore = ({ score, label, primaryAccent }) => {
+  // Convert from scale of 10 to scale of 100
+  const score100 = score != null ? score * 10 : null;
+
   const getScoreColor = (s) => {
-    if (s >= 8) return COLORS.green[500];
-    if (s >= 6) return primaryAccent;
-    if (s >= 4) return COLORS.amber[500];
+    if (s >= 80) return COLORS.green[500];
+    if (s >= 60) return primaryAccent;
+    if (s >= 40) return COLORS.amber[500];
     return '#ef4444';
   };
 
-  const color = getScoreColor(score);
+  const color = getScoreColor(score100);
 
   return (
     <div style={{
@@ -47,7 +51,7 @@ const SummaryScore = ({ score, label, primaryAccent }) => {
         color: color,
         marginBottom: '4px',
       }}>
-        {score?.toFixed(1) || '-'}
+        {score100 != null ? Math.round(score100) : '-'}
       </div>
       <div style={{
         fontSize: '13px',
@@ -101,14 +105,16 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
         : rawSummary)
     : null;
 
-  const overallScore = session.overall_score || summaryFeedback?.overall_score || 0;
+  // Convert overall score from scale of 10 to scale of 100
+  const rawScore = session.overall_score || summaryFeedback?.overall_score || 0;
+  const overallScore = rawScore <= 10 ? rawScore * 10 : rawScore;
 
   const getGradeLabel = (score) => {
-    if (score >= 9) return { text: 'Ausgezeichnet!', emoji: '🌟' };
-    if (score >= 8) return { text: 'Sehr gut!', emoji: '🎉' };
-    if (score >= 7) return { text: 'Gut!', emoji: '👏' };
-    if (score >= 6) return { text: 'Solide Leistung', emoji: '👍' };
-    if (score >= 5) return { text: 'Ausbaufähig', emoji: '💪' };
+    if (score >= 90) return { text: 'Ausgezeichnet!', emoji: '🌟' };
+    if (score >= 80) return { text: 'Sehr gut!', emoji: '🎉' };
+    if (score >= 70) return { text: 'Gut!', emoji: '👏' };
+    if (score >= 60) return { text: 'Solide Leistung', emoji: '👍' };
+    if (score >= 50) return { text: 'Ausbaufähig', emoji: '💪' };
     return { text: 'Weiter üben!', emoji: '📚' };
   };
 
@@ -176,7 +182,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
             fontWeight: 700,
             color: primaryAccent,
           }}>
-            {overallScore ? overallScore.toFixed(1) : '-'}
+            {overallScore ? Math.round(overallScore) : '-'}
           </span>
         </div>
         <p style={{
@@ -184,7 +190,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
           color: COLORS.slate[500],
           margin: 0,
         }}>
-          {overallScore ? 'Gesamtbewertung (von 10)' : 'Keine Fragen beantwortet'}
+          {overallScore ? 'Gesamtbewertung (von 100)' : 'Keine Fragen beantwortet'}
         </p>
       </div>
 
@@ -203,13 +209,13 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
         />
         <StatItem
           icon={Target}
-          value={summaryFeedback?.average_content_score?.toFixed(1) || '-'}
+          value={summaryFeedback?.average_content_score ? Math.round(summaryFeedback.average_content_score * 10) : '-'}
           label="Ø Inhalt"
           primaryAccent={primaryAccent}
         />
         <StatItem
           icon={Star}
-          value={summaryFeedback?.average_delivery_score?.toFixed(1) || '-'}
+          value={summaryFeedback?.average_delivery_score ? Math.round(summaryFeedback.average_delivery_score * 10) : '-'}
           label="Ø Präsentation"
           primaryAccent={primaryAccent}
         />

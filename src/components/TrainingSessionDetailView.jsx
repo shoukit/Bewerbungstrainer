@@ -96,13 +96,17 @@ const getGradeLabel = (score, maxScore) => {
 
 /**
  * Score display gauge
+ * @param {number} score - Score value (always on scale of 100)
+ * @param {number} size - Size of the gauge in pixels
+ * @param {string} primaryAccent - Primary accent color
+ * @param {boolean} isHeader - If true, text will be white for header display
  */
-const ScoreGauge = ({ score, maxScore = 100, size = 120, primaryAccent }) => {
-  const percentage = maxScore === 10 ? (score / 10) * 100 : score;
+const ScoreGauge = ({ score, size = 120, primaryAccent, isHeader = false }) => {
+  const percentage = Math.min(100, Math.max(0, score || 0));
   const radius = (size - 12) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
-  const color = getScoreColor(score, maxScore, primaryAccent);
+  const color = getScoreColor(score, 100, primaryAccent);
 
   return (
     <div style={{ position: 'relative', width: size, height: size }}>
@@ -112,7 +116,7 @@ const ScoreGauge = ({ score, maxScore = 100, size = 120, primaryAccent }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={COLORS.slate[200]}
+          stroke={isHeader ? 'rgba(255,255,255,0.3)' : COLORS.slate[200]}
           strokeWidth={10}
         />
         <motion.circle
@@ -140,10 +144,10 @@ const ScoreGauge = ({ score, maxScore = 100, size = 120, primaryAccent }) => {
         }}
       >
         <span style={{ fontSize: size / 3.5, fontWeight: 700, color }}>
-          {maxScore === 10 ? score.toFixed(1) : Math.round(score)}
+          {Math.round(score)}
         </span>
-        <span style={{ fontSize: size / 10, color: COLORS.slate[500] }}>
-          von {maxScore}
+        <span style={{ fontSize: size / 10, color: isHeader ? '#ffffff' : COLORS.slate[500] }}>
+          von 100
         </span>
       </div>
     </div>
@@ -271,8 +275,8 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
           onClick={togglePlay}
           disabled={isLoading}
           style={{
-            width: '36px',
-            height: '36px',
+            width: '40px',
+            height: '40px',
             borderRadius: '50%',
             background: primaryAccent || '#0d9488',
             border: 'none',
@@ -285,11 +289,11 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
           }}
         >
           {isLoading ? (
-            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+            <Loader2 size={20} color="#ffffff" style={{ animation: 'spin 1s linear infinite' }} />
           ) : isPlaying ? (
-            <Pause size={16} fill="#ffffff" />
+            <Pause size={20} color="#ffffff" fill="#ffffff" strokeWidth={2} />
           ) : (
-            <Play size={16} fill="#ffffff" style={{ marginLeft: '2px' }} />
+            <Play size={20} color="#ffffff" fill="#ffffff" strokeWidth={2} style={{ marginLeft: '2px' }} />
           )}
         </button>
         <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: COLORS.slate[500] }}>
@@ -402,7 +406,7 @@ const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
           <SkipBack size={20} />
         </button>
         <button onClick={togglePlay} style={{ width: '48px', height: '48px', borderRadius: '50%', background: primaryAccent, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-          {isPlaying ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: '2px' }} />}
+          {isPlaying ? <Pause size={22} color="#ffffff" fill="#ffffff" strokeWidth={2} /> : <Play size={22} color="#ffffff" fill="#ffffff" strokeWidth={2} style={{ marginLeft: '2px' }} />}
         </button>
         <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: COLORS.slate[500] }}>
           <SkipForward size={20} />
@@ -473,8 +477,8 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
           </h4>
         </div>
         {answer.overall_score !== null && answer.overall_score !== undefined && (
-          <span style={{ fontSize: '16px', fontWeight: 700, color: isNoSpeech ? COLORS.slate[400] : getScoreColor(answer.overall_score, 10, primaryAccent) }}>
-            {isNoSpeech ? '–' : answer.overall_score.toFixed(1)}
+          <span style={{ fontSize: '16px', fontWeight: 700, color: isNoSpeech ? COLORS.slate[400] : getScoreColor(answer.overall_score * 10, 100, primaryAccent) }}>
+            {isNoSpeech ? '–' : Math.round(answer.overall_score * 10)}
           </span>
         )}
         <ChevronDown size={18} color={COLORS.slate[400]} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
@@ -529,7 +533,9 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                       { key: 'delivery', label: 'Präsentation' },
                       { key: 'overall', label: 'Gesamt' },
                     ].map(({ key, label }) => {
-                      const score = feedback.scores[key];
+                      const rawScore = feedback.scores[key];
+                      // Convert from scale of 10 to scale of 100
+                      const score = rawScore != null ? rawScore * 10 : null;
                       return (
                         <div key={key} style={{
                           padding: '10px 8px',
@@ -541,9 +547,9 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                           <div style={{
                             fontSize: '16px',
                             fontWeight: 700,
-                            color: score != null ? getScoreColor(score, 10, primaryAccent) : COLORS.slate[400],
+                            color: score != null ? getScoreColor(score, 100, primaryAccent) : COLORS.slate[400],
                           }}>
-                            {score != null ? score.toFixed(1) : '-'}
+                            {score != null ? Math.round(score) : '-'}
                           </div>
                           <div style={{ fontSize: '10px', color: COLORS.slate[500], marginTop: '2px' }}>
                             {label}
@@ -801,16 +807,25 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
   const categoryScores = session?.category_scores || [];
   const analysis = session?.analysis || {};
 
-  // Get overall score based on type
+  // Get overall score based on type - ALWAYS return on scale of 100
   const getOverallScore = () => {
+    let rawScore = 0;
+
     if (isRoleplay && roleplayData?.feedback?.rating?.overall) {
-      return roleplayData.feedback.rating.overall;
+      rawScore = roleplayData.feedback.rating.overall;
+    } else {
+      rawScore = session?.overall_score || summaryFeedback?.overall_score || 0;
     }
-    return session?.overall_score || summaryFeedback?.overall_score || 0;
+
+    // Convert from scale of 10 to scale of 100 for Simulator and Roleplay
+    if ((isSimulator || isRoleplay) && rawScore <= 10) {
+      return rawScore * 10;
+    }
+
+    return rawScore;
   };
 
   const overallScore = getOverallScore();
-  const maxScore = isSimulator || isRoleplay ? 10 : 100;
 
   // Loading state
   if (isLoading) {
@@ -884,7 +899,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <ScoreGauge score={overallScore} maxScore={maxScore} size={100} primaryAccent="#fff" />
+              <ScoreGauge score={overallScore} size={100} primaryAccent="#fff" isHeader={true} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.9 }}>
                   {isVideo ? <Video size={16} /> : isRoleplay ? <MessageSquare size={16} /> : <Target size={16} />}
@@ -896,7 +911,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
                   {(isRoleplay ? roleplayScenario?.title : scenario?.title) || session?.scenario_title || session?.position || 'Training'}
                 </h1>
                 <p style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 8px 0', opacity: 0.9 }}>
-                  {getGradeLabel(overallScore, maxScore)}
+                  {getGradeLabel(overallScore, 100)}
                 </p>
                 <div style={{ display: 'flex', gap: '12px', fontSize: '12px', opacity: 0.8 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -1047,12 +1062,16 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
                 <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${COLORS.slate[200]}`, marginBottom: '20px' }}>
                   <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px' }}>Bewertung</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                    {Object.entries(summaryFeedback.scores).map(([key, value]) => (
-                      <div key={key} style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 700, color: getScoreColor(value, 10, primaryAccent) }}>{value?.toFixed(1) || '-'}</div>
-                        <div style={{ fontSize: '11px', color: COLORS.slate[500], textTransform: 'capitalize' }}>{key}</div>
-                      </div>
-                    ))}
+                    {Object.entries(summaryFeedback.scores).map(([key, value]) => {
+                      // Convert from scale of 10 to scale of 100
+                      const score100 = value != null ? value * 10 : null;
+                      return (
+                        <div key={key} style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '20px', fontWeight: 700, color: getScoreColor(score100, 100, primaryAccent) }}>{score100 != null ? Math.round(score100) : '-'}</div>
+                          <div style={{ fontSize: '11px', color: COLORS.slate[500], textTransform: 'capitalize' }}>{key}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1082,21 +1101,25 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
                   <div style={{ display: 'grid', gap: '10px' }}>
                     {Object.entries(roleplayData.feedback.rating)
                       .filter(([key]) => key !== 'overall')
-                      .map(([key, value]) => (
-                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
-                          <div style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: COLORS.slate[700], textTransform: 'capitalize' }}>
-                            {key.replace(/_/g, ' ')}
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '80px', height: '6px', background: COLORS.slate[200], borderRadius: '3px' }}>
-                              <div style={{ width: `${(value / 10) * 100}%`, height: '100%', background: getScoreColor(value, 10, primaryAccent), borderRadius: '3px' }} />
+                      .map(([key, value]) => {
+                        // Convert from scale of 10 to scale of 100
+                        const score100 = value * 10;
+                        return (
+                          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                            <div style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: COLORS.slate[700], textTransform: 'capitalize' }}>
+                              {key.replace(/_/g, ' ')}
                             </div>
-                            <span style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(value, 10, primaryAccent), minWidth: '35px' }}>
-                              {value}/10
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ width: '80px', height: '6px', background: COLORS.slate[200], borderRadius: '3px' }}>
+                                <div style={{ width: `${score100}%`, height: '100%', background: getScoreColor(score100, 100, primaryAccent), borderRadius: '3px' }} />
+                              </div>
+                              <span style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(score100, 100, primaryAccent), minWidth: '45px' }}>
+                                {Math.round(score100)}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </div>
                 </div>
               )}
