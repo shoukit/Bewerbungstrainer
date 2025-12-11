@@ -323,9 +323,24 @@ function AppContent() {
     };
   }, []);
 
+  // ===== SCROLL TO TOP HELPER =====
+  const scrollToTop = () => {
+    // Scroll to top of the window
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Also try to scroll the main content area if it exists
+    const mainContent = document.querySelector('[data-main-content]');
+    if (mainContent) {
+      mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // ===== NAVIGATION HANDLER =====
   const handleSidebarNavigate = (viewId) => {
     console.log('🧭 [APP] Sidebar navigation to:', viewId);
+
+    // Scroll to top on every navigation
+    scrollToTop();
+
     switch (viewId) {
       case 'dashboard':
         setCurrentView(VIEWS.DASHBOARD);
