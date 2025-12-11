@@ -9,8 +9,69 @@ import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner } from './context/PartnerContext';
 import { LoginModal, useLoginModal } from './components/LoginModal';
 import { ToastProvider } from './components/Toast';
+import { Loader2 } from 'lucide-react';
 
 console.log('📦 [APP] App.jsx module loaded');
+
+/**
+ * Loading Spinner Component
+ * Shown while partner branding is being loaded
+ */
+const BrandingLoadingSpinner = () => {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f8fafc',
+        zIndex: 9999,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px',
+        }}
+      >
+        <Loader2
+          style={{
+            width: '48px',
+            height: '48px',
+            color: '#3A7FA7',
+            animation: 'spin 1s linear infinite',
+          }}
+        />
+        <p
+          style={{
+            fontSize: '16px',
+            color: '#64748b',
+            fontWeight: 500,
+            margin: 0,
+          }}
+        >
+          Trainingscenter wird geladen...
+        </p>
+      </div>
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </div>
+  );
+};
 
 // View constants
 const VIEWS = {
@@ -119,8 +180,13 @@ function getWPHeaderHeight() {
 function AppContent() {
   console.log('🏗️ [APP] App component initialized');
 
-  // Auth context
-  const { isAuthenticated, authLoading } = usePartner();
+  // Auth context and loading state
+  const { isAuthenticated, authLoading, isLoading } = usePartner();
+
+  // Show loading spinner while branding is loading
+  if (isLoading) {
+    return <BrandingLoadingSpinner />;
+  }
 
   // Current view state
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
