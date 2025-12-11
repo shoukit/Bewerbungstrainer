@@ -682,13 +682,13 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                   )}
 
                   {/* Action Button - Between header and content */}
-                  <div className="bg-white px-4 py-3 shadow-xl">
+                  <div className="bg-white px-4 py-3 shadow-xl flex justify-center">
                     {!isStarted ? (
                       <Button
                         onClick={handleStartCall}
                         size="lg"
                         disabled={!selectedMicrophoneId}
-                        className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-base py-6 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Mic className="w-5 h-5 mr-2" />
                         {scenario.interviewer_profile?.name
@@ -699,7 +699,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                       <Button
                         onClick={() => setShowEndDialog(true)}
                         size="lg"
-                        className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold text-base py-6 rounded-xl shadow-lg"
+                        className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg"
                       >
                         <X className="w-5 h-5 mr-2" />
                         Gespräch beenden
@@ -708,7 +708,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                       <Button
                         disabled
                         size="lg"
-                        className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
+                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
                       >
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         Gespräch wurde beendet...
@@ -717,7 +717,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                       <Button
                         disabled
                         size="lg"
-                        className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-base py-6 rounded-xl shadow-lg opacity-50 cursor-not-allowed"
+                        className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-50 cursor-not-allowed"
                       >
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         Verbindung wird hergestellt...
@@ -785,13 +785,12 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                 {/* Transcript Header */}
                 <div
                   style={{ background: themedStyles.headerGradient }}
-                  className="px-4 py-3 flex items-center justify-between flex-shrink-0"
+                  className="px-4 py-3 flex items-center flex-shrink-0"
                 >
                   <div className="flex items-center gap-2" style={{ color: themedStyles.headerText }}>
                     <MessageSquare className="w-4 h-4" />
                     <h3 className="font-bold text-sm">Live Transkript</h3>
                   </div>
-                  <ChevronRight className="w-4 h-4" style={{ color: themedStyles.headerText }} />
                 </div>
 
                 {/* Transcript Content - Scrollable */}

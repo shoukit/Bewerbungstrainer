@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lightbulb, ChevronRight } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -30,7 +30,6 @@ const CoachingPanel = ({ hints }) => {
       >
         <Lightbulb className="w-5 h-5" style={{ color: headerText }} />
         <h3 className="font-bold text-sm" style={{ color: headerText }}>Live Coaching</h3>
-        <ChevronRight className="w-4 h-4 ml-auto" style={{ color: headerText }} />
       </div>
 
       {/* Hints List */}

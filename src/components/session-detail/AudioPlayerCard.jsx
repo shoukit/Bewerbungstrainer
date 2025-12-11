@@ -75,7 +75,7 @@ export function AudioPlayerCard({
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Card variant="elevated" padding="lg">
         <CardHeader className="mb-4">
-          <CardTitle icon={Volume2} iconColor="text-blue-600" size="default">
+          <CardTitle icon={Volume2} iconColor="text-slate-800" size="default">
             Gesprächsaufnahme
           </CardTitle>
         </CardHeader>

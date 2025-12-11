@@ -10,6 +10,8 @@ import { MessageSquare, User, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TRANSCRIPT_CONFIG, SPEAKER_STYLES } from '@/config/constants';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
 
 /**
  * Format elapsed time to MM:SS
@@ -29,6 +31,8 @@ export function TranscriptCard({
   onSeekToEntry,
 }) {
   const containerRef = useRef(null);
+  const { branding } = usePartner();
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
   // Auto-scroll to active entry during playback
   useEffect(() => {
@@ -64,7 +68,7 @@ export function TranscriptCard({
     >
       <Card variant="elevated" padding="lg">
         <CardHeader className="mb-4">
-          <CardTitle icon={MessageSquare} iconColor="text-blue-600" size="default">
+          <CardTitle icon={MessageSquare} iconColor="text-slate-800" size="default">
             Gesprächsverlauf
           </CardTitle>
         </CardHeader>
@@ -74,7 +78,7 @@ export function TranscriptCard({
         ) : (
           <div
             ref={containerRef}
-            className="space-y-3 overflow-y-auto pr-2 scroll-smooth"
+            className="space-y-3 overflow-y-auto pr-2 scroll-smooth pt-1"
             style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '200px' }}
           >
             {transcript.map((entry, idx) => {
@@ -128,10 +132,14 @@ export function TranscriptCard({
                     className={cn(
                       'flex-1 px-3 py-2 rounded-xl shadow-sm transition-all',
                       isAgent
-                        ? 'bg-slate-50 border border-slate-200'
+                        ? 'bg-slate-50 border'
                         : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white',
-                      isActive && 'ring-2 ring-blue-400 ring-offset-1'
+                      isActive && 'ring-2 ring-offset-1'
                     )}
+                    style={{
+                      ...(isAgent && { borderColor: `${primaryAccent}40` }),
+                      ...(isActive && { '--tw-ring-color': primaryAccent }),
+                    }}
                   >
                     <p
                       className={cn(
