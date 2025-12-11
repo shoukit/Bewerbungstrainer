@@ -319,12 +319,30 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         }).then(r => r.json()).catch(() => ({ data: [] })),
       ]);
 
-      setRoleplaySessions(Array.isArray(roleplayData?.data) ? roleplayData.data : []);
-      setSimulatorSessions(Array.isArray(simulatorData?.data) ? simulatorData.data : []);
-      setVideoSessions(Array.isArray(videoData?.data) ? videoData.data : []);
-      setRoleplayScenarios(Array.isArray(roleplayScenariosData) ? roleplayScenariosData : (Array.isArray(roleplayScenariosData?.data) ? roleplayScenariosData.data : []));
-      setSimulatorScenarios(Array.isArray(simulatorScenariosData?.data) ? simulatorScenariosData.data : []);
-      setVideoScenarios(Array.isArray(videoScenariosData?.data) ? videoScenariosData.data : []);
+      // Extract sessions from API responses - each API has different structure
+      // Simulator & Video: { success: true, data: { sessions: [...] } }
+      // Roleplay: { data: [...] }
+      const extractSessions = (response, key = 'sessions') => {
+        if (Array.isArray(response?.data)) return response.data;
+        if (Array.isArray(response?.data?.[key])) return response.data[key];
+        if (Array.isArray(response?.[key])) return response[key];
+        if (Array.isArray(response)) return response;
+        return [];
+      };
+
+      const extractScenarios = (response) => {
+        if (Array.isArray(response?.data?.scenarios)) return response.data.scenarios;
+        if (Array.isArray(response?.data)) return response.data;
+        if (Array.isArray(response)) return response;
+        return [];
+      };
+
+      setRoleplaySessions(extractSessions(roleplayData));
+      setSimulatorSessions(extractSessions(simulatorData));
+      setVideoSessions(extractSessions(videoData));
+      setRoleplayScenarios(extractScenarios(roleplayScenariosData));
+      setSimulatorScenarios(extractScenarios(simulatorScenariosData));
+      setVideoScenarios(extractScenarios(videoScenariosData));
     } catch (err) {
       console.error('Failed to load sessions:', err);
       setError(err.message || 'Fehler beim Laden der Daten');
@@ -558,16 +576,40 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         </p>
       </div>
 
-      {/* Tabs */}
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto 32px',
-        display: 'flex',
-        gap: '8px',
-        background: '#f1f5f9',
-        padding: '6px',
-        borderRadius: '14px',
-      }}>
+      {/* Tabs - Responsive: stack vertically on mobile */}
+      <style>{`
+        .session-tabs {
+          max-width: 800px;
+          margin: 0 auto 32px;
+          display: flex;
+          gap: 8px;
+          background: #f1f5f9;
+          padding: 6px;
+          border-radius: 14px;
+        }
+        .session-tab-btn {
+          flex: 1;
+          padding: 12px 16px;
+          border-radius: 10px;
+          border: none;
+          font-size: 14px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.2s;
+        }
+        @media (max-width: 640px) {
+          .session-tabs {
+            flex-direction: column;
+          }
+          .session-tab-btn {
+            padding: 14px 16px;
+          }
+        }
+      `}</style>
+      <div className="session-tabs">
         {TAB_CONFIG.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -579,22 +621,12 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              className="session-tab-btn"
               style={{
-                flex: 1,
-                padding: '12px 16px',
-                borderRadius: '10px',
-                border: 'none',
                 background: isActive ? '#fff' : 'transparent',
                 color: isActive ? '#0f172a' : '#64748b',
-                fontSize: '14px',
                 fontWeight: isActive ? 600 : 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
                 boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
-                transition: 'all 0.2s',
               }}
             >
               <Icon size={18} />
