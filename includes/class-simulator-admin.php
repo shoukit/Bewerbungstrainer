@@ -58,32 +58,21 @@ class Bewerbungstrainer_Simulator_Admin {
      * Add admin menu
      */
     public function add_admin_menu() {
-        // Main menu item
-        add_menu_page(
-            'Szenario-Training',
-            'Szenario-Training',
-            'manage_options',
-            'simulator-scenarios',
-            array($this, 'render_scenarios_page'),
-            'dashicons-target',
-            31
-        );
-
-        // Submenu: All Scenarios
+        // Submenu under Bewerbungstrainer: All Scenarios
         add_submenu_page(
-            'simulator-scenarios',
-            'Alle Szenarien',
-            'Alle Szenarien',
+            'bewerbungstrainer',
+            __('Szenario-Training', 'bewerbungstrainer'),
+            __('Szenario-Training', 'bewerbungstrainer'),
             'manage_options',
             'simulator-scenarios',
             array($this, 'render_scenarios_page')
         );
 
-        // Submenu: Add New
+        // Submenu: Add New (hidden, accessed via link)
         add_submenu_page(
-            'simulator-scenarios',
-            'Neues Szenario',
-            'Neues Szenario hinzufügen',
+            null,  // Hidden from menu
+            __('Neues Szenario', 'bewerbungstrainer'),
+            __('Neues Szenario', 'bewerbungstrainer'),
             'manage_options',
             'simulator-scenario-new',
             array($this, 'render_edit_page')

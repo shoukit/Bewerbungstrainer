@@ -52,15 +52,34 @@ class Bewerbungstrainer_Video_Training_Admin {
      * Add admin menu items
      */
     public function add_admin_menu() {
-        // Add submenu under Bewerbungstrainer
+        // Submenu under Bewerbungstrainer
         add_submenu_page(
             'bewerbungstrainer',
-            __('Video Training Szenarien', 'bewerbungstrainer'),
+            __('Video Training', 'bewerbungstrainer'),
             __('Video Training', 'bewerbungstrainer'),
             'manage_options',
             'bewerbungstrainer-video-training',
             array($this, 'render_admin_page')
         );
+
+        // Submenu: Add New (hidden, accessed via link)
+        add_submenu_page(
+            null,  // Hidden from menu
+            __('Neues Video-Szenario', 'bewerbungstrainer'),
+            __('Neues Video-Szenario', 'bewerbungstrainer'),
+            'manage_options',
+            'bewerbungstrainer-video-training-new',
+            array($this, 'render_new_scenario_page')
+        );
+    }
+
+    /**
+     * Render new scenario page (redirects to form with action=new)
+     */
+    public function render_new_scenario_page() {
+        // Set action to 'new' for the form
+        $_GET['action'] = 'new';
+        $this->render_admin_page();
     }
 
     /**
