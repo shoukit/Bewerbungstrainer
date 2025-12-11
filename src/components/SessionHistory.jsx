@@ -474,8 +474,11 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start gap-3 mb-2">
                           {/* Scenario icon */}
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean-blue-500 to-ocean-teal-400 flex items-center justify-center flex-shrink-0">
-                            <MessageSquare className="w-5 h-5 text-white" />
+                          <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: headerGradient }}
+                          >
+                            <MessageSquare className="w-5 h-5" style={{ color: headerText }} />
                           </div>
                           <div className="min-w-0">
                             <h3 className="text-lg font-semibold text-slate-900 truncate">
