@@ -73,8 +73,8 @@ class Bewerbungstrainer_API {
         $this->gemini_handler = Bewerbungstrainer_Gemini_Handler::get_instance();
         $this->roleplay_scenarios = Bewerbungstrainer_Roleplay_Scenarios::get_instance();
 
-        // Disable cookie authentication errors for video training endpoints
-        add_filter('rest_authentication_errors', array($this, 'disable_cookie_check_for_video_training'));
+        // Disable cookie authentication errors for public scenario endpoints
+        add_filter('rest_authentication_errors', array($this, 'disable_cookie_check_for_public_endpoints'));
 
         add_action('rest_api_init', array($this, 'register_routes'));
     }
@@ -327,15 +327,16 @@ class Bewerbungstrainer_API {
     }
 
     /**
-     * Disable cookie authentication check for video training endpoints
+     * Disable cookie authentication check for public scenario endpoints
      *
-     * This allows video training endpoints to work without nonce validation
+     * This allows public endpoints to work without nonce validation
      * since they use the allow_all_users permission callback.
+     * This fixes 403 "Cookie check failed" errors after re-login.
      *
      * @param WP_Error|null|bool $result Error from another authentication handler, null if not errors, true if authentication succeeded.
      * @return WP_Error|null|bool
      */
-    public function disable_cookie_check_for_video_training($result) {
+    public function disable_cookie_check_for_public_endpoints($result) {
         // If another auth method already succeeded or failed, don't override it
         if (true === $result || is_wp_error($result)) {
             return $result;
@@ -344,10 +345,19 @@ class Bewerbungstrainer_API {
         // Get the current REST route
         $route = $_SERVER['REQUEST_URI'] ?? '';
 
-        // Check if this is a video training endpoint
-        if (strpos($route, '/bewerbungstrainer/v1/video-training') !== false) {
-            // Allow the request without cookie authentication
-            return true;
+        // List of public endpoints that should bypass cookie authentication
+        $public_endpoints = array(
+            '/bewerbungstrainer/v1/video-training/scenarios',
+            '/bewerbungstrainer/v1/simulator/scenarios',
+            '/bewerbungstrainer/v1/roleplays',
+        );
+
+        // Check if this is a public endpoint
+        foreach ($public_endpoints as $endpoint) {
+            if (strpos($route, $endpoint) !== false) {
+                // Allow the request without cookie authentication
+                return true;
+            }
         }
 
         return $result;
