@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import TrainingSessionDetailView from './TrainingSessionDetailView';
 
 console.log('📦 [SESSION_HISTORY] SessionHistory module loaded');
 
@@ -260,6 +261,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Active tab
   const [activeTab, setActiveTab] = useState(TABS.SIMULATOR);
 
+  // Selected session for detail view
+  const [selectedTrainingSession, setSelectedTrainingSession] = useState(null);
+  const [selectedSessionType, setSelectedSessionType] = useState(null);
+
   // Data states
   const [roleplaySessions, setRoleplaySessions] = useState([]);
   const [simulatorSessions, setSimulatorSessions] = useState([]);
@@ -395,13 +400,38 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     if (activeTab === TABS.ROLEPLAY) {
       onSelectSession(session);
     } else {
-      // For simulator and video, we need to navigate differently
-      // For now, show an alert or handle in a specific way
+      // For simulator and video, show the training detail view
       console.log('Session clicked:', activeTab, session);
-      // TODO: Implement detail views for simulator and video sessions
-      alert(`Details für ${activeTab === TABS.SIMULATOR ? 'Szenario-Training' : 'Video-Training'} Sessions werden bald verfügbar sein.`);
+      setSelectedTrainingSession(session);
+      setSelectedSessionType(activeTab);
     }
   };
+
+  // Handle back from detail view
+  const handleBackFromDetail = () => {
+    setSelectedTrainingSession(null);
+    setSelectedSessionType(null);
+  };
+
+  // Get scenario for selected session
+  const getScenarioForSession = (session, type) => {
+    const scenarioMap = type === TABS.SIMULATOR ? simulatorScenarioMap :
+                        type === TABS.VIDEO ? videoScenarioMap :
+                        roleplayScenarioMap;
+    return scenarioMap[session?.scenario_id];
+  };
+
+  // Show detail view for selected training session
+  if (selectedTrainingSession) {
+    return (
+      <TrainingSessionDetailView
+        session={selectedTrainingSession}
+        type={selectedSessionType}
+        scenario={getScenarioForSession(selectedTrainingSession, selectedSessionType)}
+        onBack={handleBackFromDetail}
+      />
+    );
+  }
 
   // Show login required screen if not authenticated
   if (!isAuthenticated) {
