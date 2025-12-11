@@ -158,24 +158,73 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!audioUrl) return;
-    const audio = new Audio(audioUrl);
+
+    setIsLoading(true);
+    setError(null);
+
+    const audio = new Audio();
     audioRef.current = audio;
 
-    audio.addEventListener('loadedmetadata', () => setDuration(audio.duration));
+    const handleLoadedMetadata = () => {
+      const dur = audio.duration;
+      // Check for valid duration (not Infinity, NaN, or 0)
+      if (dur && isFinite(dur) && dur > 0) {
+        setDuration(dur);
+      }
+      setIsLoading(false);
+    };
+
+    const handleDurationChange = () => {
+      const dur = audio.duration;
+      if (dur && isFinite(dur) && dur > 0) {
+        setDuration(dur);
+      }
+    };
+
+    const handleCanPlayThrough = () => {
+      setIsLoading(false);
+      // Try to get duration again when fully loaded
+      const dur = audio.duration;
+      if (dur && isFinite(dur) && dur > 0) {
+        setDuration(dur);
+      }
+    };
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('durationchange', handleDurationChange);
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
     audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
     audio.addEventListener('play', () => setIsPlaying(true));
     audio.addEventListener('pause', () => setIsPlaying(false));
     audio.addEventListener('ended', () => setIsPlaying(false));
-    audio.addEventListener('error', () => setError('Audio nicht verfügbar'));
+    audio.addEventListener('error', () => {
+      setError('Audio nicht verfügbar');
+      setIsLoading(false);
+    });
 
-    return () => { audio.pause(); audio.src = ''; };
+    // Set source and load
+    audio.src = audioUrl;
+    audio.load();
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('durationchange', handleDurationChange);
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
+      audio.src = '';
+    };
   }, [audioUrl]);
 
   const formatTime = (seconds) => {
+    // Handle invalid values
+    if (!seconds || !isFinite(seconds) || isNaN(seconds)) {
+      return '0:00';
+    }
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -209,6 +258,9 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
 
   if (!audioUrl) return null;
 
+  // Calculate progress percentage safely
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div style={{ background: COLORS.slate[100], borderRadius: '12px', padding: '12px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -217,20 +269,40 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
         </button>
         <button
           onClick={togglePlay}
-          style={{ width: '36px', height: '36px', borderRadius: '50%', background: primaryAccent, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
+          disabled={isLoading}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            background: primaryAccent || '#0d9488',
+            border: 'none',
+            cursor: isLoading ? 'wait' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            opacity: isLoading ? 0.7 : 1,
+          }}
         >
-          {isPlaying ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: '2px' }} />}
+          {isLoading ? (
+            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+          ) : isPlaying ? (
+            <Pause size={16} fill="#ffffff" />
+          ) : (
+            <Play size={16} fill="#ffffff" style={{ marginLeft: '2px' }} />
+          )}
         </button>
         <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: COLORS.slate[500] }}>
           <SkipForward size={16} />
         </button>
         <div onClick={handleSeek} style={{ flex: 1, height: '6px', background: COLORS.slate[300], borderRadius: '3px', cursor: 'pointer' }}>
-          <div style={{ width: `${(currentTime / duration) * 100 || 0}%`, height: '100%', background: primaryAccent, borderRadius: '3px', transition: 'width 0.1s' }} />
+          <div style={{ width: `${progressPercent}%`, height: '100%', background: primaryAccent || '#0d9488', borderRadius: '3px', transition: 'width 0.1s' }} />
         </div>
-        <span style={{ fontSize: '12px', color: COLORS.slate[500], minWidth: '70px' }}>
-          {formatTime(currentTime)} / {formatTime(duration)}
+        <span style={{ fontSize: '12px', color: COLORS.slate[500], minWidth: '80px', textAlign: 'right' }}>
+          {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : '--:--'}
         </span>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
