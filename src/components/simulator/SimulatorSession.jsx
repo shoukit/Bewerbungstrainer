@@ -928,8 +928,8 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           {scenario?.title}
         </h1>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {/* Training beenden - nur wenn Feedback angezeigt wird und nicht letzte Frage */}
-          {showFeedback && !isLastQuestion && (
+          {/* Training beenden - immer sichtbar wenn mind. 1 Frage beantwortet */}
+          {answeredQuestions.length > 0 && (
             <button
               onClick={handleCompleteSession}
               style={{
@@ -1128,31 +1128,6 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               </div>
             )}
 
-            {/* Training beenden - Only when questions answered */}
-            {answeredQuestions.length > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-                <button
-                  onClick={handleCompleteSession}
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    background: '#22c55e',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    boxShadow: '0 4px 14px rgba(34, 197, 94, 0.3)',
-                  }}
-                >
-                  <Check size={18} />
-                  Training beenden
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Right Column - Question and Tips */}
