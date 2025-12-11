@@ -1,718 +1,748 @@
-# CLAUDE.md - AI Assistant Guide for Bewerbungstrainer
+# CLAUDE.md - KI-Assistenten-Leitfaden für Bewerbungstrainer
 
-## Project Overview
+## Projektübersicht
 
-**Bewerbungstrainer** (Application/Interview Trainer) is a web application designed to help users prepare for job applications and interviews. This document serves as a comprehensive guide for AI assistants working on this codebase.
+**Bewerbungstrainer** ist ein KI-gestütztes WordPress-Plugin für realistische Interview- und Gesprächsvorbereitung. Die Anwendung kombiniert sprachbasierte KI-Interaktion mit intelligenter Feedback-Generierung.
 
-### Project Purpose
-- Provide interactive training for job interview preparation
-- Assist users in crafting compelling application materials
-- Offer personalized feedback and guidance
-- Track user progress and improvement over time
+### Hauptzweck
+- Realistische Voice-Interviews mit KI-gesteuerten Gesprächspartnern
+- Detailliertes Feedback zu verbaler und paraverbaler Kommunikation
+- Gamifiziertes Rhetorik-Training (Rhetorik-Gym)
+- Szenario-basiertes Training mit strukturiertem Feedback
+- White-Label-Fähigkeit für Partner-Integration
 
 ---
 
-## Technology Stack
+## Technologie-Stack
 
 ### Frontend
-- **Framework**: [To be determined - React/Vue/Angular/Svelte]
-- **Language**: TypeScript (preferred) or JavaScript
-- **Styling**: [To be determined - Tailwind CSS/Material-UI/styled-components]
-- **State Management**: [To be determined - Redux/Zustand/Context API/Pinia]
-- **Build Tool**: [To be determined - Vite/Webpack/Next.js]
+| Technologie | Version | Verwendung |
+|-------------|---------|------------|
+| **React** | 18.3.1 | UI-Framework (JSX, nicht TypeScript) |
+| **Vite** | 7.2.2 | Build-Tool und Dev-Server |
+| **Tailwind CSS** | 3.4.15 | Utility-First Styling |
+| **Radix UI** | 1.1.2 | Headless UI-Komponenten (Dialog) |
+| **Framer Motion** | 12.23.25 | Animationen |
+| **Lucide React** | 0.460.0 | Icon-Bibliothek |
+
+### KI-Integration
+| Service | SDK | Verwendung |
+|---------|-----|------------|
+| **ElevenLabs** | @elevenlabs/react 0.1.0 | Conversational AI (Voice-Interviews) |
+| **Google Gemini** | @google/generative-ai 0.21.0 | Feedback-Generierung, Audio-Analyse |
 
 ### Backend
-- **Runtime**: [To be determined - Node.js/Python/Go]
-- **Framework**: [To be determined - Express/FastAPI/NestJS/Django]
-- **Database**: [To be determined - PostgreSQL/MongoDB/SQLite]
-- **ORM/ODM**: [To be determined - Prisma/TypeORM/Mongoose/SQLAlchemy]
+| Technologie | Version | Verwendung |
+|-------------|---------|------------|
+| **WordPress** | 6.0+ | CMS und Backend-Framework |
+| **PHP** | 7.4+ | Server-seitige Logik |
+| **MySQL** | (via WordPress) | Datenbank |
+| **DomPDF** | 3.1 | PDF-Export |
 
-### DevOps & Tools
-- **Version Control**: Git
-- **CI/CD**: [To be determined - GitHub Actions/GitLab CI/CircleCI]
-- **Testing**: [To be determined - Jest/Vitest/Pytest/Cypress]
-- **Linting**: ESLint, Prettier (for JS/TS), or language-appropriate linters
-- **Package Manager**: [To be determined - npm/yarn/pnpm/pip/cargo]
+### Entwicklungswerkzeuge
+| Tool | Version | Verwendung |
+|------|---------|------------|
+| **ESLint** | 9.13.0 | Code-Linting |
+| **PostCSS** | 8.4.49 | CSS-Verarbeitung |
+| **Autoprefixer** | 10.4.20 | Browser-Präfixe |
 
 ---
 
-## Repository Structure
+## Architektur
+
+### Systemübersicht
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        WordPress Frontend                            │
+├─────────────────────────────────────────────────────────────────────┤
+│  React SPA (Vite Build)                                             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐ │
+│  │  Roleplay   │  │  Simulator  │  │ Rhetorik-   │  │  Session   │ │
+│  │  Dashboard  │  │    App      │  │    Gym      │  │  History   │ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘ │
+├─────────────────────────────────────────────────────────────────────┤
+│  Services Layer                                                      │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │
+│  │  ElevenLabs │  │   Gemini    │  │  WordPress  │                 │
+│  │   Service   │  │   Service   │  │     API     │                 │
+│  └─────────────┘  └─────────────┘  └─────────────┘                 │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     WordPress REST API                               │
+├─────────────────────────────────────────────────────────────────────┤
+│  /bewerbungstrainer/v1/*     │  /karriereheld/v1/*                  │
+│  - Sessions CRUD             │  - Partner Config                    │
+│  - Audio/Video Handler       │  - Login/Logout                      │
+│  - Gemini Proxy              │  - User Management                   │
+│  - Scenarios                 │                                      │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      WordPress Database                              │
+├─────────────────────────────────────────────────────────────────────┤
+│  wp_bewerbungstrainer_sessions   │  wp_bewerbungstrainer_simulator  │
+│  wp_bewerbungstrainer_games      │  Custom Post Types               │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Externe KI-Services                             │
+├─────────────────────────────────────────────────────────────────────┤
+│  ElevenLabs Conversational AI    │  Google Gemini API               │
+│  - Voice Synthesis (TTS)         │  - Text-Feedback                 │
+│  - Speech Recognition (STT)      │  - Audio-Analyse (multimodal)    │
+│  - Conversation Management       │  - Rhetorik-Game-Analyse         │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Verzeichnisstruktur
 
 ```
 Bewerbungstrainer/
-├── .github/              # GitHub Actions workflows and templates
-├── docs/                 # Additional documentation
-├── src/                  # Source code
-│   ├── components/       # Reusable UI components
-│   ├── pages/           # Page components/views
-│   ├── services/        # Business logic and API calls
-│   ├── utils/           # Utility functions
-│   ├── types/           # TypeScript type definitions
-│   ├── hooks/           # Custom React hooks (if applicable)
-│   ├── store/           # State management
-│   ├── assets/          # Static assets (images, fonts)
-│   └── styles/          # Global styles and themes
-├── tests/               # Test files
-│   ├── unit/           # Unit tests
-│   ├── integration/    # Integration tests
-│   └── e2e/            # End-to-end tests
-├── public/              # Public static files
-├── server/              # Backend code (if applicable)
-│   ├── api/            # API routes
-│   ├── controllers/    # Request handlers
-│   ├── models/         # Data models
-│   ├── middleware/     # Express/framework middleware
-│   └── config/         # Configuration files
-├── scripts/             # Build and utility scripts
-├── .env.example         # Environment variable template
-├── package.json         # Project dependencies and scripts
-├── tsconfig.json        # TypeScript configuration
-├── README.md            # Project documentation
-└── CLAUDE.md            # This file - AI assistant guide
+├── bewerbungstrainer-plugin.php    # WordPress Plugin Hauptdatei
+├── includes/                        # PHP Backend-Klassen
+│   ├── class-api.php               # REST API Endpoints (73KB)
+│   ├── class-database.php          # Haupt-Datenbank-Management
+│   ├── class-simulator-database.php # Simulator-Datenbank
+│   ├── class-simulator-api.php     # Simulator REST API
+│   ├── class-simulator-admin.php   # Simulator Admin-Bereich
+│   ├── class-game-database.php     # Rhetorik-Gym Datenbank
+│   ├── class-game-api.php          # Rhetorik-Gym REST API
+│   ├── class-gemini-handler.php    # Gemini AI Server-Proxy
+│   ├── class-audio-handler.php     # Audio-Datei-Management
+│   ├── class-video-handler.php     # Video-Datei-Management
+│   ├── class-pdf-exporter.php      # PDF-Export mit DomPDF
+│   ├── class-roleplay-scenarios.php # Custom Post Type: Szenarien
+│   ├── class-whitelabel-partners.php # White-Label Partner-System
+│   └── class-shortcodes.php        # WordPress Shortcodes
+├── src/                             # React Frontend
+│   ├── App.jsx                     # Haupt-App mit View-Router
+│   ├── main.jsx                    # React Entry Point
+│   ├── index.css                   # Tailwind + globale Styles
+│   ├── components/                 # React-Komponenten
+│   │   ├── RoleplayDashboard.jsx   # Hauptansicht: Szenario-Auswahl
+│   │   ├── RoleplaySession.jsx     # Live-Interview mit ElevenLabs
+│   │   ├── SessionHistory.jsx      # Übersicht vergangener Sessions
+│   │   ├── SessionDetailView.jsx   # Detailansicht einer Session
+│   │   ├── simulator/              # Szenario-Training Modul
+│   │   │   ├── SimulatorApp.jsx
+│   │   │   ├── SimulatorDashboard.jsx
+│   │   │   ├── SimulatorSession.jsx
+│   │   │   ├── SimulatorWizard.jsx
+│   │   │   ├── ImmediateFeedback.jsx
+│   │   │   └── SessionComplete.jsx
+│   │   ├── rhetorik-gym/           # Gamification-Modul
+│   │   │   ├── RhetorikGym.jsx     # Spielmodus-Auswahl
+│   │   │   └── GameSession.jsx     # Aktive Spielsitzung
+│   │   ├── session-detail/         # Session-Detail Komponenten
+│   │   │   ├── AudioPlayerCard.jsx
+│   │   │   ├── TranscriptCard.jsx
+│   │   │   └── SessionHeader.jsx
+│   │   ├── audio-analysis/         # Audio-Analyse Komponenten
+│   │   │   ├── ConfidenceGauge.jsx
+│   │   │   ├── PacingSlider.jsx
+│   │   │   ├── TonalityCard.jsx
+│   │   │   ├── FillerWordCard.jsx
+│   │   │   └── PacingIssuesCard.jsx
+│   │   ├── ui/                     # Basis UI-Komponenten
+│   │   │   ├── button.jsx
+│   │   │   ├── card.jsx
+│   │   │   ├── dialog.jsx
+│   │   │   ├── input.jsx
+│   │   │   ├── textarea.jsx
+│   │   │   ├── sidebar.jsx
+│   │   │   └── ...
+│   │   ├── LoginModal.jsx          # Benutzer-Authentifizierung
+│   │   ├── Toast.jsx               # Benachrichtigungen
+│   │   └── ...
+│   ├── services/                   # API-Services
+│   │   ├── gemini.js               # Google Gemini Integration
+│   │   ├── elevenlabs.js           # ElevenLabs Basis-Service
+│   │   ├── elevenlabs-convai.js    # ElevenLabs Conversational AI
+│   │   └── wordpress-api.js        # WordPress REST API Client
+│   ├── config/                     # Konfiguration
+│   │   ├── constants.js            # Globale Konstanten
+│   │   ├── partners.js             # White-Label Partner-Config
+│   │   └── prompts/                # KI-Prompts
+│   │       ├── feedbackPrompt.js   # Interview-Feedback Prompt
+│   │       ├── audioAnalysisPrompt.js # Audio-Analyse Prompt
+│   │       └── gamePrompts.js      # Rhetorik-Gym Prompts
+│   ├── context/                    # React Context
+│   │   └── PartnerContext.jsx      # White-Label Theming
+│   ├── hooks/                      # Custom React Hooks
+│   │   └── usePartnerTheming.js    # Partner-Theming Hook
+│   ├── lib/                        # Utility-Bibliotheken
+│   │   └── utils.js                # cn() für Tailwind, etc.
+│   └── utils/                      # Hilfsfunktionen
+│       └── parseJSON.js            # Sicheres JSON-Parsing
+├── assets/                          # Statische Assets
+│   ├── css/
+│   │   └── admin.css               # WordPress Admin Styles
+│   └── js/
+├── dist/                            # Production Build (generiert)
+│   └── assets/
+│       ├── index.js                # React Bundle
+│       └── wordpress-api.css       # CSS Bundle
+├── vendor/                          # Composer Dependencies
+│   └── dompdf/                     # PDF-Bibliothek
+├── docs/                            # Zusätzliche Dokumentation
+├── vite.config.js                   # Vite Build-Konfiguration
+├── tailwind.config.js               # Tailwind CSS Konfiguration
+├── package.json                     # Node.js Dependencies
+├── composer.json                    # PHP Dependencies
+└── .env.example                     # Umgebungsvariablen-Vorlage
 ```
 
 ---
 
-## Development Workflows
+## Haupt-Features
 
-### Getting Started
+### 1. Live-Gespräch (Roleplay)
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Bewerbungstrainer
-   ```
+**Zweck:** Realistische Voice-Interviews mit KI-Interviewer
 
-2. **Install dependencies**
-   ```bash
-   npm install  # or yarn/pnpm
-   ```
+**Technische Umsetzung:**
+- **ElevenLabs Conversational AI** für bidirektionale Sprachkommunikation
+- **Dynamische Variablen** werden an den Agent übergeben:
+  - `user_name` - Name des Bewerbers
+  - `position` - Beworbene Position
+  - `company` - Zielunternehmen
+  - `conversation_style` - Gesprächsstil (friendly/critical/professional)
+- **Session-Persistenz** in WordPress-Datenbank
+- **Audio-Aufnahme** der gesamten Konversation
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your local configuration
-   ```
+**Komponenten:**
+- `RoleplayDashboard.jsx` - Szenario-Auswahl
+- `RoleplaySession.jsx` - Live-Interview-UI
+- `RoleplayVariablesDialog.jsx` - Variablen-Eingabe
 
-4. **Run development server**
-   ```bash
-   npm run dev
-   ```
+**Datenfluss:**
+```
+Benutzer -> RoleplayDashboard -> Szenario auswählen
+        -> RoleplayVariablesDialog -> Variablen eingeben
+        -> RoleplaySession -> ElevenLabs Agent starten
+        -> Live-Gespräch führen
+        -> Session beenden -> Feedback generieren (Gemini)
+        -> SessionDetailView -> Ergebnisse anzeigen
+```
 
-### Git Workflow
+### 2. Szenario-Training (Simulator)
 
-1. **Branch Naming Convention**
-   - Feature: `feature/<feature-name>`
-   - Bug fix: `fix/<bug-description>`
-   - Hotfix: `hotfix/<issue>`
-   - Refactor: `refactor/<component-name>`
-   - Claude AI branches: `claude/<session-id>`
+**Zweck:** Strukturiertes Training mit vordefinierten Fragen und sofortigem Feedback
 
-2. **Commit Message Format**
-   ```
-   <type>(<scope>): <subject>
+**Technische Umsetzung:**
+- **Frage-Antwort-Modus** mit Audio-Aufnahme
+- **Sofortiges Feedback** nach jeder Antwort via Gemini
+- **Eigene Datenbank-Tabelle** für Simulator-Sessions
+- **Admin-Bereich** zur Szenario-Verwaltung
 
-   <body>
+**Komponenten:**
+- `SimulatorDashboard.jsx` - Szenario-Übersicht
+- `SimulatorWizard.jsx` - Setup-Assistent
+- `SimulatorSession.jsx` - Training-Durchführung
+- `ImmediateFeedback.jsx` - Sofort-Feedback-Anzeige
+- `SessionComplete.jsx` - Abschluss-Zusammenfassung
 
-   <footer>
-   ```
+**Backend-Klassen:**
+- `class-simulator-database.php` - Tabellen und CRUD
+- `class-simulator-api.php` - REST Endpoints
+- `class-simulator-admin.php` - WordPress Admin UI
 
-   Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+### 3. Rhetorik-Gym (Gamification)
 
-   Examples:
-   - `feat(interview): add video recording functionality`
-   - `fix(auth): resolve token expiration issue`
-   - `docs(readme): update installation instructions`
+**Zweck:** Spielerisches Training zur Reduzierung von Füllwörtern und Verbesserung der Sprechweise
 
-3. **Pull Request Process**
-   - Create a descriptive PR title
-   - Fill out the PR template completely
-   - Request reviews from team members
-   - Ensure all CI checks pass
-   - Squash commits before merging (if required)
+**Spielmodi:**
+| Modus | Dauer | Beschreibung |
+|-------|-------|--------------|
+| **Der Klassiker** | 60s | Elevator Pitch zu einem Thema |
+| **Zufalls-Thema** | 60s | Slot-Machine wählt das Thema |
+| **Stress-Test** | 90s | Überraschungsfragen |
 
-### Code Quality
+**Bewertungssystem:**
+- **Füllwörter** werden gezählt und bestraft (-10 Punkte pro Füllwort)
+- **Sprechtempo** wird analysiert (optimal: 120-150 WPM)
+- **Inhalt** wird von Gemini bewertet (0-40 Punkte)
+- **Gesamtscore** aus 100 Punkten
 
-1. **Before Committing**
-   - Run linter: `npm run lint`
-   - Run formatter: `npm run format`
-   - Run tests: `npm test`
-   - Build check: `npm run build`
+**Komponenten:**
+- `RhetorikGym.jsx` - Spielmodus-Auswahl
+- `GameSession.jsx` - Aktive Spielsitzung
 
-2. **Pre-commit Hooks**
-   - Husky runs automated checks
-   - Lint-staged formats changed files
-   - Tests run for affected code
+**Gemini-Integration:**
+- Optimierter Prompt für schnelle Analyse
+- Nur relevante Metriken: Füllwörter, WPM, Transkript
+- Lokale Score-Berechnung für Geschwindigkeit
+
+### 4. Session-Verlauf (History)
+
+**Zweck:** Übersicht und Analyse vergangener Trainingseinheiten
+
+**Features:**
+- Chronologische Liste aller Sessions
+- Filterung nach Datum, Szenario, Bewertung
+- Detail-Ansicht mit:
+  - Audio-Wiedergabe
+  - Vollständiges Transkript
+  - Feedback-Anzeige
+  - Audio-Analyse-Metriken
+
+**Komponenten:**
+- `SessionHistory.jsx` - Übersichtsliste
+- `SessionDetailView.jsx` - Detailansicht
+- `AudioPlayerCard.jsx` - Audio-Player
+- `TranscriptCard.jsx` - Transkript-Anzeige
+
+### 5. White-Label Partner-System
+
+**Zweck:** Individuelle Branding-Anpassung für Partner-Integrationen
+
+**Funktionsweise:**
+- Partner-Slug via URL-Parameter: `?partner=xxx` oder `?pid=xxx`
+- Konfiguration über WordPress Custom Post Type
+- CSS-Variablen für vollständige Theming-Kontrolle
+
+**Konfigurierbare Elemente:**
+- App-Hintergrund (Gradient oder Farbe)
+- Sidebar-Farben (Hintergrund, Text, Aktiv-Zustand)
+- Button-Styles (Gradient oder Solid)
+- Header-Design
+- Icon-Farben
+- Text-Farben
+- Rahmenfarben
+- Logo-URL
+- Modul-Filterung (welche Features sichtbar sind)
+
+**Technische Umsetzung:**
+- `PartnerContext.jsx` - React Context für Theming
+- `usePartnerTheming.js` - Hook für CSS-Variablen-Injection
+- `class-whitelabel-partners.php` - Backend-Management
+- REST API: `/karriereheld/v1/config?partner_slug=xxx`
 
 ---
 
-## Key Conventions & Best Practices
+## KI-Integration im Detail
 
-### Code Style
+### ElevenLabs Conversational AI
 
-1. **TypeScript/JavaScript**
-   - Use TypeScript wherever possible
-   - Prefer `const` over `let`, avoid `var`
-   - Use arrow functions for callbacks
-   - Destructure objects and arrays when appropriate
-   - Use meaningful variable and function names
-   - Keep functions small and focused (single responsibility)
+**Verwendung:** Live-Voice-Interviews
 
-2. **Component Structure** (for React/Vue/similar)
-   ```typescript
-   // Imports
-   import React, { useState, useEffect } from 'react';
-   import { SomeType } from '@/types';
-
-   // Types/Interfaces
-   interface ComponentProps {
-     prop1: string;
-     prop2: number;
-   }
-
-   // Component
-   export const ComponentName: React.FC<ComponentProps> = ({ prop1, prop2 }) => {
-     // Hooks
-     const [state, setState] = useState<SomeType>();
-
-     // Effects
-     useEffect(() => {
-       // ...
-     }, []);
-
-     // Handlers
-     const handleAction = () => {
-       // ...
-     };
-
-     // Render
-     return (
-       <div>
-         {/* JSX */}
-       </div>
-     );
-   };
-   ```
-
-3. **File Naming**
-   - Components: PascalCase (`InterviewQuestion.tsx`)
-   - Utilities: camelCase (`formatDate.ts`)
-   - Constants: UPPER_SNAKE_CASE in file (`API_ENDPOINTS.ts`)
-   - Types: PascalCase (`UserProfile.types.ts`)
-
-4. **Imports Organization**
-   ```typescript
-   // 1. External dependencies
-   import React from 'react';
-   import { useQuery } from '@tanstack/react-query';
-
-   // 2. Internal absolute imports
-   import { Button } from '@/components/ui';
-   import { useAuth } from '@/hooks';
-
-   // 3. Relative imports
-   import { helperFunction } from './utils';
-   import styles from './Component.module.css';
-
-   // 4. Type imports (if not inlined)
-   import type { ComponentProps } from './types';
-   ```
-
-### Security Best Practices
-
-1. **Input Validation**
-   - Always validate and sanitize user input
-   - Use validation libraries (Zod, Yup, Joi)
-   - Never trust client-side data
-
-2. **Authentication & Authorization**
-   - Implement proper JWT handling
-   - Use HTTP-only cookies for sensitive tokens
-   - Validate permissions on every protected route
-   - Implement rate limiting
-
-3. **Data Protection**
-   - Never commit secrets or API keys
-   - Use environment variables for sensitive config
-   - Encrypt sensitive data at rest and in transit
-   - Follow GDPR/privacy regulations
-
-4. **Common Vulnerabilities to Avoid**
-   - SQL Injection: Use parameterized queries/ORM
-   - XSS: Sanitize output, use Content Security Policy
-   - CSRF: Implement CSRF tokens
-   - Insecure Dependencies: Regularly update and audit
-
-### Performance Optimization
-
-1. **Frontend**
-   - Lazy load components and routes
-   - Optimize images and assets
-   - Implement code splitting
-   - Use React.memo/useMemo/useCallback appropriately
-   - Minimize bundle size
-
-2. **Backend**
-   - Implement database indexing
-   - Use caching (Redis, in-memory)
-   - Optimize database queries (avoid N+1)
-   - Implement pagination for large datasets
-   - Use compression for responses
-
-### Accessibility (a11y)
-
-- Use semantic HTML elements
-- Provide alt text for images
-- Ensure keyboard navigation works
-- Maintain sufficient color contrast
-- Use ARIA labels where appropriate
-- Test with screen readers
-- Support reduced motion preferences
-
-### Internationalization (i18n)
-
-- Use i18n library for translations
-- Support German as primary language
-- Prepare for English and other languages
-- Externalize all user-facing strings
-- Handle date/time formatting properly
-- Support RTL if needed
-
----
-
-## Testing Guidelines
-
-### Test Structure
-
-```typescript
-describe('ComponentName', () => {
-  beforeEach(() => {
-    // Setup
-  });
-
-  afterEach(() => {
-    // Cleanup
-  });
-
-  it('should render correctly', () => {
-    // Arrange
-    const props = { /* ... */ };
-
-    // Act
-    const { getByText } = render(<ComponentName {...props} />);
-
-    // Assert
-    expect(getByText('Expected Text')).toBeInTheDocument();
-  });
-
-  it('should handle user interaction', async () => {
-    // Test user interaction
-  });
-});
-```
-
-### Test Coverage Goals
-
-- **Unit Tests**: 80%+ coverage
-- **Integration Tests**: Critical user flows
-- **E2E Tests**: Main application paths
-
-### What to Test
-
-1. **Always Test**
-   - Business logic functions
-   - Component rendering
-   - User interactions
-   - API endpoints
-   - Error handling
-   - Edge cases
-
-2. **Nice to Have**
-   - Utility functions
-   - Type guards
-   - Complex UI states
-
-3. **Don't Bother Testing**
-   - Third-party library internals
-   - Simple pass-through components
-   - Type definitions themselves
-
----
-
-## API Design Principles
-
-### RESTful Conventions
-
-```
-GET    /api/interviews          # List all interviews
-GET    /api/interviews/:id      # Get specific interview
-POST   /api/interviews          # Create new interview
-PUT    /api/interviews/:id      # Update interview
-PATCH  /api/interviews/:id      # Partial update
-DELETE /api/interviews/:id      # Delete interview
-```
-
-### Response Format
-
-```json
-{
-  "success": true,
-  "data": {
-    // Actual data
+**Konfiguration:**
+```javascript
+// Dynamische Variablen an Agent übergeben
+const overrides = {
+  agent: {
+    prompt: {
+      prompt: systemPrompt // Enthält Szenario-spezifische Instruktionen
+    }
   },
-  "message": "Optional success message",
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 100,
-    "totalPages": 5
+  variables: {
+    user_name: "Max Mustermann",
+    position: "Ausbildung zum Mechatroniker",
+    company: "BMW AG",
+    conversation_style: "professional"
   }
+};
+```
+
+**Gesprächsstile:**
+- `friendly` - Ermutigend, unterstützend
+- `critical` - Herausfordernd, anspruchsvoll
+- `professional` - Sachlich, neutral
+
+**Audio-Handling:**
+- Audio-Aufnahme via ElevenLabs SDK
+- Download über ElevenLabs API (`/history/{conversation_id}/audio`)
+- Speicherung in WordPress Uploads-Verzeichnis
+
+### Google Gemini API
+
+**Verwendung:** Feedback-Generierung, Audio-Analyse, Rhetorik-Game
+
+**Model-Fallback-Strategie:**
+```javascript
+GEMINI_MODELS.FALLBACK_ORDER = [
+  'gemini-2.0-flash-exp',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-pro-latest',
+];
+```
+
+**API-Funktionen:**
+
+1. **Interview-Feedback** (`generateInterviewFeedback`)
+   - Input: Gesprächs-Transkript
+   - Output: Strukturiertes JSON mit Bewertungen
+   - Kategorien: Kommunikation, Motivation, Professionalität, Vorbereitung
+
+2. **Audio-Analyse** (`generateAudioAnalysis`)
+   - Input: Audio-Datei (base64)
+   - Output: Paraverbale Analyse
+   - Metriken: Füllwörter, Sprechtempo, Tonalität, Selbstsicherheit
+
+3. **Rhetorik-Game** (`analyzeRhetoricGame`)
+   - Input: Audio-Datei + Thema
+   - Output: Schnelle Analyse für Gamification
+   - Optimiert für Geschwindigkeit
+
+**Fehlerbehandlung:**
+- Model-Not-Found (404) -> Nächstes Model versuchen
+- API-Key-Fehler -> Benutzerfreundliche Fehlermeldung
+- Netzwerkfehler -> Retry mit Backoff
+
+---
+
+## Datenbank-Schema
+
+### wp_bewerbungstrainer_sessions (Roleplay)
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `id` | bigint(20) | Primärschlüssel |
+| `user_id` | bigint(20) | WordPress User ID |
+| `session_id` | varchar(255) | UUID der Session |
+| `position` | varchar(255) | Beworbene Position |
+| `company` | varchar(255) | Zielunternehmen |
+| `conversation_id` | varchar(255) | ElevenLabs Conversation ID |
+| `audio_filename` | varchar(255) | Audio-Dateiname |
+| `audio_url` | text | Audio-URL |
+| `transcript` | longtext | Gesprächs-Transkript |
+| `feedback_json` | longtext | Gemini Feedback als JSON |
+| `audio_analysis_json` | longtext | Audio-Analyse als JSON |
+| `created_at` | datetime | Erstellungszeitpunkt |
+| `updated_at` | datetime | Letztes Update |
+
+### wp_bewerbungstrainer_simulator_* (Simulator)
+
+Separate Tabellen für:
+- Simulator-Sessions
+- Simulator-Antworten
+- Simulator-Feedback
+
+### wp_bewerbungstrainer_games (Rhetorik-Gym)
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `id` | bigint(20) | Primärschlüssel |
+| `user_id` | bigint(20) | WordPress User ID |
+| `game_mode` | varchar(50) | Spielmodus |
+| `topic` | varchar(255) | Thema |
+| `score` | int(11) | Gesamtpunktzahl |
+| `filler_count` | int(11) | Anzahl Füllwörter |
+| `words_per_minute` | int(11) | Sprechtempo |
+| `audio_url` | text | Audio-Aufnahme |
+| `transcript` | longtext | Transkript |
+| `analysis_json` | longtext | Gemini-Analyse |
+| `created_at` | datetime | Erstellungszeitpunkt |
+
+### Custom Post Types
+
+| Post Type | Beschreibung |
+|-----------|--------------|
+| `roleplay_scenario` | Rollenspiel-Szenarien |
+| `whitelabel_partner` | White-Label Partner |
+
+---
+
+## REST API Endpoints
+
+### Namespace: bewerbungstrainer/v1
+
+| Methode | Endpoint | Beschreibung |
+|---------|----------|--------------|
+| GET | `/sessions` | Alle Sessions des Users |
+| GET | `/sessions/{id}` | Einzelne Session |
+| POST | `/sessions` | Neue Session erstellen |
+| PUT | `/sessions/{id}` | Session aktualisieren |
+| DELETE | `/sessions/{id}` | Session löschen |
+| POST | `/audio/save-elevenlabs` | Audio von ElevenLabs speichern |
+| POST | `/audio/upload` | Audio hochladen (base64) |
+| GET | `/user/info` | Benutzer-Informationen |
+| GET | `/settings` | Plugin-Einstellungen |
+| GET | `/scenarios` | Verfügbare Szenarien |
+| POST | `/gemini/feedback` | Feedback generieren |
+| POST | `/gemini/audio-analysis` | Audio analysieren |
+
+### Namespace: karriereheld/v1
+
+| Methode | Endpoint | Beschreibung |
+|---------|----------|--------------|
+| GET | `/config` | Partner-Konfiguration |
+| POST | `/login` | Benutzer-Login |
+| POST | `/logout` | Benutzer-Logout |
+| GET | `/user` | Aktueller Benutzer |
+
+---
+
+## Entwicklungs-Workflow
+
+### Voraussetzungen
+- Node.js 18+
+- npm 9+
+- WordPress 6.0+ (für Plugin-Tests)
+- PHP 7.4+
+
+### Installation
+
+```bash
+# Repository klonen
+git clone https://github.com/shoukit/Bewerbungstrainer.git
+cd Bewerbungstrainer
+
+# Dependencies installieren
+npm install
+composer install  # für DomPDF
+
+# Umgebungsvariablen konfigurieren
+cp .env.example .env
+# .env bearbeiten und API-Keys eintragen
+```
+
+### Verfügbare Scripts
+
+```bash
+# Entwicklung
+npm run dev          # Vite Dev-Server starten (localhost:5173)
+npm run build        # Production Build erstellen
+npm run preview      # Production Build lokal testen
+
+# Code-Qualität
+npm run lint         # ESLint ausführen
+
+# Wartung
+npm run clean        # node_modules, dist, .vite löschen
+npm run clean:cache  # Nur dist und .vite löschen
+npm run fresh        # Komplett neu installieren
+npm run rebuild      # Cache löschen und neu bauen
+```
+
+### WordPress-Integration
+
+1. **Plugin installieren:**
+   ```bash
+   # Plugin-Verzeichnis nach WordPress kopieren
+   cp -r . /wp-content/plugins/bewerbungstrainer/
+   ```
+
+2. **Plugin aktivieren** in WordPress Admin
+
+3. **API-Keys konfigurieren:**
+   ```php
+   update_option('bewerbungstrainer_elevenlabs_agent_id', 'xxx');
+   update_option('bewerbungstrainer_elevenlabs_api_key', 'xxx');
+   update_option('bewerbungstrainer_gemini_api_key', 'xxx');
+   ```
+
+4. **Shortcodes verwenden:**
+   - `[bewerbungstrainer_interview]` - Haupt-App
+   - `[bewerbungstrainer_uebungen]` - Übungsliste
+   - `[bewerbungstrainer_dokumente]` - Dokumenten-Ansicht
+
+---
+
+## Konfiguration
+
+### Umgebungsvariablen (.env)
+
+```bash
+# ElevenLabs
+VITE_ELEVENLABS_AGENT_ID=agent_xxx
+VITE_ELEVENLABS_API_KEY=xxx
+
+# Google Gemini
+VITE_GEMINI_API_KEY=xxx
+```
+
+### WordPress-Optionen
+
+| Option | Beschreibung |
+|--------|--------------|
+| `bewerbungstrainer_elevenlabs_agent_id` | ElevenLabs Agent ID |
+| `bewerbungstrainer_elevenlabs_api_key` | ElevenLabs API Key |
+| `bewerbungstrainer_gemini_api_key` | Google Gemini API Key |
+| `bewerbungstrainer_version` | Plugin-Version |
+
+### Konstanten (src/config/constants.js)
+
+```javascript
+// Gemini Model-Reihenfolge
+GEMINI_MODELS.FALLBACK_ORDER
+
+// Score-Schwellenwerte
+SCORE_THRESHOLDS.EXCELLENT = 80
+SCORE_THRESHOLDS.GOOD = 60
+SCORE_THRESHOLDS.FAIR = 40
+
+// Optimales Sprechtempo
+OPTIMAL_WPM.MIN = 120
+OPTIMAL_WPM.MAX = 150
+
+// Füllwort-Schwellenwerte
+FILLER_WORD_THRESHOLDS.GOOD = 2
+FILLER_WORD_THRESHOLDS.MODERATE = 5
+
+// UI-Timing
+UI_TIMING.ANIMATION_DURATION_NORMAL = 0.4
+```
+
+---
+
+## Code-Konventionen
+
+### JavaScript/React
+
+```javascript
+// Komponenten-Struktur
+import React, { useState, useEffect } from 'react';
+import { ComponentName } from './ComponentName';
+
+// Props immer destrukturieren
+function MyComponent({ prop1, prop2, onAction }) {
+  // State mit useState
+  const [state, setState] = useState(initialValue);
+
+  // Effects
+  useEffect(() => {
+    // Side effects
+  }, [dependencies]);
+
+  // Event Handlers
+  const handleClick = () => {
+    // Handler logic
+  };
+
+  // Render
+  return (
+    <div className="tailwind-classes">
+      {/* JSX */}
+    </div>
+  );
 }
+
+export default MyComponent;
 ```
 
-### Error Response Format
+### Datei-Benennung
 
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "User-friendly error message",
-    "details": [
-      {
-        "field": "email",
-        "message": "Invalid email format"
-      }
-    ]
-  }
-}
+| Typ | Konvention | Beispiel |
+|-----|------------|----------|
+| Komponenten | PascalCase | `RoleplaySession.jsx` |
+| Services | camelCase | `gemini.js` |
+| Hooks | camelCase mit `use` | `usePartnerTheming.js` |
+| Konstanten | camelCase | `constants.js` |
+| PHP-Klassen | kebab-case mit `class-` | `class-database.php` |
+
+### CSS mit Tailwind
+
+```jsx
+// Utility-Klassen direkt im JSX
+<button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+  Button
+</button>
+
+// Mit cn() für bedingte Klassen
+import { cn } from '@/lib/utils';
+
+<div className={cn(
+  "base-classes",
+  isActive && "active-classes",
+  variant === 'primary' && "primary-classes"
+)}>
 ```
 
-### HTTP Status Codes
+### Console Logging
 
-- `200 OK`: Successful GET/PUT/PATCH
-- `201 Created`: Successful POST
-- `204 No Content`: Successful DELETE
-- `400 Bad Request`: Client error (validation)
-- `401 Unauthorized`: Authentication required
-- `403 Forbidden`: Insufficient permissions
-- `404 Not Found`: Resource doesn't exist
-- `422 Unprocessable Entity`: Semantic errors
-- `500 Internal Server Error`: Server error
-
----
-
-## Database Design
-
-### Schema Principles
-
-1. **Normalization**
-   - Follow 3NF (Third Normal Form) where appropriate
-   - Denormalize for performance when justified
-   - Document any denormalization decisions
-
-2. **Naming Conventions**
-   - Tables: plural, snake_case (`user_profiles`, `interview_sessions`)
-   - Columns: snake_case (`created_at`, `user_id`)
-   - Foreign keys: `<table>_id` (`user_id`, `interview_id`)
-   - Indexes: `idx_<table>_<column>`
-   - Constraints: descriptive names
-
-3. **Common Fields**
-   - `id`: Primary key (UUID or auto-increment)
-   - `created_at`: Timestamp of creation
-   - `updated_at`: Timestamp of last update
-   - `deleted_at`: Soft delete timestamp (if applicable)
-
-4. **Migrations**
-   - Always create migrations for schema changes
-   - Never modify existing migrations
-   - Include both `up` and `down` migrations
-   - Test migrations on staging before production
-
----
-
-## Environment Configuration
-
-### Environment Variables
-
-```bash
-# Application
-NODE_ENV=development
-PORT=3000
-APP_URL=http://localhost:3000
-
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/bewerbungstrainer
-DB_POOL_MIN=2
-DB_POOL_MAX=10
-
-# Authentication
-JWT_SECRET=your-secret-key
-JWT_EXPIRATION=7d
-SESSION_SECRET=your-session-secret
-
-# External Services
-OPENAI_API_KEY=sk-...
-SENDGRID_API_KEY=SG...
-
-# Feature Flags
-ENABLE_VIDEO_RECORDING=true
-ENABLE_AI_FEEDBACK=true
-```
-
-### Configuration Management
-
-- Use `.env` for local development
-- Use `.env.example` as template (committed)
-- Never commit actual `.env` files
-- Use platform-specific config for production (Vercel, Railway, etc.)
-- Validate required env vars on startup
-
----
-
-## Deployment
-
-### Build Process
-
-```bash
-# Install dependencies
-npm ci
-
-# Run linter
-npm run lint
-
-# Run tests
-npm test
-
-# Build for production
-npm run build
-
-# Optional: Run production build locally
-npm run preview
-```
-
-### Pre-deployment Checklist
-
-- [ ] All tests passing
-- [ ] No linter errors or warnings
-- [ ] Environment variables configured
-- [ ] Database migrations run
-- [ ] Security audit completed (`npm audit`)
-- [ ] Performance tested
-- [ ] Error monitoring configured (Sentry, LogRocket)
-- [ ] Analytics configured (if applicable)
-
-### Deployment Platforms
-
-- **Vercel**: Recommended for frontend/full-stack
-- **Railway/Render**: Good for backend services
-- **Netlify**: Alternative for static/JAMstack
-- **AWS/GCP/Azure**: For enterprise deployments
-
----
-
-## AI Assistant Guidelines
-
-### When Working on This Codebase
-
-1. **Understand Before Coding**
-   - Read relevant code files before making changes
-   - Understand the context and purpose
-   - Check for existing patterns and follow them
-   - Look for similar implementations first
-
-2. **Code Quality Standards**
-   - Write TypeScript with proper types (no `any` unless absolutely necessary)
-   - Add JSDoc comments for complex functions
-   - Include error handling for all async operations
-   - Write unit tests for new functionality
-   - Ensure accessibility compliance
-   - Follow security best practices
-
-3. **Making Changes**
-   - Make atomic, focused commits
-   - Update tests when changing functionality
-   - Update documentation when changing APIs
-   - Check for breaking changes
-   - Consider backwards compatibility
-
-4. **Communication**
-   - Explain your reasoning for architectural decisions
-   - Ask for clarification when requirements are ambiguous
-   - Suggest improvements when you spot issues
-   - Document any technical debt introduced
-
-5. **File Organization**
-   - Create new files in appropriate directories
-   - Co-locate related files (component + styles + tests)
-   - Don't create files unnecessarily
-   - Keep files focused and reasonably sized (<300 lines)
-
-6. **Common Pitfalls to Avoid**
-   - Don't ignore TypeScript errors
-   - Don't skip error handling
-   - Don't bypass security measures
-   - Don't ignore accessibility
-   - Don't create duplicate functionality
-   - Don't commit commented-out code
-   - Don't use console.log in production code
-
-7. **Before Committing**
-   - Run the full test suite
-   - Check the build succeeds
-   - Review your own changes
-   - Ensure no sensitive data is included
-   - Verify imports are correct
-
-### Helpful Commands
-
-```bash
-# Development
-npm run dev              # Start development server
-npm run build           # Build for production
-npm run preview         # Preview production build
-
-# Testing
-npm test                # Run all tests
-npm run test:watch      # Run tests in watch mode
-npm run test:coverage   # Generate coverage report
-npm run test:e2e        # Run E2E tests
-
-# Code Quality
-npm run lint            # Run linter
-npm run lint:fix        # Auto-fix linting issues
-npm run format          # Format code with Prettier
-npm run type-check      # Check TypeScript types
-
-# Database
-npm run migrate         # Run database migrations
-npm run migrate:rollback # Rollback last migration
-npm run seed            # Seed database with test data
-
-# Utilities
-npm run clean           # Clean build artifacts
-npm audit               # Check for vulnerabilities
-npm outdated           # Check for outdated packages
+```javascript
+// Einheitliches Format mit Emoji-Präfixen
+console.log('[APP] Module loaded');
+console.log('[GEMINI] Starting request...');
+console.log('[SUCCESS] Operation completed');
+console.log('[ERROR] Something failed:', error);
+console.log('[WARN] Potential issue');
+console.log('[RETRY] Trying again...');
 ```
 
 ---
 
-## Feature-Specific Guidelines
+## Sicherheit
 
-### Interview Module
+### Implementierte Maßnahmen
 
-- Support multiple interview types (behavioral, technical, case study)
-- Record user responses (text, audio, or video)
-- Provide real-time or post-interview feedback
-- Track improvement metrics over time
+1. **WordPress Nonces** für alle REST API Requests
+2. **User-Capability-Checks** auf allen Endpoints
+3. **Input-Sanitization** für alle Benutzereingaben
+4. **Prepared Statements** für alle Datenbankabfragen
+5. **File-Type-Validierung** für Audio/Video-Uploads
+6. **.htaccess-Schutz** für Upload-Verzeichnisse
 
-### Application Materials
+### Wichtige Hinweise
 
-- Support CV/resume creation and review
-- Provide cover letter templates and feedback
-- Offer industry-specific guidance
-- Enable export in multiple formats (PDF, DOCX)
-
-### User Profiles
-
-- Store user preferences and progress
-- Maintain privacy and data protection
-- Allow profile customization
-- Support multiple user roles (student, professional, admin)
-
-### AI/ML Integration
-
-- Use AI for feedback generation (GPT/Claude API)
-- Implement speech-to-text for interview practice
-- Provide sentiment analysis on responses
-- Ensure AI responses are helpful and constructive
+- API-Keys **niemals** im Frontend-Code speichern
+- In Production: Gemini-Calls über WordPress Backend proxyen
+- Sensitive Daten nur über HTTPS übertragen
+- Session-Daten nur für eingeloggten User zugänglich
 
 ---
 
-## Troubleshooting
+## Fehlerbehebung
 
-### Common Issues
+### Häufige Probleme
 
-1. **Build Failures**
-   - Clear node_modules and reinstall
-   - Check Node.js version compatibility
-   - Verify environment variables are set
-   - Check for TypeScript errors
+| Problem | Lösung |
+|---------|--------|
+| Build schlägt fehl | `npm run fresh` ausführen |
+| Vite nicht gefunden | `npm install` ausführen |
+| API-Key fehlt | `.env` prüfen und Dev-Server neu starten |
+| Plugin lädt nicht | Browser-Console auf Fehler prüfen |
+| Audio wird nicht gespeichert | ElevenLabs "Audio Saving" aktivieren |
 
-2. **Database Issues**
-   - Verify database connection string
-   - Check database is running
-   - Run pending migrations
-   - Check for schema conflicts
+### Debug-Tipps
 
-3. **Authentication Problems**
-   - Verify JWT secrets match
-   - Check token expiration settings
-   - Clear browser cookies/localStorage
-   - Verify CORS settings
-
-4. **Performance Issues**
-   - Check for N+1 queries
-   - Review bundle size
-   - Optimize images and assets
-   - Enable caching
-   - Use React DevTools Profiler
+```javascript
+// Browser Console öffnen (F12)
+// Nach Präfixen filtern:
+[APP]     // App-Level Logs
+[GEMINI]  // Gemini API Logs
+[AUDIO]   // Audio-bezogene Logs
+[START]   // Session-Start Logs
+```
 
 ---
 
-## Resources & Documentation
+## Weiterführende Dokumentation
 
-### Internal Documentation
-- Architecture Decision Records (ADRs) in `/docs/adr/`
-- API documentation in `/docs/api/`
-- Component library in Storybook (if implemented)
-
-### External Resources
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [React Documentation](https://react.dev/)
-- [MDN Web Docs](https://developer.mozilla.org/)
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Web Accessibility Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- **README.md** - Projekt-Übersicht
+- **README-WORDPRESS.md** - WordPress-spezifische Dokumentation
+- **ELEVENLABS_AGENT_SETUP.md** - ElevenLabs Agent-Konfiguration
+- **TROUBLESHOOTING.md** - Fehlerbehebungs-Leitfaden
 
 ---
 
-## Contributing
+## Externe Ressourcen
 
-### For AI Assistants
-
-When contributing code:
-1. Follow all guidelines in this document
-2. Update this CLAUDE.md if you add new patterns or conventions
-3. Maintain consistency with existing code
-4. Prioritize code quality and maintainability
-5. Think about the next developer who will read your code
-
-### For Human Developers
-
-- Review and approve AI-generated code carefully
-- Update this document as the project evolves
-- Maintain the conventions established here
-- Provide feedback on AI contributions
-- Keep documentation up-to-date
+- [ElevenLabs Conversational AI](https://elevenlabs.io/docs/conversational-ai)
+- [Google Gemini API](https://ai.google.dev/docs)
+- [React Dokumentation](https://react.dev/)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [Vite](https://vitejs.dev/guide/)
+- [WordPress REST API](https://developer.wordpress.org/rest-api/)
 
 ---
 
-## Version History
+## Versions-Historie
 
-- **v1.0.0** (2025-11-16): Initial CLAUDE.md creation for new Bewerbungstrainer project
-
----
-
-## Contact & Support
-
-For questions about this codebase or conventions, please:
-- Create an issue in the GitHub repository
-- Contact the maintainers
-- Review existing documentation in `/docs/`
+- **v1.0.0** (2025-11-17): Initiale WordPress-Plugin-Version
+- **v1.1.0** (2025-11-24): Conversation Style Feature
+- **v1.2.0** (2025-12): White-Label Partner-System
 
 ---
 
-**Last Updated**: 2025-11-16
-**Document Owner**: Project Team
-**Review Frequency**: Monthly or when major changes occur
+**Letzte Aktualisierung:** 2025-12-11
+**Dokumentations-Version:** 2.0.0
