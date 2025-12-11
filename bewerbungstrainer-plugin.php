@@ -74,6 +74,11 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-game-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-game-api.php';
 
+        // Load Video Training classes
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-video-training-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-video-training-api.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-video-training-admin.php';
+
         // Load White-Label Partners class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whitelabel-partners.php';
 
@@ -93,9 +98,54 @@ class Bewerbungstrainer_Plugin {
         // Initialize components
         add_action('plugins_loaded', array($this, 'init'));
 
+        // Add main admin menu (priority 9 to ensure it runs before sub-menus)
+        add_action('admin_menu', array($this, 'add_admin_menu'), 9);
+
+        // Increase upload limits for video training API
+        add_filter('upload_size_limit', array($this, 'increase_upload_size_limit'));
+
+        // Try to increase PHP limits for video uploads
+        add_action('rest_api_init', array($this, 'set_video_upload_limits'));
+
         // Enqueue scripts and styles
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+    }
+
+    /**
+     * Add main admin menu for Bewerbungstrainer
+     * Sub-menus are added by individual admin classes
+     */
+    public function add_admin_menu() {
+        add_menu_page(
+            __('Bewerbungstrainer', 'bewerbungstrainer'),
+            __('Bewerbungstrainer', 'bewerbungstrainer'),
+            'manage_options',
+            'bewerbungstrainer',
+            array($this, 'render_admin_dashboard'),
+            'dashicons-welcome-learn-more',
+            30
+        );
+    }
+
+    /**
+     * Render the main admin dashboard page
+     */
+    public function render_admin_dashboard() {
+        ?>
+        <div class="wrap">
+            <h1><?php _e('Bewerbungstrainer', 'bewerbungstrainer'); ?></h1>
+            <p><?php _e('Willkommen beim Bewerbungstrainer! Wählen Sie links eine der Verwaltungsoptionen.', 'bewerbungstrainer'); ?></p>
+
+            <div class="card" style="max-width: 600px; margin-top: 20px;">
+                <h2><?php _e('Module', 'bewerbungstrainer'); ?></h2>
+                <ul style="list-style: disc; margin-left: 20px;">
+                    <li><strong><?php _e('Szenario-Training', 'bewerbungstrainer'); ?></strong> - <?php _e('Verwalten Sie strukturierte Trainingsszenarien mit Fragen und Feedback.', 'bewerbungstrainer'); ?></li>
+                    <li><strong><?php _e('Video Training', 'bewerbungstrainer'); ?></strong> - <?php _e('Verwalten Sie Video-Aufnahme-Szenarien für visuelles Training.', 'bewerbungstrainer'); ?></li>
+                </ul>
+            </div>
+        </div>
+        <?php
     }
 
     /**
@@ -110,6 +160,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create game database tables
         Bewerbungstrainer_Game_Database::create_tables();
+
+        // Create video training database tables
+        Bewerbungstrainer_Video_Training_Database::create_tables();
 
         // Create upload directory for audio files
         $upload_dir = wp_upload_dir();
@@ -186,6 +239,33 @@ class Bewerbungstrainer_Plugin {
     }
 
     /**
+     * Increase WordPress upload size limit for video uploads
+     *
+     * @param int $bytes Current limit in bytes
+     * @return int New limit in bytes (500MB)
+     */
+    public function increase_upload_size_limit($bytes) {
+        return 524288000; // 500 MB
+    }
+
+    /**
+     * Set PHP limits for video uploads
+     * Note: These may be overridden by server configuration (nginx, .htaccess)
+     */
+    public function set_video_upload_limits() {
+        // Only apply to video-training API endpoints
+        $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        if (strpos($request_uri, '/video-training/') !== false) {
+            // Try to increase PHP limits (may not work on all servers)
+            @ini_set('upload_max_filesize', '500M');
+            @ini_set('post_max_size', '512M');
+            @ini_set('max_execution_time', '600');
+            @ini_set('max_input_time', '600');
+            @ini_set('memory_limit', '512M');
+        }
+    }
+
+    /**
      * Initialize plugin components
      */
     public function init() {
@@ -213,6 +293,15 @@ class Bewerbungstrainer_Plugin {
         // Initialize Game/Rhetorik-Gym
         Bewerbungstrainer_Game_Database::get_instance();
         Bewerbungstrainer_Game_API::get_instance();
+
+        // Initialize Video Training
+        Bewerbungstrainer_Video_Training_Database::get_instance();
+        Bewerbungstrainer_Video_Training_API::get_instance();
+
+        // Initialize Video Training Admin (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_Video_Training_Admin::get_instance();
+        }
 
         // Initialize White-Label Partners
         Bewerbungstrainer_Whitelabel_Partners::get_instance();

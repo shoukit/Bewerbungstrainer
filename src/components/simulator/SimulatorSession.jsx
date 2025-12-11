@@ -4,6 +4,7 @@ import {
   MicOff,
   Square,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   RotateCcw,
   Clock,
@@ -16,8 +17,10 @@ import {
   Play,
   Target,
   MessageSquare,
-  ArrowLeft
+  ArrowLeft,
+  Check
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
@@ -36,26 +39,19 @@ const COLORS = {
 };
 
 /**
- * Progress Bar with Navigation Component
+ * Progress Bar Component
  */
-const ProgressBarWithNav = ({ current, total, onPrev, onNext, answeredQuestions, themedGradient, primaryAccent }) => {
-  const progress = (current / total) * 100;
-  const isFirst = current === 1;
-  const isLast = current === total;
+const ProgressBar = ({ current, total, answeredQuestions, primaryAccent }) => {
+  const percentage = ((current + 1) / total) * 100;
 
   return (
     <div style={{ marginBottom: '24px' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '8px',
-      }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>
-          Frage {current} von {total}
+          Frage {current + 1} von {total}
         </span>
         <span style={{ fontSize: '14px', color: COLORS.slate[500] }}>
-          {Math.round(progress)}% abgeschlossen
+          {Math.round(percentage)}% abgeschlossen
         </span>
       </div>
       <div style={{
@@ -65,97 +61,40 @@ const ProgressBarWithNav = ({ current, total, onPrev, onNext, answeredQuestions,
         overflow: 'hidden',
         marginBottom: '12px',
       }}>
-        <div
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 0.3 }}
           style={{
             height: '100%',
-            width: `${progress}%`,
-            background: themedGradient,
+            background: primaryAccent,
             borderRadius: '4px',
-            transition: 'width 0.3s ease',
           }}
         />
       </div>
-      {/* Navigation Buttons */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '12px',
-      }}>
-        <button
-          onClick={onPrev}
-          disabled={isFirst}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            border: `1px solid ${isFirst ? COLORS.slate[200] : COLORS.slate[300]}`,
-            backgroundColor: 'white',
-            color: isFirst ? COLORS.slate[400] : COLORS.slate[700],
-            fontSize: '14px',
-            fontWeight: 500,
-            cursor: isFirst ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <ArrowLeft style={{ width: '16px', height: '16px' }} />
-          Vorherige
-        </button>
-
-        {/* Question dots */}
-        <div style={{
-          display: 'flex',
-          gap: '6px',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          flex: 1,
-        }}>
-          {Array.from({ length: total }, (_, i) => {
-            const isAnswered = answeredQuestions.includes(i);
-            const isCurrent = i === current - 1;
-            return (
-              <div
-                key={i}
-                style={{
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '50%',
-                  backgroundColor: isCurrent
-                    ? primaryAccent
-                    : isAnswered
-                      ? COLORS.green[500]
-                      : COLORS.slate[300],
-                  transition: 'all 0.2s',
-                }}
-                title={`Frage ${i + 1}${isAnswered ? ' (beantwortet)' : ''}`}
-              />
-            );
-          })}
-        </div>
-
-        <button
-          onClick={onNext}
-          disabled={isLast}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            border: `1px solid ${isLast ? COLORS.slate[200] : COLORS.slate[300]}`,
-            backgroundColor: 'white',
-            color: isLast ? COLORS.slate[400] : COLORS.slate[700],
-            fontSize: '14px',
-            fontWeight: 500,
-            cursor: isLast ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          Nächste
-          <ChevronRight style={{ width: '16px', height: '16px' }} />
-        </button>
+      {/* Dots */}
+      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+        {Array.from({ length: total }, (_, i) => {
+          const isAnswered = answeredQuestions.includes(i);
+          const isCurrent = i === current;
+          return (
+            <div
+              key={i}
+              style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: isCurrent
+                  ? primaryAccent
+                  : isAnswered
+                    ? COLORS.green[500]
+                    : COLORS.slate[300],
+                transition: 'all 0.2s',
+              }}
+              title={`Frage ${i + 1}${isAnswered ? ' (beantwortet)' : ''}`}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -164,134 +103,86 @@ const ProgressBarWithNav = ({ current, total, onPrev, onNext, answeredQuestions,
 /**
  * Question Tips Accordion Component
  */
-const QuestionTips = ({ tips }) => {
-  const [isOpen, setIsOpen] = useState(true);
+const QuestionTips = ({ tips, primaryAccent }) => {
+  const [isOpen, setIsOpen] = useState(false);
 
   if (!tips || tips.length === 0) return null;
 
   return (
-    <div style={{
-      marginBottom: '24px',
-      borderRadius: '16px',
-      backgroundColor: 'white',
-      border: `1px solid ${COLORS.slate[200]}`,
-      overflow: 'hidden',
-    }}>
+    <div
+      style={{
+        marginTop: '16px',
+        background: `linear-gradient(135deg, ${primaryAccent}08 0%, ${primaryAccent}04 100%)`,
+        borderRadius: '12px',
+        border: `1px solid ${primaryAccent}15`,
+        overflow: 'hidden',
+      }}
+    >
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{
           width: '100%',
+          padding: '14px 16px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 20px',
-          border: 'none',
-          backgroundColor: 'transparent',
-          cursor: 'pointer',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Lightbulb style={{ width: '20px', height: '20px', color: COLORS.amber[500] }} />
-          <span style={{ fontSize: '15px', fontWeight: 600, color: COLORS.slate[800] }}>
-            Tipps
-          </span>
-        </div>
-        <ChevronDown style={{
-          width: '20px',
-          height: '20px',
-          color: COLORS.slate[500],
-          transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
-          transition: 'transform 0.2s',
-        }} />
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
+          <Lightbulb size={18} color={primaryAccent} />
+          Tipps für diese Frage
+        </span>
+        <ChevronRight
+          size={18}
+          color="#64748b"
+          style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}
+        />
       </button>
-
-      {isOpen && (
-        <div style={{
-          padding: '0 20px 20px 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-        }}>
-          {tips.map((tip, index) => (
-            <div
-              key={index}
-              style={{
-                display: 'flex',
-                gap: '12px',
-                padding: '14px 16px',
-                borderRadius: '12px',
-                backgroundColor: COLORS.amber[100] + '50',
-              }}
-            >
-              <Lightbulb style={{
-                width: '18px',
-                height: '18px',
-                color: COLORS.amber[500],
-                flexShrink: 0,
-                marginTop: '2px',
-              }} />
-              <p style={{
-                fontSize: '14px',
-                color: COLORS.slate[700],
-                margin: 0,
-                lineHeight: 1.5,
-              }}>
-                {tip.replace(/^Tipp \d+:\s*/i, '')}
-              </p>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{ padding: '0 16px 16px' }}>
+              {tips.map((tip, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    padding: '12px',
+                    borderRadius: '10px',
+                    backgroundColor: COLORS.amber[100] + '50',
+                    marginBottom: index < tips.length - 1 ? '8px' : 0,
+                  }}
+                >
+                  <Lightbulb style={{
+                    width: '16px',
+                    height: '16px',
+                    color: COLORS.amber[500],
+                    flexShrink: 0,
+                    marginTop: '2px',
+                  }} />
+                  <p style={{
+                    fontSize: '14px',
+                    color: COLORS.slate[700],
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}>
+                    {tip.replace(/^Tipp \d+:\s*/i, '')}
+                  </p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-/**
- * Question Display Component
- */
-const QuestionDisplay = ({ question, questionNumber, primaryAccent, primaryAccentLight }) => {
-  return (
-    <div style={{
-      padding: '24px',
-      borderRadius: '16px',
-      backgroundColor: 'white',
-      border: `1px solid ${COLORS.slate[200]}`,
-      marginBottom: '24px',
-    }}>
-      <div style={{
-        display: 'inline-block',
-        padding: '4px 12px',
-        borderRadius: '20px',
-        backgroundColor: primaryAccentLight,
-        color: primaryAccent,
-        fontSize: '12px',
-        fontWeight: 600,
-        marginBottom: '12px',
-      }}>
-        {question.category || 'Frage'}
-      </div>
-      <p style={{
-        fontSize: '18px',
-        fontWeight: 500,
-        color: COLORS.slate[900],
-        margin: 0,
-        lineHeight: 1.5,
-      }}>
-        {question.question}
-      </p>
-      {question.estimated_answer_time && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          marginTop: '12px',
-          color: COLORS.slate[500],
-          fontSize: '13px',
-        }}>
-          <Clock style={{ width: '14px', height: '14px' }} />
-          Empfohlene Antwortzeit: ca. {Math.round(question.estimated_answer_time / 60)} Min
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -340,11 +231,10 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
 };
 
 /**
- * Audio Recorder Component
+ * Audio Recorder Component - Simplified for two-column layout
  */
-const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent }) => {
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting }) => {
   const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -357,7 +247,6 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   const animationFrameRef = useRef(null);
   const streamRef = useRef(null);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopRecording(true);
@@ -369,7 +258,6 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
     };
   }, []);
 
-  // Auto-stop when time limit reached
   useEffect(() => {
     if (isRecording && seconds >= timeLimit) {
       stopRecording();
@@ -382,7 +270,6 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       audioChunksRef.current = [];
       setSeconds(0);
 
-      // Use specific device if deviceId is provided
       const audioConstraints = deviceId
         ? { deviceId: { exact: deviceId } }
         : true;
@@ -390,14 +277,12 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
       streamRef.current = stream;
 
-      // Set up audio analyzer for level visualization
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       analyserRef.current = audioContextRef.current.createAnalyser();
       const source = audioContextRef.current.createMediaStreamSource(stream);
       source.connect(analyserRef.current);
       analyserRef.current.fftSize = 256;
 
-      // Start level monitoring
       const updateLevel = () => {
         if (analyserRef.current) {
           const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
@@ -409,7 +294,6 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       };
       updateLevel();
 
-      // Set up MediaRecorder
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
         : MediaRecorder.isTypeSupported('audio/webm')
@@ -429,10 +313,9 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
         onRecordingComplete(audioBlob);
       };
 
-      mediaRecorderRef.current.start(1000); // Collect data every second
+      mediaRecorderRef.current.start(1000);
       setIsRecording(true);
 
-      // Start timer
       timerRef.current = setInterval(() => {
         setSeconds(prev => prev + 1);
       }, 1000);
@@ -474,7 +357,6 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
     setAudioLevel(0);
 
     if (!cleanup) {
-      // Reset for next recording
       setSeconds(0);
     }
   };
@@ -539,39 +421,28 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       )}
 
       {/* Recording Button */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
         {!isRecording ? (
           <button
             onClick={startRecording}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '12px',
-              padding: '16px 32px',
-              borderRadius: '50px',
+              padding: '14px 28px',
+              borderRadius: '12px',
               border: 'none',
-              background: disabled ? COLORS.slate[300] : themedGradient,
+              background: (disabled || isSubmitting) ? COLORS.slate[300] : '#ef4444',
               color: 'white',
               fontSize: '16px',
               fontWeight: 600,
-              cursor: disabled ? 'not-allowed' : 'pointer',
-              boxShadow: disabled ? 'none' : `0 4px 12px ${primaryAccent}4d`,
-              transition: 'transform 0.2s, box-shadow 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              if (!disabled) {
-                e.target.style.transform = 'scale(1.05)';
-                e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'scale(1)';
-              e.target.style.boxShadow = disabled ? 'none' : `0 4px 12px ${primaryAccent}4d`;
+              cursor: (disabled || isSubmitting) ? 'not-allowed' : 'pointer',
+              boxShadow: (disabled || isSubmitting) ? 'none' : '0 4px 14px rgba(239, 68, 68, 0.4)',
             }}
           >
-            <Mic style={{ width: '24px', height: '24px' }} />
+            <Mic style={{ width: '20px', height: '20px' }} />
             Aufnahme starten
           </button>
         ) : (
@@ -582,26 +453,24 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
               alignItems: 'center',
               justifyContent: 'center',
               gap: '12px',
-              padding: '16px 32px',
-              borderRadius: '50px',
+              padding: '14px 28px',
+              borderRadius: '12px',
               border: 'none',
-              backgroundColor: COLORS.red[500],
-              color: 'white',
+              backgroundColor: COLORS.slate[100],
+              color: COLORS.slate[900],
               fontSize: '16px',
               fontWeight: 600,
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
-              animation: 'pulse 2s infinite',
             }}
           >
-            <Square style={{ width: '20px', height: '20px' }} />
+            <Square style={{ width: '18px', height: '18px', color: COLORS.red[500] }} />
             Aufnahme beenden
           </button>
         )}
       </div>
 
       {/* Recording Hint */}
-      {!isRecording && (
+      {!isRecording && !isSubmitting && (
         <p style={{
           textAlign: 'center',
           marginTop: '16px',
@@ -612,10 +481,38 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
         </p>
       )}
 
+      {/* Submitting State */}
+      {isSubmitting && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginTop: '24px',
+        }}>
+          <Loader2 style={{
+            width: '32px',
+            height: '32px',
+            color: primaryAccent,
+            animation: 'spin 1s linear infinite',
+          }} />
+          <p style={{
+            marginTop: '12px',
+            color: COLORS.slate[700],
+            fontSize: '14px',
+          }}>
+            Antwort wird analysiert...
+          </p>
+        </div>
+      )}
+
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.8; }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>
@@ -625,9 +522,9 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 /**
  * Pre-Session View Component
  * Shows preparation tips before starting the interview
+ * Order: Microphone test, Start button, then Tips
  */
 const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selectedMicrophoneId, onMicrophoneChange, onMicrophoneTest, themedGradient, primaryAccent, primaryAccentLight }) => {
-  // Tips for interview preparation
   const generalTips = [
     {
       icon: Target,
@@ -651,7 +548,6 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
     },
   ];
 
-  // Context-specific info from variables
   const contextInfo = variables ? Object.entries(variables)
     .filter(([key, value]) => value && value.trim && value.trim() !== '')
     .map(([key, value]) => ({
@@ -661,67 +557,27 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
 
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-      {/* Header with Start Button */}
+      {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: '24px',
-        }}>
-          <button
-            onClick={onBack}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              border: 'none',
-              background: 'transparent',
-              color: COLORS.slate[600],
-              fontSize: '14px',
-              cursor: 'pointer',
-              borderRadius: '8px',
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
-            onMouseLeave={(e) => e.target.style.background = 'transparent'}
-          >
-            <ArrowLeft style={{ width: '18px', height: '18px' }} />
-            Zurück
-          </button>
-
-          {/* Start Button - prominently placed at top */}
-          <button
-            onClick={onStart}
-            style={{
-              padding: '14px 28px',
-              borderRadius: '12px',
-              border: 'none',
-              background: themedGradient,
-              color: 'white',
-              fontSize: '16px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              boxShadow: `0 4px 12px ${primaryAccent}4d`,
-              transition: 'transform 0.2s, box-shadow 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'none';
-              e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
-            }}
-          >
-            <Play style={{ width: '20px', height: '20px' }} />
-            Gespräch starten
-          </button>
-        </div>
+        <button
+          onClick={onBack}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 12px',
+            marginBottom: '16px',
+            border: 'none',
+            background: 'transparent',
+            color: COLORS.slate[600],
+            fontSize: '14px',
+            cursor: 'pointer',
+            borderRadius: '8px',
+          }}
+        >
+          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          Zurück
+        </button>
 
         <div style={{
           display: 'flex',
@@ -792,7 +648,63 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
         </div>
       )}
 
-      {/* Tips Section */}
+      {/* Microphone Selection - FIRST */}
+      <div style={{
+        padding: '24px',
+        borderRadius: '16px',
+        backgroundColor: 'white',
+        border: `1px solid ${COLORS.slate[200]}`,
+        marginBottom: '24px',
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          marginBottom: '16px',
+        }}>
+          <Mic style={{ width: '22px', height: '22px', color: primaryAccent }} />
+          <h2 style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            color: COLORS.slate[900],
+            margin: 0,
+          }}>
+            Mikrofon testen
+          </h2>
+        </div>
+        <MicrophoneSelector
+          selectedDeviceId={selectedMicrophoneId}
+          onDeviceChange={onMicrophoneChange}
+          onTestClick={onMicrophoneTest}
+        />
+      </div>
+
+      {/* Start Button - SECOND (before tips) */}
+      <button
+        onClick={onStart}
+        style={{
+          width: '100%',
+          padding: '18px 28px',
+          borderRadius: '14px',
+          border: 'none',
+          background: themedGradient,
+          color: 'white',
+          fontSize: '18px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          boxShadow: `0 4px 12px ${primaryAccent}4d`,
+          marginBottom: '24px',
+        }}
+      >
+        <Play style={{ width: '24px', height: '24px' }} />
+        Gespräch starten
+      </button>
+
+      {/* Tips Section - THIRD */}
       <div style={{
         padding: '24px',
         borderRadius: '16px',
@@ -864,43 +776,11 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
         </div>
       </div>
 
-      {/* Microphone Selection */}
-      <div style={{
-        padding: '24px',
-        borderRadius: '16px',
-        backgroundColor: 'white',
-        border: `1px solid ${COLORS.slate[200]}`,
-        marginBottom: '24px',
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          marginBottom: '16px',
-        }}>
-          <Mic style={{ width: '22px', height: '22px', color: primaryAccent }} />
-          <h2 style={{
-            fontSize: '18px',
-            fontWeight: 600,
-            color: COLORS.slate[900],
-            margin: 0,
-          }}>
-            Mikrofon auswählen
-          </h2>
-        </div>
-        <MicrophoneSelector
-          selectedDeviceId={selectedMicrophoneId}
-          onDeviceChange={onMicrophoneChange}
-          onTestClick={onMicrophoneTest}
-        />
-      </div>
-
       {/* Session Info */}
       <div style={{
         padding: '16px 20px',
         borderRadius: '12px',
         backgroundColor: COLORS.slate[100],
-        marginBottom: '32px',
         display: 'flex',
         gap: '24px',
         flexWrap: 'wrap',
@@ -923,26 +803,17 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
             {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
           </span>
         </div>
-        <div>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Geschätzte Dauer</span>
-          <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
-            ~{Math.round((questions.length * (scenario.time_limit_per_question || 120)) / 60)} Min
-          </span>
-        </div>
       </div>
-
     </div>
   );
 };
 
 /**
  * Simulator Session Component
- *
- * Main session interface with question display, audio recording,
- * and immediate feedback after each answer
+ * Two-column layout like VideoTraining
  */
 const SimulatorSession = ({ session, questions, scenario, variables, onComplete, onExit }) => {
-  const [phase, setPhase] = useState('preparation'); // 'preparation' | 'interview'
+  const [phase, setPhase] = useState('preparation');
   const [currentIndex, setCurrentIndex] = useState(session.current_question_index || 0);
   const [feedback, setFeedback] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -951,11 +822,9 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   const [completedAnswers, setCompletedAnswers] = useState([]);
   const [answeredQuestions, setAnsweredQuestions] = useState([]);
 
-  // Microphone selection state
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
-  // Partner theming
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const buttonGradient = branding?.['--button-gradient'] || headerGradient;
@@ -971,7 +840,6 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     setSubmitError(null);
 
     try {
-      // Submit audio and get immediate feedback
       const response = await wordpressAPI.submitSimulatorAnswer(
         session.id,
         audioBlob,
@@ -987,13 +855,11 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
       setFeedback(response.data);
       setShowFeedback(true);
 
-      // Track completed answer
       setCompletedAnswers(prev => [
         ...prev.filter(a => a.questionIndex !== currentIndex),
         { questionIndex: currentIndex, feedback: response.data }
       ]);
 
-      // Track answered question
       setAnsweredQuestions(prev =>
         prev.includes(currentIndex) ? prev : [...prev, currentIndex]
       );
@@ -1012,55 +878,21 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     setSubmitError(null);
   };
 
-  const handleNext = async () => {
+  const handleNext = () => {
     setFeedback(null);
     setShowFeedback(false);
     setSubmitError(null);
-
-    if (isLastQuestion) {
-      // Complete the session
-      try {
-        const response = await wordpressAPI.completeSimulatorSession(session.id);
-        if (response.success) {
-          onComplete(response.data);
-        } else {
-          onComplete({ session: { ...session, status: 'completed' } });
-        }
-      } catch (err) {
-        console.error('Error completing session:', err);
-        onComplete({ session: { ...session, status: 'completed' } });
-      }
-    } else {
+    if (!isLastQuestion) {
       setCurrentIndex(prev => prev + 1);
     }
   };
 
-  const handleExitConfirm = () => {
-    if (window.confirm('Möchtest du das Training wirklich abbrechen? Dein bisheriger Fortschritt wird gespeichert.')) {
-      onExit();
-    }
-  };
-
-  const handleStartInterview = () => {
-    setPhase('interview');
-  };
-
-  // Navigation handlers for skipping questions
-  const handleNavPrev = () => {
-    if (currentIndex > 0) {
-      setFeedback(null);
-      setShowFeedback(false);
-      setSubmitError(null);
+  const handlePrev = () => {
+    setFeedback(null);
+    setShowFeedback(false);
+    setSubmitError(null);
+    if (!isFirstQuestion) {
       setCurrentIndex(prev => prev - 1);
-    }
-  };
-
-  const handleNavNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setFeedback(null);
-      setShowFeedback(false);
-      setSubmitError(null);
-      setCurrentIndex(prev => prev + 1);
     }
   };
 
@@ -1076,6 +908,16 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
       console.error('Error completing session:', err);
       onComplete({ session: { ...session, status: 'completed' } });
     }
+  };
+
+  const handleExitConfirm = () => {
+    if (window.confirm('Möchtest du das Training wirklich abbrechen? Dein bisheriger Fortschritt wird gespeichert.')) {
+      onExit();
+    }
+  };
+
+  const handleStartInterview = () => {
+    setPhase('interview');
   };
 
   // Show preparation view first
@@ -1105,129 +947,64 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-      }}>
-        <div>
-          <h1 style={{
-            fontSize: '20px',
-            fontWeight: 700,
-            color: COLORS.slate[900],
-            margin: 0,
-          }}>
-            {scenario.title}
-          </h1>
-          <p style={{
-            fontSize: '14px',
-            color: COLORS.slate[500],
-            margin: '4px 0 0 0',
-          }}>
-            Beantworte die Fragen mit deinem Mikrofon
-          </p>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#0f172a' }}>
+          {scenario?.title}
+        </h1>
         <button
           onClick={handleExitConfirm}
           style={{
+            padding: '8px 16px',
+            borderRadius: '8px',
+            background: '#f1f5f9',
+            border: 'none',
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '8px 12px',
-            border: `1px solid ${COLORS.slate[300]}`,
-            borderRadius: '8px',
-            backgroundColor: 'white',
-            color: COLORS.slate[600],
+            color: '#64748b',
             fontSize: '14px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.borderColor = COLORS.red[500];
-            e.target.style.color = COLORS.red[500];
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.borderColor = COLORS.slate[300];
-            e.target.style.color = COLORS.slate[600];
           }}
         >
-          <X style={{ width: '16px', height: '16px' }} />
+          <X size={16} />
           Beenden
         </button>
       </div>
 
-      {/* Progress with Navigation */}
-      <ProgressBarWithNav
-        current={currentIndex + 1}
+      {/* Progress */}
+      <ProgressBar
+        current={currentIndex}
         total={questions.length}
-        onPrev={handleNavPrev}
-        onNext={handleNavNext}
         answeredQuestions={answeredQuestions}
-        themedGradient={buttonGradient}
         primaryAccent={primaryAccent}
       />
 
-      {/* Question */}
-      <QuestionDisplay
-        question={currentQuestion}
-        questionNumber={currentIndex + 1}
-        primaryAccent={primaryAccent}
-        primaryAccentLight={primaryAccentLight}
-      />
-
-      {/* Question-specific Tips */}
-      {currentQuestion.tips && currentQuestion.tips.length > 0 && !showFeedback && (
-        <QuestionTips tips={currentQuestion.tips} />
-      )}
-
-      {/* Recording or Feedback */}
-      {!showFeedback ? (
-        <>
-          <AudioRecorder
-            onRecordingComplete={handleRecordingComplete}
-            timeLimit={scenario.time_limit_per_question || 120}
-            disabled={isSubmitting}
-            deviceId={selectedMicrophoneId}
-            themedGradient={buttonGradient}
-            primaryAccent={primaryAccent}
-          />
-
-          {/* Submitting State */}
-          {isSubmitting && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: '32px',
-              marginTop: '24px',
-              borderRadius: '16px',
-              backgroundColor: COLORS.slate[100],
-            }}>
-              <Loader2 style={{
-                width: '48px',
-                height: '48px',
-                color: primaryAccent,
-                animation: 'spin 1s linear infinite',
-              }} />
-              <p style={{
-                marginTop: '16px',
-                color: COLORS.slate[700],
-                fontSize: '16px',
-                fontWeight: 500,
-              }}>
-                Deine Antwort wird analysiert...
-              </p>
-              <p style={{
-                marginTop: '4px',
-                color: COLORS.slate[500],
-                fontSize: '14px',
-              }}>
-                Die KI transkribiert und bewertet deine Antwort
-              </p>
-            </div>
+      {/* Main Content - Two Column Layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        {/* Left Column - Recording */}
+        <div>
+          {/* Show feedback or recorder */}
+          {showFeedback ? (
+            <ImmediateFeedback
+              transcript={feedback.transcript}
+              feedback={feedback.feedback}
+              audioMetrics={feedback.audio_analysis}
+              onRetry={scenario.allow_retry ? handleRetry : null}
+              onNext={handleNext}
+              isLastQuestion={isLastQuestion}
+            />
+          ) : (
+            <AudioRecorder
+              onRecordingComplete={handleRecordingComplete}
+              timeLimit={scenario.time_limit_per_question || 120}
+              disabled={false}
+              deviceId={selectedMicrophoneId}
+              themedGradient={buttonGradient}
+              primaryAccent={primaryAccent}
+              isSubmitting={isSubmitting}
+            />
           )}
 
           {/* Error State */}
@@ -1236,30 +1013,32 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              padding: '24px',
-              marginTop: '24px',
-              borderRadius: '16px',
+              padding: '20px',
+              marginTop: '16px',
+              borderRadius: '12px',
               backgroundColor: COLORS.red[100],
             }}>
-              <AlertCircle style={{ width: '32px', height: '32px', color: COLORS.red[500] }} />
+              <AlertCircle style={{ width: '24px', height: '24px', color: COLORS.red[500] }} />
               <p style={{
-                marginTop: '12px',
+                marginTop: '8px',
                 color: COLORS.red[500],
-                fontWeight: 600,
+                fontWeight: 500,
+                fontSize: '14px',
+                textAlign: 'center',
               }}>
                 {submitError}
               </p>
               <button
                 onClick={handleRetry}
                 style={{
-                  marginTop: '16px',
-                  padding: '10px 20px',
+                  marginTop: '12px',
+                  padding: '8px 16px',
                   borderRadius: '8px',
                   border: 'none',
                   backgroundColor: COLORS.red[500],
                   color: 'white',
                   fontSize: '14px',
-                  fontWeight: 600,
+                  fontWeight: 500,
                   cursor: 'pointer',
                 }}
               >
@@ -1267,97 +1046,142 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               </button>
             </div>
           )}
-        </>
-      ) : (
-        <ImmediateFeedback
-          transcript={feedback.transcript}
-          feedback={feedback.feedback}
-          audioMetrics={feedback.audio_analysis}
-          onRetry={scenario.allow_retry ? handleRetry : null}
-          onNext={handleNext}
-          isLastQuestion={isLastQuestion}
-        />
-      )}
 
-      {/* Bottom Navigation */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: '24px',
-        paddingTop: '24px',
-        borderTop: `1px solid ${COLORS.slate[200]}`,
-      }}>
-        <button
-          onClick={handleNavPrev}
-          disabled={isFirstQuestion}
+          {/* Navigation Buttons - Below Recording (like VideoTraining) */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '20px' }}>
+            {/* Previous button */}
+            {!isFirstQuestion && (
+              <button
+                onClick={handlePrev}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  background: '#fff',
+                  border: '1px solid #e2e8f0',
+                  cursor: 'pointer',
+                  color: '#0f172a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px',
+                }}
+              >
+                <ChevronLeft size={18} />
+                Vorherige Frage
+              </button>
+            )}
+
+            {/* Next button */}
+            {!isLastQuestion && (
+              <button
+                onClick={handleNext}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  background: primaryAccent,
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                }}
+              >
+                Nächste Frage
+                <ChevronRight size={18} />
+              </button>
+            )}
+
+            {/* Finish button - always visible */}
+            <button
+              onClick={handleCompleteSession}
+              disabled={answeredQuestions.length === 0}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '8px',
+                background: answeredQuestions.length === 0 ? '#94a3b8' : '#22c55e',
+                border: 'none',
+                cursor: answeredQuestions.length === 0 ? 'not-allowed' : 'pointer',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '14px',
+                fontWeight: 600,
+                boxShadow: answeredQuestions.length > 0 ? '0 4px 14px rgba(34, 197, 94, 0.3)' : 'none',
+              }}
+            >
+              <Check size={18} />
+              Training abschließen
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column - Question and Tips */}
+        <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '12px 20px',
-            borderRadius: '10px',
-            border: `1px solid ${isFirstQuestion ? COLORS.slate[200] : COLORS.slate[300]}`,
-            backgroundColor: 'white',
-            color: isFirstQuestion ? COLORS.slate[400] : COLORS.slate[700],
-            fontSize: '14px',
-            fontWeight: 500,
-            cursor: isFirstQuestion ? 'not-allowed' : 'pointer',
+            background: '#fff',
+            borderRadius: '16px',
+            padding: '24px',
+            border: '1px solid #e2e8f0',
           }}
         >
-          <ArrowLeft style={{ width: '16px', height: '16px' }} />
-          Vorherige Frage
-        </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <div
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: buttonGradient,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: '13px',
+                fontWeight: 600,
+              }}
+            >
+              {currentIndex + 1}
+            </div>
+            <span style={{ fontSize: '14px', color: '#64748b' }}>
+              {currentQuestion?.category || 'Frage'}
+            </span>
+          </div>
 
-        {/* Complete button when all questions answered or on last question */}
-        {(answeredQuestions.length === questions.length || isLastQuestion) && (
-          <button
-            onClick={handleCompleteSession}
+          <h2
             style={{
-              padding: '12px 24px',
-              borderRadius: '10px',
-              border: 'none',
-              background: buttonGradient,
-              color: 'white',
-              fontSize: '14px',
+              fontSize: '18px',
               fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
+              color: '#0f172a',
+              lineHeight: 1.5,
+              marginBottom: '16px',
             }}
           >
-            <CheckCircle style={{ width: '18px', height: '18px' }} />
-            Training abschließen
-          </button>
-        )}
+            {currentQuestion?.question || 'Frage wird geladen...'}
+          </h2>
 
-        <button
-          onClick={handleNavNext}
-          disabled={isLastQuestion}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '12px 20px',
-            borderRadius: '10px',
-            border: `1px solid ${isLastQuestion ? COLORS.slate[200] : COLORS.slate[300]}`,
-            backgroundColor: 'white',
-            color: isLastQuestion ? COLORS.slate[400] : COLORS.slate[700],
-            fontSize: '14px',
-            fontWeight: 500,
-            cursor: isLastQuestion ? 'not-allowed' : 'pointer',
-          }}
-        >
-          Nächste Frage
-          <ChevronRight style={{ width: '16px', height: '16px' }} />
-        </button>
+          {currentQuestion?.estimated_answer_time && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px', marginBottom: '16px' }}>
+              <Clock size={16} />
+              Empfohlene Antwortzeit: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
+            </div>
+          )}
+
+          {/* Tips */}
+          {currentQuestion?.tips && currentQuestion.tips.length > 0 && !showFeedback && (
+            <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} />
+          )}
+        </div>
       </div>
 
+      {/* Responsive styles for mobile */}
       <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @media (max-width: 768px) {
+          div[style*="gridTemplateColumns"] {
+            grid-template-columns: 1fr !important;
+          }
         }
       `}</style>
     </div>

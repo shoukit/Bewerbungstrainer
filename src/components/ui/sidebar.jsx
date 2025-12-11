@@ -17,6 +17,7 @@ import {
   User,
   LogIn,
   LogOut,
+  Video,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/Toast';
@@ -80,6 +81,14 @@ const NAV_ITEMS = [
     shortLabel: 'Szenario',
     icon: Target,
     description: 'Frage-Antwort Training mit KI-Feedback',
+  },
+  {
+    id: 'video_training',
+    moduleId: 'video_training', // Maps to WordPress module
+    label: 'Video-Training',
+    shortLabel: 'Video',
+    icon: Video,
+    description: 'Video-Aufnahme mit KI-Analyse',
   },
   {
     id: 'dashboard',
@@ -1099,6 +1108,7 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
 
         {/* Main Content with top padding for mobile header */}
         <main
+          data-main-content
           style={{
             paddingTop: '56px',
             minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
@@ -1129,6 +1139,7 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
 
       {/* Main Content */}
       <motion.main
+        data-main-content
         initial={false}
         animate={{ marginLeft: isCollapsed ? 72 : 280 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
