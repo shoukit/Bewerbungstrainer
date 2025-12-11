@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import OverviewDashboard from './components/OverviewDashboard';
 import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplaySession from './components/RoleplaySession';
 import SessionHistory from './components/SessionHistory';
@@ -8,7 +9,7 @@ import { VideoTrainingApp } from './components/video-training';
 import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner } from './context/PartnerContext';
-import { LoginModal, useLoginModal } from './components/LoginModal';
+import { LoginModal } from './components/LoginModal';
 import { ToastProvider } from './components/Toast';
 import { Loader2 } from 'lucide-react';
 
@@ -76,6 +77,7 @@ const BrandingLoadingSpinner = () => {
 
 // View constants
 const VIEWS = {
+  OVERVIEW: 'overview',
   DASHBOARD: 'dashboard',
   ROLEPLAY: 'roleplay',
   SIMULATOR: 'simulator',
@@ -190,8 +192,8 @@ function AppContent() {
     return <BrandingLoadingSpinner />;
   }
 
-  // Current view state
-  const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
+  // Current view state - start with overview
+  const [currentView, setCurrentView] = useState(VIEWS.OVERVIEW);
   const [headerOffset, setHeaderOffset] = useState(0);
 
   // Roleplay state
@@ -342,6 +344,9 @@ function AppContent() {
     scrollToTop();
 
     switch (viewId) {
+      case 'overview':
+        setCurrentView(VIEWS.OVERVIEW);
+        break;
       case 'dashboard':
         setCurrentView(VIEWS.DASHBOARD);
         break;
@@ -361,7 +366,7 @@ function AppContent() {
         setCurrentView(VIEWS.GYM_KLASSIKER);
         break;
       default:
-        setCurrentView(VIEWS.DASHBOARD);
+        setCurrentView(VIEWS.OVERVIEW);
     }
   };
 
@@ -503,7 +508,6 @@ function AppContent() {
         );
 
       case VIEWS.DASHBOARD:
-      default:
         return (
           <RoleplayDashboard
             onSelectScenario={handleSelectScenario}
@@ -513,6 +517,14 @@ function AppContent() {
             setPendingAction={setPendingAction}
             pendingScenario={pendingRoleplayScenario}
             clearPendingScenario={() => setPendingRoleplayScenario(null)}
+          />
+        );
+
+      case VIEWS.OVERVIEW:
+      default:
+        return (
+          <OverviewDashboard
+            onNavigate={handleSidebarNavigate}
           />
         );
     }

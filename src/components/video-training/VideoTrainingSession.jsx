@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 
 /**
  * ProgressBar - Shows question progress
@@ -266,7 +267,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     try {
       // Create video blob
       const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
-      const config = window.bewerbungstrainerConfig || {};
+      const apiUrl = getWPApiUrl();
 
       // Use FormData for file upload (avoids 413 error with large files)
       const formData = new FormData();
@@ -276,10 +277,10 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
 
       // Upload video using FormData
       console.log('[VIDEO TRAINING] Uploading video (size: ' + (videoBlob.size / 1024 / 1024).toFixed(2) + ' MB)...');
-      const uploadResponse = await fetch(`${config.apiUrl}/video-training/sessions/${session.id}/video`, {
+      const uploadResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/video`, {
         method: 'POST',
         headers: {
-          'X-WP-Nonce': config.nonce,
+          'X-WP-Nonce': getWPNonce(),
           // Don't set Content-Type - browser will set it with boundary for FormData
         },
         body: formData,
@@ -302,11 +303,11 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
 
       // Analyze video
       console.log('[VIDEO TRAINING] Analyzing video...');
-      const analyzeResponse = await fetch(`${config.apiUrl}/video-training/sessions/${session.id}/analyze`, {
+      const analyzeResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-WP-Nonce': config.nonce,
+          'X-WP-Nonce': getWPNonce(),
         },
       });
 

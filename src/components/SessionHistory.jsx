@@ -25,6 +25,7 @@ import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-f
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import TrainingSessionDetailView from './TrainingSessionDetailView';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 
 console.log('📦 [SESSION_HISTORY] SessionHistory module loaded');
 
@@ -108,8 +109,11 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
   // Convert score to percentage (0-100) for consistent display
   const getScoreAsPercent = () => {
     if (score === null) return null;
-    // Roleplay scores are 0-10, convert to percentage
-    if (type === TABS.ROLEPLAY) return score * 10;
+    // Simulator and Roleplay scores are 0-10, convert to percentage
+    if (type === TABS.SIMULATOR || type === TABS.ROLEPLAY) {
+      return score <= 10 ? score * 10 : score;
+    }
+    // Video scores are already 0-100
     return score;
   };
 
@@ -301,7 +305,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     setError(null);
 
     try {
-      const config = window.bewerbungstrainerConfig || {};
+      // Get fresh nonce and API URL for each request
+      const apiUrl = getWPApiUrl();
 
       // Load all sessions in parallel
       const [
@@ -315,22 +320,22 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         // Roleplay sessions
         getRoleplaySessions({ limit: 50 }).catch(() => ({ data: [] })),
         // Simulator sessions
-        fetch(`${config.apiUrl}/simulator/sessions?limit=50`, {
-          headers: { 'X-WP-Nonce': config.nonce },
+        fetch(`${apiUrl}/simulator/sessions?limit=50`, {
+          headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Video training sessions
-        fetch(`${config.apiUrl}/video-training/sessions?limit=50`, {
-          headers: { 'X-WP-Nonce': config.nonce },
+        fetch(`${apiUrl}/video-training/sessions?limit=50`, {
+          headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Roleplay scenarios
         getRoleplayScenarios().catch(() => []),
         // Simulator scenarios
-        fetch(`${config.apiUrl}/simulator/scenarios`, {
-          headers: { 'X-WP-Nonce': config.nonce },
+        fetch(`${apiUrl}/simulator/scenarios`, {
+          headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Video scenarios
-        fetch(`${config.apiUrl}/video-training/scenarios`, {
-          headers: { 'X-WP-Nonce': config.nonce },
+        fetch(`${apiUrl}/video-training/scenarios`, {
+          headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
       ]);
 
@@ -546,9 +551,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
         <div style={{ textAlign: 'center' }}>
-          <Loader2 style={{ width: '48px', height: '48px', color: primaryAccent, animation: 'spin 1s linear infinite' }} />
+          <Loader2 style={{ width: '48px', height: '48px', color: primaryAccent, animation: 'spin 1s linear infinite', margin: '0 auto' }} />
           <p style={{ color: '#64748b', marginTop: '16px' }}>Sessions werden geladen...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

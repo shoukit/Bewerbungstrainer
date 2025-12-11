@@ -177,6 +177,44 @@ export function PartnerProvider({ children }) {
     const result = await loginUser(username, password);
 
     if (result.success) {
+      // Wait for browser to process the auth cookie
+      // Then verify the cookie is working by making a test API call
+      console.log('⏳ [PartnerContext] Waiting for cookie to be processed...');
+
+      // Try up to 3 times with increasing delays to verify cookie is set
+      let cookieVerified = false;
+      const delays = [200, 400, 600];
+
+      for (let i = 0; i < delays.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, delays[i]));
+
+        try {
+          // Test if the cookie works by making a simple authenticated request
+          const testResponse = await fetch(
+            `${window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1'}/user/info`,
+            {
+              method: 'GET',
+              headers: { 'X-WP-Nonce': result.nonce },
+              credentials: 'same-origin',
+            }
+          );
+
+          if (testResponse.ok) {
+            console.log('✅ [PartnerContext] Cookie verified on attempt', i + 1);
+            cookieVerified = true;
+            break;
+          } else {
+            console.log(`⏳ [PartnerContext] Cookie not ready yet (attempt ${i + 1}), waiting...`);
+          }
+        } catch (e) {
+          console.log(`⏳ [PartnerContext] Cookie verification failed (attempt ${i + 1}):`, e.message);
+        }
+      }
+
+      if (!cookieVerified) {
+        console.warn('⚠️ [PartnerContext] Cookie could not be verified, proceeding anyway');
+      }
+
       setUser(result.user);
       setIsAuthenticated(true);
       console.log('✅ [PartnerContext] Login successful:', result.user.displayName);

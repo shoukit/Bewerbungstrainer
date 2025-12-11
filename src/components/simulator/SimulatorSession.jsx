@@ -231,10 +231,10 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
 };
 
 /**
- * Audio Recorder Component - Simplified for two-column layout
+ * Audio Recorder Component - With Pause functionality
  */
 const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting }) => {
-  const [isRecording, setIsRecording] = useState(false);
+  const [recordingState, setRecordingState] = useState('idle'); // 'idle' | 'recording' | 'paused'
   const [seconds, setSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -249,20 +249,28 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
   useEffect(() => {
     return () => {
-      stopRecording(true);
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+      cleanupRecording();
     };
   }, []);
 
   useEffect(() => {
-    if (isRecording && seconds >= timeLimit) {
-      stopRecording();
+    if (recordingState === 'recording' && seconds >= timeLimit) {
+      finishRecording();
     }
-  }, [seconds, timeLimit, isRecording]);
+  }, [seconds, timeLimit, recordingState]);
+
+  const cleanupRecording = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  };
 
   const startRecording = async () => {
     try {
@@ -270,10 +278,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       audioChunksRef.current = [];
       setSeconds(0);
 
-      const audioConstraints = deviceId
-        ? { deviceId: { exact: deviceId } }
-        : true;
-
+      const audioConstraints = deviceId ? { deviceId: { exact: deviceId } } : true;
       const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
       streamRef.current = stream;
 
@@ -284,7 +289,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       analyserRef.current.fftSize = 256;
 
       const updateLevel = () => {
-        if (analyserRef.current) {
+        if (analyserRef.current && recordingState === 'recording') {
           const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
           analyserRef.current.getByteFrequencyData(dataArray);
           const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
@@ -314,7 +319,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       };
 
       mediaRecorderRef.current.start(1000);
-      setIsRecording(true);
+      setRecordingState('recording');
 
       timerRef.current = setInterval(() => {
         setSeconds(prev => prev + 1);
@@ -328,51 +333,68 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
     }
   };
 
-  const stopRecording = (cleanup = false) => {
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
+      setRecordingState('paused');
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setAudioLevel(0);
+    }
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setRecordingState('recording');
+      timerRef.current = setInterval(() => {
+        setSeconds(prev => prev + 1);
+      }, 1000);
+    }
+  };
+
+  const finishRecording = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
-
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
-
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
-
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-
-    setIsRecording(false);
+    setRecordingState('idle');
     setAudioLevel(0);
+    setSeconds(0);
+  };
 
-    if (!cleanup) {
-      setSeconds(0);
+  const handleMainButtonClick = () => {
+    if (recordingState === 'idle') {
+      startRecording();
+    } else if (recordingState === 'recording') {
+      pauseRecording();
+    } else if (recordingState === 'paused') {
+      resumeRecording();
     }
   };
 
   if (permissionDenied) {
     return (
-      <div style={{
-        padding: '24px',
-        borderRadius: '16px',
-        backgroundColor: COLORS.red[100],
-        textAlign: 'center',
-      }}>
+      <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: COLORS.red[100], textAlign: 'center' }}>
         <MicOff style={{ width: '48px', height: '48px', color: COLORS.red[500], marginBottom: '12px' }} />
-        <p style={{ color: COLORS.red[500], fontWeight: 600, margin: 0 }}>
-          Mikrofonzugriff verweigert
-        </p>
+        <p style={{ color: COLORS.red[500], fontWeight: 600, margin: 0 }}>Mikrofonzugriff verweigert</p>
         <p style={{ color: COLORS.slate[600], fontSize: '14px', marginTop: '8px' }}>
           Bitte erlaube den Zugriff auf dein Mikrofon in den Browser-Einstellungen.
         </p>
@@ -381,139 +403,91 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   }
 
   return (
-    <div style={{
-      padding: '24px',
-      borderRadius: '16px',
-      backgroundColor: 'white',
-      border: `1px solid ${COLORS.slate[200]}`,
-    }}>
+    <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: 'white', border: `1px solid ${COLORS.slate[200]}` }}>
       {/* Timer */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-        <Timer seconds={seconds} maxSeconds={timeLimit} isRecording={isRecording} />
+        <Timer seconds={seconds} maxSeconds={timeLimit} isRecording={recordingState === 'recording'} />
       </div>
 
       {/* Audio Level Visualization */}
-      {isRecording && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '4px',
-          height: '60px',
-          marginBottom: '24px',
-        }}>
+      {recordingState === 'recording' && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px', height: '60px', marginBottom: '24px' }}>
           {[...Array(20)].map((_, i) => {
             const height = Math.max(8, Math.min(50, audioLevel * 100 * Math.random() * 2));
             return (
-              <div
-                key={i}
-                style={{
-                  width: '6px',
-                  height: `${height}px`,
-                  backgroundColor: primaryAccent,
-                  borderRadius: '3px',
-                  transition: 'height 0.1s ease',
-                }}
-              />
+              <div key={i} style={{ width: '6px', height: `${height}px`, backgroundColor: primaryAccent, borderRadius: '3px', transition: 'height 0.1s ease' }} />
             );
           })}
         </div>
       )}
 
-      {/* Recording Button */}
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        {!isRecording ? (
+      {/* Paused State Indicator */}
+      {recordingState === 'paused' && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', height: '60px', marginBottom: '24px', color: COLORS.amber[500] }}>
+          <Mic size={24} />
+          <span style={{ fontSize: '16px', fontWeight: 600 }}>Aufnahme pausiert</span>
+        </div>
+      )}
+
+      {/* Recording Buttons */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+        {/* Main Button - Start/Pause/Resume */}
+        <button
+          onClick={handleMainButtonClick}
+          disabled={disabled || isSubmitting}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+            padding: '14px 28px', borderRadius: '12px', border: 'none',
+            background: recordingState === 'idle'
+              ? ((disabled || isSubmitting) ? COLORS.slate[300] : '#ef4444')
+              : recordingState === 'recording'
+                ? COLORS.amber[500]
+                : COLORS.green[500],
+            color: 'white', fontSize: '16px', fontWeight: 600,
+            cursor: (disabled || isSubmitting) ? 'not-allowed' : 'pointer',
+            boxShadow: (disabled || isSubmitting) ? 'none' : '0 4px 14px rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          {recordingState === 'idle' && <><Mic style={{ width: '20px', height: '20px' }} />Aufnahme starten</>}
+          {recordingState === 'recording' && <><Square style={{ width: '18px', height: '18px' }} />Pausieren</>}
+          {recordingState === 'paused' && <><Play style={{ width: '18px', height: '18px' }} />Fortsetzen</>}
+        </button>
+
+        {/* Finish Button - Only when recording or paused */}
+        {(recordingState === 'recording' || recordingState === 'paused') && (
           <button
-            onClick={startRecording}
-            disabled={disabled || isSubmitting}
+            onClick={finishRecording}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              padding: '14px 28px',
-              borderRadius: '12px',
-              border: 'none',
-              background: (disabled || isSubmitting) ? COLORS.slate[300] : '#ef4444',
-              color: 'white',
-              fontSize: '16px',
-              fontWeight: 600,
-              cursor: (disabled || isSubmitting) ? 'not-allowed' : 'pointer',
-              boxShadow: (disabled || isSubmitting) ? 'none' : '0 4px 14px rgba(239, 68, 68, 0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '14px 24px', borderRadius: '12px', border: 'none',
+              backgroundColor: COLORS.slate[100], color: COLORS.slate[900],
+              fontSize: '16px', fontWeight: 600, cursor: 'pointer',
             }}
           >
-            <Mic style={{ width: '20px', height: '20px' }} />
-            Aufnahme starten
-          </button>
-        ) : (
-          <button
-            onClick={() => stopRecording()}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              padding: '14px 28px',
-              borderRadius: '12px',
-              border: 'none',
-              backgroundColor: COLORS.slate[100],
-              color: COLORS.slate[900],
-              fontSize: '16px',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            <Square style={{ width: '18px', height: '18px', color: COLORS.red[500] }} />
-            Aufnahme beenden
+            <CheckCircle style={{ width: '18px', height: '18px', color: COLORS.green[500] }} />
+            Antwort abgeben
           </button>
         )}
       </div>
 
       {/* Recording Hint */}
-      {!isRecording && !isSubmitting && (
-        <p style={{
-          textAlign: 'center',
-          marginTop: '16px',
-          color: COLORS.slate[500],
-          fontSize: '14px',
-        }}>
+      {recordingState === 'idle' && !isSubmitting && (
+        <p style={{ textAlign: 'center', marginTop: '16px', color: COLORS.slate[500], fontSize: '14px' }}>
           Klicke auf den Button, um deine Antwort aufzunehmen
         </p>
       )}
 
       {/* Submitting State */}
       {isSubmitting && (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          marginTop: '24px',
-        }}>
-          <Loader2 style={{
-            width: '32px',
-            height: '32px',
-            color: primaryAccent,
-            animation: 'spin 1s linear infinite',
-          }} />
-          <p style={{
-            marginTop: '12px',
-            color: COLORS.slate[700],
-            fontSize: '14px',
-          }}>
-            Antwort wird analysiert...
-          </p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
+          <Loader2 style={{ width: '32px', height: '32px', color: primaryAccent, animation: 'spin 1s linear infinite' }} />
+          <p style={{ marginTop: '12px', color: COLORS.slate[700], fontSize: '14px' }}>Antwort wird analysiert...</p>
         </div>
       )}
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.8; }
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );
@@ -910,8 +884,8 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     }
   };
 
-  const handleExitConfirm = () => {
-    if (window.confirm('Möchtest du das Training wirklich abbrechen? Dein bisheriger Fortschritt wird gespeichert.')) {
+  const handleCancelSession = () => {
+    if (window.confirm('Möchtest du das Training wirklich abbrechen? Das Training wird nicht gespeichert.')) {
       onExit();
     }
   };
@@ -953,24 +927,49 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#0f172a' }}>
           {scenario?.title}
         </h1>
-        <button
-          onClick={handleExitConfirm}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '8px',
-            background: '#f1f5f9',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: '#64748b',
-            fontSize: '14px',
-          }}
-        >
-          <X size={16} />
-          Beenden
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Training beenden - immer sichtbar wenn mind. 1 Frage beantwortet */}
+          {answeredQuestions.length > 0 && (
+            <button
+              onClick={handleCompleteSession}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                background: '#22c55e',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
+              }}
+            >
+              <Check size={16} />
+              Training beenden
+            </button>
+          )}
+          <button
+            onClick={handleCancelSession}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              background: '#f1f5f9',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#64748b',
+              fontSize: '14px',
+            }}
+          >
+            <X size={16} />
+            Abbrechen
+          </button>
+        </div>
       </div>
 
       {/* Progress */}
@@ -981,21 +980,104 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         primaryAccent={primaryAccent}
       />
 
-      {/* Main Content - Two Column Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        {/* Left Column - Recording */}
-        <div>
-          {/* Show feedback or recorder */}
-          {showFeedback ? (
-            <ImmediateFeedback
-              transcript={feedback.transcript}
-              feedback={feedback.feedback}
-              audioMetrics={feedback.audio_analysis}
-              onRetry={scenario.allow_retry ? handleRetry : null}
-              onNext={handleNext}
-              isLastQuestion={isLastQuestion}
-            />
-          ) : (
+      {/* Main Content */}
+      {showFeedback ? (
+        /* Single Column Layout for Feedback View */
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', justifyContent: 'flex-end' }}>
+            {scenario.allow_retry && (
+              <button
+                onClick={handleRetry}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
+                  borderRadius: '10px',
+                  border: `2px solid ${COLORS.slate[300]}`,
+                  backgroundColor: 'white',
+                  color: COLORS.slate[700],
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <RotateCcw size={16} />
+                Nochmal versuchen
+              </button>
+            )}
+            <button
+              onClick={isLastQuestion ? handleCompleteSession : handleNext}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '10px',
+                border: 'none',
+                background: buttonGradient,
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: `0 4px 12px ${primaryAccent}4d`,
+              }}
+            >
+              {isLastQuestion ? 'Training abschließen' : 'Nächste Frage'}
+              {!isLastQuestion && <ChevronRight size={16} />}
+            </button>
+          </div>
+
+          {/* Question Card */}
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '16px',
+              padding: '20px',
+              border: '1px solid #e2e8f0',
+              marginBottom: '16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: buttonGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                }}
+              >
+                {currentIndex + 1}
+              </div>
+              <span style={{ fontSize: '14px', color: '#64748b' }}>
+                {currentQuestion?.category || 'Frage'}
+              </span>
+            </div>
+            <p style={{ fontSize: '16px', fontWeight: 500, color: '#0f172a', margin: 0, lineHeight: 1.5 }}>
+              {currentQuestion?.question || 'Frage wird geladen...'}
+            </p>
+          </div>
+
+          {/* Feedback Content */}
+          <ImmediateFeedback
+            transcript={feedback.transcript}
+            feedback={feedback.feedback}
+            audioMetrics={feedback.audio_analysis}
+            hideButtons={true}
+          />
+        </div>
+      ) : (
+        /* Two Column Layout for Recording View */
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          {/* Left Column - Recording */}
+          <div>
             <AudioRecorder
               onRecordingComplete={handleRecordingComplete}
               timeLimit={scenario.time_limit_per_question || 120}
@@ -1005,176 +1087,106 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               primaryAccent={primaryAccent}
               isSubmitting={isSubmitting}
             />
-          )}
 
-          {/* Error State */}
-          {submitError && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: '20px',
-              marginTop: '16px',
-              borderRadius: '12px',
-              backgroundColor: COLORS.red[100],
-            }}>
-              <AlertCircle style={{ width: '24px', height: '24px', color: COLORS.red[500] }} />
-              <p style={{
-                marginTop: '8px',
-                color: COLORS.red[500],
-                fontWeight: 500,
-                fontSize: '14px',
-                textAlign: 'center',
+            {/* Error State */}
+            {submitError && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: '20px',
+                marginTop: '16px',
+                borderRadius: '12px',
+                backgroundColor: COLORS.red[100],
               }}>
-                {submitError}
-              </p>
-              <button
-                onClick={handleRetry}
-                style={{
-                  marginTop: '12px',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: COLORS.red[500],
-                  color: 'white',
-                  fontSize: '14px',
+                <AlertCircle style={{ width: '24px', height: '24px', color: COLORS.red[500] }} />
+                <p style={{
+                  marginTop: '8px',
+                  color: COLORS.red[500],
                   fontWeight: 500,
-                  cursor: 'pointer',
-                }}
-              >
-                Erneut versuchen
-              </button>
-            </div>
-          )}
-
-          {/* Navigation Buttons - Below Recording (like VideoTraining) */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '20px' }}>
-            {/* Previous button */}
-            {!isFirstQuestion && (
-              <button
-                onClick={handlePrev}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  background: '#fff',
-                  border: '1px solid #e2e8f0',
-                  cursor: 'pointer',
-                  color: '#0f172a',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
                   fontSize: '14px',
-                }}
-              >
-                <ChevronLeft size={18} />
-                Vorherige Frage
-              </button>
+                  textAlign: 'center',
+                }}>
+                  {submitError}
+                </p>
+                <button
+                  onClick={handleRetry}
+                  style={{
+                    marginTop: '12px',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: COLORS.red[500],
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Erneut versuchen
+                </button>
+              </div>
             )}
 
-            {/* Next button */}
-            {!isLastQuestion && (
-              <button
-                onClick={handleNext}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  background: primaryAccent,
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                }}
-              >
-                Nächste Frage
-                <ChevronRight size={18} />
-              </button>
-            )}
-
-            {/* Finish button - always visible */}
-            <button
-              onClick={handleCompleteSession}
-              disabled={answeredQuestions.length === 0}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '8px',
-                background: answeredQuestions.length === 0 ? '#94a3b8' : '#22c55e',
-                border: 'none',
-                cursor: answeredQuestions.length === 0 ? 'not-allowed' : 'pointer',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '14px',
-                fontWeight: 600,
-                boxShadow: answeredQuestions.length > 0 ? '0 4px 14px rgba(34, 197, 94, 0.3)' : 'none',
-              }}
-            >
-              <Check size={18} />
-              Training abschließen
-            </button>
-          </div>
-        </div>
-
-        {/* Right Column - Question and Tips */}
-        <div
-          style={{
-            background: '#fff',
-            borderRadius: '16px',
-            padding: '24px',
-            border: '1px solid #e2e8f0',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <div
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: buttonGradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: '13px',
-                fontWeight: 600,
-              }}
-            >
-              {currentIndex + 1}
-            </div>
-            <span style={{ fontSize: '14px', color: '#64748b' }}>
-              {currentQuestion?.category || 'Frage'}
-            </span>
           </div>
 
-          <h2
+          {/* Right Column - Question and Tips */}
+          <div
             style={{
-              fontSize: '18px',
-              fontWeight: 600,
-              color: '#0f172a',
-              lineHeight: 1.5,
-              marginBottom: '16px',
+              background: '#fff',
+              borderRadius: '16px',
+              padding: '24px',
+              border: '1px solid #e2e8f0',
             }}
           >
-            {currentQuestion?.question || 'Frage wird geladen...'}
-          </h2>
-
-          {currentQuestion?.estimated_answer_time && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px', marginBottom: '16px' }}>
-              <Clock size={16} />
-              Empfohlene Antwortzeit: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: buttonGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                }}
+              >
+                {currentIndex + 1}
+              </div>
+              <span style={{ fontSize: '14px', color: '#64748b' }}>
+                {currentQuestion?.category || 'Frage'}
+              </span>
             </div>
-          )}
 
-          {/* Tips */}
-          {currentQuestion?.tips && currentQuestion.tips.length > 0 && !showFeedback && (
-            <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} />
-          )}
+            <h2
+              style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#0f172a',
+                lineHeight: 1.5,
+                marginBottom: '16px',
+              }}
+            >
+              {currentQuestion?.question || 'Frage wird geladen...'}
+            </h2>
+
+            {currentQuestion?.estimated_answer_time && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px', marginBottom: '16px' }}>
+                <Clock size={16} />
+                Empfohlene Antwortzeit: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
+              </div>
+            )}
+
+            {/* Tips */}
+            {currentQuestion?.tips && currentQuestion.tips.length > 0 && (
+              <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Responsive styles for mobile */}
       <style>{`

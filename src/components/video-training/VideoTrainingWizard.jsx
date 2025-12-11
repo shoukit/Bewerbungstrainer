@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { ArrowLeft, Video, Info, Loader2, AlertCircle, ChevronRight, Settings, Sparkles } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { motion } from 'framer-motion';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 
 /**
  * DynamicFormField - Renders form fields based on configuration
@@ -185,15 +186,15 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
     setApiError(null);
 
     try {
-      const config = window.bewerbungstrainerConfig || {};
+      const apiUrl = getWPApiUrl();
 
       // Step 1: Create session
       console.log('[VIDEO TRAINING] Creating session...');
-      const createResponse = await fetch(`${config.apiUrl}/video-training/sessions`, {
+      const createResponse = await fetch(`${apiUrl}/video-training/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-WP-Nonce': config.nonce,
+          'X-WP-Nonce': getWPNonce(),
         },
         body: JSON.stringify({
           scenario_id: scenario.id,
@@ -216,11 +217,11 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
 
       // Step 2: Generate questions
       console.log('[VIDEO TRAINING] Generating questions...');
-      const questionsResponse = await fetch(`${config.apiUrl}/video-training/sessions/${session.id}/questions`, {
+      const questionsResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/questions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-WP-Nonce': config.nonce,
+          'X-WP-Nonce': getWPNonce(),
         },
       });
 

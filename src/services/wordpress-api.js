@@ -18,7 +18,20 @@ class WordPressAPI {
         };
 
         this.apiUrl = this.config.apiUrl;
-        this.nonce = this.config.nonce;
+        // Note: nonce is now read dynamically via getNonce() to support login/logout
+    }
+
+    /**
+     * Get current nonce (always read from window.bewerbungstrainerConfig to support dynamic updates after login)
+     * IMPORTANT: Never cache the nonce - always read fresh from the global config
+     */
+    getNonce() {
+        // Always read directly from the global config - this is updated after login
+        const nonce = window.bewerbungstrainerConfig?.nonce || '';
+        if (!nonce) {
+            console.warn('[WordPressAPI] No nonce available - user may not be logged in');
+        }
+        return nonce;
     }
 
     /**
@@ -27,10 +40,14 @@ class WordPressAPI {
     async request(endpoint, options = {}) {
         const url = `${this.apiUrl}${endpoint}`;
 
+        // Always get fresh nonce at request time
+        const currentNonce = this.getNonce();
+        console.log(`🔐 [WordPressAPI] Request to ${endpoint} with nonce: ${currentNonce?.substring(0, 10)}...`);
+
         const defaultOptions = {
             headers: {
                 'Content-Type': 'application/json',
-                'X-WP-Nonce': this.nonce
+                'X-WP-Nonce': currentNonce
             },
             credentials: 'same-origin'
         };
@@ -224,7 +241,7 @@ class WordPressAPI {
         return this.request(`/video-training/${trainingId}/upload`, {
             method: 'POST',
             headers: {
-                'X-WP-Nonce': this.nonce
+                'X-WP-Nonce': this.getNonce()
             },
             body: formData
         });
@@ -328,7 +345,7 @@ class WordPressAPI {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'X-WP-Nonce': this.nonce
+                'X-WP-Nonce': this.getNonce()
             },
             credentials: 'same-origin',
             body: formData
@@ -533,3 +550,19 @@ class WordPressAPI {
 // Export singleton instance
 const wordpressAPI = new WordPressAPI();
 export default wordpressAPI;
+
+/**
+ * Get current WordPress REST API nonce
+ * Always reads fresh from window.bewerbungstrainerConfig to support login/logout
+ * Use this for any direct fetch calls outside of WordPressAPI
+ */
+export function getWPNonce() {
+    return window.bewerbungstrainerConfig?.nonce || '';
+}
+
+/**
+ * Get WordPress API base URL
+ */
+export function getWPApiUrl() {
+    return window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+}

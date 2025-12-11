@@ -10,7 +10,8 @@ import {
   Mic,
   ChevronDown,
   ChevronUp,
-  Trophy
+  Trophy,
+  Check
 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -28,16 +29,20 @@ const COLORS = {
 
 /**
  * Score Badge Component
+ * Now displays scores on scale of 100 (converts from scale of 10)
  */
 const ScoreBadge = ({ score, label, size = 'normal', primaryAccent }) => {
+  // Convert from scale of 10 to scale of 100
+  const score100 = score != null ? score * 10 : null;
+
   const getScoreColor = (s) => {
-    if (s >= 8) return COLORS.green[500];
-    if (s >= 6) return primaryAccent;
-    if (s >= 4) return COLORS.amber[500];
+    if (s >= 80) return COLORS.green[500];
+    if (s >= 60) return primaryAccent;
+    if (s >= 40) return COLORS.amber[500];
     return COLORS.red[500];
   };
 
-  const color = getScoreColor(score);
+  const color = getScoreColor(score100);
   const isLarge = size === 'large';
 
   return (
@@ -62,7 +67,7 @@ const ScoreBadge = ({ score, label, size = 'normal', primaryAccent }) => {
           fontWeight: 700,
           color: color,
         }}>
-          {score?.toFixed(1) || '-'}
+          {score100 != null ? Math.round(score100) : '-'}
         </span>
       </div>
       <span style={{
@@ -317,7 +322,9 @@ const ImmediateFeedback = ({
   audioMetrics,
   onRetry,
   onNext,
+  onComplete,
   isLastQuestion,
+  hideButtons = false,
 }) => {
   // Partner theming
   const { branding } = usePartner();
@@ -436,82 +443,87 @@ const ImmediateFeedback = ({
         </CollapsibleSection>
       )}
 
-      {/* Action Buttons */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        marginTop: '24px',
-        justifyContent: 'flex-end',
-      }}>
-        {onRetry && (
+      {/* Action Buttons - only show when not hidden */}
+      {!hideButtons && (
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          marginTop: '24px',
+          justifyContent: 'flex-end',
+          flexWrap: 'wrap',
+        }}>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '14px 24px',
+                borderRadius: '12px',
+                border: `2px solid ${COLORS.slate[300]}`,
+                backgroundColor: 'white',
+                color: COLORS.slate[700],
+                fontSize: '15px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = primaryAccent;
+                e.target.style.color = primaryAccent;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = COLORS.slate[300];
+                e.target.style.color = COLORS.slate[700];
+              }}
+            >
+              <RotateCcw style={{ width: '18px', height: '18px' }} />
+              Nochmal versuchen
+            </button>
+          )}
+
+          {/* Nächste Frage / Training abschließen */}
           <button
-            onClick={onRetry}
+            onClick={isLastQuestion ? onComplete : onNext}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               padding: '14px 24px',
               borderRadius: '12px',
-              border: `2px solid ${COLORS.slate[300]}`,
-              backgroundColor: 'white',
-              color: COLORS.slate[700],
+              border: 'none',
+              background: buttonGradient,
+              color: 'white',
               fontSize: '15px',
               fontWeight: 600,
               cursor: 'pointer',
+              boxShadow: `0 4px 12px ${primaryAccent}4d`,
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
-              e.target.style.borderColor = primaryAccent;
-              e.target.style.color = primaryAccent;
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
             }}
             onMouseLeave={(e) => {
-              e.target.style.borderColor = COLORS.slate[300];
-              e.target.style.color = COLORS.slate[700];
+              e.target.style.transform = 'none';
+              e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
             }}
           >
-            <RotateCcw style={{ width: '18px', height: '18px' }} />
-            Nochmal versuchen
+            {isLastQuestion ? (
+              <>
+                <Trophy style={{ width: '18px', height: '18px' }} />
+                Training abschließen
+              </>
+            ) : (
+              <>
+                Nächste Frage
+                <ChevronRight style={{ width: '18px', height: '18px' }} />
+              </>
+            )}
           </button>
-        )}
-        <button
-          onClick={onNext}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '14px 24px',
-            borderRadius: '12px',
-            border: 'none',
-            background: buttonGradient,
-            color: 'white',
-            fontSize: '15px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: `0 4px 12px ${primaryAccent}4d`,
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'none';
-            e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
-          }}
-        >
-          {isLastQuestion ? (
-            <>
-              <Trophy style={{ width: '18px', height: '18px' }} />
-              Training abschließen
-            </>
-          ) : (
-            <>
-              Nächste Frage
-              <ChevronRight style={{ width: '18px', height: '18px' }} />
-            </>
-          )}
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

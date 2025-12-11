@@ -15,6 +15,7 @@ import {
   getRoleplaySessionAudioUrl,
   getRoleplayScenario,
 } from '@/services/roleplay-feedback-adapter';
+import { getWPNonce } from '@/services/wordpress-api';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
 
 import { SessionHeader, AudioPlayerCard, TranscriptCard } from './session-detail';
@@ -48,11 +49,9 @@ function useAudioPlayer(sessionId, conversationId) {
     setIsLoading(true);
     setAudioError(null);
 
-    const config = window.bewerbungstrainerConfig || { nonce: '' };
-
     fetch(audioUrl, {
       method: 'GET',
-      headers: { 'X-WP-Nonce': config.nonce },
+      headers: { 'X-WP-Nonce': getWPNonce() },
       credentials: 'same-origin',
     })
       .then((response) => {

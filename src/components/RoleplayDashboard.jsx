@@ -53,8 +53,9 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [showVariablesDialog, setShowVariablesDialog] = useState(false);
 
-  // Load scenarios on mount
+  // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
+    console.log('🔄 [RoleplayDashboard] Loading scenarios...');
     loadScenarios();
   }, []);
 

@@ -36,6 +36,7 @@ import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 
 // =============================================================================
 // CONSTANTS
@@ -96,13 +97,17 @@ const getGradeLabel = (score, maxScore) => {
 
 /**
  * Score display gauge
+ * @param {number} score - Score value (always on scale of 100)
+ * @param {number} size - Size of the gauge in pixels
+ * @param {string} primaryAccent - Primary accent color
+ * @param {boolean} isHeader - If true, text will be white for header display
  */
-const ScoreGauge = ({ score, maxScore = 100, size = 120, primaryAccent }) => {
-  const percentage = maxScore === 10 ? (score / 10) * 100 : score;
+const ScoreGauge = ({ score, size = 120, primaryAccent, isHeader = false }) => {
+  const percentage = Math.min(100, Math.max(0, score || 0));
   const radius = (size - 12) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
-  const color = getScoreColor(score, maxScore, primaryAccent);
+  const color = getScoreColor(score, 100, primaryAccent);
 
   return (
     <div style={{ position: 'relative', width: size, height: size }}>
@@ -112,7 +117,7 @@ const ScoreGauge = ({ score, maxScore = 100, size = 120, primaryAccent }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={COLORS.slate[200]}
+          stroke={isHeader ? 'rgba(255,255,255,0.3)' : COLORS.slate[200]}
           strokeWidth={10}
         />
         <motion.circle
@@ -140,10 +145,10 @@ const ScoreGauge = ({ score, maxScore = 100, size = 120, primaryAccent }) => {
         }}
       >
         <span style={{ fontSize: size / 3.5, fontWeight: 700, color }}>
-          {maxScore === 10 ? score.toFixed(1) : Math.round(score)}
+          {Math.round(score)}
         </span>
-        <span style={{ fontSize: size / 10, color: COLORS.slate[500] }}>
-          von {maxScore}
+        <span style={{ fontSize: size / 10, color: isHeader ? '#ffffff' : COLORS.slate[500] }}>
+          von 100
         </span>
       </div>
     </div>
@@ -158,24 +163,73 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!audioUrl) return;
-    const audio = new Audio(audioUrl);
+
+    setIsLoading(true);
+    setError(null);
+
+    const audio = new Audio();
     audioRef.current = audio;
 
-    audio.addEventListener('loadedmetadata', () => setDuration(audio.duration));
+    const handleLoadedMetadata = () => {
+      const dur = audio.duration;
+      // Check for valid duration (not Infinity, NaN, or 0)
+      if (dur && isFinite(dur) && dur > 0) {
+        setDuration(dur);
+      }
+      setIsLoading(false);
+    };
+
+    const handleDurationChange = () => {
+      const dur = audio.duration;
+      if (dur && isFinite(dur) && dur > 0) {
+        setDuration(dur);
+      }
+    };
+
+    const handleCanPlayThrough = () => {
+      setIsLoading(false);
+      // Try to get duration again when fully loaded
+      const dur = audio.duration;
+      if (dur && isFinite(dur) && dur > 0) {
+        setDuration(dur);
+      }
+    };
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('durationchange', handleDurationChange);
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
     audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
     audio.addEventListener('play', () => setIsPlaying(true));
     audio.addEventListener('pause', () => setIsPlaying(false));
     audio.addEventListener('ended', () => setIsPlaying(false));
-    audio.addEventListener('error', () => setError('Audio nicht verfügbar'));
+    audio.addEventListener('error', () => {
+      setError('Audio nicht verfügbar');
+      setIsLoading(false);
+    });
 
-    return () => { audio.pause(); audio.src = ''; };
+    // Set source and load
+    audio.src = audioUrl;
+    audio.load();
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('durationchange', handleDurationChange);
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
+      audio.src = '';
+    };
   }, [audioUrl]);
 
   const formatTime = (seconds) => {
+    // Handle invalid values
+    if (!seconds || !isFinite(seconds) || isNaN(seconds)) {
+      return '0:00';
+    }
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -209,6 +263,9 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
 
   if (!audioUrl) return null;
 
+  // Calculate progress percentage safely
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div style={{ background: COLORS.slate[100], borderRadius: '12px', padding: '12px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -217,20 +274,40 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
         </button>
         <button
           onClick={togglePlay}
-          style={{ width: '36px', height: '36px', borderRadius: '50%', background: primaryAccent, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
+          disabled={isLoading}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: primaryAccent || '#0d9488',
+            border: 'none',
+            cursor: isLoading ? 'wait' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            opacity: isLoading ? 0.7 : 1,
+          }}
         >
-          {isPlaying ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: '2px' }} />}
+          {isLoading ? (
+            <Loader2 size={20} color="#ffffff" style={{ animation: 'spin 1s linear infinite' }} />
+          ) : isPlaying ? (
+            <Pause size={20} color="#ffffff" fill="#ffffff" strokeWidth={2} />
+          ) : (
+            <Play size={20} color="#ffffff" fill="#ffffff" strokeWidth={2} style={{ marginLeft: '2px' }} />
+          )}
         </button>
         <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: COLORS.slate[500] }}>
           <SkipForward size={16} />
         </button>
         <div onClick={handleSeek} style={{ flex: 1, height: '6px', background: COLORS.slate[300], borderRadius: '3px', cursor: 'pointer' }}>
-          <div style={{ width: `${(currentTime / duration) * 100 || 0}%`, height: '100%', background: primaryAccent, borderRadius: '3px', transition: 'width 0.1s' }} />
+          <div style={{ width: `${progressPercent}%`, height: '100%', background: primaryAccent || '#0d9488', borderRadius: '3px', transition: 'width 0.1s' }} />
         </div>
-        <span style={{ fontSize: '12px', color: COLORS.slate[500], minWidth: '70px' }}>
-          {formatTime(currentTime)} / {formatTime(duration)}
+        <span style={{ fontSize: '12px', color: COLORS.slate[500], minWidth: '80px', textAlign: 'right' }}>
+          {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : '--:--'}
         </span>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
@@ -255,12 +332,11 @@ const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
     }
 
     const audioUrl = getRoleplaySessionAudioUrl(sessionId);
-    const config = window.bewerbungstrainerConfig || { nonce: '' };
 
     setIsLoading(true);
     setError(null);
 
-    fetch(audioUrl, { headers: { 'X-WP-Nonce': config.nonce }, credentials: 'same-origin' })
+    fetch(audioUrl, { headers: { 'X-WP-Nonce': getWPNonce() }, credentials: 'same-origin' })
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.blob(); })
       .then((blob) => {
         const objectUrl = URL.createObjectURL(blob);
@@ -330,7 +406,7 @@ const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
           <SkipBack size={20} />
         </button>
         <button onClick={togglePlay} style={{ width: '48px', height: '48px', borderRadius: '50%', background: primaryAccent, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-          {isPlaying ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: '2px' }} />}
+          {isPlaying ? <Pause size={22} color="#ffffff" fill="#ffffff" strokeWidth={2} /> : <Play size={22} color="#ffffff" fill="#ffffff" strokeWidth={2} style={{ marginLeft: '2px' }} />}
         </button>
         <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: COLORS.slate[500] }}>
           <SkipForward size={20} />
@@ -376,6 +452,10 @@ const TranscriptEntry = ({ entry, index, primaryAccent }) => {
 const AnswerCard = ({ answer, index, primaryAccent }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const feedback = answer.feedback ? (typeof answer.feedback === 'string' ? JSON.parse(answer.feedback) : answer.feedback) : null;
+  const audioMetrics = answer.audio_analysis ? (typeof answer.audio_analysis === 'string' ? JSON.parse(answer.audio_analysis) : answer.audio_analysis) : null;
+
+  // Check if no speech was detected
+  const isNoSpeech = answer.transcript === '[Keine Sprache erkannt]' || audioMetrics?.speech_rate === 'keine_sprache';
 
   return (
     <motion.div
@@ -396,9 +476,9 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
             {answer.question_text || `Frage ${index + 1}`}
           </h4>
         </div>
-        {answer.overall_score && (
-          <span style={{ fontSize: '16px', fontWeight: 700, color: getScoreColor(answer.overall_score, 10, primaryAccent) }}>
-            {answer.overall_score.toFixed(1)}
+        {answer.overall_score !== null && answer.overall_score !== undefined && (
+          <span style={{ fontSize: '16px', fontWeight: 700, color: isNoSpeech ? COLORS.slate[400] : getScoreColor(answer.overall_score * 10, 100, primaryAccent) }}>
+            {isNoSpeech ? '–' : Math.round(answer.overall_score * 10)}
           </span>
         )}
         <ChevronDown size={18} color={COLORS.slate[400]} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
@@ -408,6 +488,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
         {isExpanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
             <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${COLORS.slate[200]}`, paddingTop: '16px' }}>
+              {/* Audio Player */}
               {answer.audio_url && (
                 <div style={{ marginBottom: '16px' }}>
                   <h5 style={{ fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -416,27 +497,172 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                   <AudioPlayer audioUrl={answer.audio_url} primaryAccent={primaryAccent} />
                 </div>
               )}
+
+              {/* Transcript */}
               {answer.transcript && (
                 <div style={{ marginBottom: '16px' }}>
                   <h5 style={{ fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <FileText size={14} color={primaryAccent} /> Transkript
                   </h5>
-                  <p style={{ fontSize: '13px', color: COLORS.slate[600], lineHeight: 1.6, background: COLORS.slate[50], padding: '12px 16px', borderRadius: '10px', margin: 0, fontStyle: 'italic' }}>
+                  <p style={{
+                    fontSize: '13px',
+                    color: isNoSpeech ? COLORS.slate[400] : COLORS.slate[600],
+                    lineHeight: 1.6,
+                    background: COLORS.slate[50],
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    margin: 0,
+                    fontStyle: 'italic'
+                  }}>
                     "{answer.transcript}"
                   </p>
                 </div>
               )}
-              {feedback?.summary && <p style={{ fontSize: '13px', color: COLORS.slate[600], lineHeight: 1.5, marginBottom: '12px' }}>{feedback.summary}</p>}
-              {feedback?.strengths?.length > 0 && (
-                <div style={{ marginBottom: '12px' }}>
-                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: COLORS.green[500], marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={12} /> Stärken</h6>
-                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>{feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
+
+              {/* Scores Grid - nur anzeigen wenn Sprache erkannt wurde */}
+              {feedback?.scores && !isNoSpeech && (
+                <div style={{ marginBottom: '16px' }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Star size={14} color={primaryAccent} /> Bewertung
+                  </h5>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                    {[
+                      { key: 'content', label: 'Inhalt' },
+                      { key: 'structure', label: 'Struktur' },
+                      { key: 'relevance', label: 'Relevanz' },
+                      { key: 'delivery', label: 'Präsentation' },
+                      { key: 'overall', label: 'Gesamt' },
+                    ].map(({ key, label }) => {
+                      const rawScore = feedback.scores[key];
+                      // Convert from scale of 10 to scale of 100
+                      const score = rawScore != null ? rawScore * 10 : null;
+                      return (
+                        <div key={key} style={{
+                          padding: '10px 8px',
+                          background: key === 'overall' ? `${primaryAccent}15` : COLORS.slate[50],
+                          borderRadius: '8px',
+                          textAlign: 'center',
+                          border: key === 'overall' ? `1px solid ${primaryAccent}30` : 'none',
+                        }}>
+                          <div style={{
+                            fontSize: '16px',
+                            fontWeight: 700,
+                            color: score != null ? getScoreColor(score, 100, primaryAccent) : COLORS.slate[400],
+                          }}>
+                            {score != null ? Math.round(score) : '-'}
+                          </div>
+                          <div style={{ fontSize: '10px', color: COLORS.slate[500], marginTop: '2px' }}>
+                            {label}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
+
+              {/* Summary */}
+              {feedback?.summary && <p style={{ fontSize: '13px', color: COLORS.slate[600], lineHeight: 1.5, marginBottom: '12px' }}>{feedback.summary}</p>}
+
+              {/* Strengths */}
+              {feedback?.strengths?.length > 0 && !isNoSpeech && (
+                <div style={{ marginBottom: '12px' }}>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: COLORS.green[500], marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CheckCircle size={12} /> Stärken
+                  </h6>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>
+                    {feedback.strengths.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {/* Improvements */}
               {feedback?.improvements?.length > 0 && (
-                <div>
-                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: COLORS.amber[500], marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}><Lightbulb size={12} /> Tipps</h6>
-                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>{feedback.improvements.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                <div style={{ marginBottom: '12px' }}>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: COLORS.amber[500], marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <AlertCircle size={12} /> Verbesserungspotenzial
+                  </h6>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>
+                    {feedback.improvements.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {/* Tips */}
+              {feedback?.tips?.length > 0 && !isNoSpeech && (
+                <div style={{ marginBottom: '12px' }}>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: primaryAccent, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Lightbulb size={12} /> Tipps
+                  </h6>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: COLORS.slate[600], fontSize: '12px' }}>
+                    {feedback.tips.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {/* Audio Metrics - nur anzeigen wenn Sprache erkannt wurde */}
+              {audioMetrics && !isNoSpeech && (
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: `1px solid ${COLORS.slate[200]}` }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Mic size={14} color={primaryAccent} /> Sprechanalyse
+                  </h5>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                    {/* Speech Rate */}
+                    {audioMetrics.speech_rate && (
+                      <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Sprechtempo</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700], textTransform: 'capitalize' }}>
+                          {audioMetrics.speech_rate === 'optimal' ? '✓ Optimal' : audioMetrics.speech_rate === 'zu_schnell' ? '⚡ Zu schnell' : audioMetrics.speech_rate === 'zu_langsam' ? '🐢 Zu langsam' : audioMetrics.speech_rate}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Filler Words */}
+                    {audioMetrics.filler_words && (
+                      <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Füllwörter</div>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          color: audioMetrics.filler_words.count <= 2 ? COLORS.green[500] : audioMetrics.filler_words.count <= 5 ? COLORS.amber[500] : COLORS.red[500]
+                        }}>
+                          {audioMetrics.filler_words.count || 0} erkannt
+                        </div>
+                        {audioMetrics.filler_words.words?.length > 0 && (
+                          <div style={{ fontSize: '11px', color: COLORS.slate[500], marginTop: '4px' }}>
+                            {audioMetrics.filler_words.words.slice(0, 5).join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Confidence Score */}
+                    {audioMetrics.confidence_score != null && (
+                      <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Selbstsicherheit</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.confidence_score, 100, primaryAccent) }}>
+                          {audioMetrics.confidence_score}%
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Clarity Score */}
+                    {audioMetrics.clarity_score != null && (
+                      <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Klarheit</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.clarity_score, 100, primaryAccent) }}>
+                          {audioMetrics.clarity_score}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notes */}
+                  {audioMetrics.notes && (
+                    <p style={{ fontSize: '12px', color: COLORS.slate[500], marginTop: '10px', fontStyle: 'italic' }}>
+                      {audioMetrics.notes}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -531,9 +757,8 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
   const loadSimulatorAnswers = async () => {
     try {
       setIsLoading(true);
-      const config = window.bewerbungstrainerConfig || {};
-      const response = await fetch(`${config.apiUrl}/simulator/sessions/${session.id}/answers`, {
-        headers: { 'X-WP-Nonce': config.nonce },
+      const response = await fetch(`${getWPApiUrl()}/simulator/sessions/${session.id}/answers`, {
+        headers: { 'X-WP-Nonce': getWPNonce() },
       });
       const data = await response.json();
       if (data.success && data.data?.answers) setAnswers(data.data.answers);
@@ -581,16 +806,25 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
   const categoryScores = session?.category_scores || [];
   const analysis = session?.analysis || {};
 
-  // Get overall score based on type
+  // Get overall score based on type - ALWAYS return on scale of 100
   const getOverallScore = () => {
+    let rawScore = 0;
+
     if (isRoleplay && roleplayData?.feedback?.rating?.overall) {
-      return roleplayData.feedback.rating.overall;
+      rawScore = roleplayData.feedback.rating.overall;
+    } else {
+      rawScore = session?.overall_score || summaryFeedback?.overall_score || 0;
     }
-    return session?.overall_score || summaryFeedback?.overall_score || 0;
+
+    // Convert from scale of 10 to scale of 100 for Simulator and Roleplay
+    if ((isSimulator || isRoleplay) && rawScore <= 10) {
+      return rawScore * 10;
+    }
+
+    return rawScore;
   };
 
   const overallScore = getOverallScore();
-  const maxScore = isSimulator || isRoleplay ? 10 : 100;
 
   // Loading state
   if (isLoading) {
@@ -630,7 +864,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
       `}</style>
 
       {/* Back button */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto 24px' }}>
         <button
           onClick={onBack}
           style={{
@@ -644,19 +878,6 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
         >
           <ArrowLeft size={18} />
           Zurück zur Übersicht
-        </button>
-        <button
-          onClick={onBack}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
-            borderRadius: '10px', background: COLORS.red[100], border: 'none',
-            cursor: 'pointer', fontSize: '14px', fontWeight: 500, color: COLORS.red[500],
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#fecaca'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = COLORS.red[100]; }}
-        >
-          Abbrechen
         </button>
       </div>
 
@@ -677,7 +898,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <ScoreGauge score={overallScore} maxScore={maxScore} size={100} primaryAccent="#fff" />
+              <ScoreGauge score={overallScore} size={100} primaryAccent="#fff" isHeader={true} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.9 }}>
                   {isVideo ? <Video size={16} /> : isRoleplay ? <MessageSquare size={16} /> : <Target size={16} />}
@@ -689,7 +910,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
                   {(isRoleplay ? roleplayScenario?.title : scenario?.title) || session?.scenario_title || session?.position || 'Training'}
                 </h1>
                 <p style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 8px 0', opacity: 0.9 }}>
-                  {getGradeLabel(overallScore, maxScore)}
+                  {getGradeLabel(overallScore, 100)}
                 </p>
                 <div style={{ display: 'flex', gap: '12px', fontSize: '12px', opacity: 0.8 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -840,12 +1061,16 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
                 <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${COLORS.slate[200]}`, marginBottom: '20px' }}>
                   <h4 style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px' }}>Bewertung</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                    {Object.entries(summaryFeedback.scores).map(([key, value]) => (
-                      <div key={key} style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 700, color: getScoreColor(value, 10, primaryAccent) }}>{value?.toFixed(1) || '-'}</div>
-                        <div style={{ fontSize: '11px', color: COLORS.slate[500], textTransform: 'capitalize' }}>{key}</div>
-                      </div>
-                    ))}
+                    {Object.entries(summaryFeedback.scores).map(([key, value]) => {
+                      // Convert from scale of 10 to scale of 100
+                      const score100 = value != null ? value * 10 : null;
+                      return (
+                        <div key={key} style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '20px', fontWeight: 700, color: getScoreColor(score100, 100, primaryAccent) }}>{score100 != null ? Math.round(score100) : '-'}</div>
+                          <div style={{ fontSize: '11px', color: COLORS.slate[500], textTransform: 'capitalize' }}>{key}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -863,16 +1088,6 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
             </motion.div>
           )}
 
-          {/* Placeholder when no analysis data */}
-          {isSimulator && !summaryFeedback && answers.length > 0 && (
-            <div style={{ background: COLORS.slate[100], borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
-              <Star size={32} color={COLORS.slate[400]} style={{ margin: '0 auto 12px' }} />
-              <p style={{ fontSize: '14px', color: COLORS.slate[500], margin: 0 }}>
-                Die Gesamtauswertung wird nach Abschluss des Trainings angezeigt.
-              </p>
-            </div>
-          )}
-
           {/* Roleplay Feedback */}
           {isRoleplay && roleplayData?.feedback && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
@@ -885,21 +1100,25 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
                   <div style={{ display: 'grid', gap: '10px' }}>
                     {Object.entries(roleplayData.feedback.rating)
                       .filter(([key]) => key !== 'overall')
-                      .map(([key, value]) => (
-                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
-                          <div style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: COLORS.slate[700], textTransform: 'capitalize' }}>
-                            {key.replace(/_/g, ' ')}
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '80px', height: '6px', background: COLORS.slate[200], borderRadius: '3px' }}>
-                              <div style={{ width: `${(value / 10) * 100}%`, height: '100%', background: getScoreColor(value, 10, primaryAccent), borderRadius: '3px' }} />
+                      .map(([key, value]) => {
+                        // Convert from scale of 10 to scale of 100
+                        const score100 = value * 10;
+                        return (
+                          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
+                            <div style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: COLORS.slate[700], textTransform: 'capitalize' }}>
+                              {key.replace(/_/g, ' ')}
                             </div>
-                            <span style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(value, 10, primaryAccent), minWidth: '35px' }}>
-                              {value}/10
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ width: '80px', height: '6px', background: COLORS.slate[200], borderRadius: '3px' }}>
+                                <div style={{ width: `${score100}%`, height: '100%', background: getScoreColor(score100, 100, primaryAccent), borderRadius: '3px' }} />
+                              </div>
+                              <span style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(score100, 100, primaryAccent), minWidth: '45px' }}>
+                                {Math.round(score100)}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </div>
                 </div>
               )}

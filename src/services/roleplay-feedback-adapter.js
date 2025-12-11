@@ -6,7 +6,7 @@
  */
 
 import { generateInterviewFeedback, generateAudioAnalysis } from './gemini.js';
-import wordpressAPI from './wordpress-api.js';
+import wordpressAPI, { getWPNonce, getWPApiUrl } from './wordpress-api.js';
 import { decodeUnicodeEscapes } from '../utils/parseJSON.js';
 
 /**
@@ -318,7 +318,6 @@ export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retr
   console.log(`🔄 [Roleplay Feedback] Max retries: ${maxRetries}, delay: ${retryDelayMs}ms`);
 
   const audioUrl = getRoleplaySessionAudioUrl(sessionId);
-  const config = window.bewerbungstrainerConfig || { nonce: '' };
 
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -329,7 +328,7 @@ export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retr
       const response = await fetch(audioUrl, {
         method: 'GET',
         headers: {
-          'X-WP-Nonce': config.nonce,
+          'X-WP-Nonce': getWPNonce(),
         },
         credentials: 'same-origin',
       });
@@ -444,15 +443,25 @@ export async function getRoleplayScenarios() {
   console.log('📋 [Roleplay Feedback] Loading scenarios...');
 
   try {
-    const response = await wordpressAPI.request('/roleplays', {
-      method: 'GET',
+    // Use direct fetch like VideoTrainingDashboard (no Content-Type header for GET)
+    const response = await fetch(`${getWPApiUrl()}/roleplays`, {
+      headers: {
+        'X-WP-Nonce': getWPNonce(),
+      },
+      credentials: 'same-origin',
     });
 
+    if (!response.ok) {
+      throw new Error('Fehler beim Laden der Szenarien');
+    }
+
+    const data = await response.json();
+
     console.log('✅ [Roleplay Feedback] Scenarios loaded successfully');
-    console.log('✅ [Roleplay Feedback] Scenarios count:', response.data.length);
+    console.log('✅ [Roleplay Feedback] Scenarios count:', data.data?.length || 0);
 
     // Decode Unicode escapes in scenario data (e.g., "u00f6" -> "ö")
-    return decodeObjectStrings(response.data);
+    return decodeObjectStrings(data.data || []);
   } catch (error) {
     console.error('❌ [Roleplay Feedback] Failed to load scenarios:', error);
     throw new Error(`Fehler beim Laden der Szenarien: ${error.message}`);
