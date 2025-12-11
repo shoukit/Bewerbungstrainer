@@ -1,20 +1,17 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import OverviewDashboard from './components/OverviewDashboard';
+import RoleplayDashboard from './components/RoleplayDashboard';
+import RoleplaySession from './components/RoleplaySession';
+import SessionHistory from './components/SessionHistory';
+import SessionDetailView from './components/SessionDetailView';
+import { SimulatorApp } from './components/simulator';
+import { VideoTrainingApp } from './components/video-training';
+import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner } from './context/PartnerContext';
 import { LoginModal } from './components/LoginModal';
 import { ToastProvider } from './components/Toast';
 import { Loader2 } from 'lucide-react';
-
-// Lazy-loaded view components for code splitting
-const OverviewDashboard = lazy(() => import('./components/OverviewDashboard'));
-const RoleplayDashboard = lazy(() => import('./components/RoleplayDashboard'));
-const RoleplaySession = lazy(() => import('./components/RoleplaySession'));
-const SessionHistory = lazy(() => import('./components/SessionHistory'));
-const SessionDetailView = lazy(() => import('./components/SessionDetailView'));
-const SimulatorApp = lazy(() => import('./components/simulator').then(m => ({ default: m.SimulatorApp })));
-const VideoTrainingApp = lazy(() => import('./components/video-training').then(m => ({ default: m.VideoTrainingApp })));
-const RhetorikGym = lazy(() => import('./components/rhetorik-gym').then(m => ({ default: m.RhetorikGym })));
-const GameSession = lazy(() => import('./components/rhetorik-gym').then(m => ({ default: m.GameSession })));
 
 console.log('📦 [APP] App.jsx module loaded');
 
@@ -77,35 +74,6 @@ const BrandingLoadingSpinner = () => {
     </div>
   );
 };
-
-/**
- * View Loading Spinner
- * Shown while lazy-loaded components are loading
- */
-const ViewLoadingSpinner = () => (
-  <div
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '60vh',
-      gap: '16px',
-    }}
-  >
-    <Loader2
-      style={{
-        width: '40px',
-        height: '40px',
-        color: '#3A7FA7',
-        animation: 'spin 1s linear infinite',
-      }}
-    />
-    <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
-      Wird geladen...
-    </p>
-  </div>
-);
 
 // View constants
 const VIEWS = {
@@ -571,9 +539,7 @@ function AppContent() {
         headerOffset={headerOffset}
         onLoginClick={openLoginModal}
       >
-        <Suspense fallback={<ViewLoadingSpinner />}>
-          {renderContent()}
-        </Suspense>
+        {renderContent()}
       </SidebarLayout>
 
       {/* Login Modal */}
