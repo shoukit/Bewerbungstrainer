@@ -18,6 +18,7 @@ import {
   LogIn,
   LogOut,
   Video,
+  LayoutDashboard,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/Toast';
@@ -74,6 +75,15 @@ const getThemedColors = (branding) => {
  * moduleId maps to WordPress partner module IDs for filtering
  */
 const NAV_ITEMS = [
+  {
+    id: 'overview',
+    moduleId: 'overview', // Always visible
+    label: 'Übersicht',
+    shortLabel: 'Übersicht',
+    icon: LayoutDashboard,
+    description: 'Alle Trainingsmöglichkeiten',
+    alwaysVisible: true, // This item is always shown regardless of partner config
+  },
   {
     id: 'simulator',
     moduleId: 'simulator', // Maps to WordPress module
@@ -151,6 +161,8 @@ const AppSidebar = ({
   // Filter nav items based on partner module configuration
   const filteredNavItems = React.useMemo(() => {
     return NAV_ITEMS.filter(item => {
+      // Always show items marked as alwaysVisible
+      if (item.alwaysVisible) return true;
       // Use moduleId if available, otherwise fall back to item id
       const moduleToCheck = item.moduleId || item.id;
       return checkModuleAllowed(moduleToCheck);
