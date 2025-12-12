@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
  * FormAccordion Component
  *
  * A beautiful accordion component for forms with:
- * - Clean white background
- * - Colored left border accent when expanded
+ * - Soft ocean-theme header background
+ * - Full-width colored header when expanded
  * - Icon on the left with subtle background
  * - Title and optional subtitle
- * - Animated chevron
  * - Smooth expand/collapse animation
  */
 export function FormAccordion({
@@ -25,39 +23,43 @@ export function FormAccordion({
   className,
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const [isHovered, setIsHovered] = useState(false);
 
-  // Color schemes - softer, more professional colors
+  // Color schemes - soft ocean-theme colors
   const colorSchemes = {
     blue: {
-      iconBg: 'bg-sky-50',
-      iconText: 'text-sky-600',
-      border: 'border-l-sky-500',
-      hoverBg: 'hover:bg-sky-50/50',
+      headerBg: 'bg-gradient-to-r from-ocean-blue-50 to-ocean-blue-100/50',
+      headerBgHover: 'hover:from-ocean-blue-100 hover:to-ocean-blue-100/70',
+      iconBg: 'bg-white/80',
+      iconText: 'text-ocean-blue-600',
+      titleText: 'text-ocean-blue-800',
     },
     green: {
-      iconBg: 'bg-emerald-50',
+      headerBg: 'bg-gradient-to-r from-emerald-50 to-emerald-100/50',
+      headerBgHover: 'hover:from-emerald-100 hover:to-emerald-100/70',
+      iconBg: 'bg-white/80',
       iconText: 'text-emerald-600',
-      border: 'border-l-emerald-500',
-      hoverBg: 'hover:bg-emerald-50/50',
+      titleText: 'text-emerald-800',
     },
     purple: {
-      iconBg: 'bg-violet-50',
+      headerBg: 'bg-gradient-to-r from-violet-50 to-violet-100/50',
+      headerBgHover: 'hover:from-violet-100 hover:to-violet-100/70',
+      iconBg: 'bg-white/80',
       iconText: 'text-violet-600',
-      border: 'border-l-violet-500',
-      hoverBg: 'hover:bg-violet-50/50',
+      titleText: 'text-violet-800',
     },
     orange: {
-      iconBg: 'bg-amber-50',
+      headerBg: 'bg-gradient-to-r from-amber-50 to-amber-100/50',
+      headerBgHover: 'hover:from-amber-100 hover:to-amber-100/70',
+      iconBg: 'bg-white/80',
       iconText: 'text-amber-600',
-      border: 'border-l-amber-500',
-      hoverBg: 'hover:bg-amber-50/50',
+      titleText: 'text-amber-800',
     },
     teal: {
-      iconBg: 'bg-teal-50',
+      headerBg: 'bg-gradient-to-r from-teal-50 to-teal-100/50',
+      headerBgHover: 'hover:from-teal-100 hover:to-teal-100/70',
+      iconBg: 'bg-white/80',
       iconText: 'text-teal-600',
-      border: 'border-l-teal-500',
-      hoverBg: 'hover:bg-teal-50/50',
+      titleText: 'text-teal-800',
     },
   };
 
@@ -67,8 +69,7 @@ export function FormAccordion({
     <motion.div
       className={cn(
         "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm",
-        "border-l-4 transition-all duration-200",
-        isExpanded ? colors.border : "border-l-transparent",
+        "transition-all duration-200",
         className
       )}
       initial={{ opacity: 0, y: 10 }}
@@ -78,48 +79,38 @@ export function FormAccordion({
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
         className={cn(
-          "w-full px-4 py-3.5 flex items-center justify-between gap-3 transition-colors text-left",
-          isHovered && "bg-slate-50/70"
+          "w-full px-4 py-3 flex items-center gap-3 transition-all text-left",
+          colors.headerBg,
+          colors.headerBgHover
         )}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {Icon && (
             <div className={cn(
-              "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors",
+              "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors shadow-sm",
               colors.iconBg
             )}>
-              <Icon className={cn("w-5 h-5", colors.iconText)} />
+              <Icon className={cn("w-4.5 h-4.5", colors.iconText)} />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <span className="font-semibold text-slate-700 text-sm block truncate">
+            <span className={cn("font-semibold text-sm block truncate", colors.titleText)}>
               {title}
             </span>
             {subtitle && (
-              <span className="text-xs text-slate-400 block truncate mt-0.5">
+              <span className="text-xs text-slate-500 block truncate mt-0.5">
                 {subtitle}
               </span>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {badge && (
-            <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-              {badge}
-            </span>
-          )}
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex-shrink-0"
-          >
-            <ChevronDown className="w-5 h-5 text-slate-400" />
-          </motion.div>
-        </div>
+        {badge && (
+          <span className="text-xs font-medium text-slate-500 bg-white/80 px-2.5 py-1 rounded-full shadow-sm">
+            {badge}
+          </span>
+        )}
       </button>
 
       <AnimatePresence>
