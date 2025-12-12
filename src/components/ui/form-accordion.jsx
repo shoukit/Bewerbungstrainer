@@ -6,8 +6,7 @@ import { cn } from '@/lib/utils';
  * FormAccordion Component
  *
  * A beautiful accordion component for forms with:
- * - Soft ocean-theme header background
- * - Full-width colored header when expanded
+ * - Soft ocean-theme header background (full-width)
  * - Icon on the left with subtle background
  * - Title and optional subtitle
  * - Smooth expand/collapse animation
@@ -23,43 +22,44 @@ export function FormAccordion({
   className,
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Color schemes - soft ocean-theme colors
+  // Color schemes with inline style values for guaranteed full-width coverage
   const colorSchemes = {
     blue: {
-      headerBg: 'bg-gradient-to-r from-ocean-blue-50 to-ocean-blue-100/50',
-      headerBgHover: 'hover:from-ocean-blue-100 hover:to-ocean-blue-100/70',
-      iconBg: 'bg-white/80',
-      iconText: 'text-ocean-blue-600',
-      titleText: 'text-ocean-blue-800',
+      headerBg: 'linear-gradient(to right, #e0f2fe, #f0f9ff)',
+      headerBgHover: 'linear-gradient(to right, #bae6fd, #e0f2fe)',
+      iconBg: 'rgba(255,255,255,0.9)',
+      iconText: '#0284c7',
+      titleText: '#075985',
     },
     green: {
-      headerBg: 'bg-gradient-to-r from-emerald-50 to-emerald-100/50',
-      headerBgHover: 'hover:from-emerald-100 hover:to-emerald-100/70',
-      iconBg: 'bg-white/80',
-      iconText: 'text-emerald-600',
-      titleText: 'text-emerald-800',
+      headerBg: 'linear-gradient(to right, #d1fae5, #ecfdf5)',
+      headerBgHover: 'linear-gradient(to right, #a7f3d0, #d1fae5)',
+      iconBg: 'rgba(255,255,255,0.9)',
+      iconText: '#059669',
+      titleText: '#065f46',
     },
     purple: {
-      headerBg: 'bg-gradient-to-r from-violet-50 to-violet-100/50',
-      headerBgHover: 'hover:from-violet-100 hover:to-violet-100/70',
-      iconBg: 'bg-white/80',
-      iconText: 'text-violet-600',
-      titleText: 'text-violet-800',
+      headerBg: 'linear-gradient(to right, #ede9fe, #f5f3ff)',
+      headerBgHover: 'linear-gradient(to right, #ddd6fe, #ede9fe)',
+      iconBg: 'rgba(255,255,255,0.9)',
+      iconText: '#7c3aed',
+      titleText: '#5b21b6',
     },
     orange: {
-      headerBg: 'bg-gradient-to-r from-amber-50 to-amber-100/50',
-      headerBgHover: 'hover:from-amber-100 hover:to-amber-100/70',
-      iconBg: 'bg-white/80',
-      iconText: 'text-amber-600',
-      titleText: 'text-amber-800',
+      headerBg: 'linear-gradient(to right, #fef3c7, #fffbeb)',
+      headerBgHover: 'linear-gradient(to right, #fde68a, #fef3c7)',
+      iconBg: 'rgba(255,255,255,0.9)',
+      iconText: '#d97706',
+      titleText: '#92400e',
     },
     teal: {
-      headerBg: 'bg-gradient-to-r from-teal-50 to-teal-100/50',
-      headerBgHover: 'hover:from-teal-100 hover:to-teal-100/70',
-      iconBg: 'bg-white/80',
-      iconText: 'text-teal-600',
-      titleText: 'text-teal-800',
+      headerBg: 'linear-gradient(to right, #ccfbf1, #f0fdfa)',
+      headerBgHover: 'linear-gradient(to right, #99f6e4, #ccfbf1)',
+      iconBg: 'rgba(255,255,255,0.9)',
+      iconText: '#0d9488',
+      titleText: '#115e59',
     },
   };
 
@@ -79,23 +79,27 @@ export function FormAccordion({
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className={cn(
-          "w-full px-4 py-3 flex items-center gap-3 transition-all text-left",
-          colors.headerBg,
-          colors.headerBgHover
-        )}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="w-full px-4 py-3 flex items-center gap-3 transition-all text-left cursor-pointer"
+        style={{
+          background: isHovered ? colors.headerBgHover : colors.headerBg,
+        }}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {Icon && (
-            <div className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors shadow-sm",
-              colors.iconBg
-            )}>
-              <Icon className={cn("w-4.5 h-4.5", colors.iconText)} />
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
+              style={{ backgroundColor: colors.iconBg }}
+            >
+              <Icon className="w-5 h-5" style={{ color: colors.iconText }} />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <span className={cn("font-semibold text-sm block truncate", colors.titleText)}>
+            <span
+              className="font-semibold text-sm block truncate"
+              style={{ color: colors.titleText }}
+            >
               {title}
             </span>
             {subtitle && (
