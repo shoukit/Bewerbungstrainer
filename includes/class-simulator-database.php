@@ -118,6 +118,7 @@ class Bewerbungstrainer_Simulator_Database {
             `completed_questions` int DEFAULT 0,
             `overall_score` decimal(5,2) DEFAULT NULL,
             `summary_feedback_json` longtext DEFAULT NULL,
+            `demo_code` varchar(10) DEFAULT NULL,
             `started_at` datetime DEFAULT NULL,
             `completed_at` datetime DEFAULT NULL,
             `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -127,6 +128,7 @@ class Bewerbungstrainer_Simulator_Database {
             KEY `user_id` (`user_id`),
             KEY `scenario_id` (`scenario_id`),
             KEY `status` (`status`),
+            KEY `demo_code` (`demo_code`),
             KEY `created_at` (`created_at`)
         ) $charset_collate;";
 
@@ -577,6 +579,7 @@ Gib konkrete Formulierungsvorschläge.',
             'completed_questions' => 0,
             'overall_score' => null,
             'summary_feedback_json' => null,
+            'demo_code' => null,
             'started_at' => null,
             'completed_at' => null,
         );
@@ -602,6 +605,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'session_id' => $data['session_id'],
                 'scenario_id' => intval($data['scenario_id']),
                 'variables_json' => $data['variables_json'],
+                'demo_code' => $data['demo_code'] ? strtoupper(sanitize_text_field($data['demo_code'])) : null,
                 'questions_json' => $data['questions_json'],
                 'current_question_index' => intval($data['current_question_index']),
                 'status' => $data['status'],
@@ -612,7 +616,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'started_at' => $data['started_at'],
                 'completed_at' => $data['completed_at'],
             ),
-            array('%d', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%d', '%d', '%f', '%s', '%s', '%s')
+            array('%d', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%f', '%s', '%s', '%s')
         );
 
         if ($result === false) {
@@ -761,6 +765,7 @@ Gib konkrete Formulierungsvorschläge.',
             'order' => 'DESC',
             'status' => null,
             'scenario_id' => null,
+            'demo_code' => null,
         );
 
         $args = wp_parse_args($args, $defaults);
@@ -777,6 +782,12 @@ Gib konkrete Formulierungsvorschläge.',
         if ($args['scenario_id']) {
             $where[] = 's.scenario_id = %d';
             $where_values[] = $args['scenario_id'];
+        }
+
+        // Filter by demo_code if provided (for demo users)
+        if (!empty($args['demo_code'])) {
+            $where[] = 's.demo_code = %s';
+            $where_values[] = strtoupper($args['demo_code']);
         }
 
         $where_clause = implode(' AND ', $where);
@@ -818,7 +829,7 @@ Gib konkrete Formulierungsvorschläge.',
      * @param string $status Optional status filter
      * @return int Count
      */
-    public function get_user_sessions_count($user_id = null, $status = null) {
+    public function get_user_sessions_count($user_id = null, $status = null, $demo_code = null) {
         global $wpdb;
 
         if ($user_id === null) {
@@ -831,6 +842,11 @@ Gib konkrete Formulierungsvorschläge.',
         if ($status) {
             $where .= ' AND status = %s';
             $where_values[] = $status;
+        }
+
+        if (!empty($demo_code)) {
+            $where .= ' AND demo_code = %s';
+            $where_values[] = strtoupper($demo_code);
         }
 
         $count = $wpdb->get_var(

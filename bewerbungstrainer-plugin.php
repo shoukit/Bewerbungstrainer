@@ -82,6 +82,9 @@ class Bewerbungstrainer_Plugin {
         // Load White-Label Partners class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whitelabel-partners.php';
 
+        // Load Demo Codes class
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-demo-codes.php';
+
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -163,6 +166,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create video training database tables
         Bewerbungstrainer_Video_Training_Database::create_tables();
+
+        // Create demo codes table
+        Bewerbungstrainer_Demo_Codes::create_tables();
 
         // Create upload directory for audio files
         $upload_dir = wp_upload_dir();
@@ -305,6 +311,9 @@ class Bewerbungstrainer_Plugin {
 
         // Initialize White-Label Partners
         Bewerbungstrainer_Whitelabel_Partners::get_instance();
+
+        // Initialize Demo Codes
+        Bewerbungstrainer_Demo_Codes::get_instance();
 
         // Initialize audio handler
         Bewerbungstrainer_Audio_Handler::get_instance();

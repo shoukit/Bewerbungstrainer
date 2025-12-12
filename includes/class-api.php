@@ -396,6 +396,36 @@ class Bewerbungstrainer_API {
             'callback' => array($this, 'admin_get_video_training_scenarios'),
             'permission_callback' => array($this, 'check_is_admin'),
         ));
+
+        // ===== Demo Code Endpoints =====
+
+        // Activate demo code with contact info
+        register_rest_route($this->namespace, '/demo/activate', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'activate_demo_code'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Validate demo code (check if valid)
+        register_rest_route($this->namespace, '/demo/validate', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'validate_demo_code'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Admin: Get all demo codes
+        register_rest_route($this->namespace, '/admin/demo-codes', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'admin_get_demo_codes'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Add more demo codes
+        register_rest_route($this->namespace, '/admin/demo-codes/generate', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'admin_generate_demo_codes'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
     }
 
     /**
@@ -1708,7 +1738,14 @@ class Bewerbungstrainer_API {
             'agent_id' => sanitize_text_field($params['agent_id']),
             'variables_json' => isset($params['variables']) ? wp_json_encode($params['variables']) : null,
             'conversation_id' => isset($params['conversation_id']) ? $params['conversation_id'] : null,
+            'demo_code' => isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null,
         );
+
+        // For demo users, update the demo code usage counter
+        if (!empty($session_data['demo_code'])) {
+            $demo_codes = Bewerbungstrainer_Demo_Codes::get_instance();
+            $demo_codes->update_usage($session_data['demo_code']);
+        }
 
         $session_id = $this->db->create_roleplay_session($session_data);
 
@@ -1883,10 +1920,23 @@ class Bewerbungstrainer_API {
             'orderby' => isset($params['orderby']) ? $params['orderby'] : 'created_at',
             'order' => isset($params['order']) ? $params['order'] : 'DESC',
             'scenario_id' => isset($params['scenario_id']) ? intval($params['scenario_id']) : null,
+            'demo_code' => isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null,
         );
 
-        $sessions = $this->db->get_user_roleplay_sessions(get_current_user_id(), $args);
-        $total = $this->db->get_user_roleplay_sessions_count(get_current_user_id(), $args['scenario_id']);
+        // Check if current user is demo user and filter by demo_code
+        if (Bewerbungstrainer_Demo_Codes::is_demo_user() && !empty($args['demo_code'])) {
+            // Demo user with code - filter by code
+            $sessions = $this->db->get_user_roleplay_sessions(get_current_user_id(), $args);
+            $total = $this->db->get_user_roleplay_sessions_count(get_current_user_id(), $args['scenario_id'], $args['demo_code']);
+        } else if (Bewerbungstrainer_Demo_Codes::is_demo_user() && empty($args['demo_code'])) {
+            // Demo user without code - return empty (they need a code to see sessions)
+            $sessions = array();
+            $total = 0;
+        } else {
+            // Regular user - normal behavior
+            $sessions = $this->db->get_user_roleplay_sessions(get_current_user_id(), $args);
+            $total = $this->db->get_user_roleplay_sessions_count(get_current_user_id(), $args['scenario_id']);
+        }
 
         $formatted_sessions = array_map(array($this, 'format_roleplay_session'), $sessions);
 
@@ -2756,6 +2806,175 @@ class Bewerbungstrainer_API {
         return new WP_REST_Response(array(
             'success' => true,
             'data' => $scenarios,
+        ), 200);
+    }
+
+    // ===== Demo Code Methods =====
+
+    /**
+     * Activate demo code with contact info
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function activate_demo_code($request) {
+        $params = $request->get_json_params();
+
+        $demo_code = isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : '';
+
+        if (empty($demo_code)) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error' => array(
+                    'code' => 'missing_code',
+                    'message' => 'Bitte geben Sie einen Demo-Code ein.',
+                ),
+            ), 400);
+        }
+
+        // Get demo codes instance
+        $demo_codes = Bewerbungstrainer_Demo_Codes::get_instance();
+
+        // Validate code
+        if (!$demo_codes->is_valid_code($demo_code)) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error' => array(
+                    'code' => 'invalid_code',
+                    'message' => 'Der Demo-Code ist ungültig. Bitte überprüfen Sie Ihre Eingabe.',
+                ),
+            ), 400);
+        }
+
+        // Prepare contact data
+        $contact_data = array(
+            'company_name' => isset($params['company_name']) ? $params['company_name'] : '',
+            'contact_name' => isset($params['contact_name']) ? $params['contact_name'] : '',
+            'homepage' => isset($params['homepage']) ? $params['homepage'] : '',
+            'contact_email' => isset($params['contact_email']) ? $params['contact_email'] : '',
+            'phone' => isset($params['phone']) ? $params['phone'] : '',
+            'privacy_accepted' => !empty($params['privacy_accepted']),
+        );
+
+        // Activate the code
+        $result = $demo_codes->activate_code($demo_code, $contact_data);
+
+        if (!$result) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error' => array(
+                    'code' => 'activation_failed',
+                    'message' => 'Der Demo-Code konnte nicht aktiviert werden.',
+                ),
+            ), 500);
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'demo_code' => $demo_code,
+                'message' => 'Demo-Code erfolgreich aktiviert.',
+            ),
+        ), 200);
+    }
+
+    /**
+     * Validate demo code (check if valid without activating)
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function validate_demo_code($request) {
+        $params = $request->get_json_params();
+
+        $demo_code = isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : '';
+
+        if (empty($demo_code)) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'valid' => false,
+                'error' => array(
+                    'code' => 'missing_code',
+                    'message' => 'Bitte geben Sie einen Demo-Code ein.',
+                ),
+            ), 400);
+        }
+
+        // Get demo codes instance
+        $demo_codes = Bewerbungstrainer_Demo_Codes::get_instance();
+
+        // Validate code
+        $is_valid = $demo_codes->is_valid_code($demo_code);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'valid' => $is_valid,
+        ), 200);
+    }
+
+    /**
+     * Admin: Get all demo codes
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function admin_get_demo_codes($request) {
+        $params = $request->get_params();
+
+        $args = array(
+            'limit' => isset($params['limit']) ? intval($params['limit']) : 100,
+            'offset' => isset($params['offset']) ? intval($params['offset']) : 0,
+            'orderby' => isset($params['orderby']) ? $params['orderby'] : 'created_at',
+            'order' => isset($params['order']) ? $params['order'] : 'ASC',
+            'filter' => isset($params['filter']) ? $params['filter'] : null,
+        );
+
+        $demo_codes = Bewerbungstrainer_Demo_Codes::get_instance();
+        $codes = $demo_codes->get_all_codes($args);
+        $total = $demo_codes->get_codes_count($args['filter']);
+
+        $total_used = $demo_codes->get_codes_count('used');
+        $total_unused = $demo_codes->get_codes_count('unused');
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $codes,
+            'pagination' => array(
+                'total' => $total,
+                'limit' => $args['limit'],
+                'offset' => $args['offset'],
+            ),
+            'stats' => array(
+                'total' => $total_used + $total_unused,
+                'used' => $total_used,
+                'unused' => $total_unused,
+            ),
+        ), 200);
+    }
+
+    /**
+     * Admin: Generate more demo codes
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function admin_generate_demo_codes($request) {
+        $params = $request->get_json_params();
+
+        $count = isset($params['count']) ? intval($params['count']) : 50;
+
+        // Limit max generation to 200 at a time
+        $count = min($count, 200);
+
+        $demo_codes = Bewerbungstrainer_Demo_Codes::get_instance();
+        $generated = $demo_codes->add_more_codes($count);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'requested' => $count,
+                'generated' => $generated,
+            ),
         ), 200);
     }
 }

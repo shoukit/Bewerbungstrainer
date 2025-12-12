@@ -31,6 +31,16 @@ export function PartnerProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
+  // Demo user state
+  const [demoCode, setDemoCodeState] = useState(() => {
+    // Initialize from localStorage if available
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bewerbungstrainer_demo_code') || null;
+    }
+    return null;
+  });
+  const [isDemoUser, setIsDemoUser] = useState(false);
+
   // Initialize partner from URL on mount - now fetches from API
   useEffect(() => {
     const initializePartner = async () => {
@@ -279,10 +289,48 @@ export function PartnerProvider({ children }) {
     setUser(null);
     setIsAuthenticated(false);
     setIsAdmin(false);
+
+    // Clear demo code on logout
+    setDemoCodeState(null);
+    setIsDemoUser(false);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('bewerbungstrainer_demo_code');
+    }
+
     console.log('✅ [PartnerContext] Logout completed');
 
     return result;
   }, []);
+
+  /**
+   * Set demo code for demo user sessions
+   * @param {string} code - The demo code to set
+   */
+  const setDemoCode = useCallback((code) => {
+    if (code) {
+      const upperCode = code.toUpperCase();
+      setDemoCodeState(upperCode);
+      setIsDemoUser(true);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bewerbungstrainer_demo_code', upperCode);
+      }
+      console.log('🎫 [PartnerContext] Demo code set:', upperCode);
+    } else {
+      setDemoCodeState(null);
+      setIsDemoUser(false);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('bewerbungstrainer_demo_code');
+      }
+      console.log('🎫 [PartnerContext] Demo code cleared');
+    }
+  }, []);
+
+  /**
+   * Clear demo code
+   */
+  const clearDemoCode = useCallback(() => {
+    setDemoCode(null);
+  }, [setDemoCode]);
 
   /**
    * Refresh user data from API
@@ -330,6 +378,12 @@ export function PartnerProvider({ children }) {
     login: handleLogin,
     logout: handleLogout,
     refreshUser,
+
+    // Demo user support
+    demoCode,
+    isDemoUser,
+    setDemoCode,
+    clearDemoCode,
   };
 
   return (

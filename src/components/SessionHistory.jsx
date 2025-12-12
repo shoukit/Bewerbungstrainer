@@ -267,7 +267,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   console.log('🏗️ [SESSION_HISTORY] SessionHistory component initialized');
 
   // Partner branding
-  const { branding } = usePartner();
+  const { branding, demoCode, isDemoUser } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -308,6 +308,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       // Get fresh nonce and API URL for each request
       const apiUrl = getWPApiUrl();
 
+      // Build query params with demo_code if applicable
+      const demoQueryParam = demoCode ? `&demo_code=${encodeURIComponent(demoCode)}` : '';
+
       // Load all sessions in parallel
       const [
         roleplayData,
@@ -317,14 +320,14 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         simulatorScenariosData,
         videoScenariosData,
       ] = await Promise.all([
-        // Roleplay sessions
-        getRoleplaySessions({ limit: 50 }).catch(() => ({ data: [] })),
-        // Simulator sessions
-        fetch(`${apiUrl}/simulator/sessions?limit=50`, {
+        // Roleplay sessions (pass demo_code)
+        getRoleplaySessions({ limit: 50, demo_code: demoCode }).catch(() => ({ data: [] })),
+        // Simulator sessions (pass demo_code)
+        fetch(`${apiUrl}/simulator/sessions?limit=50${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
-        // Video training sessions
-        fetch(`${apiUrl}/video-training/sessions?limit=50`, {
+        // Video training sessions (pass demo_code)
+        fetch(`${apiUrl}/video-training/sessions?limit=50${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Roleplay scenarios

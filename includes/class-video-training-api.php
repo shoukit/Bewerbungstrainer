@@ -276,7 +276,14 @@ class Bewerbungstrainer_Video_Training_API {
             'scenario_id' => $params['scenario_id'],
             'variables_json' => isset($params['variables']) ? $params['variables'] : null,
             'status' => 'setup',
+            'demo_code' => isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null,
         );
+
+        // For demo users, update the demo code usage counter
+        if (!empty($session_data['demo_code'])) {
+            $demo_codes = Bewerbungstrainer_Demo_Codes::get_instance();
+            $demo_codes->update_usage($session_data['demo_code']);
+        }
 
         $session_id = $this->db->create_session($session_data);
 
@@ -658,11 +665,25 @@ class Bewerbungstrainer_Video_Training_API {
             'orderby' => isset($params['orderby']) ? $params['orderby'] : 'created_at',
             'order' => isset($params['order']) ? $params['order'] : 'DESC',
             'status' => isset($params['status']) ? $params['status'] : null,
+            'demo_code' => isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null,
         );
 
         $user_id = get_current_user_id();
-        $sessions = $this->db->get_user_sessions($user_id, $args);
-        $total = $this->db->get_user_sessions_count($user_id, $args['status']);
+
+        // Check if current user is demo user and filter by demo_code
+        if (Bewerbungstrainer_Demo_Codes::is_demo_user() && !empty($args['demo_code'])) {
+            // Demo user with code - filter by code
+            $sessions = $this->db->get_user_sessions($user_id, $args);
+            $total = $this->db->get_user_sessions_count($user_id, $args['status'], $args['demo_code']);
+        } else if (Bewerbungstrainer_Demo_Codes::is_demo_user() && empty($args['demo_code'])) {
+            // Demo user without code - return empty
+            $sessions = array();
+            $total = 0;
+        } else {
+            // Regular user - normal behavior
+            $sessions = $this->db->get_user_sessions($user_id, $args);
+            $total = $this->db->get_user_sessions_count($user_id, $args['status']);
+        }
 
         $formatted = array_map(array($this, 'format_session'), $sessions);
 

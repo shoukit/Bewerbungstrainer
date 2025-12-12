@@ -143,7 +143,7 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  const { branding } = usePartner();
+  const { branding, demoCode } = usePartner();
 
   // Get themed styles
   const themedGradient = branding?.headerGradient || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
@@ -200,6 +200,7 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         body: JSON.stringify({
           scenario_id: scenario.id,
           variables: variables,
+          demo_code: demoCode || null,
         }),
       });
 

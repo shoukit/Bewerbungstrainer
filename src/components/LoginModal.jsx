@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
 import { usePartner } from '@/context/PartnerContext';
+import DemoWelcomeModal from './DemoWelcomeModal';
+
+// Demo user username constant
+const DEMO_USERNAME = 'demo';
 
 /**
  * LoginModal Component
  * Modal dialog for user authentication via WordPress REST API
  */
 export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
-  const { login, branding, partnerName, logoUrl } = usePartner();
+  const { login, logout, branding, partnerName, logoUrl, setDemoCode } = usePartner();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Demo modal state
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [demoUser, setDemoUser] = useState(null);
 
   // Get brand colors from partner branding
   const primaryAccent = branding?.['--primary-accent'] || '#3A7FA7';
@@ -37,18 +45,30 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       const result = await login(username, password);
 
       if (result.success) {
-        // Clear form
-        setUsername('');
-        setPassword('');
+        // Check if this is a demo user login
+        const isDemoUser = username.toLowerCase() === DEMO_USERNAME;
 
-        // Call success callback
-        if (onLoginSuccess) {
-          onLoginSuccess(result.user);
-        }
+        if (isDemoUser) {
+          // Store user data and show demo modal
+          setDemoUser(result.user);
+          setShowDemoModal(true);
+          // Clear password only (keep username for reference)
+          setPassword('');
+        } else {
+          // Normal login flow
+          // Clear form
+          setUsername('');
+          setPassword('');
 
-        // Close modal
-        if (onClose) {
-          onClose();
+          // Call success callback
+          if (onLoginSuccess) {
+            onLoginSuccess(result.user);
+          }
+
+          // Close modal
+          if (onClose) {
+            onClose();
+          }
         }
       } else {
         setError(result.error || 'Login fehlgeschlagen. Bitte versuchen Sie es erneut.');
@@ -59,6 +79,51 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handle demo code success
+  const handleDemoSuccess = (code) => {
+    console.log('[LOGIN] Demo code activated:', code);
+
+    // Store the demo code in context
+    if (setDemoCode) {
+      setDemoCode(code);
+    }
+
+    // Clear form
+    setUsername('');
+    setPassword('');
+    setShowDemoModal(false);
+
+    // Call success callback with demo user
+    if (onLoginSuccess && demoUser) {
+      onLoginSuccess(demoUser);
+    }
+
+    // Close modal
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  // Handle demo modal close (cancel demo registration)
+  const handleDemoCancel = async () => {
+    console.log('[LOGIN] Demo registration cancelled, logging out...');
+
+    // Log out the demo user since they didn't complete registration
+    try {
+      if (logout) {
+        await logout();
+      }
+    } catch (err) {
+      console.error('[LOGIN] Error logging out demo user:', err);
+    }
+
+    // Reset state
+    setShowDemoModal(false);
+    setDemoUser(null);
+    setUsername('');
+    setPassword('');
   };
 
   // Handle modal close
@@ -300,6 +365,13 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           </p>
         </form>
       </div>
+
+      {/* Demo Welcome Modal - shown after demo user logs in */}
+      <DemoWelcomeModal
+        isOpen={showDemoModal}
+        onClose={handleDemoCancel}
+        onSuccess={handleDemoSuccess}
+      />
     </div>
   );
 }
