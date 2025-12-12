@@ -22,12 +22,13 @@ import {
   CheckCircle,
   AlertCircle,
   X,
-  ChevronDown,
-  ChevronUp,
   Palette,
   ExternalLink,
   Copy,
+  FileText,
+  Layers,
 } from 'lucide-react';
+import { FormAccordion, FormAccordionGroup } from '@/components/ui/form-accordion';
 import wordpressAPI from '@/services/wordpress-api';
 
 // Available modules
@@ -486,19 +487,6 @@ export default function PartnerManager({ onBack }) {
  * Partner Form Component
  */
 function PartnerForm({ formData, setFormData }) {
-  const [expandedSections, setExpandedSections] = useState({
-    basic: true,
-    modules: false,
-    branding: false,
-  });
-
-  const toggleSection = (section) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
-
   const handleModuleToggle = (moduleId) => {
     const currentModules = formData.modules || [];
     if (currentModules.includes(moduleId)) {
@@ -536,174 +524,162 @@ function PartnerForm({ formData, setFormData }) {
   ];
 
   return (
-    <div className="space-y-6">
+    <FormAccordionGroup>
       {/* Basic Information */}
-      <div className="border rounded-lg">
-        <button
-          type="button"
-          onClick={() => toggleSection('basic')}
-          className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-        >
-          <span className="font-medium">Grundinformationen</span>
-          {expandedSections.basic ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-        {expandedSections.basic && (
-          <div className="p-4 pt-0 space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="z.B. Vertriebsakademie Müller"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Slug (URL-ID)</label>
-              <Input
-                value={formData.slug}
-                onChange={(e) => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')})}
-                placeholder="z.B. vertriebsakademie-mueller"
-              />
-              <p className="text-xs text-[var(--text-muted)] mt-1">
-                Wird in der URL verwendet: ?partner={formData.slug || 'ihr-slug'}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Beschreibung</label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                placeholder="Optionale Beschreibung des Partners..."
-                rows={2}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({...formData, status: e.target.value})}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="draft">Entwurf</option>
-                <option value="publish">Aktiv</option>
-                <option value="pending">Ausstehend</option>
-              </select>
-            </div>
+      <FormAccordion
+        title="Grundinformationen"
+        subtitle="Name, Slug und Status des Partners"
+        icon={FileText}
+        iconColor="text-blue-600"
+        iconBgColor="bg-blue-100"
+        defaultExpanded={true}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              placeholder="z.B. Vertriebsakademie Müller"
+            />
           </div>
-        )}
-      </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Slug (URL-ID)</label>
+            <Input
+              value={formData.slug}
+              onChange={(e) => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')})}
+              placeholder="z.B. vertriebsakademie-mueller"
+            />
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Wird in der URL verwendet: ?partner={formData.slug || 'ihr-slug'}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Beschreibung</label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              placeholder="Optionale Beschreibung des Partners..."
+              rows={2}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({...formData, status: e.target.value})}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="draft">Entwurf</option>
+              <option value="publish">Aktiv</option>
+              <option value="pending">Ausstehend</option>
+            </select>
+          </div>
+        </div>
+      </FormAccordion>
 
       {/* Modules */}
-      <div className="border rounded-lg">
-        <button
-          type="button"
-          onClick={() => toggleSection('modules')}
-          className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-        >
-          <span className="font-medium">Erlaubte Module</span>
-          {expandedSections.modules ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-        {expandedSections.modules && (
-          <div className="p-4 pt-0">
-            <p className="text-sm text-[var(--text-muted)] mb-4">
-              Keine Auswahl = Alle Module sind erlaubt
-            </p>
-            <div className="space-y-2">
-              {AVAILABLE_MODULES.map((module) => (
-                <label
-                  key={module.id}
-                  className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.modules?.includes(module.id) || false}
-                    onChange={() => handleModuleToggle(module.id)}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">{module.label}</span>
-                </label>
-              ))}
-            </div>
+      <FormAccordion
+        title="Erlaubte Module"
+        subtitle="Welche Funktionen für diesen Partner verfügbar sind"
+        icon={Layers}
+        iconColor="text-green-600"
+        iconBgColor="bg-green-100"
+        badge={formData.modules?.length > 0 ? `${formData.modules.length} ausgewählt` : 'Alle'}
+      >
+        <div>
+          <p className="text-sm text-[var(--text-muted)] mb-4">
+            Keine Auswahl = Alle Module sind erlaubt
+          </p>
+          <div className="space-y-2">
+            {AVAILABLE_MODULES.map((module) => (
+              <label
+                key={module.id}
+                className="flex items-center gap-3 p-2 rounded hover:bg-slate-50 cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.modules?.includes(module.id) || false}
+                  onChange={() => handleModuleToggle(module.id)}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">{module.label}</span>
+              </label>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      </FormAccordion>
 
       {/* Branding */}
-      <div className="border rounded-lg">
-        <button
-          type="button"
-          onClick={() => toggleSection('branding')}
-          className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-        >
-          <div className="flex items-center gap-2">
-            <Palette className="w-4 h-4" />
-            <span className="font-medium">Branding / Farben</span>
+      <FormAccordion
+        title="Branding / Farben"
+        subtitle="Individuelle Farbgestaltung für den Partner"
+        icon={Palette}
+        iconColor="text-orange-600"
+        iconBgColor="bg-orange-100"
+      >
+        <div>
+          {/* Preview */}
+          <div className="mb-4 p-4 rounded-lg border" style={{
+            backgroundColor: formData.branding?.['--sidebar-bg-color'] || '#ffffff',
+          }}>
+            <div className="flex items-center gap-3 mb-2">
+              <div
+                className="w-10 h-10 rounded-lg"
+                style={{ backgroundColor: formData.branding?.['--primary-accent'] || '#3A7FA7' }}
+              />
+              <div>
+                <p className="font-medium" style={{ color: formData.branding?.['--sidebar-text-color'] || '#0f172a' }}>
+                  Vorschau
+                </p>
+                <p className="text-sm" style={{ color: formData.branding?.['--sidebar-active-text'] || '#2D6485' }}>
+                  Aktiver Text
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="px-4 py-2 rounded-lg text-sm font-medium"
+              style={{
+                backgroundColor: formData.branding?.['--button-solid'] || '#3A7FA7',
+                color: formData.branding?.['--button-text'] || '#ffffff',
+              }}
+            >
+              Button Beispiel
+            </button>
           </div>
-          {expandedSections.branding ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-        {expandedSections.branding && (
-          <div className="p-4 pt-0">
-            {/* Preview */}
-            <div className="mb-4 p-4 rounded-lg border" style={{
-              backgroundColor: formData.branding?.['--sidebar-bg-color'] || '#ffffff',
-            }}>
-              <div className="flex items-center gap-3 mb-2">
-                <div
-                  className="w-10 h-10 rounded-lg"
-                  style={{ backgroundColor: formData.branding?.['--primary-accent'] || '#3A7FA7' }}
-                />
-                <div>
-                  <p className="font-medium" style={{ color: formData.branding?.['--sidebar-text-color'] || '#0f172a' }}>
-                    Vorschau
-                  </p>
-                  <p className="text-sm" style={{ color: formData.branding?.['--sidebar-active-text'] || '#2D6485' }}>
-                    Aktiver Text
-                  </p>
+
+          {/* Color Inputs */}
+          <div className="grid grid-cols-2 gap-4">
+            {brandingFields.map((field) => (
+              <div key={field.key}>
+                <label className="block text-xs font-medium mb-1 text-[var(--text-secondary)]">
+                  {field.label}
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={formData.branding?.[field.key] || DEFAULT_BRANDING[field.key]}
+                    onChange={(e) => handleBrandingChange(field.key, e.target.value)}
+                    className="w-10 h-8 rounded border cursor-pointer"
+                  />
+                  <Input
+                    value={formData.branding?.[field.key] || ''}
+                    onChange={(e) => handleBrandingChange(field.key, e.target.value)}
+                    placeholder={DEFAULT_BRANDING[field.key]}
+                    className="flex-1 text-xs"
+                  />
                 </div>
               </div>
-              <button
-                className="px-4 py-2 rounded-lg text-sm font-medium"
-                style={{
-                  backgroundColor: formData.branding?.['--button-solid'] || '#3A7FA7',
-                  color: formData.branding?.['--button-text'] || '#ffffff',
-                }}
-              >
-                Button Beispiel
-              </button>
-            </div>
-
-            {/* Color Inputs */}
-            <div className="grid grid-cols-2 gap-4">
-              {brandingFields.map((field) => (
-                <div key={field.key}>
-                  <label className="block text-xs font-medium mb-1 text-[var(--text-secondary)]">
-                    {field.label}
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={formData.branding?.[field.key] || DEFAULT_BRANDING[field.key]}
-                      onChange={(e) => handleBrandingChange(field.key, e.target.value)}
-                      className="w-10 h-8 rounded border cursor-pointer"
-                    />
-                    <Input
-                      value={formData.branding?.[field.key] || ''}
-                      onChange={(e) => handleBrandingChange(field.key, e.target.value)}
-                      placeholder={DEFAULT_BRANDING[field.key]}
-                      className="flex-1 text-xs"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      </FormAccordion>
+    </FormAccordionGroup>
   );
 }

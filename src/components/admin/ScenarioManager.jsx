@@ -22,9 +22,11 @@ import {
   CheckCircle,
   AlertCircle,
   X,
-  ChevronDown,
-  ChevronUp,
+  FileText,
+  User,
+  Settings,
 } from 'lucide-react';
+import { FormAccordion, FormAccordionGroup } from '@/components/ui/form-accordion';
 import wordpressAPI from '@/services/wordpress-api';
 
 /**
@@ -460,190 +462,166 @@ export default function ScenarioManager({ onBack }) {
  * Scenario Form Component
  */
 function ScenarioForm({ formData, setFormData }) {
-  const [expandedSections, setExpandedSections] = useState({
-    basic: true,
-    interviewer: false,
-    advanced: false,
-  });
-
-  const toggleSection = (section) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
-
   return (
-    <div className="space-y-6">
+    <FormAccordionGroup>
       {/* Basic Information */}
-      <div className="border rounded-lg">
-        <button
-          type="button"
-          onClick={() => toggleSection('basic')}
-          className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-        >
-          <span className="font-medium">Grundinformationen</span>
-          {expandedSections.basic ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-        {expandedSections.basic && (
-          <div className="p-4 pt-0 space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Titel <span className="text-red-500">*</span>
-              </label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                placeholder="z.B. Vorstellungsgespräch IT-Consultant"
-              />
-            </div>
+      <FormAccordion
+        title="Grundinformationen"
+        subtitle="Titel, Beschreibung und Basiseinstellungen"
+        icon={FileText}
+        iconColor="text-blue-600"
+        iconBgColor="bg-blue-100"
+        defaultExpanded={true}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Titel <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData({...formData, title: e.target.value})}
+              placeholder="z.B. Vorstellungsgespräch IT-Consultant"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Beschreibung</label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                placeholder="Kurze Beschreibung des Szenarios..."
-                rows={3}
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Beschreibung</label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              placeholder="Kurze Beschreibung des Szenarios..."
+              rows={3}
+            />
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="draft">Entwurf</option>
-                  <option value="publish">Veröffentlicht</option>
-                  <option value="pending">Ausstehend</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Schwierigkeit</label>
-                <select
-                  value={formData.difficulty}
-                  onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="easy">Einfach</option>
-                  <option value="medium">Mittel</option>
-                  <option value="hard">Schwer</option>
-                </select>
-              </div>
-            </div>
-
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
-                ElevenLabs Agent ID
-              </label>
-              <Input
-                value={formData.agent_id}
-                onChange={(e) => setFormData({...formData, agent_id: e.target.value})}
-                placeholder="agent_xxx..."
-              />
-              <p className="text-xs text-[var(--text-muted)] mt-1">
-                Die Agent ID aus Ihrem ElevenLabs Dashboard
-              </p>
+              <label className="block text-sm font-medium mb-1">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({...formData, status: e.target.value})}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="draft">Entwurf</option>
+                <option value="publish">Veröffentlicht</option>
+                <option value="pending">Ausstehend</option>
+              </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium mb-1">Erste Nachricht</label>
-              <Textarea
-                value={formData.initial_message}
-                onChange={(e) => setFormData({...formData, initial_message: e.target.value})}
-                placeholder="Die erste Nachricht des KI-Gesprächspartners..."
-                rows={3}
-              />
-              <p className="text-xs text-[var(--text-muted)] mt-1">
-                Platzhalter: {'{{user_name}}'}, {'{{company_name}}'}, {'{{position}}'}
-              </p>
+              <label className="block text-sm font-medium mb-1">Schwierigkeit</label>
+              <select
+                value={formData.difficulty}
+                onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="easy">Einfach</option>
+                <option value="medium">Mittel</option>
+                <option value="hard">Schwer</option>
+              </select>
             </div>
           </div>
-        )}
-      </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              ElevenLabs Agent ID
+            </label>
+            <Input
+              value={formData.agent_id}
+              onChange={(e) => setFormData({...formData, agent_id: e.target.value})}
+              placeholder="agent_xxx..."
+            />
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Die Agent ID aus Ihrem ElevenLabs Dashboard
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Erste Nachricht</label>
+            <Textarea
+              value={formData.initial_message}
+              onChange={(e) => setFormData({...formData, initial_message: e.target.value})}
+              placeholder="Die erste Nachricht des KI-Gesprächspartners..."
+              rows={3}
+            />
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Platzhalter: {'{{user_name}}'}, {'{{company_name}}'}, {'{{position}}'}
+            </p>
+          </div>
+        </div>
+      </FormAccordion>
 
       {/* Interviewer Profile */}
-      <div className="border rounded-lg">
-        <button
-          type="button"
-          onClick={() => toggleSection('interviewer')}
-          className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-        >
-          <span className="font-medium">Gesprächspartner-Profil</span>
-          {expandedSections.interviewer ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-        {expandedSections.interviewer && (
-          <div className="p-4 pt-0 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Name</label>
-                <Input
-                  value={formData.interviewer_profile.name}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    interviewer_profile: {...formData.interviewer_profile, name: e.target.value}
-                  })}
-                  placeholder="z.B. Dr. Maria Schmidt"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Rolle/Position</label>
-                <Input
-                  value={formData.interviewer_profile.role}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    interviewer_profile: {...formData.interviewer_profile, role: e.target.value}
-                  })}
-                  placeholder="z.B. HR-Leiterin"
-                />
-              </div>
-            </div>
+      <FormAccordion
+        title="Gesprächspartner-Profil"
+        subtitle="Name, Rolle und Eigenschaften des KI-Interviewers"
+        icon={User}
+        iconColor="text-green-600"
+        iconBgColor="bg-green-100"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Eigenschaften</label>
-              <Textarea
-                value={formData.interviewer_profile.properties}
+              <label className="block text-sm font-medium mb-1">Name</label>
+              <Input
+                value={formData.interviewer_profile.name}
                 onChange={(e) => setFormData({
                   ...formData,
-                  interviewer_profile: {...formData.interviewer_profile, properties: e.target.value}
+                  interviewer_profile: {...formData.interviewer_profile, name: e.target.value}
                 })}
-                placeholder="Charaktereigenschaften (eine pro Zeile)..."
-                rows={3}
+                placeholder="z.B. Dr. Maria Schmidt"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Rolle/Position</label>
+              <Input
+                value={formData.interviewer_profile.role}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  interviewer_profile: {...formData.interviewer_profile, role: e.target.value}
+                })}
+                placeholder="z.B. HR-Leiterin"
               />
             </div>
           </div>
-        )}
-      </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Eigenschaften</label>
+            <Textarea
+              value={formData.interviewer_profile.properties}
+              onChange={(e) => setFormData({
+                ...formData,
+                interviewer_profile: {...formData.interviewer_profile, properties: e.target.value}
+              })}
+              placeholder="Charaktereigenschaften (eine pro Zeile)..."
+              rows={3}
+            />
+          </div>
+        </div>
+      </FormAccordion>
 
       {/* Advanced Settings */}
-      <div className="border rounded-lg">
-        <button
-          type="button"
-          onClick={() => toggleSection('advanced')}
-          className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-        >
-          <span className="font-medium">Erweiterte Einstellungen</span>
-          {expandedSections.advanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-        {expandedSections.advanced && (
-          <div className="p-4 pt-0 space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Coaching-Hinweise</label>
-              <Textarea
-                value={formData.coaching_hints}
-                onChange={(e) => setFormData({...formData, coaching_hints: e.target.value})}
-                placeholder="Tipps für den Benutzer während des Gesprächs (eine pro Zeile)..."
-                rows={4}
-              />
-              <p className="text-xs text-[var(--text-muted)] mt-1">
-                Diese Hinweise werden im Live-Coaching-Panel angezeigt
-              </p>
-            </div>
+      <FormAccordion
+        title="Erweiterte Einstellungen"
+        subtitle="Coaching-Hinweise und zusätzliche Konfiguration"
+        icon={Settings}
+        iconColor="text-purple-600"
+        iconBgColor="bg-purple-100"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Coaching-Hinweise</label>
+            <Textarea
+              value={formData.coaching_hints}
+              onChange={(e) => setFormData({...formData, coaching_hints: e.target.value})}
+              placeholder="Tipps für den Benutzer während des Gesprächs (eine pro Zeile)..."
+              rows={4}
+            />
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Diese Hinweise werden im Live-Coaching-Panel angezeigt
+            </p>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      </FormAccordion>
+    </FormAccordionGroup>
   );
 }
