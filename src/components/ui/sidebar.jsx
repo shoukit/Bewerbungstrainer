@@ -1233,63 +1233,89 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
   // Mobile Layout
   if (isMobile) {
     return (
+      <>
+        {/* Fixed full-page background */}
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: appBackground,
+            zIndex: -1,
+          }}
+        />
+        <div
+          style={{
+            minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
+          }}
+        >
+          <MobileNavigation
+            activeView={activeView}
+            onNavigate={onNavigate}
+            headerOffset={headerOffset}
+            onLoginClick={onLoginClick}
+          />
+
+          {/* Main Content with top padding for mobile header */}
+          <main
+            data-main-content
+            style={{
+              paddingTop: '56px',
+              minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
+            }}
+          >
+            {children}
+          </main>
+        </div>
+      </>
+    );
+  }
+
+  // Desktop Layout
+  return (
+    <>
+      {/* Fixed full-page background */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: appBackground,
+          zIndex: -1,
+        }}
+      />
       <div
         style={{
           minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
-          background: appBackground,
         }}
       >
-        <MobileNavigation
+        <AppSidebar
+          isCollapsed={isCollapsed}
+          onToggleCollapse={handleToggleCollapse}
           activeView={activeView}
           onNavigate={onNavigate}
           headerOffset={headerOffset}
           onLoginClick={onLoginClick}
         />
 
-        {/* Main Content with top padding for mobile header */}
-        <main
+        {/* Main Content */}
+        <motion.main
           data-main-content
+          initial={false}
+          animate={{ marginLeft: isCollapsed ? 72 : 280 }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
           style={{
-            paddingTop: '56px',
             minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
           }}
         >
-          {children}
-        </main>
-      </div>
-    );
-  }
-
-  // Desktop Layout
-  return (
-    <div
-      style={{
-        minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
-        background: appBackground,
-      }}
-    >
-      <AppSidebar
-        isCollapsed={isCollapsed}
-        onToggleCollapse={handleToggleCollapse}
-        activeView={activeView}
-        onNavigate={onNavigate}
-        headerOffset={headerOffset}
-        onLoginClick={onLoginClick}
-      />
-
-      {/* Main Content */}
-      <motion.main
-        data-main-content
-        initial={false}
-        animate={{ marginLeft: isCollapsed ? 72 : 280 }}
-        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        style={{
-          minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
-        }}
-      >
         {children}
       </motion.main>
     </div>
+  </>
   );
 };
 
