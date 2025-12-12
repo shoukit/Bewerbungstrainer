@@ -669,15 +669,13 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
         </p>
       </div>
 
-      <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ padding: '0 24px' }}>
         {/* Stats Row */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
           gap: '16px',
           marginBottom: '32px',
-          maxWidth: '1000px',
-          margin: '0 auto 32px auto',
         }}>
           <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
           <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
@@ -701,8 +699,6 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '24px',
-          maxWidth: '1200px',
-          margin: '0 auto',
         }}>
           {gameModes.map((mode) => (
             <GameModeCard

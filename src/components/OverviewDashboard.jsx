@@ -121,7 +121,7 @@ const OverviewDashboard = ({ onNavigate }) => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-[1800px] mx-auto text-center mb-10 lg:mb-14 px-4 lg:px-6"
+        className="w-full text-center mb-10 lg:mb-14 px-4 lg:px-8"
       >
         {/* Welcome Badge */}
         <motion.div
@@ -225,7 +225,7 @@ const OverviewDashboard = ({ onNavigate }) => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-[1800px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 px-4 lg:px-6"
+        className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6 px-4 lg:px-8"
       >
         {features.map((feature) => (
           <motion.div

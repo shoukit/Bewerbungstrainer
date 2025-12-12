@@ -859,12 +859,12 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
     <div style={{ padding: '24px' }}>
       {/* Responsive styles */}
       <style>{`
-        .detail-grid { display: grid; grid-template-columns: 1fr 400px; gap: 24px; max-width: 1600px; margin: 0 auto; padding: 0 16px; }
+        .detail-grid { display: grid; grid-template-columns: 1fr 400px; gap: 24px; padding: 0 24px; }
         @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
       `}</style>
 
       {/* Back button */}
-      <div style={{ maxWidth: '1600px', margin: '0 auto 24px', padding: '0 16px' }}>
+      <div style={{ margin: '0 0 24px', padding: '0 24px' }}>
         <button
           onClick={onBack}
           style={{
