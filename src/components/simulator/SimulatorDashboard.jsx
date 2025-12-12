@@ -331,8 +331,9 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
         gap: '24px',
-        maxWidth: '1200px',
-        margin: '0 auto'
+        maxWidth: '1600px',
+        margin: '0 auto',
+        padding: '0 16px'
       }}>
         {scenarios.map(scenario => (
           <ScenarioCard
