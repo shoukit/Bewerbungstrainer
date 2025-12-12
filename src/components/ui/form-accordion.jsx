@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
  * FormAccordion Component
  *
  * A beautiful accordion component for forms with:
- * - Soft ocean-theme header background (full-width)
- * - Icon on the left with subtle background
+ * - Full-width soft colored header background
+ * - Icon on the left with white background
  * - Title and optional subtitle
  * - Smooth expand/collapse animation
  */
@@ -24,40 +24,40 @@ export function FormAccordion({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Color schemes with inline style values for guaranteed full-width coverage
+  // Color schemes - solid colors for reliability
   const colorSchemes = {
     blue: {
-      headerBg: 'linear-gradient(to right, #e0f2fe, #f0f9ff)',
-      headerBgHover: 'linear-gradient(to right, #bae6fd, #e0f2fe)',
-      iconBg: 'rgba(255,255,255,0.9)',
+      headerBg: '#e0f2fe',
+      headerBgHover: '#bae6fd',
+      iconBg: '#ffffff',
       iconText: '#0284c7',
       titleText: '#075985',
     },
     green: {
-      headerBg: 'linear-gradient(to right, #d1fae5, #ecfdf5)',
-      headerBgHover: 'linear-gradient(to right, #a7f3d0, #d1fae5)',
-      iconBg: 'rgba(255,255,255,0.9)',
+      headerBg: '#d1fae5',
+      headerBgHover: '#a7f3d0',
+      iconBg: '#ffffff',
       iconText: '#059669',
       titleText: '#065f46',
     },
     purple: {
-      headerBg: 'linear-gradient(to right, #ede9fe, #f5f3ff)',
-      headerBgHover: 'linear-gradient(to right, #ddd6fe, #ede9fe)',
-      iconBg: 'rgba(255,255,255,0.9)',
+      headerBg: '#ede9fe',
+      headerBgHover: '#ddd6fe',
+      iconBg: '#ffffff',
       iconText: '#7c3aed',
       titleText: '#5b21b6',
     },
     orange: {
-      headerBg: 'linear-gradient(to right, #fef3c7, #fffbeb)',
-      headerBgHover: 'linear-gradient(to right, #fde68a, #fef3c7)',
-      iconBg: 'rgba(255,255,255,0.9)',
+      headerBg: '#fef3c7',
+      headerBgHover: '#fde68a',
+      iconBg: '#ffffff',
       iconText: '#d97706',
       titleText: '#92400e',
     },
     teal: {
-      headerBg: 'linear-gradient(to right, #ccfbf1, #f0fdfa)',
-      headerBgHover: 'linear-gradient(to right, #99f6e4, #ccfbf1)',
-      iconBg: 'rgba(255,255,255,0.9)',
+      headerBg: '#ccfbf1',
+      headerBgHover: '#99f6e4',
+      iconBg: '#ffffff',
       iconText: '#0d9488',
       titleText: '#115e59',
     },
@@ -68,54 +68,110 @@ export function FormAccordion({
   return (
     <motion.div
       className={cn(
-        "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm",
+        "rounded-xl overflow-hidden shadow-sm",
         "transition-all duration-200",
         className
       )}
+      style={{
+        backgroundColor: '#ffffff',
+        border: 'none',
+      }}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <button
-        type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className="w-full px-4 py-3 flex items-center gap-3 transition-all text-left cursor-pointer"
+      {/* Full-width header with background color */}
+      <div
         style={{
-          background: isHovered ? colors.headerBgHover : colors.headerBg,
+          backgroundColor: isHovered ? colors.headerBgHover : colors.headerBg,
+          width: '100%',
+          transition: 'background-color 0.2s ease',
         }}
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          {Icon && (
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
-              style={{ backgroundColor: colors.iconBg }}
-            >
-              <Icon className="w-5 h-5" style={{ color: colors.iconText }} />
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <span
-              className="font-semibold text-sm block truncate"
-              style={{ color: colors.titleText }}
-            >
-              {title}
-            </span>
-            {subtitle && (
-              <span className="text-xs text-slate-500 block truncate mt-0.5">
-                {subtitle}
-              </span>
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            textAlign: 'left',
+            cursor: 'pointer',
+            border: 'none',
+            background: 'transparent',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+            {Icon && (
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  backgroundColor: colors.iconBg,
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                }}
+              >
+                <Icon style={{ width: '20px', height: '20px', color: colors.iconText }} />
+              </div>
             )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span
+                style={{
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  display: 'block',
+                  color: colors.titleText,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {title}
+              </span>
+              {subtitle && (
+                <span
+                  style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    display: 'block',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    marginTop: '2px',
+                  }}
+                >
+                  {subtitle}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
 
-        {badge && (
-          <span className="text-xs font-medium text-slate-500 bg-white/80 px-2.5 py-1 rounded-full shadow-sm">
-            {badge}
-          </span>
-        )}
-      </button>
+          {badge && (
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 500,
+                color: '#64748b',
+                backgroundColor: 'rgba(255,255,255,0.8)',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+              }}
+            >
+              {badge}
+            </span>
+          )}
+        </button>
+      </div>
 
       <AnimatePresence>
         {isExpanded && (
@@ -124,9 +180,15 @@ export function FormAccordion({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+            style={{ overflow: 'hidden' }}
           >
-            <div className="px-4 pb-4 pt-3 border-t border-slate-100 bg-slate-50/30">
+            <div
+              style={{
+                padding: '12px 16px 16px 16px',
+                borderTop: '1px solid #f1f5f9',
+                backgroundColor: 'rgba(248, 250, 252, 0.3)',
+              }}
+            >
               {children}
             </div>
           </motion.div>
