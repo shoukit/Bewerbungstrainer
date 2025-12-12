@@ -189,7 +189,7 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
       aria-modal="true"
       aria-labelledby="demo-modal-title"
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div
           className="px-6 py-5"
@@ -287,48 +287,48 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
             />
           </div>
 
-          {/* Company name */}
-          <div>
-            <label htmlFor="company-name" style={labelStyle}>
-              Firma <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="company-name"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              style={inputStyle}
-              onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-                e.target.style.boxShadow = 'none';
-              }}
-              placeholder="Ihre Firma"
-              disabled={isLoading}
-              autoComplete="organization"
-            />
-          </div>
-
-          {/* Contact name */}
-          <div>
-            <label htmlFor="contact-name" style={labelStyle}>
-              Name Ansprechpartner <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="contact-name"
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-              style={inputStyle}
-              onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-                e.target.style.boxShadow = 'none';
-              }}
-              placeholder="Ihr Name"
-              disabled={isLoading}
-              autoComplete="name"
-            />
+          {/* Company name and Contact name in a row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="company-name" style={labelStyle}>
+                Firma <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="company-name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                style={inputStyle}
+                onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.boxShadow = 'none';
+                }}
+                placeholder="Ihre Firma"
+                disabled={isLoading}
+                autoComplete="organization"
+              />
+            </div>
+            <div>
+              <label htmlFor="contact-name" style={labelStyle}>
+                Name Ansprechpartner <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="contact-name"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                style={inputStyle}
+                onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.boxShadow = 'none';
+                }}
+                placeholder="Ihr Name"
+                disabled={isLoading}
+                autoComplete="name"
+              />
+            </div>
           </div>
 
           {/* Homepage */}

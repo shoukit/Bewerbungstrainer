@@ -437,6 +437,9 @@ class Bewerbungstrainer_Demo_Codes {
     public function get_all_codes($args = array()) {
         global $wpdb;
 
+        // Ensure table exists
+        $this->ensure_table_exists();
+
         $defaults = array(
             'limit' => 100,
             'offset' => 0,
@@ -485,6 +488,9 @@ class Bewerbungstrainer_Demo_Codes {
     public function get_codes_count($filter = null) {
         global $wpdb;
 
+        // Ensure table exists
+        $this->ensure_table_exists();
+
         $where = '1=1';
         if ($filter === 'used') {
             $where .= ' AND is_used = 1';
@@ -506,8 +512,14 @@ class Bewerbungstrainer_Demo_Codes {
     public function add_more_codes($count = 50) {
         global $wpdb;
 
+        // Ensure table exists
+        $this->ensure_table_exists();
+
         // Get existing codes
         $existing = $wpdb->get_col("SELECT demo_code FROM {$this->table_demo_codes}");
+        if (!is_array($existing)) {
+            $existing = array();
+        }
 
         // Generate new unique codes
         $new_codes = array();
@@ -562,6 +574,26 @@ class Bewerbungstrainer_Demo_Codes {
             array('%s'),
             array('%s')
         ) !== false;
+    }
+
+    /**
+     * Ensure the demo codes table exists
+     */
+    private function ensure_table_exists() {
+        global $wpdb;
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var(
+            $wpdb->prepare(
+                "SHOW TABLES LIKE %s",
+                $this->table_demo_codes
+            )
+        );
+
+        if (!$table_exists) {
+            // Create table
+            self::create_tables();
+        }
     }
 
     /**
