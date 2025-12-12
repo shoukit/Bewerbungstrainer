@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
 /**
  * FormAccordion Component
@@ -10,6 +9,8 @@ import { cn } from '@/lib/utils';
  * - Icon on the left with white background
  * - Title and optional subtitle
  * - Smooth expand/collapse animation
+ *
+ * Uses 100% inline styles to avoid CSS conflicts
  */
 export function FormAccordion({
   title,
@@ -19,7 +20,6 @@ export function FormAccordion({
   children,
   defaultExpanded = false,
   badge,
-  className,
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isHovered, setIsHovered] = useState(false);
@@ -65,114 +65,137 @@ export function FormAccordion({
 
   const colors = colorSchemes[accentColor] || colorSchemes.blue;
 
+  // All styles as inline to avoid any CSS conflicts
+  const containerStyle = {
+    width: '100%',
+    display: 'block',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    border: 'none',
+    marginBottom: '0',
+  };
+
+  const headerStyle = {
+    width: '100%',
+    display: 'block',
+    backgroundColor: isHovered ? colors.headerBgHover : colors.headerBg,
+    transition: 'background-color 0.2s ease',
+    border: 'none',
+    margin: 0,
+    padding: 0,
+  };
+
+  const buttonStyle = {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '12px 16px',
+    textAlign: 'left',
+    cursor: 'pointer',
+    border: 'none',
+    background: 'none',
+    backgroundColor: 'transparent',
+    margin: 0,
+    outline: 'none',
+    fontFamily: 'inherit',
+  };
+
+  const iconContainerStyle = {
+    width: '36px',
+    height: '36px',
+    minWidth: '36px',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.iconBg,
+    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+    flexShrink: 0,
+  };
+
+  const titleContainerStyle = {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+  };
+
+  const titleStyle = {
+    fontWeight: 600,
+    fontSize: '14px',
+    lineHeight: '1.4',
+    display: 'block',
+    color: colors.titleText,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    margin: 0,
+    padding: 0,
+  };
+
+  const subtitleStyle = {
+    fontSize: '12px',
+    lineHeight: '1.4',
+    color: '#64748b',
+    display: 'block',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    marginTop: '2px',
+    padding: 0,
+  };
+
+  const badgeStyle = {
+    fontSize: '12px',
+    fontWeight: 500,
+    color: '#64748b',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    padding: '4px 10px',
+    borderRadius: '9999px',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+    flexShrink: 0,
+  };
+
+  const contentStyle = {
+    padding: '12px 16px 16px 16px',
+    borderTop: '1px solid #f1f5f9',
+    backgroundColor: 'rgba(248, 250, 252, 0.5)',
+  };
+
   return (
     <motion.div
-      className={cn(
-        "rounded-xl overflow-hidden shadow-sm",
-        "transition-all duration-200",
-        className
-      )}
-      style={{
-        backgroundColor: '#ffffff',
-        border: 'none',
-      }}
+      style={containerStyle}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Full-width header with background color */}
-      <div
-        style={{
-          backgroundColor: isHovered ? colors.headerBgHover : colors.headerBg,
-          width: '100%',
-          transition: 'background-color 0.2s ease',
-        }}
-      >
+      {/* Full-width header */}
+      <div style={headerStyle}>
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            textAlign: 'left',
-            cursor: 'pointer',
-            border: 'none',
-            background: 'transparent',
-          }}
+          style={buttonStyle}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            {Icon && (
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  backgroundColor: colors.iconBg,
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                }}
-              >
-                <Icon style={{ width: '20px', height: '20px', color: colors.iconText }} />
-              </div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <span
-                style={{
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  display: 'block',
-                  color: colors.titleText,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {title}
-              </span>
-              {subtitle && (
-                <span
-                  style={{
-                    fontSize: '12px',
-                    color: '#64748b',
-                    display: 'block',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    marginTop: '2px',
-                  }}
-                >
-                  {subtitle}
-                </span>
-              )}
+          {Icon && (
+            <div style={iconContainerStyle}>
+              <Icon style={{ width: '20px', height: '20px', color: colors.iconText }} />
             </div>
+          )}
+
+          <div style={titleContainerStyle}>
+            <span style={titleStyle}>{title}</span>
+            {subtitle && <span style={subtitleStyle}>{subtitle}</span>}
           </div>
 
-          {badge && (
-            <span
-              style={{
-                fontSize: '12px',
-                fontWeight: 500,
-                color: '#64748b',
-                backgroundColor: 'rgba(255,255,255,0.8)',
-                padding: '4px 10px',
-                borderRadius: '9999px',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              }}
-            >
-              {badge}
-            </span>
-          )}
+          {badge && <span style={badgeStyle}>{badge}</span>}
         </button>
       </div>
 
+      {/* Expandable content */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -182,13 +205,7 @@ export function FormAccordion({
             transition={{ duration: 0.2 }}
             style={{ overflow: 'hidden' }}
           >
-            <div
-              style={{
-                padding: '12px 16px 16px 16px',
-                borderTop: '1px solid #f1f5f9',
-                backgroundColor: 'rgba(248, 250, 252, 0.3)',
-              }}
-            >
+            <div style={contentStyle}>
               {children}
             </div>
           </motion.div>
@@ -204,8 +221,15 @@ export function FormAccordion({
  * A container for multiple FormAccordion items with consistent spacing
  */
 export function FormAccordionGroup({ children, className }) {
+  const groupStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    width: '100%',
+  };
+
   return (
-    <div className={cn("space-y-3", className)}>
+    <div style={groupStyle} className={className}>
       {children}
     </div>
   );
