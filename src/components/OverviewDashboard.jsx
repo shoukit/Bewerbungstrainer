@@ -121,7 +121,7 @@ const OverviewDashboard = ({ onNavigate }) => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-6xl mx-auto text-center mb-10 lg:mb-14"
+        className="w-full text-center mb-10 lg:mb-14 px-4 lg:px-8"
       >
         {/* Welcome Badge */}
         <motion.div
@@ -220,12 +220,17 @@ const OverviewDashboard = ({ onNavigate }) => {
         </motion.div>
       </motion.div>
 
-      {/* Feature Cards Grid */}
+      {/* Feature Cards Grid - responsive with min 2 per row on larger screens */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6"
+        className="w-full px-4 lg:px-8"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: '20px',
+        }}
       >
         {features.map((feature) => (
           <motion.div

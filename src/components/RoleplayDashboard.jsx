@@ -224,7 +224,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   return (
     <div className="min-h-screen py-4 lg:py-8 px-2 lg:px-4 overflow-x-hidden">
       {/* Header */}
-      <div className="max-w-6xl mx-auto mb-4 lg:mb-8 px-2">
+      <div className="w-full mb-4 lg:mb-8 px-4 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -355,7 +355,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
       </div>
 
       {/* Scenarios Grid */}
-      <div className="max-w-6xl mx-auto px-2">
+      <div className="w-full px-4 lg:px-8">
         {filteredScenarios.length === 0 ? (
           <div className="text-center py-12">
             <Sparkles className="w-12 h-12 text-slate-400 mx-auto mb-4" />
@@ -363,7 +363,11 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
           </div>
         ) : (
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+              gap: '24px',
+            }}
             initial="hidden"
             animate="visible"
             variants={{

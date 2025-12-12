@@ -549,15 +549,16 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
 
   return (
     <>
-      <div style={{ minHeight: '600px', height: 'auto', overflow: 'hidden' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4">
+      <div style={{ minHeight: '600px', height: 'auto' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4">
         {/* RESPONSIVE LAYOUT: Mobile stacked, Desktop 3-column */}
         <div
-          className="w-full max-w-7xl mx-auto gap-3 lg:gap-5"
+          className="w-full gap-3 lg:gap-4"
           style={{
             display: isMobile ? 'flex' : 'grid',
             flexDirection: isMobile ? 'column' : undefined,
-            gridTemplateColumns: isMobile ? undefined : 'minmax(280px, 320px) minmax(400px, 1fr) minmax(280px, 320px)',
+            gridTemplateColumns: isMobile ? undefined : 'minmax(250px, 1fr) minmax(350px, 2fr) minmax(250px, 1fr)',
             alignItems: isMobile ? undefined : 'stretch',
+            padding: '0 8px',
           }}
         >
 
@@ -566,12 +567,9 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              style={{ minWidth: '280px' }}
-              className="relative"
+              className="relative h-full"
             >
-              <div className="absolute inset-0">
-                <CoachingPanel hints={scenario.coaching_hints} />
-              </div>
+              <CoachingPanel hints={scenario.coaching_hints} />
             </motion.div>
           )}
 
@@ -778,10 +776,9 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              style={{ minWidth: '280px' }}
-              className="relative"
+              className="h-full"
             >
-              <div className="absolute inset-0 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+              <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
                 {/* Transcript Header */}
                 <div
                   style={{ background: themedStyles.headerGradient }}

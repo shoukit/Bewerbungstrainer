@@ -257,7 +257,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   }
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: '32px' }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <div

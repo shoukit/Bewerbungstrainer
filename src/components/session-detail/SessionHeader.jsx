@@ -62,9 +62,8 @@ export function SessionHeader({ session, scenario, feedback }) {
     >
       <div
         style={{
-          maxWidth: '1600px',
-          margin: '0 auto',
-          padding: '12px 16px',
+          width: '100%',
+          padding: '12px 32px',
           display: 'flex',
           alignItems: 'center',
           gap: '24px',

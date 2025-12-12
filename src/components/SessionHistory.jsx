@@ -620,8 +620,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       {/* Tabs - Responsive: stack vertically on mobile */}
       <style>{`
         .session-tabs {
-          max-width: 800px;
-          margin: 0 auto 32px;
+          margin: 0 24px 32px;
           display: flex;
           gap: 8px;
           background: #f1f5f9;
@@ -688,7 +687,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       </div>
 
       {/* Refresh button */}
-      <div style={{ maxWidth: '800px', margin: '0 auto 24px', display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ margin: '0 24px 24px', display: 'flex', justifyContent: 'flex-end' }}>
         <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
           <RefreshCw style={{ width: '16px', height: '16px', marginRight: '8px' }} className={isLoading ? 'animate-spin' : ''} />
           Aktualisieren
@@ -696,7 +695,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       </div>
 
       {/* Sessions List */}
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ margin: '0 24px' }}>
         {activeSessions.length === 0 ? (
           <div style={{
             textAlign: 'center',

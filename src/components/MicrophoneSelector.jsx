@@ -112,14 +112,15 @@ const MicrophoneSelector = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Main selector row */}
-      <div style={{ display: 'flex', gap: '12px' }}>
+      {/* Main selector row - wraps on small screens */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
         {/* Dropdown button */}
         <button
           onClick={() => !disabled && !isLoading && setIsOpen(!isOpen)}
           disabled={disabled || isLoading}
           style={{
-            flex: 1,
+            flex: '1 1 250px',
+            minWidth: '200px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -173,6 +174,7 @@ const MicrophoneSelector = ({
             onClick={onTestClick}
             disabled={disabled || isLoading || !selectedDeviceId}
             style={{
+              flex: '0 0 auto',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
@@ -183,6 +185,7 @@ const MicrophoneSelector = ({
               cursor: disabled || isLoading || !selectedDeviceId ? 'not-allowed' : 'pointer',
               opacity: disabled || isLoading || !selectedDeviceId ? 0.5 : 1,
               transition: 'all 0.2s',
+              whiteSpace: 'nowrap',
             }}
           >
             <Mic style={{ width: '18px', height: '18px', color: primaryAccent }} />
