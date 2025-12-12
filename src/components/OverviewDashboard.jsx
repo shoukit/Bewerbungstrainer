@@ -220,12 +220,17 @@ const OverviewDashboard = ({ onNavigate }) => {
         </motion.div>
       </motion.div>
 
-      {/* Feature Cards Grid */}
+      {/* Feature Cards Grid - responsive with min 2 per row on larger screens */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6 px-4 lg:px-8"
+        className="w-full px-4 lg:px-8"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: '20px',
+        }}
       >
         {features.map((feature) => (
           <motion.div
