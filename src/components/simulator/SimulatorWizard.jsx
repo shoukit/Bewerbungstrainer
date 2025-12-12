@@ -12,6 +12,7 @@ import {
 import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import FullscreenLoader from '@/components/ui/fullscreen-loader';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 
@@ -571,32 +572,23 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
             e.target.style.boxShadow = isSubmitting ? 'none' : `0 4px 12px ${primaryAccent}4d`;
           }}
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }} />
-              Fragen werden generiert...
-            </>
-          ) : (
-            <>
-              Training starten
-              <ArrowRight style={{ width: '20px', height: '20px' }} />
-            </>
-          )}
+          Training starten
+          <ArrowRight style={{ width: '20px', height: '20px' }} />
         </button>
       </form>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
 
       {/* Microphone Test Dialog */}
       <MicrophoneTestDialog
         isOpen={showMicrophoneTest}
         onClose={() => setShowMicrophoneTest(false)}
         deviceId={selectedMicrophoneId}
+      />
+
+      {/* Fullscreen Loading Overlay */}
+      <FullscreenLoader
+        isLoading={isSubmitting}
+        message="Fragen werden generiert..."
+        subMessage="Die KI erstellt personalisierte Fragen basierend auf deinen Angaben."
       />
     </div>
   );

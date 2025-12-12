@@ -326,7 +326,7 @@ function AppContent() {
   }, []);
 
   // ===== SCROLL TO TOP HELPER =====
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     // Scroll to top of the window
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // Also try to scroll the main content area if it exists
@@ -334,7 +334,13 @@ function AppContent() {
     if (mainContent) {
       mainContent.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
+  }, []);
+
+  // ===== SCROLL TO TOP ON EVERY VIEW CHANGE =====
+  useEffect(() => {
+    // Scroll to top whenever the view changes
+    scrollToTop();
+  }, [currentView, scrollToTop]);
 
   // ===== NAVIGATION HANDLER =====
   const handleSidebarNavigate = (viewId) => {

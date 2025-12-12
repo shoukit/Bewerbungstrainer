@@ -3,6 +3,7 @@ import { ArrowLeft, Video, Info, Loader2, AlertCircle, ChevronRight, Settings, S
 import { usePartner } from '../../context/PartnerContext';
 import { motion } from 'framer-motion';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
+import FullscreenLoader from '@/components/ui/fullscreen-loader';
 
 /**
  * DynamicFormField - Renders form fields based on configuration
@@ -451,22 +452,16 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
           transition: 'all 0.2s ease',
         }}
       >
-        {isLoading ? (
-          <>
-            <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
-            Fragen werden generiert...
-          </>
-        ) : (
-          <>
-            Video Training starten
-            <ChevronRight size={20} />
-          </>
-        )}
+        Video Training starten
+        <ChevronRight size={20} />
       </motion.button>
 
-      <style>
-        {`@keyframes spin { to { transform: rotate(360deg); } }`}
-      </style>
+      {/* Fullscreen Loading Overlay */}
+      <FullscreenLoader
+        isLoading={isLoading}
+        message="Fragen werden generiert..."
+        subMessage="Die KI erstellt personalisierte Fragen basierend auf deinen Angaben."
+      />
     </div>
   );
 };
