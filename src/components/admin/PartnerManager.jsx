@@ -27,6 +27,14 @@ import {
   Copy,
   FileText,
   Layers,
+  Layout,
+  PanelLeft,
+  Sparkles,
+  Square,
+  PanelTop,
+  Shapes,
+  Type,
+  Frame,
 } from 'lucide-react';
 import { FormAccordion, FormAccordionGroup } from '@/components/ui/form-accordion';
 import wordpressAPI from '@/services/wordpress-api';
@@ -42,16 +50,154 @@ const AVAILABLE_MODULES = [
   { id: 'history', label: 'Verlauf / History' },
 ];
 
-// Default branding values
+// Default branding values - matching WordPress backend
 const DEFAULT_BRANDING = {
-  '--primary-accent': '#3A7FA7',
-  '--primary-accent-hover': '#2D6485',
+  // App / Allgemein
+  '--app-bg-start': '#f8fafc',
+  '--app-bg-mid': '#eff6ff',
+  '--app-bg-end': '#f0fdfa',
+  '--card-bg-color': '#ffffff',
+  // Sidebar
   '--sidebar-bg-color': '#ffffff',
   '--sidebar-text-color': '#0f172a',
+  '--sidebar-text-muted': '#64748b',
   '--sidebar-active-bg': '#E8F4F8',
   '--sidebar-active-text': '#2D6485',
+  // Akzentfarben
+  '--primary-accent': '#3A7FA7',
+  '--primary-accent-hover': '#2D6485',
+  // Buttons
   '--button-solid': '#3A7FA7',
   '--button-text': '#ffffff',
+  // Header
+  '--header-gradient-start': '#3A7FA7',
+  '--header-gradient-end': '#3DA389',
+  '--header-text': '#ffffff',
+  // Icons
+  '--icon-primary': '#3A7FA7',
+  '--icon-secondary': '#3DA389',
+  '--icon-muted': '#94a3b8',
+  // Text
+  '--text-main': '#0f172a',
+  '--text-secondary': '#475569',
+  '--text-muted': '#94a3b8',
+  // Rahmen & Focus
+  '--border-color': '#e2e8f0',
+  '--border-color-light': '#f1f5f9',
+  '--focus-ring': 'rgba(58, 127, 167, 0.3)',
+};
+
+// Branding field sections for the form - icons will be added in component
+const BRANDING_SECTIONS = [
+  {
+    id: 'app',
+    title: 'App / Allgemein',
+    subtitle: 'Hintergrundfarben der Anwendung',
+    accentColor: 'blue',
+    iconName: 'Layout',
+    fields: [
+      { key: '--app-bg-start', label: 'App Hintergrund (Start)', type: 'color' },
+      { key: '--app-bg-mid', label: 'App Hintergrund (Mitte)', type: 'color' },
+      { key: '--app-bg-end', label: 'App Hintergrund (Ende)', type: 'color' },
+      { key: '--card-bg-color', label: 'Karten Hintergrund', type: 'color' },
+    ],
+  },
+  {
+    id: 'sidebar',
+    title: 'Sidebar',
+    subtitle: 'Farben der Seitennavigation',
+    accentColor: 'teal',
+    iconName: 'PanelLeft',
+    fields: [
+      { key: '--sidebar-bg-color', label: 'Sidebar Hintergrund', type: 'color' },
+      { key: '--sidebar-text-color', label: 'Sidebar Text', type: 'color' },
+      { key: '--sidebar-text-muted', label: 'Sidebar Text (gedämpft)', type: 'color' },
+      { key: '--sidebar-active-bg', label: 'Sidebar Aktiv Hintergrund', type: 'color' },
+      { key: '--sidebar-active-text', label: 'Sidebar Aktiv Text', type: 'color' },
+    ],
+  },
+  {
+    id: 'accent',
+    title: 'Akzentfarben',
+    subtitle: 'Primäre Markenfarben',
+    accentColor: 'purple',
+    iconName: 'Sparkles',
+    fields: [
+      { key: '--primary-accent', label: 'Primärfarbe', type: 'color' },
+      { key: '--primary-accent-hover', label: 'Primärfarbe (Hover)', type: 'color' },
+    ],
+  },
+  {
+    id: 'buttons',
+    title: 'Buttons',
+    subtitle: 'Schaltflächenfarben',
+    accentColor: 'green',
+    iconName: 'Square',
+    fields: [
+      { key: '--button-solid', label: 'Button Farbe', type: 'color' },
+      { key: '--button-text', label: 'Button Text', type: 'color' },
+    ],
+  },
+  {
+    id: 'header',
+    title: 'Header',
+    subtitle: 'Kopfzeilenfarben',
+    accentColor: 'orange',
+    iconName: 'PanelTop',
+    fields: [
+      { key: '--header-gradient-start', label: 'Header Gradient (Start)', type: 'color' },
+      { key: '--header-gradient-end', label: 'Header Gradient (Ende)', type: 'color' },
+      { key: '--header-text', label: 'Header Text', type: 'color' },
+    ],
+  },
+  {
+    id: 'icons',
+    title: 'Icons',
+    subtitle: 'Symbolfarben',
+    accentColor: 'blue',
+    iconName: 'Shapes',
+    fields: [
+      { key: '--icon-primary', label: 'Icon Primär', type: 'color' },
+      { key: '--icon-secondary', label: 'Icon Sekundär', type: 'color' },
+      { key: '--icon-muted', label: 'Icon (gedämpft)', type: 'color' },
+    ],
+  },
+  {
+    id: 'text',
+    title: 'Text',
+    subtitle: 'Textfarben',
+    accentColor: 'teal',
+    iconName: 'Type',
+    fields: [
+      { key: '--text-main', label: 'Text Hauptfarbe', type: 'color' },
+      { key: '--text-secondary', label: 'Text Sekundär', type: 'color' },
+      { key: '--text-muted', label: 'Text (gedämpft)', type: 'color' },
+    ],
+  },
+  {
+    id: 'borders',
+    title: 'Rahmen & Focus',
+    subtitle: 'Rahmen- und Fokusfarben',
+    accentColor: 'purple',
+    iconName: 'Frame',
+    fields: [
+      { key: '--border-color', label: 'Rahmenfarbe', type: 'color' },
+      { key: '--border-color-light', label: 'Rahmenfarbe (hell)', type: 'color' },
+      { key: '--focus-ring', label: 'Focus Ring', type: 'color' },
+    ],
+  },
+];
+
+// Icon mapping
+const SECTION_ICONS = {
+  Layout,
+  PanelLeft,
+  Sparkles,
+  Square,
+  PanelTop,
+  Shapes,
+  Type,
+  Frame,
 };
 
 /**
@@ -484,6 +630,94 @@ export default function PartnerManager({ onBack }) {
 }
 
 /**
+ * Color Input Component
+ */
+function ColorInput({ label, value, defaultValue, onChange }) {
+  // Handle rgba values - convert to hex for color picker
+  const isRgba = value?.startsWith('rgba') || defaultValue?.startsWith('rgba');
+  const displayValue = isRgba ? '#3A7FA7' : (value || defaultValue || '#000000');
+
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1 text-slate-600">
+        {label}
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={displayValue}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-10 h-8 rounded border cursor-pointer"
+        />
+        <Input
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={defaultValue}
+          className="flex-1 text-xs"
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Branding Preview Component
+ */
+function BrandingPreview({ branding }) {
+  const bgStart = branding?.['--app-bg-start'] || DEFAULT_BRANDING['--app-bg-start'];
+  const bgMid = branding?.['--app-bg-mid'] || DEFAULT_BRANDING['--app-bg-mid'];
+  const bgEnd = branding?.['--app-bg-end'] || DEFAULT_BRANDING['--app-bg-end'];
+  const cardBg = branding?.['--card-bg-color'] || DEFAULT_BRANDING['--card-bg-color'];
+  const headerStart = branding?.['--header-gradient-start'] || DEFAULT_BRANDING['--header-gradient-start'];
+  const headerEnd = branding?.['--header-gradient-end'] || DEFAULT_BRANDING['--header-gradient-end'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const textMain = branding?.['--text-main'] || DEFAULT_BRANDING['--text-main'];
+  const textSecondary = branding?.['--text-secondary'] || DEFAULT_BRANDING['--text-secondary'];
+  const buttonSolid = branding?.['--button-solid'] || DEFAULT_BRANDING['--button-solid'];
+  const buttonText = branding?.['--button-text'] || DEFAULT_BRANDING['--button-text'];
+  const borderColor = branding?.['--border-color'] || DEFAULT_BRANDING['--border-color'];
+
+  return (
+    <div
+      className="rounded-lg p-4 mb-4"
+      style={{
+        background: `linear-gradient(135deg, ${bgStart} 0%, ${bgMid} 50%, ${bgEnd} 100%)`,
+      }}
+    >
+      {/* Mini Header */}
+      <div
+        className="rounded-t-lg px-3 py-2 mb-2"
+        style={{ background: `linear-gradient(135deg, ${headerStart} 0%, ${headerEnd} 100%)` }}
+      >
+        <span className="text-xs font-medium" style={{ color: headerText }}>Header Vorschau</span>
+      </div>
+
+      {/* Card Preview */}
+      <div
+        className="rounded-lg p-3"
+        style={{
+          backgroundColor: cardBg,
+          border: `1px solid ${borderColor}`,
+        }}
+      >
+        <p className="text-sm font-medium mb-1" style={{ color: textMain }}>Karten-Titel</p>
+        <p className="text-xs mb-3" style={{ color: textSecondary }}>Sekundärer Text</p>
+        <button
+          type="button"
+          className="px-3 py-1.5 rounded text-xs font-medium"
+          style={{
+            backgroundColor: buttonSolid,
+            color: buttonText,
+          }}
+        >
+          Button
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Partner Form Component
  */
 function PartnerForm({ formData, setFormData }) {
@@ -511,17 +745,6 @@ function PartnerForm({ formData, setFormData }) {
       },
     });
   };
-
-  const brandingFields = [
-    { key: '--primary-accent', label: 'Primärfarbe', type: 'color' },
-    { key: '--primary-accent-hover', label: 'Primärfarbe (Hover)', type: 'color' },
-    { key: '--sidebar-bg-color', label: 'Sidebar Hintergrund', type: 'color' },
-    { key: '--sidebar-text-color', label: 'Sidebar Text', type: 'color' },
-    { key: '--sidebar-active-bg', label: 'Sidebar Aktiv Hintergrund', type: 'color' },
-    { key: '--sidebar-active-text', label: 'Sidebar Aktiv Text', type: 'color' },
-    { key: '--button-solid', label: 'Button Farbe', type: 'color' },
-    { key: '--button-text', label: 'Button Text', type: 'color' },
-  ];
 
   return (
     <FormAccordionGroup>
@@ -552,7 +775,7 @@ function PartnerForm({ formData, setFormData }) {
               onChange={(e) => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')})}
               placeholder="z.B. vertriebsakademie-mueller"
             />
-            <p className="text-xs text-[var(--text-muted)] mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Wird in der URL verwendet: ?partner={formData.slug || 'ihr-slug'}
             </p>
           </div>
@@ -591,7 +814,7 @@ function PartnerForm({ formData, setFormData }) {
         badge={formData.modules?.length > 0 ? `${formData.modules.length} ausgewählt` : 'Alle'}
       >
         <div>
-          <p className="text-sm text-[var(--text-muted)] mb-4">
+          <p className="text-sm text-slate-500 mb-4">
             Keine Auswahl = Alle Module sind erlaubt
           </p>
           <div className="space-y-2">
@@ -613,70 +836,45 @@ function PartnerForm({ formData, setFormData }) {
         </div>
       </FormAccordion>
 
-      {/* Branding */}
+      {/* Branding Preview */}
       <FormAccordion
-        title="Branding / Farben"
-        subtitle="Individuelle Farbgestaltung für den Partner"
+        title="Branding Vorschau"
+        subtitle="Live-Vorschau der konfigurierten Farben"
         icon={Palette}
         accentColor="orange"
+        defaultExpanded={true}
       >
-        <div>
-          {/* Preview */}
-          <div className="mb-4 p-4 rounded-lg border" style={{
-            backgroundColor: formData.branding?.['--sidebar-bg-color'] || '#ffffff',
-          }}>
-            <div className="flex items-center gap-3 mb-2">
-              <div
-                className="w-10 h-10 rounded-lg"
-                style={{ backgroundColor: formData.branding?.['--primary-accent'] || '#3A7FA7' }}
-              />
-              <div>
-                <p className="font-medium" style={{ color: formData.branding?.['--sidebar-text-color'] || '#0f172a' }}>
-                  Vorschau
-                </p>
-                <p className="text-sm" style={{ color: formData.branding?.['--sidebar-active-text'] || '#2D6485' }}>
-                  Aktiver Text
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="px-4 py-2 rounded-lg text-sm font-medium"
-              style={{
-                backgroundColor: formData.branding?.['--button-solid'] || '#3A7FA7',
-                color: formData.branding?.['--button-text'] || '#ffffff',
-              }}
-            >
-              Button Beispiel
-            </button>
-          </div>
-
-          {/* Color Inputs */}
-          <div className="grid grid-cols-2 gap-4">
-            {brandingFields.map((field) => (
-              <div key={field.key}>
-                <label className="block text-xs font-medium mb-1 text-[var(--text-secondary)]">
-                  {field.label}
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={formData.branding?.[field.key] || DEFAULT_BRANDING[field.key]}
-                    onChange={(e) => handleBrandingChange(field.key, e.target.value)}
-                    className="w-10 h-8 rounded border cursor-pointer"
-                  />
-                  <Input
-                    value={formData.branding?.[field.key] || ''}
-                    onChange={(e) => handleBrandingChange(field.key, e.target.value)}
-                    placeholder={DEFAULT_BRANDING[field.key]}
-                    className="flex-1 text-xs"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <BrandingPreview branding={formData.branding} />
+        <p className="text-xs text-slate-500 text-center">
+          Ändern Sie die Farben in den Sektionen unten
+        </p>
       </FormAccordion>
+
+      {/* Dynamic Branding Sections */}
+      {BRANDING_SECTIONS.map((section) => {
+        const Icon = SECTION_ICONS[section.iconName];
+        return (
+          <FormAccordion
+            key={section.id}
+            title={section.title}
+            subtitle={section.subtitle}
+            icon={Icon}
+            accentColor={section.accentColor}
+          >
+            <div className="grid grid-cols-2 gap-4">
+              {section.fields.map((field) => (
+                <ColorInput
+                  key={field.key}
+                  label={field.label}
+                  value={formData.branding?.[field.key]}
+                  defaultValue={DEFAULT_BRANDING[field.key]}
+                  onChange={(value) => handleBrandingChange(field.key, value)}
+                />
+              ))}
+            </div>
+          </FormAccordion>
+        );
+      })}
     </FormAccordionGroup>
   );
 }
