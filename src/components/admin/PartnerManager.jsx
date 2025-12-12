@@ -530,8 +530,7 @@ function PartnerForm({ formData, setFormData }) {
         title="Grundinformationen"
         subtitle="Name, Slug und Status des Partners"
         icon={FileText}
-        iconColor="text-blue-600"
-        iconBgColor="bg-blue-100"
+        accentColor="blue"
         defaultExpanded={true}
       >
         <div className="space-y-4">
@@ -588,8 +587,7 @@ function PartnerForm({ formData, setFormData }) {
         title="Erlaubte Module"
         subtitle="Welche Funktionen für diesen Partner verfügbar sind"
         icon={Layers}
-        iconColor="text-green-600"
-        iconBgColor="bg-green-100"
+        accentColor="green"
         badge={formData.modules?.length > 0 ? `${formData.modules.length} ausgewählt` : 'Alle'}
       >
         <div>
@@ -620,8 +618,7 @@ function PartnerForm({ formData, setFormData }) {
         title="Branding / Farben"
         subtitle="Individuelle Farbgestaltung für den Partner"
         icon={Palette}
-        iconColor="text-orange-600"
-        iconBgColor="bg-orange-100"
+        accentColor="orange"
       >
         <div>
           {/* Preview */}

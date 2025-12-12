@@ -469,8 +469,7 @@ function ScenarioForm({ formData, setFormData }) {
         title="Grundinformationen"
         subtitle="Titel, Beschreibung und Basiseinstellungen"
         icon={FileText}
-        iconColor="text-blue-600"
-        iconBgColor="bg-blue-100"
+        accentColor="blue"
         defaultExpanded={true}
       >
         <div className="space-y-4">
@@ -556,8 +555,7 @@ function ScenarioForm({ formData, setFormData }) {
         title="Gesprächspartner-Profil"
         subtitle="Name, Rolle und Eigenschaften des KI-Interviewers"
         icon={User}
-        iconColor="text-green-600"
-        iconBgColor="bg-green-100"
+        accentColor="teal"
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -604,8 +602,7 @@ function ScenarioForm({ formData, setFormData }) {
         title="Erweiterte Einstellungen"
         subtitle="Coaching-Hinweise und zusätzliche Konfiguration"
         icon={Settings}
-        iconColor="text-purple-600"
-        iconBgColor="bg-purple-100"
+        accentColor="purple"
       >
         <div className="space-y-4">
           <div>
