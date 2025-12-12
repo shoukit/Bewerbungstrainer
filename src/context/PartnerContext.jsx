@@ -28,6 +28,7 @@ export function PartnerProvider({ children }) {
   // Authentication state
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
   // Initialize partner from URL on mount - now fetches from API
@@ -68,6 +69,32 @@ export function PartnerProvider({ children }) {
     initializePartner();
   }, []);
 
+  /**
+   * Check if current user is admin via API
+   */
+  const checkAdminStatus = async () => {
+    try {
+      const apiUrl = window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+      const response = await fetch(`${apiUrl}/admin/check`, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': window.bewerbungstrainerConfig?.nonce || '',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.data?.isAdmin || false;
+      }
+      return false;
+    } catch (error) {
+      console.log('🔐 [PartnerContext] Admin check failed:', error);
+      return false;
+    }
+  };
+
   // Initialize authentication state from WordPress config
   useEffect(() => {
     const initializeAuth = async () => {
@@ -81,6 +108,11 @@ export function PartnerProvider({ children }) {
           firstName: wpConfig.currentUser.firstName,
         });
         setIsAuthenticated(true);
+
+        // Check admin status
+        const adminStatus = await checkAdminStatus();
+        setIsAdmin(adminStatus);
+        console.log('🔐 [PartnerContext] Admin status:', adminStatus);
       } else {
         // Try to get current user from API (in case cookies are set but config wasn't updated)
         try {
@@ -89,6 +121,11 @@ export function PartnerProvider({ children }) {
             console.log('🔐 [PartnerContext] User from API:', apiUser.displayName);
             setUser(apiUser);
             setIsAuthenticated(true);
+
+            // Check admin status
+            const adminStatus = await checkAdminStatus();
+            setIsAdmin(adminStatus);
+            console.log('🔐 [PartnerContext] Admin status:', adminStatus);
           }
         } catch (error) {
           console.log('🔐 [PartnerContext] No authenticated user');
@@ -217,7 +254,11 @@ export function PartnerProvider({ children }) {
 
       setUser(result.user);
       setIsAuthenticated(true);
-      console.log('✅ [PartnerContext] Login successful:', result.user.displayName);
+
+      // Check admin status after login
+      const adminStatus = await checkAdminStatus();
+      setIsAdmin(adminStatus);
+      console.log('✅ [PartnerContext] Login successful:', result.user.displayName, '| Admin:', adminStatus);
     } else {
       console.warn('⚠️ [PartnerContext] Login failed:', result.error);
     }
@@ -237,6 +278,7 @@ export function PartnerProvider({ children }) {
     // Always clear local state, even if API call fails
     setUser(null);
     setIsAuthenticated(false);
+    setIsAdmin(false);
     console.log('✅ [PartnerContext] Logout completed');
 
     return result;
@@ -283,6 +325,7 @@ export function PartnerProvider({ children }) {
     // Authentication
     user,
     isAuthenticated,
+    isAdmin,
     authLoading,
     login: handleLogin,
     logout: handleLogout,
@@ -322,10 +365,11 @@ export function usePartnerBranding() {
  * Convenience hook for accessing authentication state and methods
  */
 export function useAuth() {
-  const { user, isAuthenticated, authLoading, login, logout, refreshUser } = usePartner();
+  const { user, isAuthenticated, isAdmin, authLoading, login, logout, refreshUser } = usePartner();
   return {
     user,
     isAuthenticated,
+    isAdmin,
     isLoading: authLoading,
     login,
     logout,

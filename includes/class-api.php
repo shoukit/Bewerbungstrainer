@@ -317,6 +317,85 @@ class Bewerbungstrainer_API {
             'callback' => array($this, 'generate_elevenlabs_signed_url'),
             'permission_callback' => array($this, 'allow_all_users'),
         ));
+
+        // ===== Admin Management Endpoints =====
+
+        // Check if current user is admin
+        register_rest_route($this->namespace, '/admin/check', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'admin_check_status'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Admin: Get all roleplay scenarios (including drafts)
+        register_rest_route($this->namespace, '/admin/roleplays', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'admin_get_roleplay_scenarios'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Create roleplay scenario
+        register_rest_route($this->namespace, '/admin/roleplays', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'admin_create_roleplay_scenario'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Update roleplay scenario
+        register_rest_route($this->namespace, '/admin/roleplays/(?P<id>\d+)', array(
+            'methods' => 'PUT',
+            'callback' => array($this, 'admin_update_roleplay_scenario'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Delete roleplay scenario
+        register_rest_route($this->namespace, '/admin/roleplays/(?P<id>\d+)', array(
+            'methods' => 'DELETE',
+            'callback' => array($this, 'admin_delete_roleplay_scenario'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Get all partners
+        register_rest_route($this->namespace, '/admin/partners', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'admin_get_partners'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Create partner
+        register_rest_route($this->namespace, '/admin/partners', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'admin_create_partner'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Update partner
+        register_rest_route($this->namespace, '/admin/partners/(?P<id>\d+)', array(
+            'methods' => 'PUT',
+            'callback' => array($this, 'admin_update_partner'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Delete partner
+        register_rest_route($this->namespace, '/admin/partners/(?P<id>\d+)', array(
+            'methods' => 'DELETE',
+            'callback' => array($this, 'admin_delete_partner'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Get all simulator scenarios
+        register_rest_route($this->namespace, '/admin/simulator-scenarios', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'admin_get_simulator_scenarios'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
+
+        // Admin: Get all video training scenarios
+        register_rest_route($this->namespace, '/admin/video-training-scenarios', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'admin_get_video_training_scenarios'),
+            'permission_callback' => array($this, 'check_is_admin'),
+        ));
     }
 
     /**
@@ -2063,5 +2142,620 @@ class Bewerbungstrainer_API {
             'created_at' => $session->created_at,
             'updated_at' => $session->updated_at,
         );
+    }
+
+    // ===== ADMIN MANAGEMENT ENDPOINTS =====
+
+    /**
+     * Admin: Check if user is admin
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function admin_check_status($request) {
+        $is_admin = current_user_can('manage_options');
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'isAdmin' => $is_admin,
+            ),
+        ), 200);
+    }
+
+    /**
+     * Admin: Get all roleplay scenarios (including drafts)
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function admin_get_roleplay_scenarios($request) {
+        $args = array(
+            'post_type' => 'roleplay_scenario',
+            'post_status' => array('publish', 'draft', 'pending'),
+            'posts_per_page' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC'
+        );
+
+        $query = new WP_Query($args);
+        $scenarios = array();
+
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $post = get_post();
+                $scenarios[] = $this->format_admin_roleplay_scenario($post);
+            }
+            wp_reset_postdata();
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $scenarios,
+        ), 200);
+    }
+
+    /**
+     * Format roleplay scenario for admin API
+     */
+    private function format_admin_roleplay_scenario($post) {
+        $variables_json = get_post_meta($post->ID, '_roleplay_variables_schema', true);
+        $variables = $variables_json ? json_decode($variables_json, true) : array();
+
+        $tags = wp_get_post_terms($post->ID, 'roleplay_scenario_tag', array('fields' => 'names'));
+
+        return array(
+            'id' => $post->ID,
+            'title' => get_the_title($post),
+            'status' => $post->post_status,
+            'description' => get_post_meta($post->ID, '_roleplay_description', true),
+            'content' => $post->post_content,
+            'agent_id' => get_post_meta($post->ID, '_roleplay_agent_id', true),
+            'initial_message' => get_post_meta($post->ID, '_roleplay_initial_message', true),
+            'difficulty' => get_post_meta($post->ID, '_roleplay_difficulty', true),
+            'variables_schema' => $variables,
+            'tags' => is_array($tags) ? $tags : array(),
+            'feedback_prompt' => get_post_meta($post->ID, '_roleplay_feedback_prompt', true),
+            'interviewer_profile' => array(
+                'name' => get_post_meta($post->ID, '_roleplay_interviewer_name', true),
+                'role' => get_post_meta($post->ID, '_roleplay_interviewer_role', true),
+                'image_url' => get_post_meta($post->ID, '_roleplay_interviewer_image', true),
+                'properties' => get_post_meta($post->ID, '_roleplay_interviewer_properties', true),
+                'typical_objections' => get_post_meta($post->ID, '_roleplay_interviewer_objections', true),
+                'important_questions' => get_post_meta($post->ID, '_roleplay_interviewer_questions', true),
+            ),
+            'coaching_hints' => get_post_meta($post->ID, '_roleplay_coaching_hints', true),
+            'created_at' => $post->post_date,
+            'updated_at' => $post->post_modified,
+        );
+    }
+
+    /**
+     * Admin: Create roleplay scenario
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function admin_create_roleplay_scenario($request) {
+        $params = $request->get_json_params();
+
+        if (empty($params['title'])) {
+            return new WP_Error(
+                'missing_title',
+                __('Titel ist erforderlich.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Create post
+        $post_id = wp_insert_post(array(
+            'post_type' => 'roleplay_scenario',
+            'post_title' => sanitize_text_field($params['title']),
+            'post_content' => isset($params['content']) ? wp_kses_post($params['content']) : '',
+            'post_status' => isset($params['status']) ? sanitize_text_field($params['status']) : 'draft',
+        ));
+
+        if (is_wp_error($post_id)) {
+            return new WP_Error(
+                'create_failed',
+                __('Fehler beim Erstellen des Szenarios.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Save meta fields
+        $this->save_roleplay_scenario_meta($post_id, $params);
+
+        // Save tags
+        if (!empty($params['tags']) && is_array($params['tags'])) {
+            wp_set_post_terms($post_id, $params['tags'], 'roleplay_scenario_tag');
+        }
+
+        $post = get_post($post_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_admin_roleplay_scenario($post),
+        ), 201);
+    }
+
+    /**
+     * Admin: Update roleplay scenario
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function admin_update_roleplay_scenario($request) {
+        $post_id = intval($request['id']);
+        $post = get_post($post_id);
+
+        if (!$post || $post->post_type !== 'roleplay_scenario') {
+            return new WP_Error(
+                'not_found',
+                __('Szenario nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        $params = $request->get_json_params();
+
+        // Update post
+        $update_data = array('ID' => $post_id);
+
+        if (isset($params['title'])) {
+            $update_data['post_title'] = sanitize_text_field($params['title']);
+        }
+        if (isset($params['content'])) {
+            $update_data['post_content'] = wp_kses_post($params['content']);
+        }
+        if (isset($params['status'])) {
+            $update_data['post_status'] = sanitize_text_field($params['status']);
+        }
+
+        $result = wp_update_post($update_data, true);
+
+        if (is_wp_error($result)) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Aktualisieren des Szenarios.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Save meta fields
+        $this->save_roleplay_scenario_meta($post_id, $params);
+
+        // Save tags
+        if (isset($params['tags']) && is_array($params['tags'])) {
+            wp_set_post_terms($post_id, $params['tags'], 'roleplay_scenario_tag');
+        }
+
+        $post = get_post($post_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_admin_roleplay_scenario($post),
+        ), 200);
+    }
+
+    /**
+     * Save roleplay scenario meta fields
+     */
+    private function save_roleplay_scenario_meta($post_id, $params) {
+        if (isset($params['agent_id'])) {
+            update_post_meta($post_id, '_roleplay_agent_id', sanitize_text_field($params['agent_id']));
+        }
+        if (isset($params['description'])) {
+            update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($params['description']));
+        }
+        if (isset($params['initial_message'])) {
+            update_post_meta($post_id, '_roleplay_initial_message', sanitize_textarea_field($params['initial_message']));
+        }
+        if (isset($params['difficulty'])) {
+            $difficulty = sanitize_text_field($params['difficulty']);
+            if (in_array($difficulty, array('easy', 'medium', 'hard'))) {
+                update_post_meta($post_id, '_roleplay_difficulty', $difficulty);
+            }
+        }
+        if (isset($params['feedback_prompt'])) {
+            update_post_meta($post_id, '_roleplay_feedback_prompt', sanitize_textarea_field($params['feedback_prompt']));
+        }
+        if (isset($params['coaching_hints'])) {
+            update_post_meta($post_id, '_roleplay_coaching_hints', sanitize_textarea_field($params['coaching_hints']));
+        }
+
+        // Interviewer profile
+        if (isset($params['interviewer_profile']) && is_array($params['interviewer_profile'])) {
+            $profile = $params['interviewer_profile'];
+            if (isset($profile['name'])) {
+                update_post_meta($post_id, '_roleplay_interviewer_name', sanitize_text_field($profile['name']));
+            }
+            if (isset($profile['role'])) {
+                update_post_meta($post_id, '_roleplay_interviewer_role', sanitize_text_field($profile['role']));
+            }
+            if (isset($profile['image_url'])) {
+                update_post_meta($post_id, '_roleplay_interviewer_image', esc_url_raw($profile['image_url']));
+            }
+            if (isset($profile['properties'])) {
+                update_post_meta($post_id, '_roleplay_interviewer_properties', sanitize_textarea_field($profile['properties']));
+            }
+            if (isset($profile['typical_objections'])) {
+                update_post_meta($post_id, '_roleplay_interviewer_objections', sanitize_textarea_field($profile['typical_objections']));
+            }
+            if (isset($profile['important_questions'])) {
+                update_post_meta($post_id, '_roleplay_interviewer_questions', sanitize_textarea_field($profile['important_questions']));
+            }
+        }
+
+        // Variables schema
+        if (isset($params['variables_schema']) && is_array($params['variables_schema'])) {
+            $variables = array();
+            foreach ($params['variables_schema'] as $variable) {
+                if (!empty($variable['key']) && !empty($variable['label'])) {
+                    $variables[] = array(
+                        'key' => sanitize_key($variable['key']),
+                        'label' => sanitize_text_field($variable['label']),
+                        'type' => in_array($variable['type'], array('text', 'number', 'textarea')) ? $variable['type'] : 'text',
+                        'default' => isset($variable['default']) ? sanitize_text_field($variable['default']) : '',
+                        'required' => isset($variable['required']) ? (bool) $variable['required'] : false,
+                        'user_input' => isset($variable['user_input']) ? (bool) $variable['user_input'] : true,
+                    );
+                }
+            }
+            update_post_meta($post_id, '_roleplay_variables_schema', wp_json_encode($variables));
+        }
+    }
+
+    /**
+     * Admin: Delete roleplay scenario
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function admin_delete_roleplay_scenario($request) {
+        $post_id = intval($request['id']);
+        $post = get_post($post_id);
+
+        if (!$post || $post->post_type !== 'roleplay_scenario') {
+            return new WP_Error(
+                'not_found',
+                __('Szenario nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        $result = wp_delete_post($post_id, true);
+
+        if (!$result) {
+            return new WP_Error(
+                'delete_failed',
+                __('Fehler beim Löschen des Szenarios.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => __('Szenario erfolgreich gelöscht.', 'bewerbungstrainer'),
+        ), 200);
+    }
+
+    /**
+     * Admin: Get all partners
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function admin_get_partners($request) {
+        $args = array(
+            'post_type' => 'whitelabel_partner',
+            'post_status' => array('publish', 'draft', 'pending'),
+            'posts_per_page' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC'
+        );
+
+        $query = new WP_Query($args);
+        $partners = array();
+
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $post = get_post();
+                $partners[] = $this->format_admin_partner($post);
+            }
+            wp_reset_postdata();
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $partners,
+        ), 200);
+    }
+
+    /**
+     * Format partner for admin API
+     */
+    private function format_admin_partner($post) {
+        $logo_id = get_post_meta($post->ID, '_partner_logo_id', true);
+        $logo_url = $logo_id ? wp_get_attachment_url($logo_id) : null;
+
+        $branding = get_post_meta($post->ID, '_partner_branding', true);
+        if (!is_array($branding)) {
+            $branding = array();
+        }
+
+        $modules = get_post_meta($post->ID, '_partner_modules', true);
+        if (!is_array($modules)) {
+            $modules = array();
+        }
+
+        $slug = get_post_meta($post->ID, '_partner_slug', true);
+        if (empty($slug)) {
+            $slug = $post->post_name;
+        }
+
+        return array(
+            'id' => $post->ID,
+            'name' => get_the_title($post),
+            'slug' => $slug,
+            'status' => $post->post_status,
+            'description' => get_post_meta($post->ID, '_partner_description', true),
+            'logo_url' => $logo_url,
+            'logo_id' => $logo_id ? intval($logo_id) : null,
+            'branding' => $branding,
+            'modules' => $modules,
+            'custom_scenarios' => get_post_meta($post->ID, '_partner_custom_scenarios', true),
+            'created_at' => $post->post_date,
+            'updated_at' => $post->post_modified,
+        );
+    }
+
+    /**
+     * Admin: Create partner
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function admin_create_partner($request) {
+        $params = $request->get_json_params();
+
+        if (empty($params['name'])) {
+            return new WP_Error(
+                'missing_name',
+                __('Name ist erforderlich.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        $slug = isset($params['slug']) ? sanitize_title($params['slug']) : sanitize_title($params['name']);
+
+        // Create post
+        $post_id = wp_insert_post(array(
+            'post_type' => 'whitelabel_partner',
+            'post_title' => sanitize_text_field($params['name']),
+            'post_name' => $slug,
+            'post_status' => isset($params['status']) ? sanitize_text_field($params['status']) : 'draft',
+        ));
+
+        if (is_wp_error($post_id)) {
+            return new WP_Error(
+                'create_failed',
+                __('Fehler beim Erstellen des Partners.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Save meta fields
+        $this->save_partner_meta($post_id, $params);
+
+        $post = get_post($post_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_admin_partner($post),
+        ), 201);
+    }
+
+    /**
+     * Admin: Update partner
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function admin_update_partner($request) {
+        $post_id = intval($request['id']);
+        $post = get_post($post_id);
+
+        if (!$post || $post->post_type !== 'whitelabel_partner') {
+            return new WP_Error(
+                'not_found',
+                __('Partner nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        $params = $request->get_json_params();
+
+        // Update post
+        $update_data = array('ID' => $post_id);
+
+        if (isset($params['name'])) {
+            $update_data['post_title'] = sanitize_text_field($params['name']);
+        }
+        if (isset($params['slug'])) {
+            $update_data['post_name'] = sanitize_title($params['slug']);
+        }
+        if (isset($params['status'])) {
+            $update_data['post_status'] = sanitize_text_field($params['status']);
+        }
+
+        $result = wp_update_post($update_data, true);
+
+        if (is_wp_error($result)) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Aktualisieren des Partners.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Save meta fields
+        $this->save_partner_meta($post_id, $params);
+
+        $post = get_post($post_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $this->format_admin_partner($post),
+        ), 200);
+    }
+
+    /**
+     * Save partner meta fields
+     */
+    private function save_partner_meta($post_id, $params) {
+        if (isset($params['slug'])) {
+            update_post_meta($post_id, '_partner_slug', sanitize_title($params['slug']));
+        }
+        if (isset($params['description'])) {
+            update_post_meta($post_id, '_partner_description', sanitize_textarea_field($params['description']));
+        }
+        if (isset($params['logo_id'])) {
+            if ($params['logo_id']) {
+                update_post_meta($post_id, '_partner_logo_id', absint($params['logo_id']));
+            } else {
+                delete_post_meta($post_id, '_partner_logo_id');
+            }
+        }
+        if (isset($params['branding']) && is_array($params['branding'])) {
+            update_post_meta($post_id, '_partner_branding', $params['branding']);
+        }
+        if (isset($params['modules'])) {
+            update_post_meta($post_id, '_partner_modules', is_array($params['modules']) ? $params['modules'] : array());
+        }
+        if (isset($params['custom_scenarios'])) {
+            update_post_meta($post_id, '_partner_custom_scenarios', sanitize_textarea_field($params['custom_scenarios']));
+        }
+    }
+
+    /**
+     * Admin: Delete partner
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function admin_delete_partner($request) {
+        $post_id = intval($request['id']);
+        $post = get_post($post_id);
+
+        if (!$post || $post->post_type !== 'whitelabel_partner') {
+            return new WP_Error(
+                'not_found',
+                __('Partner nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        $result = wp_delete_post($post_id, true);
+
+        if (!$result) {
+            return new WP_Error(
+                'delete_failed',
+                __('Fehler beim Löschen des Partners.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => __('Partner erfolgreich gelöscht.', 'bewerbungstrainer'),
+        ), 200);
+    }
+
+    /**
+     * Admin: Get all simulator scenarios
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function admin_get_simulator_scenarios($request) {
+        $args = array(
+            'post_type' => 'simulator_scenario',
+            'post_status' => array('publish', 'draft', 'pending'),
+            'posts_per_page' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC'
+        );
+
+        $query = new WP_Query($args);
+        $scenarios = array();
+
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $post = get_post();
+                $scenarios[] = array(
+                    'id' => $post->ID,
+                    'title' => get_the_title($post),
+                    'status' => $post->post_status,
+                    'description' => get_post_meta($post->ID, '_simulator_description', true),
+                    'category' => get_post_meta($post->ID, '_simulator_category', true),
+                    'difficulty' => get_post_meta($post->ID, '_simulator_difficulty', true),
+                    'questions_count' => get_post_meta($post->ID, '_simulator_questions_count', true),
+                    'created_at' => $post->post_date,
+                    'updated_at' => $post->post_modified,
+                );
+            }
+            wp_reset_postdata();
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $scenarios,
+        ), 200);
+    }
+
+    /**
+     * Admin: Get all video training scenarios
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function admin_get_video_training_scenarios($request) {
+        $args = array(
+            'post_type' => 'video_training_scenario',
+            'post_status' => array('publish', 'draft', 'pending'),
+            'posts_per_page' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC'
+        );
+
+        $query = new WP_Query($args);
+        $scenarios = array();
+
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $post = get_post();
+                $scenarios[] = array(
+                    'id' => $post->ID,
+                    'title' => get_the_title($post),
+                    'status' => $post->post_status,
+                    'description' => get_post_meta($post->ID, '_video_training_description', true),
+                    'category' => get_post_meta($post->ID, '_video_training_category', true),
+                    'difficulty' => get_post_meta($post->ID, '_video_training_difficulty', true),
+                    'created_at' => $post->post_date,
+                    'updated_at' => $post->post_modified,
+                );
+            }
+            wp_reset_postdata();
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $scenarios,
+        ), 200);
     }
 }

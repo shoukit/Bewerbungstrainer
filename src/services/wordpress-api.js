@@ -545,6 +545,111 @@ class WordPressAPI {
             method: 'GET'
         });
     }
+
+    // ===== Admin Management API Methods =====
+
+    /**
+     * Check if current user is admin
+     */
+    async checkAdminStatus() {
+        return this.request('/admin/check', {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get all roleplay scenarios (admin)
+     */
+    async adminGetRoleplayScenarios() {
+        return this.request('/admin/roleplays', {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Create roleplay scenario (admin)
+     */
+    async adminCreateRoleplayScenario(data) {
+        return this.request('/admin/roleplays', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Update roleplay scenario (admin)
+     */
+    async adminUpdateRoleplayScenario(id, data) {
+        return this.request(`/admin/roleplays/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Delete roleplay scenario (admin)
+     */
+    async adminDeleteRoleplayScenario(id) {
+        return this.request(`/admin/roleplays/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    /**
+     * Get all partners (admin)
+     */
+    async adminGetPartners() {
+        return this.request('/admin/partners', {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Create partner (admin)
+     */
+    async adminCreatePartner(data) {
+        return this.request('/admin/partners', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Update partner (admin)
+     */
+    async adminUpdatePartner(id, data) {
+        return this.request(`/admin/partners/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Delete partner (admin)
+     */
+    async adminDeletePartner(id) {
+        return this.request(`/admin/partners/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    /**
+     * Get all simulator scenarios (admin)
+     */
+    async adminGetSimulatorScenarios() {
+        return this.request('/admin/simulator-scenarios', {
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Get all video training scenarios (admin)
+     */
+    async adminGetVideoTrainingScenarios() {
+        return this.request('/admin/video-training-scenarios', {
+            method: 'GET'
+        });
+    }
 }
 
 // Export singleton instance

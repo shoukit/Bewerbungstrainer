@@ -8,10 +8,17 @@ import { SimulatorApp } from './components/simulator';
 import { VideoTrainingApp } from './components/video-training';
 import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SidebarLayout } from './components/ui/sidebar';
-import { PartnerProvider, usePartner } from './context/PartnerContext';
+import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
 import { LoginModal } from './components/LoginModal';
 import { ToastProvider } from './components/Toast';
 import { Loader2 } from 'lucide-react';
+
+// Admin components
+import AdminDashboard from './components/admin/AdminDashboard';
+import ScenarioManager from './components/admin/ScenarioManager';
+import SimulatorScenarioManager from './components/admin/SimulatorScenarioManager';
+import VideoTrainingManager from './components/admin/VideoTrainingManager';
+import PartnerManager from './components/admin/PartnerManager';
 
 console.log('📦 [APP] App.jsx module loaded');
 
@@ -87,6 +94,12 @@ const VIEWS = {
   GYM: 'gym',
   GYM_KLASSIKER: 'gym_klassiker',
   GYM_SESSION: 'gym_session',
+  // Admin views
+  ADMIN: 'admin',
+  ADMIN_ROLEPLAYS: 'admin_roleplays',
+  ADMIN_SIMULATOR: 'admin_simulator',
+  ADMIN_VIDEO: 'admin_video',
+  ADMIN_PARTNERS: 'admin_partners',
 };
 
 /**
@@ -186,6 +199,7 @@ function AppContent() {
 
   // Auth context and loading state
   const { isAuthenticated, authLoading, isLoading } = usePartner();
+  const { isAdmin } = useAuth();
 
   // Show loading spinner while branding is loading
   if (isLoading) {
@@ -365,6 +379,22 @@ function AppContent() {
       case 'gym_klassiker':
         setCurrentView(VIEWS.GYM_KLASSIKER);
         break;
+      // Admin views
+      case 'admin':
+        setCurrentView(VIEWS.ADMIN);
+        break;
+      case 'admin_roleplays':
+        setCurrentView(VIEWS.ADMIN_ROLEPLAYS);
+        break;
+      case 'admin_simulator':
+        setCurrentView(VIEWS.ADMIN_SIMULATOR);
+        break;
+      case 'admin_video':
+        setCurrentView(VIEWS.ADMIN_VIDEO);
+        break;
+      case 'admin_partners':
+        setCurrentView(VIEWS.ADMIN_PARTNERS);
+        break;
       default:
         setCurrentView(VIEWS.OVERVIEW);
     }
@@ -521,6 +551,63 @@ function AppContent() {
         );
 
       case VIEWS.OVERVIEW:
+        return (
+          <OverviewDashboard
+            onNavigate={handleSidebarNavigate}
+          />
+        );
+
+      // Admin views - only accessible to admins
+      case VIEWS.ADMIN:
+        if (!isAdmin) {
+          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
+        }
+        return (
+          <div style={{ padding: '24px' }}>
+            <AdminDashboard onNavigate={handleSidebarNavigate} />
+          </div>
+        );
+
+      case VIEWS.ADMIN_ROLEPLAYS:
+        if (!isAdmin) {
+          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
+        }
+        return (
+          <div style={{ padding: '24px' }}>
+            <ScenarioManager onBack={() => setCurrentView(VIEWS.ADMIN)} />
+          </div>
+        );
+
+      case VIEWS.ADMIN_SIMULATOR:
+        if (!isAdmin) {
+          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
+        }
+        return (
+          <div style={{ padding: '24px' }}>
+            <SimulatorScenarioManager onBack={() => setCurrentView(VIEWS.ADMIN)} />
+          </div>
+        );
+
+      case VIEWS.ADMIN_VIDEO:
+        if (!isAdmin) {
+          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
+        }
+        return (
+          <div style={{ padding: '24px' }}>
+            <VideoTrainingManager onBack={() => setCurrentView(VIEWS.ADMIN)} />
+          </div>
+        );
+
+      case VIEWS.ADMIN_PARTNERS:
+        if (!isAdmin) {
+          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
+        }
+        return (
+          <div style={{ padding: '24px' }}>
+            <PartnerManager onBack={() => setCurrentView(VIEWS.ADMIN)} />
+          </div>
+        );
+
       default:
         return (
           <OverviewDashboard
