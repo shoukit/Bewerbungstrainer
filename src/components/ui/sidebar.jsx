@@ -1195,7 +1195,17 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
 
   // Get partner branding for background
   const { branding } = usePartner();
-  const appBackground = branding?.['--app-bg-color'] || 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)';
+
+  // Build background gradient from branding variables
+  const appBackground = React.useMemo(() => {
+    if (branding) {
+      const bgStart = branding['--app-bg-start'] || '#f8fafc';
+      const bgMid = branding['--app-bg-mid'] || '#eff6ff';
+      const bgEnd = branding['--app-bg-end'] || '#f0fdfa';
+      return `linear-gradient(135deg, ${bgStart} 0%, ${bgMid} 50%, ${bgEnd} 100%)`;
+    }
+    return 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)';
+  }, [branding]);
 
   // Check for mobile and saved preference
   React.useEffect(() => {
