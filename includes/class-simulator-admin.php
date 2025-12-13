@@ -417,6 +417,12 @@ class Bewerbungstrainer_Simulator_Admin {
                     <?php endif; ?>
                 </tbody>
             </table>
+
+            <?php
+            // Render CSV Import/Export UI
+            $csv_handler = Bewerbungstrainer_Scenario_CSV_Handler::get_instance();
+            $csv_handler->render_simulator_import_export_ui();
+            ?>
         </div>
         <?php
     }

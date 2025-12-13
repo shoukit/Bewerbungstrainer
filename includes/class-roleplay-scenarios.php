@@ -44,6 +44,31 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
         // Save meta box data
         add_action('save_post_' . self::POST_TYPE, array($this, 'save_meta_boxes'), 10, 2);
+
+        // Add import/export submenu
+        add_action('admin_menu', array($this, 'add_import_export_menu'));
+    }
+
+    /**
+     * Add import/export submenu page
+     */
+    public function add_import_export_menu() {
+        add_submenu_page(
+            'edit.php?post_type=' . self::POST_TYPE,
+            __('Import / Export', 'bewerbungstrainer'),
+            __('Import / Export', 'bewerbungstrainer'),
+            'manage_options',
+            'roleplay-import-export',
+            array($this, 'render_import_export_page')
+        );
+    }
+
+    /**
+     * Render the import/export page
+     */
+    public function render_import_export_page() {
+        $csv_handler = Bewerbungstrainer_Scenario_CSV_Handler::get_instance();
+        $csv_handler->render_roleplay_import_export_ui();
     }
 
     /**

@@ -199,6 +199,9 @@ class Bewerbungstrainer_Plugin {
         // Load Demo Codes class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-demo-codes.php';
 
+        // Load CSV Handler class for scenario import/export
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-scenario-csv-handler.php';
+
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -428,6 +431,13 @@ class Bewerbungstrainer_Plugin {
 
         // Initialize Demo Codes
         Bewerbungstrainer_Demo_Codes::get_instance();
+
+        // Initialize CSV Handler for scenario import/export (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_Scenario_CSV_Handler::get_instance();
+            // Display admin notices for CSV import/export
+            add_action('admin_notices', array('Bewerbungstrainer_Scenario_CSV_Handler', 'display_admin_notices'));
+        }
 
         // Initialize audio handler
         Bewerbungstrainer_Audio_Handler::get_instance();
