@@ -384,7 +384,16 @@ class Bewerbungstrainer_Video_Training_API {
         $response = $this->call_gemini_api($full_prompt, $api_key);
 
         if (is_wp_error($response)) {
+            // Log error response
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('VIDEO_TRAINING_QUESTIONS', $response->get_error_message(), true);
+            }
             return $response;
+        }
+
+        // Log successful response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('VIDEO_TRAINING_QUESTIONS', $response);
         }
 
         // Parse questions from response
@@ -579,11 +588,20 @@ class Bewerbungstrainer_Video_Training_API {
         $analysis_result = $this->analyze_video_with_gemini($video_path, $analysis_prompt, $api_key);
 
         if (is_wp_error($analysis_result)) {
+            // Log error response
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('VIDEO_TRAINING_ANALYSIS', $analysis_result->get_error_message(), true);
+            }
             // Update session with error status
             $this->db->update_session($session_id, array(
                 'status' => 'failed',
             ));
             return $analysis_result;
+        }
+
+        // Log successful response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('VIDEO_TRAINING_ANALYSIS', $analysis_result);
         }
 
         // Parse analysis response
