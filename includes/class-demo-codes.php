@@ -334,12 +334,20 @@ class Bewerbungstrainer_Demo_Codes {
 
         $code = strtoupper(sanitize_text_field($code));
 
+        // Debug logging
+        error_log('[DEMO_CODES] Validating code: ' . $code);
+        error_log('[DEMO_CODES] Table name: ' . $this->table_demo_codes);
+
         $exists = $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT COUNT(*) FROM {$this->table_demo_codes} WHERE demo_code = %s",
                 $code
             )
         );
+
+        // Debug logging
+        error_log('[DEMO_CODES] Query result: ' . var_export($exists, true));
+        error_log('[DEMO_CODES] Last error: ' . $wpdb->last_error);
 
         return $exists > 0;
     }
@@ -602,7 +610,10 @@ class Bewerbungstrainer_Demo_Codes {
             )
         );
 
+        error_log('[DEMO_CODES] ensure_table_exists - Table: ' . $this->table_demo_codes . ', Exists: ' . var_export($table_exists, true));
+
         if (!$table_exists) {
+            error_log('[DEMO_CODES] Creating table...');
             // Create table
             self::create_tables();
         }
