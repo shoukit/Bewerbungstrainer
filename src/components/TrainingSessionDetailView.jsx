@@ -745,6 +745,19 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   const isSimulator = type === 'simulator';
   const isRoleplay = type === 'roleplay';
 
+  // Check if session has questions (handle both string and array formats)
+  const hasQuestions = (() => {
+    if (!session?.questions_json) return false;
+    try {
+      const questions = typeof session.questions_json === 'string'
+        ? JSON.parse(session.questions_json)
+        : session.questions_json;
+      return Array.isArray(questions) && questions.length > 0;
+    } catch {
+      return false;
+    }
+  })();
+
   // Load data based on session type
   useEffect(() => {
     if (isSimulator && session?.id) {
@@ -961,7 +974,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
               ))}
 
               {/* Action Buttons for incomplete sessions with answers */}
-              {session?.status !== 'completed' && (onContinueSession || onRepeatSession) && (
+              {session?.status !== 'completed' && (onContinueSession || onRepeatSession) && hasQuestions && (
                 <div style={{
                   display: 'flex',
                   gap: '12px',
@@ -976,7 +989,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                   <p style={{ width: '100%', textAlign: 'center', color: COLORS.slate[600], fontSize: '14px', marginBottom: '12px' }}>
                     Diese Session ist noch nicht abgeschlossen.
                   </p>
-                  {onContinueSession && session?.questions_json && (
+                  {onContinueSession && (
                     <button
                       onClick={() => onContinueSession(session, scenario)}
                       style={{
@@ -998,7 +1011,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                       Fortsetzen
                     </button>
                   )}
-                  {onRepeatSession && session?.questions_json && (
+                  {onRepeatSession && (
                     <button
                       onClick={() => onRepeatSession(session, scenario)}
                       style={{
@@ -1029,12 +1042,16 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
             <div style={{ textAlign: 'center', padding: '48px 24px', background: COLORS.slate[100], borderRadius: '16px' }}>
               <AlertCircle size={48} color={COLORS.slate[400]} style={{ margin: '0 auto 16px' }} />
               <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px' }}>Keine Antworten vorhanden</h3>
-              <p style={{ color: COLORS.slate[500], marginBottom: '24px' }}>Diese Session wurde möglicherweise nicht abgeschlossen.</p>
+              <p style={{ color: COLORS.slate[500], marginBottom: hasQuestions ? '24px' : '0' }}>
+                {hasQuestions
+                  ? 'Diese Session wurde nicht abgeschlossen. Du kannst sie fortsetzen oder erneut starten.'
+                  : 'Diese Session wurde abgebrochen, bevor Fragen generiert wurden.'}
+              </p>
 
-              {/* Action Buttons */}
-              {(onContinueSession || onRepeatSession) && (
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                  {onContinueSession && session?.questions_json?.length > 0 && (
+              {/* Action Buttons - only show if questions were generated */}
+              {(onContinueSession || onRepeatSession) && hasQuestions && (
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '24px' }}>
+                  {onContinueSession && (
                     <button
                       onClick={() => onContinueSession(session, scenario)}
                       style={{
@@ -1056,7 +1073,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                       Fortsetzen
                     </button>
                   )}
-                  {onRepeatSession && session?.questions_json?.length > 0 && (
+                  {onRepeatSession && (
                     <button
                       onClick={() => onRepeatSession(session, scenario)}
                       style={{
