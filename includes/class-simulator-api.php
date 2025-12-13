@@ -176,6 +176,7 @@ class Bewerbungstrainer_Simulator_API {
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
                 'category' => $scenario->category,
+                'mode' => $scenario->mode ?? 'INTERVIEW',
                 'input_configuration' => $scenario->input_configuration,
                 'question_count_min' => (int) $scenario->question_count_min,
                 'question_count_max' => (int) $scenario->question_count_max,
@@ -214,6 +215,7 @@ class Bewerbungstrainer_Simulator_API {
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
                 'category' => $scenario->category,
+                'mode' => $scenario->mode ?? 'INTERVIEW',
                 'system_prompt' => $scenario->system_prompt,
                 'input_configuration' => $scenario->input_configuration,
                 'question_count_min' => (int) $scenario->question_count_min,
@@ -345,12 +347,16 @@ class Bewerbungstrainer_Simulator_API {
         // Calculate question count
         $question_count = rand($scenario->question_count_min, $scenario->question_count_max);
 
+        // Get scenario mode (INTERVIEW or SIMULATION)
+        $mode = $scenario->mode ?? 'INTERVIEW';
+
         // Build full prompt
         $full_prompt = $this->build_question_generation_prompt(
             $system_prompt,
             $question_prompt,
             $variables,
-            $question_count
+            $question_count,
+            $mode
         );
 
         // Log prompt to prompts.log
@@ -997,8 +1003,15 @@ Sei konstruktiv und motivierend. Verwende die "Du"-Form.';
 
     /**
      * Build question generation prompt
+     *
+     * @param string $system_prompt The system prompt for the AI
+     * @param string $question_prompt Additional question generation instructions
+     * @param array $variables User-provided variables
+     * @param int $count Number of questions/situations to generate
+     * @param string $mode Scenario mode: 'INTERVIEW' or 'SIMULATION'
+     * @return string The complete prompt
      */
-    private function build_question_generation_prompt($system_prompt, $question_prompt, $variables, $count) {
+    private function build_question_generation_prompt($system_prompt, $question_prompt, $variables, $count, $mode = 'INTERVIEW') {
         $context = '';
         if ($variables) {
             $context = "\n\nKontext:\n";
@@ -1009,11 +1022,27 @@ Sei konstruktiv und motivierend. Verwende die "Du"-Form.';
             }
         }
 
+        // Select prompt template based on mode
+        if ($mode === 'SIMULATION') {
+            $mode_prompt = $this->get_simulation_prompt_template($count);
+        } else {
+            $mode_prompt = $this->get_interview_prompt_template($count);
+        }
+
         return "{$system_prompt}
 
 {$question_prompt}
 {$context}
-Generiere genau {$count} Interviewfragen.
+{$mode_prompt}
+
+JSON Output:";
+    }
+
+    /**
+     * Get the interview prompt template (existing behavior)
+     */
+    private function get_interview_prompt_template($count) {
+        return "Generiere genau {$count} Interviewfragen.
 
 WICHTIG: Für JEDE Frage generiere auch 2-3 spezifische Tipps, die dem Bewerber helfen, diese konkrete Frage gut zu beantworten. Die Tipps sollen:
 - Konkret auf die jeweilige Frage zugeschnitten sein
@@ -1032,9 +1061,35 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
       \"Tipp 2: Weiterer praktischer Hinweis mit Beispielformulierung\"
     ]
   }
-]
+]";
+    }
 
-JSON Output:";
+    /**
+     * Get the simulation prompt template (new behavior for roleplay/counterpart scenarios)
+     */
+    private function get_simulation_prompt_template($count) {
+        return "Generiere einen realistischen Gesprächsverlauf mit genau {$count} aufeinanderfolgenden Phasen/Situationen.
+
+WICHTIG: Das ist KEIN Interview. Du stellst KEINE Fragen an den Nutzer. Du bist der Gegenspieler (z.B. Kunde, Klient, Mitarbeiter) und generierst Aussagen, Einwände oder emotionale Reaktionen, auf die der Nutzer reagieren muss.
+
+Mapping der JSON-Felder:
+- Feld \"question\": Hier trägst du die WÖRTLICHE REDE oder HANDLUNG deiner Rolle ein (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\").
+- Feld \"tips\": Hier generierst du 2-3 taktische Verhaltenstipps für den Nutzer (z.B. \"Nicht rechtfertigen, sondern Spiegeln\", \"Verständnis zeigen\").
+- Feld \"category\": Die Phase des Gesprächs (z.B. \"Konfrontation\", \"Einwand\", \"Lösungssuche\", \"Eskalation\", \"Deeskalation\").
+
+Antworte NUR mit einem JSON-Array im folgenden Format:
+[
+  {
+    \"index\": 0,
+    \"question\": \"Die Aussage oder Handlung des Gegenübers\",
+    \"category\": \"Phase\",
+    \"estimated_answer_time\": 60,
+    \"tips\": [
+      \"Taktischer Tipp 1: Konkreter Verhaltenshinweis für diese Situation\",
+      \"Taktischer Tipp 2: Weiterer praktischer Hinweis zur Reaktion\"
+    ]
+  }
+]";
     }
 
     /**

@@ -108,6 +108,7 @@ class Bewerbungstrainer_Simulator_Database {
             `icon` varchar(50) DEFAULT 'briefcase',
             `difficulty` varchar(20) DEFAULT 'intermediate',
             `category` varchar(100) DEFAULT NULL,
+            `mode` varchar(20) DEFAULT 'INTERVIEW',
             `system_prompt` longtext NOT NULL,
             `question_generation_prompt` longtext DEFAULT NULL,
             `feedback_prompt` longtext DEFAULT NULL,
@@ -123,6 +124,7 @@ class Bewerbungstrainer_Simulator_Database {
             PRIMARY KEY (`id`),
             KEY `is_active` (`is_active`),
             KEY `category` (`category`),
+            KEY `mode` (`mode`),
             KEY `sort_order` (`sort_order`)
         ) $charset_collate;";
 
@@ -198,8 +200,27 @@ class Bewerbungstrainer_Simulator_Database {
         // Insert default scenarios if table is empty
         self::insert_default_scenarios();
 
+        // Run migrations for existing installations
+        self::run_migrations();
+
         // Update version
-        update_option('bewerbungstrainer_simulator_db_version', '1.0.0');
+        update_option('bewerbungstrainer_simulator_db_version', '1.1.0');
+    }
+
+    /**
+     * Run database migrations for existing installations
+     */
+    private static function run_migrations() {
+        global $wpdb;
+        $table_scenarios = $wpdb->prefix . 'bewerbungstrainer_simulator_scenarios';
+
+        // Migration: Add 'mode' column if it doesn't exist
+        $column_exists = $wpdb->get_results("SHOW COLUMNS FROM `$table_scenarios` LIKE 'mode'");
+        if (empty($column_exists)) {
+            $wpdb->query("ALTER TABLE `$table_scenarios` ADD COLUMN `mode` varchar(20) DEFAULT 'INTERVIEW' AFTER `category`");
+            $wpdb->query("ALTER TABLE `$table_scenarios` ADD KEY `mode` (`mode`)");
+            error_log('[SIMULATOR] Migration: Added mode column to scenarios table');
+        }
     }
 
     /**
@@ -222,6 +243,7 @@ class Bewerbungstrainer_Simulator_Database {
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
             'category' => 'interview',
+            'mode' => 'INTERVIEW',
             'system_prompt' => 'Du bist ein erfahrener HR-Manager mit 15 Jahren Erfahrung in der Personalauswahl. Du führst Bewerbungsgespräche für die Position ${position}${?company: bei } durch. Der Bewerber hat ein ${experience_level}-Level. Stelle professionelle, aber faire Fragen, die dem Erfahrungslevel angemessen sind.',
             'question_generation_prompt' => 'Generiere realistische Interviewfragen für ein Bewerbungsgespräch.
 
@@ -287,6 +309,7 @@ Sei konstruktiv und motivierend. Verwende die "Du"-Form.',
             'icon' => 'banknote',
             'difficulty' => 'advanced',
             'category' => 'negotiation',
+            'mode' => 'INTERVIEW',
             'system_prompt' => 'Du bist ein erfahrener Personalleiter, der eine Gehaltsverhandlung mit einem Mitarbeiter führt. Die Person arbeitet als ${position} und hat ${years_experience} Jahre Erfahrung. Das aktuelle Gehalt liegt bei ${current_salary}. Sei professionell aber auch herausfordernd - teste die Verhandlungsfähigkeiten.',
             'question_generation_prompt' => 'Generiere realistische Fragen und Situationen für eine Gehaltsverhandlung.
 
@@ -365,6 +388,7 @@ Kriterien:
             'icon' => 'user',
             'difficulty' => 'beginner',
             'category' => 'presentation',
+            'mode' => 'INTERVIEW',
             'system_prompt' => 'Du bist ein erfahrener Karrierecoach, der Bewerbern hilft, ihre Selbstpräsentation zu verbessern. Der Teilnehmer möchte sich für die Position ${position} bewerben und hat ${experience_level} Erfahrung.',
             'question_generation_prompt' => 'Generiere Fragen und Aufgaben zur Selbstpräsentation.
 

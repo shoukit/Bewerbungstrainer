@@ -233,12 +233,19 @@ class Bewerbungstrainer_Simulator_Admin {
         // Build input_configuration from visual builder data
         $input_configuration = $this->build_input_configuration_from_post($post);
 
+        // Validate mode - only allow INTERVIEW or SIMULATION
+        $mode = sanitize_text_field($post['mode'] ?? 'INTERVIEW');
+        if (!in_array($mode, array('INTERVIEW', 'SIMULATION'))) {
+            $mode = 'INTERVIEW';
+        }
+
         return array(
             'title' => sanitize_text_field($post['title'] ?? ''),
             'description' => sanitize_textarea_field($post['description'] ?? ''),
             'icon' => sanitize_text_field($post['icon'] ?? 'briefcase'),
             'difficulty' => sanitize_text_field($post['difficulty'] ?? 'intermediate'),
             'category' => sanitize_text_field($post['category'] ?? ''),
+            'mode' => $mode,
             'system_prompt' => wp_kses_post($post['system_prompt'] ?? ''),
             'question_generation_prompt' => wp_kses_post($post['question_generation_prompt'] ?? ''),
             'feedback_prompt' => wp_kses_post($post['feedback_prompt'] ?? ''),
@@ -334,6 +341,7 @@ class Bewerbungstrainer_Simulator_Admin {
                     <tr>
                         <th style="width: 50px;">ID</th>
                         <th>Titel</th>
+                        <th style="width: 100px;">Modus</th>
                         <th style="width: 100px;">Icon</th>
                         <th style="width: 120px;">Schwierigkeit</th>
                         <th style="width: 100px;">Variablen</th>
@@ -345,7 +353,7 @@ class Bewerbungstrainer_Simulator_Admin {
                 <tbody>
                     <?php if (empty($scenarios)): ?>
                         <tr>
-                            <td colspan="8">Keine Szenarien gefunden. <a href="<?php echo admin_url('admin.php?page=simulator-scenario-new'); ?>">Erstelle dein erstes Szenario</a>.</td>
+                            <td colspan="9">Keine Szenarien gefunden. <a href="<?php echo admin_url('admin.php?page=simulator-scenario-new'); ?>">Erstelle dein erstes Szenario</a>.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($scenarios as $scenario): ?>
@@ -359,6 +367,16 @@ class Bewerbungstrainer_Simulator_Admin {
                                     </strong>
                                     <br>
                                     <span class="description"><?php echo esc_html(wp_trim_words($scenario->description, 10)); ?></span>
+                                </td>
+                                <td>
+                                    <?php
+                                    $mode = $scenario->mode ?? 'INTERVIEW';
+                                    if ($mode === 'SIMULATION') {
+                                        echo '<span style="color: #a855f7;">Simulation</span>';
+                                    } else {
+                                        echo '<span style="color: #3b82f6;">Interview</span>';
+                                    }
+                                    ?>
                                 </td>
                                 <td>
                                     <span class="dashicons dashicons-<?php echo esc_attr($this->get_dashicon($scenario->icon)); ?>"></span>
@@ -501,6 +519,19 @@ class Bewerbungstrainer_Simulator_Admin {
                                             <td>
                                                 <input type="text" name="category" id="category" value="<?php echo esc_attr($data['category']); ?>" class="regular-text">
                                                 <p class="description">z.B. interview, negotiation, presentation</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><label for="mode">Modus</label></th>
+                                            <td>
+                                                <select name="mode" id="mode">
+                                                    <option value="INTERVIEW" <?php selected($data['mode'] ?? 'INTERVIEW', 'INTERVIEW'); ?>>Interview (KI stellt Fragen)</option>
+                                                    <option value="SIMULATION" <?php selected($data['mode'] ?? 'INTERVIEW', 'SIMULATION'); ?>>Simulation (KI als Gegenspieler)</option>
+                                                </select>
+                                                <p class="description">
+                                                    <strong>Interview:</strong> KI stellt Fragen, Nutzer antwortet.<br>
+                                                    <strong>Simulation:</strong> KI agiert als Gegenspieler (Kunde, Klient, etc.), Nutzer reagiert/verhandelt.
+                                                </p>
                                             </td>
                                         </tr>
                                     </table>
