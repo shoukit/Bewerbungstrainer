@@ -935,9 +935,17 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     setShowCancelConfirm(true);
   };
 
-  // Actually cancel the session after confirmation
-  const handleCancelSession = () => {
+  // Actually cancel the session after confirmation - deletes session and all answers
+  const handleCancelSession = async () => {
     setShowCancelConfirm(false);
+    try {
+      // Delete the session and all associated answers from database
+      await wordpressAPI.deleteSimulatorSession(session.id);
+      console.log('[SIMULATOR] Session cancelled and deleted:', session.id);
+    } catch (err) {
+      console.error('[SIMULATOR] Error deleting cancelled session:', err);
+      // Continue with exit even if delete fails
+    }
     onExit();
   };
 
