@@ -96,13 +96,9 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
         console.log('[DEMO] Code activated successfully:', demoCode.toUpperCase());
 
         // Call success callback with the demo code
+        // Note: Do NOT call onClose here - onSuccess handler in LoginModal will handle closing
         if (onSuccess) {
           onSuccess(demoCode.toUpperCase().trim());
-        }
-
-        // Close modal
-        if (onClose) {
-          onClose();
         }
       } else {
         setError(result.error?.message || 'Der Demo-Code ist ungültig. Bitte überprüfen Sie Ihre Eingabe.');
