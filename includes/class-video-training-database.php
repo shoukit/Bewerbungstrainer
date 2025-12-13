@@ -92,6 +92,12 @@ class Bewerbungstrainer_Video_Training_Database {
             $this->add_demo_code_column();
             update_option('bewerbungstrainer_video_training_migration_version', '1.0.2');
         }
+
+        // Migration 3: Re-run demo_code migration with correct column name (fix for failed 1.0.2)
+        if (version_compare($current_version, '1.0.3', '<')) {
+            $this->add_demo_code_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.3');
+        }
     }
 
     /**
@@ -109,9 +115,13 @@ class Bewerbungstrainer_Video_Training_Database {
 
         if (empty($column_exists)) {
             error_log('[VIDEO TRAINING] Adding demo_code column to sessions table...');
-            $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD COLUMN `demo_code` varchar(10) DEFAULT NULL AFTER `feedback_json`");
-            $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD INDEX `demo_code` (`demo_code`)");
-            error_log('[VIDEO TRAINING] demo_code column added successfully');
+            $result = $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD COLUMN `demo_code` varchar(10) DEFAULT NULL AFTER `summary_feedback`");
+            if ($result === false) {
+                error_log('[VIDEO TRAINING] Error adding demo_code column: ' . $wpdb->last_error);
+            } else {
+                $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD INDEX `demo_code` (`demo_code`)");
+                error_log('[VIDEO TRAINING] demo_code column added successfully');
+            }
         }
     }
 
