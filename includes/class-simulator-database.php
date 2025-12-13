@@ -67,6 +67,29 @@ class Bewerbungstrainer_Simulator_Database {
         } else {
             // Check if demo_code column exists, add if not
             $this->maybe_add_demo_code_column();
+            // Check if mode column exists, add if not
+            $this->maybe_add_mode_column();
+        }
+    }
+
+    /**
+     * Add mode column to scenarios table if it doesn't exist
+     */
+    private function maybe_add_mode_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'mode'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding mode column to scenarios table...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `mode` varchar(20) DEFAULT 'INTERVIEW' AFTER `category`");
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD INDEX `mode` (`mode`)");
+            error_log('[SIMULATOR] mode column added successfully');
         }
     }
 
@@ -108,6 +131,7 @@ class Bewerbungstrainer_Simulator_Database {
             `icon` varchar(50) DEFAULT 'briefcase',
             `difficulty` varchar(20) DEFAULT 'intermediate',
             `category` varchar(100) DEFAULT NULL,
+            `mode` varchar(20) DEFAULT 'INTERVIEW',
             `system_prompt` longtext NOT NULL,
             `question_generation_prompt` longtext DEFAULT NULL,
             `feedback_prompt` longtext DEFAULT NULL,
@@ -123,6 +147,7 @@ class Bewerbungstrainer_Simulator_Database {
             PRIMARY KEY (`id`),
             KEY `is_active` (`is_active`),
             KEY `category` (`category`),
+            KEY `mode` (`mode`),
             KEY `sort_order` (`sort_order`)
         ) $charset_collate;";
 
@@ -198,8 +223,27 @@ class Bewerbungstrainer_Simulator_Database {
         // Insert default scenarios if table is empty
         self::insert_default_scenarios();
 
+        // Run migrations for existing installations
+        self::run_migrations();
+
         // Update version
-        update_option('bewerbungstrainer_simulator_db_version', '1.0.0');
+        update_option('bewerbungstrainer_simulator_db_version', '1.1.0');
+    }
+
+    /**
+     * Run database migrations for existing installations
+     */
+    private static function run_migrations() {
+        global $wpdb;
+        $table_scenarios = $wpdb->prefix . 'bewerbungstrainer_simulator_scenarios';
+
+        // Migration: Add 'mode' column if it doesn't exist
+        $column_exists = $wpdb->get_results("SHOW COLUMNS FROM `$table_scenarios` LIKE 'mode'");
+        if (empty($column_exists)) {
+            $wpdb->query("ALTER TABLE `$table_scenarios` ADD COLUMN `mode` varchar(20) DEFAULT 'INTERVIEW' AFTER `category`");
+            $wpdb->query("ALTER TABLE `$table_scenarios` ADD KEY `mode` (`mode`)");
+            error_log('[SIMULATOR] Migration: Added mode column to scenarios table');
+        }
     }
 
     /**
@@ -222,6 +266,7 @@ class Bewerbungstrainer_Simulator_Database {
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
             'category' => 'interview',
+            'mode' => 'INTERVIEW',
             'system_prompt' => 'Du bist ein erfahrener HR-Manager mit 15 Jahren Erfahrung in der Personalauswahl. Du führst Bewerbungsgespräche für die Position ${position}${?company: bei } durch. Der Bewerber hat ein ${experience_level}-Level. Stelle professionelle, aber faire Fragen, die dem Erfahrungslevel angemessen sind.',
             'question_generation_prompt' => 'Generiere realistische Interviewfragen für ein Bewerbungsgespräch.
 
@@ -287,6 +332,7 @@ Sei konstruktiv und motivierend. Verwende die "Du"-Form.',
             'icon' => 'banknote',
             'difficulty' => 'advanced',
             'category' => 'negotiation',
+            'mode' => 'INTERVIEW',
             'system_prompt' => 'Du bist ein erfahrener Personalleiter, der eine Gehaltsverhandlung mit einem Mitarbeiter führt. Die Person arbeitet als ${position} und hat ${years_experience} Jahre Erfahrung. Das aktuelle Gehalt liegt bei ${current_salary}. Sei professionell aber auch herausfordernd - teste die Verhandlungsfähigkeiten.',
             'question_generation_prompt' => 'Generiere realistische Fragen und Situationen für eine Gehaltsverhandlung.
 
@@ -365,6 +411,7 @@ Kriterien:
             'icon' => 'user',
             'difficulty' => 'beginner',
             'category' => 'presentation',
+            'mode' => 'INTERVIEW',
             'system_prompt' => 'Du bist ein erfahrener Karrierecoach, der Bewerbern hilft, ihre Selbstpräsentation zu verbessern. Der Teilnehmer möchte sich für die Position ${position} bewerben und hat ${experience_level} Erfahrung.',
             'question_generation_prompt' => 'Generiere Fragen und Aufgaben zur Selbstpräsentation.
 
@@ -528,6 +575,7 @@ Gib konkrete Formulierungsvorschläge.',
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
             'category' => null,
+            'mode' => 'INTERVIEW',
             'system_prompt' => '',
             'question_generation_prompt' => null,
             'feedback_prompt' => null,
@@ -555,6 +603,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'icon' => sanitize_text_field($data['icon']),
                 'difficulty' => $data['difficulty'],
                 'category' => sanitize_text_field($data['category']),
+                'mode' => sanitize_text_field($data['mode']),
                 'system_prompt' => $data['system_prompt'],
                 'question_generation_prompt' => $data['question_generation_prompt'],
                 'feedback_prompt' => $data['feedback_prompt'],
@@ -566,7 +615,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
         );
 
         if ($result === false) {
@@ -591,7 +640,7 @@ Gib konkrete Formulierungsvorschläge.',
         $update_format = array();
 
         $allowed_fields = array(
-            'title', 'description', 'icon', 'difficulty', 'category',
+            'title', 'description', 'icon', 'difficulty', 'category', 'mode',
             'system_prompt', 'question_generation_prompt', 'feedback_prompt',
             'input_configuration', 'question_count_min', 'question_count_max',
             'time_limit_per_question', 'allow_retry', 'is_active', 'sort_order'
@@ -607,7 +656,7 @@ Gib konkrete Formulierungsvorschläge.',
                 }
 
                 // Sanitize based on field type
-                if (in_array($field, array('title', 'icon', 'difficulty', 'category'))) {
+                if (in_array($field, array('title', 'icon', 'difficulty', 'category', 'mode'))) {
                     $value = sanitize_text_field($value);
                 } elseif ($field === 'description') {
                     $value = sanitize_textarea_field($value);

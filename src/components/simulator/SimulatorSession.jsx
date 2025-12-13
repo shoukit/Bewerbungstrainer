@@ -41,14 +41,15 @@ const COLORS = {
 /**
  * Progress Bar Component
  */
-const ProgressBar = ({ current, total, answeredQuestions, primaryAccent }) => {
+const ProgressBar = ({ current, total, answeredQuestions, primaryAccent, labels }) => {
   const percentage = ((current + 1) / total) * 100;
+  const questionLabel = labels?.questionFallback || 'Frage';
 
   return (
     <div style={{ marginBottom: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>
-          Frage {current + 1} von {total}
+          {labels?.questionCounter ? labels.questionCounter(current + 1, total) : `${questionLabel} ${current + 1} von ${total}`}
         </span>
         <span style={{ fontSize: '14px', color: COLORS.slate[500] }}>
           {Math.round(percentage)}% abgeschlossen
@@ -91,7 +92,7 @@ const ProgressBar = ({ current, total, answeredQuestions, primaryAccent }) => {
                     : COLORS.slate[300],
                 transition: 'all 0.2s',
               }}
-              title={`Frage ${i + 1}${isAnswered ? ' (beantwortet)' : ''}`}
+              title={`${questionLabel} ${i + 1}${isAnswered ? ' (beantwortet)' : ''}`}
             />
           );
         })}
@@ -103,7 +104,7 @@ const ProgressBar = ({ current, total, answeredQuestions, primaryAccent }) => {
 /**
  * Question Tips Accordion Component
  */
-const QuestionTips = ({ tips, primaryAccent }) => {
+const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   if (!tips || tips.length === 0) return null;
@@ -133,7 +134,7 @@ const QuestionTips = ({ tips, primaryAccent }) => {
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
           <Lightbulb size={18} color={primaryAccent} />
-          Tipps für diese Frage
+          {tipsLabel || 'Tipps für diese Frage'}
         </span>
         <ChevronRight
           size={18}
@@ -233,7 +234,7 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
 /**
  * Audio Recorder Component - With Pause functionality
  */
-const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting }) => {
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels }) => {
   const [recordingState, setRecordingState] = useState('idle'); // 'idle' | 'recording' | 'paused'
   const [seconds, setSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -465,7 +466,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
             }}
           >
             <CheckCircle style={{ width: '18px', height: '18px', color: COLORS.green[500] }} />
-            Antwort abgeben
+            {labels?.submitButton || 'Antwort abgeben'}
           </button>
         )}
       </div>
@@ -473,7 +474,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       {/* Recording Hint */}
       {recordingState === 'idle' && !isSubmitting && (
         <p style={{ textAlign: 'center', marginTop: '16px', color: COLORS.slate[500], fontSize: '14px' }}>
-          Klicke auf den Button, um deine Antwort aufzunehmen
+          {labels?.submitHint || 'Klicke auf den Button, um deine Antwort aufzunehmen'}
         </p>
       )}
 
@@ -481,7 +482,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       {isSubmitting && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
           <Loader2 style={{ width: '32px', height: '32px', color: primaryAccent, animation: 'spin 1s linear infinite' }} />
-          <p style={{ marginTop: '12px', color: COLORS.slate[700], fontSize: '14px' }}>Antwort wird analysiert...</p>
+          <p style={{ marginTop: '12px', color: COLORS.slate[700], fontSize: '14px' }}>{labels?.analyzing || 'Antwort wird analysiert...'}</p>
         </div>
       )}
 
@@ -499,6 +500,11 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
  * Order: Microphone test, Start button, then Tips
  */
 const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selectedMicrophoneId, onMicrophoneChange, onMicrophoneTest, themedGradient, primaryAccent, primaryAccentLight }) => {
+  // Mode-based labels
+  const isSimulation = scenario?.mode === 'SIMULATION';
+  const questionsLabel = isSimulation ? 'Situationen' : 'Fragen';
+  const timePerQuestionLabel = isSimulation ? 'Zeit pro Situation' : 'Zeit pro Frage';
+
   const generalTips = [
     {
       icon: Target,
@@ -508,7 +514,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
     {
       icon: Clock,
       title: 'Zeit im Blick behalten',
-      description: `Du hast ${Math.round((scenario.time_limit_per_question || 120) / 60)} Minuten pro Frage. Antworte präzise, aber ausführlich genug.`,
+      description: `Du hast ${Math.round((scenario.time_limit_per_question || 120) / 60)} Minuten pro ${isSimulation ? 'Situation' : 'Frage'}. ${isSimulation ? 'Reagiere' : 'Antworte'} präzise, aber ausführlich genug.`,
     },
     {
       icon: Mic,
@@ -583,7 +589,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
               color: COLORS.slate[600],
               margin: '4px 0 0 0',
             }}>
-              {scenario.title} • {questions.length} Fragen
+              {scenario.title} • {questions.length} {questionsLabel}
             </p>
           </div>
         </div>
@@ -760,13 +766,13 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
         flexWrap: 'wrap',
       }}>
         <div>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Fragen</span>
+          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{questionsLabel}</span>
           <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
             {questions.length}
           </span>
         </div>
         <div>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Zeit pro Frage</span>
+          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{timePerQuestionLabel}</span>
           <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
             {Math.round((scenario.time_limit_per_question || 120) / 60)} Min
           </span>
@@ -787,6 +793,28 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
  * Two-column layout like VideoTraining
  */
 const SimulatorSession = ({ session, questions, scenario, variables, onComplete, onExit }) => {
+  // Mode-based labels (INTERVIEW vs SIMULATION)
+  const isSimulation = scenario?.mode === 'SIMULATION';
+  const labels = {
+    questionLabel: isSimulation ? 'Situation / Aussage des Gegenübers:' : 'Interviewfrage:',
+    questionFallback: isSimulation ? 'Situation' : 'Frage',
+    questionLoading: isSimulation ? 'Situation wird geladen...' : 'Frage wird geladen...',
+    answerPlaceholder: isSimulation ? 'Deine Reaktion...' : 'Deine Antwort...',
+    submitButton: isSimulation ? 'Reaktion abgeben' : 'Antwort abgeben',
+    submitHint: isSimulation ? 'Klicke auf den Button, um deine Reaktion aufzunehmen' : 'Klicke auf den Button, um deine Antwort aufzunehmen',
+    analyzing: isSimulation ? 'Reaktion wird analysiert...' : 'Antwort wird analysiert...',
+    questionCounter: (current, total) => isSimulation ? `Situation ${current} von ${total}` : `Frage ${current} von ${total}`,
+    questionsCount: (count) => isSimulation ? `${count} Situationen` : `${count} Fragen`,
+    answeredCount: (answered, total) => isSimulation
+      ? `${answered} von ${total} Situationen`
+      : `${answered} von ${total} Fragen`,
+    tipsLabel: isSimulation ? 'Tipps für diese Situation' : 'Tipps für diese Frage',
+    nextButton: isSimulation ? 'Nächste Situation' : 'Nächste Frage',
+    timePerQuestion: isSimulation ? 'Zeit pro Situation' : 'Zeit pro Frage',
+    questionsLabel: isSimulation ? 'Situationen' : 'Fragen',
+    recommendedTime: isSimulation ? 'Empfohlene Reaktionszeit' : 'Empfohlene Antwortzeit',
+  };
+
   const [phase, setPhase] = useState('preparation');
   const [currentIndex, setCurrentIndex] = useState(session.current_question_index || 0);
   const [feedback, setFeedback] = useState(null);
@@ -1033,10 +1061,10 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               </h3>
             </div>
             <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '8px' }}>
-              Du hast <strong>{answeredQuestions.length} von {questions.length} Fragen</strong> beantwortet.
+              Du hast <strong>{labels.answeredCount(answeredQuestions.length, questions.length)}</strong> beantwortet.
             </p>
             <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
-              Möchtest du das Training jetzt mit den bisherigen Antworten abschließen oder weitere Fragen beantworten?
+              Möchtest du das Training jetzt mit den bisherigen Antworten abschließen oder weitere {labels.questionsLabel} beantworten?
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
@@ -1121,7 +1149,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
             </div>
             <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
               <strong>Achtung:</strong> Wenn du das Training abbrichst, werden alle deine bisherigen Antworten
-              {answeredQuestions.length > 0 ? ` (${answeredQuestions.length} Fragen)` : ''} <strong>nicht gespeichert</strong> und gehen verloren.
+              {answeredQuestions.length > 0 ? ` (${answeredQuestions.length} ${labels.questionsLabel})` : ''} <strong>nicht gespeichert</strong> und gehen verloren.
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
@@ -1166,6 +1194,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         total={questions.length}
         answeredQuestions={answeredQuestions}
         primaryAccent={primaryAccent}
+        labels={labels}
       />
 
       {/* Main Content */}
@@ -1212,7 +1241,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                 boxShadow: `0 4px 12px ${primaryAccent}4d`,
               }}
             >
-              {isLastQuestion ? 'Training abschließen' : 'Nächste Frage'}
+              {isLastQuestion ? 'Training abschließen' : labels.nextButton}
               {!isLastQuestion && <ChevronRight size={16} />}
             </button>
           </div>
@@ -1245,11 +1274,11 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                 {currentIndex + 1}
               </div>
               <span style={{ fontSize: '14px', color: '#64748b' }}>
-                {currentQuestion?.category || 'Frage'}
+                {currentQuestion?.category || labels.questionFallback}
               </span>
             </div>
             <p style={{ fontSize: '16px', fontWeight: 500, color: '#0f172a', margin: 0, lineHeight: 1.5 }}>
-              {currentQuestion?.question || 'Frage wird geladen...'}
+              {currentQuestion?.question || labels.questionLoading}
             </p>
           </div>
 
@@ -1274,6 +1303,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               themedGradient={buttonGradient}
               primaryAccent={primaryAccent}
               isSubmitting={isSubmitting}
+              labels={labels}
             />
 
             {/* Error State */}
@@ -1345,7 +1375,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                 {currentIndex + 1}
               </div>
               <span style={{ fontSize: '14px', color: '#64748b' }}>
-                {currentQuestion?.category || 'Frage'}
+                {currentQuestion?.category || labels.questionFallback}
               </span>
             </div>
 
@@ -1358,19 +1388,19 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                 marginBottom: '16px',
               }}
             >
-              {currentQuestion?.question || 'Frage wird geladen...'}
+              {currentQuestion?.question || labels.questionLoading}
             </h2>
 
             {currentQuestion?.estimated_answer_time && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px', marginBottom: '16px' }}>
                 <Clock size={16} />
-                Empfohlene Antwortzeit: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
+                {labels.recommendedTime}: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
               </div>
             )}
 
             {/* Tips */}
             {currentQuestion?.tips && currentQuestion.tips.length > 0 && (
-              <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} />
+              <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} tipsLabel={labels.tipsLabel} />
             )}
           </div>
         </div>
