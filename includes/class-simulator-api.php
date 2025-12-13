@@ -1050,7 +1050,7 @@ JSON Output:";
             }
         }
 
-        return "Du bist ein professioneller Karriere-Coach und analysierst Audioantworten von Bewerbern.
+        return "Du bist ein professioneller Karriere-Coach und analysierst Audioantworten.
 
 ABSOLUTE REGEL - KEINE HALLUZINATION:
 Du DARFST NUR transkribieren, was TATSÄCHLICH in der Audio-Datei gesprochen wird.
