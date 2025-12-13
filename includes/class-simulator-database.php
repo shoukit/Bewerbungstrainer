@@ -577,6 +577,96 @@ Gib konkrete Formulierungsvorschläge.',
         return $wpdb->insert_id;
     }
 
+    /**
+     * Update a scenario
+     *
+     * @param int $scenario_id Scenario ID
+     * @param array $data Scenario data to update
+     * @return bool True on success, false on failure
+     */
+    public function update_scenario($scenario_id, $data) {
+        global $wpdb;
+
+        $update_data = array();
+        $update_format = array();
+
+        $allowed_fields = array(
+            'title', 'description', 'icon', 'difficulty', 'category',
+            'system_prompt', 'question_generation_prompt', 'feedback_prompt',
+            'input_configuration', 'question_count_min', 'question_count_max',
+            'time_limit_per_question', 'allow_retry', 'is_active', 'sort_order'
+        );
+
+        foreach ($allowed_fields as $field) {
+            if (isset($data[$field])) {
+                $value = $data[$field];
+
+                // Convert arrays to JSON for input_configuration
+                if ($field === 'input_configuration' && is_array($value)) {
+                    $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+                }
+
+                // Sanitize based on field type
+                if (in_array($field, array('title', 'icon', 'difficulty', 'category'))) {
+                    $value = sanitize_text_field($value);
+                } elseif ($field === 'description') {
+                    $value = sanitize_textarea_field($value);
+                }
+
+                $update_data[$field] = $value;
+
+                // Determine format
+                if (in_array($field, array('question_count_min', 'question_count_max', 'time_limit_per_question', 'allow_retry', 'is_active', 'sort_order'))) {
+                    $update_format[] = '%d';
+                } else {
+                    $update_format[] = '%s';
+                }
+            }
+        }
+
+        if (empty($update_data)) {
+            return false;
+        }
+
+        $result = $wpdb->update(
+            $this->table_scenarios,
+            $update_data,
+            array('id' => $scenario_id),
+            $update_format,
+            array('%d')
+        );
+
+        if ($result === false) {
+            error_log('Bewerbungstrainer Simulator: Failed to update scenario - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Delete a scenario
+     *
+     * @param int $scenario_id Scenario ID
+     * @return bool True on success, false on failure
+     */
+    public function delete_scenario($scenario_id) {
+        global $wpdb;
+
+        $result = $wpdb->delete(
+            $this->table_scenarios,
+            array('id' => $scenario_id),
+            array('%d')
+        );
+
+        if ($result === false) {
+            error_log('Bewerbungstrainer Simulator: Failed to delete scenario - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
     // =========================================================================
     // SESSION METHODS
     // =========================================================================
