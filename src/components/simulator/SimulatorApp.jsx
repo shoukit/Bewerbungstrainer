@@ -61,13 +61,14 @@ const SimulatorApp = ({
       const { session, scenario } = pendingContinueSession;
       console.log('🔄 [SimulatorApp] Continuing session:', session.id);
 
-      // Parse questions from the session
-      const sessionQuestions = typeof session.questions_json === 'string'
-        ? JSON.parse(session.questions_json)
-        : session.questions_json || [];
+      // Parse questions from the session (API returns 'questions', database stores 'questions_json')
+      const questionsData = session.questions || session.questions_json;
+      const sessionQuestions = typeof questionsData === 'string'
+        ? JSON.parse(questionsData)
+        : questionsData || [];
 
       // Find the first unanswered question
-      const answeredCount = session.answered_count || 0;
+      const answeredCount = session.completed_questions || session.answered_count || 0;
 
       setSelectedScenario(scenario || { id: session.scenario_id, title: session.scenario_title });
       setActiveSession(session);
@@ -88,10 +89,11 @@ const SimulatorApp = ({
       const { session, scenario } = pendingRepeatSession;
       console.log('🔁 [SimulatorApp] Repeating session with same questions:', session.id);
 
-      // Parse questions from the session
-      const sessionQuestions = typeof session.questions_json === 'string'
-        ? JSON.parse(session.questions_json)
-        : session.questions_json || [];
+      // Parse questions from the session (API returns 'questions', database stores 'questions_json')
+      const questionsData = session.questions || session.questions_json;
+      const sessionQuestions = typeof questionsData === 'string'
+        ? JSON.parse(questionsData)
+        : questionsData || [];
 
       setSelectedScenario(scenario || { id: session.scenario_id, title: session.scenario_title });
       setQuestions(sessionQuestions);

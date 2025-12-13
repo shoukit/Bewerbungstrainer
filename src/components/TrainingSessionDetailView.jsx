@@ -745,13 +745,15 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   const isSimulator = type === 'simulator';
   const isRoleplay = type === 'roleplay';
 
-  // Check if session has questions (handle both string and array formats)
+  // Check if session has questions (handle both field names and formats)
   const hasQuestions = (() => {
-    if (!session?.questions_json) return false;
+    // API returns 'questions', database stores 'questions_json'
+    const questionsData = session?.questions || session?.questions_json;
+    if (!questionsData) return false;
     try {
-      const questions = typeof session.questions_json === 'string'
-        ? JSON.parse(session.questions_json)
-        : session.questions_json;
+      const questions = typeof questionsData === 'string'
+        ? JSON.parse(questionsData)
+        : questionsData;
       return Array.isArray(questions) && questions.length > 0;
     } catch {
       return false;
@@ -1045,7 +1047,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
               <p style={{ color: COLORS.slate[500], marginBottom: hasQuestions ? '24px' : '0' }}>
                 {hasQuestions
                   ? 'Diese Session wurde nicht abgeschlossen. Du kannst sie fortsetzen oder erneut starten.'
-                  : 'Diese Session wurde abgebrochen, bevor Fragen generiert wurden.'}
+                  : 'Diese Session wurde verlassen, bevor Fragen generiert wurden.'}
               </p>
 
               {/* Action Buttons - only show if questions were generated */}
