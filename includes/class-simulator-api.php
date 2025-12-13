@@ -825,18 +825,71 @@ class Bewerbungstrainer_Simulator_API {
 
     /**
      * Interpolate variables in a string
+     *
+     * Supports:
+     * - ${key} - Simple replacement
+     * - ${?key:prefix text } - Only adds "prefix text " if key has a value
+     * - ${key:suffix text} - Adds "suffix text" after the value (only if value exists)
+     * - ${key ? "text with value" : "text without"} - JS-style ternary (basic support)
      */
     private function interpolate_variables($string, $variables) {
         if (!$variables) {
-            return $string;
+            $variables = array();
         }
 
+        // 1. Handle JS-style ternary: ${key ? "text" : "other"}
+        // Pattern: ${variable ? "true text" : "false text"} or ${variable ? 'true text' : 'false text'}
+        $string = preg_replace_callback(
+            '/\$\{\s*(\w+)\s*\?\s*["\']([^"\']*)["\']?\s*\+?\s*\1?\s*["\']?([^"\']*)?["\']\s*:\s*["\']([^"\']*)["\']?\s*\}/',
+            function($matches) use ($variables) {
+                $key = $matches[1];
+                $has_value = isset($variables[$key]) && $variables[$key] !== '' && $variables[$key] !== null;
+
+                if ($has_value) {
+                    // Combine prefix + value + suffix
+                    $prefix = isset($matches[2]) ? $matches[2] : '';
+                    $suffix = isset($matches[3]) ? $matches[3] : '';
+                    return $prefix . $variables[$key] . $suffix;
+                } else {
+                    // Return the false case
+                    return isset($matches[4]) ? $matches[4] : '';
+                }
+            },
+            $string
+        );
+
+        // 2. Handle conditional prefix: ${?key:prefix text }
+        // If key has value, outputs "prefix text VALUE"
+        $string = preg_replace_callback(
+            '/\$\{\?(\w+):([^}]*)\}/',
+            function($matches) use ($variables) {
+                $key = $matches[1];
+                $prefix = $matches[2];
+
+                if (isset($variables[$key]) && $variables[$key] !== '' && $variables[$key] !== null) {
+                    return $prefix . $variables[$key];
+                }
+                return '';
+            },
+            $string
+        );
+
+        // 3. Handle simple ${key} format
         foreach ($variables as $key => $value) {
-            // Handle ${key} format
+            if ($value === null) {
+                $value = '';
+            }
             $string = str_replace('${' . $key . '}', $value, $string);
-            // Handle {key} format
             $string = str_replace('{' . $key . '}', $value, $string);
         }
+
+        // 4. Clean up any remaining unresolved template expressions
+        // Remove any ${...} that weren't matched (to avoid showing raw templates)
+        $string = preg_replace('/\$\{[^}]+\?\s*["\'][^"\']*["\']\s*:\s*["\'][^"\']*["\']\s*\}/', '', $string);
+
+        // Clean up double spaces that might result from empty replacements
+        $string = preg_replace('/\s{2,}/', ' ', $string);
+        $string = trim($string);
 
         return $string;
     }
