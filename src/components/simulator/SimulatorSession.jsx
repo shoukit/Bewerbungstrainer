@@ -112,9 +112,9 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
   return (
     <div
       style={{
-        background: `linear-gradient(135deg, ${primaryAccent}08 0%, ${primaryAccent}04 100%)`,
-        borderRadius: '12px',
-        border: `1px solid ${primaryAccent}15`,
+        background: '#fff',
+        borderRadius: '16px',
+        border: '1px solid #e2e8f0',
         overflow: 'hidden',
       }}
     >
@@ -122,7 +122,7 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
         onClick={() => setIsOpen(!isOpen)}
         style={{
           width: '100%',
-          padding: '14px 16px',
+          padding: '16px 24px',
           background: 'none',
           border: 'none',
           cursor: 'pointer',
@@ -135,10 +135,10 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
           <Lightbulb size={18} color={primaryAccent} />
           {tipsLabel || 'Tipps für diese Frage'}
         </span>
-        <ChevronRight
+        <ChevronDown
           size={18}
           color="#64748b"
-          style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}
+          style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
         />
       </button>
       <AnimatePresence>
@@ -149,16 +149,16 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
             exit={{ height: 0, opacity: 0 }}
             style={{ overflow: 'hidden' }}
           >
-            <div style={{ padding: '0 16px 16px' }}>
+            <div style={{ padding: '0 24px 24px' }}>
               {tips.map((tip, index) => (
                 <div
                   key={index}
                   style={{
                     display: 'flex',
                     gap: '12px',
-                    padding: '12px',
+                    padding: '12px 16px',
                     borderRadius: '10px',
-                    backgroundColor: COLORS.amber[100] + '50',
+                    backgroundColor: COLORS.amber[100] + '60',
                     marginBottom: index < tips.length - 1 ? '8px' : 0,
                   }}
                 >
