@@ -903,7 +903,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.9 }}>
                   {isVideo ? <Video size={16} /> : isRoleplay ? <MessageSquare size={16} /> : <Target size={16} />}
                   <span style={{ fontSize: '13px', fontWeight: 500 }}>
-                    {isVideo ? 'Video-Training' : isRoleplay ? 'Live-Gespräch' : 'Szenario-Training'}
+                    {isVideo ? 'Wirkungs-Analyse' : isRoleplay ? 'Live-Simulation' : 'Szenario-Training'}
                   </span>
                 </div>
                 <h1 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0' }}>
@@ -933,7 +933,18 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
               <h3 style={{ fontSize: '15px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Video size={18} color={primaryAccent} /> Deine Aufnahme
               </h3>
-              <video src={session.video_url} controls style={{ width: '100%', borderRadius: '12px', background: '#000' }} />
+              <video
+                src={session.video_url}
+                controls
+                style={{
+                  width: '100%',
+                  maxWidth: '640px',
+                  maxHeight: '360px',
+                  borderRadius: '12px',
+                  background: '#000',
+                  objectFit: 'contain',
+                }}
+              />
             </motion.div>
           )}
 

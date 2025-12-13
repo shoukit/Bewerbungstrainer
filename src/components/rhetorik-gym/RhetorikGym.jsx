@@ -588,6 +588,11 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
     }
   }, [pendingMode, isAuthenticated]);
 
+  // Scroll to top on every view change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentView]);
+
   const handleSelectMode = (mode) => {
     // Check authentication before allowing mode selection
     if (!isAuthenticated) {

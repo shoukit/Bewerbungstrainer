@@ -86,6 +86,43 @@ class Bewerbungstrainer_Video_Training_Database {
             error_log('[VIDEO TRAINING] Migration 1.0.1: Enabled navigation for pitch scenarios');
             update_option('bewerbungstrainer_video_training_migration_version', '1.0.1');
         }
+
+        // Migration 2: Add demo_code column for demo user session isolation
+        if (version_compare($current_version, '1.0.2', '<')) {
+            $this->add_demo_code_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.2');
+        }
+
+        // Migration 3: Re-run demo_code migration with correct column name (fix for failed 1.0.2)
+        if (version_compare($current_version, '1.0.3', '<')) {
+            $this->add_demo_code_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.3');
+        }
+    }
+
+    /**
+     * Add demo_code column to sessions table if it doesn't exist
+     */
+    private function add_demo_code_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_sessions}` LIKE %s",
+                'demo_code'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[VIDEO TRAINING] Adding demo_code column to sessions table...');
+            $result = $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD COLUMN `demo_code` varchar(10) DEFAULT NULL AFTER `summary_feedback`");
+            if ($result === false) {
+                error_log('[VIDEO TRAINING] Error adding demo_code column: ' . $wpdb->last_error);
+            } else {
+                $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD INDEX `demo_code` (`demo_code`)");
+                error_log('[VIDEO TRAINING] demo_code column added successfully');
+            }
+        }
     }
 
     /**
@@ -148,6 +185,7 @@ class Bewerbungstrainer_Video_Training_Database {
             `overall_score` decimal(5,2) DEFAULT NULL,
             `category_scores_json` longtext DEFAULT NULL,
             `summary_feedback` text DEFAULT NULL,
+            `demo_code` varchar(10) DEFAULT NULL,
             `started_at` datetime DEFAULT NULL,
             `completed_at` datetime DEFAULT NULL,
             `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -157,6 +195,7 @@ class Bewerbungstrainer_Video_Training_Database {
             KEY `user_id` (`user_id`),
             KEY `scenario_id` (`scenario_id`),
             KEY `status` (`status`),
+            KEY `demo_code` (`demo_code`),
             KEY `created_at` (`created_at`)
         ) $charset_collate;";
 
@@ -669,6 +708,7 @@ Gib konkretes, umsetzbares Feedback.',
             'overall_score' => null,
             'category_scores_json' => null,
             'summary_feedback' => null,
+            'demo_code' => null,
             'started_at' => null,
             'completed_at' => null,
         );
@@ -703,10 +743,11 @@ Gib konkretes, umsetzbares Feedback.',
                 'overall_score' => $data['overall_score'],
                 'category_scores_json' => $data['category_scores_json'],
                 'summary_feedback' => $data['summary_feedback'],
+                'demo_code' => $data['demo_code'] ? strtoupper(sanitize_text_field($data['demo_code'])) : null,
                 'started_at' => $data['started_at'],
                 'completed_at' => $data['completed_at'],
             ),
-            array('%d', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%f', '%s', '%s', '%s', '%s')
+            array('%d', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s')
         );
 
         if ($result === false) {
@@ -852,6 +893,7 @@ Gib konkretes, umsetzbares Feedback.',
             'order' => 'DESC',
             'status' => null,
             'scenario_id' => null,
+            'demo_code' => null,
         );
 
         $args = wp_parse_args($args, $defaults);
@@ -868,6 +910,12 @@ Gib konkretes, umsetzbares Feedback.',
         if ($args['scenario_id']) {
             $where[] = 's.scenario_id = %d';
             $where_values[] = $args['scenario_id'];
+        }
+
+        // Filter by demo_code if provided (for demo users)
+        if (!empty($args['demo_code'])) {
+            $where[] = 's.demo_code = %s';
+            $where_values[] = strtoupper($args['demo_code']);
         }
 
         $where_clause = implode(' AND ', $where);
@@ -907,7 +955,7 @@ Gib konkretes, umsetzbares Feedback.',
      * @param string $status Optional status filter
      * @return int Count
      */
-    public function get_user_sessions_count($user_id = null, $status = null) {
+    public function get_user_sessions_count($user_id = null, $status = null, $demo_code = null) {
         global $wpdb;
 
         if ($user_id === null) {
@@ -920,6 +968,11 @@ Gib konkretes, umsetzbares Feedback.',
         if ($status) {
             $where .= ' AND status = %s';
             $where_values[] = $status;
+        }
+
+        if (!empty($demo_code)) {
+            $where .= ' AND demo_code = %s';
+            $where_values[] = strtoupper($demo_code);
         }
 
         $count = $wpdb->get_var(

@@ -19,7 +19,7 @@ export default function AdminDashboard({ onNavigate }) {
   const adminSections = [
     {
       id: 'admin_roleplays',
-      title: 'Live-Gespräche (Roleplays)',
+      title: 'Live-Simulationen',
       description: 'Verwalten Sie Szenarien für Live-Voice-Interviews mit KI-Gesprächspartnern.',
       icon: MessageSquare,
       color: 'text-blue-600',
@@ -37,8 +37,8 @@ export default function AdminDashboard({ onNavigate }) {
     },
     {
       id: 'admin_video',
-      title: 'Video-Training',
-      description: 'Verwalten Sie Video-basierte Trainingsszenarien und Übungen.',
+      title: 'Wirkungs-Analyse',
+      description: 'Verwalten Sie Video-basierte Wirkungs-Analysen und Übungen.',
       icon: Video,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',

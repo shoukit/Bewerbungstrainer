@@ -24,6 +24,24 @@ class Bewerbungstrainer_Gemini_Handler {
     private $api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 
     /**
+     * Enable/disable detailed prompt logging
+     */
+    private $debug_prompts = true;
+
+    /**
+     * Log a Gemini prompt for debugging (uses global function)
+     */
+    private function log_prompt_debug($scenario, $description, $prompt, $metadata = array()) {
+        if (!$this->debug_prompts) {
+            return;
+        }
+        // Use global logging function that writes to prompts.log
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt($scenario, $description, $prompt, $metadata);
+        }
+    }
+
+    /**
      * Get singleton instance
      */
     public static function get_instance() {
@@ -67,6 +85,22 @@ class Bewerbungstrainer_Gemini_Handler {
 
         // Generate prompt based on document type
         $prompt = $this->get_analysis_prompt($text, $document_type);
+
+        // Debug logging
+        $this->log_prompt_debug(
+            $document_type === 'cv' ? 'CV_ANALYSIS' : 'COVER_LETTER_ANALYSIS',
+            $document_type === 'cv'
+                ? 'Lebenslauf-Analyse: Bewertet Struktur, Inhalt, Vollständigkeit und Professionalität des CVs.'
+                : 'Anschreiben-Analyse: Bewertet Aufbau, Argumentation, Motivation und Sprache des Bewerbungsschreibens.',
+            $prompt,
+            array(
+                'Dokument-Typ' => $document_type === 'cv' ? 'Lebenslauf' : 'Anschreiben',
+                'Text-Länge' => strlen($text) . ' Zeichen',
+                'Bewertungskategorien' => $document_type === 'cv'
+                    ? 'Struktur, Inhalt, Vollständigkeit, Professionalität'
+                    : 'Aufbau, Inhalt, Motivation, Sprache',
+            )
+        );
 
         // Call Gemini API
         $response = $this->call_gemini_api($prompt, $api_key);
@@ -471,6 +505,20 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
         // Build prompt
         $prompt = $this->get_question_generation_prompt($position, $company, $experience_level);
 
+        // Debug logging
+        $this->log_prompt_debug(
+            'QUESTION_GENERATION',
+            'Video-Training: Generierung von Interview-Fragen. Erstellt 6-8 personalisierte Fragen basierend auf Position und Erfahrungslevel.',
+            $prompt,
+            array(
+                'Position' => $position,
+                'Firma' => !empty($company) ? $company : '(nicht angegeben)',
+                'Erfahrungslevel' => $experience_level,
+                'Erwartete Fragen' => '6-8 Fragen',
+                'Kategorien' => 'Motivation, Fachlich, Soft Skills, Situativ',
+            )
+        );
+
         // Call Gemini API
         error_log('Calling Gemini API...');
         $response = $this->call_gemini_api($prompt, $api_key);
@@ -653,6 +701,21 @@ Schwierigkeit: easy, medium, hard";
 
         // Build analysis prompt
         $prompt = $this->get_video_analysis_prompt($questions, $user_data);
+
+        // Debug logging
+        $this->log_prompt_debug(
+            'VIDEO_ANALYSIS',
+            'Wirkungs-Analyse: Video-Interview-Bewertung. Analysiert Auftreten, Selbstbewusstsein, Körpersprache, Kommunikation, Professionalität.',
+            $prompt,
+            array(
+                'Bewerber' => isset($user_data['name']) ? $user_data['name'] : '(nicht angegeben)',
+                'Position' => isset($user_data['position']) ? $user_data['position'] : '(nicht angegeben)',
+                'Firma' => isset($user_data['company']) ? $user_data['company'] : '(nicht angegeben)',
+                'Anzahl Fragen' => count($questions),
+                'Video URI' => $video_data['uri'],
+                'Bewertungskategorien' => 'Auftreten, Selbstbewusstsein, Körpersprache, Kommunikation, Professionalität, Persönliche Wirkung',
+            )
+        );
 
         // Call Gemini API with video
         $analysis = $this->call_gemini_api_with_video($prompt, $video_data['uri'], $api_key);

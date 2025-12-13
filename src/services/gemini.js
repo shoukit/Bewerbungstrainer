@@ -13,6 +13,73 @@ import { getAudioAnalysisPrompt } from '@/config/prompts/audioAnalysisPrompt';
 import { getRhetoricGamePrompt } from '@/config/prompts/gamePrompts';
 
 // =============================================================================
+// DEBUG LOGGING
+// =============================================================================
+
+/**
+ * Enable/disable detailed prompt logging
+ * Set to true to see full prompts in console
+ */
+const DEBUG_PROMPTS = true;
+
+/**
+ * Logs a Gemini prompt with full context for debugging
+ * @param {string} scenario - The scenario name (e.g., "FEEDBACK", "AUDIO", "GAME")
+ * @param {string} description - Human-readable description of what this prompt does
+ * @param {string|Array} prompt - The actual prompt or content array
+ * @param {Object} metadata - Additional metadata about the request
+ */
+function logPromptDebug(scenario, description, prompt, metadata = {}) {
+  if (!DEBUG_PROMPTS) return;
+
+  const separator = '='.repeat(80);
+  const timestamp = new Date().toISOString();
+
+  console.log(`\n${separator}`);
+  console.log(`🤖 GEMINI PROMPT DEBUG - ${scenario}`);
+  console.log(`📅 ${timestamp}`);
+  console.log(separator);
+  console.log(`📋 SZENARIO: ${description}`);
+  console.log(separator);
+
+  // Log metadata
+  if (Object.keys(metadata).length > 0) {
+    console.log('📊 METADATA:');
+    Object.entries(metadata).forEach(([key, value]) => {
+      if (typeof value === 'string' && value.length > 200) {
+        console.log(`   ${key}: ${value.substring(0, 200)}... (${value.length} chars)`);
+      } else {
+        console.log(`   ${key}:`, value);
+      }
+    });
+    console.log(separator);
+  }
+
+  // Log prompt
+  console.log('📝 PROMPT:');
+  if (Array.isArray(prompt)) {
+    prompt.forEach((part, index) => {
+      if (typeof part === 'string') {
+        console.log(`--- Teil ${index + 1} (Text) ---`);
+        console.log(part);
+      } else if (part.inlineData) {
+        console.log(`--- Teil ${index + 1} (Audio/Media) ---`);
+        console.log(`   Type: ${part.inlineData.mimeType}`);
+        console.log(`   Size: ${Math.round(part.inlineData.data.length * 0.75 / 1024)} KB (base64)`);
+      } else {
+        console.log(`--- Teil ${index + 1} (Other) ---`);
+        console.log(JSON.stringify(part, null, 2));
+      }
+    });
+  } else {
+    console.log(prompt);
+  }
+
+  console.log(separator);
+  console.log(`\n`);
+}
+
+// =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
 
@@ -209,6 +276,18 @@ export async function generateInterviewFeedback(
     ? applyCustomPrompt(customPrompt, transcript)
     : getFeedbackPrompt(transcript);
 
+  // Debug logging
+  logPromptDebug(
+    'FEEDBACK',
+    'Live-Simulation / Roleplay: Analyse des Interview-Transkripts. Bewertet Kommunikation, Motivation, Professionalität des Bewerbers.',
+    prompt,
+    {
+      'Transkript-Länge': `${transcript.length} Zeichen`,
+      'Custom Prompt': customPrompt ? 'Ja' : 'Nein (Standard-Prompt)',
+      'Transkript-Vorschau': transcript.substring(0, 300),
+    }
+  );
+
   return callGeminiWithFallback({
     apiKey,
     content: prompt,
@@ -250,6 +329,19 @@ export async function generateAudioAnalysis(
   // Build content array with prompt and audio
   const prompt = getAudioAnalysisPrompt();
   const content = [prompt, audioPart];
+
+  // Debug logging
+  logPromptDebug(
+    'AUDIO',
+    'Audio-Analyse: Paraverbale Kommunikation. Analysiert Füllwörter, Sprechtempo, Tonalität und Selbstsicherheit der Stimme.',
+    content,
+    {
+      'Audio-Dateigröße': `${Math.round(audioFile.size / 1024)} KB`,
+      'Audio-Typ': audioFile.type,
+      'Analyse-Fokus': 'Nur BEWERBER-Stimme (nicht Interviewer)',
+      'Metriken': 'Füllwörter, Pacing (WPM), Tonalität, Confidence Score',
+    }
+  );
 
   return callGeminiWithFallback({
     apiKey,
@@ -294,6 +386,20 @@ export async function analyzeRhetoricGame(
   // Build content array with optimized game prompt and audio
   const prompt = getRhetoricGamePrompt(topic, durationSeconds);
   const content = [prompt, audioPart];
+
+  // Debug logging
+  logPromptDebug(
+    'GAME',
+    'Rhetorik-Gym / Füllwort-Killer: Gamification-Analyse. Zählt Füllwörter, transkribiert Audio, bewertet Inhalt.',
+    content,
+    {
+      'Thema': topic,
+      'Erwartete Dauer': `${durationSeconds} Sekunden`,
+      'Audio-Dateigröße': `${Math.round(audioFile.size / 1024)} KB`,
+      'Spielmodus': durationSeconds === 60 ? 'Klassiker/Zufall (60s)' : 'Stress-Test (90s)',
+      'Scoring': 'Lokal berechnet: 100 - (Füllwörter × 10) + Content-Score',
+    }
+  );
 
   const responseText = await callGeminiWithFallback({
     apiKey,

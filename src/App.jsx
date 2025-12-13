@@ -341,13 +341,31 @@ function AppContent() {
 
   // ===== SCROLL TO TOP HELPER =====
   const scrollToTop = useCallback(() => {
-    // Scroll to top of the window
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Also try to scroll the main content area if it exists
-    const mainContent = document.querySelector('[data-main-content]');
-    if (mainContent) {
-      mainContent.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      // Scroll window to top immediately (not smooth - more reliable)
+      window.scrollTo(0, 0);
+
+      // Also scroll the app container
+      const appContainer = document.getElementById('bewerbungstrainer-app');
+      if (appContainer) {
+        appContainer.scrollTop = 0;
+      }
+
+      // Try to scroll the main content area if it exists
+      const mainContent = document.querySelector('[data-main-content]');
+      if (mainContent) {
+        mainContent.scrollTop = 0;
+      }
+
+      // Also scroll parent containers that might have overflow
+      const scrollableParents = document.querySelectorAll('.overflow-y-auto, .overflow-auto, [style*="overflow"]');
+      scrollableParents.forEach(el => {
+        if (el.scrollTop > 0) {
+          el.scrollTop = 0;
+        }
+      });
+    });
   }, []);
 
   // ===== SCROLL TO TOP ON EVERY VIEW CHANGE =====

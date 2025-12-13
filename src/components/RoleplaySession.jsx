@@ -38,8 +38,8 @@ import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 
 const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession }) => {
-  // Partner branding
-  const { branding } = usePartner();
+  // Partner branding and demo code
+  const { branding, demoCode } = usePartner();
 
   // Memoized themed styles
   const themedStyles = useMemo(() => {
@@ -324,6 +324,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
         scenario_id: scenario.id > 0 ? scenario.id : null,
         variables: variables,
         user_name: currentUser.firstName || 'Gast',
+        demo_code: demoCode || null,
       };
 
       const createdSession = await createRoleplaySession(sessionData);

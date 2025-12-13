@@ -31,6 +31,16 @@ export function PartnerProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
+  // Demo user state
+  const [demoCode, setDemoCodeState] = useState(() => {
+    // Initialize from localStorage if available
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bewerbungstrainer_demo_code') || null;
+    }
+    return null;
+  });
+  const [isDemoUser, setIsDemoUser] = useState(false);
+
   // Initialize partner from URL on mount - now fetches from API
   useEffect(() => {
     const initializePartner = async () => {
@@ -100,14 +110,57 @@ export function PartnerProvider({ children }) {
     const initializeAuth = async () => {
       // Check if user is already logged in via WordPress
       const wpConfig = window.bewerbungstrainerConfig;
+
+      // Check for incomplete demo process - if demo user refreshed without completing registration
+      const demoPending = localStorage.getItem('bewerbungstrainer_demo_pending');
+      const storedDemoCode = localStorage.getItem('bewerbungstrainer_demo_code');
+      const isDemoUsername = wpConfig?.currentUser?.login?.toLowerCase() === 'demo';
+
+      if (demoPending === 'true' && isDemoUsername && !storedDemoCode) {
+        console.log('🔐 [PartnerContext] Demo process was incomplete, logging out demo user...');
+        // Clear the pending flag
+        localStorage.removeItem('bewerbungstrainer_demo_pending');
+
+        // Log out the demo user
+        try {
+          await logoutUser();
+          console.log('🔐 [PartnerContext] Demo user logged out due to incomplete registration');
+        } catch (error) {
+          console.error('🔐 [PartnerContext] Error logging out demo user:', error);
+        }
+
+        setAuthLoading(false);
+        return; // Don't proceed with normal auth initialization
+      }
+
       if (wpConfig?.currentUser?.id && wpConfig.currentUser.id > 0) {
         console.log('🔐 [PartnerContext] User from WordPress config:', wpConfig.currentUser.name);
+
+        // For demo users, also check if they have a valid demo code
+        if (isDemoUsername && !storedDemoCode) {
+          console.log('🔐 [PartnerContext] Demo user without code, logging out...');
+          try {
+            await logoutUser();
+          } catch (error) {
+            console.error('🔐 [PartnerContext] Error logging out demo user:', error);
+          }
+          setAuthLoading(false);
+          return;
+        }
+
         setUser({
           id: wpConfig.currentUser.id,
           displayName: wpConfig.currentUser.name,
           firstName: wpConfig.currentUser.firstName,
         });
         setIsAuthenticated(true);
+
+        // Set demo user state if applicable
+        if (isDemoUsername && storedDemoCode) {
+          setIsDemoUser(true);
+          setDemoCodeState(storedDemoCode);
+          console.log('🎫 [PartnerContext] Demo user restored with code:', storedDemoCode);
+        }
 
         // Check admin status
         const adminStatus = await checkAdminStatus();
@@ -118,9 +171,25 @@ export function PartnerProvider({ children }) {
         try {
           const apiUser = await getCurrentUser();
           if (apiUser) {
+            // Check if this is a demo user without a code
+            const apiIsDemoUser = apiUser.login?.toLowerCase() === 'demo';
+            if (apiIsDemoUser && !storedDemoCode) {
+              console.log('🔐 [PartnerContext] Demo user from API without code, logging out...');
+              await logoutUser();
+              setAuthLoading(false);
+              return;
+            }
+
             console.log('🔐 [PartnerContext] User from API:', apiUser.displayName);
             setUser(apiUser);
             setIsAuthenticated(true);
+
+            // Set demo user state if applicable
+            if (apiIsDemoUser && storedDemoCode) {
+              setIsDemoUser(true);
+              setDemoCodeState(storedDemoCode);
+              console.log('🎫 [PartnerContext] Demo user restored with code:', storedDemoCode);
+            }
 
             // Check admin status
             const adminStatus = await checkAdminStatus();
@@ -279,10 +348,48 @@ export function PartnerProvider({ children }) {
     setUser(null);
     setIsAuthenticated(false);
     setIsAdmin(false);
+
+    // Clear demo code on logout
+    setDemoCodeState(null);
+    setIsDemoUser(false);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('bewerbungstrainer_demo_code');
+    }
+
     console.log('✅ [PartnerContext] Logout completed');
 
     return result;
   }, []);
+
+  /**
+   * Set demo code for demo user sessions
+   * @param {string} code - The demo code to set
+   */
+  const setDemoCode = useCallback((code) => {
+    if (code) {
+      const upperCode = code.toUpperCase();
+      setDemoCodeState(upperCode);
+      setIsDemoUser(true);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bewerbungstrainer_demo_code', upperCode);
+      }
+      console.log('🎫 [PartnerContext] Demo code set:', upperCode);
+    } else {
+      setDemoCodeState(null);
+      setIsDemoUser(false);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('bewerbungstrainer_demo_code');
+      }
+      console.log('🎫 [PartnerContext] Demo code cleared');
+    }
+  }, []);
+
+  /**
+   * Clear demo code
+   */
+  const clearDemoCode = useCallback(() => {
+    setDemoCode(null);
+  }, [setDemoCode]);
 
   /**
    * Refresh user data from API
@@ -330,6 +437,12 @@ export function PartnerProvider({ children }) {
     login: handleLogin,
     logout: handleLogout,
     refreshUser,
+
+    // Demo user support
+    demoCode,
+    isDemoUser,
+    setDemoCode,
+    clearDemoCode,
   };
 
   return (

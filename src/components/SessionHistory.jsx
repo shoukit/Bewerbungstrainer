@@ -40,8 +40,8 @@ const TABS = {
 
 const TAB_CONFIG = [
   { id: TABS.SIMULATOR, label: 'Szenario-Training', icon: Target },
-  { id: TABS.ROLEPLAY, label: 'Live-Gespräche', icon: MessageSquare },
-  { id: TABS.VIDEO, label: 'Video-Training', icon: Video },
+  { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
+  { id: TABS.VIDEO, label: 'Wirkungs-Analyse', icon: Video },
 ];
 
 /**
@@ -267,7 +267,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   console.log('🏗️ [SESSION_HISTORY] SessionHistory component initialized');
 
   // Partner branding
-  const { branding } = usePartner();
+  const { branding, demoCode, isDemoUser } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -278,6 +278,11 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Selected session for detail view
   const [selectedTrainingSession, setSelectedTrainingSession] = useState(null);
   const [selectedSessionType, setSelectedSessionType] = useState(null);
+
+  // Scroll to top when tab changes or detail view changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab, selectedTrainingSession]);
 
   // Data states
   const [roleplaySessions, setRoleplaySessions] = useState([]);
@@ -308,6 +313,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       // Get fresh nonce and API URL for each request
       const apiUrl = getWPApiUrl();
 
+      // Build query params with demo_code if applicable
+      const demoQueryParam = demoCode ? `&demo_code=${encodeURIComponent(demoCode)}` : '';
+
       // Load all sessions in parallel
       const [
         roleplayData,
@@ -317,14 +325,14 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         simulatorScenariosData,
         videoScenariosData,
       ] = await Promise.all([
-        // Roleplay sessions
-        getRoleplaySessions({ limit: 50 }).catch(() => ({ data: [] })),
-        // Simulator sessions
-        fetch(`${apiUrl}/simulator/sessions?limit=50`, {
+        // Roleplay sessions (pass demo_code)
+        getRoleplaySessions({ limit: 50, demo_code: demoCode }).catch(() => ({ data: [] })),
+        // Simulator sessions (pass demo_code)
+        fetch(`${apiUrl}/simulator/sessions?limit=50${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
-        // Video training sessions
-        fetch(`${apiUrl}/video-training/sessions?limit=50`, {
+        // Video training sessions (pass demo_code)
+        fetch(`${apiUrl}/video-training/sessions?limit=50${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Roleplay scenarios
@@ -708,7 +716,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
             {activeTab === TABS.VIDEO && <Video style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
             <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
-              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Video-Trainings' : 'Live-Gespräche'}
+              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : 'Live-Simulationen'}
             </h3>
             <p style={{ color: '#64748b', marginBottom: '24px' }}>
               Starte dein erstes Training, um hier deine Fortschritte zu sehen.

@@ -56,6 +56,57 @@ class Bewerbungstrainer_Database {
         $this->table_documents = $wpdb->prefix . 'bewerbungstrainer_documents';
         $this->table_video_trainings = $wpdb->prefix . 'bewerbungstrainer_video_trainings';
         $this->table_roleplay_sessions = $wpdb->prefix . 'bewerbungstrainer_roleplay_sessions';
+
+        // Run migrations for existing installations
+        $this->run_migrations();
+    }
+
+    /**
+     * Run database migrations for existing installations
+     */
+    private function run_migrations() {
+        $current_version = get_option('bewerbungstrainer_db_migration_version', '0');
+
+        // Migration 1: Add demo_code column for demo user session isolation
+        if (version_compare($current_version, '1.0.1', '<')) {
+            $this->add_demo_code_columns();
+            update_option('bewerbungstrainer_db_migration_version', '1.0.1');
+        }
+    }
+
+    /**
+     * Add demo_code column to session tables if they don't exist
+     */
+    private function add_demo_code_columns() {
+        global $wpdb;
+
+        $tables = array(
+            $this->table_video_trainings => 'feedback_json',
+            $this->table_roleplay_sessions => 'audio_analysis_json',
+        );
+
+        foreach ($tables as $table => $after_column) {
+            // Check if table exists
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'");
+            if (!$table_exists) {
+                continue;
+            }
+
+            // Check if column exists
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SHOW COLUMNS FROM `$table` LIKE %s",
+                    'demo_code'
+                )
+            );
+
+            if (empty($column_exists)) {
+                error_log("[DATABASE] Adding demo_code column to $table...");
+                $wpdb->query("ALTER TABLE `$table` ADD COLUMN `demo_code` varchar(10) DEFAULT NULL AFTER `$after_column`");
+                $wpdb->query("ALTER TABLE `$table` ADD INDEX `demo_code` (`demo_code`)");
+                error_log("[DATABASE] demo_code column added to $table successfully");
+            }
+        }
     }
 
     /**
@@ -132,11 +183,13 @@ class Bewerbungstrainer_Database {
             transcript longtext DEFAULT NULL,
             analysis_json longtext DEFAULT NULL,
             overall_score decimal(5,2) DEFAULT NULL,
+            demo_code varchar(10) DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY user_id (user_id),
             KEY session_id (session_id),
+            KEY demo_code (demo_code),
             KEY created_at (created_at)
         ) $charset_collate;";
 
@@ -158,12 +211,14 @@ class Bewerbungstrainer_Database {
             audio_analysis_json longtext DEFAULT NULL,
             conversation_id varchar(255) DEFAULT NULL,
             duration int DEFAULT NULL,
+            demo_code varchar(10) DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY user_id (user_id),
             KEY session_id (session_id),
             KEY scenario_id (scenario_id),
+            KEY demo_code (demo_code),
             KEY created_at (created_at)
         ) $charset_collate;";
 
@@ -767,6 +822,7 @@ class Bewerbungstrainer_Database {
             'transcript' => null,
             'analysis_json' => null,
             'overall_score' => null,
+            'demo_code' => null,
         );
 
         $data = wp_parse_args($data, $defaults);
@@ -787,12 +843,13 @@ class Bewerbungstrainer_Database {
             'transcript' => $data['transcript'] !== null ? wp_kses_post($data['transcript']) : null,
             'analysis_json' => $data['analysis_json'],
             'overall_score' => $data['overall_score'],
+            'demo_code' => $data['demo_code'] ? strtoupper(sanitize_text_field($data['demo_code'])) : null,
         );
 
         $result = $wpdb->insert(
             $this->table_video_trainings,
             $insert_data,
-            array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f')
+            array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%s')
         );
 
         if ($result === false) {
@@ -929,6 +986,7 @@ class Bewerbungstrainer_Database {
             'offset' => 0,
             'orderby' => 'created_at',
             'order' => 'DESC',
+            'demo_code' => null,
         );
 
         $args = wp_parse_args($args, $defaults);
@@ -940,13 +998,20 @@ class Bewerbungstrainer_Database {
 
         $args['order'] = strtoupper($args['order']) === 'ASC' ? 'ASC' : 'DESC';
 
+        // Build WHERE clause
+        $where = $wpdb->prepare("user_id = %d", $user_id);
+
+        // Filter by demo_code if provided (for demo users)
+        if (!empty($args['demo_code'])) {
+            $where .= $wpdb->prepare(" AND demo_code = %s", strtoupper($args['demo_code']));
+        }
+
         $trainings = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM {$this->table_video_trainings}
-                WHERE user_id = %d
+                WHERE {$where}
                 ORDER BY {$args['orderby']} {$args['order']}
                 LIMIT %d OFFSET %d",
-                $user_id,
                 $args['limit'],
                 $args['offset']
             )
@@ -1023,6 +1088,7 @@ class Bewerbungstrainer_Database {
             'audio_analysis_json' => null,
             'conversation_id' => null,
             'duration' => null,
+            'demo_code' => null,
         );
 
         $data = wp_parse_args($data, $defaults);
@@ -1041,8 +1107,9 @@ class Bewerbungstrainer_Database {
                 'audio_analysis_json' => $data['audio_analysis_json'],
                 'conversation_id' => sanitize_text_field($data['conversation_id']),
                 'duration' => $data['duration'],
+                'demo_code' => $data['demo_code'] ? strtoupper(sanitize_text_field($data['demo_code'])) : null,
             ),
-            array('%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d')
+            array('%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s')
         );
 
         if ($result === false) {
@@ -1180,6 +1247,7 @@ class Bewerbungstrainer_Database {
             'orderby' => 'created_at',
             'order' => 'DESC',
             'scenario_id' => null,
+            'demo_code' => null,
         );
 
         $args = wp_parse_args($args, $defaults);
@@ -1198,6 +1266,11 @@ class Bewerbungstrainer_Database {
 
         if ($args['scenario_id']) {
             $where .= $wpdb->prepare(" AND scenario_id = %d", $args['scenario_id']);
+        }
+
+        // Filter by demo_code if provided (for demo users)
+        if (!empty($args['demo_code'])) {
+            $where .= $wpdb->prepare(" AND demo_code = %s", strtoupper($args['demo_code']));
         }
 
         $sessions = $wpdb->get_results(
@@ -1219,9 +1292,10 @@ class Bewerbungstrainer_Database {
      *
      * @param int $user_id User ID
      * @param int $scenario_id Optional scenario ID filter
+     * @param string $demo_code Optional demo code filter
      * @return int Count of sessions
      */
-    public function get_user_roleplay_sessions_count($user_id = null, $scenario_id = null) {
+    public function get_user_roleplay_sessions_count($user_id = null, $scenario_id = null, $demo_code = null) {
         global $wpdb;
 
         if ($user_id === null) {
@@ -1232,6 +1306,10 @@ class Bewerbungstrainer_Database {
 
         if ($scenario_id) {
             $where .= $wpdb->prepare(" AND scenario_id = %d", $scenario_id);
+        }
+
+        if (!empty($demo_code)) {
+            $where .= $wpdb->prepare(" AND demo_code = %s", strtoupper($demo_code));
         }
 
         $count = $wpdb->get_var(

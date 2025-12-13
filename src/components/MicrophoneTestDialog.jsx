@@ -281,18 +281,21 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
             <button
               onClick={onClose}
               style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
                 border: 'none',
                 backgroundColor: COLORS.slate[100],
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                transition: 'background-color 0.2s',
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[200]}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[100]}
             >
-              <X style={{ width: '18px', height: '18px', color: COLORS.slate[500] }} />
+              <X style={{ width: '24px', height: '24px', color: COLORS.slate[600] }} />
             </button>
           </div>
 

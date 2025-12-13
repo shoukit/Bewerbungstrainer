@@ -43,9 +43,9 @@ import wordpressAPI from '@/services/wordpress-api';
 const AVAILABLE_MODULES = [
   { id: 'overview', label: 'Übersicht' },
   { id: 'dashboard', label: 'Dashboard' },
-  { id: 'roleplay', label: 'Live-Gespräch (Roleplay)' },
+  { id: 'roleplay', label: 'Live-Simulation (Roleplay)' },
   { id: 'simulator', label: 'Szenario-Training (Simulator)' },
-  { id: 'video_training', label: 'Video-Training' },
+  { id: 'video_training', label: 'Wirkungs-Analyse' },
   { id: 'gym', label: 'Rhetorik-Gym (Game)' },
   { id: 'history', label: 'Verlauf / History' },
 ];

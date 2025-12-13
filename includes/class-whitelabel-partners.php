@@ -104,8 +104,9 @@ class Bewerbungstrainer_Whitelabel_Partners {
      */
     private $available_modules = array(
         'dashboard' => 'Dashboard',
-        'roleplay' => 'Live-Gespräch (Roleplay)',
+        'roleplay' => 'Live-Simulation (Roleplay)',
         'simulator' => 'Szenario-Training (Simulator)',
+        'video_training' => 'Wirkungs-Analyse',
         'gym' => 'Rhetorik-Gym (Game)',
         'history' => 'Verlauf / History',
     );

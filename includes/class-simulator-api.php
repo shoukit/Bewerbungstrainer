@@ -267,7 +267,14 @@ class Bewerbungstrainer_Simulator_API {
             'scenario_id' => $params['scenario_id'],
             'variables_json' => isset($params['variables']) ? $params['variables'] : null,
             'status' => 'setup',
+            'demo_code' => isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null,
         );
+
+        // For demo users, update the demo code usage counter
+        if (!empty($session_data['demo_code'])) {
+            $demo_codes = Bewerbungstrainer_Demo_Codes::get_instance();
+            $demo_codes->update_usage($session_data['demo_code']);
+        }
 
         $session_id = $this->db->create_session($session_data);
 
@@ -345,6 +352,22 @@ class Bewerbungstrainer_Simulator_API {
             $variables,
             $question_count
         );
+
+        // Log prompt to prompts.log
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'SIMULATOR_QUESTIONS',
+                'Szenario-Training: Generierung von Interview-Fragen basierend auf Szenario-Konfiguration und Benutzervariablen.',
+                $full_prompt,
+                array(
+                    'Szenario' => $scenario->title,
+                    'Szenario-ID' => $scenario->id,
+                    'Anzahl Fragen' => $question_count,
+                    'Variablen' => $variables,
+                    'Session-ID' => $session_id,
+                )
+            );
+        }
 
         // Call Gemini API
         $response = $this->call_gemini_api($full_prompt, $api_key);
@@ -495,6 +518,24 @@ class Bewerbungstrainer_Simulator_API {
             $feedback_prompt
         );
 
+        // Log prompt to prompts.log
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'SIMULATOR_AUDIO_FEEDBACK',
+                'Szenario-Training: Audio-Analyse und Feedback. Transkribiert Antwort, bewertet Inhalt und Sprechweise.',
+                $analysis_prompt,
+                array(
+                    'Szenario' => $scenario->title,
+                    'Frage' => $question_text,
+                    'Frage-Index' => $question_index,
+                    'Versuch-Nr' => $attempt_number,
+                    'Audio-Größe' => strlen($audio_data) . ' bytes',
+                    'MIME-Type' => $mime_type ?? 'audio/webm',
+                    'Session-ID' => $session_id,
+                )
+            );
+        }
+
         // Call Gemini with multimodal (audio + text)
         $analysis_result = $this->call_gemini_multimodal($analysis_prompt, $audio_data, $mime_type ?? 'audio/webm', $api_key);
 
@@ -631,11 +672,25 @@ class Bewerbungstrainer_Simulator_API {
             'orderby' => isset($params['orderby']) ? $params['orderby'] : 'created_at',
             'order' => isset($params['order']) ? $params['order'] : 'DESC',
             'status' => isset($params['status']) ? $params['status'] : null,
+            'demo_code' => isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null,
         );
 
         $user_id = get_current_user_id();
-        $sessions = $this->db->get_user_sessions($user_id, $args);
-        $total = $this->db->get_user_sessions_count($user_id, $args['status']);
+
+        // Check if current user is demo user and filter by demo_code
+        if (Bewerbungstrainer_Demo_Codes::is_demo_user() && !empty($args['demo_code'])) {
+            // Demo user with code - filter by code
+            $sessions = $this->db->get_user_sessions($user_id, $args);
+            $total = $this->db->get_user_sessions_count($user_id, $args['status'], $args['demo_code']);
+        } else if (Bewerbungstrainer_Demo_Codes::is_demo_user() && empty($args['demo_code'])) {
+            // Demo user without code - return empty
+            $sessions = array();
+            $total = 0;
+        } else {
+            // Regular user - normal behavior
+            $sessions = $this->db->get_user_sessions($user_id, $args);
+            $total = $this->db->get_user_sessions_count($user_id, $args['status']);
+        }
 
         $formatted = array_map(array($this, 'format_session'), $sessions);
 

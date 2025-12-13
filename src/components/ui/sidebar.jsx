@@ -98,18 +98,18 @@ const NAV_ITEMS = [
   {
     id: 'video_training',
     moduleId: 'video_training', // Maps to WordPress module
-    label: 'Video-Training',
-    shortLabel: 'Video',
+    label: 'Wirkungs-Analyse',
+    shortLabel: 'Wirkung',
     icon: Video,
-    description: 'Video-Aufnahme mit KI-Analyse',
+    description: 'Video-Aufnahme mit Wirkungs-Analyse',
   },
   {
     id: 'dashboard',
-    moduleId: 'roleplay', // Maps to WordPress module (Live-Gespräche = roleplay)
-    label: 'Live-Gespräche',
+    moduleId: 'roleplay', // Maps to WordPress module (Live-Simulationen = roleplay)
+    label: 'Live-Simulationen',
     shortLabel: 'Live',
     icon: MessageSquare,
-    description: 'Live Rollenspiel-Dialoge üben',
+    description: 'Live Simulationen mit KI-Interviewer',
   },
   {
     id: 'gym',
@@ -152,10 +152,10 @@ const ADMIN_NAV_ITEMS = [
     subItems: [
       {
         id: 'admin_roleplays',
-        label: 'Live-Gespräche',
-        shortLabel: 'Roleplays',
+        label: 'Live-Simulationen',
+        shortLabel: 'Live',
         icon: MessageSquare,
-        description: 'Roleplay-Szenarien verwalten',
+        description: 'Simulations-Szenarien verwalten',
       },
       {
         id: 'admin_simulator',
@@ -166,10 +166,10 @@ const ADMIN_NAV_ITEMS = [
       },
       {
         id: 'admin_video',
-        label: 'Video-Training',
-        shortLabel: 'Video',
+        label: 'Wirkungs-Analyse',
+        shortLabel: 'Wirkung',
         icon: Video,
-        description: 'Video-Trainings verwalten',
+        description: 'Wirkungs-Analysen verwalten',
       },
       {
         id: 'admin_partners',

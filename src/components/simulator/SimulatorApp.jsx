@@ -44,6 +44,11 @@ const SimulatorApp = ({ isAuthenticated, requireAuth, setPendingAction }) => {
     }
   }, [pendingScenario, isAuthenticated]);
 
+  // Scroll to top on every view change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentView]);
+
   /**
    * Handle scenario selection from dashboard
    */

@@ -26,6 +26,69 @@ define('BEWERBUNGSTRAINER_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('BEWERBUNGSTRAINER_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
 /**
+ * Log Gemini prompts to a dedicated prompts.log file
+ *
+ * @param string $scenario Scenario name (e.g., "SIMULATOR_QUESTIONS", "VIDEO_ANALYSIS")
+ * @param string $description Human-readable description of what this prompt does
+ * @param string $prompt The actual prompt text
+ * @param array $metadata Additional metadata (key-value pairs)
+ */
+function bewerbungstrainer_log_prompt($scenario, $description, $prompt, $metadata = array()) {
+    // Get upload directory for log file
+    $upload_dir = wp_upload_dir();
+    $log_dir = $upload_dir['basedir'] . '/bewerbungstrainer/logs/';
+
+    // Create directory if it doesn't exist
+    if (!file_exists($log_dir)) {
+        wp_mkdir_p($log_dir);
+        // Add .htaccess to protect logs
+        file_put_contents($log_dir . '.htaccess', "Deny from all\n");
+    }
+
+    $log_file = $log_dir . 'prompts.log';
+    $separator = str_repeat('=', 80);
+    $timestamp = date('Y-m-d H:i:s');
+
+    $log_content = "\n" . $separator . "\n";
+    $log_content .= "🤖 GEMINI PROMPT DEBUG - " . $scenario . "\n";
+    $log_content .= "📅 " . $timestamp . "\n";
+    $log_content .= $separator . "\n";
+    $log_content .= "📋 SZENARIO: " . $description . "\n";
+    $log_content .= $separator . "\n";
+
+    // Log metadata
+    if (!empty($metadata)) {
+        $log_content .= "📊 METADATA:\n";
+        foreach ($metadata as $key => $value) {
+            if (is_string($value) && strlen($value) > 200) {
+                $log_content .= "   " . $key . ": " . substr($value, 0, 200) . "... (" . strlen($value) . " chars)\n";
+            } else {
+                $log_content .= "   " . $key . ": " . (is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value) . "\n";
+            }
+        }
+        $log_content .= $separator . "\n";
+    }
+
+    // Log prompt
+    $log_content .= "📝 PROMPT:\n";
+    if (strlen($prompt) > 8000) {
+        $log_content .= substr($prompt, 0, 4000) . "\n";
+        $log_content .= "... [TRUNCATED - " . strlen($prompt) . " total chars] ...\n";
+        $log_content .= substr($prompt, -4000) . "\n";
+    } else {
+        $log_content .= $prompt . "\n";
+    }
+
+    $log_content .= $separator . "\n\n";
+
+    // Append to log file
+    file_put_contents($log_file, $log_content, FILE_APPEND | LOCK_EX);
+
+    // Also log to error_log for immediate visibility
+    error_log("[GEMINI PROMPT] " . $scenario . " - " . $description . " (see prompts.log for full details)");
+}
+
+/**
  * Main Bewerbungstrainer Plugin Class
  */
 class Bewerbungstrainer_Plugin {
@@ -81,6 +144,9 @@ class Bewerbungstrainer_Plugin {
 
         // Load White-Label Partners class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whitelabel-partners.php';
+
+        // Load Demo Codes class
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-demo-codes.php';
 
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
@@ -163,6 +229,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create video training database tables
         Bewerbungstrainer_Video_Training_Database::create_tables();
+
+        // Create demo codes table
+        Bewerbungstrainer_Demo_Codes::create_tables();
 
         // Create upload directory for audio files
         $upload_dir = wp_upload_dir();
@@ -305,6 +374,9 @@ class Bewerbungstrainer_Plugin {
 
         // Initialize White-Label Partners
         Bewerbungstrainer_Whitelabel_Partners::get_instance();
+
+        // Initialize Demo Codes
+        Bewerbungstrainer_Demo_Codes::get_instance();
 
         // Initialize audio handler
         Bewerbungstrainer_Audio_Handler::get_instance();

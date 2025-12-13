@@ -224,8 +224,8 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
-  // Partner theming
-  const { branding } = usePartner();
+  // Partner theming and demo code
+  const { branding, demoCode } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const buttonGradient = branding?.['--button-gradient'] || headerGradient;
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -329,6 +329,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
       const sessionResponse = await wordpressAPI.createSimulatorSession({
         scenario_id: scenario.id,
         variables: formValues,
+        demo_code: demoCode || null,
       });
 
       if (!sessionResponse.success) {
