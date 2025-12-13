@@ -233,7 +233,7 @@ function VideoFeedback({ analysis, trainingData, onStartNew, onGoHome }) {
           className="bg-ocean-600 hover:bg-ocean-700 text-white px-8 py-3 text-lg"
         >
           <RotateCcw className="w-5 h-5 mr-2" />
-          Neues Video-Training starten
+          Neue Wirkungs-Analyse starten
         </Button>
         <Button
           onClick={onGoHome}

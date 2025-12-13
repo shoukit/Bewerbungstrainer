@@ -40,8 +40,8 @@ const TABS = {
 
 const TAB_CONFIG = [
   { id: TABS.SIMULATOR, label: 'Szenario-Training', icon: Target },
-  { id: TABS.ROLEPLAY, label: 'Live-Gespräche', icon: MessageSquare },
-  { id: TABS.VIDEO, label: 'Video-Training', icon: Video },
+  { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
+  { id: TABS.VIDEO, label: 'Wirkungs-Analyse', icon: Video },
 ];
 
 /**
@@ -278,6 +278,11 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Selected session for detail view
   const [selectedTrainingSession, setSelectedTrainingSession] = useState(null);
   const [selectedSessionType, setSelectedSessionType] = useState(null);
+
+  // Scroll to top when tab changes or detail view changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab, selectedTrainingSession]);
 
   // Data states
   const [roleplaySessions, setRoleplaySessions] = useState([]);
@@ -711,7 +716,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
             {activeTab === TABS.VIDEO && <Video style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
             <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
-              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Video-Trainings' : 'Live-Gespräche'}
+              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : 'Live-Simulationen'}
             </h3>
             <p style={{ color: '#64748b', marginBottom: '24px' }}>
               Starte dein erstes Training, um hier deine Fortschritte zu sehen.

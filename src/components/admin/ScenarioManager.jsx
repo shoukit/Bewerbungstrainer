@@ -258,7 +258,7 @@ export default function ScenarioManager({ onBack }) {
             </div>
             <div>
               <h1 className="text-xl font-bold text-[var(--text-main)]">
-                Live-Gespräche (Roleplays)
+                Live-Simulationen (Roleplays)
               </h1>
               <p className="text-sm text-[var(--text-secondary)]">
                 {scenarios.length} Szenarien
@@ -385,7 +385,7 @@ export default function ScenarioManager({ onBack }) {
           <DialogHeader>
             <DialogTitle>Neues Szenario erstellen</DialogTitle>
             <DialogDescription>
-              Erstellen Sie ein neues Roleplay-Szenario für Live-Gespräche.
+              Erstellen Sie ein neues Roleplay-Szenario für Live-Simulationen.
             </DialogDescription>
           </DialogHeader>
 

@@ -91,7 +91,7 @@ export default function VideoTrainingManager({ onBack }) {
             </div>
             <div>
               <h1 className="text-xl font-bold text-[var(--text-main)]">
-                Video-Training
+                Wirkungs-Analyse
               </h1>
               <p className="text-sm text-[var(--text-secondary)]">
                 {scenarios.length} Szenarien
@@ -111,7 +111,7 @@ export default function VideoTrainingManager({ onBack }) {
             <div>
               <h3 className="font-medium text-blue-900">Verwaltung im WordPress-Backend</h3>
               <p className="text-sm text-blue-700 mt-1 mb-3">
-                Video-Training-Szenarien werden im WordPress-Adminbereich verwaltet.
+                Wirkungs-Analyse-Szenarien werden im WordPress-Adminbereich verwaltet.
                 Hier sehen Sie eine Übersicht der vorhandenen Szenarien.
               </p>
               <Button
@@ -170,7 +170,7 @@ export default function VideoTrainingManager({ onBack }) {
                 <div className="text-center py-8">
                   <Video className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-3" />
                   <p className="text-[var(--text-secondary)]">
-                    {searchQuery ? 'Keine Szenarien gefunden' : 'Noch keine Video-Training-Szenarien vorhanden'}
+                    {searchQuery ? 'Keine Szenarien gefunden' : 'Noch keine Wirkungs-Analyse-Szenarien vorhanden'}
                   </p>
                   {!searchQuery && (
                     <Button

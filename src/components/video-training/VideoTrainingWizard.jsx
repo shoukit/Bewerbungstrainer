@@ -297,7 +297,7 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
               {scenario?.title}
             </h1>
             <p style={{ fontSize: '14px', color: '#64748b' }}>
-              Konfiguriere dein Video-Training
+              Konfiguriere deine Wirkungs-Analyse
             </p>
           </div>
         </div>

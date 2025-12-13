@@ -903,7 +903,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.9 }}>
                   {isVideo ? <Video size={16} /> : isRoleplay ? <MessageSquare size={16} /> : <Target size={16} />}
                   <span style={{ fontSize: '13px', fontWeight: 500 }}>
-                    {isVideo ? 'Video-Training' : isRoleplay ? 'Live-Gespräch' : 'Szenario-Training'}
+                    {isVideo ? 'Wirkungs-Analyse' : isRoleplay ? 'Live-Simulation' : 'Szenario-Training'}
                   </span>
                 </div>
                 <h1 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0' }}>
