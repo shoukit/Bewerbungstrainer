@@ -429,6 +429,9 @@ class Bewerbungstrainer_Plugin {
         // Initialize White-Label Partners
         Bewerbungstrainer_Whitelabel_Partners::get_instance();
 
+        // Ensure all predefined partners exist (adds new partners if not already imported)
+        Bewerbungstrainer_Whitelabel_Partners::ensure_partners_exist();
+
         // Initialize Demo Codes
         Bewerbungstrainer_Demo_Codes::get_instance();
 

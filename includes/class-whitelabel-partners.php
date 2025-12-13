@@ -1079,6 +1079,49 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 ),
                 'modules' => array(),
             ),
+
+            // Allianz (Corporate Blue Theme) - allianz.de
+            'allianz' => array(
+                'name' => 'Allianz',
+                'slug' => 'allianz',
+                'description' => 'Allianz Corporate Blue Theme',
+                'branding' => array(
+                    '--app-bg-color' => 'linear-gradient(135deg, #ffffff 0%, #f0f6fa 50%, #e8f4fc 100%)',
+                    '--sidebar-bg-color' => '#003781',
+                    '--sidebar-text-color' => '#ffffff',
+                    '--sidebar-text-muted' => '#8cb4d9',
+                    '--sidebar-active-bg' => 'rgba(0, 161, 222, 0.25)',
+                    '--sidebar-active-text' => '#00a1de',
+                    '--sidebar-hover-bg' => 'rgba(255, 255, 255, 0.1)',
+                    '--card-bg-color' => '#ffffff',
+                    '--primary-accent' => '#003781',
+                    '--primary-accent-light' => '#e0eef8',
+                    '--primary-accent-hover' => '#002a61',
+                    '--button-gradient' => 'linear-gradient(135deg, #00a1de 0%, #003781 100%)',
+                    '--button-gradient-hover' => 'linear-gradient(135deg, #0089be 0%, #002a61 100%)',
+                    '--button-solid' => '#00a1de',
+                    '--button-solid-hover' => '#0089be',
+                    '--button-text' => '#ffffff',
+                    '--header-gradient' => 'linear-gradient(135deg, #00a1de 0%, #003781 100%)',
+                    '--header-text' => '#ffffff',
+                    '--icon-primary' => '#003781',
+                    '--icon-secondary' => '#00a1de',
+                    '--icon-muted' => '#8cb4d9',
+                    '--text-main' => '#1a1a1a',
+                    '--text-secondary' => '#414141',
+                    '--text-muted' => '#767676',
+                    '--border-color' => '#d4d4d4',
+                    '--border-color-light' => '#f0f0f0',
+                    '--focus-ring' => 'rgba(0, 55, 129, 0.3)',
+                ),
+                'gradient_colors' => array(
+                    '--app-bg-color' => array('start' => '#ffffff', 'mid' => '#f0f6fa', 'end' => '#e8f4fc'),
+                    '--button-gradient' => array('start' => '#00a1de', 'end' => '#003781'),
+                    '--button-gradient-hover' => array('start' => '#0089be', 'end' => '#002a61'),
+                    '--header-gradient' => array('start' => '#00a1de', 'end' => '#003781'),
+                ),
+                'modules' => array(),
+            ),
         );
 
         $imported_count = 0;
@@ -1143,6 +1186,118 @@ class Bewerbungstrainer_Whitelabel_Partners {
         }
 
         return $imported_count;
+    }
+
+    /**
+     * Import a single new partner if it doesn't exist yet
+     * Called on every plugin load to ensure new partners are added
+     *
+     * @param string $slug Partner slug
+     * @param array $partner_data Partner configuration
+     * @return bool True if partner was imported, false if already exists
+     */
+    public static function import_partner_if_not_exists($slug, $partner_data) {
+        // Check if partner already exists by slug
+        $existing = get_posts(array(
+            'post_type' => 'whitelabel_partner',
+            'post_status' => 'any',
+            'meta_query' => array(
+                array(
+                    'key' => '_partner_slug',
+                    'value' => $slug,
+                ),
+            ),
+            'posts_per_page' => 1,
+        ));
+
+        // Also check by post_name
+        if (empty($existing)) {
+            $existing = get_posts(array(
+                'post_type' => 'whitelabel_partner',
+                'post_status' => 'any',
+                'name' => $slug,
+                'posts_per_page' => 1,
+            ));
+        }
+
+        // Skip if partner already exists
+        if (!empty($existing)) {
+            return false;
+        }
+
+        // Create new partner post
+        $post_id = wp_insert_post(array(
+            'post_type' => 'whitelabel_partner',
+            'post_title' => $partner_data['name'],
+            'post_name' => $slug,
+            'post_status' => 'publish',
+        ));
+
+        if (is_wp_error($post_id) || !$post_id) {
+            return false;
+        }
+
+        // Save meta data
+        update_post_meta($post_id, '_partner_slug', $slug);
+        update_post_meta($post_id, '_partner_description', $partner_data['description']);
+        update_post_meta($post_id, '_partner_branding', $partner_data['branding']);
+        update_post_meta($post_id, '_partner_gradient_colors', $partner_data['gradient_colors']);
+        update_post_meta($post_id, '_partner_modules', $partner_data['modules']);
+
+        error_log("Bewerbungstrainer: Imported new partner '{$slug}'.");
+        return true;
+    }
+
+    /**
+     * Ensure all predefined partners exist
+     * This runs on every plugin load to add any new partners
+     */
+    public static function ensure_partners_exist() {
+        // Allianz partner configuration
+        $allianz_config = array(
+            'name' => 'Allianz',
+            'slug' => 'allianz',
+            'description' => 'Allianz Corporate Blue Theme',
+            'branding' => array(
+                '--app-bg-color' => 'linear-gradient(135deg, #ffffff 0%, #f0f6fa 50%, #e8f4fc 100%)',
+                '--sidebar-bg-color' => '#003781',
+                '--sidebar-text-color' => '#ffffff',
+                '--sidebar-text-muted' => '#8cb4d9',
+                '--sidebar-active-bg' => 'rgba(0, 161, 222, 0.25)',
+                '--sidebar-active-text' => '#00a1de',
+                '--sidebar-hover-bg' => 'rgba(255, 255, 255, 0.1)',
+                '--card-bg-color' => '#ffffff',
+                '--primary-accent' => '#003781',
+                '--primary-accent-light' => '#e0eef8',
+                '--primary-accent-hover' => '#002a61',
+                '--button-gradient' => 'linear-gradient(135deg, #00a1de 0%, #003781 100%)',
+                '--button-gradient-hover' => 'linear-gradient(135deg, #0089be 0%, #002a61 100%)',
+                '--button-solid' => '#00a1de',
+                '--button-solid-hover' => '#0089be',
+                '--button-text' => '#ffffff',
+                '--header-gradient' => 'linear-gradient(135deg, #00a1de 0%, #003781 100%)',
+                '--header-text' => '#ffffff',
+                '--icon-primary' => '#003781',
+                '--icon-secondary' => '#00a1de',
+                '--icon-muted' => '#8cb4d9',
+                '--text-main' => '#1a1a1a',
+                '--text-secondary' => '#414141',
+                '--text-muted' => '#767676',
+                '--border-color' => '#d4d4d4',
+                '--border-color-light' => '#f0f0f0',
+                '--focus-ring' => 'rgba(0, 55, 129, 0.3)',
+            ),
+            'gradient_colors' => array(
+                '--app-bg-color' => array('start' => '#ffffff', 'mid' => '#f0f6fa', 'end' => '#e8f4fc'),
+                '--button-gradient' => array('start' => '#00a1de', 'end' => '#003781'),
+                '--button-gradient-hover' => array('start' => '#0089be', 'end' => '#002a61'),
+                '--header-gradient' => array('start' => '#00a1de', 'end' => '#003781'),
+            ),
+            'modules' => array(),
+        );
+
+        // Import Allianz if not exists
+        self::import_partner_if_not_exists('allianz', $allianz_config);
     }
 
     /**
