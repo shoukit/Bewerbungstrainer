@@ -401,8 +401,11 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
             controls
             style={{
               width: '100%',
+              maxWidth: '640px',
+              maxHeight: '360px',
               borderRadius: '12px',
               background: '#000',
+              objectFit: 'contain',
             }}
           />
         </motion.div>

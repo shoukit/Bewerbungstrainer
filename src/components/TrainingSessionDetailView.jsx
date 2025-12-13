@@ -933,7 +933,18 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
               <h3 style={{ fontSize: '15px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Video size={18} color={primaryAccent} /> Deine Aufnahme
               </h3>
-              <video src={session.video_url} controls style={{ width: '100%', borderRadius: '12px', background: '#000' }} />
+              <video
+                src={session.video_url}
+                controls
+                style={{
+                  width: '100%',
+                  maxWidth: '640px',
+                  maxHeight: '360px',
+                  borderRadius: '12px',
+                  background: '#000',
+                  objectFit: 'contain',
+                }}
+              />
             </motion.div>
           )}
 
