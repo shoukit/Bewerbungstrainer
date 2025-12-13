@@ -105,14 +105,13 @@ const ProgressBar = ({ current, total, answeredQuestions, primaryAccent, labels 
  * Question Tips Accordion Component
  */
 const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Default: aufgeklappt
 
   if (!tips || tips.length === 0) return null;
 
   return (
     <div
       style={{
-        marginTop: '16px',
         background: `linear-gradient(135deg, ${primaryAccent}08 0%, ${primaryAccent}04 100%)`,
         borderRadius: '12px',
         border: `1px solid ${primaryAccent}15`,
@@ -1291,118 +1290,121 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           />
         </div>
       ) : (
-        /* Two Column Layout for Recording View */
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          {/* Left Column - Recording */}
-          <div>
-            <AudioRecorder
-              onRecordingComplete={handleRecordingComplete}
-              timeLimit={scenario.time_limit_per_question || 120}
-              disabled={false}
-              deviceId={selectedMicrophoneId}
-              themedGradient={buttonGradient}
-              primaryAccent={primaryAccent}
-              isSubmitting={isSubmitting}
-              labels={labels}
-            />
+        /* Recording View Layout */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Two Column Grid for Recording and Question */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            {/* Left Column - Recording */}
+            <div>
+              <AudioRecorder
+                onRecordingComplete={handleRecordingComplete}
+                timeLimit={scenario.time_limit_per_question || 120}
+                disabled={false}
+                deviceId={selectedMicrophoneId}
+                themedGradient={buttonGradient}
+                primaryAccent={primaryAccent}
+                isSubmitting={isSubmitting}
+                labels={labels}
+              />
 
-            {/* Error State */}
-            {submitError && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '20px',
-                marginTop: '16px',
-                borderRadius: '12px',
-                backgroundColor: COLORS.red[100],
-              }}>
-                <AlertCircle style={{ width: '24px', height: '24px', color: COLORS.red[500] }} />
-                <p style={{
-                  marginTop: '8px',
-                  color: COLORS.red[500],
-                  fontWeight: 500,
-                  fontSize: '14px',
-                  textAlign: 'center',
-                }}>
-                  {submitError}
-                </p>
-                <button
-                  onClick={handleRetry}
-                  style={{
-                    marginTop: '12px',
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    backgroundColor: COLORS.red[500],
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Erneut versuchen
-                </button>
-              </div>
-            )}
-
-          </div>
-
-          {/* Right Column - Question and Tips */}
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: buttonGradient,
+              {/* Error State */}
+              {submitError && (
+                <div style={{
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                }}
-              >
-                {currentIndex + 1}
-              </div>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>
-                {currentQuestion?.category || labels.questionFallback}
-              </span>
+                  padding: '20px',
+                  marginTop: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: COLORS.red[100],
+                }}>
+                  <AlertCircle style={{ width: '24px', height: '24px', color: COLORS.red[500] }} />
+                  <p style={{
+                    marginTop: '8px',
+                    color: COLORS.red[500],
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    textAlign: 'center',
+                  }}>
+                    {submitError}
+                  </p>
+                  <button
+                    onClick={handleRetry}
+                    style={{
+                      marginTop: '12px',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: COLORS.red[500],
+                      color: 'white',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Erneut versuchen
+                  </button>
+                </div>
+              )}
+
             </div>
 
-            <h2
+            {/* Right Column - Question */}
+            <div
               style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#0f172a',
-                lineHeight: 1.5,
-                marginBottom: '16px',
+                background: '#fff',
+                borderRadius: '16px',
+                padding: '24px',
+                border: '1px solid #e2e8f0',
               }}
             >
-              {currentQuestion?.question || labels.questionLoading}
-            </h2>
-
-            {currentQuestion?.estimated_answer_time && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px', marginBottom: '16px' }}>
-                <Clock size={16} />
-                {labels.recommendedTime}: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <div
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: buttonGradient,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                  }}
+                >
+                  {currentIndex + 1}
+                </div>
+                <span style={{ fontSize: '14px', color: '#64748b' }}>
+                  {currentQuestion?.category || labels.questionFallback}
+                </span>
               </div>
-            )}
 
-            {/* Tips */}
-            {currentQuestion?.tips && currentQuestion.tips.length > 0 && (
-              <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} tipsLabel={labels.tipsLabel} />
-            )}
+              <h2
+                style={{
+                  fontSize: '18px',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                  lineHeight: 1.5,
+                  marginBottom: '16px',
+                }}
+              >
+                {currentQuestion?.question || labels.questionLoading}
+              </h2>
+
+              {currentQuestion?.estimated_answer_time && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px' }}>
+                  <Clock size={16} />
+                  {labels.recommendedTime}: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Full Width Tips Section */}
+          {currentQuestion?.tips && currentQuestion.tips.length > 0 && (
+            <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} tipsLabel={labels.tipsLabel} />
+          )}
         </div>
       )}
 
