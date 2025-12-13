@@ -68,31 +68,36 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
   };
 
   const getScore = () => {
+    let rawScore = null;
     if (type === TABS.SIMULATOR) {
-      return session.overall_score || session.average_score;
-    }
-    if (type === TABS.VIDEO) {
-      return session.overall_score;
-    }
-    // Roleplay - extract from feedback_json
-    if (session.feedback_json) {
-      try {
-        let parsed = session.feedback_json;
-        if (typeof parsed === 'string') {
-          let jsonString = parsed.trim();
-          if (jsonString.startsWith('```json')) {
-            jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
-          } else if (jsonString.startsWith('```')) {
-            jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
+      rawScore = session.overall_score || session.average_score;
+    } else if (type === TABS.VIDEO) {
+      rawScore = session.overall_score;
+    } else {
+      // Roleplay - extract from feedback_json
+      if (session.feedback_json) {
+        try {
+          let parsed = session.feedback_json;
+          if (typeof parsed === 'string') {
+            let jsonString = parsed.trim();
+            if (jsonString.startsWith('```json')) {
+              jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
+            } else if (jsonString.startsWith('```')) {
+              jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
+            }
+            parsed = JSON.parse(jsonString);
           }
-          parsed = JSON.parse(jsonString);
+          rawScore = parsed.rating?.overall || null;
+        } catch {
+          rawScore = null;
         }
-        return parsed.rating?.overall || null;
-      } catch {
-        return null;
       }
     }
-    return null;
+    // Return null if score is invalid (null, undefined, NaN, 0)
+    if (rawScore === null || rawScore === undefined || isNaN(rawScore) || rawScore === 0) {
+      return null;
+    }
+    return rawScore;
   };
 
   const getStatus = () => {
@@ -108,13 +113,14 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
 
   // Convert score to percentage (0-100) for consistent display
   const getScoreAsPercent = () => {
-    if (score === null) return null;
+    if (score === null || score === undefined || isNaN(score)) return null;
     // Simulator and Roleplay scores are 0-10, convert to percentage
     if (type === TABS.SIMULATOR || type === TABS.ROLEPLAY) {
-      return score <= 10 ? score * 10 : score;
+      const percent = score <= 10 ? score * 10 : score;
+      return isNaN(percent) ? null : percent;
     }
     // Video scores are already 0-100
-    return score;
+    return isNaN(score) ? null : score;
   };
 
   const scorePercent = getScoreAsPercent();
@@ -263,7 +269,7 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
   );
 };
 
-const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick }) => {
+const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession }) => {
   console.log('🏗️ [SESSION_HISTORY] SessionHistory component initialized');
 
   // Partner branding
@@ -448,6 +454,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         type={selectedSessionType}
         scenario={getScenarioForSession(selectedTrainingSession, selectedSessionType)}
         onBack={handleBackFromDetail}
+        onContinueSession={onContinueSession}
+        onRepeatSession={onRepeatSession}
       />
     );
   }

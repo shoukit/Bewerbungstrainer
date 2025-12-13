@@ -28,6 +28,8 @@ import {
   Eye,
   Loader2,
   SkipBack,
+  RotateCcw,
+  PlayCircle,
   SkipForward,
   Volume2,
   VolumeX,
@@ -726,7 +728,7 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
 // MAIN COMPONENT
 // =============================================================================
 
-const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
+const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinueSession, onRepeatSession }) => {
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -957,6 +959,68 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
               {answers.map((answer, index) => (
                 <AnswerCard key={answer.id || index} answer={answer} index={index} primaryAccent={primaryAccent} />
               ))}
+
+              {/* Action Buttons for incomplete sessions with answers */}
+              {session?.status !== 'completed' && (onContinueSession || onRepeatSession) && (
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  marginTop: '24px',
+                  padding: '20px',
+                  background: COLORS.slate[50],
+                  borderRadius: '12px',
+                  border: `1px dashed ${COLORS.slate[300]}`,
+                }}>
+                  <p style={{ width: '100%', textAlign: 'center', color: COLORS.slate[600], fontSize: '14px', marginBottom: '12px' }}>
+                    Diese Session ist noch nicht abgeschlossen.
+                  </p>
+                  {onContinueSession && session?.questions_json && (
+                    <button
+                      onClick={() => onContinueSession(session, scenario)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: primaryAccent,
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: `0 4px 12px ${primaryAccent}4d`,
+                      }}
+                    >
+                      <PlayCircle size={18} />
+                      Fortsetzen
+                    </button>
+                  )}
+                  {onRepeatSession && session?.questions_json && (
+                    <button
+                      onClick={() => onRepeatSession(session, scenario)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        border: `2px solid ${COLORS.slate[300]}`,
+                        background: 'white',
+                        color: COLORS.slate[700],
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <RotateCcw size={18} />
+                      Erneut starten
+                    </button>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -965,7 +1029,56 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
             <div style={{ textAlign: 'center', padding: '48px 24px', background: COLORS.slate[100], borderRadius: '16px' }}>
               <AlertCircle size={48} color={COLORS.slate[400]} style={{ margin: '0 auto 16px' }} />
               <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px' }}>Keine Antworten vorhanden</h3>
-              <p style={{ color: COLORS.slate[500] }}>Diese Session wurde möglicherweise nicht abgeschlossen.</p>
+              <p style={{ color: COLORS.slate[500], marginBottom: '24px' }}>Diese Session wurde möglicherweise nicht abgeschlossen.</p>
+
+              {/* Action Buttons */}
+              {(onContinueSession || onRepeatSession) && (
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {onContinueSession && session?.questions_json?.length > 0 && (
+                    <button
+                      onClick={() => onContinueSession(session, scenario)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: primaryAccent,
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: `0 4px 12px ${primaryAccent}4d`,
+                      }}
+                    >
+                      <PlayCircle size={18} />
+                      Fortsetzen
+                    </button>
+                  )}
+                  {onRepeatSession && session?.questions_json?.length > 0 && (
+                    <button
+                      onClick={() => onRepeatSession(session, scenario)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        border: `2px solid ${COLORS.slate[300]}`,
+                        background: 'white',
+                        color: COLORS.slate[700],
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <RotateCcw size={18} />
+                      Erneut starten
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

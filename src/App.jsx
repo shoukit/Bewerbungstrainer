@@ -240,6 +240,10 @@ function AppContent() {
   // Pending scenario for video training (needs to trigger selection after login)
   const [pendingVideoTrainingScenario, setPendingVideoTrainingScenario] = useState(null);
 
+  // Pending session for continue/repeat in simulator
+  const [pendingContinueSession, setPendingContinueSession] = useState(null);
+  const [pendingRepeatSession, setPendingRepeatSession] = useState(null);
+
   // Reset key for video training - increments to trigger reset to dashboard
   const [videoTrainingResetKey, setVideoTrainingResetKey] = useState(0);
 
@@ -471,6 +475,19 @@ function AppContent() {
     setCurrentView(VIEWS.HISTORY);
   };
 
+  // ===== SIMULATOR SESSION HANDLERS =====
+  const handleContinueSession = (session, scenario) => {
+    console.log('🔄 [APP] Continuing simulator session:', session.id);
+    setPendingContinueSession({ session, scenario });
+    setCurrentView(VIEWS.SIMULATOR);
+  };
+
+  const handleRepeatSession = (session, scenario) => {
+    console.log('🔁 [APP] Repeating simulator session with same questions:', session.id);
+    setPendingRepeatSession({ session, scenario });
+    setCurrentView(VIEWS.SIMULATOR);
+  };
+
   // ===== RHETORIK-GYM HANDLERS =====
   const handleStartGame = (config) => {
     console.log('🎮 [APP] Starting game with config:', config);
@@ -508,6 +525,10 @@ function AppContent() {
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+            pendingContinueSession={pendingContinueSession}
+            clearPendingContinueSession={() => setPendingContinueSession(null)}
+            pendingRepeatSession={pendingRepeatSession}
+            clearPendingRepeatSession={() => setPendingRepeatSession(null)}
           />
         );
 
@@ -550,6 +571,8 @@ function AppContent() {
             onSelectSession={handleSelectSession}
             isAuthenticated={isAuthenticated}
             onLoginClick={openLoginModal}
+            onContinueSession={handleContinueSession}
+            onRepeatSession={handleRepeatSession}
           />
         );
 

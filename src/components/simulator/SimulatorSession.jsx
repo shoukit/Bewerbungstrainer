@@ -791,7 +791,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
  * Simulator Session Component
  * Two-column layout like VideoTraining
  */
-const SimulatorSession = ({ session, questions, scenario, variables, onComplete, onExit }) => {
+const SimulatorSession = ({ session, questions, scenario, variables, onComplete, onExit, startFromQuestion = 0 }) => {
   // Mode-based labels (INTERVIEW vs SIMULATION)
   const isSimulation = scenario?.mode === 'SIMULATION';
   const labels = {
@@ -814,14 +814,22 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     recommendedTime: isSimulation ? 'Empfohlene Reaktionszeit' : 'Empfohlene Antwortzeit',
   };
 
-  const [phase, setPhase] = useState('preparation');
-  const [currentIndex, setCurrentIndex] = useState(session.current_question_index || 0);
+  // Determine if this is a continuation (skip preparation)
+  const isContinuation = startFromQuestion > 0;
+
+  // Initialize with previously answered questions when continuing
+  const initialAnsweredQuestions = isContinuation
+    ? Array.from({ length: startFromQuestion }, (_, i) => i)
+    : [];
+
+  const [phase, setPhase] = useState(isContinuation ? 'interview' : 'preparation');
+  const [currentIndex, setCurrentIndex] = useState(startFromQuestion || session?.current_question_index || 0);
   const [feedback, setFeedback] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [completedAnswers, setCompletedAnswers] = useState([]);
-  const [answeredQuestions, setAnsweredQuestions] = useState([]);
+  const [answeredQuestions, setAnsweredQuestions] = useState(initialAnsweredQuestions);
 
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);

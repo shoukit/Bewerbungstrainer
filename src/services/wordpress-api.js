@@ -353,6 +353,16 @@ class WordPressAPI {
     }
 
     /**
+     * Update session with preloaded questions (for repeat sessions)
+     */
+    async updateSimulatorSessionQuestions(sessionId, questions) {
+        return this.request(`/simulator/sessions/${sessionId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ questions_json: questions })
+        });
+    }
+
+    /**
      * Submit answer with audio (using FormData)
      */
     async submitSimulatorAnswer(sessionId, audioBlob, questionIndex, questionText, questionCategory = null) {
