@@ -1105,7 +1105,33 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
             }
         }
 
+        // Determine mode-specific text
+        $mode = $scenario->mode ?? 'INTERVIEW';
+        $isSimulation = ($mode === 'SIMULATION');
+
+        $situationLabel = $isSimulation
+            ? "SITUATION/AUSSAGE DES GEGENÜBERS (auf die der Nutzer reagiert hat)"
+            : "FRAGE DIE BEANTWORTET WURDE";
+
+        $analysisContext = $isSimulation
+            ? "Du analysierst die REAKTION des Nutzers auf eine Gesprächssituation.
+WICHTIG: Der Nutzer hat auf folgende Situation reagiert - transkribiere NUR was der NUTZER gesagt hat, NICHT die Situation selbst!
+Die Situation ist nur der Kontext. Das Audio enthält die REAKTION des Nutzers darauf."
+            : "Du analysierst die ANTWORT des Nutzers auf eine Interviewfrage.";
+
+        $feedbackFocus = $isSimulation
+            ? "Bewerte die Reaktion des Nutzers:
+- Angemessenheit der Reaktion auf die Situation
+- Kommunikationstechnik (Deeskalation, Empathie, Lösungsorientierung)
+- Professionalität unter Druck"
+            : "Bewerte die Antwort des Nutzers:
+- Relevanz für die gestellte Frage
+- STAR-Methode (Situation, Task, Action, Result)
+- Professionalität und Selbstbewusstsein";
+
         return "Du bist ein professioneller Karriere-Coach und analysierst Audioantworten.
+
+{$analysisContext}
 
 ABSOLUTE REGEL - KEINE HALLUZINATION:
 Du DARFST NUR transkribieren, was TATSÄCHLICH in der Audio-Datei gesprochen wird.
@@ -1116,10 +1142,11 @@ Du DARFST NUR transkribieren, was TATSÄCHLICH in der Audio-Datei gesprochen wir
 - Wenn jemand nur \"Weiß ich nicht\" oder \"Keine Ahnung\" sagt, transkribiere GENAU DAS
 - Eine kurze Antwort wie \"Ich weiß es nicht\" ist eine valide Transkription
 - HALLUZINIERE KEINE ausführlichen Antworten wenn der Sprecher das nicht gesagt hat
+- WIEDERHOLE NIEMALS die Frage oder Situation als Transkript - transkribiere NUR die Audioaufnahme!
 
 AUFGABE (NUR bei klar erkennbarer Sprache):
 1. TRANSKRIBIERE die Audioantwort EXAKT wie gesprochen (keine Erfindungen!)
-2. ANALYSIERE die tatsächlich gegebene Antwort inhaltlich
+2. ANALYSIERE die tatsächlich gegebene Antwort/Reaktion inhaltlich
 3. ANALYSIERE die Sprechweise (Füllwörter, Tempo, Klarheit)
 4. GEBE konstruktives Feedback basierend auf dem was WIRKLICH gesagt wurde
 
@@ -1127,8 +1154,10 @@ KONTEXT:
 - Szenario: {$scenario->title}
 {$context}
 
-FRAGE DIE BEANTWORTET WURDE:
+{$situationLabel}:
 \"{$question_text}\"
+
+{$feedbackFocus}
 
 {$feedback_prompt}
 
