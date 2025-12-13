@@ -18,6 +18,7 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // Get brand colors from partner branding
   const primaryAccent = branding?.['--primary-accent'] || '#3A7FA7';
@@ -95,6 +96,9 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
       if (result.success) {
         console.log('[DEMO] Code activated successfully:', demoCode.toUpperCase());
 
+        // Mark as success to prevent handleClose from being called
+        setIsSuccess(true);
+
         // Call success callback with the demo code
         // Note: Do NOT call onClose here - onSuccess handler in LoginModal will handle closing
         if (onSuccess) {
@@ -113,6 +117,11 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
 
   // Handle modal close (cancel)
   const handleClose = () => {
+    // Don't trigger cancel if we just successfully completed
+    if (isSuccess) {
+      return;
+    }
+
     // Reset form
     setDemoCode('');
     setCompanyName('');
