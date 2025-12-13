@@ -799,6 +799,10 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
+  // Confirmation dialog states
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const buttonGradient = branding?.['--button-gradient'] || headerGradient;
@@ -870,7 +874,14 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     }
   };
 
+  // Show confirmation dialog for completing session
+  const handleCompleteClick = () => {
+    setShowCompleteConfirm(true);
+  };
+
+  // Actually complete the session after confirmation
   const handleCompleteSession = async () => {
+    setShowCompleteConfirm(false);
     try {
       const response = await wordpressAPI.completeSimulatorSession(session.id);
       if (response.success) {
@@ -884,10 +895,15 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     }
   };
 
+  // Show confirmation dialog for canceling session
+  const handleCancelClick = () => {
+    setShowCancelConfirm(true);
+  };
+
+  // Actually cancel the session after confirmation
   const handleCancelSession = () => {
-    if (window.confirm('Möchtest du das Training wirklich abbrechen? Das Training wird nicht gespeichert.')) {
-      onExit();
-    }
+    setShowCancelConfirm(false);
+    onExit();
   };
 
   const handleStartInterview = () => {
@@ -931,7 +947,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           {/* Training beenden - immer sichtbar wenn mind. 1 Frage beantwortet */}
           {answeredQuestions.length > 0 && (
             <button
-              onClick={handleCompleteSession}
+              onClick={handleCompleteClick}
               style={{
                 padding: '8px 16px',
                 borderRadius: '8px',
@@ -952,7 +968,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
             </button>
           )}
           <button
-            onClick={handleCancelSession}
+            onClick={handleCancelClick}
             style={{
               padding: '8px 16px',
               borderRadius: '8px',
@@ -971,6 +987,178 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           </button>
         </div>
       </div>
+
+      {/* Confirmation Dialog for Complete Session */}
+      {showCompleteConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowCompleteConfirm(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '420px',
+              width: '90%',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                backgroundColor: '#dcfce7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Check size={24} color="#22c55e" />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+                Training beenden?
+              </h3>
+            </div>
+            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '8px' }}>
+              Du hast <strong>{answeredQuestions.length} von {questions.length} Fragen</strong> beantwortet.
+            </p>
+            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
+              Möchtest du das Training jetzt mit den bisherigen Antworten abschließen oder weitere Fragen beantworten?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowCompleteConfirm(false)}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  border: '1px solid #e2e8f0',
+                  background: 'white',
+                  color: '#64748b',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                Weiter trainieren
+              </button>
+              <button
+                onClick={handleCompleteSession}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: '#22c55e',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
+                }}
+              >
+                Training beenden
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog for Cancel Session */}
+      {showCancelConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowCancelConfirm(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '420px',
+              width: '90%',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                backgroundColor: '#fee2e2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <AlertCircle size={24} color="#ef4444" />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+                Training abbrechen?
+              </h3>
+            </div>
+            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
+              <strong>Achtung:</strong> Wenn du das Training abbrichst, werden alle deine bisherigen Antworten
+              {answeredQuestions.length > 0 ? ` (${answeredQuestions.length} Fragen)` : ''} <strong>nicht gespeichert</strong> und gehen verloren.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  border: '1px solid #e2e8f0',
+                  background: 'white',
+                  color: '#64748b',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                Zurück zum Training
+              </button>
+              <button
+                onClick={handleCancelSession}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: '#ef4444',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
+                }}
+              >
+                Training abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Progress */}
       <ProgressBar
