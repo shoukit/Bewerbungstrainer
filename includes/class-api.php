@@ -458,8 +458,11 @@ class Bewerbungstrainer_API {
         // List of public endpoints that should bypass cookie authentication
         $public_endpoints = array(
             '/bewerbungstrainer/v1/video-training/scenarios',
+            '/bewerbungstrainer/v1/video-training/sessions',
             '/bewerbungstrainer/v1/simulator/scenarios',
+            '/bewerbungstrainer/v1/simulator/sessions',
             '/bewerbungstrainer/v1/roleplays',
+            '/bewerbungstrainer/v1/sessions',
             '/bewerbungstrainer/v1/demo/activate',
             '/bewerbungstrainer/v1/demo/validate',
         );
