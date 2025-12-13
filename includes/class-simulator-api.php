@@ -353,6 +353,22 @@ class Bewerbungstrainer_Simulator_API {
             $question_count
         );
 
+        // Log prompt to prompts.log
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'SIMULATOR_QUESTIONS',
+                'Szenario-Training: Generierung von Interview-Fragen basierend auf Szenario-Konfiguration und Benutzervariablen.',
+                $full_prompt,
+                array(
+                    'Szenario' => $scenario->title,
+                    'Szenario-ID' => $scenario->id,
+                    'Anzahl Fragen' => $question_count,
+                    'Variablen' => $variables,
+                    'Session-ID' => $session_id,
+                )
+            );
+        }
+
         // Call Gemini API
         $response = $this->call_gemini_api($full_prompt, $api_key);
 
@@ -501,6 +517,24 @@ class Bewerbungstrainer_Simulator_API {
             $variables,
             $feedback_prompt
         );
+
+        // Log prompt to prompts.log
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'SIMULATOR_AUDIO_FEEDBACK',
+                'Szenario-Training: Audio-Analyse und Feedback. Transkribiert Antwort, bewertet Inhalt und Sprechweise.',
+                $analysis_prompt,
+                array(
+                    'Szenario' => $scenario->title,
+                    'Frage' => $question_text,
+                    'Frage-Index' => $question_index,
+                    'Versuch-Nr' => $attempt_number,
+                    'Audio-Größe' => strlen($audio_data) . ' bytes',
+                    'MIME-Type' => $mime_type ?? 'audio/webm',
+                    'Session-ID' => $session_id,
+                )
+            );
+        }
 
         // Call Gemini with multimodal (audio + text)
         $analysis_result = $this->call_gemini_multimodal($analysis_prompt, $audio_data, $mime_type ?? 'audio/webm', $api_key);

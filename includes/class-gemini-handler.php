@@ -29,52 +29,16 @@ class Bewerbungstrainer_Gemini_Handler {
     private $debug_prompts = true;
 
     /**
-     * Log a Gemini prompt for debugging
-     *
-     * @param string $scenario Scenario name (e.g., "CV_ANALYSIS", "VIDEO_ANALYSIS")
-     * @param string $description Human-readable description
-     * @param string $prompt The actual prompt
-     * @param array $metadata Additional metadata
+     * Log a Gemini prompt for debugging (uses global function)
      */
     private function log_prompt_debug($scenario, $description, $prompt, $metadata = array()) {
         if (!$this->debug_prompts) {
             return;
         }
-
-        $separator = str_repeat('=', 80);
-        $timestamp = date('Y-m-d H:i:s');
-
-        error_log("\n" . $separator);
-        error_log("🤖 GEMINI PROMPT DEBUG - " . $scenario);
-        error_log("📅 " . $timestamp);
-        error_log($separator);
-        error_log("📋 SZENARIO: " . $description);
-        error_log($separator);
-
-        // Log metadata
-        if (!empty($metadata)) {
-            error_log("📊 METADATA:");
-            foreach ($metadata as $key => $value) {
-                if (is_string($value) && strlen($value) > 200) {
-                    error_log("   " . $key . ": " . substr($value, 0, 200) . "... (" . strlen($value) . " chars)");
-                } else {
-                    error_log("   " . $key . ": " . (is_array($value) ? json_encode($value) : $value));
-                }
-            }
-            error_log($separator);
+        // Use global logging function that writes to prompts.log
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt($scenario, $description, $prompt, $metadata);
         }
-
-        // Log prompt (truncate if very long)
-        error_log("📝 PROMPT:");
-        if (strlen($prompt) > 5000) {
-            error_log(substr($prompt, 0, 2500));
-            error_log("... [TRUNCATED - " . strlen($prompt) . " total chars] ...");
-            error_log(substr($prompt, -2500));
-        } else {
-            error_log($prompt);
-        }
-
-        error_log($separator . "\n");
     }
 
     /**

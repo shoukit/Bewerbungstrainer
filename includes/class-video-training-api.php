@@ -362,6 +362,24 @@ class Bewerbungstrainer_Video_Training_API {
             $scenario->scenario_type
         );
 
+        // Log prompt to prompts.log
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'VIDEO_TRAINING_QUESTIONS',
+                'Wirkungs-Analyse: Generierung von Interview-Fragen für Video-Training basierend auf Szenario und Benutzervariablen.',
+                $full_prompt,
+                array(
+                    'Szenario' => $scenario->title,
+                    'Szenario-ID' => $scenario->id,
+                    'Szenario-Typ' => $scenario->scenario_type,
+                    'Anzahl Fragen' => $scenario->question_count,
+                    'Zeit pro Frage' => $scenario->time_limit_per_question . 's',
+                    'Variablen' => $variables,
+                    'Session-ID' => $session_id,
+                )
+            );
+        }
+
         // Call Gemini API
         $response = $this->call_gemini_api($full_prompt, $api_key);
 
@@ -538,6 +556,24 @@ class Bewerbungstrainer_Video_Training_API {
             $session->timeline_json ?: array(),
             $feedback_prompt
         );
+
+        // Log prompt to prompts.log
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'VIDEO_TRAINING_ANALYSIS',
+                'Wirkungs-Analyse: Video-Analyse mit Gemini. Bewertet Auftreten, Selbstbewusstsein, Körpersprache, Kommunikation, Professionalität.',
+                $analysis_prompt,
+                array(
+                    'Szenario' => $scenario->title,
+                    'Szenario-Typ' => $scenario->scenario_type,
+                    'Anzahl Fragen' => count($session->questions_json ?: array()),
+                    'Video-Datei' => $session->video_filename,
+                    'Variablen' => $variables,
+                    'Session-ID' => $session_id,
+                    'Bewertungskategorien' => 'Auftreten, Selbstbewusstsein, Körpersprache, Kommunikation, Professionalität, Inhalt',
+                )
+            );
+        }
 
         // Upload video to Gemini File API and analyze
         $analysis_result = $this->analyze_video_with_gemini($video_path, $analysis_prompt, $api_key);
