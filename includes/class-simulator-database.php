@@ -67,6 +67,29 @@ class Bewerbungstrainer_Simulator_Database {
         } else {
             // Check if demo_code column exists, add if not
             $this->maybe_add_demo_code_column();
+            // Check if mode column exists, add if not
+            $this->maybe_add_mode_column();
+        }
+    }
+
+    /**
+     * Add mode column to scenarios table if it doesn't exist
+     */
+    private function maybe_add_mode_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'mode'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding mode column to scenarios table...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `mode` varchar(20) DEFAULT 'INTERVIEW' AFTER `category`");
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD INDEX `mode` (`mode`)");
+            error_log('[SIMULATOR] mode column added successfully');
         }
     }
 
