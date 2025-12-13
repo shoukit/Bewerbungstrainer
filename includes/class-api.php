@@ -2912,9 +2912,22 @@ class Bewerbungstrainer_API {
         // Validate code
         $is_valid = $demo_codes->is_valid_code($demo_code);
 
+        if (!$is_valid) {
+            return new WP_REST_Response(array(
+                'success' => true,
+                'valid' => false,
+                'is_activated' => false,
+            ), 200);
+        }
+
+        // Get code details to check if already activated with contact data
+        $code_data = $demo_codes->get_code($demo_code);
+        $is_activated = $code_data && $code_data->is_used && !empty($code_data->contact_email);
+
         return new WP_REST_Response(array(
             'success' => true,
-            'valid' => $is_valid,
+            'valid' => true,
+            'is_activated' => $is_activated,
         ), 200);
     }
 
