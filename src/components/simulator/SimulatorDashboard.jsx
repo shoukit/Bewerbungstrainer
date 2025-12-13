@@ -312,6 +312,17 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Filter scenarios by selected category - must be before any conditional returns
+  const filteredScenarios = useMemo(() => {
+    if (!selectedCategory) {
+      return scenarios;
+    }
+    return scenarios.filter(scenario => {
+      const normalizedCategory = normalizeCategory(scenario.category);
+      return normalizedCategory === selectedCategory;
+    });
+  }, [scenarios, selectedCategory]);
+
   // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
     console.log('🔄 [SimulatorDashboard] Loading scenarios...');
@@ -415,17 +426,6 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
       </div>
     );
   }
-
-  // Filter scenarios by selected category
-  const filteredScenarios = useMemo(() => {
-    if (!selectedCategory) {
-      return scenarios;
-    }
-    return scenarios.filter(scenario => {
-      const normalizedCategory = normalizeCategory(scenario.category);
-      return normalizedCategory === selectedCategory;
-    });
-  }, [scenarios, selectedCategory]);
 
   return (
     <div style={{ padding: '24px' }}>
