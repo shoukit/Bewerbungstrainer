@@ -575,6 +575,7 @@ Gib konkrete Formulierungsvorschläge.',
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
             'category' => null,
+            'mode' => 'INTERVIEW',
             'system_prompt' => '',
             'question_generation_prompt' => null,
             'feedback_prompt' => null,
@@ -602,6 +603,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'icon' => sanitize_text_field($data['icon']),
                 'difficulty' => $data['difficulty'],
                 'category' => sanitize_text_field($data['category']),
+                'mode' => sanitize_text_field($data['mode']),
                 'system_prompt' => $data['system_prompt'],
                 'question_generation_prompt' => $data['question_generation_prompt'],
                 'feedback_prompt' => $data['feedback_prompt'],
@@ -613,7 +615,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
         );
 
         if ($result === false) {
@@ -638,7 +640,7 @@ Gib konkrete Formulierungsvorschläge.',
         $update_format = array();
 
         $allowed_fields = array(
-            'title', 'description', 'icon', 'difficulty', 'category',
+            'title', 'description', 'icon', 'difficulty', 'category', 'mode',
             'system_prompt', 'question_generation_prompt', 'feedback_prompt',
             'input_configuration', 'question_count_min', 'question_count_max',
             'time_limit_per_question', 'allow_retry', 'is_active', 'sort_order'
@@ -654,7 +656,7 @@ Gib konkrete Formulierungsvorschläge.',
                 }
 
                 // Sanitize based on field type
-                if (in_array($field, array('title', 'icon', 'difficulty', 'category'))) {
+                if (in_array($field, array('title', 'icon', 'difficulty', 'category', 'mode'))) {
                     $value = sanitize_text_field($value);
                 } elseif ($field === 'description') {
                     $value = sanitize_textarea_field($value);
