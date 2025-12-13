@@ -86,6 +86,33 @@ class Bewerbungstrainer_Video_Training_Database {
             error_log('[VIDEO TRAINING] Migration 1.0.1: Enabled navigation for pitch scenarios');
             update_option('bewerbungstrainer_video_training_migration_version', '1.0.1');
         }
+
+        // Migration 2: Add demo_code column for demo user session isolation
+        if (version_compare($current_version, '1.0.2', '<')) {
+            $this->add_demo_code_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.2');
+        }
+    }
+
+    /**
+     * Add demo_code column to sessions table if it doesn't exist
+     */
+    private function add_demo_code_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_sessions}` LIKE %s",
+                'demo_code'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[VIDEO TRAINING] Adding demo_code column to sessions table...');
+            $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD COLUMN `demo_code` varchar(10) DEFAULT NULL AFTER `feedback_json`");
+            $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD INDEX `demo_code` (`demo_code`)");
+            error_log('[VIDEO TRAINING] demo_code column added successfully');
+        }
     }
 
     /**

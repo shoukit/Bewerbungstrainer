@@ -64,6 +64,30 @@ class Bewerbungstrainer_Simulator_Database {
         if (!$table_exists) {
             error_log('[SIMULATOR] Tables not found, creating...');
             self::create_tables();
+        } else {
+            // Check if demo_code column exists, add if not
+            $this->maybe_add_demo_code_column();
+        }
+    }
+
+    /**
+     * Add demo_code column to sessions table if it doesn't exist
+     */
+    private function maybe_add_demo_code_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_sessions}` LIKE %s",
+                'demo_code'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding demo_code column to sessions table...');
+            $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD COLUMN `demo_code` varchar(10) DEFAULT NULL AFTER `summary_feedback_json`");
+            $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD INDEX `demo_code` (`demo_code`)");
+            error_log('[SIMULATOR] demo_code column added successfully');
         }
     }
 

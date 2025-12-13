@@ -56,6 +56,57 @@ class Bewerbungstrainer_Database {
         $this->table_documents = $wpdb->prefix . 'bewerbungstrainer_documents';
         $this->table_video_trainings = $wpdb->prefix . 'bewerbungstrainer_video_trainings';
         $this->table_roleplay_sessions = $wpdb->prefix . 'bewerbungstrainer_roleplay_sessions';
+
+        // Run migrations for existing installations
+        $this->run_migrations();
+    }
+
+    /**
+     * Run database migrations for existing installations
+     */
+    private function run_migrations() {
+        $current_version = get_option('bewerbungstrainer_db_migration_version', '0');
+
+        // Migration 1: Add demo_code column for demo user session isolation
+        if (version_compare($current_version, '1.0.1', '<')) {
+            $this->add_demo_code_columns();
+            update_option('bewerbungstrainer_db_migration_version', '1.0.1');
+        }
+    }
+
+    /**
+     * Add demo_code column to session tables if they don't exist
+     */
+    private function add_demo_code_columns() {
+        global $wpdb;
+
+        $tables = array(
+            $this->table_video_trainings => 'feedback_json',
+            $this->table_roleplay_sessions => 'audio_analysis_json',
+        );
+
+        foreach ($tables as $table => $after_column) {
+            // Check if table exists
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'");
+            if (!$table_exists) {
+                continue;
+            }
+
+            // Check if column exists
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SHOW COLUMNS FROM `$table` LIKE %s",
+                    'demo_code'
+                )
+            );
+
+            if (empty($column_exists)) {
+                error_log("[DATABASE] Adding demo_code column to $table...");
+                $wpdb->query("ALTER TABLE `$table` ADD COLUMN `demo_code` varchar(10) DEFAULT NULL AFTER `$after_column`");
+                $wpdb->query("ALTER TABLE `$table` ADD INDEX `demo_code` (`demo_code`)");
+                error_log("[DATABASE] demo_code column added to $table successfully");
+            }
+        }
     }
 
     /**
