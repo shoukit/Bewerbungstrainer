@@ -329,6 +329,9 @@ class Bewerbungstrainer_Demo_Codes {
     public function is_valid_code($code) {
         global $wpdb;
 
+        // Ensure table exists
+        $this->ensure_table_exists();
+
         $code = strtoupper(sanitize_text_field($code));
 
         $exists = $wpdb->get_var(
@@ -350,6 +353,9 @@ class Bewerbungstrainer_Demo_Codes {
     public function get_code($code) {
         global $wpdb;
 
+        // Ensure table exists
+        $this->ensure_table_exists();
+
         $code = strtoupper(sanitize_text_field($code));
 
         return $wpdb->get_row(
@@ -369,6 +375,9 @@ class Bewerbungstrainer_Demo_Codes {
      */
     public function activate_code($code, $contact_data) {
         global $wpdb;
+
+        // Ensure table exists
+        $this->ensure_table_exists();
 
         $code = strtoupper(sanitize_text_field($code));
 
@@ -414,6 +423,9 @@ class Bewerbungstrainer_Demo_Codes {
      */
     public function update_usage($code) {
         global $wpdb;
+
+        // Ensure table exists
+        $this->ensure_table_exists();
 
         $code = strtoupper(sanitize_text_field($code));
 
