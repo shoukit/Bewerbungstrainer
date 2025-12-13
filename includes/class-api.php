@@ -400,17 +400,18 @@ class Bewerbungstrainer_API {
         // ===== Demo Code Endpoints =====
 
         // Activate demo code with contact info
+        // Uses allow_all_users to handle nonce validation more gracefully after login
         register_rest_route($this->namespace, '/demo/activate', array(
             'methods' => 'POST',
             'callback' => array($this, 'activate_demo_code'),
-            'permission_callback' => array($this, 'check_user_logged_in'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // Validate demo code (check if valid)
         register_rest_route($this->namespace, '/demo/validate', array(
             'methods' => 'POST',
             'callback' => array($this, 'validate_demo_code'),
-            'permission_callback' => array($this, 'check_user_logged_in'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // Admin: Get all demo codes
@@ -459,6 +460,8 @@ class Bewerbungstrainer_API {
             '/bewerbungstrainer/v1/video-training/scenarios',
             '/bewerbungstrainer/v1/simulator/scenarios',
             '/bewerbungstrainer/v1/roleplays',
+            '/bewerbungstrainer/v1/demo/activate',
+            '/bewerbungstrainer/v1/demo/validate',
         );
 
         // Check if this is a public endpoint
