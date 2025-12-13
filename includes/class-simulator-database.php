@@ -222,7 +222,7 @@ class Bewerbungstrainer_Simulator_Database {
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
             'category' => 'interview',
-            'system_prompt' => 'Du bist ein erfahrener HR-Manager mit 15 Jahren Erfahrung in der Personalauswahl. Du führst Bewerbungsgespräche für die Position ${position} ${company ? "bei " + company : ""} durch. Der Bewerber hat ein ${experience_level}-Level. Stelle professionelle, aber faire Fragen, die dem Erfahrungslevel angemessen sind.',
+            'system_prompt' => 'Du bist ein erfahrener HR-Manager mit 15 Jahren Erfahrung in der Personalauswahl. Du führst Bewerbungsgespräche für die Position ${position}${?company: bei } durch. Der Bewerber hat ein ${experience_level}-Level. Stelle professionelle, aber faire Fragen, die dem Erfahrungslevel angemessen sind.',
             'question_generation_prompt' => 'Generiere realistische Interviewfragen für ein Bewerbungsgespräch.
 
 Richtlinien:
