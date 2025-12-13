@@ -6,6 +6,100 @@
  */
 
 // =============================================================================
+// SCENARIO CATEGORIES
+// =============================================================================
+
+/**
+ * Fixed scenario categories for filtering and organization
+ */
+export const SCENARIO_CATEGORIES = {
+  CAREER: 'CAREER',
+  LEADERSHIP: 'LEADERSHIP',
+  SALES: 'SALES',
+  COMMUNICATION: 'COMMUNICATION',
+};
+
+/**
+ * Category configuration with labels, icons, and colors
+ */
+export const SCENARIO_CATEGORY_CONFIG = {
+  [SCENARIO_CATEGORIES.CAREER]: {
+    key: SCENARIO_CATEGORIES.CAREER,
+    label: 'Bewerbung & Karriere',
+    shortLabel: 'Karriere',
+    icon: 'Briefcase',
+    color: '#3b82f6', // blue-500
+    bgColor: 'rgba(59, 130, 246, 0.15)',
+  },
+  [SCENARIO_CATEGORIES.LEADERSHIP]: {
+    key: SCENARIO_CATEGORIES.LEADERSHIP,
+    label: 'Leadership & Führung',
+    shortLabel: 'Führung',
+    icon: 'Target',
+    color: '#8b5cf6', // violet-500
+    bgColor: 'rgba(139, 92, 246, 0.15)',
+  },
+  [SCENARIO_CATEGORIES.SALES]: {
+    key: SCENARIO_CATEGORIES.SALES,
+    label: 'Vertrieb & Verhandlung',
+    shortLabel: 'Vertrieb',
+    icon: 'TrendingUp',
+    color: '#22c55e', // green-500
+    bgColor: 'rgba(34, 197, 94, 0.15)',
+  },
+  [SCENARIO_CATEGORIES.COMMUNICATION]: {
+    key: SCENARIO_CATEGORIES.COMMUNICATION,
+    label: 'Kommunikation & Konflikt',
+    shortLabel: 'Kommunikation',
+    icon: 'MessageCircle',
+    color: '#f59e0b', // amber-500
+    bgColor: 'rgba(245, 158, 11, 0.15)',
+  },
+};
+
+/**
+ * Get category configuration by key
+ * @param {string} categoryKey - The category key (e.g., 'CAREER')
+ * @returns {object|null} - Category config or null if not found
+ */
+export function getScenarioCategoryConfig(categoryKey) {
+  if (!categoryKey) return null;
+  // Handle both uppercase keys and legacy lowercase values
+  const normalizedKey = categoryKey.toUpperCase();
+  return SCENARIO_CATEGORY_CONFIG[normalizedKey] || null;
+}
+
+/**
+ * Map legacy category values to new enum keys
+ */
+export const LEGACY_CATEGORY_MAP = {
+  'interview': SCENARIO_CATEGORIES.CAREER,
+  'negotiation': SCENARIO_CATEGORIES.SALES,
+  'presentation': SCENARIO_CATEGORIES.COMMUNICATION,
+  'leadership': SCENARIO_CATEGORIES.LEADERSHIP,
+  'communication': SCENARIO_CATEGORIES.COMMUNICATION,
+  'sales': SCENARIO_CATEGORIES.SALES,
+  'career': SCENARIO_CATEGORIES.CAREER,
+};
+
+/**
+ * Normalize category value (handles legacy values)
+ * @param {string} category - Category value (legacy or new)
+ * @returns {string} - Normalized category key
+ */
+export function normalizeCategory(category) {
+  if (!category) return null;
+  const upper = category.toUpperCase();
+  // If it's already a valid category key, return it
+  if (SCENARIO_CATEGORIES[upper]) {
+    return upper;
+  }
+  // Check legacy mapping
+  const lower = category.toLowerCase();
+  return LEGACY_CATEGORY_MAP[lower] || SCENARIO_CATEGORIES.CAREER;
+}
+
+// =============================================================================
 // GEMINI AI CONFIGURATION
 // =============================================================================
 
@@ -429,6 +523,11 @@ export function getGameScoreColorScheme(score) {
 }
 
 export default {
+  SCENARIO_CATEGORIES,
+  SCENARIO_CATEGORY_CONFIG,
+  getScenarioCategoryConfig,
+  LEGACY_CATEGORY_MAP,
+  normalizeCategory,
   GEMINI_MODELS,
   API_RETRY_CONFIG,
   SCORE_THRESHOLDS,

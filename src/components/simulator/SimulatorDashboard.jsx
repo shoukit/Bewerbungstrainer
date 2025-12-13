@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Briefcase,
   Banknote,
@@ -8,11 +8,20 @@ import {
   Mic,
   Loader2,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  TrendingUp,
+  MessageCircle,
+  LayoutGrid
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import {
+  SCENARIO_CATEGORIES,
+  SCENARIO_CATEGORY_CONFIG,
+  normalizeCategory,
+  getScenarioCategoryConfig
+} from '@/config/constants';
 
 /**
  * Icon mapping for scenarios
@@ -24,6 +33,23 @@ const ICON_MAP = {
   presentation: Presentation,
   target: Target,
   mic: Mic,
+};
+
+/**
+ * Category icon mapping
+ */
+const CATEGORY_ICON_MAP = {
+  Briefcase: Briefcase,
+  Target: Target,
+  TrendingUp: TrendingUp,
+  MessageCircle: MessageCircle,
+};
+
+/**
+ * Get category icon component
+ */
+const getCategoryIcon = (iconName) => {
+  return CATEGORY_ICON_MAP[iconName] || Briefcase;
 };
 
 /**
@@ -42,6 +68,37 @@ const COLORS = {
   slate: { 100: '#f1f5f9', 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
   blue: { 500: '#4A9EC9' },
   teal: { 500: '#3DA389' },
+};
+
+/**
+ * Category Badge Component
+ */
+const CategoryBadge = ({ category }) => {
+  const normalizedCategory = normalizeCategory(category);
+  const config = getScenarioCategoryConfig(normalizedCategory);
+
+  if (!config) return null;
+
+  const CategoryIcon = getCategoryIcon(config.icon);
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '4px 10px',
+        borderRadius: '16px',
+        fontSize: '11px',
+        fontWeight: 600,
+        backgroundColor: config.bgColor,
+        color: config.color,
+      }}
+    >
+      <CategoryIcon style={{ width: '12px', height: '12px' }} />
+      {config.shortLabel}
+    </span>
+  );
 };
 
 /**
@@ -74,9 +131,10 @@ const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryA
         flexDirection: 'column',
         gap: '16px',
         cursor: 'pointer',
+        position: 'relative',
       }}
     >
-      {/* Icon and Difficulty Row */}
+      {/* Icon and Badges Row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div
           style={{
@@ -92,18 +150,21 @@ const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryA
         >
           <IconComponent style={{ width: '28px', height: '28px', color: themedText }} />
         </div>
-        <span
-          style={{
-            padding: '4px 12px',
-            borderRadius: '20px',
-            fontSize: '12px',
-            fontWeight: 600,
-            backgroundColor: difficulty.bg,
-            color: difficulty.text,
-          }}
-        >
-          {difficulty.label}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+          <span
+            style={{
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: 600,
+              backgroundColor: difficulty.bg,
+              color: difficulty.text,
+            }}
+          >
+            {difficulty.label}
+          </span>
+          {scenario.category && <CategoryBadge category={scenario.category} />}
+        </div>
       </div>
 
       {/* Title */}
@@ -145,6 +206,75 @@ const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryA
 };
 
 /**
+ * Category Filter Bar Component
+ */
+const CategoryFilterBar = ({ selectedCategory, onSelectCategory, primaryAccent }) => {
+  const categories = [
+    { key: null, label: 'Alle', icon: LayoutGrid },
+    { key: SCENARIO_CATEGORIES.CAREER, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.CAREER] },
+    { key: SCENARIO_CATEGORIES.LEADERSHIP, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.LEADERSHIP] },
+    { key: SCENARIO_CATEGORIES.SALES, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.SALES] },
+    { key: SCENARIO_CATEGORIES.COMMUNICATION, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.COMMUNICATION] },
+  ];
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '10px',
+        marginBottom: '24px',
+        padding: '0 24px',
+      }}
+    >
+      {categories.map((cat) => {
+        const isSelected = selectedCategory === cat.key;
+        const IconComponent = cat.key === null
+          ? LayoutGrid
+          : getCategoryIcon(cat.icon);
+        const chipColor = cat.key === null ? primaryAccent : cat.color;
+
+        return (
+          <button
+            key={cat.key || 'all'}
+            onClick={() => onSelectCategory(cat.key)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '24px',
+              fontSize: '14px',
+              fontWeight: 600,
+              border: `2px solid ${isSelected ? chipColor : COLORS.slate[200]}`,
+              backgroundColor: isSelected ? (cat.key === null ? `${primaryAccent}15` : cat.bgColor) : 'white',
+              color: isSelected ? chipColor : COLORS.slate[600],
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isSelected) {
+                e.target.style.borderColor = chipColor;
+                e.target.style.backgroundColor = cat.key === null ? `${primaryAccent}10` : cat.bgColor;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isSelected) {
+                e.target.style.borderColor = COLORS.slate[200];
+                e.target.style.backgroundColor = 'white';
+              }
+            }}
+          >
+            <IconComponent style={{ width: '16px', height: '16px' }} />
+            {cat.key === null ? 'Alle' : cat.shortLabel}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+/**
  * Simulator Dashboard Component
  *
  * Displays available training scenarios in a grid layout
@@ -156,6 +286,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const [scenarios, setScenarios] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   /**
    * Handle scenario selection with auth check
@@ -180,6 +311,17 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Filter scenarios by selected category - must be before any conditional returns
+  const filteredScenarios = useMemo(() => {
+    if (!selectedCategory) {
+      return scenarios;
+    }
+    return scenarios.filter(scenario => {
+      const normalizedCategory = normalizeCategory(scenario.category);
+      return normalizedCategory === selectedCategory;
+    });
+  }, [scenarios, selectedCategory]);
 
   // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
@@ -326,6 +468,13 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
         </p>
       </div>
 
+      {/* Category Filter */}
+      <CategoryFilterBar
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        primaryAccent={primaryAccent}
+      />
+
       {/* Scenario Grid */}
       <div style={{
         display: 'grid',
@@ -333,7 +482,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
         gap: '24px',
         padding: '0 24px'
       }}>
-        {scenarios.map(scenario => (
+        {filteredScenarios.map(scenario => (
           <ScenarioCard
             key={scenario.id}
             scenario={scenario}
@@ -346,14 +495,36 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
       </div>
 
       {/* Empty State */}
-      {scenarios.length === 0 && (
+      {filteredScenarios.length === 0 && (
         <div style={{
           textAlign: 'center',
           padding: '60px 20px',
           color: COLORS.slate[600]
         }}>
           <Mic style={{ width: '48px', height: '48px', marginBottom: '16px', opacity: 0.5 }} />
-          <p>Keine Trainingsszenarien verfügbar.</p>
+          <p>
+            {selectedCategory
+              ? `Keine Szenarien in der Kategorie "${SCENARIO_CATEGORY_CONFIG[selectedCategory]?.shortLabel || selectedCategory}" gefunden.`
+              : 'Keine Trainingsszenarien verfügbar.'}
+          </p>
+          {selectedCategory && scenarios.length > 0 && (
+            <button
+              onClick={() => setSelectedCategory(null)}
+              style={{
+                marginTop: '16px',
+                padding: '10px 20px',
+                borderRadius: '20px',
+                border: `2px solid ${primaryAccent}`,
+                backgroundColor: 'white',
+                color: primaryAccent,
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Alle Szenarien anzeigen
+            </button>
+          )}
         </div>
       )}
     </div>

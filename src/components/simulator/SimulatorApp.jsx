@@ -23,7 +23,15 @@ const VIEWS = {
  * 3. Session (training with Q&A)
  * 4. Complete (summary)
  */
-const SimulatorApp = ({ isAuthenticated, requireAuth, setPendingAction }) => {
+const SimulatorApp = ({
+  isAuthenticated,
+  requireAuth,
+  setPendingAction,
+  pendingContinueSession,
+  clearPendingContinueSession,
+  pendingRepeatSession,
+  clearPendingRepeatSession,
+}) => {
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [activeSession, setActiveSession] = useState(null);
@@ -34,6 +42,9 @@ const SimulatorApp = ({ isAuthenticated, requireAuth, setPendingAction }) => {
   // Track pending scenario for after login
   const [pendingScenario, setPendingScenario] = useState(null);
 
+  // Track which question to start from when continuing
+  const [startFromQuestion, setStartFromQuestion] = useState(0);
+
   // Handle pending scenario after login - automatically open wizard
   useEffect(() => {
     if (pendingScenario && isAuthenticated) {
@@ -43,6 +54,59 @@ const SimulatorApp = ({ isAuthenticated, requireAuth, setPendingAction }) => {
       setPendingScenario(null);
     }
   }, [pendingScenario, isAuthenticated]);
+
+  // Handle pending continue session - resume existing session
+  useEffect(() => {
+    if (pendingContinueSession && isAuthenticated) {
+      const { session, scenario } = pendingContinueSession;
+      console.log('🔄 [SimulatorApp] Continuing session:', session.id);
+
+      // Parse questions from the session (API returns 'questions', database stores 'questions_json')
+      const questionsData = session.questions || session.questions_json;
+      const sessionQuestions = typeof questionsData === 'string'
+        ? JSON.parse(questionsData)
+        : questionsData || [];
+
+      // Find the first unanswered question
+      const answeredCount = session.completed_questions || session.answered_count || 0;
+
+      setSelectedScenario(scenario || { id: session.scenario_id, title: session.scenario_title });
+      setActiveSession(session);
+      setQuestions(sessionQuestions);
+      setVariables({}); // Variables not stored in session, but not needed for continuation
+      setStartFromQuestion(answeredCount);
+      setCurrentView(VIEWS.SESSION);
+
+      if (clearPendingContinueSession) {
+        clearPendingContinueSession();
+      }
+    }
+  }, [pendingContinueSession, isAuthenticated, clearPendingContinueSession]);
+
+  // Handle pending repeat session - new session with same questions
+  useEffect(() => {
+    if (pendingRepeatSession && isAuthenticated) {
+      const { session, scenario } = pendingRepeatSession;
+      console.log('🔁 [SimulatorApp] Repeating session with same questions:', session.id);
+
+      // Parse questions from the session (API returns 'questions', database stores 'questions_json')
+      const questionsData = session.questions || session.questions_json;
+      const sessionQuestions = typeof questionsData === 'string'
+        ? JSON.parse(questionsData)
+        : questionsData || [];
+
+      setSelectedScenario(scenario || { id: session.scenario_id, title: session.scenario_title });
+      setQuestions(sessionQuestions);
+      setVariables({});
+      setStartFromQuestion(0);
+      // Go to wizard to create a new session with pre-loaded questions
+      setCurrentView(VIEWS.WIZARD);
+
+      if (clearPendingRepeatSession) {
+        clearPendingRepeatSession();
+      }
+    }
+  }, [pendingRepeatSession, isAuthenticated, clearPendingRepeatSession]);
 
   // Scroll to top on every view change
   useEffect(() => {
@@ -66,6 +130,7 @@ const SimulatorApp = ({ isAuthenticated, requireAuth, setPendingAction }) => {
     setQuestions([]);
     setVariables({});
     setCompletedSession(null);
+    setStartFromQuestion(0);
     setCurrentView(VIEWS.DASHBOARD);
   }, []);
 
@@ -102,6 +167,7 @@ const SimulatorApp = ({ isAuthenticated, requireAuth, setPendingAction }) => {
     setActiveSession(null);
     setQuestions([]);
     setCompletedSession(null);
+    setStartFromQuestion(0);
     setCurrentView(VIEWS.WIZARD);
   }, []);
 
@@ -126,6 +192,7 @@ const SimulatorApp = ({ isAuthenticated, requireAuth, setPendingAction }) => {
             scenario={selectedScenario}
             onBack={handleBackToDashboard}
             onStart={handleStartSession}
+            preloadedQuestions={questions.length > 0 ? questions : null}
           />
         );
 
@@ -138,6 +205,7 @@ const SimulatorApp = ({ isAuthenticated, requireAuth, setPendingAction }) => {
             variables={variables}
             onComplete={handleSessionComplete}
             onExit={handleSessionExit}
+            startFromQuestion={startFromQuestion}
           />
         );
 

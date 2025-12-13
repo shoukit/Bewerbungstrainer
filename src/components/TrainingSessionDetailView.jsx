@@ -28,6 +28,8 @@ import {
   Eye,
   Loader2,
   SkipBack,
+  RotateCcw,
+  PlayCircle,
   SkipForward,
   Volume2,
   VolumeX,
@@ -726,7 +728,7 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
 // MAIN COMPONENT
 // =============================================================================
 
-const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
+const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinueSession, onRepeatSession }) => {
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -742,6 +744,21 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
   const isVideo = type === 'video';
   const isSimulator = type === 'simulator';
   const isRoleplay = type === 'roleplay';
+
+  // Check if session has questions (handle both field names and formats)
+  const hasQuestions = (() => {
+    // API returns 'questions', database stores 'questions_json'
+    const questionsData = session?.questions || session?.questions_json;
+    if (!questionsData) return false;
+    try {
+      const questions = typeof questionsData === 'string'
+        ? JSON.parse(questionsData)
+        : questionsData;
+      return Array.isArray(questions) && questions.length > 0;
+    } catch {
+      return false;
+    }
+  })();
 
   // Load data based on session type
   useEffect(() => {
@@ -957,6 +974,68 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
               {answers.map((answer, index) => (
                 <AnswerCard key={answer.id || index} answer={answer} index={index} primaryAccent={primaryAccent} />
               ))}
+
+              {/* Action Buttons for incomplete sessions with answers */}
+              {session?.status !== 'completed' && (onContinueSession || onRepeatSession) && hasQuestions && (
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  marginTop: '24px',
+                  padding: '20px',
+                  background: COLORS.slate[50],
+                  borderRadius: '12px',
+                  border: `1px dashed ${COLORS.slate[300]}`,
+                }}>
+                  <p style={{ width: '100%', textAlign: 'center', color: COLORS.slate[600], fontSize: '14px', marginBottom: '12px' }}>
+                    Diese Session ist noch nicht abgeschlossen.
+                  </p>
+                  {onContinueSession && (
+                    <button
+                      onClick={() => onContinueSession(session, scenario)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: primaryAccent,
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: `0 4px 12px ${primaryAccent}4d`,
+                      }}
+                    >
+                      <PlayCircle size={18} />
+                      Fortsetzen
+                    </button>
+                  )}
+                  {onRepeatSession && (
+                    <button
+                      onClick={() => onRepeatSession(session, scenario)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        border: `2px solid ${COLORS.slate[300]}`,
+                        background: 'white',
+                        color: COLORS.slate[700],
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <RotateCcw size={18} />
+                      Erneut starten
+                    </button>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -965,7 +1044,60 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack }) => {
             <div style={{ textAlign: 'center', padding: '48px 24px', background: COLORS.slate[100], borderRadius: '16px' }}>
               <AlertCircle size={48} color={COLORS.slate[400]} style={{ margin: '0 auto 16px' }} />
               <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px' }}>Keine Antworten vorhanden</h3>
-              <p style={{ color: COLORS.slate[500] }}>Diese Session wurde möglicherweise nicht abgeschlossen.</p>
+              <p style={{ color: COLORS.slate[500], marginBottom: hasQuestions ? '24px' : '0' }}>
+                {hasQuestions
+                  ? 'Diese Session wurde nicht abgeschlossen. Du kannst sie fortsetzen oder erneut starten.'
+                  : 'Diese Session wurde verlassen, bevor Fragen generiert wurden.'}
+              </p>
+
+              {/* Action Buttons - only show if questions were generated */}
+              {(onContinueSession || onRepeatSession) && hasQuestions && (
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '24px' }}>
+                  {onContinueSession && (
+                    <button
+                      onClick={() => onContinueSession(session, scenario)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: primaryAccent,
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: `0 4px 12px ${primaryAccent}4d`,
+                      }}
+                    >
+                      <PlayCircle size={18} />
+                      Fortsetzen
+                    </button>
+                  )}
+                  {onRepeatSession && (
+                    <button
+                      onClick={() => onRepeatSession(session, scenario)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        border: `2px solid ${COLORS.slate[300]}`,
+                        background: 'white',
+                        color: COLORS.slate[700],
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <RotateCcw size={18} />
+                      Erneut starten
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

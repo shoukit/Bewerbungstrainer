@@ -321,10 +321,44 @@ class WordPressAPI {
 
     /**
      * Generate questions for simulator session
+     * Includes retry logic for transient failures
      */
-    async generateSimulatorQuestions(sessionId) {
-        return this.request(`/simulator/sessions/${sessionId}/questions`, {
-            method: 'POST'
+    async generateSimulatorQuestions(sessionId, maxRetries = 3) {
+        let lastError;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`🔄 [SimulatorAPI] Generating questions (attempt ${attempt}/${maxRetries})...`);
+                const result = await this.request(`/simulator/sessions/${sessionId}/questions`, {
+                    method: 'POST'
+                });
+                console.log(`✅ [SimulatorAPI] Questions generated successfully on attempt ${attempt}`);
+                return result;
+            } catch (error) {
+                lastError = error;
+                console.warn(`⚠️ [SimulatorAPI] Question generation failed on attempt ${attempt}:`, error.message);
+
+                if (attempt < maxRetries) {
+                    // Wait before retrying (exponential backoff: 1s, 2s, 4s)
+                    const waitTime = Math.pow(2, attempt - 1) * 1000;
+                    console.log(`⏳ [SimulatorAPI] Retrying in ${waitTime/1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                }
+            }
+        }
+
+        // All retries failed
+        console.error(`❌ [SimulatorAPI] Question generation failed after ${maxRetries} attempts`);
+        throw lastError;
+    }
+
+    /**
+     * Update session with preloaded questions (for repeat sessions)
+     */
+    async updateSimulatorSessionQuestions(sessionId, questions) {
+        return this.request(`/simulator/sessions/${sessionId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ questions_json: questions })
         });
     }
 

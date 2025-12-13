@@ -69,6 +69,8 @@ class Bewerbungstrainer_Simulator_Database {
             $this->maybe_add_demo_code_column();
             // Check if mode column exists, add if not
             $this->maybe_add_mode_column();
+            // Run category migration for existing installations
+            self::migrate_category_values();
         }
     }
 
@@ -244,6 +246,90 @@ class Bewerbungstrainer_Simulator_Database {
             $wpdb->query("ALTER TABLE `$table_scenarios` ADD KEY `mode` (`mode`)");
             error_log('[SIMULATOR] Migration: Added mode column to scenarios table');
         }
+
+        // Migration: Normalize legacy category values to new enum format
+        self::migrate_category_values();
+    }
+
+    /**
+     * Migrate legacy category values to new enum format
+     * Maps: interview -> CAREER, negotiation -> SALES, presentation -> COMMUNICATION
+     */
+    private static function migrate_category_values() {
+        global $wpdb;
+        $table_scenarios = $wpdb->prefix . 'bewerbungstrainer_simulator_scenarios';
+
+        // Check if migration has already been run
+        $migration_key = 'bewerbungstrainer_category_migration_v1';
+        if (get_option($migration_key)) {
+            return;
+        }
+
+        // Legacy to new category mapping
+        $category_map = array(
+            'interview' => 'CAREER',
+            'negotiation' => 'SALES',
+            'presentation' => 'COMMUNICATION',
+            'leadership' => 'LEADERSHIP',
+            'communication' => 'COMMUNICATION',
+            'sales' => 'SALES',
+            'career' => 'CAREER',
+        );
+
+        $migrated_count = 0;
+
+        foreach ($category_map as $legacy => $new) {
+            $result = $wpdb->query(
+                $wpdb->prepare(
+                    "UPDATE `$table_scenarios` SET category = %s WHERE LOWER(category) = %s",
+                    $new,
+                    $legacy
+                )
+            );
+            if ($result !== false && $result > 0) {
+                $migrated_count += $result;
+            }
+        }
+
+        // Mark migration as complete
+        update_option($migration_key, current_time('mysql'));
+
+        if ($migrated_count > 0) {
+            error_log("[SIMULATOR] Migration: Migrated $migrated_count scenario categories to new enum format");
+        }
+    }
+
+    /**
+     * Normalize category value (can be called externally)
+     *
+     * @param string $category Category value (legacy or new)
+     * @return string Normalized category key
+     */
+    public static function normalize_category($category) {
+        if (empty($category)) {
+            return 'CAREER';
+        }
+
+        // Already in new format
+        $upper = strtoupper($category);
+        $valid_categories = array('CAREER', 'LEADERSHIP', 'SALES', 'COMMUNICATION');
+        if (in_array($upper, $valid_categories)) {
+            return $upper;
+        }
+
+        // Map legacy values to new format
+        $legacy_map = array(
+            'interview' => 'CAREER',
+            'negotiation' => 'SALES',
+            'presentation' => 'COMMUNICATION',
+            'leadership' => 'LEADERSHIP',
+            'communication' => 'COMMUNICATION',
+            'sales' => 'SALES',
+            'career' => 'CAREER',
+        );
+
+        $lower = strtolower($category);
+        return isset($legacy_map[$lower]) ? $legacy_map[$lower] : 'CAREER';
     }
 
     /**
@@ -265,7 +351,7 @@ class Bewerbungstrainer_Simulator_Database {
             'description' => 'Übe typische Fragen aus einem Vorstellungsgespräch und erhalte sofortiges Feedback zu deinen Antworten.',
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
-            'category' => 'interview',
+            'category' => 'CAREER',
             'mode' => 'INTERVIEW',
             'system_prompt' => 'Du bist ein erfahrener HR-Manager mit 15 Jahren Erfahrung in der Personalauswahl. Du führst Bewerbungsgespräche für die Position ${position}${?company: bei } durch. Der Bewerber hat ein ${experience_level}-Level. Stelle professionelle, aber faire Fragen, die dem Erfahrungslevel angemessen sind.',
             'question_generation_prompt' => 'Generiere realistische Interviewfragen für ein Bewerbungsgespräch.
@@ -331,7 +417,7 @@ Sei konstruktiv und motivierend. Verwende die "Du"-Form.',
             'description' => 'Trainiere Argumentationen und Reaktionen für Gehaltsverhandlungen - vom Einstieg bis zur Erhöhung.',
             'icon' => 'banknote',
             'difficulty' => 'advanced',
-            'category' => 'negotiation',
+            'category' => 'SALES',
             'mode' => 'INTERVIEW',
             'system_prompt' => 'Du bist ein erfahrener Personalleiter, der eine Gehaltsverhandlung mit einem Mitarbeiter führt. Die Person arbeitet als ${position} und hat ${years_experience} Jahre Erfahrung. Das aktuelle Gehalt liegt bei ${current_salary}. Sei professionell aber auch herausfordernd - teste die Verhandlungsfähigkeiten.',
             'question_generation_prompt' => 'Generiere realistische Fragen und Situationen für eine Gehaltsverhandlung.
@@ -410,7 +496,7 @@ Kriterien:
             'description' => 'Perfektioniere deine Selbstvorstellung und lerne, dich überzeugend zu präsentieren.',
             'icon' => 'user',
             'difficulty' => 'beginner',
-            'category' => 'presentation',
+            'category' => 'COMMUNICATION',
             'mode' => 'INTERVIEW',
             'system_prompt' => 'Du bist ein erfahrener Karrierecoach, der Bewerbern hilft, ihre Selbstpräsentation zu verbessern. Der Teilnehmer möchte sich für die Position ${position} bewerben und hat ${experience_level} Erfahrung.',
             'question_generation_prompt' => 'Generiere Fragen und Aufgaben zur Selbstpräsentation.

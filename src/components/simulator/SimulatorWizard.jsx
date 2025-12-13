@@ -213,8 +213,11 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
  *
  * Renders a dynamic form based on scenario's input_configuration
  * and creates a session with the provided variables
+ *
+ * If preloadedQuestions is provided, uses those questions instead of generating new ones
+ * (used when repeating a session)
  */
-const SimulatorWizard = ({ scenario, onBack, onStart }) => {
+const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
   const [formValues, setFormValues] = useState({});
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -325,11 +328,13 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
     setIsSubmitting(true);
 
     try {
-      // 1. Create session with variables
+      // 1. Create session with variables (and optionally preloaded questions)
       const sessionResponse = await wordpressAPI.createSimulatorSession({
         scenario_id: scenario.id,
         variables: formValues,
         demo_code: demoCode || null,
+        // If we have preloaded questions (repeating a session), include them
+        questions: preloadedQuestions || null,
       });
 
       if (!sessionResponse.success) {
@@ -338,17 +343,28 @@ const SimulatorWizard = ({ scenario, onBack, onStart }) => {
 
       const session = sessionResponse.data.session;
 
-      // 2. Generate questions
-      const questionsResponse = await wordpressAPI.generateSimulatorQuestions(session.id);
+      // 2. Generate questions only if not preloaded
+      let questions;
+      if (preloadedQuestions && preloadedQuestions.length > 0) {
+        // Use preloaded questions - skip generation
+        console.log('🔁 [SimulatorWizard] Using preloaded questions for repeat session');
+        questions = preloadedQuestions;
+        // Update session with questions_json
+        await wordpressAPI.updateSimulatorSessionQuestions(session.id, questions);
+      } else {
+        // Generate new questions
+        const questionsResponse = await wordpressAPI.generateSimulatorQuestions(session.id);
 
-      if (!questionsResponse.success) {
-        throw new Error(questionsResponse.message || 'Fehler beim Generieren der Fragen');
+        if (!questionsResponse.success) {
+          throw new Error(questionsResponse.message || 'Fehler beim Generieren der Fragen');
+        }
+        questions = questionsResponse.data.questions;
       }
 
       // 3. Start the session
       onStart({
-        session: questionsResponse.data.session,
-        questions: questionsResponse.data.questions,
+        session: { ...session, questions_json: questions },
+        questions: questions,
         scenario: scenario,
         variables: formValues,
         selectedMicrophoneId: selectedMicrophoneId,

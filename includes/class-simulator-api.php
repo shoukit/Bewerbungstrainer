@@ -1226,60 +1226,120 @@ AUDIO ZUR ANALYSE:";
     }
 
     /**
-     * Call Gemini API (text only)
+     * Call Gemini API (text only) with retry logic and model fallback
      */
-    private function call_gemini_api($prompt, $api_key) {
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' . $api_key;
-
-        $body = array(
-            'contents' => array(
-                array(
-                    'parts' => array(
-                        array('text' => $prompt)
-                    )
-                )
-            ),
-            'generationConfig' => array(
-                'temperature' => 0.7,
-                'topK' => 40,
-                'topP' => 0.95,
-                'maxOutputTokens' => 8192,
-            )
+    private function call_gemini_api($prompt, $api_key, $max_retries = 3) {
+        // Model fallback order
+        $models = array(
+            'gemini-2.0-flash-exp',
+            'gemini-2.0-flash',
+            'gemini-1.5-flash-latest',
         );
 
-        $response = wp_remote_post($url, array(
-            'headers' => array('Content-Type' => 'application/json'),
-            'body' => json_encode($body),
-            'timeout' => 60,
-        ));
+        $last_error = null;
 
-        if (is_wp_error($response)) {
-            return $response;
+        foreach ($models as $model) {
+            for ($attempt = 1; $attempt <= $max_retries; $attempt++) {
+                $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent?key=' . $api_key;
+
+                $body = array(
+                    'contents' => array(
+                        array(
+                            'parts' => array(
+                                array('text' => $prompt)
+                            )
+                        )
+                    ),
+                    'generationConfig' => array(
+                        'temperature' => 0.7,
+                        'topK' => 40,
+                        'topP' => 0.95,
+                        'maxOutputTokens' => 8192,
+                    )
+                );
+
+                error_log("[SIMULATOR] Gemini API call - Model: $model, Attempt: $attempt/$max_retries");
+
+                $response = wp_remote_post($url, array(
+                    'headers' => array('Content-Type' => 'application/json'),
+                    'body' => json_encode($body),
+                    'timeout' => 60,
+                ));
+
+                if (is_wp_error($response)) {
+                    $last_error = $response;
+                    error_log("[SIMULATOR] Gemini API WP Error: " . $response->get_error_message());
+                    // Wait before retry
+                    if ($attempt < $max_retries) {
+                        sleep(pow(2, $attempt - 1)); // Exponential backoff: 1s, 2s
+                    }
+                    continue;
+                }
+
+                $response_code = wp_remote_retrieve_response_code($response);
+
+                // Check for model not found - try next model
+                if ($response_code === 404) {
+                    error_log("[SIMULATOR] Model $model not found (404), trying next model...");
+                    break; // Break retry loop, try next model
+                }
+
+                // Check for rate limit or server error - retry
+                if ($response_code === 429 || $response_code >= 500) {
+                    $error_body = wp_remote_retrieve_body($response);
+                    error_log("[SIMULATOR] Gemini API Error ($response_code): $error_body");
+                    $last_error = new WP_Error(
+                        'api_error',
+                        __('Gemini API Fehler: ', 'bewerbungstrainer') . $response_code,
+                        array('status' => 500)
+                    );
+                    // Wait before retry
+                    if ($attempt < $max_retries) {
+                        sleep(pow(2, $attempt - 1)); // Exponential backoff: 1s, 2s
+                    }
+                    continue;
+                }
+
+                // Other error codes - don't retry
+                if ($response_code !== 200) {
+                    $error_body = wp_remote_retrieve_body($response);
+                    error_log("[SIMULATOR] Gemini API Error ($response_code): $error_body");
+                    return new WP_Error(
+                        'api_error',
+                        __('Gemini API Fehler: ', 'bewerbungstrainer') . $response_code,
+                        array('status' => 500)
+                    );
+                }
+
+                $response_body = wp_remote_retrieve_body($response);
+                $data = json_decode($response_body, true);
+
+                if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                    $last_error = new WP_Error(
+                        'invalid_response',
+                        __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer'),
+                        array('status' => 500)
+                    );
+                    // Wait before retry
+                    if ($attempt < $max_retries) {
+                        sleep(1);
+                    }
+                    continue;
+                }
+
+                // Success!
+                error_log("[SIMULATOR] Gemini API success with model: $model");
+                return $data['candidates'][0]['content']['parts'][0]['text'];
+            }
         }
 
-        $response_code = wp_remote_retrieve_response_code($response);
-        if ($response_code !== 200) {
-            $error_body = wp_remote_retrieve_body($response);
-            error_log('Gemini API Error: ' . $error_body);
-            return new WP_Error(
-                'api_error',
-                __('Gemini API Fehler: ', 'bewerbungstrainer') . $response_code,
-                array('status' => 500)
-            );
-        }
-
-        $response_body = wp_remote_retrieve_body($response);
-        $data = json_decode($response_body, true);
-
-        if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-            return new WP_Error(
-                'invalid_response',
-                __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer'),
-                array('status' => 500)
-            );
-        }
-
-        return $data['candidates'][0]['content']['parts'][0]['text'];
+        // All models and retries exhausted
+        error_log("[SIMULATOR] Gemini API failed after all retries and model fallbacks");
+        return $last_error ?: new WP_Error(
+            'api_error',
+            __('Gemini API ist nicht verfügbar.', 'bewerbungstrainer'),
+            array('status' => 500)
+        );
     }
 
     /**

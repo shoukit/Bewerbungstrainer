@@ -440,7 +440,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'description' => '',
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
-            'category' => 'interview',
+            'category' => 'CAREER',
             'system_prompt' => 'Du bist ein erfahrener HR-Manager und führst ein professionelles Gespräch. Der Bewerber ist ${name} und bewirbt sich für die Position ${position}.',
             'question_generation_prompt' => '',
             'feedback_prompt' => '',
@@ -459,6 +459,9 @@ class Bewerbungstrainer_Simulator_Admin {
         if (!is_array($data['input_configuration'])) {
             $data['input_configuration'] = json_decode($data['input_configuration'], true) ?? array();
         }
+
+        // Normalize legacy category values to new enum format
+        $data['category'] = $this->normalize_category($data['category'] ?? 'CAREER');
         ?>
         <div class="wrap">
             <h1><?php echo $is_edit ? 'Szenario bearbeiten' : 'Neues Szenario erstellen'; ?></h1>
@@ -517,8 +520,13 @@ class Bewerbungstrainer_Simulator_Admin {
                                         <tr>
                                             <th><label for="category">Kategorie</label></th>
                                             <td>
-                                                <input type="text" name="category" id="category" value="<?php echo esc_attr($data['category']); ?>" class="regular-text">
-                                                <p class="description">z.B. interview, negotiation, presentation</p>
+                                                <select name="category" id="category" class="regular-text">
+                                                    <option value="CAREER" <?php selected($data['category'], 'CAREER'); ?>>Bewerbung & Karriere</option>
+                                                    <option value="LEADERSHIP" <?php selected($data['category'], 'LEADERSHIP'); ?>>Leadership & Führung</option>
+                                                    <option value="SALES" <?php selected($data['category'], 'SALES'); ?>>Vertrieb & Verhandlung</option>
+                                                    <option value="COMMUNICATION" <?php selected($data['category'], 'COMMUNICATION'); ?>>Kommunikation & Konflikt</option>
+                                                </select>
+                                                <p class="description">Thematische Einordnung des Szenarios für die Filterung im Dashboard.</p>
                                             </td>
                                         </tr>
                                         <tr>
@@ -840,5 +848,54 @@ class Bewerbungstrainer_Simulator_Admin {
             'mic' => 'microphone',
         );
         return $map[$icon] ?? 'admin-generic';
+    }
+
+    /**
+     * Normalize legacy category values to new enum format
+     *
+     * @param string $category Category value (legacy or new)
+     * @return string Normalized category key (CAREER, LEADERSHIP, SALES, COMMUNICATION)
+     */
+    private function normalize_category($category) {
+        if (empty($category)) {
+            return 'CAREER';
+        }
+
+        // Already in new format
+        $upper = strtoupper($category);
+        $valid_categories = array('CAREER', 'LEADERSHIP', 'SALES', 'COMMUNICATION');
+        if (in_array($upper, $valid_categories)) {
+            return $upper;
+        }
+
+        // Map legacy values to new format
+        $legacy_map = array(
+            'interview' => 'CAREER',
+            'negotiation' => 'SALES',
+            'presentation' => 'COMMUNICATION',
+            'leadership' => 'LEADERSHIP',
+            'communication' => 'COMMUNICATION',
+            'sales' => 'SALES',
+            'career' => 'CAREER',
+        );
+
+        $lower = strtolower($category);
+        return $legacy_map[$lower] ?? 'CAREER';
+    }
+
+    /**
+     * Get category label for display
+     *
+     * @param string $category Category key
+     * @return string German label
+     */
+    private function get_category_label($category) {
+        $labels = array(
+            'CAREER' => 'Bewerbung & Karriere',
+            'LEADERSHIP' => 'Leadership & Führung',
+            'SALES' => 'Vertrieb & Verhandlung',
+            'COMMUNICATION' => 'Kommunikation & Konflikt',
+        );
+        return $labels[strtoupper($category)] ?? $category;
     }
 }
