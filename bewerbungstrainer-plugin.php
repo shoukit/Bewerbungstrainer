@@ -89,6 +89,57 @@ function bewerbungstrainer_log_prompt($scenario, $description, $prompt, $metadat
 }
 
 /**
+ * Log Gemini response to the prompts.log file
+ *
+ * @param string $scenario Scenario name (e.g., "SIMULATOR_QUESTIONS", "VIDEO_ANALYSIS")
+ * @param string $response The response text from Gemini
+ * @param bool $is_error Whether this is an error response
+ */
+function bewerbungstrainer_log_response($scenario, $response, $is_error = false) {
+    // Get upload directory for log file
+    $upload_dir = wp_upload_dir();
+    $log_dir = $upload_dir['basedir'] . '/bewerbungstrainer/logs/';
+
+    // Create directory if it doesn't exist
+    if (!file_exists($log_dir)) {
+        wp_mkdir_p($log_dir);
+        // Add .htaccess to protect logs
+        file_put_contents($log_dir . '.htaccess', "Deny from all\n");
+    }
+
+    $log_file = $log_dir . 'prompts.log';
+    $separator = str_repeat('=', 80);
+    $timestamp = date('Y-m-d H:i:s');
+
+    $status_icon = $is_error ? '❌' : '✅';
+    $status_text = $is_error ? 'ERROR RESPONSE' : 'RESPONSE';
+
+    $log_content = $separator . "\n";
+    $log_content .= $status_icon . " GEMINI " . $status_text . " - " . $scenario . "\n";
+    $log_content .= "📅 " . $timestamp . "\n";
+    $log_content .= $separator . "\n";
+
+    // Log response
+    $log_content .= "📤 RESPONSE:\n";
+    if (strlen($response) > 8000) {
+        $log_content .= substr($response, 0, 4000) . "\n";
+        $log_content .= "... [TRUNCATED - " . strlen($response) . " total chars] ...\n";
+        $log_content .= substr($response, -4000) . "\n";
+    } else {
+        $log_content .= $response . "\n";
+    }
+
+    $log_content .= $separator . "\n\n";
+
+    // Append to log file
+    file_put_contents($log_file, $log_content, FILE_APPEND | LOCK_EX);
+
+    // Also log to error_log for immediate visibility
+    $log_type = $is_error ? 'ERROR' : 'RESPONSE';
+    error_log("[GEMINI " . $log_type . "] " . $scenario . " - " . strlen($response) . " chars (see prompts.log for full details)");
+}
+
+/**
  * Main Bewerbungstrainer Plugin Class
  */
 class Bewerbungstrainer_Plugin {

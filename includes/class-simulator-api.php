@@ -373,7 +373,16 @@ class Bewerbungstrainer_Simulator_API {
         $response = $this->call_gemini_api($full_prompt, $api_key);
 
         if (is_wp_error($response)) {
+            // Log error response
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SIMULATOR_QUESTIONS', $response->get_error_message(), true);
+            }
             return $response;
+        }
+
+        // Log successful response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('SIMULATOR_QUESTIONS', $response);
         }
 
         // Parse questions from response
@@ -540,7 +549,16 @@ class Bewerbungstrainer_Simulator_API {
         $analysis_result = $this->call_gemini_multimodal($analysis_prompt, $audio_data, $mime_type ?? 'audio/webm', $api_key);
 
         if (is_wp_error($analysis_result)) {
+            // Log error response
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result->get_error_message(), true);
+            }
             return $analysis_result;
+        }
+
+        // Log successful response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result);
         }
 
         // Parse analysis response

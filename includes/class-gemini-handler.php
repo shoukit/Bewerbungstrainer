@@ -105,8 +105,19 @@ class Bewerbungstrainer_Gemini_Handler {
         // Call Gemini API
         $response = $this->call_gemini_api($prompt, $api_key);
 
+        $scenario_name = $document_type === 'cv' ? 'CV_ANALYSIS' : 'COVER_LETTER_ANALYSIS';
+
         if (is_wp_error($response)) {
+            // Log error response
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response($scenario_name, $response->get_error_message(), true);
+            }
             return $response;
+        }
+
+        // Log successful response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response($scenario_name, $response);
         }
 
         // Parse response
@@ -525,10 +536,19 @@ Bitte gib deine Antwort im folgenden JSON-Format zurück:
 
         if (is_wp_error($response)) {
             error_log('Gemini API returned error: ' . $response->get_error_message());
+            // Log error response
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('QUESTION_GENERATION', $response->get_error_message(), true);
+            }
             return $response;
         }
 
         error_log('Gemini API response received successfully');
+
+        // Log successful response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('QUESTION_GENERATION', $response);
+        }
 
         // Parse response
         $questions = $this->parse_questions_response($response);
@@ -721,7 +741,16 @@ Schwierigkeit: easy, medium, hard";
         $analysis = $this->call_gemini_api_with_video($prompt, $video_data['uri'], $api_key);
 
         if (is_wp_error($analysis)) {
+            // Log error response
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('VIDEO_ANALYSIS', $analysis->get_error_message(), true);
+            }
             return $analysis;
+        }
+
+        // Log successful response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('VIDEO_ANALYSIS', $analysis);
         }
 
         // Parse analysis response
