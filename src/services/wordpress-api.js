@@ -365,13 +365,16 @@ class WordPressAPI {
     /**
      * Submit answer with audio (using FormData)
      */
-    async submitSimulatorAnswer(sessionId, audioBlob, questionIndex, questionText, questionCategory = null) {
+    async submitSimulatorAnswer(sessionId, audioBlob, questionIndex, questionText, questionCategory = null, audioDuration = null) {
         const formData = new FormData();
         formData.append('audio', audioBlob, 'answer.webm');
         formData.append('question_index', questionIndex);
         formData.append('question_text', questionText);
         if (questionCategory) {
             formData.append('question_category', questionCategory);
+        }
+        if (audioDuration !== null && audioDuration > 0) {
+            formData.append('audio_duration', audioDuration);
         }
 
         const url = `${this.apiUrl}/simulator/sessions/${sessionId}/answer`;

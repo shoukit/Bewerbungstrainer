@@ -246,6 +246,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   const analyserRef = useRef(null);
   const animationFrameRef = useRef(null);
   const streamRef = useRef(null);
+  const finalDurationRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -315,7 +316,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        onRecordingComplete(audioBlob);
+        onRecordingComplete(audioBlob, finalDurationRef.current);
       };
 
       mediaRecorderRef.current.start(1000);
@@ -356,6 +357,9 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   };
 
   const finishRecording = () => {
+    // Save the duration before resetting
+    finalDurationRef.current = seconds;
+
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -848,7 +852,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   const isLastQuestion = currentIndex === questions.length - 1;
   const isFirstQuestion = currentIndex === 0;
 
-  const handleRecordingComplete = async (audioBlob) => {
+  const handleRecordingComplete = async (audioBlob, audioDuration) => {
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -858,7 +862,8 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         audioBlob,
         currentIndex,
         currentQuestion.question,
-        currentQuestion.category
+        currentQuestion.category,
+        audioDuration
       );
 
       if (!response.success) {
