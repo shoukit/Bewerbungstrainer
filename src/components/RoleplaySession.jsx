@@ -346,9 +346,12 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
       }
 
       // Use official SDK - pass variables as dynamicVariables (same as standard interview)
+      // Also pass the selected microphone deviceId if available
+      console.log('🎤 [RoleplaySession] Starting session with microphone:', selectedMicrophoneId || 'default');
       conversationIdRef.current = await conversation.startSession({
         agentId: agentId,
         dynamicVariables: enhancedVariables,
+        ...(selectedMicrophoneId && { inputDeviceId: selectedMicrophoneId }),
       });
 
       console.log('✅ [RoleplaySession] Session started:', conversationIdRef.current);
