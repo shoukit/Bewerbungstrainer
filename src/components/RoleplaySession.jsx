@@ -801,9 +801,9 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="h-full overflow-hidden"
+              className="h-full min-h-0 overflow-hidden"
             >
-              <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+              <div className="h-full min-h-0 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
                 {/* Transcript Header */}
                 <div
                   style={{ background: themedStyles.headerGradient }}
@@ -816,7 +816,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                 </div>
 
                 {/* Transcript Content - Scrollable with fixed height */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ minHeight: 0, maxHeight: '100%' }}>
+                <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
                   {transcript.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center text-slate-500">
