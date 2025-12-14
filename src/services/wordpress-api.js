@@ -684,6 +684,43 @@ class WordPressAPI {
             method: 'GET'
         });
     }
+
+    // ===== Logging API Methods =====
+
+    /**
+     * Log a prompt to the server-side prompts.log file
+     *
+     * @param {string} scenario - Scenario name (e.g., "ELEVENLABS_LIVE_SESSION", "GEMINI_FEEDBACK")
+     * @param {string} description - Human-readable description
+     * @param {string} prompt - The prompt text
+     * @param {object} metadata - Additional metadata (optional)
+     * @param {string} response - Response from AI (optional, for logging both prompt and response)
+     * @param {boolean} isError - Whether the response is an error (optional)
+     */
+    async logPrompt(scenario, description, prompt, metadata = {}, response = null, isError = false) {
+        try {
+            const payload = {
+                scenario,
+                description,
+                prompt,
+                metadata
+            };
+
+            if (response) {
+                payload.response = response;
+                payload.is_error = isError;
+            }
+
+            await this.request('/log-prompt', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            console.log(`📝 [WordPressAPI] Logged prompt: ${scenario}`);
+        } catch (error) {
+            // Don't throw - logging should not break the main flow
+            console.warn(`⚠️ [WordPressAPI] Failed to log prompt: ${error.message}`);
+        }
+    }
 }
 
 // Export singleton instance

@@ -355,6 +355,22 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
       });
 
       console.log('✅ [RoleplaySession] Session started:', conversationIdRef.current);
+
+      // Log the ElevenLabs system prompt to prompts.log
+      const systemPrompt = buildSystemPrompt();
+      wordpressAPI.logPrompt(
+        'ELEVENLABS_LIVE_SESSION',
+        `Live-Training gestartet: ${scenario.title}`,
+        systemPrompt,
+        {
+          scenario_id: scenario.id,
+          scenario_title: scenario.title,
+          agent_id: agentId,
+          conversation_id: conversationIdRef.current,
+          first_message: scenario.initial_message,
+          variables: JSON.stringify(enhancedVariables),
+        }
+      );
     } catch (err) {
       console.error('❌ [RoleplaySession] Failed to start:', err);
       setError(err.message || 'Verbindung fehlgeschlagen.');
