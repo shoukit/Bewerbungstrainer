@@ -217,7 +217,7 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
 /**
  * SessionCard - Unified card component for all session types
  */
-const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerText }) => {
+const SessionCard = ({ session, type, scenario, onClick, onContinueSession, headerGradient, headerText, primaryAccent }) => {
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -280,6 +280,28 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
   const score = getScore();
   const status = getStatus();
   const isCompleted = status === 'completed';
+
+  // Check if session is resumable (Simulator only, has unanswered questions)
+  const isResumable = type === TABS.SIMULATOR &&
+    !isCompleted &&
+    session.total_questions > 0 &&
+    (session.completed_questions || 0) < session.total_questions;
+
+  // Progress info for resumable sessions
+  const getProgressInfo = () => {
+    if (!isResumable) return null;
+    const completed = session.completed_questions || 0;
+    const total = session.total_questions || 0;
+    return `${completed}/${total} Fragen`;
+  };
+
+  // Handle continue click
+  const handleContinueClick = (e) => {
+    e.stopPropagation();
+    if (onContinueSession) {
+      onContinueSession(session, scenario);
+    }
+  };
 
   // Convert score to percentage (0-100) for consistent display
   const getScoreAsPercent = () => {
@@ -395,8 +417,58 @@ const SessionCard = ({ session, type, scenario, onClick, headerGradient, headerT
 
           {/* Status & Score */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-            {/* Status indicator */}
-            {!isCompleted && (
+            {/* Resume button for incomplete sessions */}
+            {isResumable && onContinueSession && (
+              <button
+                onClick={handleContinueClick}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: primaryAccent || '#3B82F6',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: `0 2px 8px ${primaryAccent || '#3B82F6'}40`,
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.boxShadow = `0 4px 12px ${primaryAccent || '#3B82F6'}50`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = `0 2px 8px ${primaryAccent || '#3B82F6'}40`;
+                }}
+              >
+                <Play size={14} />
+                Fortsetzen
+              </button>
+            )}
+
+            {/* Progress indicator for resumable sessions */}
+            {isResumable && (
+              <span style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                background: '#dbeafe',
+                color: '#1e40af',
+                fontSize: '12px',
+                fontWeight: 500,
+              }}>
+                {getProgressInfo()}
+              </span>
+            )}
+
+            {/* Status indicator (only for non-resumable incomplete sessions) */}
+            {!isCompleted && !isResumable && (
               <span style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -987,8 +1059,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                     type={activeTab}
                     scenario={scenario}
                     onClick={() => handleSessionClick(session)}
+                    onContinueSession={onContinueSession}
                     headerGradient={headerGradient}
                     headerText={headerText}
+                    primaryAccent={primaryAccent}
                   />
                 );
               })
