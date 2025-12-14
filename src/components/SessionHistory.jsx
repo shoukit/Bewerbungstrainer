@@ -217,7 +217,8 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
 /**
  * SessionCard - Unified card component for all session types
  */
-const SessionCard = ({ session, type, scenario, onClick, onContinueSession, headerGradient, headerText, primaryAccent }) => {
+const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDeleteSession, headerGradient, headerText, primaryAccent }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -300,6 +301,21 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, head
     e.stopPropagation();
     if (onContinueSession) {
       onContinueSession(session, scenario);
+    }
+  };
+
+  // Handle delete click
+  const handleDeleteClick = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm('Session wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+
+    setIsDeleting(true);
+    try {
+      await onDeleteSession(session, type);
+    } catch (err) {
+      console.error('Error deleting session:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -500,6 +516,39 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, head
                 <Star size={14} />
                 {Math.round(scorePercent)}%
               </span>
+            )}
+
+            {/* Delete button */}
+            {onDeleteSession && (
+              <button
+                onClick={handleDeleteClick}
+                disabled={isDeleting}
+                style={{
+                  padding: '8px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#ef4444';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#94a3b8';
+                }}
+                title="Löschen"
+              >
+                {isDeleting ? (
+                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <Trash2 size={18} />
+                )}
+              </button>
             )}
 
             {/* Arrow */}
@@ -717,23 +766,42 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     const apiUrl = getWPApiUrl();
 
     try {
-      if (type === TABS.SIMULATOR) {
-        const response = await fetch(`${apiUrl}/simulator/sessions/${session.id}`, {
-          method: 'DELETE',
-          headers: { 'X-WP-Nonce': getWPNonce() },
-        });
-        const data = await response.json();
+      let endpoint;
+      let updateState;
 
-        if (data.success) {
-          // Remove from local state
-          setSimulatorSessions((prev) => prev.filter((s) => s.id !== session.id));
-          // Navigate back to list
-          handleBackFromDetail();
-        } else {
-          throw new Error(data.message || 'Delete failed');
-        }
+      switch (type) {
+        case TABS.SIMULATOR:
+          endpoint = `${apiUrl}/simulator/sessions/${session.id}`;
+          updateState = () => setSimulatorSessions((prev) => prev.filter((s) => s.id !== session.id));
+          break;
+        case TABS.ROLEPLAY:
+          endpoint = `${apiUrl}/sessions/${session.id}`;
+          updateState = () => setRoleplaySessions((prev) => prev.filter((s) => s.id !== session.id));
+          break;
+        case TABS.VIDEO:
+          endpoint = `${apiUrl}/video-training/sessions/${session.id}`;
+          updateState = () => setVideoSessions((prev) => prev.filter((s) => s.id !== session.id));
+          break;
+        default:
+          throw new Error('Unknown session type');
       }
-      // Add support for other session types here if needed
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: { 'X-WP-Nonce': getWPNonce() },
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove from local state
+        updateState();
+        // Navigate back to list if in detail view
+        if (selectedTrainingSession) {
+          handleBackFromDetail();
+        }
+      } else {
+        throw new Error(data.message || 'Delete failed');
+      }
     } catch (err) {
       console.error('Failed to delete session:', err);
       throw err;
@@ -1089,6 +1157,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                     scenario={scenario}
                     onClick={() => handleSessionClick(session)}
                     onContinueSession={onContinueSession}
+                    onDeleteSession={handleDeleteSession}
                     headerGradient={headerGradient}
                     headerText={headerText}
                     primaryAccent={primaryAccent}
