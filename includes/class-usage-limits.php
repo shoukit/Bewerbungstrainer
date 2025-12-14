@@ -925,15 +925,15 @@ class Bewerbungstrainer_Usage_Limits {
                 <h2><?php _e('WordPress Benutzer verwalten', 'bewerbungstrainer'); ?></h2>
                 <p class="description"><?php _e('Hier können Sie Limits für WordPress-Benutzer konfigurieren. Benutzer ohne Limit erhalten den Standard von ', 'bewerbungstrainer'); ?><?php echo self::DEFAULT_MONTHLY_MINUTES; ?> <?php _e('Minuten.', 'bewerbungstrainer'); ?></p>
 
-                <table class="wp-list-table widefat fixed striped" style="margin-top: 15px;">
+                <table class="wp-list-table widefat striped" style="margin-top: 15px; table-layout: auto;">
                     <thead>
                         <tr>
-                            <th style="width: 50px;"><?php _e('ID', 'bewerbungstrainer'); ?></th>
-                            <th><?php _e('Benutzer', 'bewerbungstrainer'); ?></th>
-                            <th style="width: 200px;"><?php _e('E-Mail', 'bewerbungstrainer'); ?></th>
-                            <th style="width: 120px;"><?php _e('Minuten/Monat', 'bewerbungstrainer'); ?></th>
-                            <th style="width: 100px;"><?php _e('Verbraucht', 'bewerbungstrainer'); ?></th>
-                            <th style="width: 150px;"><?php _e('Aktion', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 40px; white-space: nowrap;"><?php _e('ID', 'bewerbungstrainer'); ?></th>
+                            <th style="white-space: nowrap;"><?php _e('Benutzer', 'bewerbungstrainer'); ?></th>
+                            <th style="white-space: nowrap;"><?php _e('E-Mail', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 140px; white-space: nowrap;"><?php _e('Minuten/Monat', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 100px; white-space: nowrap;"><?php _e('Verbraucht', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 120px; white-space: nowrap;"><?php _e('Aktion', 'bewerbungstrainer'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -942,54 +942,45 @@ class Bewerbungstrainer_Usage_Limits {
                             $existing_limit = isset($user_limits_lookup[$wp_user->ID]) ? $user_limits_lookup[$wp_user->ID] : null;
                             $current_minutes = $existing_limit ? intval($existing_limit->monthly_minutes) : self::DEFAULT_MONTHLY_MINUTES;
                             $used_minutes = $existing_limit ? floatval($existing_limit->minutes_used_this_month) : $this->get_usage_this_period($wp_user->ID, null);
+                            $percent_used = $current_minutes > 0 ? ($used_minutes / $current_minutes) * 100 : 0;
+                            $color = $percent_used > 80 ? '#ef4444' : ($percent_used > 50 ? '#f59e0b' : '#22c55e');
                             ?>
                             <tr>
-                                <td><?php echo esc_html($wp_user->ID); ?></td>
-                                <td>
-                                    <strong><?php echo esc_html($wp_user->display_name); ?></strong>
-                                    <br><small style="color: #666;"><?php echo esc_html($wp_user->user_login); ?></small>
+                                <td style="vertical-align: middle;"><?php echo esc_html($wp_user->ID); ?></td>
+                                <td style="vertical-align: middle; white-space: nowrap;">
+                                    <strong style="display: block;"><?php echo esc_html($wp_user->display_name); ?></strong>
+                                    <span style="color: #666; font-size: 12px;"><?php echo esc_html($wp_user->user_login); ?></span>
                                 </td>
-                                <td><a href="mailto:<?php echo esc_attr($wp_user->user_email); ?>"><?php echo esc_html($wp_user->user_email); ?></a></td>
-                                <td>
-                                    <form method="post" style="display: flex; align-items: center; gap: 5px;">
+                                <td style="vertical-align: middle; white-space: nowrap;">
+                                    <a href="mailto:<?php echo esc_attr($wp_user->user_email); ?>"><?php echo esc_html($wp_user->user_email); ?></a>
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    <form method="post" style="display: inline-flex; align-items: center; gap: 5px; margin: 0;">
                                         <?php wp_nonce_field('save_usage_limit'); ?>
                                         <input type="hidden" name="identifier_type" value="user_id">
                                         <input type="hidden" name="user_identifier" value="<?php echo esc_attr($wp_user->ID); ?>">
-                                        <input type="number" name="monthly_minutes" value="<?php echo esc_attr($current_minutes); ?>" min="0" max="1000" style="width: 70px;">
-                                        <button type="submit" name="save_limit" class="button button-small" title="<?php _e('Speichern', 'bewerbungstrainer'); ?>">
-                                            <span class="dashicons dashicons-saved" style="font-size: 16px; width: 16px; height: 16px; line-height: 24px;"></span>
+                                        <input type="number" name="monthly_minutes" value="<?php echo esc_attr($current_minutes); ?>" min="0" max="1000" style="width: 60px; padding: 4px;">
+                                        <button type="submit" name="save_limit" class="button button-small" title="<?php _e('Speichern', 'bewerbungstrainer'); ?>" style="padding: 2px 6px;">
+                                            ✓
                                         </button>
                                     </form>
                                 </td>
-                                <td>
-                                    <?php
-                                    $percent_used = $current_minutes > 0 ? ($used_minutes / $current_minutes) * 100 : 0;
-                                    $color = $percent_used > 80 ? '#ef4444' : ($percent_used > 50 ? '#f59e0b' : '#22c55e');
-                                    ?>
+                                <td style="vertical-align: middle; white-space: nowrap;">
                                     <span style="color: <?php echo $color; ?>; font-weight: 500;">
                                         <?php echo number_format($used_minutes, 1, ',', '.'); ?> Min.
                                     </span>
-                                    <?php if ($existing_limit): ?>
-                                        <div style="background: #e5e7eb; border-radius: 4px; height: 4px; margin-top: 4px; width: 80px;">
-                                            <div style="background: <?php echo $color; ?>; width: <?php echo min(100, $percent_used); ?>%; height: 100%; border-radius: 4px;"></div>
-                                        </div>
-                                    <?php endif; ?>
                                 </td>
-                                <td>
+                                <td style="vertical-align: middle; white-space: nowrap;">
                                     <?php if ($existing_limit): ?>
-                                        <span style="color: #22c55e; margin-right: 8px;" title="<?php _e('Limit konfiguriert', 'bewerbungstrainer'); ?>">
-                                            <span class="dashicons dashicons-yes-alt"></span>
-                                        </span>
+                                        <span style="color: #22c55e; margin-right: 5px;">✓</span>
                                         <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=bewerbungstrainer-usage-limits&action=reset&id=' . $existing_limit->id), 'reset_limit_' . $existing_limit->id); ?>"
                                            class="button button-small"
                                            onclick="return confirm('Nutzung wirklich zurücksetzen?');"
-                                           title="<?php _e('Nutzung zurücksetzen', 'bewerbungstrainer'); ?>">
+                                           style="padding: 2px 8px;">
                                             Reset
                                         </a>
                                     <?php else: ?>
-                                        <span style="color: #94a3b8;" title="<?php _e('Standard-Limit', 'bewerbungstrainer'); ?>">
-                                            Standard
-                                        </span>
+                                        <span style="color: #94a3b8;">Standard</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
