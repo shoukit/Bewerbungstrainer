@@ -255,13 +255,18 @@ export async function listAvailableModels(apiKey) {
  * @param {string} apiKey - Google Gemini API key
  * @param {string} modelName - Optional model name (unused, kept for API compatibility)
  * @param {string|null} customPrompt - Optional custom prompt with ${transcript} placeholder
+ * @param {object} roleOptions - Optional role configuration for feedback generation
+ * @param {string} roleOptions.roleType - 'interview' or 'simulation'
+ * @param {string} roleOptions.userRoleLabel - Label for the user role (e.g., 'Bewerber', 'Kundenberater')
+ * @param {string} roleOptions.agentRoleLabel - Label for the AI role (e.g., 'Interviewer', 'Kunde')
  * @returns {Promise<string>} - The generated feedback JSON string
  */
 export async function generateInterviewFeedback(
   transcript,
   apiKey,
   modelName = 'gemini-1.5-flash',
-  customPrompt = null
+  customPrompt = null,
+  roleOptions = {}
 ) {
   // Validate transcript
   if (!transcript || transcript.trim().length === 0) {
@@ -271,20 +276,26 @@ export async function generateInterviewFeedback(
 
   console.log(`📝 [GEMINI FEEDBACK] Transcript length: ${transcript.length} chars`);
   console.log(`📝 [GEMINI FEEDBACK] Custom prompt: ${customPrompt ? 'Yes' : 'No'}`);
+  console.log(`📝 [GEMINI FEEDBACK] Role type: ${roleOptions.roleType || 'interview (default)'}`);
+  console.log(`📝 [GEMINI FEEDBACK] User role label: ${roleOptions.userRoleLabel || 'Bewerber (default)'}`);
 
-  // Build prompt
+  // Build prompt - pass role options to getFeedbackPrompt
   const prompt = customPrompt
     ? applyCustomPrompt(customPrompt, transcript)
-    : getFeedbackPrompt(transcript);
+    : getFeedbackPrompt(transcript, roleOptions);
 
   // Debug logging
+  const roleTypeLabel = roleOptions.roleType === 'simulation' ? 'Simulation' : 'Interview';
+  const userLabel = roleOptions.userRoleLabel || 'Bewerber';
   logPromptDebug(
     'FEEDBACK',
-    'Live-Simulation / Roleplay: Analyse des Interview-Transkripts. Bewertet Kommunikation, Motivation, Professionalität des Bewerbers.',
+    `Live-Training (${roleTypeLabel}): Analyse des Gesprächs-Transkripts. Bewertet Kommunikation, Professionalität des/der ${userLabel}.`,
     prompt,
     {
       'Transkript-Länge': `${transcript.length} Zeichen`,
       'Custom Prompt': customPrompt ? 'Ja' : 'Nein (Standard-Prompt)',
+      'Rollentyp': roleTypeLabel,
+      'User-Rolle': userLabel,
       'Transkript-Vorschau': transcript.substring(0, 300),
     }
   );
@@ -299,11 +310,13 @@ export async function generateInterviewFeedback(
   // Log prompt and response to server-side prompts.log
   wordpressAPI.logPrompt(
     'GEMINI_LIVE_FEEDBACK',
-    'Live-Training Feedback-Generierung',
+    `Live-Training Feedback-Generierung (${roleTypeLabel})`,
     prompt,
     {
       transcript_length: transcript.length,
       custom_prompt: customPrompt ? 'Ja' : 'Nein',
+      role_type: roleOptions.roleType || 'interview',
+      user_role_label: userLabel,
     },
     response // Include response in the log
   );

@@ -168,9 +168,40 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         $difficulty = get_post_meta($post->ID, '_roleplay_difficulty', true);
         $description = get_post_meta($post->ID, '_roleplay_description', true);
         $feedback_prompt = get_post_meta($post->ID, '_roleplay_feedback_prompt', true);
+        $role_type = get_post_meta($post->ID, '_roleplay_role_type', true) ?: 'interview';
+        $user_role_label = get_post_meta($post->ID, '_roleplay_user_role_label', true) ?: 'Bewerber';
 
         ?>
         <table class="form-table">
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_role_type"><?php _e('Szenario-Typ', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <select id="roleplay_role_type" name="roleplay_role_type" class="regular-text">
+                        <option value="interview" <?php selected($role_type, 'interview'); ?>><?php _e('Interview (KI führt das Gespräch)', 'bewerbungstrainer'); ?></option>
+                        <option value="simulation" <?php selected($role_type, 'simulation'); ?>><?php _e('Simulation (User führt das Gespräch)', 'bewerbungstrainer'); ?></option>
+                    </select>
+                    <p class="description">
+                        <?php _e('Interview: Die KI stellt Fragen und führt das Gespräch (z.B. Bewerbungsgespräch). Simulation: Der User führt das Gespräch und die KI reagiert (z.B. Kundenberatung).', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_user_role_label"><?php _e('Rolle des Users', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <input type="text" id="roleplay_user_role_label" name="roleplay_user_role_label"
+                           value="<?php echo esc_attr($user_role_label); ?>"
+                           class="regular-text" placeholder="z.B. Bewerber, Kundenberater, Versicherungsagent" />
+                    <p class="description">
+                        <?php _e('Die Bezeichnung für den User im Gespräch. Wird auch im Feedback verwendet. Beispiele: "Bewerber", "Kundenberater", "Versicherungsagent", "Verkäufer".', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
             <tr>
                 <th scope="row">
                     <label for="roleplay_agent_id"><?php _e('ElevenLabs Agent ID', 'bewerbungstrainer'); ?></label>
@@ -453,6 +484,19 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($_POST['roleplay_description']));
         }
 
+        // Save role type
+        if (isset($_POST['roleplay_role_type'])) {
+            $role_type = sanitize_text_field($_POST['roleplay_role_type']);
+            if (in_array($role_type, array('interview', 'simulation'))) {
+                update_post_meta($post_id, '_roleplay_role_type', $role_type);
+            }
+        }
+
+        // Save user role label
+        if (isset($_POST['roleplay_user_role_label'])) {
+            update_post_meta($post_id, '_roleplay_user_role_label', sanitize_text_field($_POST['roleplay_user_role_label']));
+        }
+
         // Save feedback prompt
         if (isset($_POST['roleplay_feedback_prompt'])) {
             update_post_meta($post_id, '_roleplay_feedback_prompt', sanitize_textarea_field($_POST['roleplay_feedback_prompt']));
@@ -555,6 +599,18 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         // Get tags
         $tags = wp_get_post_terms($post->ID, 'roleplay_scenario_tag', array('fields' => 'names'));
 
+        // Get role type with default
+        $role_type = get_post_meta($post->ID, '_roleplay_role_type', true);
+        if (empty($role_type)) {
+            $role_type = 'interview';
+        }
+
+        // Get user role label with default based on role type
+        $user_role_label = get_post_meta($post->ID, '_roleplay_user_role_label', true);
+        if (empty($user_role_label)) {
+            $user_role_label = 'Bewerber'; // Default for backwards compatibility
+        }
+
         return array(
             'id' => $post->ID,
             'title' => get_the_title($post),
@@ -563,6 +619,8 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'agent_id' => get_post_meta($post->ID, '_roleplay_agent_id', true),
             'initial_message' => get_post_meta($post->ID, '_roleplay_initial_message', true),
             'difficulty' => get_post_meta($post->ID, '_roleplay_difficulty', true),
+            'role_type' => $role_type,
+            'user_role_label' => $user_role_label,
             'variables_schema' => $variables,
             'tags' => $tags,
             'created_at' => $post->post_date,

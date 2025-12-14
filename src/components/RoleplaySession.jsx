@@ -400,6 +400,10 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
         title: scenario.title,
         description: scenario.description,
         variables: variables,
+        role_type: scenario.role_type || 'interview',
+        user_role_label: scenario.user_role_label || 'Bewerber',
+        interviewer_profile: scenario.interviewer_profile,
+        feedback_prompt: scenario.feedback_prompt,
       };
 
       // Step 1: Save conversation_id to database first

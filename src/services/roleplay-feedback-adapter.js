@@ -84,11 +84,20 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
       console.log('🎭 [Roleplay Feedback] Using custom feedback prompt from scenario');
     }
 
+    // Build role options for dynamic feedback prompt
+    const roleOptions = {
+      roleType: scenarioContext.role_type || 'interview',
+      userRoleLabel: scenarioContext.user_role_label || 'Bewerber',
+      agentRoleLabel: scenarioContext.interviewer_profile?.role || 'Gesprächspartner',
+    };
+    console.log('🎭 [Roleplay Feedback] Role options:', roleOptions);
+
     results.feedbackContent = await generateInterviewFeedback(
       formattedTranscript,
       geminiApiKey,
       'gemini-1.5-flash', // modelName as 3rd parameter
-      customPrompt // customPrompt as 4th parameter
+      customPrompt, // customPrompt as 4th parameter
+      roleOptions // roleOptions as 5th parameter
     );
     console.log('✅ [Roleplay Feedback] Feedback generated successfully');
   } catch (error) {
@@ -152,9 +161,14 @@ function formatTranscriptForGemini(transcript, scenarioContext = {}) {
 
   formatted += '\n--- Gesprächsverlauf ---\n\n';
 
-  // Format each transcript entry
+  // Determine speaker labels based on scenario configuration
+  // Default to "Interviewer"/"Bewerber" for backwards compatibility
+  const userRoleLabel = scenarioContext.user_role_label || 'Bewerber';
+  const agentRoleLabel = scenarioContext.interviewer_profile?.role || 'Gesprächspartner';
+
+  // Format each transcript entry with appropriate speaker labels
   transcript.forEach((entry) => {
-    const speaker = entry.role === 'agent' ? 'Interviewer' : 'Bewerber';
+    const speaker = entry.role === 'agent' ? agentRoleLabel : userRoleLabel;
     formatted += `${speaker}: ${entry.text}\n\n`;
   });
 
