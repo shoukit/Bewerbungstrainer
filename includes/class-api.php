@@ -1931,9 +1931,6 @@ class Bewerbungstrainer_API {
             'demo_code' => isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null,
         );
 
-        // Debug logging
-        error_log("[Bewerbungstrainer] get_roleplay_sessions - user_id: $current_user_id, is_demo_user: " . ($is_demo_user ? 'yes' : 'no') . ", demo_code: " . ($args['demo_code'] ?: 'none'));
-
         // Check if current user is demo user and filter by demo_code
         if ($is_demo_user && !empty($args['demo_code'])) {
             // Demo user with code - filter by code
@@ -1949,8 +1946,6 @@ class Bewerbungstrainer_API {
             $total = $this->db->get_user_roleplay_sessions_count($current_user_id, $args['scenario_id']);
         }
 
-        error_log("[Bewerbungstrainer] get_roleplay_sessions - found " . count($sessions) . " sessions for user $current_user_id");
-
         $formatted_sessions = array_map(array($this, 'format_roleplay_session'), $sessions);
 
         return new WP_REST_Response(array(
@@ -1960,12 +1955,6 @@ class Bewerbungstrainer_API {
                 'total' => $total,
                 'limit' => $args['limit'],
                 'offset' => $args['offset'],
-            ),
-            'debug' => array(
-                'current_user_id' => $current_user_id,
-                'is_demo_user' => $is_demo_user,
-                'demo_code_param' => $args['demo_code'],
-                'sessions_found' => count($sessions),
             ),
         ), 200);
     }

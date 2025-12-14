@@ -283,7 +283,6 @@ export async function getRoleplaySessions(params = {}) {
 
     console.log('✅ [Roleplay Feedback] Sessions loaded successfully');
     console.log('✅ [Roleplay Feedback] Sessions count:', response.data?.length || 0);
-    console.log('🔍 [Roleplay Feedback] Debug info:', response.debug);
 
     return response;
   } catch (error) {
