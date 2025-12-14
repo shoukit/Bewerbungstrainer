@@ -193,6 +193,11 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-video-training-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-video-training-admin.php';
 
+        // Load Smart Briefing classes
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-smartbriefing-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-smartbriefing-api.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-smartbriefing-admin.php';
+
         // Load White-Label Partners class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whitelabel-partners.php';
 
@@ -259,6 +264,7 @@ class Bewerbungstrainer_Plugin {
                 <ul style="list-style: disc; margin-left: 20px;">
                     <li><strong><?php _e('Szenario-Training', 'bewerbungstrainer'); ?></strong> - <?php _e('Verwalten Sie strukturierte Trainingsszenarien mit Fragen und Feedback.', 'bewerbungstrainer'); ?></li>
                     <li><strong><?php _e('Video Training', 'bewerbungstrainer'); ?></strong> - <?php _e('Verwalten Sie Video-Aufnahme-Szenarien für visuelles Training.', 'bewerbungstrainer'); ?></li>
+                    <li><strong><?php _e('Smart Briefing', 'bewerbungstrainer'); ?></strong> - <?php _e('KI-gestützte Vorbereitungs-Dossiers für Gespräche und Verhandlungen.', 'bewerbungstrainer'); ?></li>
                 </ul>
             </div>
         </div>
@@ -280,6 +286,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create video training database tables
         Bewerbungstrainer_Video_Training_Database::create_tables();
+
+        // Create smart briefing database tables
+        Bewerbungstrainer_SmartBriefing_Database::create_tables();
 
         // Create demo codes table
         Bewerbungstrainer_Demo_Codes::create_tables();
@@ -421,6 +430,15 @@ class Bewerbungstrainer_Plugin {
         // Initialize Video Training Admin (only in admin area)
         if (is_admin()) {
             Bewerbungstrainer_Video_Training_Admin::get_instance();
+        }
+
+        // Initialize Smart Briefing
+        Bewerbungstrainer_SmartBriefing_Database::get_instance();
+        Bewerbungstrainer_SmartBriefing_API::get_instance();
+
+        // Initialize Smart Briefing Admin (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_SmartBriefing_Admin::get_instance();
         }
 
         // Initialize White-Label Partners

@@ -1128,6 +1128,22 @@ Gib konkrete Formulierungsvorschläge.',
             return false;
         }
 
+        // Get all answers to delete their audio files
+        $answers = $wpdb->get_results($wpdb->prepare(
+            "SELECT audio_filename FROM {$this->table_answers} WHERE session_id = %d AND audio_filename IS NOT NULL",
+            $session_id
+        ));
+
+        // Delete audio files from answers
+        if (!empty($answers)) {
+            $audio_handler = Bewerbungstrainer_Audio_Handler::get_instance();
+            foreach ($answers as $answer) {
+                if (!empty($answer->audio_filename)) {
+                    $audio_handler->delete_audio($answer->audio_filename);
+                }
+            }
+        }
+
         // Delete all answers first (cascade)
         $wpdb->delete(
             $this->table_answers,

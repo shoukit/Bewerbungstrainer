@@ -22,6 +22,7 @@ import {
   Shield,
   Users,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/Toast';
@@ -86,6 +87,14 @@ const NAV_ITEMS = [
     icon: LayoutDashboard,
     description: 'Alle Trainingsmöglichkeiten',
     alwaysVisible: true, // This item is always shown regardless of partner config
+  },
+  {
+    id: 'smart_briefing',
+    moduleId: 'smart_briefing', // Maps to WordPress module
+    label: 'Smart Briefing',
+    shortLabel: 'Briefing',
+    icon: Sparkles,
+    description: 'KI-Vorbereitungs-Assistent',
   },
   {
     id: 'simulator',

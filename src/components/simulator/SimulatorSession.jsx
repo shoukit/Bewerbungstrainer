@@ -246,6 +246,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   const analyserRef = useRef(null);
   const animationFrameRef = useRef(null);
   const streamRef = useRef(null);
+  const finalDurationRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -315,7 +316,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        onRecordingComplete(audioBlob);
+        onRecordingComplete(audioBlob, finalDurationRef.current);
       };
 
       mediaRecorderRef.current.start(1000);
@@ -356,6 +357,9 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   };
 
   const finishRecording = () => {
+    // Save the duration before resetting
+    finalDurationRef.current = seconds;
+
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -848,7 +852,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   const isLastQuestion = currentIndex === questions.length - 1;
   const isFirstQuestion = currentIndex === 0;
 
-  const handleRecordingComplete = async (audioBlob) => {
+  const handleRecordingComplete = async (audioBlob, audioDuration) => {
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -858,7 +862,8 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         audioBlob,
         currentIndex,
         currentQuestion.question,
-        currentQuestion.category
+        currentQuestion.category,
+        audioDuration
       );
 
       if (!response.success) {
@@ -1192,6 +1197,54 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Navigation Buttons - only show during recording (not feedback) */}
+      {!showFeedback && (
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '16px' }}>
+          <button
+            onClick={handlePrev}
+            disabled={isFirstQuestion}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 20px',
+              borderRadius: '10px',
+              border: `2px solid ${COLORS.slate[300]}`,
+              backgroundColor: 'white',
+              color: isFirstQuestion ? COLORS.slate[400] : COLORS.slate[700],
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: isFirstQuestion ? 'not-allowed' : 'pointer',
+              opacity: isFirstQuestion ? 0.5 : 1,
+            }}
+          >
+            <ChevronLeft size={16} />
+            Zurück
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={isLastQuestion}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 20px',
+              borderRadius: '10px',
+              border: `2px solid ${COLORS.slate[300]}`,
+              backgroundColor: 'white',
+              color: isLastQuestion ? COLORS.slate[400] : COLORS.slate[700],
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: isLastQuestion ? 'not-allowed' : 'pointer',
+              opacity: isLastQuestion ? 0.5 : 1,
+            }}
+          >
+            Frage überspringen
+            <ChevronRight size={16} />
+          </button>
         </div>
       )}
 

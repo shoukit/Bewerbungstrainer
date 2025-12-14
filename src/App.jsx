@@ -7,6 +7,7 @@ import SessionDetailView from './components/SessionDetailView';
 import { SimulatorApp } from './components/simulator';
 import { VideoTrainingApp } from './components/video-training';
 import { RhetorikGym, GameSession } from './components/rhetorik-gym';
+import { SmartBriefingApp } from './components/smartbriefing';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
 import { LoginModal } from './components/LoginModal';
@@ -89,6 +90,7 @@ const VIEWS = {
   ROLEPLAY: 'roleplay',
   SIMULATOR: 'simulator',
   VIDEO_TRAINING: 'video_training',
+  SMART_BRIEFING: 'smart_briefing',
   HISTORY: 'history',
   SESSION_DETAIL: 'session_detail',
   GYM: 'gym',
@@ -400,6 +402,9 @@ function AppContent() {
         setVideoTrainingResetKey(prev => prev + 1);
         setCurrentView(VIEWS.VIDEO_TRAINING);
         break;
+      case 'smart_briefing':
+        setCurrentView(VIEWS.SMART_BRIEFING);
+        break;
       case 'history':
         setCurrentView(VIEWS.HISTORY);
         break;
@@ -541,6 +546,22 @@ function AppContent() {
             setPendingAction={setPendingAction}
             pendingScenario={pendingVideoTrainingScenario}
             clearPendingScenario={() => setPendingVideoTrainingScenario(null)}
+          />
+        );
+
+      case VIEWS.SMART_BRIEFING:
+        return (
+          <SmartBriefingApp
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+            onNavigateToSimulator={(variables) => {
+              // Navigate to simulator dashboard - variables can be used to pre-fill forms
+              console.log('[APP] Navigating to simulator from Smart Briefing with variables:', variables);
+              // Store variables for potential use in simulator
+              // The simulator can access these via props or context if needed
+              setCurrentView(VIEWS.SIMULATOR);
+            }}
           />
         );
 
