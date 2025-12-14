@@ -572,11 +572,12 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
       <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4 overflow-hidden">
         {/* RESPONSIVE LAYOUT: Mobile stacked, Desktop 3-column */}
         <div
-          className="w-full h-full gap-3 lg:gap-4"
+          className="w-full h-full gap-3 lg:gap-4 overflow-hidden"
           style={{
             display: isMobile ? 'flex' : 'grid',
             flexDirection: isMobile ? 'column' : undefined,
             gridTemplateColumns: isMobile ? undefined : 'minmax(250px, 1fr) minmax(350px, 2fr) minmax(250px, 1fr)',
+            gridTemplateRows: isMobile ? undefined : '1fr',
             alignItems: isMobile ? undefined : 'stretch',
             padding: '0 8px',
           }}
@@ -796,7 +797,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="h-full"
+              className="h-full overflow-hidden"
             >
               <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
                 {/* Transcript Header */}
@@ -810,8 +811,8 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                   </div>
                 </div>
 
-                {/* Transcript Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+                {/* Transcript Content - Scrollable with fixed height */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ minHeight: 0, maxHeight: '100%' }}>
                   {transcript.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center text-slate-500">
