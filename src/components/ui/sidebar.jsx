@@ -89,6 +89,14 @@ const NAV_ITEMS = [
     alwaysVisible: true, // This item is always shown regardless of partner config
   },
   {
+    id: 'smart_briefing',
+    moduleId: 'smart_briefing', // Maps to WordPress module
+    label: 'Smart Briefing',
+    shortLabel: 'Briefing',
+    icon: Sparkles,
+    description: 'KI-Vorbereitungs-Assistent',
+  },
+  {
     id: 'simulator',
     moduleId: 'simulator', // Maps to WordPress module
     label: 'Szenario-Training',
@@ -111,14 +119,6 @@ const NAV_ITEMS = [
     shortLabel: 'Live',
     icon: MessageSquare,
     description: 'Live Simulationen mit KI-Interviewer',
-  },
-  {
-    id: 'smart_briefing',
-    moduleId: 'smart_briefing', // Maps to WordPress module
-    label: 'Smart Briefing',
-    shortLabel: 'Briefing',
-    icon: Sparkles,
-    description: 'KI-Vorbereitungs-Assistent',
   },
   {
     id: 'gym',
