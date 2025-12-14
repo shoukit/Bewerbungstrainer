@@ -712,6 +712,34 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     setSelectedSessionType(null);
   };
 
+  // Handle delete session
+  const handleDeleteSession = async (session, type) => {
+    const apiUrl = getWPApiUrl();
+
+    try {
+      if (type === TABS.SIMULATOR) {
+        const response = await fetch(`${apiUrl}/simulator/sessions/${session.id}`, {
+          method: 'DELETE',
+          headers: { 'X-WP-Nonce': getWPNonce() },
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          // Remove from local state
+          setSimulatorSessions((prev) => prev.filter((s) => s.id !== session.id));
+          // Navigate back to list
+          handleBackFromDetail();
+        } else {
+          throw new Error(data.message || 'Delete failed');
+        }
+      }
+      // Add support for other session types here if needed
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+      throw err;
+    }
+  };
+
   // Get scenario for selected session
   const getScenarioForSession = (session, type) => {
     const scenarioMap = type === TABS.SIMULATOR ? simulatorScenarioMap :
@@ -740,6 +768,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         onBack={handleBackFromDetail}
         onContinueSession={onContinueSession}
         onRepeatSession={onRepeatSession}
+        onDeleteSession={handleDeleteSession}
       />
     );
   }

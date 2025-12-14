@@ -33,6 +33,7 @@ import {
   SkipForward,
   Volume2,
   VolumeX,
+  Trash2,
 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -676,6 +677,116 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
 };
 
 /**
+ * Delete confirmation dialog
+ */
+const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAccent }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          maxWidth: '400px',
+          width: '90%',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            backgroundColor: COLORS.red[100],
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Trash2 size={24} color={COLORS.red[500]} />
+          </div>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
+              Session löschen?
+            </h3>
+          </div>
+        </div>
+
+        <p style={{ fontSize: '14px', color: COLORS.slate[600], lineHeight: 1.6, marginBottom: '24px' }}>
+          Möchtest du diese Session wirklich löschen? Alle Antworten und Feedback werden unwiderruflich entfernt.
+        </p>
+
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <button
+            onClick={onClose}
+            disabled={isDeleting}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '10px',
+              border: `1px solid ${COLORS.slate[300]}`,
+              backgroundColor: 'white',
+              color: COLORS.slate[700],
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              opacity: isDeleting ? 0.5 : 1,
+            }}
+          >
+            Abbrechen
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '10px',
+              border: 'none',
+              backgroundColor: COLORS.red[500],
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              opacity: isDeleting ? 0.7 : 1,
+            }}
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                Löschen...
+              </>
+            ) : (
+              <>
+                <Trash2 size={16} />
+                Löschen
+              </>
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+/**
  * Category score card for video training
  */
 const CategoryScoreCard = ({ category, primaryAccent }) => {
@@ -728,7 +839,7 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
 // MAIN COMPONENT
 // =============================================================================
 
-const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinueSession, onRepeatSession }) => {
+const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinueSession, onRepeatSession, onDeleteSession }) => {
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -736,6 +847,10 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   const [answers, setAnswers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Roleplay-specific state
   const [roleplayData, setRoleplayData] = useState(null);
@@ -759,6 +874,29 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
       return false;
     }
   })();
+
+  // Check if session is resumable (has unanswered questions, regardless of status)
+  const isResumable = (() => {
+    if (!isSimulator || !hasQuestions) return false;
+    const totalQuestions = session?.total_questions || 0;
+    const completedQuestions = session?.completed_questions || 0;
+    return totalQuestions > 0 && completedQuestions < totalQuestions;
+  })();
+
+  // Handle delete session
+  const handleDeleteSession = async () => {
+    if (!onDeleteSession) return;
+
+    setIsDeleting(true);
+    try {
+      await onDeleteSession(session, type);
+      // onDeleteSession should handle navigation back
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   // Load data based on session type
   useEffect(() => {
@@ -880,8 +1018,8 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
         @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
       `}</style>
 
-      {/* Back button */}
-      <div style={{ margin: '0 0 24px', padding: '0 24px' }}>
+      {/* Navigation bar with back and delete buttons */}
+      <div style={{ margin: '0 0 24px', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           onClick={onBack}
           style={{
@@ -896,6 +1034,24 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
           <ArrowLeft size={18} />
           Zurück zur Übersicht
         </button>
+
+        {/* Delete button - only for Simulator sessions */}
+        {isSimulator && onDeleteSession && (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+              borderRadius: '10px', background: COLORS.red[100], border: 'none',
+              cursor: 'pointer', fontSize: '14px', fontWeight: 500, color: COLORS.red[500],
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = COLORS.red[500]; e.currentTarget.style.color = 'white'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = COLORS.red[100]; e.currentTarget.style.color = COLORS.red[500]; }}
+          >
+            <Trash2 size={18} />
+            Session löschen
+          </button>
+        )}
       </div>
 
       {/* Two-column layout */}
@@ -975,8 +1131,8 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                 <AnswerCard key={answer.id || index} answer={answer} index={index} primaryAccent={primaryAccent} />
               ))}
 
-              {/* Action Buttons for incomplete sessions with answers */}
-              {session?.status !== 'completed' && (onContinueSession || onRepeatSession) && hasQuestions && (
+              {/* Action Buttons for resumable sessions with answers */}
+              {isResumable && (onContinueSession || onRepeatSession) && (
                 <div style={{
                   display: 'flex',
                   gap: '12px',
@@ -1050,8 +1206,8 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                   : 'Diese Session wurde verlassen, bevor Fragen generiert wurden.'}
               </p>
 
-              {/* Action Buttons - only show if questions were generated */}
-              {(onContinueSession || onRepeatSession) && hasQuestions && (
+              {/* Action Buttons - only show if session is resumable */}
+              {isResumable && (onContinueSession || onRepeatSession) && (
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '24px' }}>
                   {onContinueSession && (
                     <button
@@ -1315,6 +1471,15 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteSession}
+        isDeleting={isDeleting}
+        primaryAccent={primaryAccent}
+      />
     </div>
   );
 };
