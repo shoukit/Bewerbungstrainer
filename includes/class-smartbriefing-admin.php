@@ -1,0 +1,818 @@
+<?php
+/**
+ * SmartBriefing Admin Page
+ *
+ * Provides WordPress admin interface for managing SmartBriefing templates
+ *
+ * @package Bewerbungstrainer
+ */
+
+// Exit if accessed directly
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * SmartBriefing Admin Class
+ */
+class Bewerbungstrainer_SmartBriefing_Admin {
+
+    /**
+     * Instance of this class
+     */
+    private static $instance = null;
+
+    /**
+     * Database instance
+     */
+    private $db;
+
+    /**
+     * Get singleton instance
+     */
+    public static function get_instance() {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Constructor
+     */
+    private function __construct() {
+        $this->db = Bewerbungstrainer_SmartBriefing_Database::get_instance();
+        $this->init_hooks();
+    }
+
+    /**
+     * Initialize hooks
+     */
+    private function init_hooks() {
+        add_action('admin_menu', array($this, 'add_admin_menu'));
+        add_action('admin_init', array($this, 'handle_form_actions'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
+    }
+
+    /**
+     * Add admin menu
+     */
+    public function add_admin_menu() {
+        // Submenu under Bewerbungstrainer: All Templates
+        add_submenu_page(
+            'bewerbungstrainer',
+            __('Smart Briefing', 'bewerbungstrainer'),
+            __('Smart Briefing', 'bewerbungstrainer'),
+            'manage_options',
+            'smartbriefing-templates',
+            array($this, 'render_templates_page')
+        );
+
+        // Submenu: Add New (hidden, accessed via link)
+        add_submenu_page(
+            null,  // Hidden from menu
+            __('Neues Briefing-Template', 'bewerbungstrainer'),
+            __('Neues Briefing-Template', 'bewerbungstrainer'),
+            'manage_options',
+            'smartbriefing-template-new',
+            array($this, 'render_edit_page')
+        );
+    }
+
+    /**
+     * Enqueue admin scripts and styles
+     */
+    public function enqueue_admin_scripts($hook) {
+        if (strpos($hook, 'smartbriefing-template') === false) {
+            return;
+        }
+
+        wp_enqueue_script('jquery-ui-sortable');
+
+        // Add inline styles
+        wp_add_inline_style('wp-admin', $this->get_admin_styles());
+    }
+
+    /**
+     * Get admin CSS styles
+     */
+    private function get_admin_styles() {
+        return '
+            .smartbriefing-variables-container {
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 15px;
+                background: #f9f9f9;
+            }
+            .smartbriefing-variable-item {
+                background: #fff;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 15px;
+                margin-bottom: 10px;
+                position: relative;
+            }
+            .smartbriefing-variable-item:hover {
+                border-color: #2271b1;
+            }
+            .smartbriefing-variable-item .handle {
+                cursor: move;
+                color: #999;
+                margin-right: 10px;
+            }
+            .smartbriefing-variable-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 10px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #eee;
+            }
+            .smartbriefing-variable-fields {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .smartbriefing-variable-fields .full-width {
+                grid-column: 1 / -1;
+            }
+            .smartbriefing-variable-fields label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 4px;
+                font-size: 12px;
+            }
+            .smartbriefing-variable-fields input,
+            .smartbriefing-variable-fields select,
+            .smartbriefing-variable-fields textarea {
+                width: 100%;
+            }
+            .smartbriefing-options-container {
+                margin-top: 10px;
+                padding: 10px;
+                background: #f5f5f5;
+                border-radius: 4px;
+            }
+            .smartbriefing-option-item {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 5px;
+            }
+            .smartbriefing-option-item input {
+                flex: 1;
+            }
+            .add-variable-btn, .add-option-btn {
+                margin-top: 10px;
+            }
+            .remove-btn {
+                color: #b32d2e;
+                cursor: pointer;
+                background: none;
+                border: none;
+                padding: 5px;
+            }
+            .remove-btn:hover {
+                color: #dc3232;
+            }
+            .variable-key-preview {
+                font-family: monospace;
+                font-size: 11px;
+                color: #666;
+                background: #f0f0f0;
+                padding: 2px 6px;
+                border-radius: 3px;
+            }
+            .prompt-help {
+                background: #e7f3ff;
+                border-left: 4px solid #2271b1;
+                padding: 10px 15px;
+                margin-bottom: 15px;
+            }
+            .prompt-help code {
+                background: #fff;
+                padding: 2px 6px;
+                border-radius: 3px;
+            }
+        ';
+    }
+
+    /**
+     * Handle form submissions
+     */
+    public function handle_form_actions() {
+        // Check if we're on our admin page
+        if (!isset($_GET['page']) || strpos($_GET['page'], 'smartbriefing-template') === false) {
+            return;
+        }
+
+        // Handle delete action
+        if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+            if (!wp_verify_nonce($_GET['_wpnonce'], 'delete_smartbriefing_template_' . $_GET['id'])) {
+                wp_die('Security check failed');
+            }
+
+            $this->db->delete_template(intval($_GET['id']));
+            wp_redirect(admin_url('admin.php?page=smartbriefing-templates&deleted=1'));
+            exit;
+        }
+
+        // Handle form submission
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['smartbriefing_template_nonce'])) {
+            if (!wp_verify_nonce($_POST['smartbriefing_template_nonce'], 'save_smartbriefing_template')) {
+                wp_die('Security check failed');
+            }
+
+            $data = $this->sanitize_template_data($_POST);
+
+            if (isset($_POST['template_id']) && !empty($_POST['template_id'])) {
+                // Update existing
+                $this->db->update_template(intval($_POST['template_id']), $data);
+                wp_redirect(admin_url('admin.php?page=smartbriefing-templates&updated=1'));
+            } else {
+                // Create new
+                $this->db->create_template($data);
+                wp_redirect(admin_url('admin.php?page=smartbriefing-templates&created=1'));
+            }
+            exit;
+        }
+    }
+
+    /**
+     * Sanitize template data from form
+     */
+    private function sanitize_template_data($post) {
+        // Build variables_schema from visual builder data
+        $variables_schema = $this->build_variables_schema_from_post($post);
+
+        return array(
+            'title' => sanitize_text_field($post['title'] ?? ''),
+            'description' => sanitize_textarea_field($post['description'] ?? ''),
+            'icon' => sanitize_text_field($post['icon'] ?? 'file-text'),
+            'category' => sanitize_text_field($post['category'] ?? 'CAREER'),
+            'system_prompt' => wp_kses_post($post['system_prompt'] ?? ''),
+            'variables_schema' => json_encode($variables_schema, JSON_UNESCAPED_UNICODE),
+            'is_active' => isset($post['is_active']) ? 1 : 0,
+            'sort_order' => intval($post['sort_order'] ?? 0),
+        );
+    }
+
+    /**
+     * Build variables_schema array from POST data
+     */
+    private function build_variables_schema_from_post($post) {
+        $schema = array();
+
+        if (!isset($post['var_key']) || !is_array($post['var_key'])) {
+            return $schema;
+        }
+
+        $count = count($post['var_key']);
+
+        for ($i = 0; $i < $count; $i++) {
+            $key = sanitize_key($post['var_key'][$i] ?? '');
+            if (empty($key)) continue;
+
+            $field = array(
+                'key' => $key,
+                'label' => sanitize_text_field($post['var_label'][$i] ?? ''),
+                'type' => sanitize_text_field($post['var_type'][$i] ?? 'text'),
+                'required' => isset($post['var_required'][$i]),
+                'placeholder' => sanitize_text_field($post['var_placeholder'][$i] ?? ''),
+            );
+
+            // Handle default value
+            if (!empty($post['var_default'][$i])) {
+                $field['default'] = sanitize_text_field($post['var_default'][$i]);
+            }
+
+            // Handle options for select type
+            if ($field['type'] === 'select' && isset($post['var_options'][$i])) {
+                $options = array();
+                $opt_values = $post['var_options'][$i]['value'] ?? array();
+                $opt_labels = $post['var_options'][$i]['label'] ?? array();
+
+                for ($j = 0; $j < count($opt_values); $j++) {
+                    $opt_val = sanitize_text_field($opt_values[$j] ?? '');
+                    $opt_label = sanitize_text_field($opt_labels[$j] ?? '');
+                    if (!empty($opt_val)) {
+                        $options[] = array('value' => $opt_val, 'label' => $opt_label);
+                    }
+                }
+
+                if (!empty($options)) {
+                    $field['options'] = $options;
+                }
+            }
+
+            $schema[] = $field;
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Render templates list page
+     */
+    public function render_templates_page() {
+        // Get all templates including inactive ones
+        $templates = $this->db->get_templates(array('is_active' => null));
+
+        // Show notices
+        if (isset($_GET['deleted'])) {
+            echo '<div class="notice notice-success is-dismissible"><p>Template gelöscht.</p></div>';
+        }
+        if (isset($_GET['updated'])) {
+            echo '<div class="notice notice-success is-dismissible"><p>Template aktualisiert.</p></div>';
+        }
+        if (isset($_GET['created'])) {
+            echo '<div class="notice notice-success is-dismissible"><p>Template erstellt.</p></div>';
+        }
+        ?>
+        <div class="wrap">
+            <h1 class="wp-heading-inline">Smart Briefing - Templates</h1>
+            <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new'); ?>" class="page-title-action">Neues Template hinzufügen</a>
+            <hr class="wp-header-end">
+
+            <p class="description">
+                Mit Smart Briefing können Nutzer strukturierte Vorbereitungs-Dossiers für Gespräche, Verhandlungen und andere Situationen generieren lassen.
+            </p>
+
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>Titel</th>
+                        <th style="width: 100px;">Icon</th>
+                        <th style="width: 120px;">Kategorie</th>
+                        <th style="width: 100px;">Variablen</th>
+                        <th style="width: 80px;">Aktiv</th>
+                        <th style="width: 150px;">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($templates)): ?>
+                        <tr>
+                            <td colspan="7">Keine Templates gefunden. <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new'); ?>">Erstelle dein erstes Template</a>.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($templates as $template): ?>
+                            <tr>
+                                <td><?php echo esc_html($template->id); ?></td>
+                                <td>
+                                    <strong>
+                                        <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new&id=' . $template->id); ?>">
+                                            <?php echo esc_html($template->title); ?>
+                                        </a>
+                                    </strong>
+                                    <br>
+                                    <span class="description"><?php echo esc_html(wp_trim_words($template->description, 10)); ?></span>
+                                </td>
+                                <td>
+                                    <span class="dashicons dashicons-<?php echo esc_attr($this->get_dashicon($template->icon)); ?>"></span>
+                                    <?php echo esc_html($template->icon); ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    $cat_labels = array(
+                                        'CAREER' => '<span style="color: #3b82f6;">Karriere</span>',
+                                        'SALES' => '<span style="color: #22c55e;">Vertrieb</span>',
+                                        'LEADERSHIP' => '<span style="color: #a855f7;">Führung</span>',
+                                        'COMMUNICATION' => '<span style="color: #f59e0b;">Kommunikation</span>',
+                                    );
+                                    echo $cat_labels[$template->category] ?? esc_html($template->category);
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    $vars = is_array($template->variables_schema) ? $template->variables_schema : array();
+                                    echo count($vars);
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php if ($template->is_active): ?>
+                                        <span style="color: #22c55e;">&#10004; Ja</span>
+                                    <?php else: ?>
+                                        <span style="color: #999;">&#10008; Nein</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new&id=' . $template->id); ?>" class="button button-small">Bearbeiten</a>
+                                    <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=smartbriefing-templates&action=delete&id=' . $template->id), 'delete_smartbriefing_template_' . $template->id); ?>"
+                                       class="button button-small button-link-delete"
+                                       onclick="return confirm('Wirklich löschen?');">Löschen</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render edit/new template page
+     */
+    public function render_edit_page() {
+        $template = null;
+        $is_edit = false;
+
+        if (isset($_GET['id'])) {
+            $template = $this->db->get_template(intval($_GET['id']));
+            $is_edit = (bool) $template;
+        }
+
+        // Default values
+        $defaults = array(
+            'id' => '',
+            'title' => '',
+            'description' => '',
+            'icon' => 'file-text',
+            'category' => 'CAREER',
+            'system_prompt' => '',
+            'variables_schema' => array(),
+            'is_active' => 1,
+            'sort_order' => 0,
+        );
+
+        $data = $template ? (array) $template : $defaults;
+
+        // Ensure variables_schema is an array
+        if (!is_array($data['variables_schema'])) {
+            $data['variables_schema'] = array();
+        }
+
+        // Available icons
+        $icons = array(
+            'file-text' => 'Dokument',
+            'briefcase' => 'Aktenkoffer',
+            'banknote' => 'Geldschein',
+            'users' => 'Benutzer',
+            'user' => 'Person',
+            'message-circle' => 'Sprechblase',
+            'target' => 'Ziel',
+            'award' => 'Auszeichnung',
+            'book' => 'Buch',
+            'clipboard' => 'Klemmbrett',
+            'star' => 'Stern',
+            'lightbulb' => 'Glühbirne',
+            'shield' => 'Schild',
+            'compass' => 'Kompass',
+            'rocket' => 'Rakete',
+        );
+
+        // Available categories
+        $categories = array(
+            'CAREER' => 'Karriere',
+            'SALES' => 'Vertrieb',
+            'LEADERSHIP' => 'Führung',
+            'COMMUNICATION' => 'Kommunikation',
+        );
+        ?>
+        <div class="wrap">
+            <h1><?php echo $is_edit ? 'Template bearbeiten' : 'Neues Briefing-Template'; ?></h1>
+
+            <form method="post" action="">
+                <?php wp_nonce_field('save_smartbriefing_template', 'smartbriefing_template_nonce'); ?>
+                <input type="hidden" name="template_id" value="<?php echo esc_attr($data['id']); ?>">
+
+                <div id="poststuff">
+                    <div id="post-body" class="metabox-holder columns-2">
+
+                        <!-- Main Content -->
+                        <div id="post-body-content">
+
+                            <!-- Basic Info -->
+                            <div class="postbox">
+                                <h2 class="hndle"><span>Grundinformationen</span></h2>
+                                <div class="inside">
+                                    <table class="form-table">
+                                        <tr>
+                                            <th><label for="title">Titel *</label></th>
+                                            <td>
+                                                <input type="text" name="title" id="title" class="regular-text"
+                                                       value="<?php echo esc_attr($data['title']); ?>" required>
+                                                <p class="description">Der Name des Briefing-Templates, z.B. "Job Interview Deep-Dive"</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><label for="description">Beschreibung</label></th>
+                                            <td>
+                                                <textarea name="description" id="description" rows="3" class="large-text"><?php echo esc_textarea($data['description']); ?></textarea>
+                                                <p class="description">Kurze Beschreibung für den Nutzer</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><label for="icon">Icon</label></th>
+                                            <td>
+                                                <select name="icon" id="icon">
+                                                    <?php foreach ($icons as $icon_key => $icon_label): ?>
+                                                        <option value="<?php echo esc_attr($icon_key); ?>" <?php selected($data['icon'], $icon_key); ?>>
+                                                            <?php echo esc_html($icon_label); ?> (<?php echo esc_html($icon_key); ?>)
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><label for="category">Kategorie</label></th>
+                                            <td>
+                                                <select name="category" id="category">
+                                                    <?php foreach ($categories as $cat_key => $cat_label): ?>
+                                                        <option value="<?php echo esc_attr($cat_key); ?>" <?php selected($data['category'], $cat_key); ?>>
+                                                            <?php echo esc_html($cat_label); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- System Prompt -->
+                            <div class="postbox">
+                                <h2 class="hndle"><span>KI-Prompt</span></h2>
+                                <div class="inside">
+                                    <div class="prompt-help">
+                                        <strong>Variable Platzhalter:</strong> Verwende <code>${variable_key}</code> um Benutzereingaben in den Prompt einzufügen.
+                                        <br>Beispiel: <code>${target_company}</code> wird durch den vom Nutzer eingegebenen Firmennamen ersetzt.
+                                        <br>Für optionale Variablen: <code>${?key:Prefix }</code> - wird nur eingefügt wenn die Variable einen Wert hat.
+                                    </div>
+                                    <textarea name="system_prompt" id="system_prompt" rows="15" class="large-text code"><?php echo esc_textarea($data['system_prompt']); ?></textarea>
+                                    <p class="description">
+                                        Der vollständige Prompt, der an die KI gesendet wird. Definiere die Struktur und den Inhalt des Briefings.
+                                        Das Ergebnis sollte im Markdown-Format sein.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Variables Builder -->
+                            <div class="postbox">
+                                <h2 class="hndle"><span>Eingabefelder (Variablen)</span></h2>
+                                <div class="inside">
+                                    <p class="description">Definiere die Eingabefelder, die der Nutzer ausfüllen muss. Die Keys können dann im Prompt als <code>${key}</code> verwendet werden.</p>
+
+                                    <div class="smartbriefing-variables-container" id="variables-container">
+                                        <?php if (empty($data['variables_schema'])): ?>
+                                            <p class="no-variables-notice">Noch keine Eingabefelder definiert. Klicke auf "Feld hinzufügen" um zu beginnen.</p>
+                                        <?php else: ?>
+                                            <?php foreach ($data['variables_schema'] as $index => $var): ?>
+                                                <?php $this->render_variable_item($index, $var); ?>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <button type="button" class="button add-variable-btn" id="add-variable">+ Feld hinzufügen</button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Sidebar -->
+                        <div id="postbox-container-1" class="postbox-container">
+                            <div class="postbox">
+                                <h2 class="hndle"><span>Veröffentlichen</span></h2>
+                                <div class="inside">
+                                    <div class="submitbox">
+                                        <p>
+                                            <label>
+                                                <input type="checkbox" name="is_active" value="1" <?php checked($data['is_active'], 1); ?>>
+                                                Aktiv (für Nutzer sichtbar)
+                                            </label>
+                                        </p>
+                                        <p>
+                                            <label for="sort_order">Reihenfolge:</label>
+                                            <input type="number" name="sort_order" id="sort_order" value="<?php echo esc_attr($data['sort_order']); ?>" style="width: 60px;">
+                                        </p>
+                                        <hr>
+                                        <p>
+                                            <input type="submit" class="button button-primary button-large" value="<?php echo $is_edit ? 'Aktualisieren' : 'Template erstellen'; ?>">
+                                            <a href="<?php echo admin_url('admin.php?page=smartbriefing-templates'); ?>" class="button">Abbrechen</a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="postbox">
+                                <h2 class="hndle"><span>Hilfe</span></h2>
+                                <div class="inside">
+                                    <p><strong>So funktioniert Smart Briefing:</strong></p>
+                                    <ol>
+                                        <li>Definiere Eingabefelder (z.B. Firma, Position)</li>
+                                        <li>Schreibe einen KI-Prompt mit Platzhaltern</li>
+                                        <li>Nutzer füllt die Felder aus</li>
+                                        <li>KI generiert ein personalisiertes Briefing</li>
+                                    </ol>
+                                    <p><strong>Prompt-Tipps:</strong></p>
+                                    <ul>
+                                        <li>Nutze ### für Überschriften</li>
+                                        <li>Definiere klare Sektionen</li>
+                                        <li>Sei spezifisch mit Anweisungen</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <script type="text/template" id="variable-item-template">
+            <?php $this->render_variable_item('{{INDEX}}', array()); ?>
+        </script>
+
+        <script type="text/template" id="option-item-template">
+            <div class="smartbriefing-option-item">
+                <input type="text" name="var_options[{{INDEX}}][value][]" placeholder="Wert (value)" value="">
+                <input type="text" name="var_options[{{INDEX}}][label][]" placeholder="Anzeigename (label)" value="">
+                <button type="button" class="remove-btn remove-option" title="Option entfernen">&times;</button>
+            </div>
+        </script>
+
+        <script>
+        jQuery(function($) {
+            var variableIndex = <?php echo count($data['variables_schema']); ?>;
+
+            // Make variables sortable
+            $('#variables-container').sortable({
+                handle: '.handle',
+                items: '.smartbriefing-variable-item',
+                placeholder: 'sortable-placeholder',
+                update: function() {
+                    // Reindex after sorting if needed
+                }
+            });
+
+            // Add new variable
+            $('#add-variable').on('click', function() {
+                var template = $('#variable-item-template').html();
+                template = template.replace(/\{\{INDEX\}\}/g, variableIndex);
+                $('#variables-container').append(template);
+                $('.no-variables-notice').hide();
+                variableIndex++;
+            });
+
+            // Remove variable
+            $(document).on('click', '.remove-variable', function() {
+                $(this).closest('.smartbriefing-variable-item').remove();
+                if ($('.smartbriefing-variable-item').length === 0) {
+                    $('.no-variables-notice').show();
+                }
+            });
+
+            // Toggle options container based on type
+            $(document).on('change', '.var-type-select', function() {
+                var $item = $(this).closest('.smartbriefing-variable-item');
+                var type = $(this).val();
+                if (type === 'select') {
+                    $item.find('.smartbriefing-options-container').show();
+                } else {
+                    $item.find('.smartbriefing-options-container').hide();
+                }
+            });
+
+            // Add option
+            $(document).on('click', '.add-option-btn', function() {
+                var $container = $(this).siblings('.options-list');
+                var index = $(this).closest('.smartbriefing-variable-item').data('index');
+                var template = $('#option-item-template').html();
+                template = template.replace(/\{\{INDEX\}\}/g, index);
+                $container.append(template);
+            });
+
+            // Remove option
+            $(document).on('click', '.remove-option', function() {
+                $(this).closest('.smartbriefing-option-item').remove();
+            });
+
+            // Auto-generate key from label
+            $(document).on('blur', '.var-label-input', function() {
+                var $item = $(this).closest('.smartbriefing-variable-item');
+                var $keyInput = $item.find('.var-key-input');
+
+                if ($keyInput.val() === '') {
+                    var label = $(this).val();
+                    // Convert to snake_case key
+                    var key = label.toLowerCase()
+                        .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                        .replace(/[^a-z0-9]+/g, '_')
+                        .replace(/^_|_$/g, '');
+                    $keyInput.val(key);
+                    $item.find('.variable-key-preview').text('${' + key + '}');
+                }
+            });
+
+            // Update key preview on key change
+            $(document).on('input', '.var-key-input', function() {
+                var $item = $(this).closest('.smartbriefing-variable-item');
+                var key = $(this).val();
+                $item.find('.variable-key-preview').text('${' + key + '}');
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * Render a single variable item in the builder
+     */
+    private function render_variable_item($index, $var) {
+        $defaults = array(
+            'key' => '',
+            'label' => '',
+            'type' => 'text',
+            'required' => false,
+            'placeholder' => '',
+            'default' => '',
+            'options' => array(),
+        );
+        $var = wp_parse_args($var, $defaults);
+        ?>
+        <div class="smartbriefing-variable-item" data-index="<?php echo esc_attr($index); ?>">
+            <div class="smartbriefing-variable-header">
+                <span>
+                    <span class="handle dashicons dashicons-menu"></span>
+                    <span class="variable-key-preview">${<?php echo esc_html($var['key'] ?: 'key'); ?>}</span>
+                </span>
+                <button type="button" class="remove-btn remove-variable" title="Feld entfernen">&times;</button>
+            </div>
+            <div class="smartbriefing-variable-fields">
+                <div>
+                    <label>Key (Variable) *</label>
+                    <input type="text" name="var_key[]" class="var-key-input" value="<?php echo esc_attr($var['key']); ?>" placeholder="z.B. target_company" pattern="[a-z_]+" required>
+                </div>
+                <div>
+                    <label>Label (Anzeigename) *</label>
+                    <input type="text" name="var_label[]" class="var-label-input" value="<?php echo esc_attr($var['label']); ?>" placeholder="z.B. Zielunternehmen" required>
+                </div>
+                <div>
+                    <label>Typ</label>
+                    <select name="var_type[]" class="var-type-select">
+                        <option value="text" <?php selected($var['type'], 'text'); ?>>Text (einzeilig)</option>
+                        <option value="textarea" <?php selected($var['type'], 'textarea'); ?>>Textarea (mehrzeilig)</option>
+                        <option value="select" <?php selected($var['type'], 'select'); ?>>Dropdown (Auswahl)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>
+                        <input type="checkbox" name="var_required[<?php echo esc_attr($index); ?>]" value="1" <?php checked($var['required']); ?>>
+                        Pflichtfeld
+                    </label>
+                </div>
+                <div class="full-width">
+                    <label>Placeholder</label>
+                    <input type="text" name="var_placeholder[]" value="<?php echo esc_attr($var['placeholder']); ?>" placeholder="Hinweistext im leeren Feld">
+                </div>
+                <div class="full-width">
+                    <label>Standardwert</label>
+                    <input type="text" name="var_default[]" value="<?php echo esc_attr($var['default']); ?>" placeholder="Optionaler Standardwert">
+                </div>
+
+                <!-- Options for select type -->
+                <div class="full-width smartbriefing-options-container" style="<?php echo $var['type'] !== 'select' ? 'display:none;' : ''; ?>">
+                    <label>Auswahloptionen:</label>
+                    <div class="options-list">
+                        <?php if (!empty($var['options'])): ?>
+                            <?php foreach ($var['options'] as $opt): ?>
+                                <div class="smartbriefing-option-item">
+                                    <input type="text" name="var_options[<?php echo esc_attr($index); ?>][value][]" placeholder="Wert (value)" value="<?php echo esc_attr($opt['value']); ?>">
+                                    <input type="text" name="var_options[<?php echo esc_attr($index); ?>][label][]" placeholder="Anzeigename (label)" value="<?php echo esc_attr($opt['label']); ?>">
+                                    <button type="button" class="remove-btn remove-option" title="Option entfernen">&times;</button>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                    <button type="button" class="button button-small add-option-btn">+ Option hinzufügen</button>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Map icon name to dashicon
+     */
+    private function get_dashicon($icon) {
+        $map = array(
+            'file-text' => 'media-document',
+            'briefcase' => 'portfolio',
+            'banknote' => 'money-alt',
+            'users' => 'groups',
+            'user' => 'admin-users',
+            'message-circle' => 'format-chat',
+            'target' => 'marker',
+            'award' => 'awards',
+            'book' => 'book',
+            'clipboard' => 'clipboard',
+            'star' => 'star-filled',
+            'lightbulb' => 'lightbulb',
+            'shield' => 'shield',
+            'compass' => 'location',
+            'rocket' => 'airplane',
+        );
+
+        return isset($map[$icon]) ? $map[$icon] : 'admin-generic';
+    }
+}

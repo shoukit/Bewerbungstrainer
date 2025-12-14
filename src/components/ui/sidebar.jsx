@@ -22,6 +22,7 @@ import {
   Shield,
   Users,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/Toast';
@@ -110,6 +111,14 @@ const NAV_ITEMS = [
     shortLabel: 'Live',
     icon: MessageSquare,
     description: 'Live Simulationen mit KI-Interviewer',
+  },
+  {
+    id: 'smart_briefing',
+    moduleId: 'smart_briefing', // Maps to WordPress module
+    label: 'Smart Briefing',
+    shortLabel: 'Briefing',
+    icon: Sparkles,
+    description: 'KI-Vorbereitungs-Assistent',
   },
   {
     id: 'gym',

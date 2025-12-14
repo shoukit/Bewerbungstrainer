@@ -72,6 +72,20 @@ const OverviewDashboard = ({ onNavigate }) => {
       accentColor: '#3B82F6',
     },
     {
+      id: 'smart_briefing',
+      icon: Sparkles,
+      title: 'Smart Briefing',
+      subtitle: 'KI-Vorbereitungs-Assistent',
+      description: 'Erhalte massgeschneiderte Briefings fur deine Gesprache. Die KI erstellt dir Insider-Wissen, fachliche Must-Haves und clevere Ruckfragen - basierend auf deinen spezifischen Angaben.',
+      highlights: [
+        'Personalisierte Gesprächsvorbereitung',
+        'Branchenspezifisches Wissen',
+        'Intelligente Rückfragen-Vorschläge',
+      ],
+      gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+      accentColor: '#EC4899',
+    },
+    {
       id: 'gym_klassiker',
       icon: Dumbbell,
       title: 'Rhetorik-Gym',
