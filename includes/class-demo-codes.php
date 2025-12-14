@@ -408,7 +408,8 @@ class Bewerbungstrainer_Demo_Codes {
 
         // Set first_used_at only if not already set
         $existing = $this->get_code($code);
-        if ($existing && empty($existing->first_used_at)) {
+        $is_first_activation = ($existing && empty($existing->first_used_at));
+        if ($is_first_activation) {
             $update_data['first_used_at'] = current_time('mysql');
         }
 
@@ -419,6 +420,13 @@ class Bewerbungstrainer_Demo_Codes {
             array('%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s'),
             array('%s')
         );
+
+        // Create usage limit entry on first activation
+        if ($result !== false && $is_first_activation) {
+            $usage_limits = Bewerbungstrainer_Usage_Limits::get_instance();
+            $usage_limits->set_user_limit($code, 'demo_code', Bewerbungstrainer_Usage_Limits::DEFAULT_MONTHLY_MINUTES);
+            error_log('[DEMO_CODES] Created usage limit entry for newly activated code: ' . $code);
+        }
 
         return $result !== false;
     }

@@ -799,7 +799,13 @@ class Bewerbungstrainer_Usage_Limits {
                             $user_display = '-';
                             if (!empty($limit->user_id)) {
                                 $user = get_user_by('id', $limit->user_id);
-                                $user_display = $user ? esc_html($user->user_login . ' (' . $user->display_name . ')') : 'User #' . $limit->user_id;
+                                if ($user) {
+                                    $user_display = esc_html($user->user_login . ' (' . $user->display_name . ')');
+                                } else {
+                                    $user_display = '<span style="color: #ef4444;">User #' . esc_html($limit->user_id) . ' (nicht gefunden)</span>';
+                                }
+                            } elseif (empty($limit->demo_code)) {
+                                $user_display = '<span style="color: #f59e0b;">Kein Benutzer zugewiesen</span>';
                             }
                             ?>
                             <tr>
