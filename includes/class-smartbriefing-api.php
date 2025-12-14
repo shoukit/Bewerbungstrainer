@@ -738,28 +738,21 @@ class Bewerbungstrainer_SmartBriefing_API {
         $prompt .= "=== SYSTEM-ANWEISUNGEN ===\n";
         $prompt .= $system_prompt . "\n\n";
         $prompt .= "=== OUTPUT FORMAT ===\n";
-        $prompt .= "WICHTIG: Antworte ausschließlich mit einem validen JSON-Objekt. Keine Erklärungen, kein Markdown drumherum.\n\n";
+        $prompt .= "KRITISCH: Antworte NUR mit einem validen JSON-Objekt. KEINE Code-Blöcke, KEIN Markdown, KEIN Text davor oder danach.\n";
+        $prompt .= "Deine Antwort MUSS mit { beginnen und mit } enden.\n\n";
         $prompt .= "Jede Section MUSS ein Array von Items enthalten. Jedes Item hat einen Titel (label) und eine Beschreibung (content).\n\n";
-        $prompt .= "Struktur:\n";
-        $prompt .= "```json\n";
+        $prompt .= "Erwartete JSON-Struktur:\n";
         $prompt .= "{\n";
         $prompt .= "  \"sections\": [\n";
         $prompt .= "    {\n";
         $prompt .= "      \"title\": \"1. Abschnittstitel 🎯\",\n";
         $prompt .= "      \"items\": [\n";
-        $prompt .= "        {\n";
-        $prompt .= "          \"label\": \"Punkt-Titel\",\n";
-        $prompt .= "          \"content\": \"Beschreibung oder Erklärung zum Punkt.\"\n";
-        $prompt .= "        },\n";
-        $prompt .= "        {\n";
-        $prompt .= "          \"label\": \"Zweiter Punkt\",\n";
-        $prompt .= "          \"content\": \"Weitere Details und Tipps.\"\n";
-        $prompt .= "        }\n";
+        $prompt .= "        {\"label\": \"Punkt-Titel\", \"content\": \"Beschreibung oder Erklärung.\"},\n";
+        $prompt .= "        {\"label\": \"Zweiter Punkt\", \"content\": \"Weitere Details.\"}\n";
         $prompt .= "      ]\n";
         $prompt .= "    }\n";
         $prompt .= "  ]\n";
-        $prompt .= "}\n";
-        $prompt .= "```\n\n";
+        $prompt .= "}\n\n";
         $prompt .= "=== INHALT-RICHTLINIEN ===\n";
         $prompt .= "- Jede Section hat einen nummerierten Titel mit Emoji (z.B. '1. Dein Personal Pitch 👤')\n";
         $prompt .= "- Jede Section enthält 3-7 konkrete Items\n";
@@ -770,8 +763,7 @@ class Bewerbungstrainer_SmartBriefing_API {
         $prompt .= "- Sei spezifisch und konkret - vermeide allgemeine Phrasen\n";
         $prompt .= "- Beziehe dich auf die konkreten Angaben des Nutzers\n";
         $prompt .= "- Erstelle 4-6 aussagekräftige Sections\n\n";
-        $prompt .= "=== WICHTIG ===\n";
-        $prompt .= "Gib NUR das JSON-Objekt zurück. Kein ```json, kein Text davor oder danach.\n";
+        $prompt .= "ERINNERUNG: Starte deine Antwort DIREKT mit { - kein Text, keine Backticks, kein 'json' Marker.\n";
 
         return $prompt;
     }
@@ -781,31 +773,75 @@ class Bewerbungstrainer_SmartBriefing_API {
      * Now supports items per section with individual notes capability
      */
     private function parse_sections_response($response) {
-        // Clean up the response - remove markdown code blocks if present
+        $original = $response;
         $cleaned = trim($response);
-        $cleaned = preg_replace('/^```json\s*/i', '', $cleaned);
-        $cleaned = preg_replace('/^```\s*/i', '', $cleaned);
-        $cleaned = preg_replace('/\s*```$/i', '', $cleaned);
-        $cleaned = trim($cleaned);
 
-        // Try to parse JSON
+        // Debug: Log first part of raw response
+        error_log('[SMARTBRIEFING] Raw response (first 300 chars): ' . substr($cleaned, 0, 300));
+
+        // Step 1: Try to extract JSON from code blocks FIRST (before any stripping)
+        // This handles: ```json\n{...}\n``` or ```\n{...}\n```
+        if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/', $cleaned, $matches)) {
+            $cleaned = trim($matches[1]);
+            error_log('[SMARTBRIEFING] Extracted from code block');
+        } else {
+            // Step 2: No code block found, strip leading/trailing markers if present
+            $cleaned = preg_replace('/^```json\s*/i', '', $cleaned);
+            $cleaned = preg_replace('/^```\s*/', '', $cleaned);
+            $cleaned = preg_replace('/\s*```\s*$/', '', $cleaned);
+            $cleaned = trim($cleaned);
+        }
+
+        // Debug logging
+        error_log('[SMARTBRIEFING] Cleaned response (first 300 chars): ' . substr($cleaned, 0, 300));
+
+        // Step 3: Try to parse JSON
         $data = json_decode($cleaned, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             error_log('[SMARTBRIEFING] JSON parse error: ' . json_last_error_msg());
-            error_log('[SMARTBRIEFING] Raw response: ' . substr($response, 0, 500));
-            return new WP_Error('json_parse_error', 'Failed to parse JSON response');
+
+            // Step 4: Fallback - try to find JSON object containing "sections" anywhere in original response
+            if (preg_match('/\{[^{}]*"sections"\s*:\s*\[[\s\S]*?\]\s*\}/', $original, $jsonMatch)) {
+                $data = json_decode($jsonMatch[0], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    error_log('[SMARTBRIEFING] Successfully extracted JSON using fallback regex');
+                }
+            }
+
+            // Step 5: More aggressive fallback - find anything that looks like our JSON structure
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                // Find the first { and last } to extract full JSON
+                $start = strpos($original, '{');
+                $end = strrpos($original, '}');
+                if ($start !== false && $end !== false && $end > $start) {
+                    $extracted = substr($original, $start, $end - $start + 1);
+                    $data = json_decode($extracted, true);
+                    if (json_last_error() === JSON_ERROR_NONE && isset($data['sections'])) {
+                        error_log('[SMARTBRIEFING] Successfully extracted JSON using brace extraction');
+                    }
+                }
+            }
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log('[SMARTBRIEFING] All parsing attempts failed');
+                return new WP_Error('json_parse_error', 'Failed to parse JSON response: ' . json_last_error_msg());
+            }
         }
 
         if (!isset($data['sections']) || !is_array($data['sections'])) {
             error_log('[SMARTBRIEFING] Invalid response structure - no sections array');
+            error_log('[SMARTBRIEFING] Data keys: ' . print_r(array_keys($data ?? []), true));
             return new WP_Error('invalid_structure', 'Response missing sections array');
         }
+
+        error_log('[SMARTBRIEFING] Found ' . count($data['sections']) . ' sections');
 
         // Transform to database format
         $sections = array();
         foreach ($data['sections'] as $index => $section) {
             if (!isset($section['title'])) {
+                error_log('[SMARTBRIEFING] Section ' . $index . ' missing title, skipping');
                 continue;
             }
 
@@ -826,6 +862,8 @@ class Bewerbungstrainer_SmartBriefing_API {
                     );
                 }
 
+                error_log('[SMARTBRIEFING] Section "' . $section['title'] . '" has ' . count($items) . ' items');
+
                 $sections[] = array(
                     'sort_order' => $index,
                     'section_title' => $section['title'],
@@ -844,9 +882,11 @@ class Bewerbungstrainer_SmartBriefing_API {
         }
 
         if (empty($sections)) {
+            error_log('[SMARTBRIEFING] No valid sections found after processing');
             return new WP_Error('no_sections', 'No valid sections found in response');
         }
 
+        error_log('[SMARTBRIEFING] Successfully parsed ' . count($sections) . ' sections');
         return $sections;
     }
 
