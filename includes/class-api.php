@@ -1919,6 +1919,8 @@ class Bewerbungstrainer_API {
      */
     public function get_roleplay_sessions($request) {
         $params = $request->get_params();
+        $current_user_id = get_current_user_id();
+        $is_demo_user = Bewerbungstrainer_Demo_Codes::is_demo_user();
 
         $args = array(
             'limit' => isset($params['limit']) ? intval($params['limit']) : 50,
@@ -1929,20 +1931,25 @@ class Bewerbungstrainer_API {
             'demo_code' => isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null,
         );
 
+        // Debug logging
+        error_log("[Bewerbungstrainer] get_roleplay_sessions - user_id: $current_user_id, is_demo_user: " . ($is_demo_user ? 'yes' : 'no') . ", demo_code: " . ($args['demo_code'] ?: 'none'));
+
         // Check if current user is demo user and filter by demo_code
-        if (Bewerbungstrainer_Demo_Codes::is_demo_user() && !empty($args['demo_code'])) {
+        if ($is_demo_user && !empty($args['demo_code'])) {
             // Demo user with code - filter by code
-            $sessions = $this->db->get_user_roleplay_sessions(get_current_user_id(), $args);
-            $total = $this->db->get_user_roleplay_sessions_count(get_current_user_id(), $args['scenario_id'], $args['demo_code']);
-        } else if (Bewerbungstrainer_Demo_Codes::is_demo_user() && empty($args['demo_code'])) {
+            $sessions = $this->db->get_user_roleplay_sessions($current_user_id, $args);
+            $total = $this->db->get_user_roleplay_sessions_count($current_user_id, $args['scenario_id'], $args['demo_code']);
+        } else if ($is_demo_user && empty($args['demo_code'])) {
             // Demo user without code - return empty (they need a code to see sessions)
             $sessions = array();
             $total = 0;
         } else {
             // Regular user - normal behavior
-            $sessions = $this->db->get_user_roleplay_sessions(get_current_user_id(), $args);
-            $total = $this->db->get_user_roleplay_sessions_count(get_current_user_id(), $args['scenario_id']);
+            $sessions = $this->db->get_user_roleplay_sessions($current_user_id, $args);
+            $total = $this->db->get_user_roleplay_sessions_count($current_user_id, $args['scenario_id']);
         }
+
+        error_log("[Bewerbungstrainer] get_roleplay_sessions - found " . count($sessions) . " sessions for user $current_user_id");
 
         $formatted_sessions = array_map(array($this, 'format_roleplay_session'), $sessions);
 
@@ -1953,6 +1960,12 @@ class Bewerbungstrainer_API {
                 'total' => $total,
                 'limit' => $args['limit'],
                 'offset' => $args['offset'],
+            ),
+            'debug' => array(
+                'current_user_id' => $current_user_id,
+                'is_demo_user' => $is_demo_user,
+                'demo_code_param' => $args['demo_code'],
+                'sessions_found' => count($sessions),
             ),
         ), 200);
     }
