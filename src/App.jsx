@@ -555,6 +555,13 @@ function AppContent() {
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+            onNavigateToSimulator={(variables) => {
+              // Navigate to simulator dashboard - variables can be used to pre-fill forms
+              console.log('[APP] Navigating to simulator from Smart Briefing with variables:', variables);
+              // Store variables for potential use in simulator
+              // The simulator can access these via props or context if needed
+              setCurrentView(VIEWS.SIMULATOR);
+            }}
           />
         );
 

@@ -95,6 +95,15 @@ class Bewerbungstrainer_SmartBriefing_API {
             'callback' => array($this, 'delete_briefing'),
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
+
+        // ===== Section Endpoints =====
+
+        // Update section (for user notes)
+        register_rest_route($this->namespace, '/smartbriefing/sections/(?P<id>\d+)', array(
+            'methods' => 'PATCH',
+            'callback' => array($this, 'update_section'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
     }
 
     /**
@@ -218,11 +227,15 @@ class Bewerbungstrainer_SmartBriefing_API {
         $user_id = get_current_user_id();
         $variables = isset($params['variables']) ? $params['variables'] : array();
 
+        // Generate title from variables or date
+        $briefing_title = $this->generate_briefing_title($template, $variables);
+
         // Create briefing record first
         $briefing_data = array(
             'user_id' => $user_id,
             'user_name' => isset($params['user_name']) ? $params['user_name'] : null,
             'template_id' => $params['template_id'],
+            'title' => $briefing_title,
             'variables_json' => $variables,
             'status' => 'generating',
             'demo_code' => isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null,
@@ -241,8 +254,8 @@ class Bewerbungstrainer_SmartBriefing_API {
         // Build prompt with variable interpolation
         $system_prompt = $this->interpolate_variables($template->system_prompt, $variables);
 
-        // Build full prompt
-        $full_prompt = $this->build_briefing_prompt($system_prompt, $variables, $template->title);
+        // Build full prompt requesting JSON output
+        $full_prompt = $this->build_briefing_prompt_json($system_prompt, $variables, $template->title);
 
         // Log prompt
         if (function_exists('bewerbungstrainer_log_prompt')) {
@@ -282,19 +295,36 @@ class Bewerbungstrainer_SmartBriefing_API {
             bewerbungstrainer_log_response('SMARTBRIEFING_GENERATE', $response);
         }
 
-        // Update briefing with generated content
-        $this->db->update_briefing($briefing_id, array(
-            'content_markdown' => $response,
-            'status' => 'completed',
-        ));
+        // Parse JSON response and create sections
+        $sections_data = $this->parse_sections_response($response);
 
-        // Get updated briefing
+        if (is_wp_error($sections_data)) {
+            // Fallback: Store raw response as markdown
+            error_log('[SMARTBRIEFING] Failed to parse JSON, using raw response');
+            $this->db->update_briefing($briefing_id, array(
+                'content_markdown' => $response,
+                'status' => 'completed',
+            ));
+        } else {
+            // Create sections in database
+            $this->db->create_sections($briefing_id, $sections_data);
+
+            // Also store full markdown for backward compatibility
+            $full_markdown = $this->sections_to_markdown($sections_data);
+            $this->db->update_briefing($briefing_id, array(
+                'content_markdown' => $full_markdown,
+                'status' => 'completed',
+            ));
+        }
+
+        // Get updated briefing with sections
         $briefing = $this->db->get_briefing($briefing_id);
+        $sections = $this->db->get_briefing_sections($briefing_id);
 
         return new WP_REST_Response(array(
             'success' => true,
             'data' => array(
-                'briefing' => $this->format_briefing($briefing),
+                'briefing' => $this->format_briefing($briefing, $sections),
             ),
         ), 201);
     }
@@ -332,7 +362,7 @@ class Bewerbungstrainer_SmartBriefing_API {
     }
 
     /**
-     * Get specific briefing
+     * Get specific briefing with sections
      */
     public function get_briefing($request) {
         $briefing_id = intval($request['id']);
@@ -346,10 +376,80 @@ class Bewerbungstrainer_SmartBriefing_API {
             );
         }
 
+        // Get sections for this briefing
+        $sections = $this->db->get_briefing_sections($briefing_id);
+
         return new WP_REST_Response(array(
             'success' => true,
             'data' => array(
-                'briefing' => $this->format_briefing($briefing),
+                'briefing' => $this->format_briefing($briefing, $sections),
+            ),
+        ), 200);
+    }
+
+    /**
+     * Update a section (user notes)
+     */
+    public function update_section($request) {
+        $section_id = intval($request['id']);
+        $params = $request->get_json_params();
+
+        if (empty($params)) {
+            $params = $request->get_params();
+        }
+
+        // Get the section
+        $section = $this->db->get_section($section_id);
+
+        if (!$section) {
+            return new WP_Error(
+                'not_found',
+                __('Section nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Verify user owns this briefing
+        $briefing = $this->db->get_briefing($section->briefing_id);
+        if (!$briefing || (int) $briefing->user_id !== get_current_user_id()) {
+            return new WP_Error(
+                'unauthorized',
+                __('Du bist nicht berechtigt, diese Section zu bearbeiten.', 'bewerbungstrainer'),
+                array('status' => 403)
+            );
+        }
+
+        // Update user_notes
+        $update_data = array();
+        if (isset($params['user_notes'])) {
+            $update_data['user_notes'] = $params['user_notes'];
+        }
+
+        if (empty($update_data)) {
+            return new WP_Error(
+                'no_data',
+                __('Keine Daten zum Aktualisieren.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        $result = $this->db->update_section($section_id, $update_data);
+
+        if (!$result) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Aktualisieren der Section.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Return updated section
+        $updated_section = $this->db->get_section($section_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'section' => $this->format_section($updated_section),
             ),
         ), 200);
     }
@@ -384,41 +484,175 @@ class Bewerbungstrainer_SmartBriefing_API {
     /**
      * Format briefing for API response
      */
-    private function format_briefing($briefing) {
-        return array(
+    private function format_briefing($briefing, $sections = null) {
+        $formatted = array(
             'id' => (int) $briefing->id,
             'briefing_uuid' => $briefing->briefing_uuid,
             'template_id' => (int) $briefing->template_id,
             'template_title' => $briefing->template_title,
             'template_icon' => $briefing->template_icon,
+            'title' => $briefing->title,
             'variables' => $briefing->variables_json,
             'content_markdown' => $briefing->content_markdown,
             'status' => $briefing->status,
             'created_at' => $briefing->created_at,
             'updated_at' => $briefing->updated_at,
         );
+
+        // Include sections if provided
+        if ($sections !== null) {
+            $formatted['sections'] = array_map(array($this, 'format_section'), $sections);
+        }
+
+        return $formatted;
     }
 
     /**
-     * Build briefing generation prompt
+     * Format section for API response
      */
-    private function build_briefing_prompt($system_prompt, $variables, $template_title) {
+    private function format_section($section) {
+        return array(
+            'id' => (int) $section->id,
+            'briefing_id' => (int) $section->briefing_id,
+            'sort_order' => (int) $section->sort_order,
+            'section_title' => $section->section_title,
+            'ai_content' => $section->ai_content,
+            'user_notes' => $section->user_notes,
+            'created_at' => $section->created_at,
+            'updated_at' => $section->updated_at,
+        );
+    }
+
+    /**
+     * Generate a title for the briefing from variables
+     */
+    private function generate_briefing_title($template, $variables) {
+        // Try to create a meaningful title from variables
+        $title_parts = array();
+
+        // Common variable keys for title generation
+        $priority_keys = array(
+            'target_company', 'company', 'customer_name', 'kunde',
+            'role_name', 'position', 'rolle',
+        );
+
+        foreach ($priority_keys as $key) {
+            if (!empty($variables[$key])) {
+                $title_parts[] = $variables[$key];
+                if (count($title_parts) >= 2) {
+                    break;
+                }
+            }
+        }
+
+        // If we have variable-based title parts, use them
+        if (!empty($title_parts)) {
+            return implode(' - ', $title_parts);
+        }
+
+        // Fallback: Template title + date
+        $date = date_i18n('d.m.Y H:i');
+        return $template->title . ' - ' . $date;
+    }
+
+    /**
+     * Build briefing generation prompt for JSON output
+     */
+    private function build_briefing_prompt_json($system_prompt, $variables, $template_title) {
         $prompt = "Du bist ein KI-Assistent, der professionelle Briefings erstellt.\n\n";
         $prompt .= "=== AUFGABE ===\n";
         $prompt .= "Erstelle ein strukturiertes, umfassendes Briefing basierend auf den folgenden Anweisungen.\n\n";
         $prompt .= "=== SYSTEM-ANWEISUNGEN ===\n";
         $prompt .= $system_prompt . "\n\n";
-        $prompt .= "=== FORMATIERUNG ===\n";
-        $prompt .= "- Verwende Markdown für die Formatierung\n";
-        $prompt .= "- Nutze Überschriften (###) für klare Struktur\n";
-        $prompt .= "- Verwende Bulletpoints für Listen\n";
+        $prompt .= "=== OUTPUT FORMAT ===\n";
+        $prompt .= "WICHTIG: Antworte ausschließlich mit einem validen JSON-Objekt. Keine Erklärungen, kein Markdown drumherum.\n\n";
+        $prompt .= "Struktur:\n";
+        $prompt .= "```json\n";
+        $prompt .= "{\n";
+        $prompt .= "  \"sections\": [\n";
+        $prompt .= "    {\n";
+        $prompt .= "      \"title\": \"1. Abschnittstitel\",\n";
+        $prompt .= "      \"content\": \"Inhalt mit **Markdown** Formatierung (Bulletpoints, fett, etc.)\"\n";
+        $prompt .= "    },\n";
+        $prompt .= "    ...\n";
+        $prompt .= "  ]\n";
+        $prompt .= "}\n";
+        $prompt .= "```\n\n";
+        $prompt .= "=== INHALT-RICHTLINIEN ===\n";
+        $prompt .= "- Formatiere 'content' mit Markdown (Bulletpoints mit -, fett mit **, etc.)\n";
+        $prompt .= "- Jede Section sollte einen klar nummerierten Titel haben (z.B. '1. Dein Personal Pitch')\n";
         $prompt .= "- Halte den Ton professionell aber motivierend\n";
         $prompt .= "- Sei spezifisch und konkret - vermeide allgemeine Phrasen\n";
-        $prompt .= "- Beziehe dich auf die konkreten Angaben des Nutzers\n\n";
+        $prompt .= "- Beziehe dich auf die konkreten Angaben des Nutzers\n";
+        $prompt .= "- Erstelle 4-6 aussagekräftige Sections\n\n";
         $prompt .= "=== WICHTIG ===\n";
-        $prompt .= "Antworte NUR mit dem Briefing-Inhalt in Markdown. Keine Einleitung, keine Erklärungen.\n";
+        $prompt .= "Gib NUR das JSON-Objekt zurück. Kein ```json, kein Text davor oder danach.\n";
 
         return $prompt;
+    }
+
+    /**
+     * Parse JSON sections response from LLM
+     */
+    private function parse_sections_response($response) {
+        // Clean up the response - remove markdown code blocks if present
+        $cleaned = trim($response);
+        $cleaned = preg_replace('/^```json\s*/i', '', $cleaned);
+        $cleaned = preg_replace('/^```\s*/i', '', $cleaned);
+        $cleaned = preg_replace('/\s*```$/i', '', $cleaned);
+        $cleaned = trim($cleaned);
+
+        // Try to parse JSON
+        $data = json_decode($cleaned, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log('[SMARTBRIEFING] JSON parse error: ' . json_last_error_msg());
+            error_log('[SMARTBRIEFING] Raw response: ' . substr($response, 0, 500));
+            return new WP_Error('json_parse_error', 'Failed to parse JSON response');
+        }
+
+        if (!isset($data['sections']) || !is_array($data['sections'])) {
+            error_log('[SMARTBRIEFING] Invalid response structure - no sections array');
+            return new WP_Error('invalid_structure', 'Response missing sections array');
+        }
+
+        // Transform to database format
+        $sections = array();
+        foreach ($data['sections'] as $index => $section) {
+            if (!isset($section['title']) || !isset($section['content'])) {
+                continue;
+            }
+
+            $sections[] = array(
+                'sort_order' => $index,
+                'section_title' => $section['title'],
+                'ai_content' => $section['content'],
+                'user_notes' => null,
+            );
+        }
+
+        if (empty($sections)) {
+            return new WP_Error('no_sections', 'No valid sections found in response');
+        }
+
+        return $sections;
+    }
+
+    /**
+     * Convert sections array back to markdown
+     */
+    private function sections_to_markdown($sections) {
+        $markdown = '';
+
+        foreach ($sections as $section) {
+            $title = isset($section['section_title']) ? $section['section_title'] : $section['title'];
+            $content = isset($section['ai_content']) ? $section['ai_content'] : $section['content'];
+
+            $markdown .= "### " . $title . "\n\n";
+            $markdown .= $content . "\n\n";
+        }
+
+        return trim($markdown);
     }
 
     /**

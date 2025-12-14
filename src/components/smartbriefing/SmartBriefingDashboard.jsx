@@ -21,6 +21,7 @@ import {
   AlertCircle,
   ChevronRight,
   Sparkles,
+  FolderOpen,
 } from 'lucide-react';
 
 /**
@@ -178,6 +179,7 @@ const TemplateCard = ({ template, onSelect, primaryAccent }) => {
  */
 const SmartBriefingDashboard = ({
   onSelectTemplate,
+  onShowList,
   isAuthenticated,
   requireAuth,
   setPendingAction,
@@ -243,35 +245,60 @@ const SmartBriefingDashboard = ({
     >
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Sparkles size={24} style={{ color: 'white' }} />
-          </div>
-          <div>
-            <h1
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
               style={{
-                fontSize: '28px',
-                fontWeight: 700,
-                color: '#0f172a',
-                margin: 0,
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              Smart Briefing
-            </h1>
-            <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
-              Dein KI-gestützter Vorbereitungs-Assistent
-            </p>
+              <Sparkles size={24} style={{ color: 'white' }} />
+            </div>
+            <div>
+              <h1
+                style={{
+                  fontSize: '28px',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  margin: 0,
+                }}
+              >
+                Smart Briefing
+              </h1>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
+                Dein KI-gestützter Vorbereitungs-Assistent
+              </p>
+            </div>
           </div>
+          {/* My Briefings Button - Only for authenticated users */}
+          {isAuthenticated && onShowList && (
+            <button
+              onClick={onShowList}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                border: `2px solid ${primaryAccent}`,
+                backgroundColor: 'white',
+                color: primaryAccent,
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <FolderOpen size={18} />
+              Meine Briefings
+            </button>
+          )}
         </div>
       </div>
 

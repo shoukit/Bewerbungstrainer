@@ -2,6 +2,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import SmartBriefingDashboard from './SmartBriefingDashboard';
 import SmartBriefingForm from './SmartBriefingForm';
 import BriefingResult from './BriefingResult';
+import BriefingList from './BriefingList';
+import BriefingWorkbook from './BriefingWorkbook';
 
 /**
  * View states for the smart briefing flow
@@ -10,6 +12,8 @@ const VIEWS = {
   DASHBOARD: 'dashboard',
   FORM: 'form',
   RESULT: 'result',
+  LIST: 'list',
+  WORKBOOK: 'workbook',
 };
 
 /**
@@ -19,15 +23,19 @@ const VIEWS = {
  * 1. Dashboard (template selection)
  * 2. Form (variable input)
  * 3. Result (generated briefing display)
+ * 4. List (saved briefings overview)
+ * 5. Workbook (detailed briefing view with notes)
  */
 const SmartBriefingApp = ({
   isAuthenticated,
   requireAuth,
   setPendingAction,
+  onNavigateToSimulator,
 }) => {
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [generatedBriefing, setGeneratedBriefing] = useState(null);
+  const [selectedBriefing, setSelectedBriefing] = useState(null);
 
   // Track pending template for after login
   const [pendingTemplate, setPendingTemplate] = useState(null);
@@ -62,23 +70,27 @@ const SmartBriefingApp = ({
   const handleBackToDashboard = useCallback(() => {
     setSelectedTemplate(null);
     setGeneratedBriefing(null);
+    setSelectedBriefing(null);
     setCurrentView(VIEWS.DASHBOARD);
   }, []);
 
   /**
-   * Handle briefing generated
+   * Handle briefing generated - now goes to workbook instead of result
    */
   const handleBriefingGenerated = useCallback((briefing) => {
     console.log('[SmartBriefing] Briefing generated:', briefing.id);
     setGeneratedBriefing(briefing);
-    setCurrentView(VIEWS.RESULT);
+    setSelectedBriefing(briefing);
+    // Go directly to workbook view for the new section-based experience
+    setCurrentView(VIEWS.WORKBOOK);
   }, []);
 
   /**
-   * Handle create new briefing (from result view)
+   * Handle create new briefing (from list or workbook)
    */
   const handleCreateNew = useCallback(() => {
     setGeneratedBriefing(null);
+    setSelectedBriefing(null);
     setSelectedTemplate(null);
     setCurrentView(VIEWS.DASHBOARD);
   }, []);
@@ -88,8 +100,46 @@ const SmartBriefingApp = ({
    */
   const handleGenerateAnother = useCallback(() => {
     setGeneratedBriefing(null);
+    setSelectedBriefing(null);
     setCurrentView(VIEWS.FORM);
   }, []);
+
+  /**
+   * Handle navigate to saved briefings list
+   */
+  const handleShowList = useCallback(() => {
+    setCurrentView(VIEWS.LIST);
+  }, []);
+
+  /**
+   * Handle open briefing from list
+   */
+  const handleOpenBriefing = useCallback((briefing) => {
+    console.log('[SmartBriefing] Opening briefing:', briefing.id);
+    setSelectedBriefing(briefing);
+    setCurrentView(VIEWS.WORKBOOK);
+  }, []);
+
+  /**
+   * Handle back from workbook to list
+   */
+  const handleBackToList = useCallback(() => {
+    setSelectedBriefing(null);
+    setCurrentView(VIEWS.LIST);
+  }, []);
+
+  /**
+   * Handle start simulation from workbook
+   * Bridge feature: Pre-fill simulator with briefing variables
+   */
+  const handleStartSimulation = useCallback((variables) => {
+    console.log('[SmartBriefing] Starting simulation with variables:', variables);
+
+    if (onNavigateToSimulator) {
+      // Navigate to simulator with pre-filled variables
+      onNavigateToSimulator(variables);
+    }
+  }, [onNavigateToSimulator]);
 
   /**
    * Render current view
@@ -117,11 +167,30 @@ const SmartBriefingApp = ({
           />
         );
 
+      case VIEWS.LIST:
+        return (
+          <BriefingList
+            onOpenBriefing={handleOpenBriefing}
+            onCreateNew={handleCreateNew}
+            isAuthenticated={isAuthenticated}
+          />
+        );
+
+      case VIEWS.WORKBOOK:
+        return (
+          <BriefingWorkbook
+            briefing={selectedBriefing}
+            onBack={isAuthenticated ? handleBackToList : handleBackToDashboard}
+            onStartSimulation={onNavigateToSimulator ? handleStartSimulation : null}
+          />
+        );
+
       case VIEWS.DASHBOARD:
       default:
         return (
           <SmartBriefingDashboard
             onSelectTemplate={handleSelectTemplate}
+            onShowList={handleShowList}
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}

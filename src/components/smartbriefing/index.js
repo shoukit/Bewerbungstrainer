@@ -8,3 +8,5 @@ export { default as SmartBriefingApp } from './SmartBriefingApp';
 export { default as SmartBriefingDashboard } from './SmartBriefingDashboard';
 export { default as SmartBriefingForm } from './SmartBriefingForm';
 export { default as BriefingResult } from './BriefingResult';
+export { default as BriefingList } from './BriefingList';
+export { default as BriefingWorkbook } from './BriefingWorkbook';

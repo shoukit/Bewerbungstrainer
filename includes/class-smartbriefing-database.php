@@ -22,6 +22,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
      */
     private $table_templates;
     private $table_briefings;
+    private $table_sections;
 
     /**
      * Get singleton instance
@@ -40,6 +41,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
         global $wpdb;
         $this->table_templates = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_templates';
         $this->table_briefings = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_briefings';
+        $this->table_sections = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_sections';
 
         // Check if tables exist, create if not
         $this->maybe_create_tables();
@@ -93,7 +95,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
             KEY `sort_order` (`sort_order`)
         ) $charset_collate;";
 
-        // Briefings table - stores user-generated briefings
+        // Briefings table - stores user-generated briefings (UserBriefing container)
         $table_briefings = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_briefings';
         $sql_briefings = "CREATE TABLE IF NOT EXISTS `$table_briefings` (
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -101,6 +103,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
             `user_name` varchar(255) DEFAULT NULL,
             `template_id` bigint(20) UNSIGNED NOT NULL,
             `briefing_uuid` varchar(36) NOT NULL,
+            `title` varchar(255) DEFAULT NULL,
             `variables_json` longtext DEFAULT NULL,
             `content_markdown` longtext DEFAULT NULL,
             `status` varchar(20) DEFAULT 'generating',
@@ -116,9 +119,26 @@ class Bewerbungstrainer_SmartBriefing_Database {
             KEY `created_at` (`created_at`)
         ) $charset_collate;";
 
+        // Sections table - stores individual briefing sections (BriefingSection)
+        $table_sections = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_sections';
+        $sql_sections = "CREATE TABLE IF NOT EXISTS `$table_sections` (
+            `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            `briefing_id` bigint(20) UNSIGNED NOT NULL,
+            `sort_order` int(11) NOT NULL DEFAULT 0,
+            `section_title` varchar(255) NOT NULL,
+            `ai_content` longtext DEFAULT NULL,
+            `user_notes` longtext DEFAULT NULL,
+            `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `briefing_id` (`briefing_id`),
+            KEY `sort_order` (`sort_order`)
+        ) $charset_collate;";
+
         // Execute queries directly
         $wpdb->query($sql_templates);
         $wpdb->query($sql_briefings);
+        $wpdb->query($sql_sections);
 
         // Log any errors
         if ($wpdb->last_error) {
@@ -597,6 +617,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             'user_name' => null,
             'template_id' => 0,
             'briefing_uuid' => wp_generate_uuid4(),
+            'title' => null,
             'variables_json' => null,
             'content_markdown' => null,
             'status' => 'generating',
@@ -617,12 +638,13 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
                 'user_name' => $data['user_name'] ? sanitize_text_field($data['user_name']) : null,
                 'template_id' => intval($data['template_id']),
                 'briefing_uuid' => $data['briefing_uuid'],
+                'title' => $data['title'] ? sanitize_text_field($data['title']) : null,
                 'variables_json' => $data['variables_json'],
                 'content_markdown' => $data['content_markdown'],
                 'status' => $data['status'],
                 'demo_code' => $data['demo_code'] ? strtoupper(sanitize_text_field($data['demo_code'])) : null,
             ),
-            array('%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s')
+            array('%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s')
         );
 
         if ($result === false) {
@@ -647,7 +669,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
         $update_format = array();
 
         $allowed_fields = array(
-            'variables_json', 'content_markdown', 'status'
+            'title', 'variables_json', 'content_markdown', 'status'
         );
 
         foreach ($allowed_fields as $field) {
@@ -657,6 +679,11 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
                 // Convert arrays to JSON
                 if ($field === 'variables_json' && is_array($value)) {
                     $value = json_encode($value);
+                }
+
+                // Sanitize title
+                if ($field === 'title') {
+                    $value = sanitize_text_field($value);
                 }
 
                 $update_data[$field] = $value;
@@ -869,6 +896,14 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             return false;
         }
 
+        // Delete all associated sections first (cascade)
+        $wpdb->delete(
+            $this->table_sections,
+            array('briefing_id' => $briefing_id),
+            array('%d')
+        );
+
+        // Then delete the briefing
         $result = $wpdb->delete(
             $this->table_briefings,
             array(
@@ -886,6 +921,182 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
         return true;
     }
 
+    // =========================================================================
+    // SECTION METHODS
+    // =========================================================================
+
+    /**
+     * Create a new section
+     *
+     * @param array $data Section data
+     * @return int|false Section ID or false on failure
+     */
+    public function create_section($data) {
+        global $wpdb;
+
+        $defaults = array(
+            'briefing_id' => 0,
+            'sort_order' => 0,
+            'section_title' => '',
+            'ai_content' => null,
+            'user_notes' => null,
+        );
+
+        $data = wp_parse_args($data, $defaults);
+
+        $result = $wpdb->insert(
+            $this->table_sections,
+            array(
+                'briefing_id' => intval($data['briefing_id']),
+                'sort_order' => intval($data['sort_order']),
+                'section_title' => sanitize_text_field($data['section_title']),
+                'ai_content' => $data['ai_content'],
+                'user_notes' => $data['user_notes'],
+            ),
+            array('%d', '%d', '%s', '%s', '%s')
+        );
+
+        if ($result === false) {
+            error_log('[SMARTBRIEFING] Failed to create section - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return $wpdb->insert_id;
+    }
+
+    /**
+     * Create multiple sections for a briefing
+     *
+     * @param int $briefing_id Briefing ID
+     * @param array $sections Array of section data
+     * @return array Array of created section IDs
+     */
+    public function create_sections($briefing_id, $sections) {
+        $created_ids = array();
+
+        foreach ($sections as $index => $section) {
+            $section['briefing_id'] = $briefing_id;
+            $section['sort_order'] = isset($section['sort_order']) ? $section['sort_order'] : $index;
+
+            $section_id = $this->create_section($section);
+            if ($section_id) {
+                $created_ids[] = $section_id;
+            }
+        }
+
+        return $created_ids;
+    }
+
+    /**
+     * Get a section by ID
+     *
+     * @param int $section_id Section ID
+     * @return object|null Section object or null
+     */
+    public function get_section($section_id) {
+        global $wpdb;
+
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_sections} WHERE id = %d",
+                $section_id
+            )
+        );
+    }
+
+    /**
+     * Get all sections for a briefing
+     *
+     * @param int $briefing_id Briefing ID
+     * @return array Array of section objects
+     */
+    public function get_briefing_sections($briefing_id) {
+        global $wpdb;
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_sections}
+                 WHERE briefing_id = %d
+                 ORDER BY sort_order ASC",
+                $briefing_id
+            )
+        );
+    }
+
+    /**
+     * Update a section
+     *
+     * @param int $section_id Section ID
+     * @param array $data Data to update
+     * @return bool True on success, false on failure
+     */
+    public function update_section($section_id, $data) {
+        global $wpdb;
+
+        $update_data = array();
+        $update_format = array();
+
+        $allowed_fields = array(
+            'sort_order', 'section_title', 'ai_content', 'user_notes'
+        );
+
+        foreach ($allowed_fields as $field) {
+            if (isset($data[$field])) {
+                $value = $data[$field];
+
+                // Sanitize title
+                if ($field === 'section_title') {
+                    $value = sanitize_text_field($value);
+                }
+
+                $update_data[$field] = $value;
+                $update_format[] = ($field === 'sort_order') ? '%d' : '%s';
+            }
+        }
+
+        if (empty($update_data)) {
+            return false;
+        }
+
+        $result = $wpdb->update(
+            $this->table_sections,
+            $update_data,
+            array('id' => $section_id),
+            $update_format,
+            array('%d')
+        );
+
+        if ($result === false) {
+            error_log('[SMARTBRIEFING] Failed to update section - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Delete a section
+     *
+     * @param int $section_id Section ID
+     * @return bool True on success, false on failure
+     */
+    public function delete_section($section_id) {
+        global $wpdb;
+
+        $result = $wpdb->delete(
+            $this->table_sections,
+            array('id' => $section_id),
+            array('%d')
+        );
+
+        if ($result === false) {
+            error_log('[SMARTBRIEFING] Failed to delete section - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * Get table names
      */
@@ -895,5 +1106,9 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
 
     public function get_table_briefings() {
         return $this->table_briefings;
+    }
+
+    public function get_table_sections() {
+        return $this->table_sections;
     }
 }
