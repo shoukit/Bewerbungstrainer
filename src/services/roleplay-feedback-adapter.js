@@ -244,6 +244,22 @@ export async function saveRoleplaySessionAnalysis(
     console.log('✅ [Roleplay Feedback] API Response:', response);
     console.log('✅ [Roleplay Feedback] Response.data:', response?.data);
     console.log('✅ [Roleplay Feedback] Response feedback_json:', response?.data?.feedback_json ? 'present' : 'null');
+
+    // Update usage limits if duration > 0
+    if (duration > 0) {
+      try {
+        console.log('💾 [Roleplay Feedback] Updating usage limits with duration:', duration);
+        await wordpressAPI.request(`/roleplays/sessions/${sessionId}/duration`, {
+          method: 'POST',
+          body: JSON.stringify({ duration_seconds: duration }),
+        });
+        console.log('✅ [Roleplay Feedback] Usage limits updated successfully');
+      } catch (usageError) {
+        // Log error but don't fail the save operation
+        console.warn('⚠️ [Roleplay Feedback] Failed to update usage limits:', usageError.message);
+      }
+    }
+
     console.log('💾 [Roleplay Feedback] ========= SAVE COMPLETE =========');
 
     return response.data;
