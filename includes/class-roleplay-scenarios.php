@@ -246,6 +246,9 @@ class Bewerbungstrainer_Roleplay_Scenarios {
     public function render_variables_meta_box($post) {
         // Get current values
         $variables_json = get_post_meta($post->ID, '_roleplay_variables_schema', true);
+
+        // Check if this is a new post (no variables saved yet) vs intentionally empty
+        $is_new_scenario = ($variables_json === '' || $variables_json === false);
         $variables = $variables_json ? json_decode($variables_json, true) : array();
 
         ?>
@@ -257,11 +260,12 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             <div id="roleplay-variables-list">
                 <?php
                 if (!empty($variables)) {
+                    // Show existing variables
                     foreach ($variables as $index => $variable) {
                         $this->render_variable_row($index, $variable);
                     }
-                } else {
-                    // Default: company and role variables
+                } elseif ($is_new_scenario) {
+                    // Only show defaults for NEW scenarios (never saved before)
                     $this->render_variable_row(0, array(
                         'key' => 'company_name',
                         'label' => 'Unternehmensname',
@@ -479,10 +483,10 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_coaching_hints', sanitize_textarea_field($_POST['roleplay_coaching_hints']));
         }
 
-        // Save variables schema
-        if (isset($_POST['roleplay_variables']) && is_array($_POST['roleplay_variables'])) {
-            $variables = array();
+        // Save variables schema - always update, even if empty (to allow deletion)
+        $variables = array();
 
+        if (isset($_POST['roleplay_variables']) && is_array($_POST['roleplay_variables'])) {
             foreach ($_POST['roleplay_variables'] as $variable) {
                 if (!empty($variable['key']) && !empty($variable['label'])) {
                     $variables[] = array(
@@ -495,9 +499,10 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                     );
                 }
             }
-
-            update_post_meta($post_id, '_roleplay_variables_schema', wp_json_encode($variables));
         }
+
+        // Always save - even empty array to allow complete removal of variables
+        update_post_meta($post_id, '_roleplay_variables_schema', wp_json_encode($variables));
     }
 
     /**

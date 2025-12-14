@@ -1919,6 +1919,8 @@ class Bewerbungstrainer_API {
      */
     public function get_roleplay_sessions($request) {
         $params = $request->get_params();
+        $current_user_id = get_current_user_id();
+        $is_demo_user = Bewerbungstrainer_Demo_Codes::is_demo_user();
 
         $args = array(
             'limit' => isset($params['limit']) ? intval($params['limit']) : 50,
@@ -1930,18 +1932,18 @@ class Bewerbungstrainer_API {
         );
 
         // Check if current user is demo user and filter by demo_code
-        if (Bewerbungstrainer_Demo_Codes::is_demo_user() && !empty($args['demo_code'])) {
+        if ($is_demo_user && !empty($args['demo_code'])) {
             // Demo user with code - filter by code
-            $sessions = $this->db->get_user_roleplay_sessions(get_current_user_id(), $args);
-            $total = $this->db->get_user_roleplay_sessions_count(get_current_user_id(), $args['scenario_id'], $args['demo_code']);
-        } else if (Bewerbungstrainer_Demo_Codes::is_demo_user() && empty($args['demo_code'])) {
+            $sessions = $this->db->get_user_roleplay_sessions($current_user_id, $args);
+            $total = $this->db->get_user_roleplay_sessions_count($current_user_id, $args['scenario_id'], $args['demo_code']);
+        } else if ($is_demo_user && empty($args['demo_code'])) {
             // Demo user without code - return empty (they need a code to see sessions)
             $sessions = array();
             $total = 0;
         } else {
             // Regular user - normal behavior
-            $sessions = $this->db->get_user_roleplay_sessions(get_current_user_id(), $args);
-            $total = $this->db->get_user_roleplay_sessions_count(get_current_user_id(), $args['scenario_id']);
+            $sessions = $this->db->get_user_roleplay_sessions($current_user_id, $args);
+            $total = $this->db->get_user_roleplay_sessions_count($current_user_id, $args['scenario_id']);
         }
 
         $formatted_sessions = array_map(array($this, 'format_roleplay_session'), $sessions);
