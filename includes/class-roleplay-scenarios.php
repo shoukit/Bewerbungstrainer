@@ -479,10 +479,10 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_coaching_hints', sanitize_textarea_field($_POST['roleplay_coaching_hints']));
         }
 
-        // Save variables schema
-        if (isset($_POST['roleplay_variables']) && is_array($_POST['roleplay_variables'])) {
-            $variables = array();
+        // Save variables schema - always update, even if empty (to allow deletion)
+        $variables = array();
 
+        if (isset($_POST['roleplay_variables']) && is_array($_POST['roleplay_variables'])) {
             foreach ($_POST['roleplay_variables'] as $variable) {
                 if (!empty($variable['key']) && !empty($variable['label'])) {
                     $variables[] = array(
@@ -495,9 +495,10 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                     );
                 }
             }
-
-            update_post_meta($post_id, '_roleplay_variables_schema', wp_json_encode($variables));
         }
+
+        // Always save - even empty array to allow complete removal of variables
+        update_post_meta($post_id, '_roleplay_variables_schema', wp_json_encode($variables));
     }
 
     /**
