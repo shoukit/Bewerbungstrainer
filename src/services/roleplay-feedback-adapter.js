@@ -74,6 +74,14 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
     audioAnalysisContent: null,
   };
 
+  // Build role options for dynamic feedback prompt (defined outside try blocks for shared access)
+  const roleOptions = {
+    roleType: scenarioContext.role_type || 'interview',
+    userRoleLabel: scenarioContext.user_role_label || 'Bewerber',
+    agentRoleLabel: scenarioContext.interviewer_profile?.role || 'Gesprächspartner',
+  };
+  console.log('🎭 [Roleplay Feedback] Role options:', roleOptions);
+
   try {
     // Generate feedback (transcript analysis)
     console.log('🎭 [Roleplay Feedback] Generating feedback...');
@@ -83,14 +91,6 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
     if (customPrompt) {
       console.log('🎭 [Roleplay Feedback] Using custom feedback prompt from scenario');
     }
-
-    // Build role options for dynamic feedback prompt
-    const roleOptions = {
-      roleType: scenarioContext.role_type || 'interview',
-      userRoleLabel: scenarioContext.user_role_label || 'Bewerber',
-      agentRoleLabel: scenarioContext.interviewer_profile?.role || 'Gesprächspartner',
-    };
-    console.log('🎭 [Roleplay Feedback] Role options:', roleOptions);
 
     results.feedbackContent = await generateInterviewFeedback(
       formattedTranscript,
