@@ -11,6 +11,7 @@ import { GEMINI_MODELS, ERROR_MESSAGES } from '@/config/constants';
 import { getFeedbackPrompt, applyCustomPrompt } from '@/config/prompts/feedbackPrompt';
 import { getAudioAnalysisPrompt } from '@/config/prompts/audioAnalysisPrompt';
 import { getRhetoricGamePrompt } from '@/config/prompts/gamePrompts';
+import wordpressAPI from './wordpress-api.js';
 
 // =============================================================================
 // DEBUG LOGGING
@@ -288,11 +289,26 @@ export async function generateInterviewFeedback(
     }
   );
 
-  return callGeminiWithFallback({
+  // Call Gemini API
+  const response = await callGeminiWithFallback({
     apiKey,
     content: prompt,
     context: 'FEEDBACK',
   });
+
+  // Log prompt and response to server-side prompts.log
+  wordpressAPI.logPrompt(
+    'GEMINI_LIVE_FEEDBACK',
+    'Live-Training Feedback-Generierung',
+    prompt,
+    {
+      transcript_length: transcript.length,
+      custom_prompt: customPrompt ? 'Ja' : 'Nein',
+    },
+    response // Include response in the log
+  );
+
+  return response;
 }
 
 /**
@@ -343,11 +359,27 @@ export async function generateAudioAnalysis(
     }
   );
 
-  return callGeminiWithFallback({
+  // Call Gemini API
+  const response = await callGeminiWithFallback({
     apiKey,
     content,
     context: 'AUDIO',
   });
+
+  // Log prompt and response to server-side prompts.log
+  // Note: We don't log the audio itself (too large), just the prompt text
+  wordpressAPI.logPrompt(
+    'GEMINI_LIVE_AUDIO_ANALYSIS',
+    'Live-Training Audio-Analyse',
+    prompt,
+    {
+      audio_size_kb: Math.round(audioFile.size / 1024),
+      audio_type: audioFile.type,
+    },
+    response // Include response in the log
+  );
+
+  return response;
 }
 
 /**

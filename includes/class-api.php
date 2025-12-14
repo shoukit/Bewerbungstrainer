@@ -427,6 +427,15 @@ class Bewerbungstrainer_API {
             'callback' => array($this, 'admin_generate_demo_codes'),
             'permission_callback' => array($this, 'check_is_admin'),
         ));
+
+        // ===== Logging Endpoints =====
+
+        // Log prompt (for frontend to log ElevenLabs/Gemini prompts)
+        register_rest_route($this->namespace, '/log-prompt', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'log_prompt'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
     }
 
     /**
@@ -465,6 +474,7 @@ class Bewerbungstrainer_API {
             '/bewerbungstrainer/v1/sessions',
             '/bewerbungstrainer/v1/demo/activate',
             '/bewerbungstrainer/v1/demo/validate',
+            '/bewerbungstrainer/v1/log-prompt',
         );
 
         // Check if this is a public endpoint
@@ -2996,6 +3006,53 @@ class Bewerbungstrainer_API {
                 'requested' => $count,
                 'generated' => $generated,
             ),
+        ), 200);
+    }
+
+    /**
+     * Log a prompt from the frontend
+     *
+     * Allows the frontend to log ElevenLabs/Gemini prompts to the server-side prompts.log file
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function log_prompt($request) {
+        $params = $request->get_json_params();
+
+        // Required parameters
+        $scenario = isset($params['scenario']) ? sanitize_text_field($params['scenario']) : '';
+        $description = isset($params['description']) ? sanitize_text_field($params['description']) : '';
+        $prompt = isset($params['prompt']) ? $params['prompt'] : ''; // Don't sanitize - might contain special chars
+
+        if (empty($scenario) || empty($prompt)) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => 'Missing required parameters: scenario and prompt',
+            ), 400);
+        }
+
+        // Optional metadata
+        $metadata = isset($params['metadata']) && is_array($params['metadata']) ? $params['metadata'] : array();
+
+        // Add user info to metadata if logged in
+        if (is_user_logged_in()) {
+            $user = wp_get_current_user();
+            $metadata['user_id'] = $user->ID;
+            $metadata['user_name'] = $user->display_name;
+        }
+
+        // Log using the existing function
+        bewerbungstrainer_log_prompt($scenario, $description, $prompt, $metadata);
+
+        // If there's a response to log as well
+        if (isset($params['response']) && !empty($params['response'])) {
+            bewerbungstrainer_log_response($scenario, $params['response'], isset($params['is_error']) && $params['is_error']);
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => 'Prompt logged successfully',
         ), 200);
     }
 }
