@@ -553,10 +553,10 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
 
   return (
     <>
-      <div style={{ minHeight: '600px', height: 'auto' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4">
+      <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4 overflow-hidden">
         {/* RESPONSIVE LAYOUT: Mobile stacked, Desktop 3-column */}
         <div
-          className="w-full gap-3 lg:gap-4"
+          className="w-full h-full gap-3 lg:gap-4"
           style={{
             display: isMobile ? 'flex' : 'grid',
             flexDirection: isMobile ? 'column' : undefined,
