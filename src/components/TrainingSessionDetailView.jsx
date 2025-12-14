@@ -270,17 +270,22 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div style={{ background: COLORS.slate[100], borderRadius: '12px', padding: '12px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button onClick={() => skip(-10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: COLORS.slate[500] }}>
-          <SkipBack size={16} />
+    <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${COLORS.slate[200]}` }}>
+      {/* Progress bar */}
+      <div onClick={handleSeek} style={{ height: '8px', background: COLORS.slate[200], borderRadius: '4px', cursor: 'pointer', marginBottom: '16px' }}>
+        <div style={{ width: `${progressPercent}%`, height: '100%', background: primaryAccent || '#0d9488', borderRadius: '4px', transition: 'width 0.1s' }} />
+      </div>
+      {/* Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+        <button onClick={() => skip(-10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: COLORS.slate[500] }}>
+          <SkipBack size={20} />
         </button>
         <button
           onClick={togglePlay}
           disabled={isLoading}
           style={{
-            width: '40px',
-            height: '40px',
+            width: '48px',
+            height: '48px',
             borderRadius: '50%',
             background: primaryAccent || '#0d9488',
             border: 'none',
@@ -293,22 +298,20 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
           }}
         >
           {isLoading ? (
-            <Loader2 size={20} color="#ffffff" style={{ animation: 'spin 1s linear infinite' }} />
+            <Loader2 size={22} color="#ffffff" style={{ animation: 'spin 1s linear infinite' }} />
           ) : isPlaying ? (
-            <Pause size={20} color="#ffffff" fill="#ffffff" strokeWidth={2} />
+            <Pause size={22} color="#ffffff" fill="#ffffff" strokeWidth={2} />
           ) : (
-            <Play size={20} color="#ffffff" fill="#ffffff" strokeWidth={2} style={{ marginLeft: '2px' }} />
+            <Play size={22} color="#ffffff" fill="#ffffff" strokeWidth={2} style={{ marginLeft: '2px' }} />
           )}
         </button>
-        <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: COLORS.slate[500] }}>
-          <SkipForward size={16} />
+        <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: COLORS.slate[500] }}>
+          <SkipForward size={20} />
         </button>
-        <div onClick={handleSeek} style={{ flex: 1, height: '6px', background: COLORS.slate[300], borderRadius: '3px', cursor: 'pointer' }}>
-          <div style={{ width: `${progressPercent}%`, height: '100%', background: primaryAccent || '#0d9488', borderRadius: '3px', transition: 'width 0.1s' }} />
-        </div>
-        <span style={{ fontSize: '12px', color: COLORS.slate[500], minWidth: '80px', textAlign: 'right' }}>
-          {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : '--:--'}
-        </span>
+      </div>
+      {/* Time display */}
+      <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '13px', color: COLORS.slate[500] }}>
+        {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : '--:--'}
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
