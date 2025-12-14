@@ -44,6 +44,20 @@ const OverviewDashboard = ({ onNavigate }) => {
       accentColor: '#10B981',
     },
     {
+      id: 'smart_briefing',
+      icon: Sparkles,
+      title: 'Smart Briefing',
+      subtitle: 'KI-Vorbereitungs-Assistent',
+      description: 'Erhalte massgeschneiderte Briefings für deine Gespräche. Die KI erstellt dir Insider-Wissen, fachliche Must-Haves und clevere Rückfragen - basierend auf deinen spezifischen Angaben.',
+      highlights: [
+        'Personalisierte Gesprächsvorbereitung',
+        'Branchenspezifisches Wissen',
+        'Intelligente Rückfragen-Vorschläge',
+      ],
+      gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+      accentColor: '#EC4899',
+    },
+    {
       id: 'video_training',
       icon: Video,
       title: 'Wirkungs-Analyse',
@@ -70,20 +84,6 @@ const OverviewDashboard = ({ onNavigate }) => {
       ],
       gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
       accentColor: '#3B82F6',
-    },
-    {
-      id: 'smart_briefing',
-      icon: Sparkles,
-      title: 'Smart Briefing',
-      subtitle: 'KI-Vorbereitungs-Assistent',
-      description: 'Erhalte massgeschneiderte Briefings fur deine Gesprache. Die KI erstellt dir Insider-Wissen, fachliche Must-Haves und clevere Ruckfragen - basierend auf deinen spezifischen Angaben.',
-      highlights: [
-        'Personalisierte Gesprächsvorbereitung',
-        'Branchenspezifisches Wissen',
-        'Intelligente Rückfragen-Vorschläge',
-      ],
-      gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
-      accentColor: '#EC4899',
     },
     {
       id: 'gym_klassiker',
@@ -137,28 +137,6 @@ const OverviewDashboard = ({ onNavigate }) => {
         transition={{ duration: 0.5 }}
         className="w-full text-center mb-10 lg:mb-14 px-4 lg:px-8"
       >
-        {/* Welcome Badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            borderRadius: '9999px',
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
-            border: '1px solid rgba(59, 130, 246, 0.2)',
-            marginBottom: '24px',
-          }}
-        >
-          <Sparkles style={{ width: '16px', height: '16px', color: primaryAccent }} />
-          <span style={{ fontSize: '14px', fontWeight: 600, color: primaryAccent }}>
-            KI-gestütztes Training
-          </span>
-        </motion.div>
-
         {/* Main Title */}
         <h1 style={{
           fontSize: 'clamp(28px, 5vw, 42px)',

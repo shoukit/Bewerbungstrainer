@@ -49,9 +49,9 @@ const TABS = {
 
 const TAB_CONFIG = [
   { id: TABS.SIMULATOR, label: 'Szenario-Training', icon: Target },
+  { id: TABS.BRIEFINGS, label: 'Smart Briefings', icon: Sparkles },
   { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
   { id: TABS.VIDEO, label: 'Wirkungs-Analyse', icon: Video },
-  { id: TABS.BRIEFINGS, label: 'Smart Briefings', icon: Sparkles },
 ];
 
 /**

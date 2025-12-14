@@ -22,14 +22,12 @@ import {
   Save,
   Check,
   Loader2,
-  Play,
   Sparkles,
   PenLine,
   Bot,
   Trash2,
   ChevronDown,
   ChevronUp,
-  X,
   RotateCcw,
 } from 'lucide-react';
 
@@ -52,6 +50,44 @@ const ICON_MAP = {
   'shield': Shield,
   'compass': Compass,
   'rocket': Rocket,
+};
+
+/**
+ * Variable name mapping - technical keys to display names
+ */
+const VARIABLE_DISPLAY_NAMES = {
+  // Common variables
+  role_name: 'Position',
+  position: 'Position',
+  target_company: 'Unternehmen',
+  company: 'Unternehmen',
+  interview_type: 'Gesprächsart',
+  karrierelevel: 'Karrierelevel',
+  experience_years: 'Berufserfahrung',
+  industry: 'Branche',
+
+  // Salary negotiation
+  current_salary: 'Aktuelles Gehalt',
+  target_salary: 'Zielgehalt',
+  negotiation_context: 'Verhandlungskontext',
+
+  // Customer meeting
+  customer_name: 'Kunde',
+  meeting_goal: 'Gesprächsziel',
+  product_service: 'Produkt/Service',
+
+  // General
+  user_name: 'Name',
+  skills: 'Fähigkeiten',
+  strengths: 'Stärken',
+  challenges: 'Herausforderungen',
+};
+
+/**
+ * Get display name for a variable key
+ */
+const getVariableDisplayName = (key) => {
+  return VARIABLE_DISPLAY_NAMES[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 };
 
 /**
@@ -720,7 +756,6 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, isExpanded, onToggl
 const BriefingWorkbook = ({
   briefing: initialBriefing,
   onBack,
-  onStartSimulation,
 }) => {
   const { config } = usePartner();
   const [briefing, setBriefing] = useState(initialBriefing);
@@ -807,13 +842,6 @@ const BriefingWorkbook = ({
     }));
   }, []);
 
-  // Handle start simulation
-  const handleStartSimulation = () => {
-    if (onStartSimulation && briefing?.variables) {
-      onStartSimulation(briefing.variables);
-    }
-  };
-
   if (!briefing) {
     return null;
   }
@@ -898,30 +926,6 @@ const BriefingWorkbook = ({
             </div>
           </div>
 
-          {/* Start Simulation Button */}
-          {onStartSimulation && briefing?.variables && (
-            <button
-              onClick={handleStartSimulation}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                borderRadius: '12px',
-                border: 'none',
-                background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                boxShadow: `0 4px 14px ${primaryAccent}40`,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <Play size={18} />
-              Training starten
-            </button>
-          )}
         </div>
 
         {/* Variables display */}
@@ -947,7 +951,7 @@ const BriefingWorkbook = ({
                   color: '#64748b',
                 }}
               >
-                <strong style={{ color: '#374151' }}>{key}:</strong> {value}
+                <strong style={{ color: '#374151' }}>{getVariableDisplayName(key)}:</strong> {value}
               </span>
             ))}
           </div>
