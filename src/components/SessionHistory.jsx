@@ -282,10 +282,10 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, head
   const isCompleted = status === 'completed';
 
   // Check if session is resumable (Simulator only, has unanswered questions)
-  const isResumable = type === TABS.SIMULATOR &&
-    !isCompleted &&
-    session.total_questions > 0 &&
+  // Allow resuming even "completed" sessions if not all questions were answered
+  const hasUnansweredQuestions = session.total_questions > 0 &&
     (session.completed_questions || 0) < session.total_questions;
+  const isResumable = type === TABS.SIMULATOR && hasUnansweredQuestions;
 
   // Progress info for resumable sessions
   const getProgressInfo = () => {
