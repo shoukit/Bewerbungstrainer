@@ -1413,6 +1413,52 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           {currentQuestion?.tips && currentQuestion.tips.length > 0 && (
             <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} tipsLabel={labels.tipsLabel} />
           )}
+
+          {/* Navigation Buttons */}
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
+            <button
+              onClick={handlePrev}
+              disabled={isFirstQuestion}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '10px',
+                border: `2px solid ${COLORS.slate[300]}`,
+                backgroundColor: 'white',
+                color: isFirstQuestion ? COLORS.slate[400] : COLORS.slate[700],
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: isFirstQuestion ? 'not-allowed' : 'pointer',
+                opacity: isFirstQuestion ? 0.5 : 1,
+              }}
+            >
+              <ChevronLeft size={16} />
+              Zurück
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={isLastQuestion}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '10px',
+                border: `2px solid ${COLORS.slate[300]}`,
+                backgroundColor: 'white',
+                color: isLastQuestion ? COLORS.slate[400] : COLORS.slate[700],
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: isLastQuestion ? 'not-allowed' : 'pointer',
+                opacity: isLastQuestion ? 0.5 : 1,
+              }}
+            >
+              Frage überspringen
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       )}
 
