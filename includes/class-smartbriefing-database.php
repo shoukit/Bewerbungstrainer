@@ -49,6 +49,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
 
     /**
      * Check if tables exist and create them if not
+     * Also runs migrations for schema updates
      */
     private function maybe_create_tables() {
         global $wpdb;
@@ -64,6 +65,84 @@ class Bewerbungstrainer_SmartBriefing_Database {
         if (!$table_exists) {
             error_log('[SMARTBRIEFING] Tables not found, creating...');
             self::create_tables();
+        } else {
+            // Tables exist - run migrations for schema updates
+            $this->run_migrations();
+        }
+    }
+
+    /**
+     * Run database migrations for schema updates
+     * This handles adding new columns/tables to existing installations
+     */
+    private function run_migrations() {
+        global $wpdb;
+
+        $current_version = get_option('bewerbungstrainer_smartbriefing_db_version', '1.0.0');
+
+        // Migration 1.1.0: Add title column to briefings table and create sections table
+        if (version_compare($current_version, '1.1.0', '<')) {
+            error_log('[SMARTBRIEFING] Running migration to 1.1.0...');
+
+            // Check if title column exists in briefings table
+            $title_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SHOW COLUMNS FROM {$this->table_briefings} LIKE %s",
+                    'title'
+                )
+            );
+
+            if (empty($title_exists)) {
+                error_log('[SMARTBRIEFING] Adding title column to briefings table...');
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_briefings} ADD COLUMN `title` varchar(255) DEFAULT NULL AFTER `briefing_uuid`"
+                );
+
+                if ($wpdb->last_error) {
+                    error_log('[SMARTBRIEFING] Error adding title column: ' . $wpdb->last_error);
+                } else {
+                    error_log('[SMARTBRIEFING] Title column added successfully');
+                }
+            }
+
+            // Check if sections table exists
+            $sections_exists = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SHOW TABLES LIKE %s",
+                    $this->table_sections
+                )
+            );
+
+            if (!$sections_exists) {
+                error_log('[SMARTBRIEFING] Creating sections table...');
+                $charset_collate = $wpdb->get_charset_collate();
+
+                $sql_sections = "CREATE TABLE IF NOT EXISTS `{$this->table_sections}` (
+                    `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `briefing_id` bigint(20) UNSIGNED NOT NULL,
+                    `sort_order` int(11) NOT NULL DEFAULT 0,
+                    `section_title` varchar(255) NOT NULL,
+                    `ai_content` longtext DEFAULT NULL,
+                    `user_notes` longtext DEFAULT NULL,
+                    `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `briefing_id` (`briefing_id`),
+                    KEY `sort_order` (`sort_order`)
+                ) $charset_collate;";
+
+                $wpdb->query($sql_sections);
+
+                if ($wpdb->last_error) {
+                    error_log('[SMARTBRIEFING] Error creating sections table: ' . $wpdb->last_error);
+                } else {
+                    error_log('[SMARTBRIEFING] Sections table created successfully');
+                }
+            }
+
+            // Update version
+            update_option('bewerbungstrainer_smartbriefing_db_version', '1.1.0');
+            error_log('[SMARTBRIEFING] Migration to 1.1.0 completed');
         }
     }
 
@@ -150,8 +229,8 @@ class Bewerbungstrainer_SmartBriefing_Database {
         // Insert default templates if table is empty
         self::insert_default_templates();
 
-        // Update version
-        update_option('bewerbungstrainer_smartbriefing_db_version', '1.0.0');
+        // Update version to latest
+        update_option('bewerbungstrainer_smartbriefing_db_version', '1.1.0');
     }
 
     /**
