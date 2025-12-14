@@ -14,7 +14,7 @@
     "rebuild": "npm run clean:cache && npm run build"
   },
   "dependencies": {
-    "@elevenlabs/react": "^0.1.0",
+    "@elevenlabs/react": "^0.5.6",
     "@google/generative-ai": "^0.21.0",
     "@radix-ui/react-dialog": "^1.1.2",
     "class-variance-authority": "^0.7.0",
