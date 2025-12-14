@@ -501,22 +501,20 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
               </span>
             )}
 
-            {/* Score badge */}
-            {scorePercent !== null && (
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '6px 12px',
-                borderRadius: '20px',
-                fontSize: '14px',
-                fontWeight: 600,
-                ...getScoreBadgeStyle(scorePercent),
-              }}>
-                <Star size={14} />
-                {Math.round(scorePercent)}%
-              </span>
-            )}
+            {/* Score badge - always show for consistency */}
+            <span style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '14px',
+              fontWeight: 600,
+              ...getScoreBadgeStyle(scorePercent),
+            }}>
+              <Star size={14} />
+              {scorePercent !== null ? `${Math.round(scorePercent)}%` : '-- %'}
+            </span>
 
             {/* Delete button */}
             {onDeleteSession && (

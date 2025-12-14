@@ -161,11 +161,11 @@ const ScoreGauge = ({ score, size = 120, primaryAccent, isHeader = false }) => {
 /**
  * Audio player for individual answers
  */
-const AudioPlayer = ({ audioUrl, primaryAccent }) => {
+const AudioPlayer = ({ audioUrl, primaryAccent, durationHint }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState(durationHint || 0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -174,6 +174,8 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
 
     setIsLoading(true);
     setError(null);
+    // Reset duration to hint or 0
+    setDuration(durationHint || 0);
 
     const audio = new Audio();
     audioRef.current = audio;
@@ -226,7 +228,7 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
       audio.removeEventListener('canplaythrough', handleCanPlayThrough);
       audio.src = '';
     };
-  }, [audioUrl]);
+  }, [audioUrl, durationHint]);
 
   const formatTime = (seconds) => {
     // Handle invalid values
@@ -311,7 +313,7 @@ const AudioPlayer = ({ audioUrl, primaryAccent }) => {
       </div>
       {/* Time display */}
       <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '13px', color: COLORS.slate[500] }}>
-        {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : '--:--'}
+        {formatTime(currentTime)} / {formatTime(duration)}
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
@@ -500,7 +502,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                   <h5 style={{ fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Mic size={14} color={primaryAccent} /> Deine Aufnahme
                   </h5>
-                  <AudioPlayer audioUrl={answer.audio_url} primaryAccent={primaryAccent} />
+                  <AudioPlayer audioUrl={answer.audio_url} primaryAccent={primaryAccent} durationHint={answer.audio_duration_seconds} />
                 </div>
               )}
 
