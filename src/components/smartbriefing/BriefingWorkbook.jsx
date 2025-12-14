@@ -29,6 +29,8 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  X,
+  RotateCcw,
 } from 'lucide-react';
 
 /**
@@ -68,7 +70,81 @@ const formatDate = (dateString) => {
 };
 
 /**
- * Simple Markdown Renderer
+ * Render inline markdown (bold, italic, code)
+ */
+const renderInlineMarkdown = (text, primaryAccent) => {
+  if (!text) return null;
+
+  const parts = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining.length > 0) {
+    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    const italicMatch = remaining.match(/(?<!\*)\*([^*]+)\*(?!\*)|_([^_]+)_/);
+    const codeMatch = remaining.match(/`([^`]+)`/);
+
+    const matches = [
+      { match: boldMatch, type: 'bold' },
+      { match: italicMatch, type: 'italic' },
+      { match: codeMatch, type: 'code' },
+    ].filter(m => m.match);
+
+    if (matches.length === 0) {
+      parts.push(remaining);
+      break;
+    }
+
+    const earliest = matches.reduce((a, b) =>
+      (a.match?.index ?? Infinity) < (b.match?.index ?? Infinity) ? a : b
+    );
+
+    if (earliest.match.index > 0) {
+      parts.push(remaining.substring(0, earliest.match.index));
+    }
+
+    switch (earliest.type) {
+      case 'bold':
+        parts.push(
+          <strong key={key++} style={{ fontWeight: 600, color: '#0f172a' }}>
+            {earliest.match[1]}
+          </strong>
+        );
+        break;
+      case 'italic':
+        parts.push(
+          <em key={key++} style={{ fontStyle: 'italic' }}>
+            {earliest.match[1] || earliest.match[2]}
+          </em>
+        );
+        break;
+      case 'code':
+        parts.push(
+          <code
+            key={key++}
+            style={{
+              backgroundColor: '#f1f5f9',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontSize: '13px',
+              fontFamily: 'monospace',
+              color: primaryAccent,
+            }}
+          >
+            {earliest.match[1]}
+          </code>
+        );
+        break;
+    }
+
+    remaining = remaining.substring(earliest.match.index + earliest.match[0].length);
+  }
+
+  return parts;
+};
+
+/**
+ * Simple Markdown Renderer (for legacy content)
  */
 const MarkdownContent = ({ content, primaryAccent }) => {
   if (!content) return null;
@@ -110,9 +186,9 @@ const MarkdownContent = ({ content, primaryAccent }) => {
                     fontWeight: 'bold',
                   }}
                 >
-                  {listType === 'number' ? `${idx + 1}.` : ''}
+                  {listType === 'number' ? `${idx + 1}.` : '•'}
                 </span>
-                {renderInlineMarkdown(item)}
+                {renderInlineMarkdown(item, primaryAccent)}
               </li>
             ))}
           </ul>
@@ -163,7 +239,7 @@ const MarkdownContent = ({ content, primaryAccent }) => {
             color: '#374151',
           }}
         >
-          {renderInlineMarkdown(trimmedLine)}
+          {renderInlineMarkdown(trimmedLine, primaryAccent)}
         </p>
       );
     });
@@ -172,111 +248,324 @@ const MarkdownContent = ({ content, primaryAccent }) => {
     return elements;
   };
 
-  const renderInlineMarkdown = (text) => {
-    const parts = [];
-    let remaining = text;
-    let key = 0;
-
-    while (remaining.length > 0) {
-      const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
-      const italicMatch = remaining.match(/(?<!\*)\*([^*]+)\*(?!\*)|_([^_]+)_/);
-      const codeMatch = remaining.match(/`([^`]+)`/);
-
-      const matches = [
-        { match: boldMatch, type: 'bold' },
-        { match: italicMatch, type: 'italic' },
-        { match: codeMatch, type: 'code' },
-      ].filter(m => m.match);
-
-      if (matches.length === 0) {
-        parts.push(remaining);
-        break;
-      }
-
-      const earliest = matches.reduce((a, b) =>
-        (a.match?.index ?? Infinity) < (b.match?.index ?? Infinity) ? a : b
-      );
-
-      if (earliest.match.index > 0) {
-        parts.push(remaining.substring(0, earliest.match.index));
-      }
-
-      switch (earliest.type) {
-        case 'bold':
-          parts.push(
-            <strong key={key++} style={{ fontWeight: 600, color: '#0f172a' }}>
-              {earliest.match[1]}
-            </strong>
-          );
-          break;
-        case 'italic':
-          parts.push(
-            <em key={key++} style={{ fontStyle: 'italic' }}>
-              {earliest.match[1] || earliest.match[2]}
-            </em>
-          );
-          break;
-        case 'code':
-          parts.push(
-            <code
-              key={key++}
-              style={{
-                backgroundColor: '#f1f5f9',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '13px',
-                fontFamily: 'monospace',
-                color: primaryAccent,
-              }}
-            >
-              {earliest.match[1]}
-            </code>
-          );
-          break;
-      }
-
-      remaining = remaining.substring(earliest.match.index + earliest.match[0].length);
-    }
-
-    return parts;
-  };
-
   return <div>{renderMarkdown(content)}</div>;
 };
 
 /**
- * Section Card Component
+ * Item Card Component - Individual briefing item with note and delete
  */
-const SectionCard = ({ section, primaryAccent, onSaveNotes, isExpanded, onToggle }) => {
-  const [notes, setNotes] = useState(section.user_notes || '');
+const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
+  const [note, setNote] = useState(item.user_note || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showNoteField, setShowNoteField] = useState(!!item.user_note);
 
   // Track changes
   useEffect(() => {
-    setHasChanges(notes !== (section.user_notes || ''));
-  }, [notes, section.user_notes]);
+    setHasChanges(note !== (item.user_note || ''));
+  }, [note, item.user_note]);
 
-  // Handle save
-  const handleSave = async () => {
+  // Handle save note
+  const handleSaveNote = async () => {
     setIsSaving(true);
     try {
-      await onSaveNotes(section.id, notes);
+      await onUpdateItem(sectionId, item.id, { user_note: note });
       setSaveSuccess(true);
       setHasChanges(false);
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (err) {
-      console.error('Error saving notes:', err);
+      console.error('Error saving note:', err);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Handle clear
-  const handleClear = () => {
-    setNotes('');
+  // Handle delete item
+  const handleDelete = async () => {
+    try {
+      await onUpdateItem(sectionId, item.id, { deleted: true });
+    } catch (err) {
+      console.error('Error deleting item:', err);
+    }
   };
+
+  // Handle restore item
+  const handleRestore = async () => {
+    try {
+      await onUpdateItem(sectionId, item.id, { deleted: false });
+    } catch (err) {
+      console.error('Error restoring item:', err);
+    }
+  };
+
+  if (item.deleted) {
+    return (
+      <div
+        style={{
+          padding: '12px 16px',
+          backgroundColor: '#f8fafc',
+          borderRadius: '10px',
+          marginBottom: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          opacity: 0.6,
+        }}
+      >
+        <span style={{ fontSize: '14px', color: '#94a3b8', fontStyle: 'italic' }}>
+          <s>{item.label}</s> - gelöscht
+        </span>
+        <button
+          onClick={handleRestore}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '6px 10px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: '#e2e8f0',
+            color: '#64748b',
+            fontSize: '12px',
+            cursor: 'pointer',
+          }}
+        >
+          <RotateCcw size={12} />
+          Wiederherstellen
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        border: '1px solid #e2e8f0',
+        marginBottom: '10px',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Item Header */}
+      <div
+        style={{
+          padding: '14px 16px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+        }}
+      >
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: primaryAccent,
+                flexShrink: 0,
+              }}
+            />
+            <h4
+              style={{
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#0f172a',
+                margin: 0,
+              }}
+            >
+              {item.label}
+            </h4>
+          </div>
+          {item.content && (
+            <p
+              style={{
+                fontSize: '13px',
+                color: '#64748b',
+                margin: '0 0 0 14px',
+                lineHeight: 1.5,
+              }}
+            >
+              {renderInlineMarkdown(item.content, primaryAccent)}
+            </p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+          {item.user_note && !showNoteField && (
+            <span
+              style={{
+                fontSize: '11px',
+                color: primaryAccent,
+                backgroundColor: `${primaryAccent}15`,
+                padding: '2px 6px',
+                borderRadius: '4px',
+              }}
+            >
+              Notiz
+            </span>
+          )}
+          <button
+            onClick={() => setShowNoteField(!showNoteField)}
+            title="Notiz hinzufügen"
+            style={{
+              padding: '6px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: showNoteField ? `${primaryAccent}15` : 'transparent',
+              color: showNoteField ? primaryAccent : '#94a3b8',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <PenLine size={16} />
+          </button>
+          <button
+            onClick={handleDelete}
+            title="Löschen"
+            style={{
+              padding: '6px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Note Field (collapsible) */}
+      {showNoteField && (
+        <div
+          style={{
+            padding: '12px 16px',
+            backgroundColor: '#fafbfc',
+            borderTop: '1px solid #f1f5f9',
+          }}
+        >
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Deine Notiz zu diesem Punkt..."
+            style={{
+              width: '100%',
+              minHeight: '60px',
+              padding: '10px',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              fontSize: '13px',
+              color: '#374151',
+              resize: 'vertical',
+              outline: 'none',
+              boxSizing: 'border-box',
+              transition: 'border-color 0.2s',
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = primaryAccent;
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e2e8f0';
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', gap: '8px' }}>
+            <button
+              onClick={() => {
+                setShowNoteField(false);
+                setNote(item.user_note || '');
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: '1px solid #e2e8f0',
+                backgroundColor: 'white',
+                color: '#64748b',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              Abbrechen
+            </button>
+            <button
+              onClick={handleSaveNote}
+              disabled={isSaving || !hasChanges}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: saveSuccess
+                  ? '#dcfce7'
+                  : hasChanges
+                    ? primaryAccent
+                    : '#f1f5f9',
+                color: saveSuccess
+                  ? '#16a34a'
+                  : hasChanges
+                    ? 'white'
+                    : '#94a3b8',
+                fontSize: '12px',
+                fontWeight: 500,
+                cursor: hasChanges && !isSaving ? 'pointer' : 'default',
+              }}
+            >
+              {isSaving ? (
+                <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+              ) : saveSuccess ? (
+                <Check size={12} />
+              ) : (
+                <Save size={12} />
+              )}
+              {saveSuccess ? 'Gespeichert!' : 'Speichern'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style>
+        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
+      </style>
+    </div>
+  );
+};
+
+/**
+ * Section Card Component - Handles both item-based and legacy markdown content
+ */
+const SectionCard = ({ section, primaryAccent, onUpdateItem, isExpanded, onToggle }) => {
+  // Parse ai_content to check if it's JSON with items
+  const parseContent = useCallback(() => {
+    if (!section.ai_content) return { type: 'empty', items: [], content: '' };
+
+    try {
+      const parsed = JSON.parse(section.ai_content);
+      if (parsed && Array.isArray(parsed.items)) {
+        return { type: 'items', items: parsed.items, content: '' };
+      }
+    } catch {
+      // Not JSON, treat as markdown
+    }
+
+    return { type: 'markdown', items: [], content: section.ai_content };
+  }, [section.ai_content]);
+
+  const { type, items, content } = parseContent();
+  const visibleItems = items.filter(item => !item.deleted);
+  const deletedItems = items.filter(item => item.deleted);
+  const hasNotes = items.some(item => item.user_note && !item.deleted);
 
   return (
     <div
@@ -288,7 +577,7 @@ const SectionCard = ({ section, primaryAccent, onSaveNotes, isExpanded, onToggle
         marginBottom: '16px',
       }}
     >
-      {/* Section Header - Always visible */}
+      {/* Section Header */}
       <button
         onClick={onToggle}
         style={{
@@ -315,7 +604,20 @@ const SectionCard = ({ section, primaryAccent, onSaveNotes, isExpanded, onToggle
           {section.section_title}
         </h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {section.user_notes && (
+          {type === 'items' && (
+            <span
+              style={{
+                fontSize: '12px',
+                color: '#94a3b8',
+                backgroundColor: '#f1f5f9',
+                padding: '4px 8px',
+                borderRadius: '12px',
+              }}
+            >
+              {visibleItems.length} Punkte
+            </span>
+          )}
+          {hasNotes && (
             <span
               style={{
                 display: 'flex',
@@ -342,132 +644,70 @@ const SectionCard = ({ section, primaryAccent, onSaveNotes, isExpanded, onToggle
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div style={{ padding: '0' }}>
-          {/* AI Content */}
-          <div
-            style={{
-              padding: '16px 20px',
-              backgroundColor: '#f8fafc',
-              borderBottom: '1px solid #f1f5f9',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <Bot size={16} style={{ color: primaryAccent }} />
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                KI-Empfehlung
-              </span>
-            </div>
-            <MarkdownContent content={section.ai_content} primaryAccent={primaryAccent} />
-          </div>
+        <div style={{ padding: '16px 20px' }}>
+          {type === 'items' ? (
+            <>
+              {/* Items list */}
+              {visibleItems.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  sectionId={section.id}
+                  primaryAccent={primaryAccent}
+                  onUpdateItem={onUpdateItem}
+                />
+              ))}
 
-          {/* User Notes */}
-          <div style={{ padding: '16px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <PenLine size={16} style={{ color: '#64748b' }} />
+              {/* Deleted items (collapsed) */}
+              {deletedItems.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: '#94a3b8',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Trash2 size={12} />
+                    {deletedItems.length} gelöschte {deletedItems.length === 1 ? 'Punkt' : 'Punkte'}
+                  </div>
+                  {deletedItems.map((item) => (
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      sectionId={section.id}
+                      primaryAccent={primaryAccent}
+                      onUpdateItem={onUpdateItem}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          ) : type === 'markdown' ? (
+            /* Legacy markdown content */
+            <div
+              style={{
+                backgroundColor: '#f8fafc',
+                padding: '16px',
+                borderRadius: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Bot size={16} style={{ color: primaryAccent }} />
                 <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Deine Notizen
+                  KI-Empfehlung
                 </span>
               </div>
-              {notes && (
-                <button
-                  onClick={handleClear}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    backgroundColor: 'transparent',
-                    color: '#94a3b8',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Trash2 size={12} />
-                  Leeren
-                </button>
-              )}
+              <MarkdownContent content={content} primaryAccent={primaryAccent} />
             </div>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notiere hier deine Gedanken, Ideen oder spezifische Antworten..."
-              style={{
-                width: '100%',
-                minHeight: '100px',
-                padding: '12px',
-                borderRadius: '10px',
-                border: '2px solid #e2e8f0',
-                fontSize: '14px',
-                color: '#374151',
-                resize: 'vertical',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-                boxSizing: 'border-box',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = primaryAccent;
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-              }}
-            />
-
-            {/* Save button */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-              <button
-                onClick={handleSave}
-                disabled={isSaving || !hasChanges}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: saveSuccess
-                    ? '#dcfce7'
-                    : hasChanges
-                      ? primaryAccent
-                      : '#f1f5f9',
-                  color: saveSuccess
-                    ? '#16a34a'
-                    : hasChanges
-                      ? 'white'
-                      : '#94a3b8',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: hasChanges && !isSaving ? 'pointer' : 'default',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                    Speichern...
-                  </>
-                ) : saveSuccess ? (
-                  <>
-                    <Check size={16} />
-                    Gespeichert!
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} />
-                    Speichern
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+          ) : (
+            <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>Kein Inhalt verfügbar</p>
+          )}
         </div>
       )}
-
-      <style>
-        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
-      </style>
     </div>
   );
 };
@@ -475,7 +715,7 @@ const SectionCard = ({ section, primaryAccent, onSaveNotes, isExpanded, onToggle
 /**
  * BriefingWorkbook Component
  *
- * Displays a briefing with all sections and editable user notes
+ * Displays a briefing with all sections and editable user notes per item
  */
 const BriefingWorkbook = ({
   briefing: initialBriefing,
@@ -544,22 +784,25 @@ const BriefingWorkbook = ({
     }));
   }, []);
 
-  // Save section notes
-  const handleSaveNotes = useCallback(async (sectionId, notes) => {
-    const response = await wordpressAPI.request(`/smartbriefing/sections/${sectionId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ user_notes: notes }),
-    });
+  // Update item within a section
+  const handleUpdateItem = useCallback(async (sectionId, itemId, data) => {
+    const response = await wordpressAPI.request(
+      `/smartbriefing/sections/${sectionId}/items/${itemId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }
+    );
 
     if (!response.success) {
       throw new Error('Fehler beim Speichern');
     }
 
-    // Update local state
+    // Update local state with the updated section
     setBriefing((prev) => ({
       ...prev,
       sections: prev.sections.map((s) =>
-        s.id === sectionId ? { ...s, user_notes: notes } : s
+        s.id === sectionId ? response.data.section : s
       ),
     }));
   }, []);
@@ -601,7 +844,7 @@ const BriefingWorkbook = ({
         }}
       >
         <ArrowLeft size={18} />
-        Zuruck zur Ubersicht
+        Zurück zur Übersicht
       </button>
 
       {/* Header */}
@@ -768,7 +1011,7 @@ const BriefingWorkbook = ({
               key={section.id}
               section={section}
               primaryAccent={primaryAccent}
-              onSaveNotes={handleSaveNotes}
+              onUpdateItem={handleUpdateItem}
               isExpanded={expandedSections[section.id]}
               onToggle={() => toggleSection(section.id)}
             />
@@ -804,15 +1047,19 @@ const BriefingWorkbook = ({
           <Lightbulb size={18} style={{ color: primaryAccent, flexShrink: 0, marginTop: '2px' }} />
           <div>
             <h4 style={{ margin: '0 0 4px 0', color: '#0f172a', fontSize: '14px', fontWeight: 600 }}>
-              Tipp: Nutze die Notiz-Felder
+              Tipp: Personalisiere dein Briefing
             </h4>
             <p style={{ margin: 0, color: '#64748b', fontSize: '13px', lineHeight: 1.5 }}>
-              Schreibe zu jedem Abschnitt deine eigenen Gedanken, spezifischen Antworten oder Ideen auf.
-              Deine Notizen werden automatisch gespeichert und helfen dir bei der Vorbereitung.
+              Klicke auf das Stift-Icon bei jedem Punkt, um deine eigenen Notizen hinzuzufügen.
+              Nicht relevante Punkte kannst du mit dem Papierkorb-Icon ausblenden.
             </p>
           </div>
         </div>
       </div>
+
+      <style>
+        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
+      </style>
     </div>
   );
 };

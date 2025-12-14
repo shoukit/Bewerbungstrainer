@@ -19,6 +19,12 @@ import {
   Video,
   CheckCircle,
   XCircle,
+  FileText,
+  Briefcase,
+  Banknote,
+  Users,
+  Sparkles,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
@@ -26,6 +32,8 @@ import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import TrainingSessionDetailView from './TrainingSessionDetailView';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
+import wordpressAPI from '@/services/wordpress-api';
+import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
 
 console.log('📦 [SESSION_HISTORY] SessionHistory module loaded');
 
@@ -36,13 +44,175 @@ const TABS = {
   SIMULATOR: 'simulator',
   ROLEPLAY: 'roleplay',
   VIDEO: 'video',
+  BRIEFINGS: 'briefings',
 };
 
 const TAB_CONFIG = [
   { id: TABS.SIMULATOR, label: 'Szenario-Training', icon: Target },
   { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
   { id: TABS.VIDEO, label: 'Wirkungs-Analyse', icon: Video },
+  { id: TABS.BRIEFINGS, label: 'Smart Briefings', icon: Sparkles },
 ];
+
+/**
+ * Icon mapping for briefing template icons
+ */
+const BRIEFING_ICON_MAP = {
+  'file-text': FileText,
+  'briefcase': Briefcase,
+  'banknote': Banknote,
+  'users': Users,
+};
+
+/**
+ * BriefingCard - Card component for Smart Briefings
+ */
+const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText, primaryAccent }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const Icon = BRIEFING_ICON_MAP[briefing.template_icon] || FileText;
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm('Briefing wirklich löschen?')) return;
+
+    setIsDeleting(true);
+    try {
+      await onDelete(briefing.id);
+    } catch (err) {
+      console.error('Error deleting briefing:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 },
+      }}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+    >
+      <div
+        onClick={onClick}
+        style={{
+          background: '#fff',
+          borderRadius: '16px',
+          padding: '20px',
+          cursor: 'pointer',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
+          e.currentTarget.style.borderColor = '#cbd5e1';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+          e.currentTarget.style.borderColor = '#e2e8f0';
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Icon */}
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}30)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Icon style={{ width: '24px', height: '24px', color: primaryAccent }} />
+          </div>
+
+          {/* Content */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 style={{
+              fontSize: '16px',
+              fontWeight: 600,
+              color: '#0f172a',
+              marginBottom: '4px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
+              {briefing.title || 'Briefing'}
+            </h3>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              flexWrap: 'wrap',
+              fontSize: '13px',
+              color: '#64748b',
+            }}>
+              <span style={{
+                backgroundColor: `${primaryAccent}15`,
+                color: primaryAccent,
+                padding: '2px 8px',
+                borderRadius: '10px',
+                fontSize: '12px',
+                fontWeight: 500,
+              }}>
+                {briefing.template_title}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Calendar size={14} />
+                {formatDate(briefing.created_at)}
+              </span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              style={{
+                padding: '8px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: '#94a3b8',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="Löschen"
+            >
+              {isDeleting ? (
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <Trash2 size={18} />
+              )}
+            </button>
+            <ChevronRight size={20} style={{ color: '#94a3b8' }} />
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 /**
  * SessionCard - Unified card component for all session types
@@ -294,9 +464,13 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const [roleplaySessions, setRoleplaySessions] = useState([]);
   const [simulatorSessions, setSimulatorSessions] = useState([]);
   const [videoSessions, setVideoSessions] = useState([]);
+  const [briefings, setBriefings] = useState([]);
   const [roleplayScenarios, setRoleplayScenarios] = useState([]);
   const [simulatorScenarios, setSimulatorScenarios] = useState([]);
   const [videoScenarios, setVideoScenarios] = useState([]);
+
+  // Selected briefing for workbook view
+  const [selectedBriefing, setSelectedBriefing] = useState(null);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -327,6 +501,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         roleplayData,
         simulatorData,
         videoData,
+        briefingsData,
         roleplayScenariosData,
         simulatorScenariosData,
         videoScenariosData,
@@ -341,6 +516,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         fetch(`${apiUrl}/video-training/sessions?limit=50${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
+        // Smart Briefings (pass demo_code)
+        wordpressAPI.request(`/smartbriefing/briefings?limit=50${demoCode ? `&demo_code=${encodeURIComponent(demoCode)}` : ''}`, {
+          method: 'GET',
+        }).catch(() => ({ success: false, data: { briefings: [] } })),
         // Roleplay scenarios
         getRoleplayScenarios().catch(() => []),
         // Simulator scenarios
@@ -374,6 +553,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       setRoleplaySessions(extractSessions(roleplayData));
       setSimulatorSessions(extractSessions(simulatorData));
       setVideoSessions(extractSessions(videoData));
+      setBriefings(briefingsData?.data?.briefings || []);
       setRoleplayScenarios(extractScenarios(roleplayScenariosData));
       setSimulatorScenarios(extractScenarios(simulatorScenariosData));
       setVideoScenarios(extractScenarios(videoScenariosData));
@@ -409,6 +589,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     switch (activeTab) {
       case TABS.SIMULATOR: return simulatorSessions;
       case TABS.VIDEO: return videoSessions;
+      case TABS.BRIEFINGS: return briefings;
       default: return roleplaySessions;
     }
   };
@@ -422,7 +603,28 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   };
 
   // Total sessions count
-  const totalSessions = roleplaySessions.length + simulatorSessions.length + videoSessions.length;
+  const totalSessions = roleplaySessions.length + simulatorSessions.length + videoSessions.length + briefings.length;
+
+  // Delete briefing handler
+  const handleDeleteBriefing = async (briefingId) => {
+    const response = await wordpressAPI.request(`/smartbriefing/briefings/${briefingId}`, {
+      method: 'DELETE',
+    });
+
+    if (response.success) {
+      setBriefings((prev) => prev.filter((b) => b.id !== briefingId));
+    }
+  };
+
+  // Handle briefing click - open workbook
+  const handleBriefingClick = (briefing) => {
+    setSelectedBriefing(briefing);
+  };
+
+  // Handle back from briefing workbook
+  const handleBackFromBriefing = () => {
+    setSelectedBriefing(null);
+  };
 
   // Handle session click
   const handleSessionClick = (session) => {
@@ -445,6 +647,16 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                         roleplayScenarioMap;
     return scenarioMap[session?.scenario_id];
   };
+
+  // Show briefing workbook if a briefing is selected
+  if (selectedBriefing) {
+    return (
+      <BriefingWorkbook
+        briefing={selectedBriefing}
+        onBack={handleBackFromBriefing}
+      />
+    );
+  }
 
   // Show detail view for selected training session
   if (selectedTrainingSession) {
@@ -671,6 +883,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           const isActive = activeTab === tab.id;
           const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
                        tab.id === TABS.VIDEO ? videoSessions.length :
+                       tab.id === TABS.BRIEFINGS ? briefings.length :
                        roleplaySessions.length;
 
           return (
@@ -723,15 +936,18 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             {activeTab === TABS.SIMULATOR && <Target style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
             {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
             {activeTab === TABS.VIDEO && <Video style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
+            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
             <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
-              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : 'Live-Simulationen'}
+              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : 'Live-Simulationen'}
             </h3>
             <p style={{ color: '#64748b', marginBottom: '24px' }}>
-              Starte dein erstes Training, um hier deine Fortschritte zu sehen.
+              {activeTab === TABS.BRIEFINGS
+                ? 'Erstelle dein erstes Briefing, um dich optimal vorzubereiten.'
+                : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
             </p>
             <Button onClick={onBack}>
               <Play style={{ width: '16px', height: '16px', marginRight: '8px' }} />
-              Training starten
+              {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : 'Training starten'}
             </Button>
           </div>
         ) : (
@@ -747,23 +963,43 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
               },
             }}
           >
-            {activeSessions.map((session) => {
-              const scenario = activeScenarioMap[session.scenario_id];
-              return (
-                <SessionCard
-                  key={session.id}
-                  session={session}
-                  type={activeTab}
-                  scenario={scenario}
-                  onClick={() => handleSessionClick(session)}
+            {activeTab === TABS.BRIEFINGS ? (
+              // Render briefings
+              briefings.map((briefing) => (
+                <BriefingCard
+                  key={briefing.id}
+                  briefing={briefing}
+                  onClick={() => handleBriefingClick(briefing)}
+                  onDelete={handleDeleteBriefing}
                   headerGradient={headerGradient}
                   headerText={headerText}
+                  primaryAccent={primaryAccent}
                 />
-              );
-            })}
+              ))
+            ) : (
+              // Render regular sessions
+              activeSessions.map((session) => {
+                const scenario = activeScenarioMap[session.scenario_id];
+                return (
+                  <SessionCard
+                    key={session.id}
+                    session={session}
+                    type={activeTab}
+                    scenario={scenario}
+                    onClick={() => handleSessionClick(session)}
+                    headerGradient={headerGradient}
+                    headerText={headerText}
+                  />
+                );
+              })
+            )}
           </motion.div>
         )}
       </div>
+
+      <style>
+        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
+      </style>
     </div>
   );
 };
