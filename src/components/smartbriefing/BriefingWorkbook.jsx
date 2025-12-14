@@ -581,7 +581,21 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
 /**
  * Section Card Component - Handles both item-based and legacy markdown content
  */
-const SectionCard = ({ section, primaryAccent, onUpdateItem, isExpanded, onToggle }) => {
+const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isExpanded, onToggle }) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Handle generate more click
+  const handleGenerateMore = async () => {
+    setIsGenerating(true);
+    try {
+      await onGenerateMore(section.id);
+    } catch (err) {
+      console.error('Error generating more items:', err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // Parse ai_content to check if it's JSON with items
   const parseContent = useCallback(() => {
     if (!section.ai_content) return { type: 'empty', items: [], content: '' };
@@ -693,6 +707,54 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, isExpanded, onToggl
                   onUpdateItem={onUpdateItem}
                 />
               ))}
+
+              {/* Generate more button */}
+              {onGenerateMore && (
+                <button
+                  onClick={handleGenerateMore}
+                  disabled={isGenerating}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    marginTop: '12px',
+                    marginBottom: '8px',
+                    borderRadius: '10px',
+                    border: `1px dashed ${primaryAccent}40`,
+                    backgroundColor: `${primaryAccent}08`,
+                    color: primaryAccent,
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: isGenerating ? 'wait' : 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isGenerating) {
+                      e.currentTarget.style.backgroundColor = `${primaryAccent}15`;
+                      e.currentTarget.style.borderColor = `${primaryAccent}60`;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = `${primaryAccent}08`;
+                    e.currentTarget.style.borderColor = `${primaryAccent}40`;
+                  }}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                      Generiere 5 weitere Punkte...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} />
+                      5 weitere Punkte generieren
+                    </>
+                  )}
+                </button>
+              )}
 
               {/* Deleted items (collapsed) */}
               {deletedItems.length > 0 && (
@@ -840,6 +902,30 @@ const BriefingWorkbook = ({
         s.id === sectionId ? response.data.section : s
       ),
     }));
+  }, []);
+
+  // Generate more items for a section
+  const handleGenerateMore = useCallback(async (sectionId) => {
+    const response = await wordpressAPI.request(
+      `/smartbriefing/sections/${sectionId}/generate-more`,
+      {
+        method: 'POST',
+      }
+    );
+
+    if (!response.success) {
+      throw new Error(response.message || 'Fehler beim Generieren');
+    }
+
+    // Update local state with the updated section
+    setBriefing((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) =>
+        s.id === sectionId ? response.data.section : s
+      ),
+    }));
+
+    return response.data.new_items_count;
   }, []);
 
   if (!briefing) {
@@ -1016,6 +1102,7 @@ const BriefingWorkbook = ({
               section={section}
               primaryAccent={primaryAccent}
               onUpdateItem={handleUpdateItem}
+              onGenerateMore={handleGenerateMore}
               isExpanded={expandedSections[section.id]}
               onToggle={() => toggleSection(section.id)}
             />

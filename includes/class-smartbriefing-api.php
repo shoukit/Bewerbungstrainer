@@ -111,6 +111,13 @@ class Bewerbungstrainer_SmartBriefing_API {
             'callback' => array($this, 'update_section_item'),
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
+
+        // Generate more items for a section
+        register_rest_route($this->namespace, '/smartbriefing/sections/(?P<section_id>\d+)/generate-more', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'generate_more_items'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
     }
 
     /**
@@ -559,6 +566,141 @@ class Bewerbungstrainer_SmartBriefing_API {
     }
 
     /**
+     * Generate more items for a section using AI
+     */
+    public function generate_more_items($request) {
+        $section_id = intval($request['section_id']);
+
+        // Get the section
+        $section = $this->db->get_section($section_id);
+
+        if (!$section) {
+            return new WP_Error(
+                'not_found',
+                __('Section nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Verify user owns this briefing
+        $briefing = $this->db->get_briefing($section->briefing_id);
+        if (!$briefing || (int) $briefing->user_id !== get_current_user_id()) {
+            return new WP_Error(
+                'unauthorized',
+                __('Du bist nicht berechtigt, diese Section zu bearbeiten.', 'bewerbungstrainer'),
+                array('status' => 403)
+            );
+        }
+
+        // Parse ai_content to get existing items
+        $ai_content = json_decode($section->ai_content, true);
+
+        if (!$ai_content || !isset($ai_content['items']) || !is_array($ai_content['items'])) {
+            return new WP_Error(
+                'invalid_format',
+                __('Diese Section unterstützt keine Item-Generierung.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get existing items (not deleted)
+        $existing_items = array_filter($ai_content['items'], function($item) {
+            return empty($item['deleted']);
+        });
+
+        // Get API key
+        $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
+        if (empty($api_key)) {
+            return new WP_Error(
+                'missing_api_key',
+                __('Gemini API Key ist nicht konfiguriert.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Get template for context
+        $template = $this->db->get_template($briefing->template_id);
+
+        // Build prompt for generating more items
+        $prompt = $this->build_generate_more_prompt(
+            $briefing->variables_json,
+            $section->section_title,
+            $existing_items,
+            $template ? $template->title : 'Briefing'
+        );
+
+        // Log prompt
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'SMARTBRIEFING_GENERATE_MORE',
+                'Smart Briefing: Generierung von 5 zusätzlichen Punkten für eine Section.',
+                $prompt,
+                array(
+                    'Section' => $section->section_title,
+                    'Section-ID' => $section_id,
+                    'Existing Items' => count($existing_items),
+                )
+            );
+        }
+
+        // Call Gemini API
+        $response = $this->call_gemini_api($prompt, $api_key);
+
+        if (is_wp_error($response)) {
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SMARTBRIEFING_GENERATE_MORE', $response->get_error_message(), true);
+            }
+            return $response;
+        }
+
+        // Log successful response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('SMARTBRIEFING_GENERATE_MORE', $response);
+        }
+
+        // Parse new items from response
+        $new_items = $this->parse_new_items_response($response);
+
+        if (is_wp_error($new_items)) {
+            return $new_items;
+        }
+
+        // Add unique IDs to new items
+        foreach ($new_items as &$item) {
+            $item['id'] = wp_generate_uuid4();
+            $item['user_note'] = '';
+            $item['deleted'] = false;
+        }
+
+        // Merge new items with existing items
+        $ai_content['items'] = array_merge($ai_content['items'], $new_items);
+
+        // Save updated ai_content
+        $result = $this->db->update_section($section_id, array(
+            'ai_content' => json_encode($ai_content, JSON_UNESCAPED_UNICODE),
+        ));
+
+        if (!$result) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Speichern der neuen Items.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Return updated section
+        $updated_section = $this->db->get_section($section_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'section' => $this->format_section($updated_section),
+                'new_items_count' => count($new_items),
+            ),
+        ), 200);
+    }
+
+    /**
      * Delete a briefing
      */
     public function delete_briefing($request) {
@@ -726,6 +868,118 @@ class Bewerbungstrainer_SmartBriefing_API {
             }
         }
         return null;
+    }
+
+    /**
+     * Build prompt for generating 5 more items for a section
+     */
+    private function build_generate_more_prompt($variables, $section_title, $existing_items, $template_title) {
+        $prompt = "Du bist ein KI-Assistent, der professionelle Briefings erstellt.\n\n";
+        $prompt .= "=== AUFGABE ===\n";
+        $prompt .= "Generiere GENAU 5 neue, zusätzliche Punkte für den Abschnitt \"$section_title\" eines $template_title Briefings.\n\n";
+
+        // Add context from variables
+        if (!empty($variables) && is_array($variables)) {
+            $prompt .= "=== KONTEXT ===\n";
+            foreach ($variables as $key => $value) {
+                if (!empty($value)) {
+                    $display_key = ucfirst(str_replace('_', ' ', $key));
+                    $prompt .= "- $display_key: $value\n";
+                }
+            }
+            $prompt .= "\n";
+        }
+
+        // Add existing items to avoid duplicates
+        $prompt .= "=== BEREITS VORHANDENE PUNKTE (NICHT WIEDERHOLEN) ===\n";
+        foreach ($existing_items as $item) {
+            $prompt .= "- " . $item['label'] . ": " . ($item['content'] ?? '') . "\n";
+        }
+        $prompt .= "\n";
+
+        $prompt .= "=== OUTPUT FORMAT ===\n";
+        $prompt .= "KRITISCH: Antworte NUR mit einem validen JSON-Array. KEINE Code-Blöcke, KEIN Markdown, KEIN Text davor oder danach.\n";
+        $prompt .= "Deine Antwort MUSS mit [ beginnen und mit ] enden.\n\n";
+        $prompt .= "Erwartete JSON-Struktur:\n";
+        $prompt .= "[\n";
+        $prompt .= "  {\"label\": \"Neuer Punkt 1\", \"content\": \"Beschreibung oder Erklärung.\"},\n";
+        $prompt .= "  {\"label\": \"Neuer Punkt 2\", \"content\": \"Weitere Details.\"},\n";
+        $prompt .= "  {\"label\": \"Neuer Punkt 3\", \"content\": \"...\"},\n";
+        $prompt .= "  {\"label\": \"Neuer Punkt 4\", \"content\": \"...\"},\n";
+        $prompt .= "  {\"label\": \"Neuer Punkt 5\", \"content\": \"...\"}\n";
+        $prompt .= "]\n\n";
+
+        $prompt .= "=== WICHTIGE REGELN ===\n";
+        $prompt .= "- Generiere GENAU 5 neue Punkte\n";
+        $prompt .= "- KEINE Wiederholung der bereits vorhandenen Punkte\n";
+        $prompt .= "- Jeder Punkt muss zum Thema \"$section_title\" passen\n";
+        $prompt .= "- Sei spezifisch und konkret bezogen auf den Kontext\n";
+        $prompt .= "- Nutze **fett** für wichtige Begriffe in 'content'\n";
+        $prompt .= "- Halte 'label' kurz und prägnant (2-5 Wörter)\n";
+        $prompt .= "- 'content' sollte 1-2 Sätze sein\n\n";
+        $prompt .= "ERINNERUNG: Starte deine Antwort DIREKT mit [ - kein Text, keine Backticks.\n";
+
+        return $prompt;
+    }
+
+    /**
+     * Parse new items response from LLM
+     */
+    private function parse_new_items_response($response) {
+        $original = $response;
+        $cleaned = trim($response);
+
+        // Try to extract JSON from code blocks first
+        if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/', $cleaned, $matches)) {
+            $cleaned = trim($matches[1]);
+        } else {
+            // Strip leading/trailing markers if present
+            $cleaned = preg_replace('/^```json\s*/i', '', $cleaned);
+            $cleaned = preg_replace('/^```\s*/', '', $cleaned);
+            $cleaned = preg_replace('/\s*```\s*$/', '', $cleaned);
+            $cleaned = trim($cleaned);
+        }
+
+        // Try to parse JSON
+        $data = json_decode($cleaned, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            // Fallback - try to find JSON array in original response
+            $start = strpos($original, '[');
+            $end = strrpos($original, ']');
+            if ($start !== false && $end !== false && $end > $start) {
+                $extracted = substr($original, $start, $end - $start + 1);
+                $data = json_decode($extracted, true);
+            }
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log('[SMARTBRIEFING] Failed to parse new items JSON: ' . json_last_error_msg());
+                return new WP_Error('json_parse_error', 'Failed to parse JSON response: ' . json_last_error_msg());
+            }
+        }
+
+        if (!is_array($data)) {
+            return new WP_Error('invalid_structure', 'Response is not an array');
+        }
+
+        // Validate and transform items
+        $items = array();
+        foreach ($data as $item) {
+            if (!isset($item['label'])) {
+                continue;
+            }
+            $items[] = array(
+                'label' => $item['label'],
+                'content' => isset($item['content']) ? $item['content'] : '',
+            );
+        }
+
+        if (empty($items)) {
+            return new WP_Error('no_items', 'No valid items found in response');
+        }
+
+        error_log('[SMARTBRIEFING] Successfully parsed ' . count($items) . ' new items');
+        return $items;
     }
 
     /**
