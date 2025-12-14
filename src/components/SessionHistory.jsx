@@ -331,8 +331,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         simulatorScenariosData,
         videoScenariosData,
       ] = await Promise.all([
-        // Roleplay sessions (pass demo_code)
-        getRoleplaySessions({ limit: 50, demo_code: demoCode }).catch(() => ({ data: [] })),
+        // Roleplay sessions (only pass demo_code if it exists)
+        getRoleplaySessions({ limit: 50, ...(demoCode && { demo_code: demoCode }) }).catch(() => ({ data: [] })),
         // Simulator sessions (pass demo_code)
         fetch(`${apiUrl}/simulator/sessions?limit=50${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
