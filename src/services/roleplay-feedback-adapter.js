@@ -109,7 +109,12 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
   if (audioFile) {
     try {
       console.log('🎭 [Roleplay Feedback] Generating audio analysis...');
-      results.audioAnalysisContent = await generateAudioAnalysis(audioFile, geminiApiKey);
+      results.audioAnalysisContent = await generateAudioAnalysis(
+        audioFile,
+        geminiApiKey,
+        'gemini-1.5-flash', // modelName
+        roleOptions // pass same role options for audio analysis
+      );
       console.log('✅ [Roleplay Feedback] Audio analysis generated successfully');
     } catch (error) {
       console.error('❌ [Roleplay Feedback] Failed to generate audio analysis:', error);

@@ -118,7 +118,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
 
     // Add interviewer profile information to system prompt
     if (scenario.interviewer_profile) {
-      prompt += '\n\n## Dein Profil als Interviewer:\n';
+      prompt += '\n\n## Dein Profil:\n';
 
       if (scenario.interviewer_profile.name) {
         prompt += `\nDein Name: ${scenario.interviewer_profile.name}`;
