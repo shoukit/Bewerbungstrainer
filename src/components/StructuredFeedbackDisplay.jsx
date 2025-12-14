@@ -505,6 +505,89 @@ const CategoryItemCard = ({ item, index }) => {
 };
 
 /**
+ * Feedback Accordion Component
+ * Displays a collapsible section with feedback items (strengths, improvements, tips)
+ */
+const FeedbackAccordion = ({
+  title,
+  icon: Icon,
+  items,
+  bgColor,
+  borderColor,
+  headerBgColor,
+  iconColor,
+  titleColor,
+  textColor,
+  bulletColor,
+  bulletIcon: BulletIcon,
+  defaultOpen = false,
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  if (!items || items.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={cn("border rounded-xl overflow-hidden", bgColor, borderColor)}
+    >
+      {/* Accordion Header */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "w-full px-4 py-3 flex items-center justify-between gap-3 transition-colors hover:opacity-90",
+          bgColor
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", headerBgColor)}>
+            <Icon className={cn("w-4 h-4", iconColor)} />
+          </div>
+          <h4 className={cn("text-sm font-bold", titleColor)}>
+            {title}
+          </h4>
+        </div>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown className={cn("w-5 h-5", iconColor)} />
+        </motion.div>
+      </button>
+
+      {/* Accordion Content */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4">
+              <ul className="space-y-2">
+                {items.map((item, idx) => (
+                  <li key={idx} className={cn("flex items-start gap-2 text-sm", textColor)}>
+                    {BulletIcon ? (
+                      <BulletIcon className={cn("w-4 h-4 mt-0.5 flex-shrink-0", bulletColor)} />
+                    ) : (
+                      <span className={cn("mt-0.5 flex-shrink-0", bulletColor)}>•</span>
+                    )}
+                    <span className="leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+/**
  * Main StructuredFeedbackDisplay Component
  */
 function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
@@ -735,40 +818,57 @@ function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
           </div>
         </div>
 
-        {/* Highlight Cards */}
-        <div className="grid grid-cols-1 gap-3">
-          {data.strengths?.[0] && (
-            <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-              <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                <ThumbsUp className="w-4 h-4 text-green-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
-                  Deine Superkraft
-                </p>
-                <p className="text-sm text-green-900 mt-0.5 leading-relaxed">
-                  {data.strengths[0]}
-                </p>
-              </div>
-            </div>
-          )}
+        {/* All Strengths - Accordion Style */}
+        {data.strengths?.length > 0 && (
+          <FeedbackAccordion
+            title="Deine Superkräfte"
+            icon={ThumbsUp}
+            items={data.strengths}
+            bgColor="bg-green-50"
+            borderColor="border-green-200"
+            headerBgColor="bg-green-100"
+            iconColor="text-green-600"
+            titleColor="text-green-800"
+            textColor="text-green-700"
+            bulletColor="text-green-500"
+            defaultOpen={true}
+          />
+        )}
 
-          {data.improvements?.[0] && (
-            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <Target className="w-4 h-4 text-amber-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
-                  Dein Trainingsfeld
-                </p>
-                <p className="text-sm text-amber-900 mt-0.5 leading-relaxed">
-                  {data.improvements[0]}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* All Improvements - Accordion Style */}
+        {data.improvements?.length > 0 && (
+          <FeedbackAccordion
+            title="Dein Trainingsfeld"
+            icon={Target}
+            items={data.improvements}
+            bgColor="bg-amber-50"
+            borderColor="border-amber-200"
+            headerBgColor="bg-amber-100"
+            iconColor="text-amber-600"
+            titleColor="text-amber-800"
+            textColor="text-amber-700"
+            bulletColor="text-amber-500"
+            defaultOpen={true}
+          />
+        )}
+
+        {/* All Tips - Accordion Style */}
+        {data.tips?.length > 0 && (
+          <FeedbackAccordion
+            title="Praktische Tipps"
+            icon={Lightbulb}
+            items={data.tips}
+            bgColor="bg-blue-50"
+            borderColor="border-blue-200"
+            headerBgColor="bg-blue-100"
+            iconColor="text-blue-600"
+            titleColor="text-blue-800"
+            textColor="text-blue-700"
+            bulletColor="text-blue-500"
+            bulletIcon={Zap}
+            defaultOpen={true}
+          />
+        )}
       </motion.div>
 
       {/* Bewertungskriterien */}
@@ -814,75 +914,6 @@ function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
               />
             )}
           </div>
-        </motion.div>
-      )}
-
-      {/* Additional Strengths */}
-      {data.strengths?.length > 1 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="p-4 bg-green-50 border border-green-200 rounded-xl"
-        >
-          <h4 className="text-sm font-bold text-green-800 mb-2 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Weitere Stärken
-          </h4>
-          <ul className="space-y-1.5">
-            {data.strengths.slice(1).map((strength, idx) => (
-              <li key={idx} className="flex items-start gap-2 text-xs text-green-700">
-                <span className="text-green-500 mt-0.5">•</span>
-                <span>{strength}</span>
-              </li>
-            ))}
-          </ul>
-        </motion.div>
-      )}
-
-      {/* Additional Improvements */}
-      {data.improvements?.length > 1 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 }}
-          className="p-4 bg-amber-50 border border-amber-200 rounded-xl"
-        >
-          <h4 className="text-sm font-bold text-amber-800 mb-2 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Verbesserungspotential
-          </h4>
-          <ul className="space-y-1.5">
-            {data.improvements.slice(1).map((improvement, idx) => (
-              <li key={idx} className="flex items-start gap-2 text-xs text-amber-700">
-                <span className="text-amber-500 mt-0.5">•</span>
-                <span>{improvement}</span>
-              </li>
-            ))}
-          </ul>
-        </motion.div>
-      )}
-
-      {/* Tips */}
-      {data.tips?.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="p-4 bg-blue-50 border border-blue-200 rounded-xl"
-        >
-          <h4 className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2">
-            <Lightbulb className="w-4 h-4" />
-            Praktische Tipps
-          </h4>
-          <ul className="space-y-1.5">
-            {data.tips.map((tip, idx) => (
-              <li key={idx} className="flex items-start gap-2 text-xs text-blue-700">
-                <Zap className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
-                <span>{tip}</span>
-              </li>
-            ))}
-          </ul>
         </motion.div>
       )}
     </div>

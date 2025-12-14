@@ -74,6 +74,14 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
     audioAnalysisContent: null,
   };
 
+  // Build role options for dynamic feedback prompt (defined outside try blocks for shared access)
+  const roleOptions = {
+    roleType: scenarioContext.role_type || 'interview',
+    userRoleLabel: scenarioContext.user_role_label || 'Bewerber',
+    agentRoleLabel: scenarioContext.interviewer_profile?.role || 'Gesprächspartner',
+  };
+  console.log('🎭 [Roleplay Feedback] Role options:', roleOptions);
+
   try {
     // Generate feedback (transcript analysis)
     console.log('🎭 [Roleplay Feedback] Generating feedback...');
@@ -88,7 +96,8 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
       formattedTranscript,
       geminiApiKey,
       'gemini-1.5-flash', // modelName as 3rd parameter
-      customPrompt // customPrompt as 4th parameter
+      customPrompt, // customPrompt as 4th parameter
+      roleOptions // roleOptions as 5th parameter
     );
     console.log('✅ [Roleplay Feedback] Feedback generated successfully');
   } catch (error) {
@@ -100,7 +109,12 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
   if (audioFile) {
     try {
       console.log('🎭 [Roleplay Feedback] Generating audio analysis...');
-      results.audioAnalysisContent = await generateAudioAnalysis(audioFile, geminiApiKey);
+      results.audioAnalysisContent = await generateAudioAnalysis(
+        audioFile,
+        geminiApiKey,
+        'gemini-1.5-flash', // modelName
+        roleOptions // pass same role options for audio analysis
+      );
       console.log('✅ [Roleplay Feedback] Audio analysis generated successfully');
     } catch (error) {
       console.error('❌ [Roleplay Feedback] Failed to generate audio analysis:', error);
@@ -152,9 +166,14 @@ function formatTranscriptForGemini(transcript, scenarioContext = {}) {
 
   formatted += '\n--- Gesprächsverlauf ---\n\n';
 
-  // Format each transcript entry
+  // Determine speaker labels based on scenario configuration
+  // Default to "Interviewer"/"Bewerber" for backwards compatibility
+  const userRoleLabel = scenarioContext.user_role_label || 'Bewerber';
+  const agentRoleLabel = scenarioContext.interviewer_profile?.role || 'Gesprächspartner';
+
+  // Format each transcript entry with appropriate speaker labels
   transcript.forEach((entry) => {
-    const speaker = entry.role === 'agent' ? 'Interviewer' : 'Bewerber';
+    const speaker = entry.role === 'agent' ? agentRoleLabel : userRoleLabel;
     formatted += `${speaker}: ${entry.text}\n\n`;
   });
 

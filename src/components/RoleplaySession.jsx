@@ -118,7 +118,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
 
     // Add interviewer profile information to system prompt
     if (scenario.interviewer_profile) {
-      prompt += '\n\n## Dein Profil als Interviewer:\n';
+      prompt += '\n\n## Dein Profil:\n';
 
       if (scenario.interviewer_profile.name) {
         prompt += `\nDein Name: ${scenario.interviewer_profile.name}`;
@@ -400,6 +400,10 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
         title: scenario.title,
         description: scenario.description,
         variables: variables,
+        role_type: scenario.role_type || 'interview',
+        user_role_label: scenario.user_role_label || 'Bewerber',
+        interviewer_profile: scenario.interviewer_profile,
+        feedback_prompt: scenario.feedback_prompt,
       };
 
       // Step 1: Save conversation_id to database first
@@ -797,9 +801,9 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="h-full overflow-hidden"
+              className="h-full min-h-0 overflow-hidden"
             >
-              <div className="h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+              <div className="h-full min-h-0 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
                 {/* Transcript Header */}
                 <div
                   style={{ background: themedStyles.headerGradient }}
@@ -812,7 +816,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                 </div>
 
                 {/* Transcript Content - Scrollable with fixed height */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ minHeight: 0, maxHeight: '100%' }}>
+                <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
                   {transcript.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center text-slate-500">
