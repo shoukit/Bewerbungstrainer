@@ -48,10 +48,10 @@ const TABS = {
 };
 
 const TAB_CONFIG = [
-  { id: TABS.SIMULATOR, label: 'Szenario-Training', icon: Target },
   { id: TABS.BRIEFINGS, label: 'Smart Briefings', icon: Sparkles },
-  { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
+  { id: TABS.SIMULATOR, label: 'Szenario-Training', icon: Target },
   { id: TABS.VIDEO, label: 'Wirkungs-Analyse', icon: Video },
+  { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
 ];
 
 /**
@@ -520,8 +520,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
-  // Active tab
-  const [activeTab, setActiveTab] = useState(TABS.SIMULATOR);
+  // Active tab - default to first tab (Smart Briefings)
+  const [activeTab, setActiveTab] = useState(TABS.BRIEFINGS);
 
   // Selected session for detail view
   const [selectedTrainingSession, setSelectedTrainingSession] = useState(null);
