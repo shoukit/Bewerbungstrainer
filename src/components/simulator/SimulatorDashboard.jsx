@@ -14,14 +14,13 @@ import {
   LayoutGrid,
   Clock,
   FolderOpen,
-  Search,
-  Filter,
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
-import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 import {
   SCENARIO_CATEGORIES,
   SCENARIO_CATEGORY_CONFIG,
@@ -388,107 +387,40 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
           )}
         </div>
 
-        {/* Search and Filters */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '24px', alignItems: 'center' }}>
-          {/* Search Input */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
-            <Search
-              style={{
-                position: 'absolute',
-                left: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '18px',
-                height: '18px',
-                color: COLORS.slate[400],
-                pointerEvents: 'none',
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Szenarien durchsuchen..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 14px 12px 44px',
-                borderRadius: '12px',
-                border: `1px solid ${COLORS.slate[200]}`,
-                fontSize: '14px',
-                color: COLORS.slate[900],
-                backgroundColor: '#fff',
-                outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = primaryAccent;
-                e.target.style.boxShadow = `0 0 0 3px ${primaryAccent}20`;
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = COLORS.slate[200];
-                e.target.style.boxShadow = 'none';
-              }}
-            />
-          </div>
-
-          {/* Difficulty Filter */}
-          <div style={{ position: 'relative', minWidth: '180px' }}>
-            <Filter
-              style={{
-                position: 'absolute',
-                left: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '16px',
-                height: '16px',
-                color: COLORS.slate[400],
-                pointerEvents: 'none',
-              }}
-            />
-            <select
-              value={difficultyFilter}
-              onChange={(e) => setDifficultyFilter(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 14px 12px 40px',
-                borderRadius: '12px',
-                border: `1px solid ${COLORS.slate[200]}`,
-                fontSize: '14px',
-                color: COLORS.slate[900],
-                backgroundColor: '#fff',
-                cursor: 'pointer',
-                outline: 'none',
-                appearance: 'none',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 12px center',
-                paddingRight: '40px',
-              }}
-            >
-              <option value="all">Alle Schwierigkeiten</option>
-              <option value="easy">Einfach</option>
-              <option value="beginner">Einsteiger</option>
-              <option value="medium">Mittel</option>
-              <option value="intermediate">Fortgeschritten</option>
-              <option value="hard">Schwer</option>
-              <option value="advanced">Experte</option>
-            </select>
-          </div>
-
-          {/* View Toggle */}
-          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+        {/* Search, Filters and Categories - Responsive */}
+        <div style={{ marginTop: '24px' }}>
+          <MobileFilterSheet
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Szenarien durchsuchen..."
+            categories={[
+              { key: SCENARIO_CATEGORIES.CAREER, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.CAREER], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.CAREER].icon) },
+              { key: SCENARIO_CATEGORIES.LEADERSHIP, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.LEADERSHIP], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.LEADERSHIP].icon) },
+              { key: SCENARIO_CATEGORIES.SALES, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.SALES], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.SALES].icon) },
+              { key: SCENARIO_CATEGORIES.COMMUNICATION, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.COMMUNICATION], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.COMMUNICATION].icon) },
+            ]}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            difficultyOptions={[
+              { value: 'all', label: 'Alle Schwierigkeiten' },
+              { value: 'easy', label: 'Einfach' },
+              { value: 'beginner', label: 'Einsteiger' },
+              { value: 'medium', label: 'Mittel' },
+              { value: 'intermediate', label: 'Fortgeschritten' },
+              { value: 'hard', label: 'Schwer' },
+              { value: 'advanced', label: 'Experte' },
+            ]}
+            selectedDifficulty={difficultyFilter}
+            onDifficultyChange={setDifficultyFilter}
+            showDifficulty={true}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
         </div>
       </div>
 
-      {/* Category Filter */}
-      <CategoryFilterBar
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        primaryAccent={primaryAccent}
-      />
-
       {/* Scenario Grid */}
-      <div style={{ padding: '0 24px' }}>
+      <div>
         <ScenarioCardGrid minCardWidth="340px" viewMode={viewMode}>
           {filteredScenarios.map(scenario => {
             const IconComponent = ICON_MAP[scenario.icon] || Briefcase;

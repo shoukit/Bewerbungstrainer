@@ -67,6 +67,9 @@ const TAB_CONFIG = [
  * ConfirmDeleteDialog - Styled confirmation dialog for delete actions
  */
 const ConfirmDeleteDialog = ({ isOpen, onClose, onConfirm, title, description, isDeleting }) => {
+  const { branding } = usePartner();
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent style={{ maxWidth: '400px' }}>
@@ -92,33 +95,57 @@ const ConfirmDeleteDialog = ({ isOpen, onClose, onConfirm, title, description, i
           </DialogDescription>
         </DialogHeader>
         <DialogFooter style={{ marginTop: '16px' }}>
-          <Button
-            variant="outline"
+          <button
             onClick={onClose}
             disabled={isDeleting}
-            style={{ minWidth: '100px' }}
+            style={{
+              minWidth: '100px',
+              height: '40px',
+              padding: '8px 20px',
+              borderRadius: '8px',
+              border: `2px solid ${primaryAccent}`,
+              backgroundColor: 'white',
+              color: primaryAccent,
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              opacity: isDeleting ? 0.5 : 1,
+              transition: 'all 0.2s',
+            }}
           >
             Abbrechen
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={onConfirm}
             disabled={isDeleting}
             style={{
               minWidth: '100px',
+              height: '40px',
+              padding: '8px 20px',
+              borderRadius: '8px',
+              border: 'none',
               background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
               color: '#fff',
-              border: 'none',
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              opacity: isDeleting ? 0.5 : 1,
+              transition: 'all 0.2s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
             }}
           >
             {isDeleting ? (
               <>
-                <Loader2 style={{ width: '16px', height: '16px', marginRight: '8px', animation: 'spin 1s linear infinite' }} />
+                <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
                 Löschen...
               </>
             ) : (
               'Löschen'
             )}
-          </Button>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
