@@ -28,6 +28,14 @@ import {
   Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -56,6 +64,68 @@ const TAB_CONFIG = [
 ];
 
 /**
+ * ConfirmDeleteDialog - Styled confirmation dialog for delete actions
+ */
+const ConfirmDeleteDialog = ({ isOpen, onClose, onConfirm, title, description, isDeleting }) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent style={{ maxWidth: '400px' }}>
+        <DialogHeader>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Trash2 style={{ width: '20px', height: '20px', color: '#fff' }} />
+            </div>
+            <DialogTitle>{title || 'Löschen bestätigen'}</DialogTitle>
+          </div>
+          <DialogDescription>
+            {description || 'Diese Aktion kann nicht rückgängig gemacht werden.'}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter style={{ marginTop: '16px' }}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isDeleting}
+            style={{ minWidth: '100px' }}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            style={{
+              minWidth: '100px',
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              color: '#fff',
+              border: 'none',
+            }}
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 style={{ width: '16px', height: '16px', marginRight: '8px', animation: 'spin 1s linear infinite' }} />
+                Löschen...
+              </>
+            ) : (
+              'Löschen'
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+/**
  * Icon mapping for briefing template icons
  */
 const BRIEFING_ICON_MAP = {
@@ -70,6 +140,7 @@ const BRIEFING_ICON_MAP = {
  */
 const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText, primaryAccent }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -85,13 +156,16 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
 
   const Icon = BRIEFING_ICON_MAP[briefing.template_icon] || FileText;
 
-  const handleDelete = async (e) => {
+  const handleDeleteClick = (e) => {
     e.stopPropagation();
-    if (!window.confirm('Briefing wirklich löschen?')) return;
+    setShowDeleteDialog(true);
+  };
 
+  const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
       await onDelete(briefing.id);
+      setShowDeleteDialog(false);
     } catch (err) {
       console.error('Error deleting briefing:', err);
     } finally {
@@ -186,7 +260,7 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
           {/* Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <button
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               disabled={isDeleting}
               style={{
                 padding: '8px',
@@ -211,6 +285,16 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleConfirmDelete}
+        title="Briefing löschen"
+        description="Möchtest du dieses Briefing wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+        isDeleting={isDeleting}
+      />
     </motion.div>
   );
 };
@@ -220,6 +304,7 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
  */
 const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDeleteSession, headerGradient, headerText, primaryAccent }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // Listen for resize events
@@ -314,14 +399,18 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
     }
   };
 
-  // Handle delete click
-  const handleDeleteClick = async (e) => {
+  // Handle delete click - opens confirmation dialog
+  const handleDeleteClick = (e) => {
     e.stopPropagation();
-    if (!window.confirm('Session wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+    setShowDeleteDialog(true);
+  };
 
+  // Handle confirmed delete
+  const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
       await onDeleteSession(session, type);
+      setShowDeleteDialog(false);
     } catch (err) {
       console.error('Error deleting session:', err);
     } finally {
@@ -750,6 +839,16 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleConfirmDelete}
+        title="Session löschen"
+        description="Möchtest du diese Session wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+        isDeleting={isDeleting}
+      />
     </motion.div>
   );
 };

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp, FolderOpen } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp, FolderOpen, Search, Filter } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
+import { COLORS } from '@/config/colors';
 
 // Icon mapping for scenarios
 const ICON_MAP = {
@@ -32,13 +33,36 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState('all');
 
   const { branding } = usePartner();
 
   // Get themed styles
-  const themedGradient = branding?.headerGradient || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
-  const themedText = branding?.headerText || '#ffffff';
-  const primaryAccent = branding?.primaryAccent || '#3A7FA7';
+  const themedGradient = branding?.headerGradient || branding?.['--header-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
+  const themedText = branding?.headerText || branding?.['--header-text'] || '#ffffff';
+  const primaryAccent = branding?.primaryAccent || branding?.['--primary-accent'] || '#3A7FA7';
+
+  // Filter scenarios by search and difficulty
+  const filteredScenarios = useMemo(() => {
+    let filtered = [...scenarios];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(scenario =>
+        scenario.title?.toLowerCase().includes(query) ||
+        scenario.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Difficulty filter
+    if (difficultyFilter !== 'all') {
+      filtered = filtered.filter(scenario => scenario.difficulty === difficultyFilter);
+    }
+
+    return filtered;
+  }, [scenarios, searchQuery, difficultyFilter]);
 
   // Fetch scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
@@ -203,14 +227,101 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
             </button>
           )}
         </div>
-        {/* View Toggle */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+
+        {/* Search and Filters */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '24px', alignItems: 'center' }}>
+          {/* Search Input */}
+          <div style={{ position: 'relative', flex: '1', minWidth: '200px', maxWidth: '400px' }}>
+            <Search
+              style={{
+                position: 'absolute',
+                left: '14px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '18px',
+                height: '18px',
+                color: COLORS.slate[400],
+                pointerEvents: 'none',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Szenarien durchsuchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px 12px 44px',
+                borderRadius: '12px',
+                border: `1px solid ${COLORS.slate[200]}`,
+                fontSize: '14px',
+                color: COLORS.slate[900],
+                backgroundColor: '#fff',
+                outline: 'none',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = primaryAccent;
+                e.target.style.boxShadow = `0 0 0 3px ${primaryAccent}20`;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = COLORS.slate[200];
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+
+          {/* Difficulty Filter */}
+          <div style={{ position: 'relative', minWidth: '180px' }}>
+            <Filter
+              style={{
+                position: 'absolute',
+                left: '14px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '16px',
+                height: '16px',
+                color: COLORS.slate[400],
+                pointerEvents: 'none',
+              }}
+            />
+            <select
+              value={difficultyFilter}
+              onChange={(e) => setDifficultyFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px 12px 40px',
+                borderRadius: '12px',
+                border: `1px solid ${COLORS.slate[200]}`,
+                fontSize: '14px',
+                color: COLORS.slate[900],
+                backgroundColor: '#fff',
+                cursor: 'pointer',
+                outline: 'none',
+                appearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 12px center',
+                paddingRight: '40px',
+              }}
+            >
+              <option value="all">Alle Schwierigkeiten</option>
+              <option value="easy">Einfach</option>
+              <option value="beginner">Einsteiger</option>
+              <option value="medium">Mittel</option>
+              <option value="intermediate">Fortgeschritten</option>
+              <option value="hard">Schwer</option>
+              <option value="advanced">Experte</option>
+            </select>
+          </div>
+
+          {/* View Toggle */}
           <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
         </div>
       </div>
 
       {/* Empty state */}
-      {scenarios.length === 0 && (
+      {filteredScenarios.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           <Video size={64} color="#cbd5e1" style={{ marginBottom: '16px' }} />
           <h3 style={{ color: '#64748b', fontWeight: 500 }}>Keine Szenarien verfügbar</h3>
@@ -222,7 +333,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
 
       {/* Scenario Grid */}
       <ScenarioCardGrid viewMode={viewMode}>
-        {scenarios.map((scenario) => {
+        {filteredScenarios.map((scenario) => {
           const IconComponent = ICON_MAP[scenario.icon] || Video;
           const typeLabel = SCENARIO_TYPE_LABELS[scenario.scenario_type] || 'Training';
           return (
