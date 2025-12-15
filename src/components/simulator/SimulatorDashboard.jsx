@@ -11,7 +11,8 @@ import {
   Sparkles,
   TrendingUp,
   MessageCircle,
-  LayoutGrid
+  LayoutGrid,
+  Clock
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
@@ -120,86 +121,93 @@ const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryA
       onMouseLeave={() => setIsHovered(false)}
       style={{
         backgroundColor: 'white',
-        borderRadius: '16px',
+        borderRadius: '24px',
         padding: '24px',
-        border: `2px solid ${isHovered ? primaryAccent : COLORS.slate[200]}`,
+        border: `1px solid ${isHovered ? primaryAccent : COLORS.slate[200]}`,
         boxShadow: isHovered
           ? `0 10px 25px -5px ${primaryAccent}33, 0 8px 10px -6px ${primaryAccent}22`
-          : '0 1px 3px rgba(0, 0, 0, 0.1)',
+          : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         transition: 'all 0.3s ease',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
         cursor: 'pointer',
         position: 'relative',
+        height: '100%',
       }}
     >
-      {/* Icon and Badges Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div
+      {/* Badges Row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+        <span
           style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '14px',
-            background: themedGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: `0 4px 6px -1px ${primaryAccent}4D`,
+            padding: '4px 12px',
+            borderRadius: '9999px',
+            fontSize: '12px',
+            fontWeight: 600,
+            backgroundColor: difficulty.bg,
+            color: difficulty.text,
+            border: `1px solid ${difficulty.text}20`,
           }}
         >
-          <IconComponent style={{ width: '28px', height: '28px', color: themedText }} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-          <span
-            style={{
-              padding: '4px 12px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: 600,
-              backgroundColor: difficulty.bg,
-              color: difficulty.text,
-            }}
-          >
-            {difficulty.label}
-          </span>
-          {scenario.category && <CategoryBadge category={scenario.category} />}
-        </div>
+          {difficulty.label}
+        </span>
+        {scenario.category && <CategoryBadge category={scenario.category} />}
       </div>
 
       {/* Title */}
       <h3 style={{
-        fontSize: '18px',
+        fontSize: '20px',
         fontWeight: 700,
         color: COLORS.slate[900],
         margin: 0,
+        marginBottom: '8px',
       }}>
         {scenario.title}
       </h3>
 
-      {/* Description */}
+      {/* Description - flex: 1 to push footer down, line-clamp-3 */}
       <p style={{
         fontSize: '14px',
         color: COLORS.slate[600],
         margin: 0,
-        lineHeight: 1.5
+        marginBottom: '16px',
+        lineHeight: 1.6,
+        display: '-webkit-box',
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+        flex: 1,
       }}>
         {scenario.description}
       </p>
 
-      {/* Meta Info */}
+      {/* Footer */}
       <div style={{
         display: 'flex',
-        gap: '16px',
-        paddingTop: '12px',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingTop: '16px',
         borderTop: `1px solid ${COLORS.slate[100]}`
       }}>
-        <span style={{ fontSize: '13px', color: COLORS.slate[400] }}>
-          {scenario.question_count_min}-{scenario.question_count_max} Fragen
-        </span>
-        <span style={{ fontSize: '13px', color: COLORS.slate[400] }}>
-          {Math.round(scenario.time_limit_per_question / 60)} Min/Frage
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: COLORS.slate[400] }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Clock style={{ width: '14px', height: '14px' }} />
+            ~{Math.round(scenario.time_limit_per_question / 60 * scenario.question_count_min)} Min.
+          </span>
+          <span>
+            {scenario.question_count_min}-{scenario.question_count_max} Fragen
+          </span>
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          color: primaryAccent,
+          fontSize: '14px',
+          fontWeight: 600
+        }}>
+          <span>Starten</span>
+          <TrendingUp style={{ width: '16px', height: '16px' }} />
+        </div>
       </div>
     </div>
   );

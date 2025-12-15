@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { motion } from 'framer-motion';
@@ -48,12 +48,15 @@ const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryA
       onClick={() => onSelect(scenario)}
       style={{
         background: '#fff',
-        borderRadius: '16px',
+        borderRadius: '24px',
         padding: '24px',
         cursor: 'pointer',
-        border: '2px solid #e2e8f0',
+        border: '1px solid #e2e8f0',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        transition: 'all 0.2s ease',
+        transition: 'all 0.3s ease',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = primaryAccent;
@@ -66,38 +69,38 @@ const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryA
     >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <div
-          style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '12px',
-            background: themedGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <IconComponent size={24} color="#fff" />
-        </div>
         <span
           style={{
             padding: '4px 12px',
             borderRadius: '9999px',
             fontSize: '12px',
-            fontWeight: 500,
+            fontWeight: 600,
             background: difficulty.bg,
             color: difficulty.text,
+            border: `1px solid ${difficulty.text}20`,
           }}
         >
           {difficulty.label}
         </span>
+        <span
+          style={{
+            padding: '4px 12px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontWeight: 500,
+            background: '#f1f5f9',
+            color: '#64748b',
+          }}
+        >
+          {typeLabel}
+        </span>
       </div>
 
-      {/* Content */}
+      {/* Title */}
       <h3
         style={{
-          fontSize: '18px',
-          fontWeight: 600,
+          fontSize: '20px',
+          fontWeight: 700,
           color: '#0f172a',
           marginBottom: '8px',
         }}
@@ -105,33 +108,51 @@ const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryA
         {scenario.title}
       </h3>
 
+      {/* Description - flex-1 to push footer down, line-clamp-3 */}
       <p
         style={{
           fontSize: '14px',
           color: '#64748b',
           marginBottom: '16px',
-          lineHeight: 1.5,
+          lineHeight: 1.6,
           display: '-webkit-box',
-          WebkitLineClamp: 2,
+          WebkitLineClamp: 3,
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden',
+          flex: 1,
         }}
       >
         {scenario.description}
       </p>
 
       {/* Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '13px', color: '#94a3b8' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Video size={14} />
-          {typeLabel}
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {scenario.question_count} Fragen
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          ~{Math.round(scenario.total_time_limit / 60)} Min.
-        </span>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingTop: '16px',
+        borderTop: '1px solid #f1f5f9',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: '#94a3b8' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Clock size={14} />
+            ~{Math.round(scenario.total_time_limit / 60)} Min.
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {scenario.question_count} Fragen
+          </span>
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          color: primaryAccent,
+          fontSize: '14px',
+          fontWeight: 600
+        }}>
+          <span>Starten</span>
+          <TrendingUp size={16} />
+        </div>
       </div>
     </motion.div>
   );
