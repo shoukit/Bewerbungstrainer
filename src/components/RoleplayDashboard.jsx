@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import RoleplayVariablesDialog from './RoleplayVariablesDialog';
@@ -203,19 +204,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
     }
   };
 
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'easy':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'hard':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
+  // getDifficultyLabel helper - used in custom dialog
   const getDifficultyLabel = (difficulty) => {
     switch (difficulty) {
       case 'easy':
@@ -344,92 +333,25 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
             <p className="text-slate-600">Keine Szenarien gefunden.</p>
           </div>
         ) : (
-          <motion.div
-            className="grid gap-6"
-            style={{
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
-            }}
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: {
-                  staggerChildren: 0.1,
-                },
-              },
-            }}
-          >
+          <ScenarioCardGrid>
             {filteredScenarios.map((scenario) => (
-              <motion.div
+              <ScenarioCard
                 key={scenario.id}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 },
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div
-                  onClick={() => handleScenarioClick(scenario)}
-                  className="bg-white rounded-3xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 cursor-pointer border border-slate-100 h-full flex flex-col"
-                >
-                  {/* Difficulty Badge */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${getDifficultyColor(
-                        scenario.difficulty
-                      )}`}
-                    >
-                      {getDifficultyLabel(scenario.difficulty)}
-                    </span>
-
-                    {/* Tags */}
-                    {scenario.tags && scenario.tags.length > 0 && (
-                      <div className="flex gap-1">
-                        {scenario.tags.slice(0, 2).map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">{scenario.title}</h3>
-
-                  {/* Description */}
-                  <p className="text-slate-600 text-sm mb-4 flex-1 line-clamp-3">{scenario.description}</p>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
-                      {scenario.variables_schema && scenario.variables_schema.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Target className="w-3 h-3" />
-                          <span>{scenario.variables_schema.length} Variablen</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>~10 Min</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 text-ocean-blue-600 text-sm font-semibold">
-                      <span>Starten</span>
-                      <TrendingUp className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+                title={scenario.title}
+                description={scenario.description}
+                difficulty={scenario.difficulty}
+                tags={scenario.tags || []}
+                meta={[
+                  ...(scenario.variables_schema && scenario.variables_schema.length > 0
+                    ? [{ icon: Target, text: `${scenario.variables_schema.length} Variablen` }]
+                    : []),
+                  { icon: Clock, text: '~10 Min' },
+                ]}
+                action={{ label: 'Starten', icon: TrendingUp }}
+                onClick={() => handleScenarioClick(scenario)}
+              />
             ))}
-          </motion.div>
+          </ScenarioCardGrid>
         )}
       </div>
 

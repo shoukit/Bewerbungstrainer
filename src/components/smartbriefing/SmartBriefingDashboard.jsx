@@ -23,6 +23,7 @@ import {
   Sparkles,
   FolderOpen,
 } from 'lucide-react';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
 
 /**
  * Icon mapping for template icons
@@ -56,119 +57,28 @@ const CATEGORIES = {
 };
 
 /**
- * Template Card Component
+ * Category Badge Component for Smart Briefing
  */
-const TemplateCard = ({ template, onSelect, primaryAccent }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const IconComponent = ICON_MAP[template.icon] || FileText;
-  const category = CATEGORIES[template.category] || CATEGORIES.CAREER;
-  const variableCount = template.variables_schema?.length || 0;
-
+const SmartBriefingCategoryBadge = ({ category }) => {
+  const config = CATEGORIES[category] || CATEGORIES.CAREER;
   return (
-    <div
-      onClick={() => onSelect(template)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+    <span
       style={{
-        backgroundColor: 'white',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '4px 10px',
         borderRadius: '16px',
-        padding: '24px',
-        border: `2px solid ${isHovered ? primaryAccent : '#e2e8f0'}`,
-        boxShadow: isHovered
-          ? `0 10px 25px -5px rgba(0,0,0,0.1), 0 0 0 1px ${primaryAccent}20`
-          : '0 1px 3px rgba(0,0,0,0.1)',
-        cursor: 'pointer',
-        transition: 'all 0.3s ease',
-        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        position: 'relative',
-        overflow: 'hidden',
+        fontSize: '11px',
+        fontWeight: 600,
+        backgroundColor: `${config.color}15`,
+        color: config.color,
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
       }}
     >
-      {/* Header with icon and category */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <div
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '12px',
-            background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}25)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <IconComponent size={28} style={{ color: primaryAccent }} />
-        </div>
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            padding: '4px 10px',
-            borderRadius: '20px',
-            backgroundColor: `${category.color}15`,
-            color: category.color,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}
-        >
-          {category.label}
-        </span>
-      </div>
-
-      {/* Title */}
-      <h3
-        style={{
-          fontSize: '18px',
-          fontWeight: 700,
-          color: '#0f172a',
-          margin: '0 0 8px 0',
-          lineHeight: 1.3,
-        }}
-      >
-        {template.title}
-      </h3>
-
-      {/* Description */}
-      <p
-        style={{
-          fontSize: '14px',
-          color: '#64748b',
-          margin: '0 0 16px 0',
-          lineHeight: 1.5,
-          minHeight: '42px',
-        }}
-      >
-        {template.description}
-      </p>
-
-      {/* Footer */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: '12px',
-          borderTop: '1px solid #f1f5f9',
-        }}
-      >
-        <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-          {variableCount} Eingabefeld{variableCount !== 1 ? 'er' : ''}
-        </span>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            color: primaryAccent,
-            fontSize: '13px',
-            fontWeight: 600,
-          }}
-        >
-          Briefing erstellen
-          <ChevronRight size={16} />
-        </div>
-      </div>
-    </div>
+      {config.label}
+    </span>
   );
 };
 
@@ -421,22 +331,26 @@ const SmartBriefingDashboard = ({
               </p>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                gap: '24px',
-              }}
-            >
-              {filteredTemplates.map(template => (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  onSelect={handleSelectTemplate}
-                  primaryAccent={primaryAccent}
-                />
-              ))}
-            </div>
+            <ScenarioCardGrid>
+              {filteredTemplates.map(template => {
+                const IconComponent = ICON_MAP[template.icon] || FileText;
+                const variableCount = template.variables_schema?.length || 0;
+                return (
+                  <ScenarioCard
+                    key={template.id}
+                    title={template.title}
+                    description={template.description}
+                    icon={IconComponent}
+                    categoryBadge={<SmartBriefingCategoryBadge category={template.category} />}
+                    meta={[
+                      { text: `${variableCount} Eingabefeld${variableCount !== 1 ? 'er' : ''}` },
+                    ]}
+                    action={{ label: 'Briefing erstellen', icon: ChevronRight }}
+                    onClick={() => handleSelectTemplate(template)}
+                  />
+                );
+              })}
+            </ScenarioCardGrid>
           )}
         </>
       )}

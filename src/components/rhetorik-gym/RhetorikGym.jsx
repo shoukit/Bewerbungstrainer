@@ -30,6 +30,7 @@ import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS, GAME_MODE_COLORS } from '@/config/colors';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
 
 /**
  * Icon mapping for game modes
@@ -41,94 +42,6 @@ const ICON_MAP = {
 };
 
 // ================== SUB-COMPONENTS ==================
-
-/**
- * Game Mode Card Component
- */
-const GameModeCard = ({ mode, onSelect, headerGradient, headerText, primaryAccent }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const IconComponent = ICON_MAP[mode.icon] || Rocket;
-
-  return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => onSelect(mode)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        border: `2px solid ${isHovered ? primaryAccent : COLORS.slate[200]}`,
-        boxShadow: isHovered
-          ? `0 10px 25px -5px ${primaryAccent}33, 0 8px 10px -6px ${primaryAccent}22`
-          : '0 1px 3px rgba(0, 0, 0, 0.1)',
-        transition: 'all 0.3s ease',
-        cursor: 'pointer',
-      }}
-    >
-      {/* Icon */}
-      <div
-        style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '14px',
-          background: headerGradient,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '16px',
-        }}
-      >
-        <IconComponent style={{ width: '28px', height: '28px', color: headerText }} />
-      </div>
-
-      {/* Title */}
-      <h3 style={{
-        fontSize: '18px',
-        fontWeight: 700,
-        color: COLORS.slate[900],
-        margin: '0 0 4px 0',
-      }}>
-        {mode.title}
-      </h3>
-
-      {/* Subtitle */}
-      <div style={{
-        fontSize: '13px',
-        color: primaryAccent,
-        fontWeight: 600,
-        marginBottom: '12px',
-      }}>
-        {mode.subtitle}
-      </div>
-
-      {/* Description */}
-      <p style={{
-        fontSize: '14px',
-        color: COLORS.slate[600],
-        margin: '0 0 16px 0',
-        lineHeight: 1.6,
-        minHeight: '44px',
-      }}>
-        {mode.description}
-      </p>
-
-      {/* Duration */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontSize: '13px',
-        color: COLORS.slate[400],
-      }}>
-        <Clock style={{ width: '14px', height: '14px' }} />
-        {mode.duration} Sekunden
-      </div>
-    </motion.div>
-  );
-};
 
 /**
  * Stats Card Component
@@ -688,22 +601,25 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
         </h2>
 
         {/* Game Mode Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '24px',
-        }}>
-          {gameModes.map((mode) => (
-            <GameModeCard
-              key={mode.id}
-              mode={mode}
-              onSelect={handleSelectMode}
-              headerGradient={headerGradient}
-              headerText={headerText}
-              primaryAccent={primaryAccent}
-            />
-          ))}
-        </div>
+        <ScenarioCardGrid minCardWidth="280px">
+          {gameModes.map((mode) => {
+            const IconComponent = ICON_MAP[mode.icon] || Rocket;
+            return (
+              <ScenarioCard
+                key={mode.id}
+                title={mode.title}
+                subtitle={mode.subtitle}
+                description={mode.description}
+                icon={IconComponent}
+                meta={[
+                  { icon: Clock, text: `${mode.duration} Sekunden` },
+                ]}
+                action={{ label: 'Starten', icon: TrendingUp }}
+                onClick={() => handleSelectMode(mode)}
+              />
+            );
+          })}
+        </ScenarioCardGrid>
       </div>
     </div>
   );

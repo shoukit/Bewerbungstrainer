@@ -11,12 +11,14 @@ import {
   Sparkles,
   TrendingUp,
   MessageCircle,
-  LayoutGrid
+  LayoutGrid,
+  Clock
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
 import {
   SCENARIO_CATEGORIES,
   SCENARIO_CATEGORY_CONFIG,
@@ -54,15 +56,6 @@ const getCategoryIcon = (iconName) => {
 };
 
 /**
- * Difficulty badge colors (semantic - keep as is)
- */
-const DIFFICULTY_COLORS = {
-  beginner: { bg: 'rgba(34, 197, 94, 0.15)', text: '#16a34a', label: 'Einsteiger' },
-  intermediate: { bg: 'rgba(59, 130, 246, 0.15)', text: '#2563eb', label: 'Fortgeschritten' },
-  advanced: { bg: 'rgba(168, 85, 247, 0.15)', text: '#9333ea', label: 'Experte' },
-};
-
-/**
  * Category Badge Component
  */
 const CategoryBadge = ({ category }) => {
@@ -90,110 +83,6 @@ const CategoryBadge = ({ category }) => {
       <CategoryIcon style={{ width: '12px', height: '12px' }} />
       {config.shortLabel}
     </span>
-  );
-};
-
-/**
- * Scenario Card Component
- */
-const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryAccent }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const IconComponent = ICON_MAP[scenario.icon] || Briefcase;
-  const difficulty = DIFFICULTY_COLORS[scenario.difficulty] || DIFFICULTY_COLORS.intermediate;
-
-  const handleClick = () => {
-    onSelect(scenario);
-  };
-
-  return (
-    <div
-      onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        border: `2px solid ${isHovered ? primaryAccent : COLORS.slate[200]}`,
-        boxShadow: isHovered
-          ? `0 10px 25px -5px ${primaryAccent}33, 0 8px 10px -6px ${primaryAccent}22`
-          : '0 1px 3px rgba(0, 0, 0, 0.1)',
-        transition: 'all 0.3s ease',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        cursor: 'pointer',
-        position: 'relative',
-      }}
-    >
-      {/* Icon and Badges Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '14px',
-            background: themedGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: `0 4px 6px -1px ${primaryAccent}4D`,
-          }}
-        >
-          <IconComponent style={{ width: '28px', height: '28px', color: themedText }} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-          <span
-            style={{
-              padding: '4px 12px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: 600,
-              backgroundColor: difficulty.bg,
-              color: difficulty.text,
-            }}
-          >
-            {difficulty.label}
-          </span>
-          {scenario.category && <CategoryBadge category={scenario.category} />}
-        </div>
-      </div>
-
-      {/* Title */}
-      <h3 style={{
-        fontSize: '18px',
-        fontWeight: 700,
-        color: COLORS.slate[900],
-        margin: 0,
-      }}>
-        {scenario.title}
-      </h3>
-
-      {/* Description */}
-      <p style={{
-        fontSize: '14px',
-        color: COLORS.slate[600],
-        margin: 0,
-        lineHeight: 1.5
-      }}>
-        {scenario.description}
-      </p>
-
-      {/* Meta Info */}
-      <div style={{
-        display: 'flex',
-        gap: '16px',
-        paddingTop: '12px',
-        borderTop: `1px solid ${COLORS.slate[100]}`
-      }}>
-        <span style={{ fontSize: '13px', color: COLORS.slate[400] }}>
-          {scenario.question_count_min}-{scenario.question_count_max} Fragen
-        </span>
-        <span style={{ fontSize: '13px', color: COLORS.slate[400] }}>
-          {Math.round(scenario.time_limit_per_question / 60)} Min/Frage
-        </span>
-      </div>
-    </div>
   );
 };
 
@@ -468,22 +357,28 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
       />
 
       {/* Scenario Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-        gap: '24px',
-        padding: '0 24px'
-      }}>
-        {filteredScenarios.map(scenario => (
-          <ScenarioCard
-            key={scenario.id}
-            scenario={scenario}
-            onSelect={handleSelectScenario}
-            themedGradient={headerGradient}
-            themedText={headerText}
-            primaryAccent={primaryAccent}
-          />
-        ))}
+      <div style={{ padding: '0 24px' }}>
+        <ScenarioCardGrid minCardWidth="340px">
+          {filteredScenarios.map(scenario => {
+            const IconComponent = ICON_MAP[scenario.icon] || Briefcase;
+            return (
+              <ScenarioCard
+                key={scenario.id}
+                title={scenario.title}
+                description={scenario.description}
+                difficulty={scenario.difficulty}
+                icon={IconComponent}
+                categoryBadge={scenario.category ? <CategoryBadge category={scenario.category} /> : null}
+                meta={[
+                  { text: `${scenario.question_count_min}-${scenario.question_count_max} Fragen` },
+                  { icon: Clock, text: `${Math.round(scenario.time_limit_per_question / 60)} Min/Frage` },
+                ]}
+                action={{ label: 'Starten', icon: TrendingUp }}
+                onClick={() => handleSelectScenario(scenario)}
+              />
+            );
+          })}
+        </ScenarioCardGrid>
       </div>
 
       {/* Empty State */}
