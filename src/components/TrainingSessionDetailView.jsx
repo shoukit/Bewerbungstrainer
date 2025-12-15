@@ -37,10 +37,10 @@ import {
 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { COLORS } from '@/config/colors';
 import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
-import { COLORS } from '@/config/colors';
 
 // =============================================================================
 // CONSTANTS

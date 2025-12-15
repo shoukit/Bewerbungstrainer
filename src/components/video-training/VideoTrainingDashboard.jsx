@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp, FolderOpen, Rocket, Handshake } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
-import { motion } from 'framer-motion';
-import { DIFFICULTY_COLORS, getDifficultyConfig } from '@/config/constants';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
+import { COLORS } from '@/config/colors';
 
 // Icon mapping for scenarios
 const ICON_MAP = {
@@ -16,156 +17,95 @@ const ICON_MAP = {
   banknote: Banknote,
 };
 
-// Scenario type labels
-const SCENARIO_TYPE_LABELS = {
-  self_presentation: 'Selbstpräsentation',
-  interview: 'Bewerbungsgespräch',
-  pitch: 'Elevator Pitch',
-  negotiation: 'Verhandlung',
-  custom: 'Training',
-};
-
-/**
- * ScenarioCard - Individual scenario card component
- */
-const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryAccent }) => {
-  const IconComponent = ICON_MAP[scenario.icon] || Video;
-  const difficulty = getDifficultyConfig(scenario.difficulty);
-  const typeLabel = SCENARIO_TYPE_LABELS[scenario.scenario_type] || 'Training';
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => onSelect(scenario)}
-      style={{
-        background: '#fff',
-        borderRadius: '24px',
-        padding: '24px',
-        cursor: 'pointer',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        transition: 'all 0.3s ease',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = primaryAccent;
-        e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.15)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = '#e2e8f0';
-        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-      }}
-    >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <span
-          style={{
-            padding: '4px 12px',
-            borderRadius: '9999px',
-            fontSize: '12px',
-            fontWeight: 600,
-            background: difficulty.bg,
-            color: difficulty.text,
-            border: `1px solid ${difficulty.text}20`,
-          }}
-        >
-          {difficulty.label}
-        </span>
-        <span
-          style={{
-            padding: '4px 12px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            fontWeight: 500,
-            background: '#f1f5f9',
-            color: '#64748b',
-          }}
-        >
-          {typeLabel}
-        </span>
-      </div>
-
-      {/* Title */}
-      <h3
-        style={{
-          fontSize: '20px',
-          fontWeight: 700,
-          color: '#0f172a',
-          marginBottom: '8px',
-        }}
-      >
-        {scenario.title}
-      </h3>
-
-      {/* Description - flex-1 to push footer down, line-clamp-3 */}
-      <p
-        style={{
-          fontSize: '14px',
-          color: '#64748b',
-          marginBottom: '16px',
-          lineHeight: 1.6,
-          display: '-webkit-box',
-          WebkitLineClamp: 3,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          flex: 1,
-        }}
-      >
-        {scenario.description}
-      </p>
-
-      {/* Footer */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: '16px',
-        borderTop: '1px solid #f1f5f9',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: '#94a3b8' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Clock size={14} />
-            ~{Math.round(scenario.total_time_limit / 60)} Min.
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {scenario.question_count} Fragen
-          </span>
-        </div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          color: primaryAccent,
-          fontSize: '14px',
-          fontWeight: 600
-        }}>
-          <span>Starten</span>
-          <TrendingUp size={16} />
-        </div>
-      </div>
-    </motion.div>
-  );
+// Scenario type configuration for category filter
+const SCENARIO_TYPE_CONFIG = {
+  self_presentation: {
+    label: 'Selbstpräsentation',
+    icon: User,
+    color: '#3A7FA7',
+    bgColor: '#E8F4F8',
+  },
+  interview: {
+    label: 'Bewerbungsgespräch',
+    icon: Briefcase,
+    color: '#059669',
+    bgColor: '#d1fae5',
+  },
+  pitch: {
+    label: 'Elevator Pitch',
+    icon: Rocket,
+    color: '#7c3aed',
+    bgColor: '#ede9fe',
+  },
+  negotiation: {
+    label: 'Verhandlung',
+    icon: Handshake,
+    color: '#d97706',
+    bgColor: '#fef3c7',
+  },
+  custom: {
+    label: 'Training',
+    icon: Target,
+    color: '#64748b',
+    bgColor: '#f1f5f9',
+  },
 };
 
 /**
  * VideoTrainingDashboard - Scenario selection view
  */
-const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario }) => {
+const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario, onNavigateToHistory }) => {
   const [scenarios, setScenarios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const { branding } = usePartner();
 
   // Get themed styles
-  const themedGradient = branding?.headerGradient || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
-  const themedText = branding?.headerText || '#ffffff';
-  const primaryAccent = branding?.primaryAccent || '#3A7FA7';
+  const themedGradient = branding?.headerGradient || branding?.['--header-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
+  const themedText = branding?.headerText || branding?.['--header-text'] || '#ffffff';
+  const primaryAccent = branding?.primaryAccent || branding?.['--primary-accent'] || '#3A7FA7';
+
+  // Get available categories from scenarios
+  const availableCategories = useMemo(() => {
+    const types = new Set();
+    scenarios.forEach(scenario => {
+      if (scenario.scenario_type && SCENARIO_TYPE_CONFIG[scenario.scenario_type]) {
+        types.add(scenario.scenario_type);
+      }
+    });
+    return Array.from(types);
+  }, [scenarios]);
+
+  // Filter scenarios by search, difficulty, and category
+  const filteredScenarios = useMemo(() => {
+    let filtered = [...scenarios];
+
+    // Category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(scenario => scenario.scenario_type === selectedCategory);
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(scenario =>
+        scenario.title?.toLowerCase().includes(query) ||
+        scenario.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Difficulty filter
+    if (difficultyFilter !== 'all') {
+      filtered = filtered.filter(scenario => scenario.difficulty === difficultyFilter);
+    }
+
+    return filtered;
+  }, [scenarios, selectedCategory, searchQuery, difficultyFilter]);
 
   // Fetch scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
@@ -272,41 +212,101 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   }
 
   return (
-    <div style={{ padding: '32px' }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <div
-          style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
-            background: themedGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-          }}
-        >
-          <Video size={32} color={themedText} />
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: themedGradient,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Video size={24} color={themedText} />
+            </div>
+            <div>
+              <h1
+                style={{
+                  fontSize: '28px',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  margin: 0,
+                }}
+              >
+                Wirkungs-Analyse
+              </h1>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
+                Video-Feedback zu Auftreten und Kommunikation
+              </p>
+            </div>
+          </div>
+          {/* My Analyses Button - Only for authenticated users */}
+          {isAuthenticated && onNavigateToHistory && (
+            <button
+              onClick={onNavigateToHistory}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                border: `2px solid ${primaryAccent}`,
+                backgroundColor: 'white',
+                color: primaryAccent,
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <FolderOpen size={18} />
+              Meine Wirkungs-Analysen
+            </button>
+          )}
         </div>
-        <h1
-          style={{
-            fontSize: '28px',
-            fontWeight: 700,
-            color: '#0f172a',
-            marginBottom: '8px',
-          }}
-        >
-          Video Training
-        </h1>
-        <p style={{ fontSize: '16px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>
-          Nimm dich selbst auf Video auf und erhalte detailliertes KI-Feedback zu deinem Auftreten,
-          deiner Körpersprache und Kommunikation.
-        </p>
+
+        {/* Search, Filters and Categories - Responsive */}
+        <div style={{ marginTop: '24px' }}>
+          <MobileFilterSheet
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Szenarien durchsuchen..."
+            categories={availableCategories.map(key => ({
+              key,
+              label: SCENARIO_TYPE_CONFIG[key]?.label || key,
+              color: SCENARIO_TYPE_CONFIG[key]?.color,
+              bgColor: SCENARIO_TYPE_CONFIG[key]?.bgColor,
+              icon: SCENARIO_TYPE_CONFIG[key]?.icon,
+            }))}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            showCategories={availableCategories.length > 0}
+            difficultyOptions={[
+              { value: 'all', label: 'Alle Schwierigkeiten' },
+              { value: 'easy', label: 'Einfach' },
+              { value: 'beginner', label: 'Einsteiger' },
+              { value: 'medium', label: 'Mittel' },
+              { value: 'intermediate', label: 'Fortgeschritten' },
+              { value: 'hard', label: 'Schwer' },
+              { value: 'advanced', label: 'Experte' },
+            ]}
+            selectedDifficulty={difficultyFilter}
+            onDifficultyChange={setDifficultyFilter}
+            showDifficulty={true}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
+        </div>
       </div>
 
       {/* Empty state */}
-      {scenarios.length === 0 && (
+      {filteredScenarios.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           <Video size={64} color="#cbd5e1" style={{ marginBottom: '16px' }} />
           <h3 style={{ color: '#64748b', fontWeight: 500 }}>Keine Szenarien verfügbar</h3>
@@ -317,24 +317,27 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
       )}
 
       {/* Scenario Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '24px',
-        }}
-      >
-        {scenarios.map((scenario) => (
-          <ScenarioCard
-            key={scenario.id}
-            scenario={scenario}
-            onSelect={handleSelectScenario}
-            themedGradient={themedGradient}
-            themedText={themedText}
-            primaryAccent={primaryAccent}
-          />
-        ))}
-      </div>
+      <ScenarioCardGrid viewMode={viewMode}>
+        {filteredScenarios.map((scenario) => {
+          const IconComponent = ICON_MAP[scenario.icon] || Video;
+          return (
+            <ScenarioCard
+              key={scenario.id}
+              title={scenario.title}
+              description={scenario.description}
+              difficulty={scenario.difficulty}
+              icon={IconComponent}
+              meta={[
+                { text: `${scenario.question_count} Fragen` },
+                { icon: Clock, text: `~${Math.round(scenario.total_time_limit / 60)} Min.` },
+              ]}
+              action={{ label: 'Starten', icon: TrendingUp }}
+              onClick={() => handleSelectScenario(scenario)}
+              viewMode={viewMode}
+            />
+          );
+        })}
+      </ScenarioCardGrid>
 
       {/* Info Box */}
       <div

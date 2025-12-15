@@ -25,9 +25,9 @@ import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
-import { useBranding } from '@/hooks/useBranding';
-import { useMobile } from '@/hooks/useMobile';
-import COLORS from '@/config/colors';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
+import { COLORS } from '@/config/colors';
 
 /**
  * Progress Bar Component
@@ -787,8 +787,14 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
  * Two-column layout like VideoTraining
  */
 const SimulatorSession = ({ session, questions, scenario, variables, onComplete, onExit, startFromQuestion = 0 }) => {
-  // Mobile detection - using shared hook
-  const isMobile = useMobile();
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Mode-based labels (INTERVIEW vs SIMULATION)
   const isSimulation = scenario?.mode === 'SIMULATION';
@@ -836,8 +842,11 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  // Partner theming - using shared hook
-  const { headerGradient, buttonGradient, primaryAccent, primaryAccentLight } = useBranding();
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;

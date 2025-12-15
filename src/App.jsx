@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import OverviewDashboard from './components/OverviewDashboard';
 import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplaySession from './components/RoleplaySession';
-import SessionHistory from './components/SessionHistory';
+import SessionHistory, { SESSION_TABS } from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
 import { SimulatorApp } from './components/simulator';
 import { VideoTrainingApp } from './components/video-training';
@@ -220,6 +220,7 @@ function AppContent() {
 
   // Session history state
   const [selectedSession, setSelectedSession] = useState(null);
+  const [historyInitialTab, setHistoryInitialTab] = useState(null);
 
   // Rhetorik-Gym state
   const [gameConfig, setGameConfig] = useState(null);
@@ -463,14 +464,29 @@ function AppContent() {
   };
 
   // ===== HISTORY HANDLERS =====
-  const handleOpenHistory = () => {
-    console.log('📜 [APP] Opening session history');
+  const handleOpenHistory = (tab = null) => {
+    console.log('📜 [APP] Opening session history with tab:', tab);
+    setHistoryInitialTab(tab);
     setCurrentView(VIEWS.HISTORY);
   };
 
   const handleCloseHistory = () => {
     console.log('📜 [APP] Closing session history');
+    setHistoryInitialTab(null);
     setCurrentView(VIEWS.DASHBOARD);
+  };
+
+  // Navigate to history with a specific tab
+  const handleNavigateToHistoryWithTab = (tabId) => {
+    console.log('📜 [APP] Navigating to history with tab:', tabId);
+    const tabMap = {
+      'briefings': SESSION_TABS.BRIEFINGS,
+      'simulator': SESSION_TABS.SIMULATOR,
+      'video': SESSION_TABS.VIDEO,
+      'roleplay': SESSION_TABS.ROLEPLAY,
+    };
+    setHistoryInitialTab(tabMap[tabId] || null);
+    setCurrentView(VIEWS.HISTORY);
   };
 
   const handleSelectSession = (session) => {
@@ -539,6 +555,7 @@ function AppContent() {
             clearPendingContinueSession={() => setPendingContinueSession(null)}
             pendingRepeatSession={pendingRepeatSession}
             clearPendingRepeatSession={() => setPendingRepeatSession(null)}
+            onNavigateToHistory={() => handleNavigateToHistoryWithTab('simulator')}
           />
         );
 
@@ -551,6 +568,7 @@ function AppContent() {
             setPendingAction={setPendingAction}
             pendingScenario={pendingVideoTrainingScenario}
             clearPendingScenario={() => setPendingVideoTrainingScenario(null)}
+            onNavigateToHistory={() => handleNavigateToHistoryWithTab('video')}
           />
         );
 
@@ -567,6 +585,7 @@ function AppContent() {
               // The simulator can access these via props or context if needed
               setCurrentView(VIEWS.SIMULATOR);
             }}
+            onNavigateToHistory={() => handleNavigateToHistoryWithTab('briefings')}
           />
         );
 
@@ -599,6 +618,8 @@ function AppContent() {
             onLoginClick={openLoginModal}
             onContinueSession={handleContinueSession}
             onRepeatSession={handleRepeatSession}
+            initialTab={historyInitialTab}
+            onNavigateToModule={handleSidebarNavigate}
           />
         );
 
@@ -629,6 +650,7 @@ function AppContent() {
             setPendingAction={setPendingAction}
             pendingScenario={pendingRoleplayScenario}
             clearPendingScenario={() => setPendingRoleplayScenario(null)}
+            onNavigateToHistory={() => handleNavigateToHistoryWithTab('roleplay')}
           />
         );
 

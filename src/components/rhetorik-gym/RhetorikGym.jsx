@@ -27,11 +27,10 @@ import { GAME_MODES, getRandomTopic, getRandomStressQuestion } from '@/config/pr
 import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
-import { useBranding } from '@/hooks/useBranding';
-import { useMobile } from '@/hooks/useMobile';
-import COLORS from '@/config/colors';
-
-// Colors imported from @/config/colors
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
+import { COLORS, GAME_MODE_COLORS } from '@/config/colors';
+import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
 
 /**
  * Icon mapping for game modes
@@ -42,104 +41,7 @@ const ICON_MAP = {
   zap: Zap,
 };
 
-/**
- * Mode color gradients
- */
-const MODE_COLORS = {
-  klassiker: { from: COLORS.blue[500], to: COLORS.teal[500] },
-  zufall: { from: COLORS.purple[500], to: COLORS.blue[500] },
-  stress: { from: COLORS.red[500], to: COLORS.amber[500] },
-};
-
 // ================== SUB-COMPONENTS ==================
-
-/**
- * Game Mode Card Component
- */
-const GameModeCard = ({ mode, onSelect, headerGradient, headerText, primaryAccent }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const IconComponent = ICON_MAP[mode.icon] || Rocket;
-
-  return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => onSelect(mode)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        border: `2px solid ${isHovered ? primaryAccent : COLORS.slate[200]}`,
-        boxShadow: isHovered
-          ? `0 10px 25px -5px ${primaryAccent}33, 0 8px 10px -6px ${primaryAccent}22`
-          : '0 1px 3px rgba(0, 0, 0, 0.1)',
-        transition: 'all 0.3s ease',
-        cursor: 'pointer',
-      }}
-    >
-      {/* Icon */}
-      <div
-        style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '14px',
-          background: headerGradient,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '16px',
-        }}
-      >
-        <IconComponent style={{ width: '28px', height: '28px', color: headerText }} />
-      </div>
-
-      {/* Title */}
-      <h3 style={{
-        fontSize: '18px',
-        fontWeight: 700,
-        color: COLORS.slate[900],
-        margin: '0 0 4px 0',
-      }}>
-        {mode.title}
-      </h3>
-
-      {/* Subtitle */}
-      <div style={{
-        fontSize: '13px',
-        color: primaryAccent,
-        fontWeight: 600,
-        marginBottom: '12px',
-      }}>
-        {mode.subtitle}
-      </div>
-
-      {/* Description */}
-      <p style={{
-        fontSize: '14px',
-        color: COLORS.slate[600],
-        margin: '0 0 16px 0',
-        lineHeight: 1.6,
-        minHeight: '44px',
-      }}>
-        {mode.description}
-      </p>
-
-      {/* Duration */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontSize: '13px',
-        color: COLORS.slate[400],
-      }}>
-        <Clock style={{ width: '14px', height: '14px' }} />
-        {mode.duration} Sekunden
-      </div>
-    </motion.div>
-  );
-};
 
 /**
  * Stats Card Component
@@ -181,7 +83,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
   const IconComponent = ICON_MAP[mode.icon] || Rocket;
-  const colors = MODE_COLORS[mode.id] || MODE_COLORS.klassiker;
+  const colors = GAME_MODE_COLORS[mode.id] || GAME_MODE_COLORS.klassiker;
 
   // Partner theming for primary CTA button
   const { branding } = usePartner();
@@ -527,6 +429,7 @@ const VIEWS = {
 const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingAction }) => {
   const [currentView, setCurrentView] = useState(VIEWS.MODES);
   const [selectedMode, setSelectedMode] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
   const [userStats, setUserStats] = useState({
     totalGames: 0,
     bestScore: 0,
@@ -534,14 +437,24 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
     totalPracticeTime: 0,
   });
 
-  // Mobile detection - using shared hook
-  const isMobile = useMobile();
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Pending mode for after login
   const [pendingMode, setPendingMode] = useState(null);
 
-  // Partner theming - using shared hook
-  const { headerGradient, headerText, primaryAccent, primaryAccentLight } = useBranding();
+  // Partner theming
+  const { branding } = usePartner();
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   // Load user stats - reload when returning to mode selection view
   useEffect(() => {
@@ -677,34 +590,45 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
           <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
         </div>
 
-        {/* Section Title */}
-        <h2 style={{
-          fontSize: '18px',
-          fontWeight: 600,
-          color: COLORS.slate[800],
+        {/* Section Title with View Toggle */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           marginBottom: '16px',
-          textAlign: 'center',
         }}>
-          Wähle deinen Modus
-        </h2>
+          <h2 style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            color: COLORS.slate[800],
+            margin: 0,
+          }}>
+            Wähle deinen Modus
+          </h2>
+          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+        </div>
 
         {/* Game Mode Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '24px',
-        }}>
-          {gameModes.map((mode) => (
-            <GameModeCard
-              key={mode.id}
-              mode={mode}
-              onSelect={handleSelectMode}
-              headerGradient={headerGradient}
-              headerText={headerText}
-              primaryAccent={primaryAccent}
-            />
-          ))}
-        </div>
+        <ScenarioCardGrid minCardWidth="280px" viewMode={viewMode}>
+          {gameModes.map((mode) => {
+            const IconComponent = ICON_MAP[mode.icon] || Rocket;
+            return (
+              <ScenarioCard
+                key={mode.id}
+                title={mode.title}
+                subtitle={mode.subtitle}
+                description={mode.description}
+                icon={IconComponent}
+                meta={[
+                  { icon: Clock, text: `${mode.duration} Sekunden` },
+                ]}
+                action={{ label: 'Starten', icon: TrendingUp }}
+                onClick={() => handleSelectMode(mode)}
+                viewMode={viewMode}
+              />
+            );
+          })}
+        </ScenarioCardGrid>
       </div>
     </div>
   );

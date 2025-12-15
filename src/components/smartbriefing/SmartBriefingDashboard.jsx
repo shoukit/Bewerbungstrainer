@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { usePartner } from '../../context/PartnerContext';
 import wordpressAPI from '../../services/wordpress-api';
 import {
@@ -22,7 +22,11 @@ import {
   ChevronRight,
   Sparkles,
   FolderOpen,
+  TrendingUp,
 } from 'lucide-react';
+import { COLORS } from '@/config/colors';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 
 /**
  * Icon mapping for template icons
@@ -46,129 +50,38 @@ const ICON_MAP = {
 };
 
 /**
- * Category configuration
+ * Category configuration with icons for MobileFilterSheet
  */
 const CATEGORIES = {
-  CAREER: { label: 'Karriere', color: '#3b82f6' },
-  SALES: { label: 'Vertrieb', color: '#22c55e' },
-  LEADERSHIP: { label: 'Fuhrung', color: '#a855f7' },
-  COMMUNICATION: { label: 'Kommunikation', color: '#f59e0b' },
+  CAREER: { label: 'Karriere', color: '#3b82f6', bgColor: '#eff6ff', icon: Briefcase },
+  SALES: { label: 'Vertrieb', color: '#22c55e', bgColor: '#f0fdf4', icon: TrendingUp },
+  LEADERSHIP: { label: 'Führung', color: '#a855f7', bgColor: '#faf5ff', icon: Users },
+  COMMUNICATION: { label: 'Kommunikation', color: '#f59e0b', bgColor: '#fffbeb', icon: MessageCircle },
 };
 
 /**
- * Template Card Component
+ * Category Badge Component for Smart Briefing
  */
-const TemplateCard = ({ template, onSelect, primaryAccent }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const IconComponent = ICON_MAP[template.icon] || FileText;
-  const category = CATEGORIES[template.category] || CATEGORIES.CAREER;
-  const variableCount = template.variables_schema?.length || 0;
-
+const SmartBriefingCategoryBadge = ({ category }) => {
+  const config = CATEGORIES[category] || CATEGORIES.CAREER;
   return (
-    <div
-      onClick={() => onSelect(template)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+    <span
       style={{
-        backgroundColor: 'white',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '4px 10px',
         borderRadius: '16px',
-        padding: '24px',
-        border: `2px solid ${isHovered ? primaryAccent : '#e2e8f0'}`,
-        boxShadow: isHovered
-          ? `0 10px 25px -5px rgba(0,0,0,0.1), 0 0 0 1px ${primaryAccent}20`
-          : '0 1px 3px rgba(0,0,0,0.1)',
-        cursor: 'pointer',
-        transition: 'all 0.3s ease',
-        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        position: 'relative',
-        overflow: 'hidden',
+        fontSize: '11px',
+        fontWeight: 600,
+        backgroundColor: `${config.color}15`,
+        color: config.color,
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
       }}
     >
-      {/* Header with icon and category */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <div
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '12px',
-            background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}25)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <IconComponent size={28} style={{ color: primaryAccent }} />
-        </div>
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            padding: '4px 10px',
-            borderRadius: '20px',
-            backgroundColor: `${category.color}15`,
-            color: category.color,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}
-        >
-          {category.label}
-        </span>
-      </div>
-
-      {/* Title */}
-      <h3
-        style={{
-          fontSize: '18px',
-          fontWeight: 700,
-          color: '#0f172a',
-          margin: '0 0 8px 0',
-          lineHeight: 1.3,
-        }}
-      >
-        {template.title}
-      </h3>
-
-      {/* Description */}
-      <p
-        style={{
-          fontSize: '14px',
-          color: '#64748b',
-          margin: '0 0 16px 0',
-          lineHeight: 1.5,
-          minHeight: '42px',
-        }}
-      >
-        {template.description}
-      </p>
-
-      {/* Footer */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: '12px',
-          borderTop: '1px solid #f1f5f9',
-        }}
-      >
-        <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-          {variableCount} Eingabefeld{variableCount !== 1 ? 'er' : ''}
-        </span>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            color: primaryAccent,
-            fontSize: '13px',
-            fontWeight: 600,
-          }}
-        >
-          Briefing erstellen
-          <ChevronRight size={16} />
-        </div>
-      </div>
-    </div>
+      {config.label}
+    </span>
   );
 };
 
@@ -184,14 +97,16 @@ const SmartBriefingDashboard = ({
   requireAuth,
   setPendingAction,
 }) => {
-  const { config } = usePartner();
+  const { config, branding } = usePartner();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Get primary accent color from partner config
-  const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
+  const primaryAccent = branding?.['--primary-accent'] || config?.buttonGradientStart || '#3A7FA7';
 
   // Fetch templates on mount
   useEffect(() => {
@@ -227,13 +142,32 @@ const SmartBriefingDashboard = ({
     onSelectTemplate(template);
   };
 
-  // Filter templates by category
-  const filteredTemplates = selectedCategory
-    ? templates.filter(t => t.category === selectedCategory)
-    : templates;
-
   // Get unique categories from templates
-  const availableCategories = [...new Set(templates.map(t => t.category))];
+  const availableCategories = useMemo(() =>
+    [...new Set(templates.map(t => t.category))],
+    [templates]
+  );
+
+  // Filter templates by category and search
+  const filteredTemplates = useMemo(() => {
+    let filtered = [...templates];
+
+    // Category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(t => t.category === selectedCategory);
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(t =>
+        t.title?.toLowerCase().includes(query) ||
+        t.description?.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [templates, selectedCategory, searchQuery]);
 
   return (
     <div
@@ -300,53 +234,32 @@ const SmartBriefingDashboard = ({
             </button>
           )}
         </div>
-      </div>
 
-      {/* Category Filter */}
-      {availableCategories.length > 1 && (
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setSelectedCategory(null)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '20px',
-                border: 'none',
-                backgroundColor: selectedCategory === null ? primaryAccent : '#f1f5f9',
-                color: selectedCategory === null ? 'white' : '#64748b',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              Alle
-            </button>
-            {availableCategories.map(cat => {
-              const category = CATEGORIES[cat] || { label: cat, color: '#64748b' };
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    border: 'none',
-                    backgroundColor: selectedCategory === cat ? category.color : '#f1f5f9',
-                    color: selectedCategory === cat ? 'white' : '#64748b',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {category.label}
-                </button>
-              );
+        {/* Search, Filters and Categories - Responsive */}
+        <div style={{ marginTop: '24px' }}>
+          <MobileFilterSheet
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Briefings durchsuchen..."
+            categories={availableCategories.map(cat => {
+              const config = CATEGORIES[cat] || { label: cat, color: '#64748b', bgColor: '#f1f5f9', icon: FileText };
+              return {
+                key: cat,
+                label: config.label,
+                color: config.color,
+                bgColor: config.bgColor,
+                icon: config.icon,
+              };
             })}
-          </div>
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            showCategories={availableCategories.length > 1}
+            showDifficulty={false}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
         </div>
-      )}
+      </div>
 
       {/* Loading State */}
       {loading && (
@@ -421,22 +334,27 @@ const SmartBriefingDashboard = ({
               </p>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                gap: '24px',
-              }}
-            >
-              {filteredTemplates.map(template => (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  onSelect={handleSelectTemplate}
-                  primaryAccent={primaryAccent}
-                />
-              ))}
-            </div>
+            <ScenarioCardGrid viewMode={viewMode}>
+              {filteredTemplates.map(template => {
+                const IconComponent = ICON_MAP[template.icon] || FileText;
+                const variableCount = template.variables_schema?.length || 0;
+                return (
+                  <ScenarioCard
+                    key={template.id}
+                    title={template.title}
+                    description={template.description}
+                    icon={IconComponent}
+                    categoryBadge={<SmartBriefingCategoryBadge category={template.category} />}
+                    meta={[
+                      { text: `${variableCount} Eingabefeld${variableCount !== 1 ? 'er' : ''}` },
+                    ]}
+                    action={{ label: 'Briefing erstellen', icon: ChevronRight }}
+                    onClick={() => handleSelectTemplate(template)}
+                    viewMode={viewMode}
+                  />
+                );
+              })}
+            </ScenarioCardGrid>
           )}
         </>
       )}

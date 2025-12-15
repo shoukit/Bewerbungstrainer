@@ -28,7 +28,8 @@ const VideoTrainingApp = ({
   requireAuth,
   setPendingAction,
   pendingScenario: externalPendingScenario,
-  clearPendingScenario
+  clearPendingScenario,
+  onNavigateToHistory,
 }) => {
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [selectedScenario, setSelectedScenario] = useState(null);
@@ -140,6 +141,7 @@ const VideoTrainingApp = ({
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingScenario={setInternalPendingScenario}
+            onNavigateToHistory={onNavigateToHistory}
           />
         );
 
@@ -181,6 +183,7 @@ const VideoTrainingApp = ({
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingScenario={setInternalPendingScenario}
+            onNavigateToHistory={onNavigateToHistory}
           />
         );
     }

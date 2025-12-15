@@ -117,8 +117,8 @@ export function SessionHeader({ session, scenario, feedback }) {
                 style={{
                   width: '14px',
                   height: '14px',
-                  fill: COLORS.yellow[400],
-                  color: COLORS.yellow[500],
+                  fill: COLORS.amber[400],
+                  color: COLORS.amber[500],
                 }}
               />
               {overallRating}/10
