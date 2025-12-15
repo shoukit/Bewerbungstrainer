@@ -904,9 +904,9 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
         <button
           onClick={() => setIsOpen(!isOpen)}
           style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
+            width: '56px',
+            height: '56px',
+            borderRadius: '12px',
             border: 'none',
             backgroundColor: isOpen ? colors.hoverBg : 'transparent',
             display: 'flex',
@@ -916,9 +916,9 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
           }}
         >
           {isOpen ? (
-            <X style={{ width: '24px', height: '24px', color: colors.headerText }} />
+            <X style={{ width: '40px', height: '40px', color: colors.headerText }} />
           ) : (
-            <Menu style={{ width: '24px', height: '24px', color: colors.headerText }} />
+            <Menu style={{ width: '40px', height: '40px', color: colors.headerText }} />
           )}
         </button>
       </div>
