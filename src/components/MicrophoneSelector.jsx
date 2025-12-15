@@ -103,7 +103,7 @@ const MicrophoneSelector = ({
   const selectedDevice = devices.find(d => d.deviceId === selectedDeviceId);
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="microphone-selector" style={{ position: 'relative' }}>
       {/* Main selector row - wraps on small screens */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
         {/* Dropdown button */}

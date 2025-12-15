@@ -33,6 +33,11 @@ import {
   updateRoleplaySessionConversationId,
   fetchRoleplaySessionAudio,
 } from '@/services/roleplay-feedback-adapter';
+import {
+  generateLiveCoaching,
+  shouldGenerateCoaching,
+  extractCoachingContext,
+} from '@/services/live-coaching-engine';
 import wordpressAPI from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -96,6 +101,10 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
   const [showProfileOnMobile, setShowProfileOnMobile] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
+  // Live coaching state
+  const [dynamicCoaching, setDynamicCoaching] = useState(null);
+  const [isCoachingGenerating, setIsCoachingGenerating] = useState(false);
+
   // Dynamic header height
   const [headerHeight, setHeaderHeight] = useState(80);
   const headerObserverRef = useRef(null);
@@ -107,6 +116,7 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
   const transcriptEndRef = useRef(null);
   const startTimeRef = useRef(null); // Ref for stable startTime access in callbacks
   const lastMessageEndTimeRef = useRef(0); // Track when last message ended (for calculating start time)
+  const transcriptRef = useRef([]); // Ref to access transcript in callbacks
 
   // Get API credentials
   const apiKey = wordpressAPI.getElevenLabsApiKey();
@@ -142,6 +152,41 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
     }
 
     return prompt;
+  };
+
+  // Generate live coaching when agent speaks
+  const handleGenerateCoaching = async (agentMessage, currentTranscript) => {
+    const geminiApiKey = wordpressAPI.getGeminiApiKey();
+    if (!geminiApiKey) {
+      console.warn('[COACHING] No Gemini API key available');
+      return;
+    }
+
+    // Check if this message warrants coaching
+    if (!shouldGenerateCoaching({ role: 'agent', text: agentMessage })) {
+      console.log('[COACHING] Skipping short/filler message');
+      return;
+    }
+
+    try {
+      setIsCoachingGenerating(true);
+      // Clear previous coaching immediately for fresh UI
+      setDynamicCoaching(null);
+
+      const coaching = await generateLiveCoaching({
+        apiKey: geminiApiKey,
+        nextAgentInput: agentMessage,
+        transcriptHistory: currentTranscript.slice(-4), // Last 4 messages for context
+        scenarioContext: extractCoachingContext(scenario),
+      });
+
+      setDynamicCoaching(coaching);
+      console.log('[COACHING] New coaching generated:', coaching);
+    } catch (error) {
+      console.error('[COACHING] Failed to generate coaching:', error);
+    } finally {
+      setIsCoachingGenerating(false);
+    }
   };
 
   // Use official @11labs/react SDK with overrides for system prompt and first message
@@ -187,16 +232,27 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
 
         console.log('📝 [RoleplaySession] Message started at', timeLabel, '- elapsedTime:', messageStartSeconds, '(ended at', messageEndSeconds + 's)');
 
-        setTranscript((prev) => [
-          ...prev,
-          {
-            role: message.source === 'ai' ? 'agent' : 'user',
-            text: message.message,
-            timestamp: now,
-            elapsedTime: messageStartSeconds, // Store START time in seconds for seeking
-            timeLabel: timeLabel, // Format: "00:12" - shows START time
-          },
-        ]);
+        const newEntry = {
+          role: message.source === 'ai' ? 'agent' : 'user',
+          text: message.message,
+          timestamp: now,
+          elapsedTime: messageStartSeconds, // Store START time in seconds for seeking
+          timeLabel: timeLabel, // Format: "00:12" - shows START time
+        };
+
+        setTranscript((prev) => {
+          const updated = [...prev, newEntry];
+          transcriptRef.current = updated; // Keep ref in sync
+          return updated;
+        });
+
+        // Generate coaching when agent speaks
+        if (message.source === 'ai') {
+          // Use setTimeout to allow state update first
+          setTimeout(() => {
+            handleGenerateCoaching(message.message, transcriptRef.current);
+          }, 100);
+        }
       }
     },
     onError: (err) => {
@@ -594,7 +650,12 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
               animate={{ opacity: 1, x: 0 }}
               className="relative h-full"
             >
-              <CoachingPanel hints={scenario.coaching_hints} />
+              <CoachingPanel
+                hints={scenario.coaching_hints}
+                dynamicCoaching={dynamicCoaching}
+                isGenerating={isCoachingGenerating}
+                isConnected={conversation.status === 'connected'}
+              />
             </motion.div>
           )}
 
@@ -942,14 +1003,17 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
                 className="fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl overflow-hidden"
               >
-                <div className="bg-white h-full overflow-y-auto">
+                <div className="bg-white h-full flex flex-col">
                   <div
                     style={{ background: themedStyles.headerGradient }}
-                    className="sticky top-0 px-4 py-3 flex items-center justify-between"
+                    className="px-4 py-3 flex items-center justify-between flex-shrink-0"
                   >
                     <div className="flex items-center gap-2" style={{ color: themedStyles.headerText }}>
                       <Lightbulb className="w-5 h-5" />
                       <h3 className="font-bold text-sm">Live Coaching</h3>
+                      {isCoachingGenerating && (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      )}
                     </div>
                     <button
                       onClick={() => setShowCoachingOnMobile(false)}
@@ -958,34 +1022,120 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="p-4 space-y-3">
-                    {parseHints(scenario.coaching_hints).length === 0 ? (
-                      <div className="text-center text-slate-400 py-8">
-                        <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p className="text-xs">Tipps erscheinen hier während des Gesprächs</p>
-                      </div>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {/* Show dynamic coaching when connected and available */}
+                    {conversation.status === 'connected' && (dynamicCoaching || isCoachingGenerating) ? (
+                      <>
+                        {isCoachingGenerating && !dynamicCoaching ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="text-center text-slate-400">
+                              <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                              <p className="text-xs">Analysiere...</p>
+                            </div>
+                          </div>
+                        ) : dynamicCoaching ? (
+                          <>
+                            {/* Content Impulses */}
+                            {dynamicCoaching.content_impulses?.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                  Inhalt
+                                </div>
+                                {dynamicCoaching.content_impulses.map((impulse, index) => (
+                                  <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                    className="flex gap-2 items-start"
+                                  >
+                                    <div
+                                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                                      style={{ background: themedStyles.primaryAccentLight }}
+                                    >
+                                      <span className="text-xs font-bold" style={{ color: themedStyles.iconPrimary }}>
+                                        {index + 1}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-slate-700 leading-snug font-medium">{impulse}</p>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Behavioral Cue */}
+                            {dynamicCoaching.behavioral_cue && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-xs font-semibold text-amber-600 uppercase tracking-wide">
+                                  <TrendingUp className="w-3.5 h-3.5" />
+                                  Tonfall
+                                </div>
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                  <p className="text-sm text-amber-800">{dynamicCoaching.behavioral_cue}</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Strategic Bridge */}
+                            {dynamicCoaching.strategic_bridge && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 uppercase tracking-wide">
+                                  <TrendingUp className="w-3.5 h-3.5" />
+                                  Strategie
+                                </div>
+                                <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                  <p className="text-sm text-emerald-800">{dynamicCoaching.strategic_bridge}</p>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-center text-slate-400 py-8">
+                            <Lightbulb className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                            <p className="text-xs">Warte auf Gesprächspartner...</p>
+                          </div>
+                        )}
+                      </>
                     ) : (
-                      parseHints(scenario.coaching_hints).map((hint, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="flex gap-3 items-start p-3 rounded-lg"
-                          style={{ backgroundColor: themedStyles.primaryAccentLight }}
-                        >
-                          <div
-                            className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                      /* Show static hints when not connected */
+                      parseHints(scenario.coaching_hints).length === 0 ? (
+                        <div className="text-center text-slate-400 py-8">
+                          <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                          <p className="text-xs">Tipps erscheinen hier während des Gesprächs</p>
+                        </div>
+                      ) : (
+                        parseHints(scenario.coaching_hints).map((hint, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="flex gap-3 items-start p-3 rounded-lg"
                             style={{ backgroundColor: themedStyles.primaryAccentLight }}
                           >
-                            <Lightbulb className="w-3.5 h-3.5" style={{ color: themedStyles.iconPrimary }} />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm text-slate-700 leading-relaxed">{hint}</p>
-                          </div>
-                        </motion.div>
-                      ))
+                            <div
+                              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                              style={{ backgroundColor: themedStyles.primaryAccentLight }}
+                            >
+                              <Lightbulb className="w-3.5 h-3.5" style={{ color: themedStyles.iconPrimary }} />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm text-slate-700 leading-relaxed">{hint}</p>
+                            </div>
+                          </motion.div>
+                        ))
+                      )
                     )}
+                  </div>
+                  {/* Footer */}
+                  <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+                    <p className="text-xs text-slate-500 text-center">
+                      {conversation.status === 'connected'
+                        ? '💡 Echtzeit-Coaching basierend auf dem Gespräch'
+                        : '💡 Hilfreiche Tipps für ein erfolgreiches Gespräch'
+                      }
+                    </p>
                   </div>
                 </div>
               </motion.div>
