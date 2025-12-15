@@ -30,7 +30,7 @@ import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS, GAME_MODE_COLORS } from '@/config/colors';
-import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
 
 /**
  * Icon mapping for game modes
@@ -429,6 +429,7 @@ const VIEWS = {
 const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingAction }) => {
   const [currentView, setCurrentView] = useState(VIEWS.MODES);
   const [selectedMode, setSelectedMode] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
   const [userStats, setUserStats] = useState({
     totalGames: 0,
     bestScore: 0,
@@ -589,19 +590,26 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
           <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
         </div>
 
-        {/* Section Title */}
-        <h2 style={{
-          fontSize: '18px',
-          fontWeight: 600,
-          color: COLORS.slate[800],
+        {/* Section Title with View Toggle */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           marginBottom: '16px',
-          textAlign: 'center',
         }}>
-          Wähle deinen Modus
-        </h2>
+          <h2 style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            color: COLORS.slate[800],
+            margin: 0,
+          }}>
+            Wähle deinen Modus
+          </h2>
+          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+        </div>
 
         {/* Game Mode Grid */}
-        <ScenarioCardGrid minCardWidth="280px">
+        <ScenarioCardGrid minCardWidth="280px" viewMode={viewMode}>
           {gameModes.map((mode) => {
             const IconComponent = ICON_MAP[mode.icon] || Rocket;
             return (
@@ -616,6 +624,7 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
                 ]}
                 action={{ label: 'Starten', icon: TrendingUp }}
                 onClick={() => handleSelectMode(mode)}
+                viewMode={viewMode}
               />
             );
           })}

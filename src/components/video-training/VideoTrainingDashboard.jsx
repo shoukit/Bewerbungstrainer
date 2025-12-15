@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
-import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
 
 // Icon mapping for scenarios
 const ICON_MAP = {
@@ -31,6 +31,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   const [scenarios, setScenarios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
 
   const { branding } = usePartner();
 
@@ -175,6 +176,10 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
           Nimm dich selbst auf Video auf und erhalte detailliertes KI-Feedback zu deinem Auftreten,
           deiner Körpersprache und Kommunikation.
         </p>
+        {/* View Toggle */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+        </div>
       </div>
 
       {/* Empty state */}
@@ -189,7 +194,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
       )}
 
       {/* Scenario Grid */}
-      <ScenarioCardGrid>
+      <ScenarioCardGrid viewMode={viewMode}>
         {scenarios.map((scenario) => {
           const IconComponent = ICON_MAP[scenario.icon] || Video;
           const typeLabel = SCENARIO_TYPE_LABELS[scenario.scenario_type] || 'Training';
@@ -207,6 +212,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
               ]}
               action={{ label: 'Starten', icon: TrendingUp }}
               onClick={() => handleSelectScenario(scenario)}
+              viewMode={viewMode}
             />
           );
         })}

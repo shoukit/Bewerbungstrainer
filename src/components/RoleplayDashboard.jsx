@@ -15,7 +15,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import RoleplayVariablesDialog from './RoleplayVariablesDialog';
@@ -70,9 +70,10 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
     [primaryAccent, focusRing]
   );
 
-  // Filters
+  // Filters and view mode
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('grid');
 
   // Custom scenario dialog
   const [showCustomDialog, setShowCustomDialog] = useState(false);
@@ -321,6 +322,9 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
                 <option value="hard">Schwer</option>
               </select>
             </div>
+
+            {/* View Toggle */}
+            <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
           </div>
         </motion.div>
       </div>
@@ -333,7 +337,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
             <p className="text-slate-600">Keine Szenarien gefunden.</p>
           </div>
         ) : (
-          <ScenarioCardGrid>
+          <ScenarioCardGrid viewMode={viewMode}>
             {filteredScenarios.map((scenario) => (
               <ScenarioCard
                 key={scenario.id}
@@ -349,6 +353,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
                 ]}
                 action={{ label: 'Starten', icon: TrendingUp }}
                 onClick={() => handleScenarioClick(scenario)}
+                viewMode={viewMode}
               />
             ))}
           </ScenarioCardGrid>

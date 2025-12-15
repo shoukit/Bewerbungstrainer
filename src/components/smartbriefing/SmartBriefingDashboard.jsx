@@ -23,7 +23,7 @@ import {
   Sparkles,
   FolderOpen,
 } from 'lucide-react';
-import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
 
 /**
  * Icon mapping for template icons
@@ -99,6 +99,7 @@ const SmartBriefingDashboard = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
 
   // Get primary accent color from partner config
   const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
@@ -209,6 +210,10 @@ const SmartBriefingDashboard = ({
               Meine Briefings
             </button>
           )}
+        </div>
+        {/* View Toggle */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
         </div>
       </div>
 
@@ -331,7 +336,7 @@ const SmartBriefingDashboard = ({
               </p>
             </div>
           ) : (
-            <ScenarioCardGrid>
+            <ScenarioCardGrid viewMode={viewMode}>
               {filteredTemplates.map(template => {
                 const IconComponent = ICON_MAP[template.icon] || FileText;
                 const variableCount = template.variables_schema?.length || 0;
@@ -347,6 +352,7 @@ const SmartBriefingDashboard = ({
                     ]}
                     action={{ label: 'Briefing erstellen', icon: ChevronRight }}
                     onClick={() => handleSelectTemplate(template)}
+                    viewMode={viewMode}
                   />
                 );
               })}

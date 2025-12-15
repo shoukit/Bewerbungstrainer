@@ -18,7 +18,7 @@ import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
-import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
 import {
   SCENARIO_CATEGORIES,
   SCENARIO_CATEGORY_CONFIG,
@@ -168,6 +168,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const [scenarios, setScenarios] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
 
   /**
    * Handle scenario selection with auth check
@@ -347,6 +348,10 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
           Trainiere wichtige Karriere-Skills mit sofortigem KI-Feedback nach jeder Antwort.
           Wähle ein Szenario und starte dein Training.
         </p>
+        {/* View Toggle */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+        </div>
       </div>
 
       {/* Category Filter */}
@@ -358,7 +363,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
 
       {/* Scenario Grid */}
       <div style={{ padding: '0 24px' }}>
-        <ScenarioCardGrid minCardWidth="340px">
+        <ScenarioCardGrid minCardWidth="340px" viewMode={viewMode}>
           {filteredScenarios.map(scenario => {
             const IconComponent = ICON_MAP[scenario.icon] || Briefcase;
             return (
@@ -375,6 +380,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
                 ]}
                 action={{ label: 'Starten', icon: TrendingUp }}
                 onClick={() => handleSelectScenario(scenario)}
+                viewMode={viewMode}
               />
             );
           })}
