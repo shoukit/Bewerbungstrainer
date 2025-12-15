@@ -164,31 +164,50 @@ export const ViewToggle = ({ viewMode, onViewChange }) => {
   const { branding } = usePartner();
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
+  // Use inline styles with higher specificity to override Elementor defaults
+  const getButtonStyles = (isActive) => ({
+    padding: '8px',
+    borderRadius: '6px',
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    backgroundColor: isActive ? '#ffffff' : 'transparent',
+    boxShadow: isActive ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  });
+
+  const getIconStyles = (isActive) => ({
+    width: '16px',
+    height: '16px',
+    color: isActive ? primaryAccent : COLORS.slate[500],
+  });
+
   return (
-    <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        padding: '4px',
+        backgroundColor: COLORS.slate[100],
+        borderRadius: '8px',
+      }}
+    >
       <button
         onClick={() => onViewChange('grid')}
-        className={`p-2 rounded-md transition-all ${
-          viewMode === 'grid'
-            ? 'bg-white shadow-sm'
-            : 'hover:bg-slate-200'
-        }`}
-        style={viewMode === 'grid' ? { color: primaryAccent } : { color: COLORS.slate[500] }}
+        style={getButtonStyles(viewMode === 'grid')}
         title="Kachelansicht"
       >
-        <LayoutGrid className="w-4 h-4" />
+        <LayoutGrid style={getIconStyles(viewMode === 'grid')} />
       </button>
       <button
         onClick={() => onViewChange('list')}
-        className={`p-2 rounded-md transition-all ${
-          viewMode === 'list'
-            ? 'bg-white shadow-sm'
-            : 'hover:bg-slate-200'
-        }`}
-        style={viewMode === 'list' ? { color: primaryAccent } : { color: COLORS.slate[500] }}
+        style={getButtonStyles(viewMode === 'list')}
         title="Listenansicht"
       >
-        <List className="w-4 h-4" />
+        <List style={getIconStyles(viewMode === 'list')} />
       </button>
     </div>
   );

@@ -199,7 +199,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
               }}
             >
               <FolderOpen size={18} />
-              Meine Analysen
+              Meine Wirkungs-Analysen
             </button>
           )}
         </div>

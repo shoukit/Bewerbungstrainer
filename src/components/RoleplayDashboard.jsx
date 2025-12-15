@@ -306,7 +306,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
                 }}
               >
                 <FolderOpen size={18} />
-                Meine Simulationen
+                Meine Live-Simulationen
               </button>
             )}
           </div>

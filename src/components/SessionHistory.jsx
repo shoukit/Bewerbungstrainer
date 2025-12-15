@@ -1310,9 +1310,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           >
             <Plus style={{ width: '16px', height: '16px', marginRight: '8px' }} />
             {activeTab === TABS.BRIEFINGS ? 'Neues Briefing' :
-             activeTab === TABS.SIMULATOR ? 'Neues Training' :
-             activeTab === TABS.VIDEO ? 'Neue Analyse' :
-             'Neue Simulation'}
+             activeTab === TABS.SIMULATOR ? 'Neues Szenario-Training' :
+             activeTab === TABS.VIDEO ? 'Neue Wirkungs-Analyse' :
+             'Neue Live-Simulation'}
           </Button>
         )}
       </div>

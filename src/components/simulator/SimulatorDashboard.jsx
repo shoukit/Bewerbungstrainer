@@ -361,7 +361,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
               }}
             >
               <FolderOpen size={18} />
-              Meine Trainings
+              Meine Szenario-Trainings
             </button>
           )}
         </div>
