@@ -796,6 +796,15 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
  * Two-column layout like VideoTraining
  */
 const SimulatorSession = ({ session, questions, scenario, variables, onComplete, onExit, startFromQuestion = 0 }) => {
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Mode-based labels (INTERVIEW vs SIMULATION)
   const isSimulation = scenario?.mode === 'SIMULATION';
   const labels = {
@@ -977,19 +986,36 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#0f172a' }}>
+    <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: '1000px', margin: '0 auto' }}>
+      {/* Header - Mobile responsive */}
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? '12px' : '0',
+        marginBottom: '24px',
+      }}>
+        <h1 style={{
+          fontSize: isMobile ? '18px' : '20px',
+          fontWeight: 600,
+          color: '#0f172a',
+          margin: 0,
+        }}>
           {scenario?.title}
         </h1>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          alignItems: 'center',
+          justifyContent: isMobile ? 'space-between' : 'flex-end',
+        }}>
           {/* Training beenden - immer sichtbar wenn mind. 1 Frage beantwortet */}
           {answeredQuestions.length > 0 && (
             <button
               onClick={handleCompleteClick}
               style={{
-                padding: '8px 16px',
+                padding: isMobile ? '10px 14px' : '8px 16px',
                 borderRadius: '8px',
                 background: '#22c55e',
                 border: 'none',
@@ -1001,16 +1027,18 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                 fontSize: '14px',
                 fontWeight: 600,
                 boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
+                flex: isMobile ? 1 : 'none',
+                justifyContent: 'center',
               }}
             >
               <Check size={16} />
-              Training beenden
+              {isMobile ? 'Beenden' : 'Training beenden'}
             </button>
           )}
           <button
             onClick={handleCancelClick}
             style={{
-              padding: '8px 16px',
+              padding: isMobile ? '10px 14px' : '8px 16px',
               borderRadius: '8px',
               background: '#f1f5f9',
               border: 'none',
@@ -1020,6 +1048,8 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               gap: '6px',
               color: '#64748b',
               fontSize: '14px',
+              flex: isMobile && answeredQuestions.length === 0 ? 1 : 'none',
+              justifyContent: 'center',
             }}
           >
             <X size={16} />
@@ -1202,23 +1232,30 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
 
       {/* Navigation Buttons - only show during recording (not feedback) */}
       {!showFeedback && (
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '16px' }}>
+        <div style={{
+          display: 'flex',
+          gap: isMobile ? '8px' : '12px',
+          justifyContent: 'center',
+          marginBottom: '16px',
+        }}>
           <button
             onClick={handlePrev}
             disabled={isFirstQuestion}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '12px 20px',
+              gap: '6px',
+              padding: isMobile ? '10px 14px' : '12px 20px',
               borderRadius: '10px',
               border: `2px solid ${COLORS.slate[300]}`,
               backgroundColor: 'white',
               color: isFirstQuestion ? COLORS.slate[400] : COLORS.slate[700],
-              fontSize: '14px',
+              fontSize: isMobile ? '13px' : '14px',
               fontWeight: 600,
               cursor: isFirstQuestion ? 'not-allowed' : 'pointer',
               opacity: isFirstQuestion ? 0.5 : 1,
+              flex: isMobile ? 1 : 'none',
+              justifyContent: 'center',
             }}
           >
             <ChevronLeft size={16} />
@@ -1230,19 +1267,21 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '12px 20px',
+              gap: '6px',
+              padding: isMobile ? '10px 14px' : '12px 20px',
               borderRadius: '10px',
               border: `2px solid ${COLORS.slate[300]}`,
               backgroundColor: 'white',
               color: isLastQuestion ? COLORS.slate[400] : COLORS.slate[700],
-              fontSize: '14px',
+              fontSize: isMobile ? '13px' : '14px',
               fontWeight: 600,
               cursor: isLastQuestion ? 'not-allowed' : 'pointer',
               opacity: isLastQuestion ? 0.5 : 1,
+              flex: isMobile ? 1 : 'none',
+              justifyContent: 'center',
             }}
           >
-            Frage überspringen
+            {isMobile ? 'Überspringen' : 'Frage überspringen'}
             <ChevronRight size={16} />
           </button>
         </div>
@@ -1352,11 +1391,64 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         </div>
       ) : (
         /* Recording View Layout */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Two Column Grid for Recording and Question */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            {/* Left Column - Recording */}
-            <div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px' }}>
+          {/* Mobile: Question First, then Recording. Desktop: Two columns */}
+          {isMobile ? (
+            /* Mobile Layout - Stacked vertically */
+            <>
+              {/* Question Card - Mobile */}
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <div
+                    style={{
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '50%',
+                      background: buttonGradient,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {currentIndex + 1}
+                  </div>
+                  <span style={{ fontSize: '13px', color: '#64748b' }}>
+                    {currentQuestion?.category || labels.questionFallback}
+                  </span>
+                </div>
+
+                <p
+                  style={{
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    color: '#0f172a',
+                    lineHeight: 1.5,
+                    margin: 0,
+                  }}
+                >
+                  {currentQuestion?.question || labels.questionLoading}
+                </p>
+
+                {currentQuestion?.estimated_answer_time && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginTop: '12px' }}>
+                    <Clock size={14} />
+                    {labels.recommendedTime}: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
+                  </div>
+                )}
+              </div>
+
+              {/* Recording Area - Mobile */}
               <AudioRecorder
                 onRecordingComplete={handleRecordingComplete}
                 timeLimit={scenario.time_limit_per_question || 120}
@@ -1368,14 +1460,13 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                 labels={labels}
               />
 
-              {/* Error State */}
+              {/* Error State - Mobile */}
               {submitError && (
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  padding: '20px',
-                  marginTop: '16px',
+                  padding: '16px',
                   borderRadius: '12px',
                   backgroundColor: COLORS.red[100],
                 }}>
@@ -1407,60 +1498,116 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                   </button>
                 </div>
               )}
+            </>
+          ) : (
+            /* Desktop Layout - Two Column Grid */
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              {/* Left Column - Recording */}
+              <div>
+                <AudioRecorder
+                  onRecordingComplete={handleRecordingComplete}
+                  timeLimit={scenario.time_limit_per_question || 120}
+                  disabled={false}
+                  deviceId={selectedMicrophoneId}
+                  themedGradient={buttonGradient}
+                  primaryAccent={primaryAccent}
+                  isSubmitting={isSubmitting}
+                  labels={labels}
+                />
 
-            </div>
-
-            {/* Right Column - Question */}
-            <div
-              style={{
-                background: '#fff',
-                borderRadius: '16px',
-                padding: '24px',
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <div
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '50%',
-                    background: buttonGradient,
+                {/* Error State */}
+                {submitError && (
+                  <div style={{
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                  }}
-                >
-                  {currentIndex + 1}
-                </div>
-                <span style={{ fontSize: '14px', color: '#64748b' }}>
-                  {currentQuestion?.category || labels.questionFallback}
-                </span>
+                    padding: '20px',
+                    marginTop: '16px',
+                    borderRadius: '12px',
+                    backgroundColor: COLORS.red[100],
+                  }}>
+                    <AlertCircle style={{ width: '24px', height: '24px', color: COLORS.red[500] }} />
+                    <p style={{
+                      marginTop: '8px',
+                      color: COLORS.red[500],
+                      fontWeight: 500,
+                      fontSize: '14px',
+                      textAlign: 'center',
+                    }}>
+                      {submitError}
+                    </p>
+                    <button
+                      onClick={handleRetry}
+                      style={{
+                        marginTop: '12px',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        backgroundColor: COLORS.red[500],
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Erneut versuchen
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <h2
+              {/* Right Column - Question */}
+              <div
                 style={{
-                  fontSize: '18px',
-                  fontWeight: 600,
-                  color: '#0f172a',
-                  lineHeight: 1.5,
-                  marginBottom: '16px',
+                  background: '#fff',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  border: '1px solid #e2e8f0',
                 }}
               >
-                {currentQuestion?.question || labels.questionLoading}
-              </h2>
-
-              {currentQuestion?.estimated_answer_time && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px' }}>
-                  <Clock size={16} />
-                  {labels.recommendedTime}: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <div
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      background: buttonGradient,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {currentIndex + 1}
+                  </div>
+                  <span style={{ fontSize: '14px', color: '#64748b' }}>
+                    {currentQuestion?.category || labels.questionFallback}
+                  </span>
                 </div>
-              )}
+
+                <h2
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 600,
+                    color: '#0f172a',
+                    lineHeight: 1.5,
+                    marginBottom: '16px',
+                  }}
+                >
+                  {currentQuestion?.question || labels.questionLoading}
+                </h2>
+
+                {currentQuestion?.estimated_answer_time && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px' }}>
+                    <Clock size={16} />
+                    {labels.recommendedTime}: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Full Width Tips Section */}
           {currentQuestion?.tips && currentQuestion.tips.length > 0 && (
@@ -1469,14 +1616,6 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         </div>
       )}
 
-      {/* Responsive styles for mobile */}
-      <style>{`
-        @media (max-width: 768px) {
-          div[style*="gridTemplateColumns"] {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </div>
   );
 };
