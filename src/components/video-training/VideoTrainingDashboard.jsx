@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp } from 'lucide-react';
+import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp, FolderOpen } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
@@ -27,7 +27,7 @@ const SCENARIO_TYPE_LABELS = {
 /**
  * VideoTrainingDashboard - Scenario selection view
  */
-const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario }) => {
+const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario, onNavigateToHistory }) => {
   const [scenarios, setScenarios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -145,39 +145,66 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   }
 
   return (
-    <div style={{ padding: '32px' }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <div
-          style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
-            background: themedGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-          }}
-        >
-          <Video size={32} color={themedText} />
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: themedGradient,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Video size={24} color={themedText} />
+            </div>
+            <div>
+              <h1
+                style={{
+                  fontSize: '28px',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  margin: 0,
+                }}
+              >
+                Wirkungs-Analyse
+              </h1>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
+                Video-Feedback zu Auftreten und Kommunikation
+              </p>
+            </div>
+          </div>
+          {/* My Analyses Button - Only for authenticated users */}
+          {isAuthenticated && onNavigateToHistory && (
+            <button
+              onClick={onNavigateToHistory}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                border: `2px solid ${primaryAccent}`,
+                backgroundColor: 'white',
+                color: primaryAccent,
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <FolderOpen size={18} />
+              Meine Analysen
+            </button>
+          )}
         </div>
-        <h1
-          style={{
-            fontSize: '28px',
-            fontWeight: 700,
-            color: '#0f172a',
-            marginBottom: '8px',
-          }}
-        >
-          Video Training
-        </h1>
-        <p style={{ fontSize: '16px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>
-          Nimm dich selbst auf Video auf und erhalte detailliertes KI-Feedback zu deinem Auftreten,
-          deiner Körpersprache und Kommunikation.
-        </p>
         {/* View Toggle */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
           <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
         </div>
       </div>

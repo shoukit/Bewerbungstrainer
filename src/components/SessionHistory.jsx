@@ -25,6 +25,7 @@ import {
   Users,
   Sparkles,
   Trash2,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
@@ -753,7 +754,7 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
   );
 };
 
-const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession }) => {
+const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession, initialTab, onNavigateToModule }) => {
   console.log('🏗️ [SESSION_HISTORY] SessionHistory component initialized');
 
   // Partner branding
@@ -762,8 +763,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
-  // Active tab - default to first tab (Smart Briefings)
-  const [activeTab, setActiveTab] = useState(TABS.BRIEFINGS);
+  // Active tab - use initialTab prop if provided, otherwise default to Smart Briefings
+  const [activeTab, setActiveTab] = useState(initialTab || TABS.BRIEFINGS);
+
+  // Update active tab when initialTab prop changes
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Selected session for detail view
   const [selectedTrainingSession, setSelectedTrainingSession] = useState(null);
@@ -1277,12 +1285,36 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         })}
       </div>
 
-      {/* Refresh button */}
-      <div style={{ margin: '0 24px 24px', display: 'flex', justifyContent: 'flex-end' }}>
+      {/* Action buttons */}
+      <div style={{ margin: '0 24px 24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
         <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
           <RefreshCw style={{ width: '16px', height: '16px', marginRight: '8px' }} className={isLoading ? 'animate-spin' : ''} />
           Aktualisieren
         </Button>
+        {onNavigateToModule && (
+          <Button
+            onClick={() => {
+              // Navigate to the corresponding module based on active tab
+              const moduleMap = {
+                [TABS.BRIEFINGS]: 'smart_briefing',
+                [TABS.SIMULATOR]: 'simulator',
+                [TABS.VIDEO]: 'video_training',
+                [TABS.ROLEPLAY]: 'dashboard',
+              };
+              onNavigateToModule(moduleMap[activeTab] || 'overview');
+            }}
+            style={{
+              background: headerGradient,
+              color: headerText,
+            }}
+          >
+            <Plus style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+            {activeTab === TABS.BRIEFINGS ? 'Neues Briefing' :
+             activeTab === TABS.SIMULATOR ? 'Neues Training' :
+             activeTab === TABS.VIDEO ? 'Neue Analyse' :
+             'Neue Simulation'}
+          </Button>
+        )}
       </div>
 
       {/* Sessions List */}
@@ -1370,3 +1402,4 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 };
 
 export default SessionHistory;
+export { TABS as SESSION_TABS };

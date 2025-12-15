@@ -31,6 +31,7 @@ const SmartBriefingApp = ({
   requireAuth,
   setPendingAction,
   onNavigateToSimulator,
+  onNavigateToHistory,
 }) => {
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -180,7 +181,7 @@ const SmartBriefingApp = ({
         return (
           <BriefingWorkbook
             briefing={selectedBriefing}
-            onBack={isAuthenticated ? handleBackToList : handleBackToDashboard}
+            onBack={handleBackToDashboard}
             onStartSimulation={onNavigateToSimulator ? handleStartSimulation : null}
           />
         );
@@ -190,7 +191,7 @@ const SmartBriefingApp = ({
         return (
           <SmartBriefingDashboard
             onSelectTemplate={handleSelectTemplate}
-            onShowList={handleShowList}
+            onShowList={onNavigateToHistory}
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}

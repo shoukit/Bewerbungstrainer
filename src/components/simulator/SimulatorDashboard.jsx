@@ -12,7 +12,8 @@ import {
   TrendingUp,
   MessageCircle,
   LayoutGrid,
-  Clock
+  Clock,
+  FolderOpen
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
@@ -160,7 +161,7 @@ const CategoryFilterBar = ({ selectedCategory, onSelectCategory, primaryAccent }
  *
  * Displays available training scenarios in a grid layout
  */
-const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario }) => {
+const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario, onNavigateToHistory }) => {
   // Partner theming
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -310,46 +311,62 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '12px'
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
-            background: headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Sparkles style={{ width: '24px', height: '24px', color: headerText }} />
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              background: headerGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Sparkles style={{ width: '24px', height: '24px', color: headerText }} />
+            </div>
+            <div>
+              <h1 style={{
+                fontSize: '28px',
+                fontWeight: 700,
+                color: COLORS.slate[900],
+                margin: 0
+              }}>
+                Szenario-Training
+              </h1>
+              <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
+                Trainiere wichtige Karriere-Skills mit KI-Feedback
+              </p>
+            </div>
           </div>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: 700,
-            color: COLORS.slate[900],
-            margin: 0
-          }}>
-            Szenario-Training
-          </h1>
+          {/* My Trainings Button - Only for authenticated users */}
+          {isAuthenticated && onNavigateToHistory && (
+            <button
+              onClick={onNavigateToHistory}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                border: `2px solid ${primaryAccent}`,
+                backgroundColor: 'white',
+                color: primaryAccent,
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <FolderOpen size={18} />
+              Meine Trainings
+            </button>
+          )}
         </div>
-        <p style={{
-          fontSize: '16px',
-          color: COLORS.slate[600],
-          maxWidth: '600px',
-          margin: '0 auto'
-        }}>
-          Trainiere wichtige Karriere-Skills mit sofortigem KI-Feedback nach jeder Antwort.
-          Wähle ein Szenario und starte dein Training.
-        </p>
         {/* View Toggle */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
           <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
         </div>
       </div>

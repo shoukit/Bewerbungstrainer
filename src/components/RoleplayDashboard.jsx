@@ -13,6 +13,7 @@ import {
   Award,
   Loader2,
   AlertCircle,
+  FolderOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
@@ -48,7 +49,7 @@ const getInputStyles = (primaryAccent, focusRing) => ({
   },
 });
 
-const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenticated, requireAuth, setPendingAction, pendingScenario, clearPendingScenario }) => {
+const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenticated, requireAuth, setPendingAction, pendingScenario, clearPendingScenario, onNavigateToHistory }) => {
   const [scenarios, setScenarios] = useState([]);
   const [filteredScenarios, setFilteredScenarios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -244,9 +245,9 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   }
 
   return (
-    <div className="min-h-screen py-4 lg:py-8 px-2 lg:px-4 overflow-x-hidden">
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div className="w-full mb-4 lg:mb-8 px-4 lg:px-8">
+      <div style={{ marginBottom: '32px' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -260,22 +261,54 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
             </Button>
           )}
 
-          {/* Title */}
-          <div className="mb-6 text-center">
-            <div className="inline-flex items-center gap-3 mb-3">
+          {/* Title Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div
-                className="w-12 h-12 rounded-[14px] flex items-center justify-center"
-                style={{ background: headerGradient }}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: headerGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <MessageSquare className="w-6 h-6" style={{ color: headerText }} />
+                <MessageSquare style={{ width: '24px', height: '24px', color: headerText }} />
               </div>
-              <h1 className="text-[28px] font-bold m-0" style={{ color: COLORS.slate[900] }}>
-                Praxis-Training
-              </h1>
+              <div>
+                <h1 style={{ fontSize: '28px', fontWeight: 700, color: COLORS.slate[900], margin: 0 }}>
+                  Live-Simulationen
+                </h1>
+                <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
+                  Live Simulationen mit KI-Interviewer
+                </p>
+              </div>
             </div>
-            <p className="text-base max-w-[600px] mx-auto" style={{ color: COLORS.slate[600] }}>
-              Wähle ein Szenario und übe realistische Gespräche
-            </p>
+            {/* My Simulations Button - Only for authenticated users */}
+            {isAuthenticated && onNavigateToHistory && (
+              <button
+                onClick={onNavigateToHistory}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
+                  borderRadius: '12px',
+                  border: `2px solid ${primaryAccent}`,
+                  backgroundColor: 'white',
+                  color: primaryAccent,
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <FolderOpen size={18} />
+                Meine Simulationen
+              </button>
+            )}
           </div>
 
           {/* Search and Filters */}
@@ -330,7 +363,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
       </div>
 
       {/* Scenarios Grid */}
-      <div className="w-full px-4 lg:px-8">
+      <div>
         {filteredScenarios.length === 0 ? (
           <div className="text-center py-12">
             <Sparkles className="w-12 h-12 text-slate-400 mx-auto mb-4" />
