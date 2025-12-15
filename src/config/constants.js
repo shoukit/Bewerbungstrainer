@@ -196,6 +196,86 @@ export const CONFIDENCE_LABELS = {
 };
 
 // =============================================================================
+// DIFFICULTY COLORS
+// =============================================================================
+
+/**
+ * Difficulty level styling for scenario cards
+ * Used across SimulatorDashboard, VideoTrainingDashboard, RoleplayDashboard
+ */
+export const DIFFICULTY_COLORS = {
+  beginner: {
+    bg: 'rgba(34, 197, 94, 0.15)',
+    text: '#16a34a',
+    label: 'Einsteiger',
+    tailwind: {
+      bg: 'bg-green-100',
+      text: 'text-green-700',
+      border: 'border-green-200',
+    },
+  },
+  easy: {
+    bg: 'rgba(34, 197, 94, 0.15)',
+    text: '#16a34a',
+    label: 'Leicht',
+    tailwind: {
+      bg: 'bg-green-100',
+      text: 'text-green-700',
+      border: 'border-green-200',
+    },
+  },
+  intermediate: {
+    bg: 'rgba(59, 130, 246, 0.15)',
+    text: '#2563eb',
+    label: 'Fortgeschritten',
+    tailwind: {
+      bg: 'bg-blue-100',
+      text: 'text-blue-700',
+      border: 'border-blue-200',
+    },
+  },
+  medium: {
+    bg: 'rgba(245, 158, 11, 0.15)',
+    text: '#d97706',
+    label: 'Mittel',
+    tailwind: {
+      bg: 'bg-amber-100',
+      text: 'text-amber-700',
+      border: 'border-amber-200',
+    },
+  },
+  advanced: {
+    bg: 'rgba(168, 85, 247, 0.15)',
+    text: '#9333ea',
+    label: 'Experte',
+    tailwind: {
+      bg: 'bg-purple-100',
+      text: 'text-purple-700',
+      border: 'border-purple-200',
+    },
+  },
+  hard: {
+    bg: 'rgba(239, 68, 68, 0.15)',
+    text: '#dc2626',
+    label: 'Schwer',
+    tailwind: {
+      bg: 'bg-red-100',
+      text: 'text-red-700',
+      border: 'border-red-200',
+    },
+  },
+};
+
+/**
+ * Get difficulty configuration by level
+ * @param {string} level - Difficulty level (beginner, easy, intermediate, medium, advanced, hard)
+ * @returns {object} - Difficulty config with bg, text, label
+ */
+export function getDifficultyConfig(level) {
+  return DIFFICULTY_COLORS[level] || DIFFICULTY_COLORS.intermediate;
+}
+
+// =============================================================================
 // PACING CONFIGURATION
 // =============================================================================
 
@@ -291,6 +371,53 @@ export const UI_TIMING = {
   ANIMATION_DURATION_FAST: 0.2,
   ANIMATION_DURATION_NORMAL: 0.4,
   ANIMATION_DURATION_SLOW: 0.8,
+};
+
+// =============================================================================
+// BORDER RADIUS TOKENS
+// =============================================================================
+
+/**
+ * Standardized border radius values for consistent UI
+ * Usage: borderRadius: BORDER_RADIUS.md
+ *
+ * Conventions:
+ * - xs (4px): Progress bars, small dividers, inline elements
+ * - sm (8px): Buttons, badges, small inputs
+ * - md (12px): Cards, dialogs, medium inputs
+ * - lg (16px): Large cards, sections, modals
+ * - xl (24px): Hero sections, large feature cards
+ * - full (9999px): Pills, circular buttons, avatars
+ */
+export const BORDER_RADIUS = {
+  xs: '4px',
+  sm: '8px',
+  md: '12px',
+  lg: '16px',
+  xl: '24px',
+  full: '9999px',
+};
+
+// =============================================================================
+// SPACING TOKENS
+// =============================================================================
+
+/**
+ * Standardized spacing values (based on 4px grid)
+ * Usage: padding: SPACING[4] (16px)
+ */
+export const SPACING = {
+  0: '0px',
+  1: '4px',
+  2: '8px',
+  3: '12px',
+  4: '16px',
+  5: '20px',
+  6: '24px',
+  8: '32px',
+  10: '40px',
+  12: '48px',
+  16: '64px',
 };
 
 // =============================================================================
@@ -533,12 +660,16 @@ export default {
   SCORE_THRESHOLDS,
   getScoreColorScheme,
   CONFIDENCE_LABELS,
+  DIFFICULTY_COLORS,
+  getDifficultyConfig,
   PACING_CONFIG,
   OPTIMAL_WPM,
   TONALITY_CONFIG,
   FILLER_WORD_THRESHOLDS,
   FILLER_WORDS,
   UI_TIMING,
+  BORDER_RADIUS,
+  SPACING,
   AUDIO_CONFIG,
   TRANSCRIPT_CONFIG,
   INTERACTIVE_STATES,

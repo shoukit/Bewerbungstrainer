@@ -3,6 +3,7 @@ import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, 
 import { usePartner } from '../../context/PartnerContext';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { motion } from 'framer-motion';
+import { DIFFICULTY_COLORS, getDifficultyConfig } from '@/config/constants';
 
 // Icon mapping for scenarios
 const ICON_MAP = {
@@ -13,13 +14,6 @@ const ICON_MAP = {
   mic: Mic,
   target: Target,
   banknote: Banknote,
-};
-
-// Difficulty badge styles
-const DIFFICULTY_STYLES = {
-  beginner: { bg: 'rgba(34, 197, 94, 0.15)', text: '#16a34a', label: 'Einsteiger' },
-  intermediate: { bg: 'rgba(59, 130, 246, 0.15)', text: '#2563eb', label: 'Fortgeschritten' },
-  advanced: { bg: 'rgba(168, 85, 247, 0.15)', text: '#9333ea', label: 'Experte' },
 };
 
 // Scenario type labels
@@ -36,7 +30,7 @@ const SCENARIO_TYPE_LABELS = {
  */
 const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryAccent }) => {
   const IconComponent = ICON_MAP[scenario.icon] || Video;
-  const difficulty = DIFFICULTY_STYLES[scenario.difficulty] || DIFFICULTY_STYLES.intermediate;
+  const difficulty = getDifficultyConfig(scenario.difficulty);
   const typeLabel = SCENARIO_TYPE_LABELS[scenario.scenario_type] || 'Training';
 
   return (

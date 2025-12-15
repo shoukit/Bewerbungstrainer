@@ -2,13 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, User } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-
-/**
- * Theme colors (slate only - blue/teal from partner branding)
- */
-const COLORS = {
-  slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 500: '#64748b', 600: '#475569', 700: '#334155' },
-};
+import { COLORS } from '@/config/colors';
 
 /**
  * InterviewerProfile Component

@@ -40,28 +40,11 @@ import { DEFAULT_BRANDING } from '@/config/partners';
 import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
+import { COLORS } from '@/config/colors';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
-
-const COLORS = {
-  slate: {
-    50: '#f8fafc',
-    100: '#f1f5f9',
-    200: '#e2e8f0',
-    300: '#cbd5e1',
-    400: '#94a3b8',
-    500: '#64748b',
-    600: '#475569',
-    700: '#334155',
-    800: '#1e293b',
-    900: '#0f172a',
-  },
-  green: { 500: '#22c55e', 100: '#dcfce7' },
-  amber: { 500: '#f59e0b', 100: '#fef3c7' },
-  red: { 500: '#ef4444', 100: '#fee2e2' },
-};
 
 const CATEGORY_ICONS = {
   auftreten: Eye,

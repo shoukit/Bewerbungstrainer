@@ -11,15 +11,7 @@ import {
 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-
-/**
- * Fallback theme colors
- */
-const COLORS = {
-  slate: { 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
-  green: { 500: '#22c55e', 100: '#dcfce7' },
-  amber: { 500: '#f59e0b', 100: '#fef3c7' },
-};
+import { COLORS } from '@/config/colors';
 
 /**
  * Score Badge for Summary
