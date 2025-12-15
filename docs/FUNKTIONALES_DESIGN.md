@@ -13,7 +13,7 @@
    - [2.2 Szenario-Training (Simulator)](#22-szenario-training-simulator)
    - [2.3 Rhetorik-Gym](#23-rhetorik-gym)
    - [2.4 Session-Historie](#24-session-historie)
-3. [Szenario- & Rollenspiel-Konfiguration](#3-szenario---rollenspiel-konfiguration)
+3. [Szenario- & Live-Simulation-Konfiguration](#3-szenario---live-simulation-konfiguration)
    - [3.1 WordPress Custom Post Types](#31-wordpress-custom-post-types)
    - [3.2 Variablen-Schema](#32-variablen-schema)
    - [3.3 Interviewer-Profile](#33-interviewer-profile)
@@ -215,7 +215,7 @@ Chronologische Übersicht aller vergangenen Trainingseinheiten mit Zugriff auf D
 
 ---
 
-## 3. Szenario- & Rollenspiel-Konfiguration
+## 3. Szenario- & Live-Simulation-Konfiguration
 
 ### 3.1 WordPress Custom Post Types
 
@@ -878,7 +878,7 @@ GET  /wp-json/karriereheld/v1/user
 
 | Post Type | Verwendung |
 |-----------|------------|
-| `roleplay_scenario` | Rollenspiel-Szenarien |
+| `roleplay_scenario` | Live-Simulationen (Szenarien) |
 | `whitelabel_partner` | White-Label Partner |
 
 ---

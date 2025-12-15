@@ -446,7 +446,7 @@ Separate Tabellen für:
 
 | Post Type | Beschreibung |
 |-----------|--------------|
-| `roleplay_scenario` | Rollenspiel-Szenarien |
+| `roleplay_scenario` | Live-Simulationen (Szenarien) |
 | `whitelabel_partner` | White-Label Partner |
 
 ---
