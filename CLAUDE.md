@@ -1,8 +1,13 @@
-# CLAUDE.md - KI-Assistenten-Leitfaden für Bewerbungstrainer
+# CLAUDE.md - KI-Assistenten-Leitfaden für Karriereheld
 
 ## Projektübersicht
 
-**Bewerbungstrainer** ist ein KI-gestütztes WordPress-Plugin für umfassende Karriere- und Gesprächsvorbereitung. Die Anwendung kombiniert sprachbasierte KI-Interaktion, intelligente Feedback-Generierung und strukturierte Wissensvermittlung zu einem ganzheitlichen Trainingsystem.
+**Karriereheld** ist ein KI-gestütztes WordPress-Plugin für umfassende Karriere- und Gesprächsvorbereitung. Die Anwendung kombiniert sprachbasierte KI-Interaktion, intelligente Feedback-Generierung und strukturierte Wissensvermittlung zu einem ganzheitlichen Trainingsystem.
+
+> **Hinweis:** Ausführliche Dokumentation findet sich im `docs/` Ordner:
+> - `PRODUKTBESCHREIBUNG.md` - Umfassende fachliche Dokumentation
+> - `FUNKTIONALES_DESIGN.md` - Funktionales Design und Benutzerflows
+> - `TECHNISCHE_DOKUMENTATION.md` - Technische Details und API-Referenz
 
 ### Vision
 Menschen dabei unterstützen, selbstbewusst und optimal vorbereitet in wichtige berufliche Gespräche zu gehen – sei es ein Vorstellungsgespräch, eine Gehaltsverhandlung oder ein wichtiges Kundengespräch.
@@ -728,7 +733,7 @@ Zentrale Übersicht aller durchgeführten Trainings mit der Möglichkeit, vergan
 
 #### Zweck
 
-Ermöglicht Partner-Unternehmen, den Bewerbungstrainer unter eigenem Branding in ihre Plattformen zu integrieren.
+Ermöglicht Partner-Unternehmen, Karriereheld unter eigenem Branding in ihre Plattformen zu integrieren.
 
 #### Funktionsweise
 

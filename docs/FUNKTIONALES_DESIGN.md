@@ -1,7 +1,7 @@
-# KarriereHeld Bewerbungstrainer - Funktionales Design
+# Karriereheld - Funktionales Design
 
-**Version:** 2.0.0
-**Stand:** Dezember 2024
+**Version:** 3.0.0
+**Stand:** Dezember 2025
 
 ---
 
@@ -9,10 +9,12 @@
 
 1. [Produktübersicht](#1-produktübersicht)
 2. [Module & Features](#2-module--features)
-   - [2.1 Live-Gespräche (Roleplay)](#21-live-gespräche-roleplay)
-   - [2.2 Szenario-Training (Simulator)](#22-szenario-training-simulator)
-   - [2.3 Rhetorik-Gym](#23-rhetorik-gym)
-   - [2.4 Session-Historie](#24-session-historie)
+   - [2.1 Smart Briefings](#21-smart-briefings)
+   - [2.2 Live-Simulation](#22-live-simulation)
+   - [2.3 Szenario-Training](#23-szenario-training)
+   - [2.4 Wirkungs-Analyse](#24-wirkungs-analyse)
+   - [2.5 Rhetorik-Gym](#25-rhetorik-gym)
+   - [2.6 Session-Historie](#26-session-historie)
 3. [Szenario- & Live-Simulation-Konfiguration](#3-szenario---live-simulation-konfiguration)
    - [3.1 WordPress Custom Post Types](#31-wordpress-custom-post-types)
    - [3.2 Variablen-Schema](#32-variablen-schema)
@@ -36,29 +38,86 @@
 
 ### Vision
 
-**KarriereHeld Bewerbungstrainer** ist eine KI-gestützte Trainingsplattform für realistische Gesprächsvorbereitung. Die Anwendung kombiniert sprachbasierte KI-Interaktion mit intelligenter Feedback-Generierung.
+**Karriereheld** ist eine KI-gestützte Trainingsplattform für umfassende Karriere- und Gesprächsvorbereitung. Die Anwendung kombiniert sprachbasierte KI-Interaktion, intelligente Feedback-Generierung und strukturierte Wissensvermittlung zu einem ganzheitlichen Trainingsystem.
+
+> *Menschen dabei unterstützen, selbstbewusst und optimal vorbereitet in wichtige berufliche Gespräche zu gehen – sei es ein Vorstellungsgespräch, eine Gehaltsverhandlung oder ein wichtiges Kundengespräch.*
 
 ### Kernfunktionen
 
 | Modul | Beschreibung | Primärer Use Case |
 |-------|--------------|-------------------|
-| **Live-Gespräche** | Echtzeit-Voice-Interviews mit KI-Interviewer | Bewerbungsgespräche üben |
-| **Szenario-Training** | Strukturiertes Frage-Antwort-Training mit Sofortfeedback | Spezifische Situationen trainieren |
-| **Rhetorik-Gym** | Gamifiziertes Sprechtraining | Füllwörter reduzieren, Sprechtechnik verbessern |
+| **Smart Briefings** | KI-generierte Wissenspakete zur Vorbereitung | Schnelle, strukturierte Recherche |
+| **Live-Simulation** | Echtzeit-Voice-Interviews mit KI-Interviewer | Spontanität unter Druck üben |
+| **Szenario-Training** | Strukturiertes Frage-Antwort-Training mit Sofortfeedback | Systematisches Lernen |
+| **Wirkungs-Analyse** | Video-Training mit Körpersprache-Feedback | Nonverbale Kommunikation verbessern |
+| **Rhetorik-Gym** | Gamifiziertes Sprechtraining | Füllwörter reduzieren |
 | **Session-Historie** | Übersicht vergangener Trainings | Fortschritt verfolgen |
 
 ### Zielgruppen
 
-- **Bewerber** - Vorbereitung auf Vorstellungsgespräche
+- **Bewerber** - Vorbereitung auf Vorstellungsgespräche und Gehaltsverhandlungen
 - **Vertriebsmitarbeiter** - Training für Kundengespräche und Verhandlungen
-- **Führungskräfte** - Übung von Mitarbeitergesprächen
+- **Führungskräfte** - Übung von Mitarbeiter- und Feedback-Gesprächen
+- **Studierende** - Vorbereitung auf den Berufseinstieg
 - **Coaches/Trainer** - Tool für Klienten (White-Label)
 
 ---
 
 ## 2. Module & Features
 
-### 2.1 Live-Gespräche (Roleplay)
+### 2.1 Smart Briefings
+
+#### Beschreibung
+
+KI-generierte Wissenspakete zur optimalen Vorbereitung auf berufliche Gespräche. Smart Briefings liefern in Sekunden personalisierte Informationen, die normalerweise Stunden manueller Recherche erfordern würden.
+
+#### Das Problem, das es löst
+
+- **Zeitaufwändige Recherche**: Vor wichtigen Gesprächen verbringen Menschen Stunden mit unstrukturierter Internet-Recherche
+- **Informationsüberflutung**: Zu viele Informationen führen zu Unsicherheit statt Selbstvertrauen
+- **Fehlender roter Faden**: Ohne Struktur wissen Bewerber nicht, welche Informationen wirklich relevant sind
+
+#### Benutzerflow
+
+```
+1. Template auswählen
+   ├─ Dashboard zeigt verfügbare Templates (Kategoriefilter)
+   └─ Beispiele: Job Interview, Gehaltsverhandlung, Kundengespräch
+   ↓
+2. Variablen eingeben
+   ├─ Position, Unternehmen, Kontext
+   └─ Dynamisches Formular basierend auf Template
+   ↓
+3. Briefing generieren (~10 Sekunden)
+   ↓
+4. Interaktives Workbook nutzen
+   ├─ Sections aufklappen/zuklappen
+   ├─ Items durcharbeiten
+   ├─ Eigene Notizen hinzufügen ✏️
+   ├─ Irrelevante Punkte löschen 🗑️
+   └─ "5 weitere Punkte generieren" pro Section
+```
+
+#### Verfügbare Templates
+
+| Template | Kategorie | Beschreibung |
+|----------|-----------|--------------|
+| **Job Interview Deep-Dive** | Karriere | Unternehmens-Insights, typische Fragen, Antwortstrategien |
+| **Gehaltsverhandlung Prep** | Karriere | Marktanalyse, Argumente, Konterstrategien |
+| **Kundengespräch Vorbereitung** | Vertrieb | Branchenkontext, Kundenanalyse, Gesprächsstrategie |
+| **Feedback-Gespräch** | Führung | Strukturierte Vorbereitung auf Mitarbeitergespräche |
+
+#### Workbook-Features
+
+- **Sections**: Thematisch gruppierte Informationspunkte
+- **Items**: Einzelne Wissenspunkte mit Erklärungen
+- **Notizen**: Persönliche Anmerkungen zu jedem Item
+- **Soft-Delete**: Ausgeblendete Items können wiederhergestellt werden
+- **Dynamische Erweiterung**: KI generiert weitere Punkte auf Anfrage
+
+---
+
+### 2.2 Live-Simulation
 
 #### Beschreibung
 
@@ -107,7 +166,7 @@ Während des Gesprächs werden kontextbezogene Tipps eingeblendet:
 
 ---
 
-### 2.2 Szenario-Training (Simulator)
+### 2.3 Szenario-Training
 
 #### Beschreibung
 
@@ -139,7 +198,57 @@ Strukturiertes Training mit vordefinierten Fragen und sofortigem Feedback nach j
 
 ---
 
-### 2.3 Rhetorik-Gym
+### 2.4 Wirkungs-Analyse
+
+#### Beschreibung
+
+Video-basiertes Training, das neben dem gesprochenen Wort auch Körpersprache, Mimik und Auftreten analysiert. Die KI wertet das Video aus und gibt konkretes Feedback zur nonverbalen Kommunikation.
+
+#### Das Problem, das es löst
+
+- **Blinder Fleck Körpersprache**: Die meisten wissen nicht, wie sie auf andere wirken
+- **Nervöse Ticks**: Unbewusste Gesten und Bewegungen bleiben unbemerkt
+- **Keine Video-Übung**: Sich selbst auf Video zu sehen ist ungewohnt
+
+#### Benutzerflow
+
+```
+1. Szenario auswählen
+   ↓
+2. Kamera & Mikrofon einrichten
+   ├─ Kamera-Auswahl
+   ├─ Licht- und Rahmen-Check
+   └─ HD-Qualität (1280x720)
+   ↓
+3. Video-Aufnahme
+   ├─ Kontinuierliche Aufnahme über alle Fragen
+   ├─ Fragen-Navigation (Vor/Zurück)
+   └─ Timestamps werden pro Frage gespeichert
+   ↓
+4. Upload & Analyse
+   ├─ Video wird hochgeladen
+   ├─ Gemini Vision analysiert jeden Abschnitt
+   └─ Fortschrittsanzeige während Analyse
+   ↓
+5. Ergebnisse ansehen
+   ├─ Video-Wiedergabe pro Frage
+   ├─ Nonverbale Analyse neben Video
+   └─ Gesamtbewertung der Präsentation
+```
+
+#### Analysierte Aspekte
+
+| Kategorie | Was analysiert wird | Beispiel-Feedback |
+|-----------|--------------------|--------------------|
+| **Augenkontakt** | Blickrichtung, Häufigkeit | "Mehr direkter Blick in die Kamera" |
+| **Körperhaltung** | Aufrecht, entspannt, verkrampft | "Schultern sind angespannt" |
+| **Gestik** | Handbewegungen, Nervosität | "Hände unterstützen das Gesagte gut" |
+| **Mimik** | Lächeln, Stirnrunzeln | "Freundlicher Gesichtsausdruck" |
+| **Gesamtwirkung** | Professionell, sympathisch | "Selbstbewusstes Auftreten" |
+
+---
+
+### 2.5 Rhetorik-Gym
 
 #### Beschreibung
 
@@ -193,25 +302,35 @@ Gamifiziertes Training zur Verbesserung der Sprechqualität. Fokus auf Füllwör
 
 ---
 
-### 2.4 Session-Historie
+### 2.6 Session-Historie
 
 #### Beschreibung
 
-Chronologische Übersicht aller vergangenen Trainingseinheiten mit Zugriff auf Details.
+Zentrale Übersicht aller durchgeführten Trainings mit der Möglichkeit, vergangene Sessions zu reviewen, fortzusetzen oder zu wiederholen.
 
-#### Angezeigte Informationen
+#### Verfügbare Tabs
 
-- Datum und Uhrzeit
-- Szenario-Typ und Titel
-- Erreichte Punktzahl
-- Dauer des Trainings
+| Tab | Inhalt |
+|-----|--------|
+| **Smart Briefings** | Alle generierten Wissenspakete |
+| **Szenario-Training** | Strukturierte Trainings-Sessions |
+| **Wirkungs-Analyse** | Video-basierte Trainings |
+| **Live-Simulationen** | Echtzeit-Gespräche mit KI |
+
+#### Session-Cards
+
+Jede Session-Karte zeigt:
+- Szenario-Name und Erstellungsdatum
+- Score/Bewertung (farbcodiert)
+- Fortschritt bei unvollständigen Sessions
+- Aktionen: Fortsetzen, Wiederholen, Löschen
 
 #### Detail-Ansicht
 
-- Audio-Wiedergabe der Aufnahme
+- Audio/Video-Wiedergabe
 - Vollständiges Transkript
 - Feedback und Bewertungen
-- Audio-Analyse-Metriken
+- Analyse-Metriken (paraverbal, nonverbal)
 
 ---
 
