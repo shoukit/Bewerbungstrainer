@@ -27,21 +27,11 @@ import { GAME_MODES, getRandomTopic, getRandomStressQuestion } from '@/config/pr
 import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
+import { useMobile } from '@/hooks/useMobile';
+import COLORS from '@/config/colors';
 
-/**
- * Ocean theme colors - consistent with other components
- */
-const COLORS = {
-  blue: { 50: '#eff6ff', 100: '#dbeafe', 500: '#4A9EC9', 600: '#3A7FA7', 700: '#2D6485' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
-  slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
-  amber: { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 600: '#d97706' },
-  green: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a' },
-  purple: { 50: '#faf5ff', 100: '#f3e8ff', 500: '#a855f7', 600: '#9333ea' },
-  red: { 50: '#fef2f2', 500: '#ef4444', 600: '#dc2626' },
-};
+// Colors imported from @/config/colors
 
 /**
  * Icon mapping for game modes
@@ -544,24 +534,14 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
     totalPracticeTime: 0,
   });
 
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Mobile detection - using shared hook
+  const isMobile = useMobile();
 
   // Pending mode for after login
   const [pendingMode, setPendingMode] = useState(null);
 
-  // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+  // Partner theming - using shared hook
+  const { headerGradient, headerText, primaryAccent, primaryAccentLight } = useBranding();
 
   // Load user stats - reload when returning to mode selection view
   useEffect(() => {
