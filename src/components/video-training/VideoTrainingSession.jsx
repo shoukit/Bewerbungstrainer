@@ -135,6 +135,15 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
 
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const timerRef = useRef(null);
@@ -406,22 +415,35 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#0f172a' }}>
+    <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: '1000px', margin: '0 auto' }}>
+      {/* Header - Mobile responsive */}
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? '12px' : '0',
+        marginBottom: '24px',
+      }}>
+        <h1 style={{
+          fontSize: isMobile ? '18px' : '20px',
+          fontWeight: 600,
+          color: '#0f172a',
+          margin: 0,
+        }}>
           {scenario?.title}
         </h1>
         <button
           onClick={handleExit}
           style={{
-            padding: '8px 16px',
+            padding: isMobile ? '10px 14px' : '8px 16px',
             borderRadius: '8px',
             background: '#f1f5f9',
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '6px',
             color: '#64748b',
             fontSize: '14px',
@@ -435,10 +457,316 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       {/* Progress */}
       <ProgressBar current={currentQuestionIndex} total={questions.length} primaryAccent={primaryAccent} />
 
-      {/* Main Content */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        {/* Video Preview */}
-        <div>
+      {/* Main Content - Mobile: stacked, Desktop: two columns */}
+      {isMobile ? (
+        /* Mobile Layout - Stacked vertically: Question first, then Video */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Question Panel - Mobile */}
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '16px',
+              padding: '16px',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <div
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  background: themedGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  flexShrink: 0,
+                }}
+              >
+                {currentQuestionIndex + 1}
+              </div>
+              <span style={{ fontSize: '13px', color: '#64748b' }}>
+                {currentQuestion?.category || 'Frage'}
+              </span>
+            </div>
+
+            <p
+              style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                color: '#0f172a',
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              {currentQuestion?.question || 'Frage wird geladen...'}
+            </p>
+
+            {currentQuestion?.estimated_time && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginTop: '12px' }}>
+                <Clock size={14} />
+                Empfohlene Antwortzeit: ~{Math.round(currentQuestion.estimated_time / 60)} Min.
+              </div>
+            )}
+
+            {/* Tips - collapsed by default on mobile */}
+            {scenario?.enable_tips && currentQuestion?.tips && (
+              <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} />
+            )}
+          </div>
+
+          {/* Video Preview - Mobile */}
+          <div>
+            <div
+              style={{
+                position: 'relative',
+                background: '#000',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                aspectRatio: '16/9',
+              }}
+            >
+              {cameraError ? (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    padding: '16px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <VideoOff size={40} style={{ marginBottom: '12px', opacity: 0.6 }} />
+                  <p style={{ marginBottom: '12px', fontSize: '14px' }}>{cameraError}</p>
+                  <button
+                    onClick={initializeCamera}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      background: primaryAccent,
+                      color: '#fff',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '14px',
+                    }}
+                  >
+                    <RefreshCw size={16} />
+                    Erneut versuchen
+                  </button>
+                </div>
+              ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transform: 'scaleX(-1)',
+                  }}
+                />
+              )}
+
+              {/* Recording indicator */}
+              {isRecording && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '12px',
+                    left: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#ef4444',
+                      animation: 'pulse 1.5s infinite',
+                    }}
+                  />
+                  <span style={{ color: '#fff', fontSize: '13px', fontWeight: 500 }}>
+                    {formatTime(recordingTime)}
+                  </span>
+                </div>
+              )}
+
+              {/* Time display when not recording */}
+              {!isRecording && recordingTime > 0 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '12px',
+                    left: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                  }}
+                >
+                  <Clock size={14} color="#fff" />
+                  <span style={{ color: '#fff', fontSize: '13px' }}>{formatTime(recordingTime)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Controls - Mobile */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+              {/* Recording button */}
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                {!isRecording ? (
+                  <button
+                    onClick={startRecording}
+                    disabled={!stream}
+                    style={{
+                      padding: '14px 24px',
+                      borderRadius: '12px',
+                      background: stream ? '#ef4444' : '#94a3b8',
+                      color: '#fff',
+                      border: 'none',
+                      cursor: stream ? 'pointer' : 'not-allowed',
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      width: '100%',
+                      justifyContent: 'center',
+                      boxShadow: stream ? '0 4px 14px rgba(239, 68, 68, 0.4)' : 'none',
+                    }}
+                  >
+                    <Video size={20} />
+                    Aufnahme starten
+                  </button>
+                ) : (
+                  <button
+                    onClick={stopRecording}
+                    style={{
+                      padding: '14px 24px',
+                      borderRadius: '12px',
+                      background: '#f1f5f9',
+                      color: '#0f172a',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      width: '100%',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <StopCircle size={20} color="#ef4444" />
+                    Aufnahme pausieren
+                  </button>
+                )}
+              </div>
+
+              {/* Navigation and finish buttons - Mobile */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {/* Previous button */}
+                {scenario?.enable_navigation && currentQuestionIndex > 0 && (
+                  <button
+                    onClick={goToPrevQuestion}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      background: '#fff',
+                      border: '1px solid #e2e8f0',
+                      cursor: 'pointer',
+                      color: '#0f172a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      fontSize: '13px',
+                      flex: 1,
+                    }}
+                  >
+                    <ChevronLeft size={16} />
+                    Zurück
+                  </button>
+                )}
+
+                {/* Next button */}
+                {scenario?.enable_navigation && currentQuestionIndex < questions.length - 1 && (
+                  <button
+                    onClick={goToNextQuestion}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      background: primaryAccent,
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      flex: 1,
+                    }}
+                  >
+                    Nächste
+                    <ChevronRight size={16} />
+                  </button>
+                )}
+
+                {/* Finish button */}
+                <button
+                  onClick={finishRecording}
+                  disabled={recordedChunks.length === 0}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: recordedChunks.length === 0 ? '#94a3b8' : '#22c55e',
+                    border: 'none',
+                    cursor: recordedChunks.length === 0 ? 'not-allowed' : 'pointer',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    flex: 1,
+                    boxShadow: recordedChunks.length > 0 ? '0 4px 14px rgba(34, 197, 94, 0.3)' : 'none',
+                  }}
+                >
+                  <Check size={16} />
+                  Abschließen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Desktop Layout - Two columns */
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          {/* Video Preview */}
+          <div>
           <div
             style={{
               position: 'relative',
