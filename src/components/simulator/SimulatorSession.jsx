@@ -1046,7 +1046,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
               gap: '6px',
               color: '#64748b',
               fontSize: '14px',
-              flex: isMobile && answeredQuestions.length === 0 ? 1 : 'none',
+              flex: isMobile ? 1 : 'none',
               justifyContent: 'center',
             }}
           >
