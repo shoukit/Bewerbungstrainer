@@ -8,6 +8,7 @@ import { SimulatorApp } from './components/simulator';
 import { VideoTrainingApp } from './components/video-training';
 import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SmartBriefingApp } from './components/smartbriefing';
+import UsageLimitsDisplay from './components/UsageLimitsDisplay';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
 import { LoginModal } from './components/LoginModal';
@@ -93,6 +94,7 @@ const VIEWS = {
   SMART_BRIEFING: 'smart_briefing',
   HISTORY: 'history',
   SESSION_DETAIL: 'session_detail',
+  USAGE_LIMITS: 'usage_limits',
   GYM: 'gym',
   GYM_KLASSIKER: 'gym_klassiker',
   GYM_SESSION: 'gym_session',
@@ -408,6 +410,9 @@ function AppContent() {
       case 'history':
         setCurrentView(VIEWS.HISTORY);
         break;
+      case 'usage_limits':
+        setCurrentView(VIEWS.USAGE_LIMITS);
+        break;
       case 'gym':
       case 'gym_klassiker':
         setCurrentView(VIEWS.GYM_KLASSIKER);
@@ -595,6 +600,15 @@ function AppContent() {
             onContinueSession={handleContinueSession}
             onRepeatSession={handleRepeatSession}
           />
+        );
+
+      case VIEWS.USAGE_LIMITS:
+        return (
+          <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
+            <UsageLimitsDisplay
+              onNavigateToRoleplay={() => setCurrentView(VIEWS.DASHBOARD)}
+            />
+          </div>
         );
 
       case VIEWS.SESSION_DETAIL:

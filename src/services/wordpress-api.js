@@ -724,6 +724,27 @@ class WordPressAPI {
             console.warn(`⚠️ [WordPressAPI] Failed to log prompt: ${error.message}`);
         }
     }
+
+    /**
+     * Get usage limits for current user
+     *
+     * @param {string} demoCode - Optional demo code for demo users
+     * @returns {Promise<object>} Usage limits data
+     */
+    async getUsageLimits(demoCode = null) {
+        try {
+            const queryParams = demoCode ? `?demo_code=${encodeURIComponent(demoCode)}` : '';
+            const response = await this.request(`/usage-limits${queryParams}`, {
+                method: 'GET'
+            });
+
+            console.log('📊 [WordPressAPI] Usage limits:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [WordPressAPI] Failed to get usage limits:', error);
+            throw error;
+        }
+    }
 }
 
 // Export singleton instance

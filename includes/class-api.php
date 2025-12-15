@@ -355,6 +355,22 @@ class Bewerbungstrainer_API {
             'permission_callback' => array($this, 'check_is_admin'),
         ));
 
+        // ===== Usage Limits Endpoints =====
+
+        // Get usage limits for current user
+        register_rest_route($this->namespace, '/usage-limits', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_usage_limits'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Update roleplay session duration
+        register_rest_route($this->namespace, '/roleplays/sessions/(?P<id>\d+)/duration', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'update_session_duration'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
         // Admin: Get all partners
         register_rest_route($this->namespace, '/admin/partners', array(
             'methods' => 'GET',
@@ -3053,6 +3069,148 @@ class Bewerbungstrainer_API {
         return new WP_REST_Response(array(
             'success' => true,
             'message' => 'Prompt logged successfully',
+        ), 200);
+    }
+
+    /**
+     * ===== Usage Limits Methods =====
+     */
+
+    /**
+     * Get usage limits for current user
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function get_usage_limits($request) {
+        $current_user_id = get_current_user_id();
+        $is_demo_user = Bewerbungstrainer_Demo_Codes::is_demo_user();
+
+        // Get demo code from request or session
+        $demo_code = null;
+        if ($is_demo_user) {
+            $demo_code = isset($_COOKIE['bewerbungstrainer_demo_code'])
+                ? sanitize_text_field($_COOKIE['bewerbungstrainer_demo_code'])
+                : $request->get_param('demo_code');
+        }
+
+        // Get usage limits handler
+        $usage_limits = Bewerbungstrainer_Usage_Limits::get_instance();
+
+        // Get availability for this user/demo_code
+        $availability = $usage_limits->check_availability(
+            $is_demo_user ? null : $current_user_id,
+            $demo_code
+        );
+
+        // Calculate next reset date (1st of next month)
+        $now = current_time('timestamp');
+        $next_reset = date('Y-m-01', strtotime('+1 month', $now));
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'has_minutes' => $availability['has_minutes'],
+                'remaining_minutes' => round($availability['remaining'], 1),
+                'monthly_limit' => $availability['limit'],
+                'used_minutes' => round($availability['used'], 1),
+                'period_start' => $availability['period_start'] ?? date('Y-m-01', $now),
+                'period_end' => $availability['period_end'] ?? date('Y-m-t', $now),
+                'next_reset' => $next_reset,
+                'is_demo_user' => $is_demo_user,
+                'demo_code' => $demo_code,
+            ),
+        ), 200);
+    }
+
+    /**
+     * Update roleplay session duration and add to usage
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response object
+     */
+    public function update_session_duration($request) {
+        $session_id = intval($request['id']);
+        $params = $request->get_json_params();
+
+        $duration_seconds = isset($params['duration_seconds']) ? intval($params['duration_seconds']) : 0;
+
+        if ($duration_seconds <= 0) {
+            return new WP_Error(
+                'invalid_duration',
+                __('Ungültige Dauer angegeben.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get session
+        $session = $this->db->get_roleplay_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'session_not_found',
+                __('Session nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Update session duration
+        $result = $this->db->update_roleplay_session($session_id, array(
+            'duration' => $duration_seconds,
+        ));
+
+        if (!$result) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Aktualisieren der Session-Dauer.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Log usage to separate tracking table (independent of sessions)
+        $usage_limits = Bewerbungstrainer_Usage_Limits::get_instance();
+        $is_demo_user = Bewerbungstrainer_Demo_Codes::is_demo_user();
+
+        // Get demo code from session or cookie
+        $demo_code = null;
+        if ($is_demo_user) {
+            $demo_code = !empty($session->demo_code) ? $session->demo_code : null;
+            if (empty($demo_code)) {
+                $demo_code = isset($_COOKIE['bewerbungstrainer_demo_code'])
+                    ? sanitize_text_field($_COOKIE['bewerbungstrainer_demo_code'])
+                    : null;
+            }
+        }
+
+        // Log usage to usage_log table (persists even if session is deleted)
+        $usage_limits->log_usage(
+            $duration_seconds,
+            $is_demo_user ? null : intval($session->user_id),
+            $demo_code,
+            Bewerbungstrainer_Usage_Limits::USAGE_TYPE_LIVE_CONVERSATION,
+            $session_id,
+            'Live-Gespräch'
+        );
+
+        // Get updated availability
+        $availability = $usage_limits->check_availability(
+            $is_demo_user ? null : intval($session->user_id),
+            $demo_code
+        );
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => __('Session-Dauer aktualisiert.', 'bewerbungstrainer'),
+            'data' => array(
+                'session_id' => $session_id,
+                'duration_seconds' => $duration_seconds,
+                'duration_minutes' => round($duration_seconds / 60, 1),
+                'usage' => array(
+                    'remaining_minutes' => round($availability['remaining'], 1),
+                    'used_minutes' => round($availability['used'], 1),
+                    'monthly_limit' => $availability['limit'],
+                ),
+            ),
         ), 200);
     }
 }

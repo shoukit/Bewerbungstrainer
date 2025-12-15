@@ -74,6 +74,27 @@ class Bewerbungstrainer_Demo_Codes {
             echo '<div class="notice notice-success"><p>' . sprintf(__('%d neue Demo-Codes wurden generiert.', 'bewerbungstrainer'), $generated) . '</p></div>';
         }
 
+        // Handle reserve action
+        if (isset($_POST['reserve_code']) && check_admin_referer('reserve_demo_code')) {
+            $code = isset($_POST['code']) ? sanitize_text_field($_POST['code']) : '';
+            $reserved_for = isset($_POST['reserved_for']) ? sanitize_text_field($_POST['reserved_for']) : '';
+            if (!empty($code) && !empty($reserved_for)) {
+                if ($this->reserve_code($code, $reserved_for)) {
+                    echo '<div class="notice notice-success"><p>' . sprintf(__('Code %s wurde reserviert für: %s', 'bewerbungstrainer'), $code, $reserved_for) . '</p></div>';
+                } else {
+                    echo '<div class="notice notice-error"><p>' . __('Fehler beim Reservieren des Codes.', 'bewerbungstrainer') . '</p></div>';
+                }
+            }
+        }
+
+        // Handle unreserve action
+        if (isset($_GET['action']) && $_GET['action'] === 'unreserve' && isset($_GET['code']) && check_admin_referer('unreserve_code_' . $_GET['code'])) {
+            $code = sanitize_text_field($_GET['code']);
+            if ($this->unreserve_code($code)) {
+                echo '<div class="notice notice-success"><p>' . sprintf(__('Reservierung für Code %s wurde aufgehoben.', 'bewerbungstrainer'), $code) . '</p></div>';
+            }
+        }
+
         // Get filter
         $filter = isset($_GET['filter']) ? sanitize_text_field($_GET['filter']) : null;
 
@@ -88,13 +109,15 @@ class Bewerbungstrainer_Demo_Codes {
         $total_all = $this->get_codes_count();
         $total_used = $this->get_codes_count('used');
         $total_unused = $this->get_codes_count('unused');
+        $total_reserved = $this->get_codes_count('reserved');
+        $total_available = $this->get_codes_count('available');
 
         ?>
         <div class="wrap">
             <h1><?php _e('Demo-Codes Verwaltung', 'bewerbungstrainer'); ?></h1>
 
             <!-- Stats Cards -->
-            <div style="display: flex; gap: 20px; margin: 20px 0;">
+            <div style="display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap;">
                 <div class="card" style="padding: 15px 20px; margin: 0;">
                     <h3 style="margin: 0 0 5px 0; font-size: 14px; color: #666;"><?php _e('Gesamt', 'bewerbungstrainer'); ?></h3>
                     <span style="font-size: 28px; font-weight: bold; color: #2271b1;"><?php echo $total_all; ?></span>
@@ -104,8 +127,12 @@ class Bewerbungstrainer_Demo_Codes {
                     <span style="font-size: 28px; font-weight: bold; color: #00a32a;"><?php echo $total_used; ?></span>
                 </div>
                 <div class="card" style="padding: 15px 20px; margin: 0;">
-                    <h3 style="margin: 0 0 5px 0; font-size: 14px; color: #666;"><?php _e('Verfügbar', 'bewerbungstrainer'); ?></h3>
-                    <span style="font-size: 28px; font-weight: bold; color: #dba617;"><?php echo $total_unused; ?></span>
+                    <h3 style="margin: 0 0 5px 0; font-size: 14px; color: #666;"><?php _e('Reserviert', 'bewerbungstrainer'); ?></h3>
+                    <span style="font-size: 28px; font-weight: bold; color: #a855f7;"><?php echo $total_reserved; ?></span>
+                </div>
+                <div class="card" style="padding: 15px 20px; margin: 0;">
+                    <h3 style="margin: 0 0 5px 0; font-size: 14px; color: #666;"><?php _e('Frei', 'bewerbungstrainer'); ?></h3>
+                    <span style="font-size: 28px; font-weight: bold; color: #dba617;"><?php echo $total_available; ?></span>
                 </div>
             </div>
 
@@ -137,66 +164,104 @@ class Bewerbungstrainer_Demo_Codes {
                     </a> |
                 </li>
                 <li>
+                    <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-demo-codes&filter=reserved'); ?>" <?php echo $filter === 'reserved' ? 'class="current"' : ''; ?>>
+                        <?php _e('Reserviert', 'bewerbungstrainer'); ?> <span class="count">(<?php echo $total_reserved; ?>)</span>
+                    </a> |
+                </li>
+                <li>
+                    <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-demo-codes&filter=available'); ?>" <?php echo $filter === 'available' ? 'class="current"' : ''; ?>>
+                        <?php _e('Frei', 'bewerbungstrainer'); ?> <span class="count">(<?php echo $total_available; ?>)</span>
+                    </a> |
+                </li>
+                <li>
                     <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-demo-codes&filter=unused'); ?>" <?php echo $filter === 'unused' ? 'class="current"' : ''; ?>>
-                        <?php _e('Verfügbar', 'bewerbungstrainer'); ?> <span class="count">(<?php echo $total_unused; ?>)</span>
+                        <?php _e('Nicht verwendet', 'bewerbungstrainer'); ?> <span class="count">(<?php echo $total_unused; ?>)</span>
                     </a>
                 </li>
             </ul>
 
             <!-- Codes Table -->
-            <table class="wp-list-table widefat fixed striped">
+            <table class="wp-list-table widefat striped" style="table-layout: auto;">
                 <thead>
                     <tr>
-                        <th style="width: 100px;"><?php _e('Code', 'bewerbungstrainer'); ?></th>
-                        <th style="width: 80px;"><?php _e('Status', 'bewerbungstrainer'); ?></th>
-                        <th><?php _e('Firma', 'bewerbungstrainer'); ?></th>
-                        <th><?php _e('Ansprechpartner', 'bewerbungstrainer'); ?></th>
-                        <th><?php _e('E-Mail', 'bewerbungstrainer'); ?></th>
-                        <th style="width: 80px;"><?php _e('Sessions', 'bewerbungstrainer'); ?></th>
-                        <th style="width: 140px;"><?php _e('Erste Nutzung', 'bewerbungstrainer'); ?></th>
-                        <th style="width: 140px;"><?php _e('Letzte Nutzung', 'bewerbungstrainer'); ?></th>
+                        <th style="width: 100px; white-space: nowrap;"><?php _e('Code', 'bewerbungstrainer'); ?></th>
+                        <th style="width: 90px; white-space: nowrap;"><?php _e('Status', 'bewerbungstrainer'); ?></th>
+                        <th style="white-space: nowrap;"><?php _e('Reserviert für', 'bewerbungstrainer'); ?></th>
+                        <th style="white-space: nowrap;"><?php _e('Firma', 'bewerbungstrainer'); ?></th>
+                        <th style="white-space: nowrap;"><?php _e('Ansprechpartner', 'bewerbungstrainer'); ?></th>
+                        <th style="white-space: nowrap;"><?php _e('E-Mail', 'bewerbungstrainer'); ?></th>
+                        <th style="width: 70px; white-space: nowrap;"><?php _e('Sessions', 'bewerbungstrainer'); ?></th>
+                        <th style="width: 130px; white-space: nowrap;"><?php _e('Erste Nutzung', 'bewerbungstrainer'); ?></th>
+                        <th style="width: 150px; white-space: nowrap;"><?php _e('Aktion', 'bewerbungstrainer'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($codes)): ?>
                         <tr>
-                            <td colspan="8"><?php _e('Keine Codes gefunden.', 'bewerbungstrainer'); ?></td>
+                            <td colspan="9"><?php _e('Keine Codes gefunden.', 'bewerbungstrainer'); ?></td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($codes as $code): ?>
-                            <tr>
-                                <td>
+                            <?php
+                            $is_reserved = !empty($code->is_reserved);
+                            $is_used = !empty($code->is_used);
+                            ?>
+                            <tr style="<?php echo $is_reserved && !$is_used ? 'background: #f3e8ff;' : ''; ?>">
+                                <td style="vertical-align: middle;">
                                     <code style="font-size: 14px; font-weight: bold; letter-spacing: 1px;"><?php echo esc_html($code->demo_code); ?></code>
                                 </td>
-                                <td>
-                                    <?php if ($code->is_used): ?>
+                                <td style="vertical-align: middle; white-space: nowrap;">
+                                    <?php if ($is_used): ?>
                                         <span style="color: #00a32a; font-weight: 500;"><?php _e('Verwendet', 'bewerbungstrainer'); ?></span>
+                                    <?php elseif ($is_reserved): ?>
+                                        <span style="color: #a855f7; font-weight: 500;"><?php _e('Reserviert', 'bewerbungstrainer'); ?></span>
                                     <?php else: ?>
-                                        <span style="color: #dba617;"><?php _e('Verfügbar', 'bewerbungstrainer'); ?></span>
+                                        <span style="color: #dba617;"><?php _e('Frei', 'bewerbungstrainer'); ?></span>
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo esc_html($code->company_name ?: '-'); ?></td>
-                                <td><?php echo esc_html($code->contact_name ?: '-'); ?></td>
-                                <td>
+                                <td style="vertical-align: middle;">
+                                    <?php if ($is_reserved && !empty($code->reserved_for)): ?>
+                                        <strong style="color: #7c3aed;"><?php echo esc_html($code->reserved_for); ?></strong>
+                                        <?php if (!empty($code->reserved_at)): ?>
+                                            <br><small style="color: #888;"><?php echo date_i18n('d.m.Y', strtotime($code->reserved_at)); ?></small>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                                <td style="vertical-align: middle;"><?php echo esc_html($code->company_name ?: '-'); ?></td>
+                                <td style="vertical-align: middle;"><?php echo esc_html($code->contact_name ?: '-'); ?></td>
+                                <td style="vertical-align: middle;">
                                     <?php if ($code->contact_email): ?>
                                         <a href="mailto:<?php echo esc_attr($code->contact_email); ?>"><?php echo esc_html($code->contact_email); ?></a>
                                     <?php else: ?>
                                         -
                                     <?php endif; ?>
                                 </td>
-                                <td style="text-align: center;"><?php echo intval($code->session_count); ?></td>
-                                <td>
+                                <td style="text-align: center; vertical-align: middle;"><?php echo intval($code->session_count); ?></td>
+                                <td style="vertical-align: middle; white-space: nowrap;">
                                     <?php if ($code->first_used_at): ?>
-                                        <?php echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($code->first_used_at)); ?>
+                                        <?php echo date_i18n('d.m.Y H:i', strtotime($code->first_used_at)); ?>
                                     <?php else: ?>
                                         -
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <?php if ($code->last_used_at): ?>
-                                        <?php echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($code->last_used_at)); ?>
+                                <td style="vertical-align: middle; white-space: nowrap;">
+                                    <?php if ($is_used): ?>
+                                        <span style="color: #94a3b8; font-size: 12px;"><?php _e('Bereits verwendet', 'bewerbungstrainer'); ?></span>
+                                    <?php elseif ($is_reserved): ?>
+                                        <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=bewerbungstrainer-demo-codes&action=unreserve&code=' . $code->demo_code), 'unreserve_code_' . $code->demo_code); ?>"
+                                           class="button button-small"
+                                           onclick="return confirm('Reservierung wirklich aufheben?');"
+                                           style="color: #dc2626;">
+                                            <?php _e('Freigeben', 'bewerbungstrainer'); ?>
+                                        </a>
                                     <?php else: ?>
-                                        -
+                                        <button type="button" class="button button-small reserve-btn"
+                                                data-code="<?php echo esc_attr($code->demo_code); ?>"
+                                                style="color: #7c3aed;">
+                                            <?php _e('Reservieren', 'bewerbungstrainer'); ?>
+                                        </button>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -204,6 +269,68 @@ class Bewerbungstrainer_Demo_Codes {
                     <?php endif; ?>
                 </tbody>
             </table>
+
+            <!-- Reserve Modal -->
+            <div id="reserve-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100000; align-items: center; justify-content: center;">
+                <div style="background: white; padding: 30px; border-radius: 8px; max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                    <h2 style="margin: 0 0 20px 0;"><?php _e('Code reservieren', 'bewerbungstrainer'); ?></h2>
+                    <form method="post" id="reserve-form">
+                        <?php wp_nonce_field('reserve_demo_code'); ?>
+                        <input type="hidden" name="code" id="reserve-code-input" value="">
+                        <p>
+                            <label for="reserved_for" style="font-weight: 600; display: block; margin-bottom: 5px;">
+                                <?php _e('Code:', 'bewerbungstrainer'); ?>
+                                <code id="reserve-code-display" style="font-size: 16px; letter-spacing: 2px; margin-left: 10px;"></code>
+                            </label>
+                        </p>
+                        <p>
+                            <label for="reserved_for" style="font-weight: 600; display: block; margin-bottom: 5px;"><?php _e('Reserviert für:', 'bewerbungstrainer'); ?></label>
+                            <input type="text" name="reserved_for" id="reserved_for"
+                                   placeholder="<?php _e('z.B. Firma XYZ - Max Mustermann', 'bewerbungstrainer'); ?>"
+                                   style="width: 100%; padding: 10px; font-size: 14px;" required>
+                            <small style="color: #666; margin-top: 5px; display: block;"><?php _e('Notiz für wen dieser Code reserviert ist', 'bewerbungstrainer'); ?></small>
+                        </p>
+                        <p style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" class="button" onclick="closeReserveModal();"><?php _e('Abbrechen', 'bewerbungstrainer'); ?></button>
+                            <button type="submit" name="reserve_code" class="button button-primary" style="background: #7c3aed; border-color: #7c3aed;">
+                                <?php _e('Reservieren', 'bewerbungstrainer'); ?>
+                            </button>
+                        </p>
+                    </form>
+                </div>
+            </div>
+
+            <script>
+            jQuery(document).ready(function($) {
+                // Open reserve modal
+                $('.reserve-btn').on('click', function() {
+                    var code = $(this).data('code');
+                    $('#reserve-code-input').val(code);
+                    $('#reserve-code-display').text(code);
+                    $('#reserved_for').val('');
+                    $('#reserve-modal').css('display', 'flex');
+                    $('#reserved_for').focus();
+                });
+
+                // Close modal on backdrop click
+                $('#reserve-modal').on('click', function(e) {
+                    if (e.target === this) {
+                        closeReserveModal();
+                    }
+                });
+
+                // Close on escape key
+                $(document).on('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeReserveModal();
+                    }
+                });
+            });
+
+            function closeReserveModal() {
+                document.getElementById('reserve-modal').style.display = 'none';
+            }
+            </script>
 
             <!-- Copy Codes Section for Unused Codes -->
             <?php if ($total_unused > 0): ?>
@@ -246,6 +373,9 @@ class Bewerbungstrainer_Demo_Codes {
             privacy_accepted tinyint(1) NOT NULL DEFAULT 0,
             privacy_accepted_at datetime DEFAULT NULL,
             is_used tinyint(1) NOT NULL DEFAULT 0,
+            is_reserved tinyint(1) NOT NULL DEFAULT 0,
+            reserved_for varchar(500) DEFAULT NULL,
+            reserved_at datetime DEFAULT NULL,
             first_used_at datetime DEFAULT NULL,
             last_used_at datetime DEFAULT NULL,
             session_count int DEFAULT 0,
@@ -255,12 +385,21 @@ class Bewerbungstrainer_Demo_Codes {
             PRIMARY KEY (id),
             UNIQUE KEY demo_code (demo_code),
             KEY is_used (is_used),
+            KEY is_reserved (is_reserved),
             KEY company_name (company_name),
             KEY created_at (created_at)
         ) $charset_collate;";
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
+
+        // Add reserved columns if they don't exist (for existing installations)
+        $row = $wpdb->get_results("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '$table_demo_codes' AND column_name = 'is_reserved'");
+        if (empty($row)) {
+            $wpdb->query("ALTER TABLE $table_demo_codes ADD COLUMN is_reserved tinyint(1) NOT NULL DEFAULT 0 AFTER is_used");
+            $wpdb->query("ALTER TABLE $table_demo_codes ADD COLUMN reserved_for varchar(500) DEFAULT NULL AFTER is_reserved");
+            $wpdb->query("ALTER TABLE $table_demo_codes ADD COLUMN reserved_at datetime DEFAULT NULL AFTER reserved_for");
+        }
 
         // Generate initial 100 codes if table is empty
         self::generate_initial_codes();
@@ -408,7 +547,8 @@ class Bewerbungstrainer_Demo_Codes {
 
         // Set first_used_at only if not already set
         $existing = $this->get_code($code);
-        if ($existing && empty($existing->first_used_at)) {
+        $is_first_activation = ($existing && empty($existing->first_used_at));
+        if ($is_first_activation) {
             $update_data['first_used_at'] = current_time('mysql');
         }
 
@@ -419,6 +559,13 @@ class Bewerbungstrainer_Demo_Codes {
             array('%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s'),
             array('%s')
         );
+
+        // Create usage limit entry on first activation
+        if ($result !== false && $is_first_activation) {
+            $usage_limits = Bewerbungstrainer_Usage_Limits::get_instance();
+            $usage_limits->set_user_limit($code, 'demo_code', Bewerbungstrainer_Usage_Limits::DEFAULT_MONTHLY_MINUTES);
+            error_log('[DEMO_CODES] Created usage limit entry for newly activated code: ' . $code);
+        }
 
         return $result !== false;
     }
@@ -485,6 +632,10 @@ class Bewerbungstrainer_Demo_Codes {
             $where .= ' AND is_used = 1';
         } elseif ($args['filter'] === 'unused') {
             $where .= ' AND is_used = 0';
+        } elseif ($args['filter'] === 'reserved') {
+            $where .= ' AND is_reserved = 1 AND is_used = 0';
+        } elseif ($args['filter'] === 'available') {
+            $where .= ' AND is_reserved = 0 AND is_used = 0';
         }
 
         $query = $wpdb->prepare(
@@ -502,7 +653,7 @@ class Bewerbungstrainer_Demo_Codes {
     /**
      * Get count of demo codes
      *
-     * @param string|null $filter Filter ('used', 'unused', or null)
+     * @param string|null $filter Filter ('used', 'unused', 'reserved', 'available', or null)
      * @return int Count
      */
     public function get_codes_count($filter = null) {
@@ -516,6 +667,10 @@ class Bewerbungstrainer_Demo_Codes {
             $where .= ' AND is_used = 1';
         } elseif ($filter === 'unused') {
             $where .= ' AND is_used = 0';
+        } elseif ($filter === 'reserved') {
+            $where .= ' AND is_reserved = 1 AND is_used = 0';
+        } elseif ($filter === 'available') {
+            $where .= ' AND is_reserved = 0 AND is_used = 0';
         }
 
         return (int) $wpdb->get_var(
@@ -592,6 +747,61 @@ class Bewerbungstrainer_Demo_Codes {
             array('notes' => sanitize_textarea_field($notes)),
             array('demo_code' => $code),
             array('%s'),
+            array('%s')
+        ) !== false;
+    }
+
+    /**
+     * Reserve a code for someone
+     *
+     * @param string $code Demo code
+     * @param string $reserved_for Note for whom it's reserved
+     * @return bool Success status
+     */
+    public function reserve_code($code, $reserved_for) {
+        global $wpdb;
+
+        $code = strtoupper(sanitize_text_field($code));
+
+        // Check if code exists and is not already used
+        $existing = $this->get_code($code);
+        if (!$existing || $existing->is_used) {
+            return false;
+        }
+
+        return $wpdb->update(
+            $this->table_demo_codes,
+            array(
+                'is_reserved' => 1,
+                'reserved_for' => sanitize_text_field($reserved_for),
+                'reserved_at' => current_time('mysql'),
+            ),
+            array('demo_code' => $code),
+            array('%d', '%s', '%s'),
+            array('%s')
+        ) !== false;
+    }
+
+    /**
+     * Unreserve a code
+     *
+     * @param string $code Demo code
+     * @return bool Success status
+     */
+    public function unreserve_code($code) {
+        global $wpdb;
+
+        $code = strtoupper(sanitize_text_field($code));
+
+        return $wpdb->update(
+            $this->table_demo_codes,
+            array(
+                'is_reserved' => 0,
+                'reserved_for' => null,
+                'reserved_at' => null,
+            ),
+            array('demo_code' => $code),
+            array('%d', '%s', '%s'),
             array('%s')
         ) !== false;
     }

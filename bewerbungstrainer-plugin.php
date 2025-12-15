@@ -204,6 +204,9 @@ class Bewerbungstrainer_Plugin {
         // Load Demo Codes class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-demo-codes.php';
 
+        // Load Usage Limits class
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-usage-limits.php';
+
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -223,6 +226,9 @@ class Bewerbungstrainer_Plugin {
         // Add main admin menu (priority 9 to ensure it runs before sub-menus)
         add_action('admin_menu', array($this, 'add_admin_menu'), 9);
 
+        // Remove duplicate submenu entry (priority 999 to run after all submenus are added)
+        add_action('admin_menu', array($this, 'remove_duplicate_submenu'), 999);
+
         // Increase upload limits for video training API
         add_filter('upload_size_limit', array($this, 'increase_upload_size_limit'));
 
@@ -240,14 +246,21 @@ class Bewerbungstrainer_Plugin {
      */
     public function add_admin_menu() {
         add_menu_page(
-            __('Bewerbungstrainer', 'bewerbungstrainer'),
-            __('Bewerbungstrainer', 'bewerbungstrainer'),
+            __('Karriereheld', 'bewerbungstrainer'),
+            __('Karriereheld', 'bewerbungstrainer'),
             'manage_options',
             'bewerbungstrainer',
-            array($this, 'render_admin_dashboard'),
+            '__return_null',
             'dashicons-welcome-learn-more',
             30
         );
+    }
+
+    /**
+     * Remove duplicate "Karriereheld" submenu entry
+     */
+    public function remove_duplicate_submenu() {
+        remove_submenu_page('bewerbungstrainer', 'bewerbungstrainer');
     }
 
     /**
@@ -292,6 +305,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create demo codes table
         Bewerbungstrainer_Demo_Codes::create_tables();
+
+        // Create usage limits table
+        Bewerbungstrainer_Usage_Limits::create_tables();
 
         // Create upload directory for audio files
         $upload_dir = wp_upload_dir();
@@ -446,6 +462,9 @@ class Bewerbungstrainer_Plugin {
 
         // Initialize Demo Codes
         Bewerbungstrainer_Demo_Codes::get_instance();
+
+        // Initialize Usage Limits
+        Bewerbungstrainer_Usage_Limits::get_instance();
 
         // Initialize audio handler
         Bewerbungstrainer_Audio_Handler::get_instance();

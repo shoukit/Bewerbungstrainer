@@ -23,6 +23,7 @@ import {
   Users,
   Settings,
   Sparkles,
+  Clock,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/Toast';
@@ -145,6 +146,14 @@ const NAV_ITEMS = [
     icon: History,
     description: 'Vergangene Übungen ansehen',
   },
+  {
+    id: 'usage_limits',
+    moduleId: 'roleplay', // Show when roleplay module is enabled
+    label: 'Mein Kontingent',
+    shortLabel: 'Kontingent',
+    icon: Clock,
+    description: 'Verfügbare Gesprächsminuten',
+  },
 ];
 
 /**
@@ -206,7 +215,7 @@ const AppSidebar = ({
   headerOffset = 0,
   onLoginClick,
 }) => {
-  const [expandedItems, setExpandedItems] = React.useState(['gym']); // Gym expanded by default
+  const [expandedItems, setExpandedItems] = React.useState([]); // All collapsed by default
 
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
@@ -760,7 +769,7 @@ const AppSidebar = ({
  */
 const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginClick }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [expandedItems, setExpandedItems] = React.useState(['gym']);
+  const [expandedItems, setExpandedItems] = React.useState([]);
 
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
