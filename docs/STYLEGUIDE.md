@@ -1,7 +1,7 @@
 # Karriereheld - Style Guide
 
-**Version:** 1.0.0
-**Stand:** Dezember 2025
+**Version:** 1.1.0
+**Stand:** 15. Dezember 2025
 
 ---
 
@@ -506,57 +506,57 @@ const styles = useBrandingStyles();
 
 ## 9. Duplikate & Inkonsistenzen
 
-### 9.1 Identifizierte Duplikate
+### 9.1 Behobene Duplikate (Dezember 2025)
 
-#### COLORS Konstante (14 Dateien!)
+#### COLORS Konstante - BEHOBEN
 
-```
-src/components/simulator/SimulatorDashboard.jsx
-src/components/TrainingSessionDetailView.jsx
-src/components/InterviewerProfile.jsx
-src/components/MicrophoneSelector.jsx
-src/components/MicrophoneTestDialog.jsx
-src/components/rhetorik-gym/GameSession.jsx
-src/components/RoleplayVariablesDialog.jsx
-src/components/session-detail/SessionHeader.jsx
-src/components/SessionSidebar.jsx
-src/components/simulator/ImmediateFeedback.jsx
-src/components/simulator/SessionComplete.jsx
-src/components/simulator/SimulatorWizard.jsx
-src/components/ui/button.jsx
+Alle 13 Dateien, die lokale COLORS-Konstanten definierten, wurden auf den zentralen Import umgestellt:
+
+```javascript
+import { COLORS } from '@/config/colors';
 ```
 
-**Problem:** Jede Datei definiert eigene `COLORS`-Konstante statt `src/config/colors.js` zu verwenden.
+**Betroffene Dateien (jetzt zentralisiert):**
+- `SimulatorDashboard.jsx`, `TrainingSessionDetailView.jsx`
+- `InterviewerProfile.jsx`, `MicrophoneSelector.jsx`
+- `MicrophoneTestDialog.jsx`, `GameSession.jsx`
+- `RoleplayVariablesDialog.jsx`, `SessionHeader.jsx`
+- `SessionSidebar.jsx`, `ImmediateFeedback.jsx`
+- `SessionComplete.jsx`, `SimulatorWizard.jsx`, `button.jsx`
 
-#### DIFFICULTY_COLORS/STYLES (2 Dateien)
+#### DIFFICULTY_COLORS - BEHOBEN
 
+Zentralisiert in `src/config/constants.js`:
+
+```javascript
+import { DIFFICULTY_COLORS, getDifficultyConfig } from '@/config/constants';
+
+// Verwendung:
+const difficulty = getDifficultyConfig(scenario.difficulty);
+// difficulty.bg, difficulty.text, difficulty.label, difficulty.tailwind
 ```
-src/components/simulator/SimulatorDashboard.jsx
-src/components/video-training/VideoTrainingDashboard.jsx
+
+### 9.2 Border-Radius - STANDARDISIERT
+
+Neue Token in `src/config/constants.js`:
+
+```javascript
+import { BORDER_RADIUS, SPACING } from '@/config/constants';
+
+// BORDER_RADIUS Token:
+// xs: '4px'   - Progress bars, kleine Elemente
+// sm: '8px'   - Buttons, Badges
+// md: '12px'  - Cards, Inputs
+// lg: '16px'  - Große Cards, Sections
+// xl: '24px'  - Hero Sections
+// full: '9999px' - Pills, Kreise
 ```
 
-**Problem:** Doppelte Definition von Schwierigkeitsfarben.
+### 9.3 Verbleibende Inkonsistenzen
 
-### 9.2 Inkonsistente Border-Radius
+**Hardcoded Hex-Farben:** Noch ca. 600+ Hex-Farben in Component-Dateien. Diese sollten schrittweise durch `COLORS`-Referenzen oder Partner-Theming-Variablen ersetzt werden.
 
-| Wert | Anzahl Dateien |
-|------|----------------|
-| 16px | 12 |
-| 24px | 9 |
-| 8px | viele |
-| 12px | viele |
-
-**Problem:** Keine klare Konvention, wann welcher Radius verwendet wird.
-
-### 9.3 Hardcoded Colors
-
-**668 Hex-Farben** in Component-Dateien statt CSS-Variablen oder zentrale Konstanten.
-
-Besonders viele in:
-- `SessionHistory.jsx` (68 Vorkommen)
-- `VideoTrainingWizard.jsx` (47 Vorkommen)
-- `VideoTrainingSession.jsx` (40 Vorkommen)
-- `SimulatorSession.jsx` (35 Vorkommen)
+**Inline Styles vs. Tailwind:** Manche Komponenten verwenden Inline Styles (wegen WordPress-Konflikten), andere Tailwind. Dies ist dokumentiert, aber die Konvention sollte konsistent angewendet werden.
 
 ### 9.4 Inline Styles vs. Tailwind
 
@@ -564,52 +564,48 @@ Manche Komponenten verwenden **Inline Styles** (button.jsx), andere **Tailwind**
 
 **Grund:** WordPress/Elementor CSS-Konflikte bei manchen Komponenten.
 
-**Inkonsistenz:** Nicht dokumentiert, welche Komponenten warum Inline Styles verwenden.
+**Regel:** Komponenten, die direkt in WordPress-Seiten eingebettet werden, sollten Inline Styles verwenden.
 
 ---
 
 ## 10. Refactoring-Empfehlungen
 
-### 10.1 Zentralisierung der Farben
+### 10.1 Zentralisierung der Farben - ERLEDIGT
 
-**Priorität: HOCH**
+**Status:** Abgeschlossen (Dezember 2025)
 
-1. **Alle `COLORS`-Konstanten entfernen** und durch `import { COLORS } from '@/config/colors'` ersetzen.
+- Alle `COLORS`-Konstanten wurden durch `import { COLORS } from '@/config/colors'` ersetzt (13 Dateien)
+- `DIFFICULTY_COLORS` wurde in `src/config/constants.js` zentralisiert mit Helper-Funktion `getDifficultyConfig()`
+- `BORDER_RADIUS` und `SPACING` Token wurden zu `constants.js` hinzugefügt
 
-2. **DIFFICULTY_COLORS nach constants.js verschieben:**
+### 10.2 Border-Radius Standardisierung - ERLEDIGT
+
+**Status:** Token definiert (Dezember 2025)
+
+Token sind in `constants.js` definiert:
 ```javascript
-// src/config/constants.js
-export const DIFFICULTY_COLORS = {
-  easy: { bg: '#dcfce7', text: '#166534', label: 'Einsteiger' },
-  intermediate: { bg: '#fef3c7', text: '#92400e', label: 'Fortgeschritten' },
-  hard: { bg: '#fee2e2', text: '#991b1b', label: 'Experte' },
-};
+import { BORDER_RADIUS, SPACING } from '@/config/constants';
+
+// Verwendung:
+borderRadius: BORDER_RADIUS.md  // '12px' für Cards
+borderRadius: BORDER_RADIUS.sm  // '8px' für Buttons
+borderRadius: BORDER_RADIUS.full // '9999px' für Pills
 ```
 
-### 10.2 Border-Radius Standardisierung
+**Nächste Schritte:** Schrittweise Migration der hardcoded `borderRadius: '12px'` zu Token-basierten Werten.
+
+### 10.3 Theming-Konsistenz - TEILWEISE ERLEDIGT
 
 **Priorität: MITTEL**
 
-Konvention einführen:
-- **8px**: Buttons, Inputs, Badges
-- **12px**: kleine Cards, Tooltips
-- **16px**: Standard Cards
-- **24px**: Dashboard Cards, Dialogs
-
-### 10.3 Theming-Konsistenz
-
-**Priorität: HOCH**
-
-1. **Alle hardcoded Farben durch CSS-Variablen ersetzen**, die vom Partner-Theming überschrieben werden können.
-
-2. **useBranding Hook überall verwenden:**
+1. **useBranding Hook** ist implementiert und kann überall verwendet werden:
 ```jsx
-// Statt
-const primaryColor = '#3A7FA7';
+import { useBranding } from '@/hooks/useBranding';
 
-// Verwenden
-const { primaryAccent } = useBranding();
+const { primaryAccent, headerGradient, cardBgColor } = useBranding();
 ```
+
+2. **Verbleibende Arbeit:** Hardcoded Farben in Komponenten sollten schrittweise durch `useBranding()` oder `COLORS`-Referenzen ersetzt werden.
 
 ### 10.4 Component Library Vervollständigung
 
@@ -691,5 +687,5 @@ transition: all 0.3s ease;      /* Smooth */
 
 ---
 
-**Dokumentversion:** 1.0.0
-**Letzte Aktualisierung:** Dezember 2025
+**Dokumentversion:** 1.1.0
+**Letzte Aktualisierung:** 15. Dezember 2025

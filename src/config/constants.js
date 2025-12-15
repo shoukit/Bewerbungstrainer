@@ -374,6 +374,53 @@ export const UI_TIMING = {
 };
 
 // =============================================================================
+// BORDER RADIUS TOKENS
+// =============================================================================
+
+/**
+ * Standardized border radius values for consistent UI
+ * Usage: borderRadius: BORDER_RADIUS.md
+ *
+ * Conventions:
+ * - xs (4px): Progress bars, small dividers, inline elements
+ * - sm (8px): Buttons, badges, small inputs
+ * - md (12px): Cards, dialogs, medium inputs
+ * - lg (16px): Large cards, sections, modals
+ * - xl (24px): Hero sections, large feature cards
+ * - full (9999px): Pills, circular buttons, avatars
+ */
+export const BORDER_RADIUS = {
+  xs: '4px',
+  sm: '8px',
+  md: '12px',
+  lg: '16px',
+  xl: '24px',
+  full: '9999px',
+};
+
+// =============================================================================
+// SPACING TOKENS
+// =============================================================================
+
+/**
+ * Standardized spacing values (based on 4px grid)
+ * Usage: padding: SPACING[4] (16px)
+ */
+export const SPACING = {
+  0: '0px',
+  1: '4px',
+  2: '8px',
+  3: '12px',
+  4: '16px',
+  5: '20px',
+  6: '24px',
+  8: '32px',
+  10: '40px',
+  12: '48px',
+  16: '64px',
+};
+
+// =============================================================================
 // AUDIO PLAYER CONFIGURATION
 // =============================================================================
 
@@ -621,6 +668,8 @@ export default {
   FILLER_WORD_THRESHOLDS,
   FILLER_WORDS,
   UI_TIMING,
+  BORDER_RADIUS,
+  SPACING,
   AUDIO_CONFIG,
   TRANSCRIPT_CONFIG,
   INTERACTIVE_STATES,
