@@ -3,15 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Sparkles } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-
-/**
- * Fallback theme colors
- */
-const COLORS = {
-  slate: { 50: '#f8fafc', 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 700: '#334155', 900: '#0f172a' },
-  red: { 500: '#ef4444' },
-  blue: { 500: '#4a9ec9' }, // Default focus color - will be overridden by partner theming
-};
+import { COLORS } from '@/config/colors';
 
 /**
  * Scroll element into view for mobile keyboard

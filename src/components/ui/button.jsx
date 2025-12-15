@@ -10,31 +10,7 @@ import * as React from 'react';
 import { useState, useMemo } from 'react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-
-// Ocean theme colors - inline to avoid WordPress CSS conflicts
-const COLORS = {
-  blue: {
-    50: '#E8F4F8',
-    100: '#D1E9F1',
-    300: '#8BCCE3',
-    600: '#3A7FA7',
-    700: '#2D6485',
-    900: '#1a3d52',
-  },
-  teal: {
-    500: '#3DA389',
-    600: '#2E8A72',
-    700: '#247560',
-  },
-  slate: {
-    50: '#f8fafc',
-    100: '#f1f5f9',
-    700: '#334155',
-    900: '#0f172a',
-  },
-  red: { 600: '#dc2626', 700: '#b91c1c' },
-  green: { 600: '#16a34a', 700: '#15803d' },
-};
+import { COLORS } from '@/config/colors';
 
 // Base styles shared by all buttons
 const baseStyles = {

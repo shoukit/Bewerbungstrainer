@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -20,6 +20,32 @@ import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/r
 import RoleplayVariablesDialog from './RoleplayVariablesDialog';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { COLORS } from '@/config/colors';
+
+/**
+ * Shared input styles for consistent form elements
+ */
+const getInputStyles = (primaryAccent, focusRing) => ({
+  base: {
+    height: '44px',
+    borderRadius: '12px',
+    border: `2px solid ${COLORS.slate[200]}`,
+    backgroundColor: COLORS.white,
+    color: COLORS.slate[800],
+    fontSize: '14px',
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+    outline: 'none',
+    transition: 'all 0.2s',
+  },
+  focus: {
+    borderColor: primaryAccent,
+    boxShadow: `0 0 0 3px ${focusRing}`,
+  },
+  blur: {
+    borderColor: COLORS.slate[200],
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+  },
+});
 
 const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenticated, requireAuth, setPendingAction, pendingScenario, clearPendingScenario }) => {
   const [scenarios, setScenarios] = useState([]);
@@ -36,6 +62,12 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   const iconPrimary = branding?.['--icon-primary'] || DEFAULT_BRANDING['--icon-primary'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const focusRing = branding?.['--focus-ring'] || DEFAULT_BRANDING['--focus-ring'];
+
+  // Memoized input styles
+  const inputStyles = useMemo(
+    () => getInputStyles(primaryAccent, focusRing),
+    [primaryAccent, focusRing]
+  );
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -239,41 +271,19 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
           )}
 
           {/* Title */}
-          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '12px'
-            }}>
+          <div className="mb-6 text-center">
+            <div className="inline-flex items-center gap-3 mb-3">
               <div
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '14px',
-                  background: headerGradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                className="w-12 h-12 rounded-[14px] flex items-center justify-center"
+                style={{ background: headerGradient }}
               >
-                <MessageSquare style={{ width: '24px', height: '24px', color: headerText }} />
+                <MessageSquare className="w-6 h-6" style={{ color: headerText }} />
               </div>
-              <h1 style={{
-                fontSize: '28px',
-                fontWeight: 700,
-                color: '#0f172a',
-                margin: 0
-              }}>
+              <h1 className="text-[28px] font-bold m-0" style={{ color: COLORS.slate[900] }}>
                 Praxis-Training
               </h1>
             </div>
-            <p style={{
-              fontSize: '16px',
-              color: '#475569',
-              maxWidth: '600px',
-              margin: '0 auto'
-            }}>
+            <p className="text-base max-w-[600px] mx-auto" style={{ color: COLORS.slate[600] }}>
               Wähle ein Szenario und übe realistische Gespräche
             </p>
           </div>
@@ -283,8 +293,8 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
             {/* Search */}
             <div className="relative flex-1">
               <Search
-                className="absolute top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
-                style={{ left: '16px', color: '#94a3b8' }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
+                style={{ color: COLORS.slate[400] }}
               />
               <input
                 type="text"
@@ -292,27 +302,13 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
+                  ...inputStyles.base,
                   width: '100%',
-                  height: '44px',
                   paddingLeft: '48px',
                   paddingRight: '16px',
-                  borderRadius: '12px',
-                  border: '2px solid #e2e8f0',
-                  backgroundColor: 'white',
-                  color: '#1e293b',
-                  fontSize: '14px',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-                  outline: 'none',
-                  transition: 'all 0.2s',
                 }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = primaryAccent;
-                  e.target.style.boxShadow = `0 0 0 3px ${focusRing}`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
-                  e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
-                }}
+                onFocus={(e) => Object.assign(e.target.style, inputStyles.focus)}
+                onBlur={(e) => Object.assign(e.target.style, inputStyles.blur)}
               />
             </div>
 
@@ -323,26 +319,12 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
                 value={difficultyFilter}
                 onChange={(e) => setDifficultyFilter(e.target.value)}
                 style={{
-                  height: '44px',
+                  ...inputStyles.base,
                   padding: '8px 16px',
-                  borderRadius: '12px',
-                  border: '2px solid #e2e8f0',
-                  backgroundColor: 'white',
-                  color: '#1e293b',
-                  fontSize: '14px',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
                   cursor: 'pointer',
-                  outline: 'none',
-                  transition: 'all 0.2s',
                 }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = primaryAccent;
-                  e.target.style.boxShadow = `0 0 0 3px ${focusRing}`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
-                  e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
-                }}
+                onFocus={(e) => Object.assign(e.target.style, inputStyles.focus)}
+                onBlur={(e) => Object.assign(e.target.style, inputStyles.blur)}
               >
                 <option value="all">Alle Schwierigkeiten</option>
                 <option value="easy">Einfach</option>
@@ -363,10 +345,9 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
           </div>
         ) : (
           <motion.div
+            className="grid gap-6"
             style={{
-              display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
-              gap: '24px',
             }}
             initial="hidden"
             animate="visible"
