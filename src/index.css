@@ -239,3 +239,93 @@
     @apply h-full bg-gradient-to-r from-blue-500 to-teal-500 transition-all duration-100;
   }
 }
+
+/* =============================================================================
+   ELEMENTOR CONFLICT OVERRIDES
+   Prevent Elementor's global styles (red hover, link colors) from affecting our app
+   ============================================================================= */
+
+/* Override Elementor's default link/hover colors */
+#bewerbungstrainer-app a,
+#bewerbungstrainer-app a:hover,
+#bewerbungstrainer-app a:focus,
+#bewerbungstrainer-app a:active,
+#bewerbungstrainer-app a:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Override Elementor's heading hover styles */
+#bewerbungstrainer-app h1,
+#bewerbungstrainer-app h2,
+#bewerbungstrainer-app h3,
+#bewerbungstrainer-app h4,
+#bewerbungstrainer-app h5,
+#bewerbungstrainer-app h6,
+#bewerbungstrainer-app h1:hover,
+#bewerbungstrainer-app h2:hover,
+#bewerbungstrainer-app h3:hover,
+#bewerbungstrainer-app h4:hover,
+#bewerbungstrainer-app h5:hover,
+#bewerbungstrainer-app h6:hover {
+  color: inherit;
+}
+
+/* Override Elementor's button hover styles */
+#bewerbungstrainer-app button,
+#bewerbungstrainer-app button:hover,
+#bewerbungstrainer-app button:focus,
+#bewerbungstrainer-app button:active {
+  color: inherit;
+}
+
+/* Override Elementor's form element styles */
+#bewerbungstrainer-app select,
+#bewerbungstrainer-app select:hover,
+#bewerbungstrainer-app select:focus,
+#bewerbungstrainer-app input,
+#bewerbungstrainer-app input:hover,
+#bewerbungstrainer-app input:focus,
+#bewerbungstrainer-app textarea,
+#bewerbungstrainer-app textarea:hover,
+#bewerbungstrainer-app textarea:focus {
+  color: inherit;
+  border-color: inherit;
+}
+
+/* Ensure our custom select/dropdown elements don't get Elementor's red highlight */
+#bewerbungstrainer-app [role="listbox"],
+#bewerbungstrainer-app [role="option"],
+#bewerbungstrainer-app [role="combobox"],
+#bewerbungstrainer-app .select-trigger,
+#bewerbungstrainer-app .dropdown-trigger {
+  color: inherit !important;
+}
+
+#bewerbungstrainer-app [role="listbox"]:hover,
+#bewerbungstrainer-app [role="option"]:hover,
+#bewerbungstrainer-app [role="combobox"]:hover,
+#bewerbungstrainer-app .select-trigger:hover,
+#bewerbungstrainer-app .dropdown-trigger:hover {
+  color: inherit !important;
+}
+
+/* Override any Elementor primary/accent color overrides */
+#bewerbungstrainer-app *:not(.text-red-500):not(.text-red-600):not([style*="color: #ef4444"]):not([style*="color: #dc2626"]) {
+  --elementor-color-primary: var(--primary-accent);
+  --e-global-color-primary: var(--primary-accent);
+}
+
+/* Ensure microphone selector and similar dropdowns maintain correct colors */
+#bewerbungstrainer-app .microphone-selector,
+#bewerbungstrainer-app .microphone-selector *,
+#bewerbungstrainer-app .microphone-selector:hover,
+#bewerbungstrainer-app .microphone-selector *:hover {
+  color: inherit !important;
+}
+
+/* Override Elementor widget hover effects */
+#bewerbungstrainer-app .elementor-widget-container,
+#bewerbungstrainer-app .elementor-widget-container * {
+  color: inherit;
+}
