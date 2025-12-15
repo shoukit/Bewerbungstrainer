@@ -179,7 +179,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
             'public'              => false,
             'publicly_queryable'  => false,
             'show_ui'             => true,
-            'show_in_menu'        => true,
+            'show_in_menu'        => 'bewerbungstrainer',
             'menu_position'       => 30,
             'menu_icon'           => 'dashicons-groups',
             'query_var'           => false,

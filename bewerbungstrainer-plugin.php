@@ -243,11 +243,11 @@ class Bewerbungstrainer_Plugin {
      */
     public function add_admin_menu() {
         add_menu_page(
-            __('Bewerbungstrainer', 'bewerbungstrainer'),
-            __('Bewerbungstrainer', 'bewerbungstrainer'),
+            __('Karriereheld', 'bewerbungstrainer'),
+            __('Karriereheld', 'bewerbungstrainer'),
             'manage_options',
             'bewerbungstrainer',
-            array($this, 'render_admin_dashboard'),
+            null, // No callback - removes duplicate submenu item
             'dashicons-welcome-learn-more',
             30
         );
