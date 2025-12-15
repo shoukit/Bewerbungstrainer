@@ -1010,31 +1010,29 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           alignItems: 'center',
           justifyContent: isMobile ? 'space-between' : 'flex-end',
         }}>
-          {/* Training beenden - immer sichtbar wenn mind. 1 Frage beantwortet */}
-          {answeredQuestions.length > 0 && (
-            <button
-              onClick={handleCompleteClick}
-              style={{
-                padding: isMobile ? '10px 14px' : '8px 16px',
-                borderRadius: '8px',
-                background: '#22c55e',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: 600,
-                boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
-                flex: isMobile ? 1 : 'none',
-                justifyContent: 'center',
-              }}
-            >
-              <Check size={16} />
-              {isMobile ? 'Beenden' : 'Training beenden'}
-            </button>
-          )}
+          {/* Training beenden - immer sichtbar */}
+          <button
+            onClick={handleCompleteClick}
+            style={{
+              padding: isMobile ? '10px 14px' : '8px 16px',
+              borderRadius: '8px',
+              background: '#22c55e',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: 600,
+              boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
+              flex: isMobile ? 1 : 'none',
+              justifyContent: 'center',
+            }}
+          >
+            <Check size={16} />
+            {isMobile ? 'Beenden' : 'Training beenden'}
+          </button>
           <button
             onClick={handleCancelClick}
             style={{
@@ -1102,12 +1100,20 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                 Training beenden?
               </h3>
             </div>
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '8px' }}>
-              Du hast <strong>{labels.answeredCount(answeredQuestions.length, questions.length)}</strong> beantwortet.
-            </p>
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
-              Möchtest du das Training jetzt mit den bisherigen Antworten abschließen oder weitere {labels.questionsLabel} beantworten?
-            </p>
+            {answeredQuestions.length > 0 ? (
+              <>
+                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '8px' }}>
+                  Du hast <strong>{labels.answeredCount(answeredQuestions.length, questions.length)}</strong> beantwortet.
+                </p>
+                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
+                  Möchtest du das Training jetzt mit den bisherigen Antworten abschließen oder weitere {labels.questionsLabel} beantworten?
+                </p>
+              </>
+            ) : (
+              <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
+                Du hast noch keine {labels.questionsLabel} beantwortet. Möchtest du das Training wirklich beenden?
+              </p>
+            )}
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setShowCompleteConfirm(false)}
