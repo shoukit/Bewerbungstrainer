@@ -344,6 +344,7 @@ const ScenarioCardGridView = ({
 /**
  * ScenarioCardListView - List/row view of the card
  * Uses inline styles for better compatibility with WordPress/Elementor
+ * Responsive: stacks vertically on mobile, horizontal on desktop
  */
 const ScenarioCardListView = ({
   title,
@@ -362,53 +363,53 @@ const ScenarioCardListView = ({
   headerText,
   primaryAccent,
   difficultyConfig,
-}) => (
-  <motion.div
-    variants={{
-      hidden: { opacity: 0, x: -20 },
-      visible: { opacity: 1, x: 0 },
-    }}
-    whileHover={{ scale: 1.01 }}
-    whileTap={{ scale: 0.99 }}
-  >
-    <div
-      onClick={onClick}
-      style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '16px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        padding: '16px',
-        cursor: 'pointer',
-        border: '1px solid #f1f5f9',
-        transition: 'all 0.3s',
-        ...style,
-      }}
-      className={className}
-    >
-      {/* Single Row Layout - Works on all screen sizes */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {/* Icon */}
-        {icon && (
-          <IconContainer
-            icon={icon}
-            gradient={headerGradient}
-            textColor={headerText}
-            size="md"
-          />
-        )}
+}) => {
+  // Check if we're on mobile (will be used for initial render, CSS handles the rest)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
 
-        {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Title Row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+  return (
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, x: -20 },
+        visible: { opacity: 1, x: 0 },
+      }}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+    >
+      <div
+        onClick={onClick}
+        style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '16px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          padding: '16px',
+          cursor: 'pointer',
+          border: '1px solid #f1f5f9',
+          transition: 'all 0.3s',
+          ...style,
+        }}
+        className={className}
+      >
+        {/* Row 1: Icon + Title + Difficulty Badge */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+          {/* Icon */}
+          {icon && (
+            <IconContainer
+              icon={icon}
+              gradient={headerGradient}
+              textColor={headerText}
+              size="sm"
+            />
+          )}
+
+          {/* Title & Subtitle */}
+          <div style={{ flex: 1, minWidth: 0 }}>
             <h3 style={{
-              fontSize: '16px',
+              fontSize: '15px',
               fontWeight: 700,
               color: '#0f172a',
               margin: 0,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              lineHeight: 1.3,
             }}>
               {title}
             </h3>
@@ -419,73 +420,70 @@ const ScenarioCardListView = ({
             )}
           </div>
 
-          {/* Description */}
-          {description && (
-            <p style={{
-              color: '#475569',
-              fontSize: '14px',
-              margin: '0 0 4px 0',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
-              {description}
-            </p>
-          )}
-
-          {/* Meta information */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: '#64748b' }}>
-            {meta.slice(0, 3).map((item, idx) => (
-              <MetaItem key={idx} icon={item.icon} text={item.text} />
-            ))}
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {/* Tags (only first one in list view) */}
-          {tags.length > 0 && (
-            <span style={{
-              padding: '4px 8px',
-              borderRadius: '8px',
-              backgroundColor: '#f1f5f9',
-              color: '#334155',
-              fontSize: '12px',
-            }}>
-              {tags[0]}
-            </span>
-          )}
-
-          {/* Category badge */}
-          {categoryBadge}
-
-          {/* Difficulty badge */}
+          {/* Difficulty Badge - always visible */}
           {difficulty && (
             <Badge className={difficultyConfig.classes}>
               {difficultyConfig.label}
             </Badge>
           )}
+        </div>
 
-          {/* Action button */}
-          {action && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '14px',
-              fontWeight: 600,
-              marginLeft: '8px',
-              color: primaryAccent,
-            }}>
-              <span>{action.label}</span>
-              {action.icon && <action.icon style={{ width: '16px', height: '16px' }} />}
-            </div>
-          )}
+        {/* Row 2: Description (if exists) */}
+        {description && (
+          <p style={{
+            color: '#475569',
+            fontSize: '13px',
+            margin: '0 0 8px 0',
+            lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>
+            {description}
+          </p>
+        )}
+
+        {/* Row 3: Meta + Category + Action */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '8px',
+        }}>
+          {/* Meta information */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: '#64748b' }}>
+            {meta.slice(0, 2).map((item, idx) => (
+              <MetaItem key={idx} icon={item.icon} text={item.text} />
+            ))}
+          </div>
+
+          {/* Category + Action */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Category badge */}
+            {categoryBadge}
+
+            {/* Action button */}
+            {action && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: primaryAccent,
+              }}>
+                <span>{action.label}</span>
+                {action.icon && <action.icon style={{ width: '16px', height: '16px' }} />}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 // =============================================================================
 // MAIN COMPONENT
