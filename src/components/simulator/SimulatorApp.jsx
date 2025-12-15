@@ -31,6 +31,7 @@ const SimulatorApp = ({
   clearPendingContinueSession,
   pendingRepeatSession,
   clearPendingRepeatSession,
+  onNavigateToHistory,
 }) => {
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [selectedScenario, setSelectedScenario] = useState(null);
@@ -183,6 +184,7 @@ const SimulatorApp = ({
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingScenario={setPendingScenario}
+            onNavigateToHistory={onNavigateToHistory}
           />
         );
 
@@ -226,6 +228,7 @@ const SimulatorApp = ({
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingScenario={setPendingScenario}
+            onNavigateToHistory={onNavigateToHistory}
           />
         );
     }

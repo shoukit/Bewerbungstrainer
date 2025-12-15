@@ -25,10 +25,17 @@ import {
   Users,
   Sparkles,
   Trash2,
-  X,
-  Search,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -38,153 +45,6 @@ import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
 
 console.log('📦 [SESSION_HISTORY] SessionHistory module loaded');
-
-/**
- * DeleteConfirmDialog - Styled confirmation dialog for delete actions
- */
-const DeleteConfirmDialog = ({ isOpen, title, message, itemName, onConfirm, onCancel, isDeleting, primaryAccent }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10000,
-        padding: '16px',
-      }}
-      onClick={onCancel}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '24px',
-          maxWidth: '400px',
-          width: '100%',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        {/* Icon */}
-        <div style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '50%',
-          background: '#fef2f2',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 16px',
-        }}>
-          <Trash2 size={24} color="#ef4444" />
-        </div>
-
-        {/* Title */}
-        <h3 style={{
-          fontSize: '18px',
-          fontWeight: 600,
-          color: '#0f172a',
-          textAlign: 'center',
-          margin: '0 0 8px',
-        }}>
-          {title}
-        </h3>
-
-        {/* Item name */}
-        {itemName && (
-          <p style={{
-            fontSize: '14px',
-            fontWeight: 500,
-            color: primaryAccent,
-            textAlign: 'center',
-            margin: '0 0 12px',
-            padding: '8px 12px',
-            background: `${primaryAccent}10`,
-            borderRadius: '8px',
-          }}>
-            {itemName}
-          </p>
-        )}
-
-        {/* Message */}
-        <p style={{
-          fontSize: '14px',
-          color: '#64748b',
-          textAlign: 'center',
-          margin: '0 0 24px',
-          lineHeight: 1.5,
-        }}>
-          {message}
-        </p>
-
-        {/* Buttons */}
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-        }}>
-          <button
-            onClick={onCancel}
-            disabled={isDeleting}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              borderRadius: '10px',
-              border: '1px solid #e2e8f0',
-              background: '#fff',
-              color: '#64748b',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: isDeleting ? 'not-allowed' : 'pointer',
-              opacity: isDeleting ? 0.5 : 1,
-            }}
-          >
-            Abbrechen
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isDeleting}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              borderRadius: '10px',
-              border: 'none',
-              background: '#ef4444',
-              color: '#fff',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: isDeleting ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
-          >
-            {isDeleting ? (
-              <>
-                <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                Löschen...
-              </>
-            ) : (
-              'Löschen'
-            )}
-          </button>
-        </div>
-      </motion.div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
-};
 
 /**
  * Tab configuration
@@ -204,6 +64,95 @@ const TAB_CONFIG = [
 ];
 
 /**
+ * ConfirmDeleteDialog - Styled confirmation dialog for delete actions
+ */
+const ConfirmDeleteDialog = ({ isOpen, onClose, onConfirm, title, description, isDeleting }) => {
+  const { branding } = usePartner();
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent style={{ maxWidth: '400px' }}>
+        <DialogHeader>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Trash2 style={{ width: '20px', height: '20px', color: '#fff' }} />
+            </div>
+            <DialogTitle>{title || 'Löschen bestätigen'}</DialogTitle>
+          </div>
+          <DialogDescription>
+            {description || 'Diese Aktion kann nicht rückgängig gemacht werden.'}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter style={{ marginTop: '16px' }}>
+          <button
+            onClick={onClose}
+            disabled={isDeleting}
+            style={{
+              minWidth: '100px',
+              height: '40px',
+              padding: '8px 20px',
+              borderRadius: '8px',
+              border: `2px solid ${primaryAccent}`,
+              backgroundColor: 'white',
+              color: primaryAccent,
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              opacity: isDeleting ? 0.5 : 1,
+              transition: 'all 0.2s',
+            }}
+          >
+            Abbrechen
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            style={{
+              minWidth: '100px',
+              height: '40px',
+              padding: '8px 20px',
+              borderRadius: '8px',
+              border: 'none',
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              opacity: isDeleting ? 0.5 : 1,
+              transition: 'all 0.2s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
+                Löschen...
+              </>
+            ) : (
+              'Löschen'
+            )}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+/**
  * Icon mapping for briefing template icons
  */
 const BRIEFING_ICON_MAP = {
@@ -216,7 +165,10 @@ const BRIEFING_ICON_MAP = {
 /**
  * BriefingCard - Card component for Smart Briefings
  */
-const BriefingCard = ({ briefing, onClick, onDeleteClick, isDeleting, headerGradient, headerText, primaryAccent }) => {
+const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText, primaryAccent }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -231,9 +183,21 @@ const BriefingCard = ({ briefing, onClick, onDeleteClick, isDeleting, headerGrad
 
   const Icon = BRIEFING_ICON_MAP[briefing.template_icon] || FileText;
 
-  const handleDelete = (e) => {
+  const handleDeleteClick = (e) => {
     e.stopPropagation();
-    onDeleteClick(briefing);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(briefing.id);
+      setShowDeleteDialog(false);
+    } catch (err) {
+      console.error('Error deleting briefing:', err);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -323,7 +287,7 @@ const BriefingCard = ({ briefing, onClick, onDeleteClick, isDeleting, headerGrad
           {/* Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <button
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               disabled={isDeleting}
               style={{
                 padding: '8px',
@@ -348,6 +312,16 @@ const BriefingCard = ({ briefing, onClick, onDeleteClick, isDeleting, headerGrad
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleConfirmDelete}
+        title="Briefing löschen"
+        description="Möchtest du dieses Briefing wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+        isDeleting={isDeleting}
+      />
     </motion.div>
   );
 };
@@ -355,7 +329,9 @@ const BriefingCard = ({ briefing, onClick, onDeleteClick, isDeleting, headerGrad
 /**
  * SessionCard - Unified card component for all session types
  */
-const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDeleteClick, isDeleting, headerGradient, headerText, primaryAccent }) => {
+const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDeleteSession, headerGradient, headerText, primaryAccent }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // Listen for resize events
@@ -450,11 +426,22 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
     }
   };
 
-  // Handle delete click - triggers confirmation dialog
+  // Handle delete click - opens confirmation dialog
   const handleDeleteClick = (e) => {
     e.stopPropagation();
-    if (onDeleteClick) {
-      onDeleteClick(session, type, scenario);
+    setShowDeleteDialog(true);
+  };
+
+  // Handle confirmed delete
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDeleteSession(session, type);
+      setShowDeleteDialog(false);
+    } catch (err) {
+      console.error('Error deleting session:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -541,7 +528,7 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
                 {formatDate(session.created_at)}
               </div>
             </div>
-            {onDeleteClick && (
+            {onDeleteSession && (
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
@@ -842,7 +829,7 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
             </span>
 
             {/* Delete button */}
-            {onDeleteClick && (
+            {onDeleteSession && (
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
@@ -879,11 +866,21 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleConfirmDelete}
+        title="Session löschen"
+        description="Möchtest du diese Session wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+        isDeleting={isDeleting}
+      />
     </motion.div>
   );
 };
 
-const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession }) => {
+const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession, initialTab, onNavigateToModule }) => {
   console.log('🏗️ [SESSION_HISTORY] SessionHistory component initialized');
 
   // Partner branding
@@ -892,8 +889,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
-  // Active tab - default to first tab (Smart Briefings)
-  const [activeTab, setActiveTab] = useState(TABS.BRIEFINGS);
+  // Active tab - use initialTab prop if provided, otherwise default to Smart Briefings
+  const [activeTab, setActiveTab] = useState(initialTab || TABS.BRIEFINGS);
+
+  // Update active tab when initialTab prop changes
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Selected session for detail view
   const [selectedTrainingSession, setSelectedTrainingSession] = useState(null);
@@ -903,11 +907,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [activeTab, selectedTrainingSession]);
-
-  // Reset search query when tab changes
-  useEffect(() => {
-    setSearchQuery('');
-  }, [activeTab]);
 
   // Data states
   const [roleplaySessions, setRoleplaySessions] = useState([]);
@@ -920,18 +919,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Selected briefing for workbook view
   const [selectedBriefing, setSelectedBriefing] = useState(null);
-
-  // Search/filter state
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Delete dialog state
-  const [deleteDialog, setDeleteDialog] = useState({
-    isOpen: false,
-    type: null, // 'briefing' | 'simulator' | 'roleplay' | 'video'
-    item: null,
-    scenario: null,
-  });
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -1063,28 +1050,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     }
   };
 
-  // Filter sessions based on search query
-  const filterBySearchQuery = (sessions, scenarioMap) => {
-    if (!searchQuery.trim()) return sessions;
-    const query = searchQuery.toLowerCase().trim();
-
-    return sessions.filter((item) => {
-      // Get the title/name to search
-      let searchableText = '';
-
-      if (activeTab === TABS.BRIEFINGS) {
-        // Briefing: check title and template_title
-        searchableText = `${item.title || ''} ${item.template_title || ''}`.toLowerCase();
-      } else {
-        // Session: check scenario title and session-specific fields
-        const scenario = scenarioMap[item.scenario_id];
-        searchableText = `${scenario?.title || ''} ${item.scenario_title || ''} ${item.position || ''} ${item.company || ''}`.toLowerCase();
-      }
-
-      return searchableText.includes(query);
-    });
-  };
-
   // Total sessions count
   const totalSessions = roleplaySessions.length + simulatorSessions.length + videoSessions.length + briefings.length;
 
@@ -1176,89 +1141,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                         type === TABS.VIDEO ? videoScenarioMap :
                         roleplayScenarioMap;
     return scenarioMap[session?.scenario_id];
-  };
-
-  // Open delete confirmation dialog for briefings
-  const handleBriefingDeleteClick = (briefing) => {
-    setDeleteDialog({
-      isOpen: true,
-      type: 'briefing',
-      item: briefing,
-      scenario: null,
-    });
-  };
-
-  // Open delete confirmation dialog for sessions
-  const handleSessionDeleteClick = (session, type, scenario) => {
-    setDeleteDialog({
-      isOpen: true,
-      type: type,
-      item: session,
-      scenario: scenario,
-    });
-  };
-
-  // Close delete dialog
-  const handleDeleteDialogClose = () => {
-    setDeleteDialog({ isOpen: false, type: null, item: null, scenario: null });
-  };
-
-  // Execute delete after confirmation
-  const handleDeleteConfirm = async () => {
-    if (!deleteDialog.item) return;
-
-    setIsDeleting(true);
-    try {
-      if (deleteDialog.type === 'briefing') {
-        await handleDeleteBriefing(deleteDialog.item.id);
-      } else {
-        await handleDeleteSession(deleteDialog.item, deleteDialog.type);
-      }
-      handleDeleteDialogClose();
-    } catch (err) {
-      console.error('Delete failed:', err);
-      // Keep dialog open on error
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  // Get delete dialog content based on type
-  const getDeleteDialogContent = () => {
-    const { type, item, scenario } = deleteDialog;
-
-    switch (type) {
-      case 'briefing':
-        return {
-          title: 'Briefing löschen?',
-          message: 'Möchtest du dieses Briefing wirklich unwiderruflich löschen?',
-          itemName: item?.title || 'Briefing',
-        };
-      case TABS.SIMULATOR:
-        return {
-          title: 'Szenario-Training löschen?',
-          message: 'Möchtest du dieses Training wirklich unwiderruflich löschen? Alle Antworten und Feedback werden entfernt.',
-          itemName: scenario?.title || item?.scenario_title || `Session #${item?.id}`,
-        };
-      case TABS.VIDEO:
-        return {
-          title: 'Wirkungs-Analyse löschen?',
-          message: 'Möchtest du diese Analyse wirklich unwiderruflich löschen? Video und Feedback werden entfernt.',
-          itemName: scenario?.title || item?.scenario_title || `Session #${item?.id}`,
-        };
-      case TABS.ROLEPLAY:
-        return {
-          title: 'Live-Simulation löschen?',
-          message: 'Möchtest du diese Simulation wirklich unwiderruflich löschen? Audio und Feedback werden entfernt.',
-          itemName: scenario?.title || item?.scenario_title || `Session #${item?.id}`,
-        };
-      default:
-        return {
-          title: 'Löschen?',
-          message: 'Möchtest du dieses Element wirklich löschen?',
-          itemName: '',
-        };
-    }
   };
 
   // Show briefing workbook if a briefing is selected
@@ -1416,82 +1298,52 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     );
   }
 
+  const activeSessions = getActiveSessions();
   const activeScenarioMap = getActiveScenarioMap();
-  const activeSessions = filterBySearchQuery(getActiveSessions(), activeScenarioMap);
 
   return (
     <div style={{ padding: '24px' }}>
-      {/* Header with refresh button on mobile */}
-      <div style={{ marginBottom: '32px', position: 'relative' }}>
-        {/* Mobile refresh button - top right */}
-        <button
-          onClick={loadAllData}
-          disabled={isLoading}
-          className="mobile-header-refresh"
-          style={{
-            position: 'absolute',
-            top: '0',
-            right: '0',
-            padding: '10px',
-            borderRadius: '10px',
-            border: '1px solid #e2e8f0',
-            background: '#fff',
-            color: '#64748b',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.5 : 1,
-            display: 'none',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-          }}
-        >
-          <RefreshCw style={{ width: '18px', height: '18px' }} className={isLoading ? 'animate-spin' : ''} />
-        </button>
-        <style>{`
-          @media (max-width: 640px) {
-            .mobile-header-refresh { display: flex !important; }
-          }
-        `}</style>
-
-        <div style={{ textAlign: 'center' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '12px',
+        }}>
           <div style={{
-            display: 'inline-flex',
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            background: headerGradient,
+            display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            marginBottom: '12px',
+            justifyContent: 'center',
           }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '14px',
-              background: headerGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <History style={{ width: '24px', height: '24px', color: headerText }} />
-            </div>
-            <h1 style={{
-              fontSize: '28px',
-              fontWeight: 700,
-              color: '#0f172a',
-              margin: 0,
-            }}>
-              Meine Sessions
-            </h1>
+            <History style={{ width: '24px', height: '24px', color: headerText }} />
           </div>
-          <p style={{
-            fontSize: '16px',
-            color: '#475569',
-            maxWidth: '600px',
-            margin: '0 auto',
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: 700,
+            color: '#0f172a',
+            margin: 0,
           }}>
-            {totalSessions} {totalSessions === 1 ? 'Übung' : 'Übungen'} gespeichert
-          </p>
+            Meine Sessions
+          </h1>
         </div>
+        <p style={{
+          fontSize: '16px',
+          color: '#475569',
+          maxWidth: '600px',
+          margin: '0 auto',
+        }}>
+          {totalSessions} {totalSessions === 1 ? 'Übung' : 'Übungen'} gespeichert
+        </p>
       </div>
 
-      {/* Tabs - Responsive: horizontal icons on mobile with active label below */}
+      {/* Tabs - Responsive: stack vertically on mobile */}
       <style>{`
-        .session-tabs-desktop {
+        .session-tabs {
           margin: 0 24px 32px;
           display: flex;
           gap: 8px;
@@ -1499,7 +1351,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           padding: 6px;
           border-radius: 14px;
         }
-        .session-tab-btn-desktop {
+        .session-tab-btn {
           flex: 1;
           padding: 12px 16px;
           border-radius: 10px;
@@ -1512,49 +1364,16 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           gap: 8px;
           transition: all 0.2s;
         }
-        .session-tabs-mobile {
-          margin: 0 16px 16px;
-        }
-        .session-tabs-mobile-icons {
-          display: flex;
-          gap: 8px;
-          justify-content: center;
-          margin-bottom: 12px;
-        }
-        .session-tab-btn-mobile {
-          flex: 1;
-          max-width: 80px;
-          padding: 12px 8px;
-          border-radius: 12px;
-          border: none;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          transition: all 0.2s;
-        }
-        .session-tab-mobile-label {
-          text-align: center;
-          font-size: 15px;
-          font-weight: 600;
-          color: #0f172a;
-          padding: 8px 16px;
-          background: #fff;
-          border-radius: 10px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-        @media (min-width: 641px) {
-          .session-tabs-mobile { display: none; }
-        }
         @media (max-width: 640px) {
-          .session-tabs-desktop { display: none; }
+          .session-tabs {
+            flex-direction: column;
+          }
+          .session-tab-btn {
+            padding: 14px 16px;
+          }
         }
       `}</style>
-
-      {/* Desktop Tabs */}
-      <div className="session-tabs-desktop">
+      <div className="session-tabs">
         {TAB_CONFIG.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1567,7 +1386,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="session-tab-btn-desktop"
+              className="session-tab-btn"
               style={{
                 background: isActive ? '#fff' : 'transparent',
                 color: isActive ? '#0f172a' : '#64748b',
@@ -1592,146 +1411,37 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         })}
       </div>
 
-      {/* Mobile Tabs - Icons with counts + active label below */}
-      <div className="session-tabs-mobile">
-        <div className="session-tabs-mobile-icons">
-          {TAB_CONFIG.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
-                         tab.id === TABS.VIDEO ? videoSessions.length :
-                         tab.id === TABS.BRIEFINGS ? briefings.length :
-                         roleplaySessions.length;
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="session-tab-btn-mobile"
-                style={{
-                  background: isActive ? '#fff' : '#f1f5f9',
-                  boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none',
-                  border: isActive ? `2px solid ${primaryAccent}` : '2px solid transparent',
-                }}
-              >
-                <Icon size={20} style={{ color: isActive ? primaryAccent : '#64748b' }} />
-                <span style={{
-                  padding: '2px 6px',
-                  borderRadius: '8px',
-                  background: isActive ? primaryAccent : '#e2e8f0',
-                  color: isActive ? '#fff' : '#64748b',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                }}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        {/* Active tab label */}
-        <div className="session-tab-mobile-label">
-          {TAB_CONFIG.find(t => t.id === activeTab)?.label}
-        </div>
-      </div>
-
-      {/* Search Bar & Refresh Button */}
-      <div style={{ margin: '0 24px 24px' }}>
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'center',
-        }}>
-          {/* Search Input */}
-          <div style={{
-            flex: 1,
-            position: 'relative',
-          }}>
-            <Search
-              size={18}
-              style={{
-                position: 'absolute',
-                left: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#94a3b8',
-                pointerEvents: 'none',
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Suchen..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 14px 12px 44px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                backgroundColor: '#fff',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = primaryAccent;
-                e.target.style.boxShadow = `0 0 0 3px ${primaryAccent}20`;
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-                e.target.style.boxShadow = 'none';
-              }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: '#f1f5f9',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '20px',
-                  height: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: '#64748b',
-                }}
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-
-          {/* Desktop Refresh Button */}
-          <div className="desktop-only-refresh">
-            <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
-              <RefreshCw style={{ width: '16px', height: '16px', marginRight: '8px' }} className={isLoading ? 'animate-spin' : ''} />
-              Aktualisieren
-            </Button>
-          </div>
-        </div>
-
-        {/* Filter result count */}
-        {searchQuery && (
-          <div style={{
-            marginTop: '12px',
-            fontSize: '13px',
-            color: '#64748b',
-          }}>
-            {filterBySearchQuery(getActiveSessions(), getActiveScenarioMap()).length} Ergebnis{filterBySearchQuery(getActiveSessions(), getActiveScenarioMap()).length !== 1 ? 'se' : ''} gefunden
-          </div>
+      {/* Action buttons */}
+      <div style={{ margin: '0 24px 24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+        <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
+          <RefreshCw style={{ width: '16px', height: '16px', marginRight: '8px' }} className={isLoading ? 'animate-spin' : ''} />
+          Aktualisieren
+        </Button>
+        {onNavigateToModule && (
+          <Button
+            onClick={() => {
+              // Navigate to the corresponding module based on active tab
+              const moduleMap = {
+                [TABS.BRIEFINGS]: 'smart_briefing',
+                [TABS.SIMULATOR]: 'simulator',
+                [TABS.VIDEO]: 'video_training',
+                [TABS.ROLEPLAY]: 'dashboard',
+              };
+              onNavigateToModule(moduleMap[activeTab] || 'overview');
+            }}
+            style={{
+              background: headerGradient,
+              color: headerText,
+            }}
+          >
+            <Plus style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+            {activeTab === TABS.BRIEFINGS ? 'Neues Briefing' :
+             activeTab === TABS.SIMULATOR ? 'Neues Szenario-Training' :
+             activeTab === TABS.VIDEO ? 'Neue Wirkungs-Analyse' :
+             'Neue Live-Simulation'}
+          </Button>
         )}
       </div>
-      <style>{`
-        @media (max-width: 640px) {
-          .desktop-only-refresh { display: none !important; }
-        }
-      `}</style>
 
       {/* Sessions List */}
       <div style={{ margin: '0 24px' }}>
@@ -1774,14 +1484,13 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             }}
           >
             {activeTab === TABS.BRIEFINGS ? (
-              // Render briefings (filtered via activeSessions)
-              activeSessions.map((briefing) => (
+              // Render briefings
+              briefings.map((briefing) => (
                 <BriefingCard
                   key={briefing.id}
                   briefing={briefing}
                   onClick={() => handleBriefingClick(briefing)}
-                  onDeleteClick={handleBriefingDeleteClick}
-                  isDeleting={isDeleting && deleteDialog.item?.id === briefing.id}
+                  onDelete={handleDeleteBriefing}
                   headerGradient={headerGradient}
                   headerText={headerText}
                   primaryAccent={primaryAccent}
@@ -1799,8 +1508,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                     scenario={scenario}
                     onClick={() => handleSessionClick(session)}
                     onContinueSession={onContinueSession}
-                    onDeleteClick={(s, t, sc) => handleSessionDeleteClick(s, t, sc)}
-                    isDeleting={isDeleting && deleteDialog.item?.id === session.id}
+                    onDeleteSession={handleDeleteSession}
                     headerGradient={headerGradient}
                     headerText={headerText}
                     primaryAccent={primaryAccent}
@@ -1815,22 +1523,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       <style>
         {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
       </style>
-
-      {/* Delete Confirmation Dialog */}
-      <AnimatePresence>
-        {deleteDialog.isOpen && (
-          <DeleteConfirmDialog
-            isOpen={deleteDialog.isOpen}
-            {...getDeleteDialogContent()}
-            onConfirm={handleDeleteConfirm}
-            onCancel={handleDeleteDialogClose}
-            isDeleting={isDeleting}
-            primaryAccent={primaryAccent}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };
 
 export default SessionHistory;
+export { TABS as SESSION_TABS };

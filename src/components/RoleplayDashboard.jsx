@@ -1,27 +1,89 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
   Target,
   ArrowLeft,
   Plus,
-  Filter,
-  Search,
   MessageSquare,
   Clock,
   TrendingUp,
   Award,
   Loader2,
   AlertCircle,
+  FolderOpen,
+  Briefcase,
+  Users,
+  Banknote,
+  Presentation,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import RoleplayVariablesDialog from './RoleplayVariablesDialog';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { COLORS } from '@/config/colors';
 
-const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenticated, requireAuth, setPendingAction, pendingScenario, clearPendingScenario }) => {
+/**
+ * Category type configuration for roleplay scenarios
+ */
+const CATEGORY_CONFIG = {
+  vorstellungsgespraech: {
+    label: 'Vorstellungsgespräch',
+    icon: Briefcase,
+    color: '#3A7FA7',
+    bgColor: '#E8F4F8',
+  },
+  gehaltsverhandlung: {
+    label: 'Gehaltsverhandlung',
+    icon: Banknote,
+    color: '#059669',
+    bgColor: '#d1fae5',
+  },
+  fuehrungsgespraech: {
+    label: 'Führungsgespräch',
+    icon: Users,
+    color: '#7c3aed',
+    bgColor: '#ede9fe',
+  },
+  praesentation: {
+    label: 'Präsentation',
+    icon: Presentation,
+    color: '#d97706',
+    bgColor: '#fef3c7',
+  },
+  selbstvorstellung: {
+    label: 'Selbstvorstellung',
+    icon: User,
+    color: '#ec4899',
+    bgColor: '#fce7f3',
+  },
+  training: {
+    label: 'Training',
+    icon: Target,
+    color: '#64748b',
+    bgColor: '#f1f5f9',
+  },
+};
+
+/**
+ * Normalize category string for matching
+ */
+const normalizeCategory = (category) => {
+  if (!category) return null;
+  return category.toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]/g, '');
+};
+
+const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenticated, requireAuth, setPendingAction, pendingScenario, clearPendingScenario, onNavigateToHistory }) => {
   const [scenarios, setScenarios] = useState([]);
   const [filteredScenarios, setFilteredScenarios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,13 +95,25 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   // Get themed styles
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const iconPrimary = branding?.['--icon-primary'] || DEFAULT_BRANDING['--icon-primary'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const focusRing = branding?.['--focus-ring'] || DEFAULT_BRANDING['--focus-ring'];
 
-  // Filters
+  // Filters and view mode
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
+
+  // Compute available categories from scenarios
+  const availableCategories = useMemo(() => {
+    const categories = new Set();
+    scenarios.forEach(scenario => {
+      const normalized = normalizeCategory(scenario.category);
+      if (normalized && CATEGORY_CONFIG[normalized]) {
+        categories.add(normalized);
+      }
+    });
+    return Array.from(categories);
+  }, [scenarios]);
 
   // Custom scenario dialog
   const [showCustomDialog, setShowCustomDialog] = useState(false);
@@ -62,7 +136,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   // Filter scenarios when search, filters, or partner changes
   useEffect(() => {
     filterScenarios();
-  }, [scenarios, searchQuery, difficultyFilter, filterByPartner]);
+  }, [scenarios, searchQuery, difficultyFilter, selectedCategory, filterByPartner]);
 
   // Handle pending scenario after login - automatically open variables dialog
   useEffect(() => {
@@ -134,6 +208,13 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
       });
     }
 
+    // Category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(scenario =>
+        normalizeCategory(scenario.category) === selectedCategory
+      );
+    }
+
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -171,19 +252,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
     }
   };
 
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'easy':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'hard':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
+  // getDifficultyLabel helper - used in custom dialog
   const getDifficultyLabel = (difficulty) => {
     switch (difficulty) {
       case 'easy':
@@ -222,9 +291,9 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   }
 
   return (
-    <div className="min-h-screen py-4 lg:py-8 px-2 lg:px-4 overflow-x-hidden">
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div className="w-full mb-4 lg:mb-8 px-4 lg:px-8">
+      <div style={{ marginBottom: '32px' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -238,19 +307,14 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
             </Button>
           )}
 
-          {/* Title */}
-          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '12px'
-            }}>
+          {/* Title Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div
                 style={{
                   width: '48px',
                   height: '48px',
-                  borderRadius: '14px',
+                  borderRadius: '12px',
                   background: headerGradient,
                   display: 'flex',
                   alignItems: 'center',
@@ -259,196 +323,100 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
               >
                 <MessageSquare style={{ width: '24px', height: '24px', color: headerText }} />
               </div>
-              <h1 style={{
-                fontSize: '28px',
-                fontWeight: 700,
-                color: '#0f172a',
-                margin: 0
-              }}>
-                Praxis-Training
-              </h1>
+              <div>
+                <h1 style={{ fontSize: '28px', fontWeight: 700, color: COLORS.slate[900], margin: 0 }}>
+                  Live-Simulationen
+                </h1>
+                <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
+                  Live Simulationen mit KI-Interviewer
+                </p>
+              </div>
             </div>
-            <p style={{
-              fontSize: '16px',
-              color: '#475569',
-              maxWidth: '600px',
-              margin: '0 auto'
-            }}>
-              Wähle ein Szenario und übe realistische Gespräche
-            </p>
-          </div>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mt-6">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search
-                className="absolute top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
-                style={{ left: '16px', color: '#94a3b8' }}
-              />
-              <input
-                type="text"
-                placeholder="Szenarien durchsuchen..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+            {/* My Simulations Button - Only for authenticated users */}
+            {isAuthenticated && onNavigateToHistory && (
+              <button
+                onClick={onNavigateToHistory}
                 style={{
-                  width: '100%',
-                  height: '44px',
-                  paddingLeft: '48px',
-                  paddingRight: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
                   borderRadius: '12px',
-                  border: '2px solid #e2e8f0',
+                  border: `2px solid ${primaryAccent}`,
                   backgroundColor: 'white',
-                  color: '#1e293b',
+                  color: primaryAccent,
                   fontSize: '14px',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-                  outline: 'none',
-                  transition: 'all 0.2s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = primaryAccent;
-                  e.target.style.boxShadow = `0 0 0 3px ${focusRing}`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
-                  e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
-                }}
-              />
-            </div>
-
-            {/* Difficulty filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5" style={{ color: iconPrimary }} />
-              <select
-                value={difficultyFilter}
-                onChange={(e) => setDifficultyFilter(e.target.value)}
-                style={{
-                  height: '44px',
-                  padding: '8px 16px',
-                  borderRadius: '12px',
-                  border: '2px solid #e2e8f0',
-                  backgroundColor: 'white',
-                  color: '#1e293b',
-                  fontSize: '14px',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                  fontWeight: 600,
                   cursor: 'pointer',
-                  outline: 'none',
                   transition: 'all 0.2s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = primaryAccent;
-                  e.target.style.boxShadow = `0 0 0 3px ${focusRing}`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
-                  e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
                 }}
               >
-                <option value="all">Alle Schwierigkeiten</option>
-                <option value="easy">Einfach</option>
-                <option value="medium">Mittel</option>
-                <option value="hard">Schwer</option>
-              </select>
-            </div>
+                <FolderOpen size={18} />
+                Meine Live-Simulationen
+              </button>
+            )}
+          </div>
+
+          {/* Search, Filters and Categories - Responsive */}
+          <div style={{ marginTop: '24px' }}>
+            <MobileFilterSheet
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="Szenarien durchsuchen..."
+              categories={availableCategories.map(key => ({
+                key,
+                label: CATEGORY_CONFIG[key]?.label || key,
+                color: CATEGORY_CONFIG[key]?.color,
+                bgColor: CATEGORY_CONFIG[key]?.bgColor,
+                icon: CATEGORY_CONFIG[key]?.icon,
+              }))}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              showCategories={availableCategories.length > 0}
+              difficultyOptions={[
+                { value: 'all', label: 'Alle Schwierigkeiten' },
+                { value: 'easy', label: 'Einfach' },
+                { value: 'medium', label: 'Mittel' },
+                { value: 'hard', label: 'Schwer' },
+              ]}
+              selectedDifficulty={difficultyFilter}
+              onDifficultyChange={setDifficultyFilter}
+              showDifficulty={true}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+            />
           </div>
         </motion.div>
       </div>
 
       {/* Scenarios Grid */}
-      <div className="w-full px-4 lg:px-8">
+      <div>
         {filteredScenarios.length === 0 ? (
           <div className="text-center py-12">
             <Sparkles className="w-12 h-12 text-slate-400 mx-auto mb-4" />
             <p className="text-slate-600">Keine Szenarien gefunden.</p>
           </div>
         ) : (
-          <motion.div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
-              gap: '24px',
-            }}
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: {
-                  staggerChildren: 0.1,
-                },
-              },
-            }}
-          >
+          <ScenarioCardGrid viewMode={viewMode}>
             {filteredScenarios.map((scenario) => (
-              <motion.div
+              <ScenarioCard
                 key={scenario.id}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 },
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div
-                  onClick={() => handleScenarioClick(scenario)}
-                  className="bg-white rounded-3xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 cursor-pointer border border-slate-100 h-full flex flex-col"
-                >
-                  {/* Difficulty Badge */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${getDifficultyColor(
-                        scenario.difficulty
-                      )}`}
-                    >
-                      {getDifficultyLabel(scenario.difficulty)}
-                    </span>
-
-                    {/* Tags */}
-                    {scenario.tags && scenario.tags.length > 0 && (
-                      <div className="flex gap-1">
-                        {scenario.tags.slice(0, 2).map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">{scenario.title}</h3>
-
-                  {/* Description */}
-                  <p className="text-slate-600 text-sm mb-4 flex-1 line-clamp-3">{scenario.description}</p>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
-                      {scenario.variables_schema && scenario.variables_schema.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Target className="w-3 h-3" />
-                          <span>{scenario.variables_schema.length} Variablen</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>~10 Min</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 text-ocean-blue-600 text-sm font-semibold">
-                      <span>Starten</span>
-                      <TrendingUp className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+                title={scenario.title}
+                description={scenario.description}
+                difficulty={scenario.difficulty}
+                tags={scenario.tags || []}
+                meta={[
+                  ...(scenario.variables_schema && scenario.variables_schema.length > 0
+                    ? [{ icon: Target, text: `${scenario.variables_schema.length} Variablen` }]
+                    : []),
+                  { icon: Clock, text: '~10 Min' },
+                ]}
+                action={{ label: 'Starten', icon: TrendingUp }}
+                onClick={() => handleScenarioClick(scenario)}
+                viewMode={viewMode}
+              />
             ))}
-          </motion.div>
+          </ScenarioCardGrid>
         )}
       </div>
 

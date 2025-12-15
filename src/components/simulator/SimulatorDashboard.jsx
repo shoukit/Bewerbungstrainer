@@ -12,20 +12,21 @@ import {
   TrendingUp,
   MessageCircle,
   LayoutGrid,
-  Clock
+  Clock,
+  FolderOpen,
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { COLORS } from '@/config/colors';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 import {
   SCENARIO_CATEGORIES,
   SCENARIO_CATEGORY_CONFIG,
   normalizeCategory,
-  getScenarioCategoryConfig,
-  DIFFICULTY_COLORS,
-  getDifficultyConfig
+  getScenarioCategoryConfig
 } from '@/config/constants';
-import { COLORS } from '@/config/colors';
 
 /**
  * Icon mapping for scenarios
@@ -84,117 +85,6 @@ const CategoryBadge = ({ category }) => {
       <CategoryIcon style={{ width: '12px', height: '12px' }} />
       {config.shortLabel}
     </span>
-  );
-};
-
-/**
- * Scenario Card Component
- */
-const ScenarioCard = ({ scenario, onSelect, themedGradient, themedText, primaryAccent }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const IconComponent = ICON_MAP[scenario.icon] || Briefcase;
-  const difficulty = DIFFICULTY_COLORS[scenario.difficulty] || DIFFICULTY_COLORS.intermediate;
-
-  const handleClick = () => {
-    onSelect(scenario);
-  };
-
-  return (
-    <div
-      onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        backgroundColor: 'white',
-        borderRadius: '24px',
-        padding: '24px',
-        border: `1px solid ${isHovered ? primaryAccent : COLORS.slate[200]}`,
-        boxShadow: isHovered
-          ? `0 10px 25px -5px ${primaryAccent}33, 0 8px 10px -6px ${primaryAccent}22`
-          : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        transition: 'all 0.3s ease',
-        display: 'flex',
-        flexDirection: 'column',
-        cursor: 'pointer',
-        position: 'relative',
-        height: '100%',
-      }}
-    >
-      {/* Badges Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <span
-          style={{
-            padding: '4px 12px',
-            borderRadius: '9999px',
-            fontSize: '12px',
-            fontWeight: 600,
-            backgroundColor: difficulty.bg,
-            color: difficulty.text,
-            border: `1px solid ${difficulty.text}20`,
-          }}
-        >
-          {difficulty.label}
-        </span>
-        {scenario.category && <CategoryBadge category={scenario.category} />}
-      </div>
-
-      {/* Title */}
-      <h3 style={{
-        fontSize: '20px',
-        fontWeight: 700,
-        color: COLORS.slate[900],
-        margin: 0,
-        marginBottom: '8px',
-      }}>
-        {scenario.title}
-      </h3>
-
-      {/* Description - flex: 1 to push footer down, line-clamp-3 */}
-      <p style={{
-        fontSize: '14px',
-        color: COLORS.slate[600],
-        margin: 0,
-        marginBottom: '16px',
-        lineHeight: 1.6,
-        display: '-webkit-box',
-        WebkitLineClamp: 3,
-        WebkitBoxOrient: 'vertical',
-        overflow: 'hidden',
-        flex: 1,
-      }}>
-        {scenario.description}
-      </p>
-
-      {/* Footer */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: '16px',
-        borderTop: `1px solid ${COLORS.slate[100]}`
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: COLORS.slate[400] }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Clock style={{ width: '14px', height: '14px' }} />
-            ~{Math.round(scenario.time_limit_per_question / 60 * scenario.question_count_min)} Min.
-          </span>
-          <span>
-            {scenario.question_count_min}-{scenario.question_count_max} Fragen
-          </span>
-        </div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          color: primaryAccent,
-          fontSize: '14px',
-          fontWeight: 600
-        }}>
-          <span>Starten</span>
-          <TrendingUp style={{ width: '16px', height: '16px' }} />
-        </div>
-      </div>
-    </div>
   );
 };
 
@@ -272,7 +162,7 @@ const CategoryFilterBar = ({ selectedCategory, onSelectCategory, primaryAccent }
  *
  * Displays available training scenarios in a grid layout
  */
-const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario }) => {
+const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario, onNavigateToHistory }) => {
   // Partner theming
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -280,6 +170,9 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const [scenarios, setScenarios] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState('all');
 
   /**
    * Handle scenario selection with auth check
@@ -305,16 +198,34 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filter scenarios by selected category - must be before any conditional returns
+  // Filter scenarios by category, search, and difficulty
   const filteredScenarios = useMemo(() => {
-    if (!selectedCategory) {
-      return scenarios;
+    let filtered = [...scenarios];
+
+    // Category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(scenario => {
+        const normalizedCategory = normalizeCategory(scenario.category);
+        return normalizedCategory === selectedCategory;
+      });
     }
-    return scenarios.filter(scenario => {
-      const normalizedCategory = normalizeCategory(scenario.category);
-      return normalizedCategory === selectedCategory;
-    });
-  }, [scenarios, selectedCategory]);
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(scenario =>
+        scenario.title?.toLowerCase().includes(query) ||
+        scenario.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Difficulty filter
+    if (difficultyFilter !== 'all') {
+      filtered = filtered.filter(scenario => scenario.difficulty === difficultyFilter);
+    }
+
+    return filtered;
+  }, [scenarios, selectedCategory, searchQuery, difficultyFilter]);
 
   // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
@@ -421,70 +332,117 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '12px'
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
-            background: headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Sparkles style={{ width: '24px', height: '24px', color: headerText }} />
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              background: headerGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Sparkles style={{ width: '24px', height: '24px', color: headerText }} />
+            </div>
+            <div>
+              <h1 style={{
+                fontSize: '28px',
+                fontWeight: 700,
+                color: COLORS.slate[900],
+                margin: 0
+              }}>
+                Szenario-Training
+              </h1>
+              <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
+                Trainiere wichtige Karriere-Skills mit KI-Feedback
+              </p>
+            </div>
           </div>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: 700,
-            color: COLORS.slate[900],
-            margin: 0
-          }}>
-            Szenario-Training
-          </h1>
+          {/* My Trainings Button - Only for authenticated users */}
+          {isAuthenticated && onNavigateToHistory && (
+            <button
+              onClick={onNavigateToHistory}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                border: `2px solid ${primaryAccent}`,
+                backgroundColor: 'white',
+                color: primaryAccent,
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <FolderOpen size={18} />
+              Meine Szenario-Trainings
+            </button>
+          )}
         </div>
-        <p style={{
-          fontSize: '16px',
-          color: COLORS.slate[600],
-          maxWidth: '600px',
-          margin: '0 auto'
-        }}>
-          Trainiere wichtige Karriere-Skills mit sofortigem KI-Feedback nach jeder Antwort.
-          Wähle ein Szenario und starte dein Training.
-        </p>
+
+        {/* Search, Filters and Categories - Responsive */}
+        <div style={{ marginTop: '24px' }}>
+          <MobileFilterSheet
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Szenarien durchsuchen..."
+            categories={[
+              { key: SCENARIO_CATEGORIES.CAREER, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.CAREER], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.CAREER].icon) },
+              { key: SCENARIO_CATEGORIES.LEADERSHIP, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.LEADERSHIP], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.LEADERSHIP].icon) },
+              { key: SCENARIO_CATEGORIES.SALES, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.SALES], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.SALES].icon) },
+              { key: SCENARIO_CATEGORIES.COMMUNICATION, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.COMMUNICATION], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.COMMUNICATION].icon) },
+            ]}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            difficultyOptions={[
+              { value: 'all', label: 'Alle Schwierigkeiten' },
+              { value: 'easy', label: 'Einfach' },
+              { value: 'beginner', label: 'Einsteiger' },
+              { value: 'medium', label: 'Mittel' },
+              { value: 'intermediate', label: 'Fortgeschritten' },
+              { value: 'hard', label: 'Schwer' },
+              { value: 'advanced', label: 'Experte' },
+            ]}
+            selectedDifficulty={difficultyFilter}
+            onDifficultyChange={setDifficultyFilter}
+            showDifficulty={true}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
+        </div>
       </div>
 
-      {/* Category Filter */}
-      <CategoryFilterBar
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        primaryAccent={primaryAccent}
-      />
-
       {/* Scenario Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-        gap: '24px',
-        padding: '0 24px'
-      }}>
-        {filteredScenarios.map(scenario => (
-          <ScenarioCard
-            key={scenario.id}
-            scenario={scenario}
-            onSelect={handleSelectScenario}
-            themedGradient={headerGradient}
-            themedText={headerText}
-            primaryAccent={primaryAccent}
-          />
-        ))}
+      <div>
+        <ScenarioCardGrid minCardWidth="340px" viewMode={viewMode}>
+          {filteredScenarios.map(scenario => {
+            const IconComponent = ICON_MAP[scenario.icon] || Briefcase;
+            return (
+              <ScenarioCard
+                key={scenario.id}
+                title={scenario.title}
+                description={scenario.description}
+                difficulty={scenario.difficulty}
+                icon={IconComponent}
+                categoryBadge={scenario.category ? <CategoryBadge category={scenario.category} /> : null}
+                meta={[
+                  { text: `${scenario.question_count_min}-${scenario.question_count_max} Fragen` },
+                  { icon: Clock, text: `${Math.round(scenario.time_limit_per_question / 60)} Min/Frage` },
+                ]}
+                action={{ label: 'Starten', icon: TrendingUp }}
+                onClick={() => handleSelectScenario(scenario)}
+                viewMode={viewMode}
+              />
+            );
+          })}
+        </ScenarioCardGrid>
       </div>
 
       {/* Empty State */}
