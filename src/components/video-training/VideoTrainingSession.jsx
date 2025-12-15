@@ -1054,6 +1054,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
           )}
         </div>
       </div>
+      )}
 
       {/* Error display */}
       {error && (
