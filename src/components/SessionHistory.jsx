@@ -1390,47 +1390,77 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   return (
     <div style={{ padding: '24px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '12px',
-        }}>
+      {/* Header with refresh button on mobile */}
+      <div style={{ marginBottom: '32px', position: 'relative' }}>
+        {/* Mobile refresh button - top right */}
+        <button
+          onClick={loadAllData}
+          disabled={isLoading}
+          className="mobile-header-refresh"
+          style={{
+            position: 'absolute',
+            top: '0',
+            right: '0',
+            padding: '10px',
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            background: '#fff',
+            color: '#64748b',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? 0.5 : 1,
+            display: 'none',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+          }}
+        >
+          <RefreshCw style={{ width: '18px', height: '18px' }} className={isLoading ? 'animate-spin' : ''} />
+        </button>
+        <style>{`
+          @media (max-width: 640px) {
+            .mobile-header-refresh { display: flex !important; }
+          }
+        `}</style>
+
+        <div style={{ textAlign: 'center' }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
-            background: headerGradient,
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '12px',
           }}>
-            <History style={{ width: '24px', height: '24px', color: headerText }} />
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '14px',
+              background: headerGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <History style={{ width: '24px', height: '24px', color: headerText }} />
+            </div>
+            <h1 style={{
+              fontSize: '28px',
+              fontWeight: 700,
+              color: '#0f172a',
+              margin: 0,
+            }}>
+              Meine Sessions
+            </h1>
           </div>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: 700,
-            color: '#0f172a',
-            margin: 0,
+          <p style={{
+            fontSize: '16px',
+            color: '#475569',
+            maxWidth: '600px',
+            margin: '0 auto',
           }}>
-            Meine Sessions
-          </h1>
+            {totalSessions} {totalSessions === 1 ? 'Übung' : 'Übungen'} gespeichert
+          </p>
         </div>
-        <p style={{
-          fontSize: '16px',
-          color: '#475569',
-          maxWidth: '600px',
-          margin: '0 auto',
-        }}>
-          {totalSessions} {totalSessions === 1 ? 'Übung' : 'Übungen'} gespeichert
-        </p>
       </div>
 
-      {/* Tabs - Responsive: stack vertically on mobile */}
+      {/* Tabs - Responsive: horizontal icons on mobile with active label below */}
       <style>{`
-        .session-tabs {
+        .session-tabs-desktop {
           margin: 0 24px 32px;
           display: flex;
           gap: 8px;
@@ -1438,7 +1468,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           padding: 6px;
           border-radius: 14px;
         }
-        .session-tab-btn {
+        .session-tab-btn-desktop {
           flex: 1;
           padding: 12px 16px;
           border-radius: 10px;
@@ -1451,16 +1481,49 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           gap: 8px;
           transition: all 0.2s;
         }
+        .session-tabs-mobile {
+          margin: 0 16px 16px;
+        }
+        .session-tabs-mobile-icons {
+          display: flex;
+          gap: 8px;
+          justify-content: center;
+          margin-bottom: 12px;
+        }
+        .session-tab-btn-mobile {
+          flex: 1;
+          max-width: 80px;
+          padding: 12px 8px;
+          border-radius: 12px;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          transition: all 0.2s;
+        }
+        .session-tab-mobile-label {
+          text-align: center;
+          font-size: 15px;
+          font-weight: 600;
+          color: #0f172a;
+          padding: 8px 16px;
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        @media (min-width: 641px) {
+          .session-tabs-mobile { display: none; }
+        }
         @media (max-width: 640px) {
-          .session-tabs {
-            flex-direction: column;
-          }
-          .session-tab-btn {
-            padding: 14px 16px;
-          }
+          .session-tabs-desktop { display: none; }
         }
       `}</style>
-      <div className="session-tabs">
+
+      {/* Desktop Tabs */}
+      <div className="session-tabs-desktop">
         {TAB_CONFIG.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1473,7 +1536,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="session-tab-btn"
+              className="session-tab-btn-desktop"
               style={{
                 background: isActive ? '#fff' : 'transparent',
                 color: isActive ? '#0f172a' : '#64748b',
@@ -1498,13 +1561,61 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         })}
       </div>
 
-      {/* Refresh button */}
-      <div style={{ margin: '0 24px 24px', display: 'flex', justifyContent: 'flex-end' }}>
+      {/* Mobile Tabs - Icons with counts + active label below */}
+      <div className="session-tabs-mobile">
+        <div className="session-tabs-mobile-icons">
+          {TAB_CONFIG.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
+                         tab.id === TABS.VIDEO ? videoSessions.length :
+                         tab.id === TABS.BRIEFINGS ? briefings.length :
+                         roleplaySessions.length;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="session-tab-btn-mobile"
+                style={{
+                  background: isActive ? '#fff' : '#f1f5f9',
+                  boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none',
+                  border: isActive ? `2px solid ${primaryAccent}` : '2px solid transparent',
+                }}
+              >
+                <Icon size={20} style={{ color: isActive ? primaryAccent : '#64748b' }} />
+                <span style={{
+                  padding: '2px 6px',
+                  borderRadius: '8px',
+                  background: isActive ? primaryAccent : '#e2e8f0',
+                  color: isActive ? '#fff' : '#64748b',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Active tab label */}
+        <div className="session-tab-mobile-label">
+          {TAB_CONFIG.find(t => t.id === activeTab)?.label}
+        </div>
+      </div>
+
+      {/* Desktop only: Refresh button with text */}
+      <div style={{ margin: '0 24px 24px', display: 'flex', justifyContent: 'flex-end' }} className="desktop-only-refresh-container">
         <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
           <RefreshCw style={{ width: '16px', height: '16px', marginRight: '8px' }} className={isLoading ? 'animate-spin' : ''} />
           Aktualisieren
         </Button>
       </div>
+      <style>{`
+        @media (max-width: 640px) {
+          .desktop-only-refresh-container { display: none !important; }
+        }
+      `}</style>
 
       {/* Sessions List */}
       <div style={{ margin: '0 24px' }}>
