@@ -95,6 +95,21 @@ class Bewerbungstrainer_Demo_Codes {
             }
         }
 
+        // Handle delete action
+        if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['code']) && check_admin_referer('delete_code_' . $_GET['code'])) {
+            $code = sanitize_text_field($_GET['code']);
+            $result = $this->delete_code_with_data($code);
+            if ($result['success']) {
+                echo '<div class="notice notice-success"><p>' . sprintf(__('Code %s und alle zugehörigen Daten wurden gelöscht.', 'bewerbungstrainer'), $code);
+                if (!empty($result['deleted'])) {
+                    echo ' (' . esc_html($result['deleted']) . ')';
+                }
+                echo '</p></div>';
+            } else {
+                echo '<div class="notice notice-error"><p>' . sprintf(__('Fehler beim Löschen des Codes %s.', 'bewerbungstrainer'), $code) . '</p></div>';
+            }
+        }
+
         // Get filter
         $filter = isset($_GET['filter']) ? sanitize_text_field($_GET['filter']) : null;
 
@@ -247,22 +262,34 @@ class Bewerbungstrainer_Demo_Codes {
                                     <?php endif; ?>
                                 </td>
                                 <td style="vertical-align: middle; white-space: nowrap;">
-                                    <?php if ($is_used): ?>
-                                        <span style="color: #94a3b8; font-size: 12px;"><?php _e('Bereits verwendet', 'bewerbungstrainer'); ?></span>
-                                    <?php elseif ($is_reserved): ?>
-                                        <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=bewerbungstrainer-demo-codes&action=unreserve&code=' . $code->demo_code), 'unreserve_code_' . $code->demo_code); ?>"
-                                           class="button button-small"
-                                           onclick="return confirm('Reservierung wirklich aufheben?');"
-                                           style="color: #dc2626;">
-                                            <?php _e('Freigeben', 'bewerbungstrainer'); ?>
+                                    <div style="display: flex; gap: 6px; align-items: center;">
+                                        <?php if ($is_used): ?>
+                                            <span style="color: #94a3b8; font-size: 12px;"><?php _e('Verwendet', 'bewerbungstrainer'); ?></span>
+                                        <?php elseif ($is_reserved): ?>
+                                            <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=bewerbungstrainer-demo-codes&action=unreserve&code=' . $code->demo_code), 'unreserve_code_' . $code->demo_code); ?>"
+                                               class="button button-small"
+                                               onclick="return confirm('Reservierung wirklich aufheben?');"
+                                               style="color: #dc2626;">
+                                                <?php _e('Freigeben', 'bewerbungstrainer'); ?>
+                                            </a>
+                                        <?php else: ?>
+                                            <button type="button" class="button button-small reserve-btn"
+                                                    data-code="<?php echo esc_attr($code->demo_code); ?>"
+                                                    style="color: #7c3aed;">
+                                                <?php _e('Reservieren', 'bewerbungstrainer'); ?>
+                                            </button>
+                                        <?php endif; ?>
+                                        <!-- Delete Button -->
+                                        <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=bewerbungstrainer-demo-codes&action=delete&code=' . $code->demo_code . ($filter ? '&filter=' . $filter : '')), 'delete_code_' . $code->demo_code); ?>"
+                                           class="button button-small delete-code-btn"
+                                           data-code="<?php echo esc_attr($code->demo_code); ?>"
+                                           data-sessions="<?php echo intval($code->session_count); ?>"
+                                           data-used="<?php echo $is_used ? '1' : '0'; ?>"
+                                           style="color: #dc2626;"
+                                           title="<?php _e('Code und alle zugehörigen Daten löschen', 'bewerbungstrainer'); ?>">
+                                            <?php _e('Löschen', 'bewerbungstrainer'); ?>
                                         </a>
-                                    <?php else: ?>
-                                        <button type="button" class="button button-small reserve-btn"
-                                                data-code="<?php echo esc_attr($code->demo_code); ?>"
-                                                style="color: #7c3aed;">
-                                            <?php _e('Reservieren', 'bewerbungstrainer'); ?>
-                                        </button>
-                                    <?php endif; ?>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -330,6 +357,33 @@ class Bewerbungstrainer_Demo_Codes {
             function closeReserveModal() {
                 document.getElementById('reserve-modal').style.display = 'none';
             }
+
+            // Delete confirmation
+            jQuery(document).ready(function($) {
+                $('.delete-code-btn').on('click', function(e) {
+                    e.preventDefault();
+                    var code = $(this).data('code');
+                    var sessions = $(this).data('sessions');
+                    var isUsed = $(this).data('used') == '1';
+                    var href = $(this).attr('href');
+
+                    var message = 'Möchten Sie den Code ' + code + ' wirklich löschen?';
+                    if (isUsed || sessions > 0) {
+                        message += '\n\nACHTUNG: Dieser Code wurde bereits verwendet!';
+                        message += '\nAlle zugehörigen Daten werden ebenfalls gelöscht:';
+                        message += '\n- ' + sessions + ' Session(s)';
+                        message += '\n- Alle Übungen (Simulator, Video-Training, Briefings)';
+                        message += '\n- Nutzungslimits und -protokolle';
+                        message += '\n\nDiese Aktion kann nicht rückgängig gemacht werden!';
+                    } else {
+                        message += '\n\nDieser Code wurde noch nicht verwendet.';
+                    }
+
+                    if (confirm(message)) {
+                        window.location.href = href;
+                    }
+                });
+            });
             </script>
 
             <!-- Copy Codes Section for Unused Codes -->
@@ -804,6 +858,130 @@ class Bewerbungstrainer_Demo_Codes {
             array('%d', '%s', '%s'),
             array('%s')
         ) !== false;
+    }
+
+    /**
+     * Delete a demo code and all associated data
+     *
+     * @param string $code Demo code to delete
+     * @return array ['success' => bool, 'deleted' => string description of what was deleted]
+     */
+    public function delete_code_with_data($code) {
+        global $wpdb;
+
+        $code = strtoupper(sanitize_text_field($code));
+        $deleted_counts = array();
+
+        // Check if code exists
+        if (!$this->is_valid_code($code)) {
+            return array('success' => false, 'deleted' => '');
+        }
+
+        error_log('[DEMO_CODES] Starting deletion of code: ' . $code);
+
+        // 1. Delete from roleplay_sessions (wp_bewerbungstrainer_sessions)
+        $table_roleplay = $wpdb->prefix . 'bewerbungstrainer_sessions';
+        $count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_roleplay WHERE demo_code = %s", $code));
+        if ($count > 0) {
+            $wpdb->delete($table_roleplay, array('demo_code' => $code), array('%s'));
+            $deleted_counts['roleplay_sessions'] = $count;
+            error_log('[DEMO_CODES] Deleted ' . $count . ' roleplay sessions');
+        }
+
+        // 2. Delete from video_training_sessions
+        $table_video = $wpdb->prefix . 'bewerbungstrainer_video_training_sessions';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_video'") === $table_video) {
+            $count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_video WHERE demo_code = %s", $code));
+            if ($count > 0) {
+                $wpdb->delete($table_video, array('demo_code' => $code), array('%s'));
+                $deleted_counts['video_training'] = $count;
+                error_log('[DEMO_CODES] Deleted ' . $count . ' video training sessions');
+            }
+        }
+
+        // 3. Delete from simulator_sessions and related answers
+        $table_simulator = $wpdb->prefix . 'bewerbungstrainer_simulator_sessions';
+        $table_simulator_answers = $wpdb->prefix . 'bewerbungstrainer_simulator_answers';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_simulator'") === $table_simulator) {
+            // First get session IDs to delete related answers
+            $session_ids = $wpdb->get_col($wpdb->prepare("SELECT id FROM $table_simulator WHERE demo_code = %s", $code));
+            if (!empty($session_ids)) {
+                // Delete answers
+                if ($wpdb->get_var("SHOW TABLES LIKE '$table_simulator_answers'") === $table_simulator_answers) {
+                    $placeholders = implode(',', array_fill(0, count($session_ids), '%d'));
+                    $wpdb->query($wpdb->prepare(
+                        "DELETE FROM $table_simulator_answers WHERE session_id IN ($placeholders)",
+                        $session_ids
+                    ));
+                }
+                // Delete sessions
+                $count = count($session_ids);
+                $wpdb->delete($table_simulator, array('demo_code' => $code), array('%s'));
+                $deleted_counts['simulator'] = $count;
+                error_log('[DEMO_CODES] Deleted ' . $count . ' simulator sessions');
+            }
+        }
+
+        // 4. Delete from smartbriefing_briefings
+        $table_briefings = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_briefings';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_briefings'") === $table_briefings) {
+            $count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_briefings WHERE demo_code = %s", $code));
+            if ($count > 0) {
+                $wpdb->delete($table_briefings, array('demo_code' => $code), array('%s'));
+                $deleted_counts['briefings'] = $count;
+                error_log('[DEMO_CODES] Deleted ' . $count . ' smart briefings');
+            }
+        }
+
+        // 5. Delete from usage_limits
+        $table_limits = $wpdb->prefix . 'bewerbungstrainer_usage_limits';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_limits'") === $table_limits) {
+            $wpdb->delete($table_limits, array('demo_code' => $code), array('%s'));
+            error_log('[DEMO_CODES] Deleted usage limits for code');
+        }
+
+        // 6. Delete from usage_log
+        $table_log = $wpdb->prefix . 'bewerbungstrainer_usage_log';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_log'") === $table_log) {
+            $count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_log WHERE demo_code = %s", $code));
+            if ($count > 0) {
+                $wpdb->delete($table_log, array('demo_code' => $code), array('%s'));
+                $deleted_counts['usage_log'] = $count;
+                error_log('[DEMO_CODES] Deleted ' . $count . ' usage log entries');
+            }
+        }
+
+        // 7. Finally, delete the demo code itself
+        $result = $wpdb->delete($this->table_demo_codes, array('demo_code' => $code), array('%s'));
+
+        if ($result === false) {
+            error_log('[DEMO_CODES] Failed to delete code: ' . $wpdb->last_error);
+            return array('success' => false, 'deleted' => '');
+        }
+
+        // Build summary of what was deleted
+        $summary_parts = array();
+        if (!empty($deleted_counts['roleplay_sessions'])) {
+            $summary_parts[] = $deleted_counts['roleplay_sessions'] . ' Live-Simulationen';
+        }
+        if (!empty($deleted_counts['video_training'])) {
+            $summary_parts[] = $deleted_counts['video_training'] . ' Wirkungs-Analysen';
+        }
+        if (!empty($deleted_counts['simulator'])) {
+            $summary_parts[] = $deleted_counts['simulator'] . ' Szenario-Trainings';
+        }
+        if (!empty($deleted_counts['briefings'])) {
+            $summary_parts[] = $deleted_counts['briefings'] . ' Smart Briefings';
+        }
+        if (!empty($deleted_counts['usage_log'])) {
+            $summary_parts[] = $deleted_counts['usage_log'] . ' Nutzungseinträge';
+        }
+
+        $summary = !empty($summary_parts) ? implode(', ', $summary_parts) : 'keine zugehörigen Daten';
+
+        error_log('[DEMO_CODES] Successfully deleted code ' . $code . ': ' . $summary);
+
+        return array('success' => true, 'deleted' => $summary);
     }
 
     /**
