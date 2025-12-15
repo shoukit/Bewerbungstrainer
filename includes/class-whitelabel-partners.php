@@ -159,16 +159,16 @@ class Bewerbungstrainer_Whitelabel_Partners {
      */
     public function register_post_type() {
         $labels = array(
-            'name'                  => 'White-Label Partner',
+            'name'                  => 'Partner Branding',
             'singular_name'         => 'Partner',
-            'menu_name'             => 'White-Label Partner',
+            'menu_name'             => 'Partner Branding',
             'name_admin_bar'        => 'Partner',
             'add_new'               => 'Neuen Partner anlegen',
             'add_new_item'          => 'Neuen Partner anlegen',
             'new_item'              => 'Neuer Partner',
             'edit_item'             => 'Partner bearbeiten',
             'view_item'             => 'Partner anzeigen',
-            'all_items'             => 'Alle Partner',
+            'all_items'             => 'Partner Branding',
             'search_items'          => 'Partner suchen',
             'not_found'             => 'Keine Partner gefunden',
             'not_found_in_trash'    => 'Keine Partner im Papierkorb',
