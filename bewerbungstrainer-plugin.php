@@ -226,6 +226,9 @@ class Bewerbungstrainer_Plugin {
         // Add main admin menu (priority 9 to ensure it runs before sub-menus)
         add_action('admin_menu', array($this, 'add_admin_menu'), 9);
 
+        // Remove duplicate submenu entry (priority 999 to run after all submenus are added)
+        add_action('admin_menu', array($this, 'remove_duplicate_submenu'), 999);
+
         // Increase upload limits for video training API
         add_filter('upload_size_limit', array($this, 'increase_upload_size_limit'));
 
@@ -247,10 +250,17 @@ class Bewerbungstrainer_Plugin {
             __('Karriereheld', 'bewerbungstrainer'),
             'manage_options',
             'bewerbungstrainer',
-            null, // No callback - removes duplicate submenu item
+            '__return_null',
             'dashicons-welcome-learn-more',
             30
         );
+    }
+
+    /**
+     * Remove duplicate "Karriereheld" submenu entry
+     */
+    public function remove_duplicate_submenu() {
+        remove_submenu_page('bewerbungstrainer', 'bewerbungstrainer');
     }
 
     /**
