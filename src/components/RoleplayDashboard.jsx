@@ -5,8 +5,6 @@ import {
   Target,
   ArrowLeft,
   Plus,
-  Filter,
-  Search,
   MessageSquare,
   Clock,
   TrendingUp,
@@ -14,7 +12,6 @@ import {
   Loader2,
   AlertCircle,
   FolderOpen,
-  LayoutGrid,
   Briefcase,
   Users,
   Banknote,
@@ -22,7 +19,8 @@ import {
   User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import RoleplayVariablesDialog from './RoleplayVariablesDialog';
@@ -85,85 +83,6 @@ const normalizeCategory = (category) => {
     .replace(/[^a-z0-9]/g, '');
 };
 
-/**
- * CategoryFilterBar component for roleplay scenarios
- */
-const CategoryFilterBar = ({ selectedCategory, onSelectCategory, primaryAccent, availableCategories }) => {
-  const categories = [
-    { key: null, label: 'Alle', icon: LayoutGrid },
-    ...availableCategories.map(key => ({
-      key,
-      ...CATEGORY_CONFIG[key],
-    })),
-  ];
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '10px',
-        marginBottom: '24px',
-      }}
-    >
-      {categories.map((cat) => {
-        const isSelected = selectedCategory === cat.key;
-        const IconComponent = cat.icon || LayoutGrid;
-        const chipColor = cat.key === null ? primaryAccent : cat.color;
-
-        return (
-          <button
-            key={cat.key || 'all'}
-            onClick={() => onSelectCategory(cat.key)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              borderRadius: '24px',
-              fontSize: '14px',
-              fontWeight: 600,
-              border: `2px solid ${isSelected ? chipColor : COLORS.slate[200]}`,
-              backgroundColor: isSelected ? (cat.key === null ? `${primaryAccent}15` : cat.bgColor) : 'white',
-              color: isSelected ? chipColor : COLORS.slate[600],
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <IconComponent style={{ width: '16px', height: '16px' }} />
-            {cat.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-};
-
-/**
- * Shared input styles for consistent form elements
- */
-const getInputStyles = (primaryAccent, focusRing) => ({
-  base: {
-    height: '44px',
-    borderRadius: '12px',
-    border: `2px solid ${COLORS.slate[200]}`,
-    backgroundColor: COLORS.white,
-    color: COLORS.slate[800],
-    fontSize: '14px',
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-    outline: 'none',
-    transition: 'all 0.2s',
-  },
-  focus: {
-    borderColor: primaryAccent,
-    boxShadow: `0 0 0 3px ${focusRing}`,
-  },
-  blur: {
-    borderColor: COLORS.slate[200],
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-  },
-});
-
 const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenticated, requireAuth, setPendingAction, pendingScenario, clearPendingScenario, onNavigateToHistory }) => {
   const [scenarios, setScenarios] = useState([]);
   const [filteredScenarios, setFilteredScenarios] = useState([]);
@@ -176,15 +95,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   // Get themed styles
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const iconPrimary = branding?.['--icon-primary'] || DEFAULT_BRANDING['--icon-primary'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const focusRing = branding?.['--focus-ring'] || DEFAULT_BRANDING['--focus-ring'];
-
-  // Memoized input styles
-  const inputStyles = useMemo(
-    () => getInputStyles(primaryAccent, focusRing),
-    [primaryAccent, focusRing]
-  );
 
   // Filters and view mode
   const [searchQuery, setSearchQuery] = useState('');
@@ -446,66 +357,37 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
             )}
           </div>
 
-          {/* Search and Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mt-6">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
-                style={{ color: COLORS.slate[400] }}
-              />
-              <input
-                type="text"
-                placeholder="Szenarien durchsuchen..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  ...inputStyles.base,
-                  width: '100%',
-                  paddingLeft: '48px',
-                  paddingRight: '16px',
-                }}
-                onFocus={(e) => Object.assign(e.target.style, inputStyles.focus)}
-                onBlur={(e) => Object.assign(e.target.style, inputStyles.blur)}
-              />
-            </div>
-
-            {/* Difficulty filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5" style={{ color: iconPrimary }} />
-              <select
-                value={difficultyFilter}
-                onChange={(e) => setDifficultyFilter(e.target.value)}
-                style={{
-                  ...inputStyles.base,
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                }}
-                onFocus={(e) => Object.assign(e.target.style, inputStyles.focus)}
-                onBlur={(e) => Object.assign(e.target.style, inputStyles.blur)}
-              >
-                <option value="all">Alle Schwierigkeiten</option>
-                <option value="easy">Einfach</option>
-                <option value="medium">Mittel</option>
-                <option value="hard">Schwer</option>
-              </select>
-            </div>
-
-            {/* View Toggle */}
-            <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+          {/* Search, Filters and Categories - Responsive */}
+          <div style={{ marginTop: '24px' }}>
+            <MobileFilterSheet
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="Szenarien durchsuchen..."
+              categories={availableCategories.map(key => ({
+                key,
+                label: CATEGORY_CONFIG[key]?.label || key,
+                color: CATEGORY_CONFIG[key]?.color,
+                bgColor: CATEGORY_CONFIG[key]?.bgColor,
+                icon: CATEGORY_CONFIG[key]?.icon,
+              }))}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              showCategories={availableCategories.length > 0}
+              difficultyOptions={[
+                { value: 'all', label: 'Alle Schwierigkeiten' },
+                { value: 'easy', label: 'Einfach' },
+                { value: 'medium', label: 'Mittel' },
+                { value: 'hard', label: 'Schwer' },
+              ]}
+              selectedDifficulty={difficultyFilter}
+              onDifficultyChange={setDifficultyFilter}
+              showDifficulty={true}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+            />
           </div>
         </motion.div>
       </div>
-
-      {/* Category Filter */}
-      {availableCategories.length > 0 && (
-        <CategoryFilterBar
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-          primaryAccent={primaryAccent}
-          availableCategories={availableCategories}
-        />
-      )}
 
       {/* Scenarios Grid */}
       <div>

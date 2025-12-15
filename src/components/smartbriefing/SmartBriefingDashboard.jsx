@@ -22,11 +22,11 @@ import {
   ChevronRight,
   Sparkles,
   FolderOpen,
-  Search,
-  LayoutGrid,
+  TrendingUp,
 } from 'lucide-react';
 import { COLORS } from '@/config/colors';
-import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
+import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
+import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 
 /**
  * Icon mapping for template icons
@@ -50,13 +50,13 @@ const ICON_MAP = {
 };
 
 /**
- * Category configuration
+ * Category configuration with icons for MobileFilterSheet
  */
 const CATEGORIES = {
-  CAREER: { label: 'Karriere', color: '#3b82f6' },
-  SALES: { label: 'Vertrieb', color: '#22c55e' },
-  LEADERSHIP: { label: 'Fuhrung', color: '#a855f7' },
-  COMMUNICATION: { label: 'Kommunikation', color: '#f59e0b' },
+  CAREER: { label: 'Karriere', color: '#3b82f6', bgColor: '#eff6ff', icon: Briefcase },
+  SALES: { label: 'Vertrieb', color: '#22c55e', bgColor: '#f0fdf4', icon: TrendingUp },
+  LEADERSHIP: { label: 'Führung', color: '#a855f7', bgColor: '#faf5ff', icon: Users },
+  COMMUNICATION: { label: 'Kommunikation', color: '#f59e0b', bgColor: '#fffbeb', icon: MessageCircle },
 };
 
 /**
@@ -235,99 +235,31 @@ const SmartBriefingDashboard = ({
           )}
         </div>
 
-        {/* Search and Filters */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '24px', alignItems: 'center' }}>
-          {/* Search Input */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
-            <Search
-              style={{
-                position: 'absolute',
-                left: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '18px',
-                height: '18px',
-                color: COLORS.slate[400],
-                pointerEvents: 'none',
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Templates durchsuchen..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 14px 12px 44px',
-                borderRadius: '12px',
-                border: `1px solid ${COLORS.slate[200]}`,
-                fontSize: '14px',
-                color: COLORS.slate[900],
-                backgroundColor: '#fff',
-                outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = primaryAccent;
-                e.target.style.boxShadow = `0 0 0 3px ${primaryAccent}20`;
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = COLORS.slate[200];
-                e.target.style.boxShadow = 'none';
-              }}
-            />
-          </div>
-
-          {/* View Toggle */}
-          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+        {/* Search, Filters and Categories - Responsive */}
+        <div style={{ marginTop: '24px' }}>
+          <MobileFilterSheet
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Briefings durchsuchen..."
+            categories={availableCategories.map(cat => {
+              const config = CATEGORIES[cat] || { label: cat, color: '#64748b', bgColor: '#f1f5f9', icon: FileText };
+              return {
+                key: cat,
+                label: config.label,
+                color: config.color,
+                bgColor: config.bgColor,
+                icon: config.icon,
+              };
+            })}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            showCategories={availableCategories.length > 1}
+            showDifficulty={false}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
         </div>
       </div>
-
-      {/* Category Filter */}
-      {availableCategories.length > 1 && (
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setSelectedCategory(null)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '20px',
-                border: 'none',
-                backgroundColor: selectedCategory === null ? primaryAccent : '#f1f5f9',
-                color: selectedCategory === null ? 'white' : '#64748b',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              Alle
-            </button>
-            {availableCategories.map(cat => {
-              const category = CATEGORIES[cat] || { label: cat, color: '#64748b' };
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    border: 'none',
-                    backgroundColor: selectedCategory === cat ? category.color : '#f1f5f9',
-                    color: selectedCategory === cat ? 'white' : '#64748b',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {category.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Loading State */}
       {loading && (

@@ -343,6 +343,13 @@ const ScenarioCardGridView = ({
 
 /**
  * ScenarioCardListView - List/row view of the card
+ *
+ * Mobile Layout (< 640px):
+ *   Row 1: Title (full width) + Difficulty Badge
+ *   Row 2: [Icon] Meta info... [Action]
+ *
+ * Desktop Layout (>= 640px):
+ *   [Icon] | Title + Description + Meta | Badges + Action
  */
 const ScenarioCardListView = ({
   title,
@@ -372,80 +379,119 @@ const ScenarioCardListView = ({
   >
     <div
       onClick={onClick}
-      className={`bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-4 cursor-pointer border border-slate-100 flex items-center gap-4 ${className}`}
+      className={`bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-4 cursor-pointer border border-slate-100 ${className}`}
       style={style}
     >
-      {/* Icon */}
-      {icon && (
-        <IconContainer
-          icon={icon}
-          gradient={headerGradient}
-          textColor={headerText}
-          size="md"
-        />
-      )}
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        {/* Title Row */}
-        <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-base font-bold text-slate-900 truncate">{title}</h3>
-          {subtitle && (
-            <span
-              className="text-xs font-semibold hidden sm:inline"
-              style={{ color: primaryAccent }}
-            >
-              {subtitle}
-            </span>
+      {/* Mobile Layout: Title on top row */}
+      <div className="sm:hidden">
+        {/* Row 1: Title + Difficulty */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <h3 className="text-base font-bold text-slate-900 flex-1">{title}</h3>
+          {difficulty && (
+            <Badge className={`${difficultyConfig.classes} flex-shrink-0`}>
+              {difficultyConfig.label}
+            </Badge>
           )}
         </div>
 
-        {/* Description */}
-        {description && (
-          <p className="text-slate-600 text-sm line-clamp-1 mb-1 hidden sm:block">
-            {description}
-          </p>
-        )}
-
-        {/* Meta information */}
-        <div className="flex items-center gap-3 text-xs text-slate-500">
-          {meta.slice(0, 3).map((item, idx) => (
-            <MetaItem key={idx} icon={item.icon} text={item.text} />
-          ))}
+        {/* Row 2: Icon + Meta + Action */}
+        <div className="flex items-center gap-3">
+          {icon && (
+            <IconContainer
+              icon={icon}
+              gradient={headerGradient}
+              textColor={headerText}
+              size="sm"
+            />
+          )}
+          <div className="flex-1 flex items-center gap-3 text-xs text-slate-500">
+            {meta.slice(0, 2).map((item, idx) => (
+              <MetaItem key={idx} icon={item.icon} text={item.text} />
+            ))}
+          </div>
+          {action && (
+            <div
+              className="flex items-center gap-1 text-sm font-semibold"
+              style={{ color: primaryAccent }}
+            >
+              {action.icon && <action.icon className="w-4 h-4" />}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Badges */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Tags (only first one in list view) */}
-        {tags.length > 0 && (
-          <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs hidden md:inline">
-            {tags[0]}
-          </span>
+      {/* Desktop Layout: Horizontal row */}
+      <div className="hidden sm:flex items-center gap-4">
+        {/* Icon */}
+        {icon && (
+          <IconContainer
+            icon={icon}
+            gradient={headerGradient}
+            textColor={headerText}
+            size="md"
+          />
         )}
 
-        {/* Category badge */}
-        <div className="hidden sm:block">
-          {categoryBadge}
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Title Row */}
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-base font-bold text-slate-900 truncate">{title}</h3>
+            {subtitle && (
+              <span
+                className="text-xs font-semibold"
+                style={{ color: primaryAccent }}
+              >
+                {subtitle}
+              </span>
+            )}
+          </div>
+
+          {/* Description */}
+          {description && (
+            <p className="text-slate-600 text-sm line-clamp-1 mb-1">
+              {description}
+            </p>
+          )}
+
+          {/* Meta information */}
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            {meta.slice(0, 3).map((item, idx) => (
+              <MetaItem key={idx} icon={item.icon} text={item.text} />
+            ))}
+          </div>
         </div>
 
-        {/* Difficulty badge */}
-        {difficulty && (
-          <Badge className={difficultyConfig.classes}>
-            {difficultyConfig.label}
-          </Badge>
-        )}
+        {/* Badges */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Tags (only first one in list view) */}
+          {tags.length > 0 && (
+            <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs hidden md:inline">
+              {tags[0]}
+            </span>
+          )}
 
-        {/* Action button */}
-        {action && (
-          <div
-            className="flex items-center gap-1 text-sm font-semibold ml-2"
-            style={{ color: primaryAccent }}
-          >
-            <span className="hidden sm:inline">{action.label}</span>
-            {action.icon && <action.icon className="w-4 h-4" />}
-          </div>
-        )}
+          {/* Category badge */}
+          {categoryBadge}
+
+          {/* Difficulty badge */}
+          {difficulty && (
+            <Badge className={difficultyConfig.classes}>
+              {difficultyConfig.label}
+            </Badge>
+          )}
+
+          {/* Action button */}
+          {action && (
+            <div
+              className="flex items-center gap-1 text-sm font-semibold ml-2"
+              style={{ color: primaryAccent }}
+            >
+              <span>{action.label}</span>
+              {action.icon && <action.icon className="w-4 h-4" />}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </motion.div>
