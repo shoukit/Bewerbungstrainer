@@ -154,30 +154,30 @@ const GameModeCard = ({ mode, onSelect, headerGradient, headerText, primaryAccen
 /**
  * Stats Card Component
  */
-const StatsCard = ({ icon: Icon, label, value, primaryAccent, primaryAccentLight }) => {
+const StatsCard = ({ icon: Icon, label, value, primaryAccent, primaryAccentLight, isMobile }) => {
   // Use branding colors for all stats cards
 
   return (
     <div style={{
       backgroundColor: 'white',
-      borderRadius: '12px',
-      padding: '16px',
+      borderRadius: isMobile ? '10px' : '12px',
+      padding: isMobile ? '12px' : '16px',
       border: `1px solid ${COLORS.slate[200]}`,
     }}>
       <div style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '10px',
+        width: isMobile ? '32px' : '40px',
+        height: isMobile ? '32px' : '40px',
+        borderRadius: isMobile ? '8px' : '10px',
         backgroundColor: primaryAccentLight,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: '12px',
+        marginBottom: isMobile ? '8px' : '12px',
       }}>
-        <Icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
+        <Icon style={{ width: isMobile ? '16px' : '20px', height: isMobile ? '16px' : '20px', color: primaryAccent }} />
       </div>
-      <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{value}</div>
-      <div style={{ fontSize: '13px', color: COLORS.slate[500] }}>{label}</div>
+      <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: 700, color: COLORS.slate[900] }}>{value}</div>
+      <div style={{ fontSize: isMobile ? '11px' : '13px', color: COLORS.slate[500] }}>{label}</div>
     </div>
   );
 };
@@ -544,6 +544,15 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
     totalPracticeTime: 0,
   });
 
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Pending mode for after login
   const [pendingMode, setPendingMode] = useState(null);
 
@@ -635,28 +644,28 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
 
   // Main Mode Selection View
   return (
-    <div style={{ padding: '24px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+    <div style={{ padding: isMobile ? '16px' : '24px' }}>
+      {/* Header - Compact on mobile */}
+      <div style={{ marginBottom: isMobile ? '20px' : '32px', textAlign: 'center' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '12px',
-          marginBottom: '12px',
+          gap: isMobile ? '10px' : '12px',
+          marginBottom: isMobile ? '8px' : '12px',
         }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
+            width: isMobile ? '40px' : '48px',
+            height: isMobile ? '40px' : '48px',
+            borderRadius: isMobile ? '12px' : '14px',
             background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Dumbbell style={{ width: '24px', height: '24px', color: headerText }} />
+            <Dumbbell style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px', color: headerText }} />
           </div>
           <h1 style={{
-            fontSize: '28px',
+            fontSize: isMobile ? '22px' : '28px',
             fontWeight: 700,
             color: COLORS.slate[900],
             margin: 0,
@@ -665,7 +674,7 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
           </h1>
         </div>
         <p style={{
-          fontSize: '16px',
+          fontSize: isMobile ? '14px' : '16px',
           color: COLORS.slate[600],
           maxWidth: '600px',
           margin: '0 auto',
@@ -674,18 +683,18 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
         </p>
       </div>
 
-      <div style={{ padding: '0 24px' }}>
-        {/* Stats Row */}
+      <div style={{ padding: isMobile ? '0 8px' : '0 24px' }}>
+        {/* Stats Row - 2x2 grid on mobile */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '16px',
-          marginBottom: '32px',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: isMobile ? '10px' : '16px',
+          marginBottom: isMobile ? '24px' : '32px',
         }}>
-          <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
-          <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
-          <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
-          <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+          <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
+          <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
+          <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
+          <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
         </div>
 
         {/* Section Title */}
