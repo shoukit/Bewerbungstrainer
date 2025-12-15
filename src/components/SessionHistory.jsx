@@ -26,6 +26,7 @@ import {
   Sparkles,
   Trash2,
   X,
+  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
@@ -903,6 +904,11 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     window.scrollTo(0, 0);
   }, [activeTab, selectedTrainingSession]);
 
+  // Reset search query when tab changes
+  useEffect(() => {
+    setSearchQuery('');
+  }, [activeTab]);
+
   // Data states
   const [roleplaySessions, setRoleplaySessions] = useState([]);
   const [simulatorSessions, setSimulatorSessions] = useState([]);
@@ -914,6 +920,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Selected briefing for workbook view
   const [selectedBriefing, setSelectedBriefing] = useState(null);
+
+  // Search/filter state
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Delete dialog state
   const [deleteDialog, setDeleteDialog] = useState({
@@ -1052,6 +1061,28 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       case TABS.VIDEO: return videoScenarioMap;
       default: return roleplayScenarioMap;
     }
+  };
+
+  // Filter sessions based on search query
+  const filterBySearchQuery = (sessions, scenarioMap) => {
+    if (!searchQuery.trim()) return sessions;
+    const query = searchQuery.toLowerCase().trim();
+
+    return sessions.filter((item) => {
+      // Get the title/name to search
+      let searchableText = '';
+
+      if (activeTab === TABS.BRIEFINGS) {
+        // Briefing: check title and template_title
+        searchableText = `${item.title || ''} ${item.template_title || ''}`.toLowerCase();
+      } else {
+        // Session: check scenario title and session-specific fields
+        const scenario = scenarioMap[item.scenario_id];
+        searchableText = `${scenario?.title || ''} ${item.scenario_title || ''} ${item.position || ''} ${item.company || ''}`.toLowerCase();
+      }
+
+      return searchableText.includes(query);
+    });
   };
 
   // Total sessions count
@@ -1385,8 +1416,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     );
   }
 
-  const activeSessions = getActiveSessions();
   const activeScenarioMap = getActiveScenarioMap();
+  const activeSessions = filterBySearchQuery(getActiveSessions(), activeScenarioMap);
 
   return (
     <div style={{ padding: '24px' }}>
@@ -1604,16 +1635,101 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         </div>
       </div>
 
-      {/* Desktop only: Refresh button with text */}
-      <div style={{ margin: '0 24px 24px', display: 'flex', justifyContent: 'flex-end' }} className="desktop-only-refresh-container">
-        <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
-          <RefreshCw style={{ width: '16px', height: '16px', marginRight: '8px' }} className={isLoading ? 'animate-spin' : ''} />
-          Aktualisieren
-        </Button>
+      {/* Search Bar & Refresh Button */}
+      <div style={{ margin: '0 24px 24px' }}>
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'center',
+        }}>
+          {/* Search Input */}
+          <div style={{
+            flex: 1,
+            position: 'relative',
+          }}>
+            <Search
+              size={18}
+              style={{
+                position: 'absolute',
+                left: '14px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#94a3b8',
+                pointerEvents: 'none',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Suchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px 12px 44px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                fontSize: '14px',
+                outline: 'none',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+                backgroundColor: '#fff',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = primaryAccent;
+                e.target.style.boxShadow = `0 0 0 3px ${primaryAccent}20`;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e2e8f0';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                }}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Desktop Refresh Button */}
+          <div className="desktop-only-refresh">
+            <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
+              <RefreshCw style={{ width: '16px', height: '16px', marginRight: '8px' }} className={isLoading ? 'animate-spin' : ''} />
+              Aktualisieren
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter result count */}
+        {searchQuery && (
+          <div style={{
+            marginTop: '12px',
+            fontSize: '13px',
+            color: '#64748b',
+          }}>
+            {filterBySearchQuery(getActiveSessions(), getActiveScenarioMap()).length} Ergebnis{filterBySearchQuery(getActiveSessions(), getActiveScenarioMap()).length !== 1 ? 'se' : ''} gefunden
+          </div>
+        )}
       </div>
       <style>{`
         @media (max-width: 640px) {
-          .desktop-only-refresh-container { display: none !important; }
+          .desktop-only-refresh { display: none !important; }
         }
       `}</style>
 
@@ -1658,8 +1774,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             }}
           >
             {activeTab === TABS.BRIEFINGS ? (
-              // Render briefings
-              briefings.map((briefing) => (
+              // Render briefings (filtered via activeSessions)
+              activeSessions.map((briefing) => (
                 <BriefingCard
                   key={briefing.id}
                   briefing={briefing}
