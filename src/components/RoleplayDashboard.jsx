@@ -14,6 +14,12 @@ import {
   Loader2,
   AlertCircle,
   FolderOpen,
+  LayoutGrid,
+  Briefcase,
+  Users,
+  Banknote,
+  Presentation,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
@@ -23,6 +29,115 @@ import RoleplayVariablesDialog from './RoleplayVariablesDialog';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
+
+/**
+ * Category type configuration for roleplay scenarios
+ */
+const CATEGORY_CONFIG = {
+  vorstellungsgespraech: {
+    label: 'Vorstellungsgespräch',
+    icon: Briefcase,
+    color: '#3A7FA7',
+    bgColor: '#E8F4F8',
+  },
+  gehaltsverhandlung: {
+    label: 'Gehaltsverhandlung',
+    icon: Banknote,
+    color: '#059669',
+    bgColor: '#d1fae5',
+  },
+  fuehrungsgespraech: {
+    label: 'Führungsgespräch',
+    icon: Users,
+    color: '#7c3aed',
+    bgColor: '#ede9fe',
+  },
+  praesentation: {
+    label: 'Präsentation',
+    icon: Presentation,
+    color: '#d97706',
+    bgColor: '#fef3c7',
+  },
+  selbstvorstellung: {
+    label: 'Selbstvorstellung',
+    icon: User,
+    color: '#ec4899',
+    bgColor: '#fce7f3',
+  },
+  training: {
+    label: 'Training',
+    icon: Target,
+    color: '#64748b',
+    bgColor: '#f1f5f9',
+  },
+};
+
+/**
+ * Normalize category string for matching
+ */
+const normalizeCategory = (category) => {
+  if (!category) return null;
+  return category.toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]/g, '');
+};
+
+/**
+ * CategoryFilterBar component for roleplay scenarios
+ */
+const CategoryFilterBar = ({ selectedCategory, onSelectCategory, primaryAccent, availableCategories }) => {
+  const categories = [
+    { key: null, label: 'Alle', icon: LayoutGrid },
+    ...availableCategories.map(key => ({
+      key,
+      ...CATEGORY_CONFIG[key],
+    })),
+  ];
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '10px',
+        marginBottom: '24px',
+      }}
+    >
+      {categories.map((cat) => {
+        const isSelected = selectedCategory === cat.key;
+        const IconComponent = cat.icon || LayoutGrid;
+        const chipColor = cat.key === null ? primaryAccent : cat.color;
+
+        return (
+          <button
+            key={cat.key || 'all'}
+            onClick={() => onSelectCategory(cat.key)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '24px',
+              fontSize: '14px',
+              fontWeight: 600,
+              border: `2px solid ${isSelected ? chipColor : COLORS.slate[200]}`,
+              backgroundColor: isSelected ? (cat.key === null ? `${primaryAccent}15` : cat.bgColor) : 'white',
+              color: isSelected ? chipColor : COLORS.slate[600],
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <IconComponent style={{ width: '16px', height: '16px' }} />
+            {cat.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 /**
  * Shared input styles for consistent form elements
@@ -74,7 +189,20 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   // Filters and view mode
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
+
+  // Compute available categories from scenarios
+  const availableCategories = useMemo(() => {
+    const categories = new Set();
+    scenarios.forEach(scenario => {
+      const normalized = normalizeCategory(scenario.category);
+      if (normalized && CATEGORY_CONFIG[normalized]) {
+        categories.add(normalized);
+      }
+    });
+    return Array.from(categories);
+  }, [scenarios]);
 
   // Custom scenario dialog
   const [showCustomDialog, setShowCustomDialog] = useState(false);
@@ -97,7 +225,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   // Filter scenarios when search, filters, or partner changes
   useEffect(() => {
     filterScenarios();
-  }, [scenarios, searchQuery, difficultyFilter, filterByPartner]);
+  }, [scenarios, searchQuery, difficultyFilter, selectedCategory, filterByPartner]);
 
   // Handle pending scenario after login - automatically open variables dialog
   useEffect(() => {
@@ -167,6 +295,13 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
         total: scenarios.length,
         afterPartnerFilter: filtered.length,
       });
+    }
+
+    // Category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(scenario =>
+        normalizeCategory(scenario.category) === selectedCategory
+      );
     }
 
     // Search filter
@@ -361,6 +496,16 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
           </div>
         </motion.div>
       </div>
+
+      {/* Category Filter */}
+      {availableCategories.length > 0 && (
+        <CategoryFilterBar
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          primaryAccent={primaryAccent}
+          availableCategories={availableCategories}
+        />
+      )}
 
       {/* Scenarios Grid */}
       <div>

@@ -391,7 +391,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
         {/* Search and Filters */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '24px', alignItems: 'center' }}>
           {/* Search Input */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '200px', maxWidth: '400px' }}>
+          <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
             <Search
               style={{
                 position: 'absolute',

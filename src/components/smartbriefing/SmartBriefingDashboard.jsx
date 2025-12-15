@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { usePartner } from '../../context/PartnerContext';
 import wordpressAPI from '../../services/wordpress-api';
 import {
@@ -22,7 +22,10 @@ import {
   ChevronRight,
   Sparkles,
   FolderOpen,
+  Search,
+  LayoutGrid,
 } from 'lucide-react';
+import { COLORS } from '@/config/colors';
 import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
 
 /**
@@ -94,15 +97,16 @@ const SmartBriefingDashboard = ({
   requireAuth,
   setPendingAction,
 }) => {
-  const { config } = usePartner();
+  const { config, branding } = usePartner();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Get primary accent color from partner config
-  const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
+  const primaryAccent = branding?.['--primary-accent'] || config?.buttonGradientStart || '#3A7FA7';
 
   // Fetch templates on mount
   useEffect(() => {
@@ -138,13 +142,32 @@ const SmartBriefingDashboard = ({
     onSelectTemplate(template);
   };
 
-  // Filter templates by category
-  const filteredTemplates = selectedCategory
-    ? templates.filter(t => t.category === selectedCategory)
-    : templates;
-
   // Get unique categories from templates
-  const availableCategories = [...new Set(templates.map(t => t.category))];
+  const availableCategories = useMemo(() =>
+    [...new Set(templates.map(t => t.category))],
+    [templates]
+  );
+
+  // Filter templates by category and search
+  const filteredTemplates = useMemo(() => {
+    let filtered = [...templates];
+
+    // Category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(t => t.category === selectedCategory);
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(t =>
+        t.title?.toLowerCase().includes(query) ||
+        t.description?.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [templates, selectedCategory, searchQuery]);
 
   return (
     <div
@@ -211,8 +234,51 @@ const SmartBriefingDashboard = ({
             </button>
           )}
         </div>
-        {/* View Toggle */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+
+        {/* Search and Filters */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '24px', alignItems: 'center' }}>
+          {/* Search Input */}
+          <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
+            <Search
+              style={{
+                position: 'absolute',
+                left: '14px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '18px',
+                height: '18px',
+                color: COLORS.slate[400],
+                pointerEvents: 'none',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Templates durchsuchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px 12px 44px',
+                borderRadius: '12px',
+                border: `1px solid ${COLORS.slate[200]}`,
+                fontSize: '14px',
+                color: COLORS.slate[900],
+                backgroundColor: '#fff',
+                outline: 'none',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = primaryAccent;
+                e.target.style.boxShadow = `0 0 0 3px ${primaryAccent}20`;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = COLORS.slate[200];
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+
+          {/* View Toggle */}
           <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
         </div>
       </div>

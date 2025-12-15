@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp, FolderOpen, Search, Filter } from 'lucide-react';
+import { Video, User, Briefcase, Presentation, Mic, Target, Banknote, Sparkles, AlertCircle, Loader2, Clock, TrendingUp, FolderOpen, Search, Filter, LayoutGrid, MessageSquare, Rocket, Handshake } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
@@ -16,13 +16,92 @@ const ICON_MAP = {
   banknote: Banknote,
 };
 
-// Scenario type labels
-const SCENARIO_TYPE_LABELS = {
-  self_presentation: 'Selbstpräsentation',
-  interview: 'Bewerbungsgespräch',
-  pitch: 'Elevator Pitch',
-  negotiation: 'Verhandlung',
-  custom: 'Training',
+// Scenario type configuration for category filter
+const SCENARIO_TYPE_CONFIG = {
+  self_presentation: {
+    label: 'Selbstpräsentation',
+    icon: User,
+    color: '#3A7FA7',
+    bgColor: '#E8F4F8',
+  },
+  interview: {
+    label: 'Bewerbungsgespräch',
+    icon: Briefcase,
+    color: '#059669',
+    bgColor: '#d1fae5',
+  },
+  pitch: {
+    label: 'Elevator Pitch',
+    icon: Rocket,
+    color: '#7c3aed',
+    bgColor: '#ede9fe',
+  },
+  negotiation: {
+    label: 'Verhandlung',
+    icon: Handshake,
+    color: '#d97706',
+    bgColor: '#fef3c7',
+  },
+  custom: {
+    label: 'Training',
+    icon: Target,
+    color: '#64748b',
+    bgColor: '#f1f5f9',
+  },
+};
+
+/**
+ * Category Filter Bar for Video Training
+ */
+const CategoryFilterBar = ({ selectedCategory, onSelectCategory, primaryAccent, availableCategories }) => {
+  const categories = [
+    { key: null, label: 'Alle', icon: LayoutGrid },
+    ...availableCategories.map(key => ({
+      key,
+      ...SCENARIO_TYPE_CONFIG[key],
+    })),
+  ];
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '10px',
+        marginBottom: '24px',
+      }}
+    >
+      {categories.map((cat) => {
+        const isSelected = selectedCategory === cat.key;
+        const IconComponent = cat.icon || LayoutGrid;
+        const chipColor = cat.key === null ? primaryAccent : cat.color;
+
+        return (
+          <button
+            key={cat.key || 'all'}
+            onClick={() => onSelectCategory(cat.key)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '24px',
+              fontSize: '14px',
+              fontWeight: 600,
+              border: `2px solid ${isSelected ? chipColor : COLORS.slate[200]}`,
+              backgroundColor: isSelected ? (cat.key === null ? `${primaryAccent}15` : cat.bgColor) : 'white',
+              color: isSelected ? chipColor : COLORS.slate[600],
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <IconComponent style={{ width: '16px', height: '16px' }} />
+            {cat.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 };
 
 /**
@@ -35,6 +114,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const { branding } = usePartner();
 
@@ -43,9 +123,25 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   const themedText = branding?.headerText || branding?.['--header-text'] || '#ffffff';
   const primaryAccent = branding?.primaryAccent || branding?.['--primary-accent'] || '#3A7FA7';
 
-  // Filter scenarios by search and difficulty
+  // Get available categories from scenarios
+  const availableCategories = useMemo(() => {
+    const types = new Set();
+    scenarios.forEach(scenario => {
+      if (scenario.scenario_type && SCENARIO_TYPE_CONFIG[scenario.scenario_type]) {
+        types.add(scenario.scenario_type);
+      }
+    });
+    return Array.from(types);
+  }, [scenarios]);
+
+  // Filter scenarios by search, difficulty, and category
   const filteredScenarios = useMemo(() => {
     let filtered = [...scenarios];
+
+    // Category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(scenario => scenario.scenario_type === selectedCategory);
+    }
 
     // Search filter
     if (searchQuery.trim()) {
@@ -62,7 +158,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
     }
 
     return filtered;
-  }, [scenarios, searchQuery, difficultyFilter]);
+  }, [scenarios, selectedCategory, searchQuery, difficultyFilter]);
 
   // Fetch scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
@@ -231,7 +327,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
         {/* Search and Filters */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '24px', alignItems: 'center' }}>
           {/* Search Input */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '200px', maxWidth: '400px' }}>
+          <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
             <Search
               style={{
                 position: 'absolute',
@@ -320,6 +416,16 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
         </div>
       </div>
 
+      {/* Category Filter */}
+      {availableCategories.length > 0 && (
+        <CategoryFilterBar
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          primaryAccent={primaryAccent}
+          availableCategories={availableCategories}
+        />
+      )}
+
       {/* Empty state */}
       {filteredScenarios.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
@@ -335,7 +441,6 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
       <ScenarioCardGrid viewMode={viewMode}>
         {filteredScenarios.map((scenario) => {
           const IconComponent = ICON_MAP[scenario.icon] || Video;
-          const typeLabel = SCENARIO_TYPE_LABELS[scenario.scenario_type] || 'Training';
           return (
             <ScenarioCard
               key={scenario.id}
@@ -344,7 +449,6 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
               difficulty={scenario.difficulty}
               icon={IconComponent}
               meta={[
-                { icon: Video, text: typeLabel },
                 { text: `${scenario.question_count} Fragen` },
                 { icon: Clock, text: `~${Math.round(scenario.total_time_limit / 60)} Min.` },
               ]}
