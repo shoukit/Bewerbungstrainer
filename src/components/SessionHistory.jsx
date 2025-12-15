@@ -25,6 +25,7 @@ import {
   Users,
   Sparkles,
   Trash2,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
@@ -36,6 +37,153 @@ import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
 
 console.log('📦 [SESSION_HISTORY] SessionHistory module loaded');
+
+/**
+ * DeleteConfirmDialog - Styled confirmation dialog for delete actions
+ */
+const DeleteConfirmDialog = ({ isOpen, title, message, itemName, onConfirm, onCancel, isDeleting, primaryAccent }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000,
+        padding: '16px',
+      }}
+      onClick={onCancel}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#fff',
+          borderRadius: '16px',
+          padding: '24px',
+          maxWidth: '400px',
+          width: '100%',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        {/* Icon */}
+        <div style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          background: '#fef2f2',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 16px',
+        }}>
+          <Trash2 size={24} color="#ef4444" />
+        </div>
+
+        {/* Title */}
+        <h3 style={{
+          fontSize: '18px',
+          fontWeight: 600,
+          color: '#0f172a',
+          textAlign: 'center',
+          margin: '0 0 8px',
+        }}>
+          {title}
+        </h3>
+
+        {/* Item name */}
+        {itemName && (
+          <p style={{
+            fontSize: '14px',
+            fontWeight: 500,
+            color: primaryAccent,
+            textAlign: 'center',
+            margin: '0 0 12px',
+            padding: '8px 12px',
+            background: `${primaryAccent}10`,
+            borderRadius: '8px',
+          }}>
+            {itemName}
+          </p>
+        )}
+
+        {/* Message */}
+        <p style={{
+          fontSize: '14px',
+          color: '#64748b',
+          textAlign: 'center',
+          margin: '0 0 24px',
+          lineHeight: 1.5,
+        }}>
+          {message}
+        </p>
+
+        {/* Buttons */}
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+        }}>
+          <button
+            onClick={onCancel}
+            disabled={isDeleting}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              borderRadius: '10px',
+              border: '1px solid #e2e8f0',
+              background: '#fff',
+              color: '#64748b',
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              opacity: isDeleting ? 0.5 : 1,
+            }}
+          >
+            Abbrechen
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              borderRadius: '10px',
+              border: 'none',
+              background: '#ef4444',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                Löschen...
+              </>
+            ) : (
+              'Löschen'
+            )}
+          </button>
+        </div>
+      </motion.div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+};
 
 /**
  * Tab configuration
@@ -67,9 +215,7 @@ const BRIEFING_ICON_MAP = {
 /**
  * BriefingCard - Card component for Smart Briefings
  */
-const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText, primaryAccent }) => {
-  const [isDeleting, setIsDeleting] = useState(false);
-
+const BriefingCard = ({ briefing, onClick, onDeleteClick, isDeleting, headerGradient, headerText, primaryAccent }) => {
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -84,18 +230,9 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
 
   const Icon = BRIEFING_ICON_MAP[briefing.template_icon] || FileText;
 
-  const handleDelete = async (e) => {
+  const handleDelete = (e) => {
     e.stopPropagation();
-    if (!window.confirm('Briefing wirklich löschen?')) return;
-
-    setIsDeleting(true);
-    try {
-      await onDelete(briefing.id);
-    } catch (err) {
-      console.error('Error deleting briefing:', err);
-    } finally {
-      setIsDeleting(false);
-    }
+    onDeleteClick(briefing);
   };
 
   return (
@@ -217,8 +354,7 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
 /**
  * SessionCard - Unified card component for all session types
  */
-const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDeleteSession, headerGradient, headerText, primaryAccent }) => {
-  const [isDeleting, setIsDeleting] = useState(false);
+const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDeleteClick, isDeleting, headerGradient, headerText, primaryAccent }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // Listen for resize events
@@ -313,18 +449,11 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
     }
   };
 
-  // Handle delete click
-  const handleDeleteClick = async (e) => {
+  // Handle delete click - triggers confirmation dialog
+  const handleDeleteClick = (e) => {
     e.stopPropagation();
-    if (!window.confirm('Session wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
-
-    setIsDeleting(true);
-    try {
-      await onDeleteSession(session, type);
-    } catch (err) {
-      console.error('Error deleting session:', err);
-    } finally {
-      setIsDeleting(false);
+    if (onDeleteClick) {
+      onDeleteClick(session, type, scenario);
     }
   };
 
@@ -411,7 +540,7 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
                 {formatDate(session.created_at)}
               </div>
             </div>
-            {onDeleteSession && (
+            {onDeleteClick && (
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
@@ -712,7 +841,7 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
             </span>
 
             {/* Delete button */}
-            {onDeleteSession && (
+            {onDeleteClick && (
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
@@ -785,6 +914,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Selected briefing for workbook view
   const [selectedBriefing, setSelectedBriefing] = useState(null);
+
+  // Delete dialog state
+  const [deleteDialog, setDeleteDialog] = useState({
+    isOpen: false,
+    type: null, // 'briefing' | 'simulator' | 'roleplay' | 'video'
+    item: null,
+    scenario: null,
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -1007,6 +1145,89 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                         type === TABS.VIDEO ? videoScenarioMap :
                         roleplayScenarioMap;
     return scenarioMap[session?.scenario_id];
+  };
+
+  // Open delete confirmation dialog for briefings
+  const handleBriefingDeleteClick = (briefing) => {
+    setDeleteDialog({
+      isOpen: true,
+      type: 'briefing',
+      item: briefing,
+      scenario: null,
+    });
+  };
+
+  // Open delete confirmation dialog for sessions
+  const handleSessionDeleteClick = (session, type, scenario) => {
+    setDeleteDialog({
+      isOpen: true,
+      type: type,
+      item: session,
+      scenario: scenario,
+    });
+  };
+
+  // Close delete dialog
+  const handleDeleteDialogClose = () => {
+    setDeleteDialog({ isOpen: false, type: null, item: null, scenario: null });
+  };
+
+  // Execute delete after confirmation
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.item) return;
+
+    setIsDeleting(true);
+    try {
+      if (deleteDialog.type === 'briefing') {
+        await handleDeleteBriefing(deleteDialog.item.id);
+      } else {
+        await handleDeleteSession(deleteDialog.item, deleteDialog.type);
+      }
+      handleDeleteDialogClose();
+    } catch (err) {
+      console.error('Delete failed:', err);
+      // Keep dialog open on error
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Get delete dialog content based on type
+  const getDeleteDialogContent = () => {
+    const { type, item, scenario } = deleteDialog;
+
+    switch (type) {
+      case 'briefing':
+        return {
+          title: 'Briefing löschen?',
+          message: 'Möchtest du dieses Briefing wirklich unwiderruflich löschen?',
+          itemName: item?.title || 'Briefing',
+        };
+      case TABS.SIMULATOR:
+        return {
+          title: 'Szenario-Training löschen?',
+          message: 'Möchtest du dieses Training wirklich unwiderruflich löschen? Alle Antworten und Feedback werden entfernt.',
+          itemName: scenario?.title || item?.scenario_title || `Session #${item?.id}`,
+        };
+      case TABS.VIDEO:
+        return {
+          title: 'Wirkungs-Analyse löschen?',
+          message: 'Möchtest du diese Analyse wirklich unwiderruflich löschen? Video und Feedback werden entfernt.',
+          itemName: scenario?.title || item?.scenario_title || `Session #${item?.id}`,
+        };
+      case TABS.ROLEPLAY:
+        return {
+          title: 'Live-Simulation löschen?',
+          message: 'Möchtest du diese Simulation wirklich unwiderruflich löschen? Audio und Feedback werden entfernt.',
+          itemName: scenario?.title || item?.scenario_title || `Session #${item?.id}`,
+        };
+      default:
+        return {
+          title: 'Löschen?',
+          message: 'Möchtest du dieses Element wirklich löschen?',
+          itemName: '',
+        };
+    }
   };
 
   // Show briefing workbook if a briefing is selected
@@ -1332,7 +1553,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   key={briefing.id}
                   briefing={briefing}
                   onClick={() => handleBriefingClick(briefing)}
-                  onDelete={handleDeleteBriefing}
+                  onDeleteClick={handleBriefingDeleteClick}
+                  isDeleting={isDeleting && deleteDialog.item?.id === briefing.id}
                   headerGradient={headerGradient}
                   headerText={headerText}
                   primaryAccent={primaryAccent}
@@ -1350,7 +1572,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                     scenario={scenario}
                     onClick={() => handleSessionClick(session)}
                     onContinueSession={onContinueSession}
-                    onDeleteSession={handleDeleteSession}
+                    onDeleteClick={(s, t, sc) => handleSessionDeleteClick(s, t, sc)}
+                    isDeleting={isDeleting && deleteDialog.item?.id === session.id}
                     headerGradient={headerGradient}
                     headerText={headerText}
                     primaryAccent={primaryAccent}
@@ -1365,6 +1588,20 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       <style>
         {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
       </style>
+
+      {/* Delete Confirmation Dialog */}
+      <AnimatePresence>
+        {deleteDialog.isOpen && (
+          <DeleteConfirmDialog
+            isOpen={deleteDialog.isOpen}
+            {...getDeleteDialogContent()}
+            onConfirm={handleDeleteConfirm}
+            onCancel={handleDeleteDialogClose}
+            isDeleting={isDeleting}
+            primaryAccent={primaryAccent}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,15 +1,33 @@
-# CLAUDE.md - KI-Assistenten-Leitfaden für Bewerbungstrainer
+# CLAUDE.md - KI-Assistenten-Leitfaden für Karriereheld
 
 ## Projektübersicht
 
-**Bewerbungstrainer** ist ein KI-gestütztes WordPress-Plugin für realistische Interview- und Gesprächsvorbereitung. Die Anwendung kombiniert sprachbasierte KI-Interaktion mit intelligenter Feedback-Generierung.
+**Karriereheld** ist ein KI-gestütztes WordPress-Plugin für umfassende Karriere- und Gesprächsvorbereitung. Die Anwendung kombiniert sprachbasierte KI-Interaktion, intelligente Feedback-Generierung und strukturierte Wissensvermittlung zu einem ganzheitlichen Trainingsystem.
 
-### Hauptzweck
-- Realistische Voice-Interviews mit KI-gesteuerten Gesprächspartnern
-- Detailliertes Feedback zu verbaler und paraverbaler Kommunikation
-- Gamifiziertes Rhetorik-Training (Rhetorik-Gym)
-- Szenario-basiertes Training mit strukturiertem Feedback
-- White-Label-Fähigkeit für Partner-Integration
+> **Hinweis:** Ausführliche Dokumentation findet sich im `docs/` Ordner:
+> - `PRODUKTBESCHREIBUNG.md` - Umfassende fachliche Dokumentation
+> - `FUNKTIONALES_DESIGN.md` - Funktionales Design und Benutzerflows
+> - `TECHNISCHE_DOKUMENTATION.md` - Technische Details und API-Referenz
+
+### Vision
+Menschen dabei unterstützen, selbstbewusst und optimal vorbereitet in wichtige berufliche Gespräche zu gehen – sei es ein Vorstellungsgespräch, eine Gehaltsverhandlung oder ein wichtiges Kundengespräch.
+
+### Hauptfunktionen
+
+| Modul | Zweck | Zielgruppe |
+|-------|-------|------------|
+| **Smart Briefings** | KI-generierte Wissenspakete zur optimalen Vorbereitung | Alle Nutzer vor wichtigen Gesprächen |
+| **Live-Simulation** | Realistische Echtzeit-Gespräche mit KI-Interviewer | Fortgeschrittene, die unter Druck üben wollen |
+| **Szenario-Training** | Strukturiertes Q&A mit sofortigem Feedback | Anfänger und systematische Lerner |
+| **Wirkungs-Analyse** | Video-Training mit Körpersprache-Analyse | Nutzer, die an ihrer Präsenz arbeiten wollen |
+| **Rhetorik-Gym** | Gamifiziertes Sprechtraining gegen Füllwörter | Alle, die ihre Redegewandtheit verbessern wollen |
+
+### Kernvorteile
+- **Kein menschlicher Trainer nötig** – Üben jederzeit und überall möglich
+- **Sofortiges, objektives Feedback** – KI analysiert ohne Vorurteile
+- **Personalisierte Vorbereitung** – Briefings und Training auf spezifische Situation zugeschnitten
+- **Ganzheitlicher Ansatz** – Wissen + verbale + nonverbale Kommunikation
+- **White-Label-fähig** – Integration in Partner-Plattformen mit eigenem Branding
 
 ---
 
@@ -53,50 +71,60 @@
 ### Systemübersicht
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        WordPress Frontend                            │
-├─────────────────────────────────────────────────────────────────────┤
-│  React SPA (Vite Build)                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐ │
-│  │  Roleplay   │  │  Simulator  │  │ Rhetorik-   │  │  Session   │ │
-│  │  Dashboard  │  │    App      │  │    Gym      │  │  History   │ │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘ │
-├─────────────────────────────────────────────────────────────────────┤
-│  Services Layer                                                      │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │
-│  │  ElevenLabs │  │   Gemini    │  │  WordPress  │                 │
-│  │   Service   │  │   Service   │  │     API     │                 │
-│  └─────────────┘  └─────────────┘  └─────────────┘                 │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                     WordPress REST API                               │
-├─────────────────────────────────────────────────────────────────────┤
-│  /bewerbungstrainer/v1/*     │  /karriereheld/v1/*                  │
-│  - Sessions CRUD             │  - Partner Config                    │
-│  - Audio/Video Handler       │  - Login/Logout                      │
-│  - Gemini Proxy              │  - User Management                   │
-│  - Scenarios                 │                                      │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      WordPress Database                              │
-├─────────────────────────────────────────────────────────────────────┤
-│  wp_bewerbungstrainer_sessions   │  wp_bewerbungstrainer_simulator  │
-│  wp_bewerbungstrainer_games      │  Custom Post Types               │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Externe KI-Services                             │
-├─────────────────────────────────────────────────────────────────────┤
-│  ElevenLabs Conversational AI    │  Google Gemini API               │
-│  - Voice Synthesis (TTS)         │  - Text-Feedback                 │
-│  - Speech Recognition (STT)      │  - Audio-Analyse (multimodal)    │
-│  - Conversation Management       │  - Rhetorik-Game-Analyse         │
-└─────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│                           WordPress Frontend                               │
+├───────────────────────────────────────────────────────────────────────────┤
+│  React SPA (Vite Build)                                                   │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐         │
+│  │   Smart     │ │    Live     │ │  Szenario   │ │  Wirkungs   │         │
+│  │  Briefing   │ │  Simulation │ │  Training   │ │  Analyse    │         │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘         │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                         │
+│  │  Rhetorik   │ │  Session    │ │   Login/    │                         │
+│  │    Gym      │ │  History    │ │   Profile   │                         │
+│  └─────────────┘ └─────────────┘ └─────────────┘                         │
+├───────────────────────────────────────────────────────────────────────────┤
+│  Services Layer                                                           │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐         │
+│  │  ElevenLabs │ │   Gemini    │ │  WordPress  │ │   Partner   │         │
+│  │   Service   │ │   Service   │ │     API     │ │   Context   │         │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘         │
+└───────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                          WordPress REST API                                │
+├───────────────────────────────────────────────────────────────────────────┤
+│  /bewerbungstrainer/v1/*           │  /karriereheld/v1/*                  │
+│  - Sessions (Roleplay, Simulator)  │  - Partner Config                    │
+│  - Smart Briefings (Templates,     │  - Login/Logout                      │
+│    Generation, Sections)           │  - User Management                   │
+│  - Video Training Sessions         │  - Demo Codes                        │
+│  - Rhetorik-Gym Games              │                                      │
+│  - Audio/Video Handler             │                                      │
+│  - Scenarios CRUD                  │                                      │
+└───────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                           WordPress Database                               │
+├───────────────────────────────────────────────────────────────────────────┤
+│  wp_bewerbungstrainer_sessions         │  wp_bewerbungstrainer_simulator  │
+│  wp_bewerbungstrainer_games            │  wp_bewerbungstrainer_video      │
+│  wp_bewerbungstrainer_smartbriefing_*  │  Custom Post Types (Szenarien)   │
+└───────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                           Externe KI-Services                              │
+├───────────────────────────────────────────────────────────────────────────┤
+│  ElevenLabs Conversational AI       │  Google Gemini API                  │
+│  - Voice Synthesis (TTS)            │  - Briefing-Generierung             │
+│  - Speech Recognition (STT)         │  - Interview-Feedback               │
+│  - Bidirektionale Konversation      │  - Audio-Analyse (multimodal)       │
+│  - Interviewer-Persönlichkeiten     │  - Video-Analyse (Vision)           │
+│                                     │  - Rhetorik-Game-Analyse            │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -107,11 +135,15 @@
 Bewerbungstrainer/
 ├── bewerbungstrainer-plugin.php    # WordPress Plugin Hauptdatei
 ├── includes/                        # PHP Backend-Klassen
-│   ├── class-api.php               # REST API Endpoints (73KB)
+│   ├── class-api.php               # Haupt-REST-API Endpoints
 │   ├── class-database.php          # Haupt-Datenbank-Management
 │   ├── class-simulator-database.php # Simulator-Datenbank
 │   ├── class-simulator-api.php     # Simulator REST API
 │   ├── class-simulator-admin.php   # Simulator Admin-Bereich
+│   ├── class-smartbriefing-api.php # Smart Briefing REST API
+│   ├── class-smartbriefing-database.php # Smart Briefing Datenbank
+│   ├── class-video-training-api.php    # Video Training REST API
+│   ├── class-video-training-database.php # Video Training Datenbank
 │   ├── class-game-database.php     # Rhetorik-Gym Datenbank
 │   ├── class-game-api.php          # Rhetorik-Gym REST API
 │   ├── class-gemini-handler.php    # Gemini AI Server-Proxy
@@ -126,20 +158,32 @@ Bewerbungstrainer/
 │   ├── main.jsx                    # React Entry Point
 │   ├── index.css                   # Tailwind + globale Styles
 │   ├── components/                 # React-Komponenten
-│   │   ├── RoleplayDashboard.jsx   # Hauptansicht: Szenario-Auswahl
-│   │   ├── RoleplaySession.jsx     # Live-Interview mit ElevenLabs
-│   │   ├── SessionHistory.jsx      # Übersicht vergangener Sessions
-│   │   ├── SessionDetailView.jsx   # Detailansicht einer Session
+│   │   ├── smartbriefing/          # Smart Briefing Modul
+│   │   │   ├── SmartBriefingApp.jsx    # Haupt-Orchestrator
+│   │   │   ├── SmartBriefingDashboard.jsx # Template-Auswahl
+│   │   │   ├── SmartBriefingForm.jsx   # Variablen-Eingabe
+│   │   │   ├── BriefingWorkbook.jsx    # Interaktives Workbook
+│   │   │   ├── BriefingList.jsx        # Gespeicherte Briefings
+│   │   │   └── BriefingResult.jsx      # Ergebnis-Ansicht (Legacy)
+│   │   ├── RoleplayDashboard.jsx   # Live-Simulation: Szenario-Auswahl
+│   │   ├── RoleplaySession.jsx     # Live-Simulation: Interview
 │   │   ├── simulator/              # Szenario-Training Modul
-│   │   │   ├── SimulatorApp.jsx
-│   │   │   ├── SimulatorDashboard.jsx
-│   │   │   ├── SimulatorSession.jsx
-│   │   │   ├── SimulatorWizard.jsx
-│   │   │   ├── ImmediateFeedback.jsx
-│   │   │   └── SessionComplete.jsx
+│   │   │   ├── SimulatorApp.jsx        # Haupt-Orchestrator
+│   │   │   ├── SimulatorDashboard.jsx  # Szenario-Auswahl
+│   │   │   ├── SimulatorSession.jsx    # Training-Durchführung
+│   │   │   ├── SimulatorWizard.jsx     # Setup-Assistent
+│   │   │   ├── ImmediateFeedback.jsx   # Sofort-Feedback
+│   │   │   └── SessionComplete.jsx     # Abschluss-Zusammenfassung
+│   │   ├── video-training/         # Wirkungs-Analyse Modul
+│   │   │   ├── VideoTrainingApp.jsx    # Haupt-Orchestrator
+│   │   │   ├── VideoTrainingDashboard.jsx # Szenario-Auswahl
+│   │   │   ├── VideoTrainingSession.jsx # Video-Aufnahme
+│   │   │   └── VideoTrainingResults.jsx # Ergebnisse
 │   │   ├── rhetorik-gym/           # Gamification-Modul
-│   │   │   ├── RhetorikGym.jsx     # Spielmodus-Auswahl
-│   │   │   └── GameSession.jsx     # Aktive Spielsitzung
+│   │   │   ├── RhetorikGym.jsx         # Spielmodus-Auswahl
+│   │   │   └── GameSession.jsx         # Aktive Spielsitzung
+│   │   ├── SessionHistory.jsx      # Übersicht aller Sessions
+│   │   ├── TrainingSessionDetailView.jsx # Unified Detail-Ansicht
 │   │   ├── session-detail/         # Session-Detail Komponenten
 │   │   │   ├── AudioPlayerCard.jsx
 │   │   │   ├── TranscriptCard.jsx
@@ -151,16 +195,11 @@ Bewerbungstrainer/
 │   │   │   ├── FillerWordCard.jsx
 │   │   │   └── PacingIssuesCard.jsx
 │   │   ├── ui/                     # Basis UI-Komponenten
-│   │   │   ├── button.jsx
-│   │   │   ├── card.jsx
-│   │   │   ├── dialog.jsx
-│   │   │   ├── input.jsx
-│   │   │   ├── textarea.jsx
-│   │   │   ├── sidebar.jsx
+│   │   │   ├── button.jsx, card.jsx, dialog.jsx
+│   │   │   ├── input.jsx, textarea.jsx, sidebar.jsx
 │   │   │   └── ...
 │   │   ├── LoginModal.jsx          # Benutzer-Authentifizierung
-│   │   ├── Toast.jsx               # Benachrichtigungen
-│   │   └── ...
+│   │   └── Toast.jsx               # Benachrichtigungen
 │   ├── services/                   # API-Services
 │   │   ├── gemini.js               # Google Gemini Integration
 │   │   ├── elevenlabs.js           # ElevenLabs Basis-Service
@@ -203,127 +242,531 @@ Bewerbungstrainer/
 
 ## Haupt-Features
 
-### 1. Live-Gespräch (Roleplay)
+### 1. Smart Briefings – KI-generierte Wissenspakete
 
-**Zweck:** Realistische Voice-Interviews mit KI-Interviewer
+> **"Wissen ist Macht – und das richtige Wissen zur richtigen Zeit ist Selbstvertrauen."**
 
-**Technische Umsetzung:**
-- **ElevenLabs Conversational AI** für bidirektionale Sprachkommunikation
-- **Dynamische Variablen** werden an den Agent übergeben:
-  - `user_name` - Name des Bewerbers
-  - `position` - Beworbene Position
-  - `company` - Zielunternehmen
-  - `conversation_style` - Gesprächsstil (friendly/critical/professional)
-- **Session-Persistenz** in WordPress-Datenbank
-- **Audio-Aufnahme** der gesamten Konversation
+#### Was ist Smart Briefing?
 
-**Komponenten:**
-- `RoleplayDashboard.jsx` - Szenario-Auswahl
-- `RoleplaySession.jsx` - Live-Interview-UI
-- `RoleplayVariablesDialog.jsx` - Variablen-Eingabe
+Smart Briefing ist ein KI-gestütztes Vorbereitungssystem, das personalisierte Wissenspakete für berufliche Gespräche generiert. Statt stundenlang im Internet zu recherchieren, erhalten Nutzer in Sekunden ein maßgeschneidertes Briefing mit allem, was sie für ihr spezifisches Gespräch wissen müssen.
 
-**Datenfluss:**
+#### Das Problem, das es löst
+
+- **Zeitaufwändige Recherche**: Vor wichtigen Gesprächen verbringen Menschen Stunden mit unstrukturierter Internet-Recherche
+- **Informationsüberflutung**: Zu viele Informationen führen zu Unsicherheit statt Selbstvertrauen
+- **Fehlender roter Faden**: Ohne Struktur wissen Bewerber nicht, welche Informationen wirklich relevant sind
+
+#### Die Lösung
+
+Ein strukturiertes, KI-generiertes Wissenspaket mit:
+- **Insider-Wissen** über die Zielposition und das Unternehmen
+- **Konkrete Formulierungshilfen** für schwierige Fragen
+- **Strategische Tipps** für die spezifische Gesprächssituation
+- **Persönliche Notizen** zu jedem Punkt hinzufügbar
+
+#### Verfügbare Briefing-Templates
+
+| Template | Kategorie | Einsatzzweck |
+|----------|-----------|--------------|
+| **Job Interview Deep-Dive** | Karriere | Vorstellungsgespräch mit Position, Unternehmen, Interviewtyp |
+| **Gehaltsverhandlung Prep** | Karriere | Gehaltsverhandlung mit Marktanalyse, Argumenten, Konterstrategien |
+| **Kundengespräch Vorbereitung** | Vertrieb | Wichtige Kundenmeetings mit Branchenkontext |
+| **Feedback-Gespräch** | Führung | Mitarbeitergespräche mit Gesprächsstruktur |
+
+#### Benutzer-Workflow
+
 ```
-Benutzer -> RoleplayDashboard -> Szenario auswählen
-        -> RoleplayVariablesDialog -> Variablen eingeben
-        -> RoleplaySession -> ElevenLabs Agent starten
-        -> Live-Gespräch führen
-        -> Session beenden -> Feedback generieren (Gemini)
-        -> SessionDetailView -> Ergebnisse anzeigen
+1. TEMPLATE AUSWÄHLEN
+   ├─ Dashboard zeigt verfügbare Templates
+   ├─ Kategoriefilter (Karriere, Vertrieb, Führung, Kommunikation)
+   └─ Beschreibung und benötigte Eingabefelder sichtbar
+
+2. VARIABLEN EINGEBEN
+   ├─ Dynamisches Formular basierend auf Template
+   ├─ Beispiel für "Job Interview Deep-Dive":
+   │   ├─ Position: "Senior Software Engineer"
+   │   ├─ Unternehmen: "Google Germany"
+   │   └─ Interview-Typ: "Finales Interview"
+   └─ Validierung der Pflichtfelder
+
+3. BRIEFING GENERIEREN
+   ├─ Gemini erstellt strukturiertes Briefing (~10 Sekunden)
+   ├─ Automatische Speicherung in der Datenbank
+   └─ Redirect zum Workbook
+
+4. WORKBOOK NUTZEN
+   ├─ Sections aufklappen/zuklappen
+   ├─ Items durcharbeiten
+   ├─ Persönliche Notizen zu jedem Punkt hinzufügen ✏️
+   ├─ Irrelevante Punkte löschen 🗑️ (wiederherstellbar)
+   ├─ "5 weitere Punkte generieren" pro Section
+   └─ Briefing jederzeit wieder aufrufen
 ```
 
-### 2. Szenario-Training (Simulator)
+#### Technische Umsetzung
 
-**Zweck:** Strukturiertes Training mit vordefinierten Fragen und sofortigem Feedback
+**Frontend-Komponenten:**
+- `SmartBriefingApp.jsx` – State-Management und View-Router
+- `SmartBriefingDashboard.jsx` – Template-Grid mit Kategoriefilter
+- `SmartBriefingForm.jsx` – Dynamische Formulargenerierung
+- `BriefingWorkbook.jsx` – Interaktives Workbook mit Item-Management
+- `BriefingList.jsx` – Gespeicherte Briefings des Nutzers
 
-**Technische Umsetzung:**
-- **Frage-Antwort-Modus** mit Audio-Aufnahme
-- **Sofortiges Feedback** nach jeder Antwort via Gemini
-- **Eigene Datenbank-Tabelle** für Simulator-Sessions
-- **Admin-Bereich** zur Szenario-Verwaltung
+**Backend:**
+- `class-smartbriefing-api.php` – REST API für Templates, Generation, CRUD
+- `class-smartbriefing-database.php` – Drei Tabellen (Templates, Briefings, Sections)
 
-**Komponenten:**
-- `SimulatorDashboard.jsx` - Szenario-Übersicht
-- `SimulatorWizard.jsx` - Setup-Assistent
-- `SimulatorSession.jsx` - Training-Durchführung
-- `ImmediateFeedback.jsx` - Sofort-Feedback-Anzeige
-- `SessionComplete.jsx` - Abschluss-Zusammenfassung
+**Datenbank-Schema:**
+```sql
+wp_bewerbungstrainer_smartbriefing_templates  -- Vorlagen mit System-Prompts
+wp_bewerbungstrainer_smartbriefing_briefings  -- Generierte Briefings der User
+wp_bewerbungstrainer_smartbriefing_sections   -- Sections mit Items (JSON)
+```
 
-**Backend-Klassen:**
-- `class-simulator-database.php` - Tabellen und CRUD
-- `class-simulator-api.php` - REST Endpoints
-- `class-simulator-admin.php` - WordPress Admin UI
+---
 
-### 3. Rhetorik-Gym (Gamification)
+### 2. Live-Simulation – Realistische Echtzeit-Gespräche
 
-**Zweck:** Spielerisches Training zur Reduzierung von Füllwörtern und Verbesserung der Sprechweise
+> **"Übung macht den Meister – aber nur realistische Übung."**
 
-**Spielmodi:**
+#### Was ist Live-Simulation?
+
+Live-Simulation ermöglicht echte, bidirektionale Sprachgespräche mit einem KI-gesteuerten Interviewer. Anders als bei vorbereiteten Antworten müssen Nutzer hier spontan reagieren – genau wie in einem echten Gespräch.
+
+#### Das Problem, das es löst
+
+- **Keine spontanen Antworten geübt**: Die meisten üben nur auswendig gelernte Antworten
+- **Fehlende Drucksituation**: Alleine vor dem Spiegel üben erzeugt keinen echten Stress
+- **Kein menschlicher Sparringspartner**: Freunde und Familie sind oft zu nett oder nicht verfügbar
+
+#### Die Lösung
+
+Ein KI-Interviewer mit:
+- **Realistischer Stimme** (ElevenLabs Text-to-Speech)
+- **Natürlicher Gesprächsführung** (keine Skripte, echte Konversation)
+- **Anpassbarem Schwierigkeitsgrad** (freundlich / kritisch / professionell)
+- **Scenario-spezifischen Einwänden** und Nachfragen
+
+#### Interviewer-Persönlichkeiten
+
+| Stil | Beschreibung | Typische Fragen |
+|------|--------------|-----------------|
+| **Freundlich** | Ermutigend, unterstützend, hilft bei Blockaden | "Interessant! Können Sie mir mehr dazu erzählen?" |
+| **Kritisch** | Herausfordernd, hakt nach, testet Belastbarkeit | "Das klingt gut, aber wie genau haben Sie das umgesetzt?" |
+| **Professionell** | Sachlich, neutral, geschäftsmäßig | "Verstehe. Kommen wir zur nächsten Frage." |
+
+#### Benutzer-Workflow
+
+```
+1. SZENARIO AUSWÄHLEN
+   ├─ Dashboard mit verfügbaren Szenarien
+   ├─ Filter nach Schwierigkeit (Leicht/Mittel/Schwer)
+   ├─ Szenario-Details: Interviewer-Profil, typische Fragen, Dauer
+   └─ Option: Eigenes Szenario erstellen
+
+2. VARIABLEN EINGEBEN
+   ├─ Name, Position, Unternehmen
+   ├─ Gesprächsstil wählen (friendly/critical/professional)
+   └─ Optional: Zusätzlicher Kontext
+
+3. MIKROFON TESTEN
+   ├─ Geräteauswahl
+   ├─ Testaufnahme abspielen
+   └─ Latenz-Check für Echtzeit-Kommunikation
+
+4. LIVE-GESPRÄCH FÜHREN
+   ├─ Desktop: 3-Spalten-Layout (Coaching | Interview | Transkript)
+   ├─ Mobile: Gestapelt mit FAB-Buttons
+   ├─ Echtzeit-Transkript mit Zeitstempeln
+   ├─ Coaching-Hinweise während des Gesprächs
+   └─ Timer zeigt Gesprächsdauer
+
+5. ANALYSE ERHALTEN
+   ├─ Strukturiertes Feedback (Gemini)
+   │   ├─ Kommunikation
+   │   ├─ Motivation
+   │   ├─ Professionalität
+   │   └─ Vorbereitung
+   ├─ Paraverbale Analyse
+   │   ├─ Füllwörter (mit Timestamps)
+   │   ├─ Sprechtempo (WPM)
+   │   ├─ Selbstsicherheit (Gauge)
+   │   └─ Tonalität
+   └─ Audio-Wiedergabe mit Seek zu Timestamps
+```
+
+#### Technische Umsetzung
+
+**KI-Services:**
+- **ElevenLabs Conversational AI** (@elevenlabs/react)
+  - Bidirektionale Sprach-zu-Sprach-Kommunikation
+  - Automatische TTS für Agent, STT für Nutzer
+  - Variable Injection (user_name, position, company, conversation_style)
+  - Audio-Recording der gesamten Session
+
+- **Google Gemini API**
+  - Transkript-Analyse nach Session-Ende
+  - Multimodale Audio-Analyse (wenn Audio verfügbar)
+
+**Frontend-Komponenten:**
+- `RoleplayDashboard.jsx` – Szenario-Auswahl und Custom-Szenario-Builder
+- `RoleplaySession.jsx` – Live-Interview-Interface mit ElevenLabs-Integration
+- `RoleplayVariablesDialog.jsx` – Variablen-Eingabe vor Session-Start
+
+---
+
+### 3. Szenario-Training – Strukturiertes Lernen mit sofortigem Feedback
+
+> **"Wer schnell Feedback bekommt, lernt schneller."**
+
+#### Was ist Szenario-Training?
+
+Szenario-Training ist ein strukturiertes Frage-Antwort-Format, bei dem Nutzer nach **jeder Antwort** sofortiges, detailliertes Feedback erhalten. Im Gegensatz zur Live-Simulation können Nutzer hier in ihrem eigenen Tempo lernen und verstehen, was funktioniert und was nicht.
+
+#### Das Problem, das es löst
+
+- **Keine Lernschleife**: Bei der Live-Simulation kommt das Feedback erst am Ende
+- **Überforderung bei Anfängern**: Echtzeitgespräche sind für viele zu stressig
+- **Keine systematische Verbesserung**: Ohne Feedback nach jeder Antwort bleibt unklar, was falsch war
+
+#### Die Lösung
+
+Ein geführtes Training mit:
+- **Vordefinierten Fragen** zu spezifischen Szenarien
+- **Sofortigem Feedback** nach jeder Antwort
+- **Konkreten Verbesserungsvorschlägen**
+- **Fortschrittsverfolgung** (welche Fragen wurden beantwortet)
+
+#### Feedback-Struktur pro Antwort
+
+```
+📝 TRANSKRIPT
+   └─ Vollständige Verschriftlichung der Antwort
+
+✅ STÄRKEN
+   ├─ "Gute Struktur mit klarem Einstieg"
+   ├─ "Konkrete Beispiele genannt"
+   └─ "Selbstbewusster Tonfall"
+
+🔧 VERBESSERUNGSVORSCHLÄGE
+   ├─ "Mehr Zahlen und Ergebnisse nennen"
+   ├─ "STAR-Methode konsequenter anwenden"
+   └─ "Füllwörter reduzieren (5x 'ähm')"
+
+⭐ BEWERTUNG
+   └─ Punktzahl mit Kurzbegründung
+```
+
+#### Benutzer-Workflow
+
+```
+1. SZENARIO AUSWÄHLEN
+   ├─ Dashboard mit Szenarien nach Kategorie
+   ├─ Vorschau: Anzahl Fragen, geschätzte Dauer
+   └─ Schwierigkeitsgrad und Tags sichtbar
+
+2. VORBEREITUNG
+   ├─ Wizard mit Szenario-Kontext
+   ├─ Tipps vor dem Start (STAR-Methode, etc.)
+   ├─ Mikrofon-Auswahl und Test
+   └─ Variablen eingeben (falls nötig)
+
+3. TRAINING DURCHFÜHREN
+   │
+   │  ┌──────────────────────────────────────┐
+   │  │         FRAGE 1 VON 8                │
+   │  │  "Erzählen Sie etwas über sich"      │
+   │  │                                      │
+   │  │  [💡 Tipps anzeigen]                 │
+   │  │                                      │
+   │  │  🔴 [  AUFNAHME STARTEN  ]           │
+   │  │      ⏸️ Pause möglich                │
+   │  │                                      │
+   │  │  ⏱️ 0:45 / ~2:00 empfohlen           │
+   │  │                                      │
+   │  │  [  ANTWORT ABSENDEN  ]              │
+   │  └──────────────────────────────────────┘
+   │
+   ▼
+   │  ┌──────────────────────────────────────┐
+   │  │         SOFORT-FEEDBACK              │
+   │  │                                      │
+   │  │  📝 Transkript: "Mein Name ist..."   │
+   │  │                                      │
+   │  │  ✅ Stärken:                         │
+   │  │     • Strukturierter Einstieg        │
+   │  │     • Relevante Beispiele            │
+   │  │                                      │
+   │  │  🔧 Verbesserungen:                  │
+   │  │     • Mehr Zahlen nennen             │
+   │  │     • 3x "ähm" reduzieren            │
+   │  │                                      │
+   │  │  ⭐ 7/10 Punkte                      │
+   │  │                                      │
+   │  │  [WIEDERHOLEN]  [WEITER]             │
+   │  └──────────────────────────────────────┘
+   │
+   └── Wiederhole für alle Fragen
+
+4. ZUSAMMENFASSUNG
+   ├─ Gesamtpunktzahl
+   ├─ Stärken-/Schwächen-Überblick
+   └─ Option: Session später fortsetzen
+```
+
+#### Technische Umsetzung
+
+**Frontend-Komponenten:**
+- `SimulatorApp.jsx` – State-Management, View-Router
+- `SimulatorDashboard.jsx` – Szenario-Grid mit Filterung
+- `SimulatorWizard.jsx` – Setup-Assistent mit Tipps
+- `SimulatorSession.jsx` – Frage-Antwort-Interface mit Recording
+- `ImmediateFeedback.jsx` – Feedback-Anzeige nach jeder Antwort
+- `SessionComplete.jsx` – Abschluss-Zusammenfassung
+
+**Backend:**
+- `class-simulator-api.php` – REST API für Sessions, Answers, Feedback
+- `class-simulator-database.php` – Sessions, Answers, Scenarios
+- `class-simulator-admin.php` – WordPress Admin für Szenario-Verwaltung
+
+---
+
+### 4. Wirkungs-Analyse – Video-Training mit Körpersprache-Feedback
+
+> **"93% der Kommunikation ist nonverbal – Zeit, daran zu arbeiten."**
+
+#### Was ist Wirkungs-Analyse?
+
+Wirkungs-Analyse ist ein Video-basiertes Training, das neben dem gesprochenen Wort auch Körpersprache, Mimik und Auftreten analysiert. Nutzer sehen sich selbst auf Video und erhalten KI-Feedback zu ihrer gesamten Wirkung.
+
+#### Das Problem, das es löst
+
+- **Blinder Fleck Körpersprache**: Die meisten wissen nicht, wie sie auf andere wirken
+- **Nervöse Ticks**: Unbewusste Gesten und Bewegungen bleiben unbemerkt
+- **Keine Video-Übung**: Sich selbst auf Video zu sehen ist ungewohnt und unangenehm
+
+#### Die Lösung
+
+Ein Video-Training mit:
+- **Kamera-Aufnahme** während der Antworten
+- **KI-Analyse der Körpersprache** (Gemini Vision)
+- **Video-Wiedergabe** zur Selbstreflexion
+- **Konkreten Tipps** zu Haltung, Gestik, Mimik
+
+#### Analysierte Aspekte
+
+| Kategorie | Was analysiert wird | Beispiel-Feedback |
+|-----------|--------------------|--------------------|
+| **Augenkontakt** | Blickrichtung, Häufigkeit | "Mehr direkter Blick in die Kamera empfohlen" |
+| **Körperhaltung** | Aufrecht, entspannt, verkrampft | "Schultern sind angespannt, bewusst lockern" |
+| **Gestik** | Handbewegungen, Nervosität | "Hände zeigen Nervosität, ruhiger halten" |
+| **Mimik** | Lächeln, Stirnrunzeln | "Freundlicher Gesichtsausdruck, sehr gut!" |
+| **Gesamtwirkung** | Professionell, sympathisch | "Selbstbewusstes Auftreten, weiter so" |
+
+#### Benutzer-Workflow
+
+```
+1. SZENARIO AUSWÄHLEN
+   ├─ Ähnlich wie Szenario-Training
+   └─ Video-spezifische Szenarien verfügbar
+
+2. KAMERA & MIKROFON EINRICHTEN
+   ├─ Kamera-Auswahl (Frontkamera bevorzugt)
+   ├─ Licht- und Rahmen-Check
+   ├─ Mikrofon-Auswahl und Test
+   └─ HD-Qualität (1280x720)
+
+3. VIDEO-AUFNAHME
+   ├─ Kontinuierliche Aufnahme über alle Fragen
+   ├─ Fragen-Navigation (Vor/Zurück)
+   ├─ Timestamps werden pro Frage gespeichert
+   └─ Stop-Button beendet Aufnahme
+
+4. UPLOAD & ANALYSE
+   ├─ Video wird hochgeladen (FormData)
+   ├─ Backend segmentiert Video nach Fragen
+   ├─ Gemini Vision analysiert jeden Abschnitt
+   └─ Fortschrittsanzeige während Analyse
+
+5. ERGEBNISSE
+   ├─ Video-Wiedergabe pro Frage
+   ├─ Nonverbale Analyse neben Video
+   ├─ Verbales Feedback (wie Szenario-Training)
+   └─ Gesamtbewertung der Präsentation
+```
+
+#### Technische Umsetzung
+
+**Frontend-Komponenten:**
+- `VideoTrainingApp.jsx` – Haupt-Orchestrator
+- `VideoTrainingDashboard.jsx` – Szenario-Auswahl
+- `VideoTrainingSession.jsx` – Video-Recording mit MediaRecorder API
+- `VideoTrainingResults.jsx` – Video-Player mit Analyse-Anzeige
+
+**Backend:**
+- `class-video-training-api.php` – REST API für Sessions
+- `class-video-training-database.php` – Video-Sessions, Analysen
+
+---
+
+### 5. Rhetorik-Gym – Gamifiziertes Sprechtraining
+
+> **"Äh, also, ähm... – Schluss damit!"**
+
+#### Was ist Rhetorik-Gym?
+
+Rhetorik-Gym ist ein spielerisches Kurzformat, das gezielt Füllwörter reduziert und die Sprechflüssigkeit verbessert. Mit Score-System, Highscores und schnellem Feedback macht es süchtig, immer besser zu werden.
+
+#### Das Problem, das es löst
+
+- **Unbewusste Füllwörter**: "Ähm", "also", "quasi", "sozusagen" rutschen automatisch raus
+- **Zu schnelles/langsames Sprechen**: Optimales Tempo (120-150 WPM) ist schwer zu halten
+- **Langweiliges Üben**: Klassisches Rhetorik-Training ist mühsam und trocken
+
+#### Die Lösung
+
+Ein Spiel mit:
+- **60-90 Sekunden Challenges**: Kurz genug für zwischendurch
+- **Echtzeit-Scoring**: Sofortige Punktzahl motiviert
+- **Füllwort-Zähler**: Sichtbar machen, was unbewusst passiert
+- **Highscore-System**: Eigene Bestleistung schlagen
+
+#### Spielmodi
+
 | Modus | Dauer | Beschreibung |
 |-------|-------|--------------|
-| **Der Klassiker** | 60s | Elevator Pitch zu einem Thema |
-| **Zufalls-Thema** | 60s | Slot-Machine wählt das Thema |
-| **Stress-Test** | 90s | Überraschungsfragen |
+| **Der Klassiker** | 60s | Festes Thema, frei sprechen |
+| **Zufalls-Thema** | 60s | Slot-Machine wählt Thema – Überraschungseffekt! |
+| **Stress-Test** | 90s | Unerwartete Fragen – maximale Herausforderung |
 
-**Bewertungssystem:**
-- **Füllwörter** werden gezählt und bestraft (-10 Punkte pro Füllwort)
-- **Sprechtempo** wird analysiert (optimal: 120-150 WPM)
-- **Inhalt** wird von Gemini bewertet (0-40 Punkte)
-- **Gesamtscore** aus 100 Punkten
+#### Scoring-System (100 Punkte max)
 
-**Komponenten:**
-- `RhetorikGym.jsx` - Spielmodus-Auswahl
-- `GameSession.jsx` - Aktive Spielsitzung
+| Kategorie | Max. Punkte | Beschreibung |
+|-----------|-------------|--------------|
+| **Wortanzahl** | 25 | Mindestmenge zeigt Redefluss |
+| **Füllwörter** | 25 | -5 Punkte pro Füllwort |
+| **Tempo** | 10 | Optimal: 120-150 WPM |
+| **Inhalt** | 40 | KI bewertet Qualität der Antwort |
 
-**Gemini-Integration:**
-- Optimierter Prompt für schnelle Analyse
-- Nur relevante Metriken: Füllwörter, WPM, Transkript
-- Lokale Score-Berechnung für Geschwindigkeit
+#### Benutzer-Workflow
 
-### 4. Session-Verlauf (History)
+```
+1. MODUS WÄHLEN
+   ├─ Drei Karten mit Modi
+   ├─ Persönliche Statistiken sichtbar:
+   │   ├─ Highscore: 87
+   │   ├─ Spiele: 42
+   │   ├─ Durchschnitt: 71
+   │   └─ Übungszeit: 2h 15m
+   └─ Mikrofon auswählen
 
-**Zweck:** Übersicht und Analyse vergangener Trainingseinheiten
+2. THEMA ERHALTEN
+   ├─ Klassiker: Festes Thema angezeigt
+   ├─ Zufalls: "Spin"-Button für neues Thema
+   └─ Stress: Überraschungsfrage
 
-**Features:**
-- Chronologische Liste aller Sessions
-- Filterung nach Datum, Szenario, Bewertung
-- Detail-Ansicht mit:
-  - Audio-Wiedergabe
+3. COUNTDOWN
+   └─ 3... 2... 1... LOS!
+
+4. SPRECHEN
+   ├─ Großer Timer (farbcodiert: grün → gelb → rot)
+   ├─ Audio-Visualisierung (Frequenz-Bars)
+   └─ Stop-Button für vorzeitiges Ende
+
+5. ERGEBNIS
+   ├─ Großer Score mit Emoji
+   │   ├─ 90+: 🏆 "Hervorragend!"
+   │   ├─ 70+: 😊 "Gut gemacht!"
+   │   ├─ 50+: 🤔 "Weiter üben!"
+   │   └─ <50: 💪 "Du schaffst das!"
+   ├─ Detaillierte Aufschlüsselung
+   ├─ Füllwörter-Liste
+   └─ [NOCHMAL]  [ANDERES THEMA]
+```
+
+#### Technische Umsetzung
+
+**Frontend-Komponenten:**
+- `RhetorikGym.jsx` – Modus-Auswahl, Statistiken, Themen
+- `GameSession.jsx` – Recording, Timer, Audio-Visualisierung, Ergebnisse
+
+**Backend:**
+- `class-game-api.php` – REST API für Spiele, Statistiken
+- `class-game-database.php` – Spiele-Tabelle mit Scores
+
+**Optimierungen:**
+- Schneller Gemini-Prompt für <3s Analyse
+- Lokale Score-Berechnung (kein API-Call)
+- Sofortiges Feedback-Gefühl
+
+---
+
+### 6. Session-Verlauf – Alle Trainings auf einen Blick
+
+#### Zweck
+
+Zentrale Übersicht aller durchgeführten Trainings mit der Möglichkeit, vergangene Sessions zu reviewen, fortzusetzen oder zu wiederholen.
+
+#### Features
+
+- **4 Tabs**: Smart Briefings | Szenario-Training | Wirkungs-Analyse | Live-Simulationen
+- **Session-Cards** mit:
+  - Szenario-Name und Datum
+  - Score/Bewertung (farbcodiert)
+  - Fortschritt (bei unvollständigen Sessions)
+  - Aktionen: Fortsetzen, Wiederholen, Löschen
+- **Detail-Ansicht** pro Session:
+  - Audio/Video-Wiedergabe
   - Vollständiges Transkript
-  - Feedback-Anzeige
-  - Audio-Analyse-Metriken
+  - Feedback und Analyse
+  - Export-Optionen
 
-**Komponenten:**
-- `SessionHistory.jsx` - Übersichtsliste
-- `SessionDetailView.jsx` - Detailansicht
-- `AudioPlayerCard.jsx` - Audio-Player
-- `TranscriptCard.jsx` - Transkript-Anzeige
+#### Technische Umsetzung
 
-### 5. White-Label Partner-System
+- `SessionHistory.jsx` – Tab-basierte Übersicht aller Session-Typen
+- `TrainingSessionDetailView.jsx` – Unified Detail-Ansicht für alle Typen
+- `DeleteConfirmDialog` – Styled Lösch-Bestätigung (kein Browser-Dialog)
 
-**Zweck:** Individuelle Branding-Anpassung für Partner-Integrationen
+---
 
-**Funktionsweise:**
-- Partner-Slug via URL-Parameter: `?partner=xxx` oder `?pid=xxx`
-- Konfiguration über WordPress Custom Post Type
-- CSS-Variablen für vollständige Theming-Kontrolle
+### 7. White-Label Partner-System
 
-**Konfigurierbare Elemente:**
-- App-Hintergrund (Gradient oder Farbe)
-- Sidebar-Farben (Hintergrund, Text, Aktiv-Zustand)
-- Button-Styles (Gradient oder Solid)
-- Header-Design
-- Icon-Farben
-- Text-Farben
-- Rahmenfarben
-- Logo-URL
-- Modul-Filterung (welche Features sichtbar sind)
+#### Zweck
 
-**Technische Umsetzung:**
-- `PartnerContext.jsx` - React Context für Theming
-- `usePartnerTheming.js` - Hook für CSS-Variablen-Injection
-- `class-whitelabel-partners.php` - Backend-Management
-- REST API: `/karriereheld/v1/config?partner_slug=xxx`
+Ermöglicht Partner-Unternehmen, Karriereheld unter eigenem Branding in ihre Plattformen zu integrieren.
+
+#### Funktionsweise
+
+```
+1. Partner-Slug via URL: ?partner=karriereheld oder ?pid=kh
+
+2. REST API liefert Partner-Konfiguration:
+   GET /karriereheld/v1/config?partner_slug=xxx
+
+3. React PartnerContext wendet Theming an:
+   - CSS-Variablen für Farben
+   - Logo-Austausch
+   - Modul-Filterung (welche Features sichtbar)
+```
+
+#### Konfigurierbare Elemente
+
+| Element | CSS-Variable | Beispiel |
+|---------|--------------|----------|
+| Header-Gradient | `--header-gradient` | `linear-gradient(135deg, #4F46E5, #7C3AED)` |
+| Primary Accent | `--primary-accent` | `#4F46E5` |
+| Sidebar Background | `--sidebar-bg` | `#1E293B` |
+| Button Style | `--button-gradient` | Solid oder Gradient |
+| Logo | `--logo-url` | Partner-Logo-URL |
+| Sichtbare Module | `visible_modules` | `["briefings", "simulator", "gym"]` |
+
+#### Technische Umsetzung
+
+- `PartnerContext.jsx` – React Context für globales Theming
+- `usePartnerTheming.js` – Hook für CSS-Variablen-Injection
+- `useBranding.js` – Hook für einfachen Zugriff auf Branding-Werte
+- `class-whitelabel-partners.php` – WordPress Custom Post Type
+- Demo-Code-System für Testnutzer ohne Account
 
 ---
 
@@ -401,53 +844,136 @@ GEMINI_MODELS.FALLBACK_ORDER = [
 
 ## Datenbank-Schema
 
-### wp_bewerbungstrainer_sessions (Roleplay)
+### Smart Briefings (3 Tabellen)
+
+**wp_bewerbungstrainer_smartbriefing_templates**
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `id` | bigint(20) | Primärschlüssel |
+| `title` | varchar(255) | Template-Name |
+| `description` | text | Beschreibung für Dashboard |
+| `icon` | varchar(50) | Lucide-Icon-Name |
+| `category` | varchar(100) | CAREER, SALES, LEADERSHIP, COMMUNICATION |
+| `system_prompt` | longtext | Gemini-Prompt mit ${variable}-Platzhaltern |
+| `variables_schema` | JSON | Array von Formfeld-Definitionen |
+| `is_active` | tinyint | Aktiv/Inaktiv |
+| `sort_order` | int | Reihenfolge im Dashboard |
+
+**wp_bewerbungstrainer_smartbriefing_briefings**
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `id` | bigint(20) | Primärschlüssel |
+| `user_id` | bigint(20) | WordPress User ID |
+| `template_id` | bigint(20) | Referenz auf Template |
+| `title` | varchar(255) | Auto-generierter Titel |
+| `variables` | JSON | Eingegebene Variablen |
+| `status` | varchar(20) | generating/completed/failed |
+| `demo_code` | varchar(50) | Demo-Code für Gast-Nutzer |
+| `created_at` | datetime | Erstellungszeitpunkt |
+
+**wp_bewerbungstrainer_smartbriefing_sections**
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `id` | bigint(20) | Primärschlüssel |
+| `briefing_id` | bigint(20) | Referenz auf Briefing |
+| `sort_order` | int | Reihenfolge der Section |
+| `section_title` | varchar(255) | Section-Überschrift |
+| `ai_content` | JSON | Items-Array mit {id, label, content, deleted, user_note} |
+| `user_notes` | text | Section-Level Notizen |
+
+---
+
+### Live-Simulation (wp_bewerbungstrainer_sessions)
 
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
 | `id` | bigint(20) | Primärschlüssel |
 | `user_id` | bigint(20) | WordPress User ID |
 | `session_id` | varchar(255) | UUID der Session |
+| `scenario_id` | bigint(20) | Referenz auf Szenario |
 | `position` | varchar(255) | Beworbene Position |
 | `company` | varchar(255) | Zielunternehmen |
 | `conversation_id` | varchar(255) | ElevenLabs Conversation ID |
+| `conversation_style` | varchar(50) | friendly/critical/professional |
 | `audio_filename` | varchar(255) | Audio-Dateiname |
 | `audio_url` | text | Audio-URL |
 | `transcript` | longtext | Gesprächs-Transkript |
 | `feedback_json` | longtext | Gemini Feedback als JSON |
-| `audio_analysis_json` | longtext | Audio-Analyse als JSON |
+| `audio_analysis_json` | longtext | Paraverbale Analyse |
 | `created_at` | datetime | Erstellungszeitpunkt |
-| `updated_at` | datetime | Letztes Update |
 
-### wp_bewerbungstrainer_simulator_* (Simulator)
+---
 
-Separate Tabellen für:
-- Simulator-Sessions
-- Simulator-Antworten
-- Simulator-Feedback
+### Szenario-Training (Simulator)
 
-### wp_bewerbungstrainer_games (Rhetorik-Gym)
+**wp_bewerbungstrainer_simulator_sessions**
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `id` | bigint(20) | Primärschlüssel |
+| `user_id` | bigint(20) | WordPress User ID |
+| `scenario_id` | bigint(20) | Referenz auf Szenario |
+| `status` | varchar(20) | in_progress/completed |
+| `overall_score` | decimal(5,2) | Durchschnittliche Bewertung |
+| `completed_questions` | int | Anzahl beantworteter Fragen |
+| `total_questions` | int | Gesamtzahl Fragen |
+| `demo_code` | varchar(50) | Demo-Code für Gast-Nutzer |
+
+**wp_bewerbungstrainer_simulator_answers**
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `id` | bigint(20) | Primärschlüssel |
+| `session_id` | bigint(20) | Referenz auf Session |
+| `question_index` | int | Frage-Nummer |
+| `audio_url` | text | Audio der Antwort |
+| `transcript` | longtext | Transkript |
+| `feedback_json` | longtext | Gemini-Feedback |
+| `score` | decimal(5,2) | Bewertung |
+
+---
+
+### Video-Training (Wirkungs-Analyse)
+
+**wp_bewerbungstrainer_video_sessions**
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `id` | bigint(20) | Primärschlüssel |
+| `user_id` | bigint(20) | WordPress User ID |
+| `scenario_id` | bigint(20) | Referenz auf Szenario |
+| `video_url` | text | Video-URL |
+| `video_duration_seconds` | int | Video-Länge |
+| `timeline_json` | JSON | Timestamps pro Frage |
+| `overall_score` | decimal(5,2) | Gesamtbewertung |
+| `status` | varchar(20) | recording/analyzing/completed |
+
+---
+
+### Rhetorik-Gym (wp_bewerbungstrainer_games)
 
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
 | `id` | bigint(20) | Primärschlüssel |
 | `user_id` | bigint(20) | WordPress User ID |
-| `game_mode` | varchar(50) | Spielmodus |
+| `game_mode` | varchar(50) | classic/random/stress |
 | `topic` | varchar(255) | Thema |
-| `score` | int(11) | Gesamtpunktzahl |
+| `score` | int(11) | Gesamtpunktzahl (0-100) |
 | `filler_count` | int(11) | Anzahl Füllwörter |
 | `words_per_minute` | int(11) | Sprechtempo |
 | `audio_url` | text | Audio-Aufnahme |
 | `transcript` | longtext | Transkript |
 | `analysis_json` | longtext | Gemini-Analyse |
+| `demo_code` | varchar(50) | Demo-Code für Gast-Nutzer |
 | `created_at` | datetime | Erstellungszeitpunkt |
+
+---
 
 ### Custom Post Types
 
 | Post Type | Beschreibung |
 |-----------|--------------|
-| `roleplay_scenario` | Live-Simulationen (Szenarien) |
-| `whitelabel_partner` | White-Label Partner |
+| `roleplay_scenario` | Live-Simulationen (Szenarien mit Interviewer-Profil) |
+| `simulator_scenario` | Szenario-Training (Fragen-Sets) |
+| `video_scenario` | Video-Training (Szenarien) |
+| `whitelabel_partner` | White-Label Partner-Konfiguration |
 
 ---
 
@@ -455,29 +981,86 @@ Separate Tabellen für:
 
 ### Namespace: bewerbungstrainer/v1
 
-| Methode | Endpoint | Beschreibung |
-|---------|----------|--------------|
-| GET | `/sessions` | Alle Sessions des Users |
-| GET | `/sessions/{id}` | Einzelne Session |
-| POST | `/sessions` | Neue Session erstellen |
-| PUT | `/sessions/{id}` | Session aktualisieren |
-| DELETE | `/sessions/{id}` | Session löschen |
-| POST | `/audio/save-elevenlabs` | Audio von ElevenLabs speichern |
-| POST | `/audio/upload` | Audio hochladen (base64) |
-| GET | `/user/info` | Benutzer-Informationen |
-| GET | `/settings` | Plugin-Einstellungen |
-| GET | `/scenarios` | Verfügbare Szenarien |
-| POST | `/gemini/feedback` | Feedback generieren |
-| POST | `/gemini/audio-analysis` | Audio analysieren |
+#### Smart Briefings
+
+| Methode | Endpoint | Auth | Beschreibung |
+|---------|----------|------|--------------|
+| GET | `/smartbriefing/templates` | - | Alle aktiven Templates |
+| GET | `/smartbriefing/templates/{id}` | - | Einzelnes Template |
+| POST | `/smartbriefing/generate` | Optional | Briefing generieren |
+| GET | `/smartbriefing/briefings` | Ja | Briefings des Users |
+| GET | `/smartbriefing/briefings/{id}` | - | Einzelnes Briefing mit Sections |
+| DELETE | `/smartbriefing/briefings/{id}` | Ja | Briefing löschen |
+| PATCH | `/smartbriefing/sections/{id}` | Ja | Section aktualisieren |
+| PATCH | `/smartbriefing/sections/{id}/items/{item_id}` | Ja | Item aktualisieren (Note, Delete) |
+| POST | `/smartbriefing/sections/{id}/generate-more` | Ja | 5 weitere Items generieren |
+
+#### Live-Simulation (Roleplay)
+
+| Methode | Endpoint | Auth | Beschreibung |
+|---------|----------|------|--------------|
+| GET | `/sessions` | Ja | Alle Sessions des Users |
+| GET | `/sessions/{id}` | Ja | Einzelne Session |
+| POST | `/sessions` | Ja | Neue Session erstellen |
+| PUT | `/sessions/{id}` | Ja | Session aktualisieren |
+| DELETE | `/sessions/{id}` | Ja | Session löschen |
+| GET | `/scenarios` | - | Verfügbare Szenarien |
+| POST | `/audio/save-elevenlabs` | Ja | Audio von ElevenLabs speichern |
+
+#### Szenario-Training (Simulator)
+
+| Methode | Endpoint | Auth | Beschreibung |
+|---------|----------|------|--------------|
+| GET | `/simulator/scenarios` | - | Alle Simulator-Szenarien |
+| GET | `/simulator/scenarios/{id}` | - | Einzelnes Szenario mit Fragen |
+| GET | `/simulator/sessions` | Ja | Sessions des Users |
+| POST | `/simulator/sessions` | Ja | Neue Session starten |
+| GET | `/simulator/sessions/{id}` | Ja | Session mit Antworten |
+| DELETE | `/simulator/sessions/{id}` | Ja | Session löschen |
+| POST | `/simulator/sessions/{id}/answers` | Ja | Antwort speichern |
+
+#### Video-Training (Wirkungs-Analyse)
+
+| Methode | Endpoint | Auth | Beschreibung |
+|---------|----------|------|--------------|
+| GET | `/video-training/scenarios` | - | Alle Video-Szenarien |
+| GET | `/video-training/sessions` | Ja | Sessions des Users |
+| POST | `/video-training/sessions` | Ja | Neue Session starten |
+| GET | `/video-training/sessions/{id}` | Ja | Session mit Analyse |
+| DELETE | `/video-training/sessions/{id}` | Ja | Session löschen |
+| POST | `/video-training/sessions/{id}/video` | Ja | Video hochladen |
+
+#### Rhetorik-Gym
+
+| Methode | Endpoint | Auth | Beschreibung |
+|---------|----------|------|--------------|
+| GET | `/games` | Ja | Spiele des Users |
+| POST | `/games` | Ja | Neues Spiel speichern |
+| GET | `/games/stats` | Ja | Statistiken (Highscore, etc.) |
+
+#### Allgemein
+
+| Methode | Endpoint | Auth | Beschreibung |
+|---------|----------|------|--------------|
+| POST | `/audio/upload` | Ja | Audio hochladen (base64) |
+| GET | `/user/info` | Ja | Benutzer-Informationen |
+| GET | `/settings` | - | Plugin-Einstellungen |
+| POST | `/gemini/feedback` | Ja | Feedback generieren |
+| POST | `/gemini/audio-analysis` | Ja | Audio analysieren |
+
+---
 
 ### Namespace: karriereheld/v1
 
-| Methode | Endpoint | Beschreibung |
-|---------|----------|--------------|
-| GET | `/config` | Partner-Konfiguration |
-| POST | `/login` | Benutzer-Login |
-| POST | `/logout` | Benutzer-Logout |
-| GET | `/user` | Aktueller Benutzer |
+| Methode | Endpoint | Auth | Beschreibung |
+|---------|----------|------|--------------|
+| GET | `/config` | - | Partner-Konfiguration |
+| POST | `/login` | - | Benutzer-Login |
+| POST | `/logout` | Ja | Benutzer-Logout |
+| GET | `/user` | Ja | Aktueller Benutzer |
+| GET | `/demo-codes` | Admin | Demo-Codes verwalten |
+| POST | `/demo-codes` | Admin | Neuen Demo-Code erstellen |
+| DELETE | `/demo-codes/{code}` | Admin | Demo-Code löschen
 
 ---
 
@@ -738,11 +1321,27 @@ console.log('[RETRY] Trying again...');
 
 ## Versions-Historie
 
-- **v1.0.0** (2025-11-17): Initiale WordPress-Plugin-Version
-- **v1.1.0** (2025-11-24): Conversation Style Feature
-- **v1.2.0** (2025-12): White-Label Partner-System
+| Version | Datum | Änderungen |
+|---------|-------|------------|
+| **v1.0.0** | 2025-11-17 | Initiale WordPress-Plugin-Version mit Live-Simulation |
+| **v1.1.0** | 2025-11-24 | Conversation Style Feature (friendly/critical/professional) |
+| **v1.2.0** | 2025-12-01 | White-Label Partner-System |
+| **v1.3.0** | 2025-12-08 | Smart Briefings Feature mit Templates und Workbook |
+| **v1.4.0** | 2025-12-15 | Video-Training (Wirkungs-Analyse) mit Körpersprache-Feedback |
 
 ---
 
-**Letzte Aktualisierung:** 2025-12-11
-**Dokumentations-Version:** 2.0.0
+## Feature-Vergleich
+
+| Feature | Dauer | Feedback | KI-Service | Hauptnutzen |
+|---------|-------|----------|------------|-------------|
+| **Smart Briefings** | ~10s Generierung | Sofort | Gemini | Wissen aufbauen |
+| **Live-Simulation** | ~10 min | Nach Session | ElevenLabs + Gemini | Spontanität üben |
+| **Szenario-Training** | ~15-30 min | Nach jeder Antwort | Gemini | Systematisch lernen |
+| **Wirkungs-Analyse** | ~15-30 min | Nach Upload | Gemini Vision | Körpersprache verbessern |
+| **Rhetorik-Gym** | 60-90s | Sofort | Gemini | Füllwörter reduzieren |
+
+---
+
+**Letzte Aktualisierung:** 2025-12-15
+**Dokumentations-Version:** 3.0.0

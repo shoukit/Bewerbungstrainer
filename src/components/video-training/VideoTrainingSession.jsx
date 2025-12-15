@@ -3,9 +3,10 @@ import {
   Video, VideoOff, Mic, MicOff, StopCircle, PlayCircle, ChevronLeft, ChevronRight,
   Clock, AlertCircle, Loader2, Lightbulb, X, Check, Camera, RefreshCw
 } from 'lucide-react';
-import { usePartner } from '../../context/PartnerContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
+import { useBranding } from '@/hooks/useBranding';
+import { useMobile } from '@/hooks/useMobile';
 
 /**
  * ProgressBar - Shows question progress
@@ -135,22 +136,15 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
 
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Mobile detection - using shared hook
+  const isMobile = useMobile();
 
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const timerRef = useRef(null);
 
-  const { branding } = usePartner();
-  const primaryAccent = branding?.primaryAccent || '#3A7FA7';
-  const themedGradient = branding?.headerGradient || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
+  // Partner theming - using shared hook
+  const { primaryAccent, headerGradient: themedGradient } = useBranding();
 
   const currentQuestion = questions[currentQuestionIndex];
 
