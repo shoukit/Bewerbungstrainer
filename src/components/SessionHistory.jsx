@@ -219,6 +219,15 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
  */
 const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDeleteSession, headerGradient, headerText, primaryAccent }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Listen for resize events
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -351,6 +360,192 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
 
   const Icon = getIcon();
 
+  // Mobile-optimized card layout
+  if (isMobile) {
+    return (
+      <motion.div
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div
+          onClick={onClick}
+          style={{
+            background: '#fff',
+            borderRadius: '16px',
+            padding: '16px',
+            cursor: 'pointer',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+          }}
+        >
+          {/* Top row: Icon + Title + Delete */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                background: headerGradient,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon style={{ width: '22px', height: '22px', color: headerText }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h3 style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                color: '#0f172a',
+                marginBottom: '4px',
+                lineHeight: '1.3',
+              }}>
+                {scenario?.title || session.scenario_title || `Session #${session.id}`}
+              </h3>
+              <div style={{ fontSize: '13px', color: '#64748b' }}>
+                {formatDate(session.created_at)}
+              </div>
+            </div>
+            {onDeleteSession && (
+              <button
+                onClick={handleDeleteClick}
+                disabled={isDeleting}
+                style={{
+                  padding: '8px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+                title="Löschen"
+              >
+                {isDeleting ? (
+                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <Trash2 size={18} />
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Bottom row: Status badges + Action */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            paddingTop: '12px',
+            borderTop: '1px solid #f1f5f9',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* Status indicator */}
+              {!isCompleted && !isResumable && (
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: '#fef3c7',
+                  color: '#92400e',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                }}>
+                  <Clock size={12} />
+                  In Bearbeitung
+                </span>
+              )}
+
+              {/* Score badge */}
+              <span style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '5px 10px',
+                borderRadius: '20px',
+                fontSize: '13px',
+                fontWeight: 600,
+                ...getScoreBadgeStyle(scorePercent),
+              }}>
+                <Star size={13} />
+                {scorePercent !== null ? `${Math.round(scorePercent)}%` : '-- %'}
+              </span>
+
+              {/* Duration */}
+              {(session.duration || session.video_duration_seconds) && (
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#64748b',
+                }}>
+                  <Clock size={12} />
+                  {formatDuration(session.duration || session.video_duration_seconds)}
+                </span>
+              )}
+
+              {/* Progress for resumable */}
+              {isResumable && (
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: '#dbeafe',
+                  color: '#1e40af',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                }}>
+                  {getProgressInfo()}
+                </span>
+              )}
+            </div>
+
+            {/* Resume button or Arrow */}
+            {isResumable && onContinueSession ? (
+              <button
+                onClick={handleContinueClick}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: primaryAccent || '#3B82F6',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: `0 2px 8px ${primaryAccent || '#3B82F6'}40`,
+                  flexShrink: 0,
+                }}
+              >
+                <Play size={14} />
+                Fortsetzen
+              </button>
+            ) : (
+              <ChevronRight size={22} style={{ color: '#94a3b8', flexShrink: 0 }} />
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Desktop layout (unchanged)
   return (
     <motion.div
       variants={{
