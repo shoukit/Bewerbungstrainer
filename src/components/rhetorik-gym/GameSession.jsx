@@ -30,17 +30,7 @@ import { getScoreFeedback } from '@/config/prompts/gamePrompts';
 import wordpressAPI from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-
-/**
- * Fallback theme colors
- */
-const COLORS = {
-  slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
-  amber: { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 600: '#d97706' },
-  green: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a' },
-  red: { 50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 500: '#ef4444', 600: '#dc2626' },
-  teal: { 500: '#3DA389', 600: '#2E8A72' },
-};
+import { COLORS } from '@/config/colors';
 
 // Game states
 const GAME_STATES = {

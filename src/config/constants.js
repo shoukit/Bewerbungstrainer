@@ -196,6 +196,86 @@ export const CONFIDENCE_LABELS = {
 };
 
 // =============================================================================
+// DIFFICULTY COLORS
+// =============================================================================
+
+/**
+ * Difficulty level styling for scenario cards
+ * Used across SimulatorDashboard, VideoTrainingDashboard, RoleplayDashboard
+ */
+export const DIFFICULTY_COLORS = {
+  beginner: {
+    bg: 'rgba(34, 197, 94, 0.15)',
+    text: '#16a34a',
+    label: 'Einsteiger',
+    tailwind: {
+      bg: 'bg-green-100',
+      text: 'text-green-700',
+      border: 'border-green-200',
+    },
+  },
+  easy: {
+    bg: 'rgba(34, 197, 94, 0.15)',
+    text: '#16a34a',
+    label: 'Leicht',
+    tailwind: {
+      bg: 'bg-green-100',
+      text: 'text-green-700',
+      border: 'border-green-200',
+    },
+  },
+  intermediate: {
+    bg: 'rgba(59, 130, 246, 0.15)',
+    text: '#2563eb',
+    label: 'Fortgeschritten',
+    tailwind: {
+      bg: 'bg-blue-100',
+      text: 'text-blue-700',
+      border: 'border-blue-200',
+    },
+  },
+  medium: {
+    bg: 'rgba(245, 158, 11, 0.15)',
+    text: '#d97706',
+    label: 'Mittel',
+    tailwind: {
+      bg: 'bg-amber-100',
+      text: 'text-amber-700',
+      border: 'border-amber-200',
+    },
+  },
+  advanced: {
+    bg: 'rgba(168, 85, 247, 0.15)',
+    text: '#9333ea',
+    label: 'Experte',
+    tailwind: {
+      bg: 'bg-purple-100',
+      text: 'text-purple-700',
+      border: 'border-purple-200',
+    },
+  },
+  hard: {
+    bg: 'rgba(239, 68, 68, 0.15)',
+    text: '#dc2626',
+    label: 'Schwer',
+    tailwind: {
+      bg: 'bg-red-100',
+      text: 'text-red-700',
+      border: 'border-red-200',
+    },
+  },
+};
+
+/**
+ * Get difficulty configuration by level
+ * @param {string} level - Difficulty level (beginner, easy, intermediate, medium, advanced, hard)
+ * @returns {object} - Difficulty config with bg, text, label
+ */
+export function getDifficultyConfig(level) {
+  return DIFFICULTY_COLORS[level] || DIFFICULTY_COLORS.intermediate;
+}
+
+// =============================================================================
 // PACING CONFIGURATION
 // =============================================================================
 
@@ -533,6 +613,8 @@ export default {
   SCORE_THRESHOLDS,
   getScoreColorScheme,
   CONFIDENCE_LABELS,
+  DIFFICULTY_COLORS,
+  getDifficultyConfig,
   PACING_CONFIG,
   OPTIMAL_WPM,
   TONALITY_CONFIG,

@@ -9,14 +9,7 @@ import React from 'react';
 import { Calendar, Clock, Star } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-
-/**
- * Theme colors (slate/yellow only - blue from partner branding)
- */
-const COLORS = {
-  slate: { 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 900: '#0f172a' },
-  yellow: { 400: '#facc15', 500: '#eab308' },
-};
+import { COLORS } from '@/config/colors';
 
 /**
  * Format seconds to M:SS

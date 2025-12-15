@@ -76,6 +76,42 @@ export const COLORS = {
     500: '#f97316',
     600: '#ea580c',
   },
+  yellow: {
+    50: '#fefce8',
+    100: '#fef9c3',
+    200: '#fef08a',
+    300: '#fde047',
+    400: '#facc15',
+    500: '#eab308',
+    600: '#ca8a04',
+    700: '#a16207',
+  },
+  // Ocean Blue Theme Colors (from tailwind.config.js)
+  oceanBlue: {
+    50: '#E8F4F8',
+    100: '#D1E9F1',
+    200: '#A8D8EA',
+    300: '#8BCCE3',
+    400: '#5FB3D8',
+    500: '#4A9EC9',
+    600: '#3A7FA7',
+    700: '#2D6485',
+    800: '#1F4963',
+    900: '#1a3d52',
+  },
+  // Ocean Teal Theme Colors (from tailwind.config.js)
+  oceanTeal: {
+    50: '#E6F7F4',
+    100: '#CCEFE9',
+    200: '#99DFD3',
+    300: '#66CFBD',
+    400: '#4DB8A0',
+    500: '#3DA389',
+    600: '#2E8A72',
+    700: '#22705B',
+    800: '#165644',
+    900: '#0B3C2D',
+  },
 };
 
 /**

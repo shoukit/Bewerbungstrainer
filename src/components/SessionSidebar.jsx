@@ -25,20 +25,7 @@ import StructuredFeedbackDisplay from './StructuredFeedbackDisplay';
 import AudioAnalysisDisplay from './AudioAnalysisDisplay';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-
-// Fallback theme colors for inline styles
-const COLORS = {
-  slate: {
-    50: '#f8fafc',
-    100: '#f1f5f9',
-    200: '#e2e8f0',
-    400: '#94a3b8',
-    500: '#64748b',
-    600: '#475569',
-    700: '#334155',
-  },
-  amber: { 300: '#fcd34d' },
-};
+import { COLORS } from '@/config/colors';
 
 const SessionSidebar = ({
   session,

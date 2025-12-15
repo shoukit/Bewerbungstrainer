@@ -21,8 +21,11 @@ import {
   SCENARIO_CATEGORIES,
   SCENARIO_CATEGORY_CONFIG,
   normalizeCategory,
-  getScenarioCategoryConfig
+  getScenarioCategoryConfig,
+  DIFFICULTY_COLORS,
+  getDifficultyConfig
 } from '@/config/constants';
+import { COLORS } from '@/config/colors';
 
 /**
  * Icon mapping for scenarios
@@ -51,24 +54,6 @@ const CATEGORY_ICON_MAP = {
  */
 const getCategoryIcon = (iconName) => {
   return CATEGORY_ICON_MAP[iconName] || Briefcase;
-};
-
-/**
- * Difficulty badge colors (semantic - keep as is)
- */
-const DIFFICULTY_COLORS = {
-  beginner: { bg: 'rgba(34, 197, 94, 0.15)', text: '#16a34a', label: 'Einsteiger' },
-  intermediate: { bg: 'rgba(59, 130, 246, 0.15)', text: '#2563eb', label: 'Fortgeschritten' },
-  advanced: { bg: 'rgba(168, 85, 247, 0.15)', text: '#9333ea', label: 'Experte' },
-};
-
-/**
- * Fallback theme colors
- */
-const COLORS = {
-  slate: { 100: '#f1f5f9', 200: '#e2e8f0', 400: '#94a3b8', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
-  blue: { 500: '#4A9EC9' },
-  teal: { 500: '#3DA389' },
 };
 
 /**
