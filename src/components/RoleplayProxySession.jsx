@@ -208,9 +208,22 @@ const RoleplayProxySession = ({
           // ElevenLabs is ready - now send our config and start audio
           console.log('[ProxySession] Received initiation metadata, sending config...');
 
+          // Build dynamic variables including interviewer info from scenario
+          const dynamicVariables = {
+            ...variables,
+            // Add interviewer info from scenario if available
+            interviewer_name: scenario?.interviewer_profile?.name || 'Interviewer',
+            interviewer_role: scenario?.interviewer_profile?.role || '',
+            interviewer_company: scenario?.interviewer_profile?.company || '',
+          };
+
+          console.log('[ProxySession] Dynamic variables:', dynamicVariables);
+
           // Send our configuration
+          // Note: ElevenLabs expects dynamic_variables at root level
           const initMessage = {
             type: 'conversation_initiation_client_data',
+            dynamic_variables: dynamicVariables,
             conversation_config_override: {
               agent: {
                 prompt: {
@@ -218,9 +231,6 @@ const RoleplayProxySession = ({
                 },
                 first_message: scenario?.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
               },
-            },
-            custom_llm_extra_body: {
-              dynamic_variables: variables,
             },
           };
 
