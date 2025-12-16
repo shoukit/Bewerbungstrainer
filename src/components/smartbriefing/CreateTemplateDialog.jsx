@@ -647,7 +647,7 @@ const CreateTemplateDialog = ({
         zIndex: 50,
         padding: '16px',
       }}
-      onClick={onClose}
+      // Don't close on backdrop click - user must use Cancel or X button
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
