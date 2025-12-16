@@ -502,16 +502,32 @@ const RoleplayProxySession = ({
    * End the conversation and perform analysis
    */
   const endConversation = async () => {
+    // 1. IMMEDIATELY show analyzing state
     setShowEndDialog(false);
     setStatus('analyzing');
 
-    // Close WebSocket
+    // 2. IMMEDIATELY stop audio playback - clear queue and close context
+    audioQueueRef.current = [];
+    isPlayingRef.current = false;
+    nextPlayTimeRef.current = 0;
+
+    if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
+      try {
+        await playbackContextRef.current.close();
+        console.log('[ProxySession] Audio playback stopped immediately');
+      } catch (e) {
+        // Ignore close errors
+      }
+      playbackContextRef.current = null;
+    }
+
+    // 3. IMMEDIATELY close WebSocket
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
 
-    // Stop audio capture
+    // 4. Stop audio capture (microphone)
     if (mediaRecorderRef.current) {
       if (mediaRecorderRef.current.processor) {
         mediaRecorderRef.current.processor.disconnect();
@@ -520,6 +536,22 @@ const RoleplayProxySession = ({
         mediaRecorderRef.current.source.disconnect();
       }
       mediaRecorderRef.current = null;
+    }
+
+    // 5. Stop microphone stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    // Close capture context
+    if (captureContextRef.current && captureContextRef.current.state !== 'closed') {
+      try {
+        await captureContextRef.current.close();
+      } catch (e) {
+        // Ignore close errors
+      }
+      captureContextRef.current = null;
     }
 
     // Calculate final duration
