@@ -561,18 +561,57 @@ const RoleplayProxySession = ({
         feedback_prompt: scenario.feedback_prompt,
       };
 
-      console.log('[ProxySession] Starting analysis...');
+      // 1. FIRST: Download audio from ElevenLabs via HTTPS (needed for audio analysis)
+      let audioBlob = null;
+      let audioUrl = null;
 
-      // Analyze the transcript (no audio file for proxy mode)
+      if (conversationIdRef.current) {
+        console.log('[ProxySession] Step 1: Downloading audio from ElevenLabs via HTTPS...');
+        try {
+          const audioResult = await wordpressAPI.saveAudioFromElevenLabs(
+            conversationIdRef.current,
+            sessionId
+          );
+          console.log('[ProxySession] Audio saved successfully:', audioResult);
+
+          // Get the audio URL from the response
+          audioUrl = audioResult?.data?.audio_url;
+
+          // Fetch the audio as a Blob for Gemini analysis
+          if (audioUrl) {
+            console.log('[ProxySession] Fetching audio blob from:', audioUrl);
+            try {
+              const audioResponse = await fetch(audioUrl);
+              if (audioResponse.ok) {
+                audioBlob = await audioResponse.blob();
+                console.log('[ProxySession] Audio blob fetched, size:', audioBlob.size, 'type:', audioBlob.type);
+              } else {
+                console.warn('[ProxySession] Failed to fetch audio blob:', audioResponse.status);
+              }
+            } catch (fetchError) {
+              console.warn('[ProxySession] Failed to fetch audio blob:', fetchError.message);
+            }
+          }
+        } catch (audioError) {
+          console.warn('[ProxySession] Failed to save audio (non-critical):', audioError.message);
+        }
+      } else {
+        console.log('[ProxySession] No conversation_id available, skipping audio download');
+      }
+
+      // 2. Run analysis WITH the audio blob (if available)
+      console.log('[ProxySession] Step 2: Starting analysis...');
+      console.log('[ProxySession] Audio blob available:', !!audioBlob);
+
       const analysis = await analyzeRoleplayTranscript(
         transcriptRef.current,
         scenarioContext,
-        null // No audio file in proxy mode
+        audioBlob // Pass audio blob for Gemini audio analysis
       );
 
       console.log('[ProxySession] Analysis complete, saving to database...');
 
-      // Save analysis to database (with conversation_id if available)
+      // 3. Save analysis to database (with conversation_id if available)
       await saveRoleplaySessionAnalysis(
         sessionId,
         transcriptRef.current,
@@ -583,23 +622,6 @@ const RoleplayProxySession = ({
       );
 
       console.log('[ProxySession] Session saved successfully');
-
-      // Try to download and save audio from ElevenLabs via HTTPS
-      if (conversationIdRef.current) {
-        console.log('[ProxySession] Downloading audio from ElevenLabs via HTTPS...');
-        try {
-          const audioResult = await wordpressAPI.saveAudioFromElevenLabs(
-            conversationIdRef.current,
-            sessionId
-          );
-          console.log('[ProxySession] Audio saved successfully:', audioResult);
-        } catch (audioError) {
-          // Log error but don't fail - the session is already saved
-          console.warn('[ProxySession] Failed to save audio (non-critical):', audioError.message);
-        }
-      } else {
-        console.log('[ProxySession] No conversation_id available, skipping audio download');
-      }
 
       // Navigate to session results
       if (onNavigateToSession) {
