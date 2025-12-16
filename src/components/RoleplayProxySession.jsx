@@ -735,20 +735,29 @@ const RoleplayProxySession = ({
     }
   };
 
-  // Analyzing state - show loading screen
+  // Analyzing state - show fullscreen loading overlay
   if (status === 'analyzing') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center"
         >
-          <Loader2 className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-spin" />
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Analysiere Gespräch...</h2>
-          <p className="text-slate-600">
-            Das Transkript wird ausgewertet. Dies dauert einen Moment.
-          </p>
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" style={{ color: themedStyles.primaryAccent }} />
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Feedback wird generiert...</h2>
+          <p className="text-slate-600">Das kann einen Moment dauern</p>
+          <div className="mt-6">
+            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <motion.div
+                className="h-full"
+                style={{ background: themedStyles.headerGradient }}
+                initial={{ width: '0%' }}
+                animate={{ width: '100%' }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+            </div>
+          </div>
         </motion.div>
       </div>
     );
