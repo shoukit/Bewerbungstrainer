@@ -502,22 +502,21 @@ const RoleplayProxySession = ({
    * End the conversation and perform analysis
    */
   const endConversation = async () => {
-    // 1. IMMEDIATELY show analyzing state and close dialog
+    // 1. IMMEDIATELY close dialog and stop all audio/connections (synchronous)
     setShowEndDialog(false);
-    setStatus('analyzing');
 
-    // 2. SYNCHRONOUSLY stop everything (no await - so React can render immediately)
+    // Stop audio queue immediately
     audioQueueRef.current = [];
     isPlayingRef.current = false;
     nextPlayTimeRef.current = 0;
 
-    // Close WebSocket immediately (sync)
+    // Close WebSocket immediately
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
 
-    // Stop audio capture (sync)
+    // Stop audio capture
     if (mediaRecorderRef.current) {
       if (mediaRecorderRef.current.processor) {
         mediaRecorderRef.current.processor.disconnect();
@@ -528,13 +527,13 @@ const RoleplayProxySession = ({
       mediaRecorderRef.current = null;
     }
 
-    // Stop microphone stream (sync)
+    // Stop microphone stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
 
-    // Close audio contexts (fire-and-forget, no await)
+    // Close audio contexts (fire-and-forget)
     if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
       playbackContextRef.current.close().catch(() => {});
       playbackContextRef.current = null;
@@ -545,6 +544,13 @@ const RoleplayProxySession = ({
     }
 
     console.log('[ProxySession] Audio playback stopped immediately');
+
+    // 2. Show analyzing state
+    setStatus('analyzing');
+
+    // 3. Yield to allow React to re-render with the fullscreen spinner
+    // This is critical - without this, React won't render until the function completes
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     // Calculate final duration before async operations
     const finalDuration = startTimeRef.current
