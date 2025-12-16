@@ -77,7 +77,8 @@ const RoleplayProxySession = ({
   const wsRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
-  const audioContextRef = useRef(null);
+  const captureContextRef = useRef(null);  // For audio input
+  const playbackContextRef = useRef(null); // For audio output
   const audioQueueRef = useRef([]);
   const isPlayingRef = useRef(false);
   const transcriptEndRef = useRef(null);
@@ -113,7 +114,9 @@ const RoleplayProxySession = ({
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => cleanup();
+    return () => {
+      cleanup();
+    };
   }, []);
 
   const formatDuration = (seconds) => {
@@ -160,26 +163,7 @@ const RoleplayProxySession = ({
 
       ws.onopen = () => {
         console.log('[ProxySession] Connected to proxy');
-        setStatus('connected');
-        setStartTime(Date.now());
-
-        // Send initial configuration
-        const initMessage = {
-          type: 'conversation_initiation_client_data',
-          conversation_config_override: {
-            agent: {
-              prompt: {
-                prompt: scenario.content || '',
-              },
-              first_message: scenario.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
-            },
-          },
-          dynamic_variables: variables,
-        };
-        ws.send(JSON.stringify(initMessage));
-
-        // Start sending audio
-        startAudioCapture(stream, ws);
+        // Don't set connected yet - wait for conversation_initiation_metadata
       };
 
       ws.onmessage = (event) => {
@@ -217,10 +201,45 @@ const RoleplayProxySession = ({
     // Text data = JSON
     try {
       const data = JSON.parse(event.data);
+      console.log('[ProxySession] Received message type:', data.type);
 
       switch (data.type) {
+        case 'conversation_initiation_metadata':
+          // ElevenLabs is ready - now send our config and start audio
+          console.log('[ProxySession] Received initiation metadata, sending config...');
+
+          // Send our configuration
+          const initMessage = {
+            type: 'conversation_initiation_client_data',
+            conversation_config_override: {
+              agent: {
+                prompt: {
+                  prompt: scenario?.content || '',
+                },
+                first_message: scenario?.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
+              },
+            },
+            custom_llm_extra_body: {
+              dynamic_variables: variables,
+            },
+          };
+
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify(initMessage));
+            console.log('[ProxySession] Config sent');
+
+            // Now we're truly connected - start audio capture
+            setStatus('connected');
+            setStartTime(Date.now());
+
+            if (streamRef.current) {
+              startAudioCapture(streamRef.current, wsRef.current);
+            }
+          }
+          break;
+
         case 'audio':
-          // Base64 encoded audio
+          // Base64 encoded audio from ElevenLabs
           if (data.audio_event?.audio_base_64) {
             const binaryString = atob(data.audio_event.audio_base_64);
             const bytes = new Uint8Array(binaryString.length);
@@ -232,24 +251,22 @@ const RoleplayProxySession = ({
           break;
 
         case 'agent_response':
-        case 'transcript':
-          // AI message
-          if (data.agent_response_event?.agent_response || data.transcript) {
-            const text = data.agent_response_event?.agent_response || data.transcript;
-            addToTranscript('agent', text);
+          // AI response text
+          if (data.agent_response_event?.agent_response) {
+            addToTranscript('agent', data.agent_response_event.agent_response);
           }
           break;
 
         case 'user_transcript':
-          // User message
-          if (data.user_transcription_event?.user_transcript || data.user_transcript) {
-            const text = data.user_transcription_event?.user_transcript || data.user_transcript;
-            addToTranscript('user', text);
+          // User speech transcription
+          if (data.user_transcription_event?.user_transcript) {
+            addToTranscript('user', data.user_transcription_event.user_transcript);
           }
           break;
 
         case 'interruption':
           // User interrupted - clear audio queue
+          console.log('[ProxySession] Interruption detected');
           audioQueueRef.current = [];
           break;
 
@@ -260,13 +277,19 @@ const RoleplayProxySession = ({
           }
           break;
 
+        case 'internal_vad_score':
+        case 'internal_turn_probability':
+        case 'internal_tentative_agent_response':
+          // Internal debugging messages - ignore silently
+          break;
+
         case 'error':
           console.error('[ProxySession] Server error:', data);
-          setError(data.message || 'Server-Fehler');
+          setError(data.message || data.error_message || 'Server-Fehler');
           break;
 
         default:
-          console.log('[ProxySession] Unknown message type:', data.type);
+          console.log('[ProxySession] Unhandled message type:', data.type, data);
       }
     } catch (err) {
       console.error('[ProxySession] Message parse error:', err);
@@ -288,31 +311,59 @@ const RoleplayProxySession = ({
   };
 
   /**
-   * Start capturing and sending audio
+   * Start capturing and sending audio using AudioWorklet/ScriptProcessor
+   * ElevenLabs expects PCM16 audio at 16kHz
    */
-  const startAudioCapture = (stream, ws) => {
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : 'audio/webm';
+  const startAudioCapture = async (stream, ws) => {
+    try {
+      // Create audio context at 16kHz for ElevenLabs
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+        sampleRate: 16000,
+      });
+      captureContextRef.current = audioContext;
 
-    const mediaRecorder = new MediaRecorder(stream, { mimeType });
-    mediaRecorderRef.current = mediaRecorder;
+      const source = audioContext.createMediaStreamSource(stream);
 
-    mediaRecorder.ondataavailable = async (event) => {
-      if (event.data.size > 0 && ws.readyState === WebSocket.OPEN && !isMuted) {
-        // Convert to base64 and send as JSON
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result.split(',')[1];
-          ws.send(JSON.stringify({
-            user_audio_chunk: base64,
-          }));
-        };
-        reader.readAsDataURL(event.data);
-      }
-    };
+      // Use ScriptProcessor for wider browser support
+      // Buffer size of 4096 at 16kHz = ~256ms chunks
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
 
-    mediaRecorder.start(100); // Send chunks every 100ms
+      processor.onaudioprocess = (event) => {
+        if (ws.readyState !== WebSocket.OPEN || isMuted) return;
+
+        const inputData = event.inputBuffer.getChannelData(0);
+
+        // Convert Float32 to Int16 PCM
+        const pcmData = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          const sample = Math.max(-1, Math.min(1, inputData[i]));
+          pcmData[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+        }
+
+        // Convert to base64
+        const uint8Array = new Uint8Array(pcmData.buffer);
+        let binary = '';
+        for (let i = 0; i < uint8Array.length; i++) {
+          binary += String.fromCharCode(uint8Array[i]);
+        }
+        const base64Audio = btoa(binary);
+
+        // Send in ElevenLabs format
+        ws.send(JSON.stringify({
+          user_audio_chunk: base64Audio,
+        }));
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      // Store processor for cleanup
+      mediaRecorderRef.current = { processor, source, audioContext };
+
+      console.log('[ProxySession] Audio capture started (PCM16 @ 16kHz)');
+    } catch (err) {
+      console.error('[ProxySession] Failed to start audio capture:', err);
+    }
   };
 
   /**
@@ -338,20 +389,18 @@ const RoleplayProxySession = ({
     const arrayBuffer = audioQueueRef.current.shift();
 
     try {
-      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
-          sampleRate: 22050,
-        });
+      if (!playbackContextRef.current || playbackContextRef.current.state === 'closed') {
+        playbackContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       }
 
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
+      if (playbackContextRef.current.state === 'suspended') {
+        await playbackContextRef.current.resume();
       }
 
-      const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer.slice(0));
-      const source = audioContextRef.current.createBufferSource();
+      const audioBuffer = await playbackContextRef.current.decodeAudioData(arrayBuffer.slice(0));
+      const source = playbackContextRef.current.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(audioContextRef.current.destination);
+      source.connect(playbackContextRef.current.destination);
 
       source.onended = () => {
         playNextAudio();
@@ -399,8 +448,27 @@ const RoleplayProxySession = ({
       wsRef.current = null;
     }
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+    // Clean up audio processor
+    if (mediaRecorderRef.current) {
+      if (mediaRecorderRef.current.processor) {
+        mediaRecorderRef.current.processor.disconnect();
+      }
+      if (mediaRecorderRef.current.source) {
+        mediaRecorderRef.current.source.disconnect();
+      }
+      mediaRecorderRef.current = null;
+    }
+
+    // Close capture audio context
+    if (captureContextRef.current && captureContextRef.current.state !== 'closed') {
+      captureContextRef.current.close();
+      captureContextRef.current = null;
+    }
+
+    // Close playback audio context
+    if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
+      playbackContextRef.current.close();
+      playbackContextRef.current = null;
     }
 
     if (streamRef.current) {
