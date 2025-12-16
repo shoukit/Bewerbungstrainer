@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePartner } from '../../context/PartnerContext';
 import wordpressAPI from '../../services/wordpress-api';
+import FullscreenLoader from '@/components/ui/fullscreen-loader';
 import {
   ArrowLeft,
   Sparkles,
@@ -261,14 +262,15 @@ const SmartBriefingForm = ({
   }
 
   return (
-    <div
-      style={{
-        padding: '24px',
-        maxWidth: '700px',
-        margin: '0 auto',
-      }}
-    >
-      {/* Back Button */}
+    <>
+      <div
+        style={{
+          padding: '24px',
+          maxWidth: '700px',
+          margin: '0 auto',
+        }}
+      >
+        {/* Back Button */}
       <button
         onClick={onBack}
         disabled={isGenerating}
@@ -440,27 +442,15 @@ const SmartBriefingForm = ({
         </form>
       </div>
 
-      {/* Info Box */}
-      {isGenerating && (
-        <div
-          style={{
-            marginTop: '24px',
-            padding: '16px 20px',
-            backgroundColor: `${primaryAccent}08`,
-            borderRadius: '12px',
-            border: `1px solid ${primaryAccent}20`,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Lightbulb size={18} style={{ color: primaryAccent }} />
-            <p style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>
-              Die KI analysiert deine Angaben und erstellt ein massgeschneidertes Briefing.
-              Dies kann einige Sekunden dauern...
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+
+      {/* Fullscreen Loading Overlay */}
+      <FullscreenLoader
+        isLoading={isGenerating}
+        message="Smart Briefing wird erstellt..."
+        subMessage="Die KI analysiert deine Angaben und erstellt ein maßgeschneidertes Briefing."
+      />
+    </>
   );
 };
 
