@@ -18,13 +18,15 @@ import {
   Target,
   MessageSquare,
   ArrowLeft,
-  Check
+  Check,
+  Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
@@ -837,6 +839,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
 
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
 
   // Confirmation dialog states
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -1023,6 +1026,24 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           >
             <Check size={16} />
             {isMobile ? 'Beenden' : 'Training beenden'}
+          </button>
+          {/* Settings Button */}
+          <button
+            onClick={() => setShowDeviceSettings(true)}
+            style={{
+              padding: isMobile ? '10px' : '8px',
+              borderRadius: '8px',
+              background: '#f1f5f9',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#64748b',
+            }}
+            title="Geräte-Einstellungen"
+          >
+            <Settings size={18} />
           </button>
           <button
             onClick={handleCancelClick}
@@ -1613,6 +1634,14 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         </div>
       )}
 
+      {/* Device Settings Dialog */}
+      <DeviceSettingsDialog
+        isOpen={showDeviceSettings}
+        onClose={() => setShowDeviceSettings(false)}
+        mode="audio"
+        selectedMicrophoneId={selectedMicrophoneId}
+        onMicrophoneChange={setSelectedMicrophoneId}
+      />
     </div>
   );
 };
