@@ -574,8 +574,8 @@ const RoleplayProxySession = ({
           );
           console.log('[ProxySession] Audio saved successfully:', audioResult);
 
-          // Get the audio URL from the response
-          audioUrl = audioResult?.data?.audio_url;
+          // Get the audio URL from the response (API returns 'url', not 'audio_url')
+          audioUrl = audioResult?.data?.url;
 
           // Fetch the audio as a Blob for Gemini analysis
           if (audioUrl) {
