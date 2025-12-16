@@ -78,9 +78,9 @@ const RoleplayProxySession = ({
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const captureContextRef = useRef(null);  // For audio input
-  const playbackContextRef = useRef(null); // For audio output
   const audioQueueRef = useRef([]);
   const isPlayingRef = useRef(false);
+  const audioElementRef = useRef(null);
   const transcriptEndRef = useRef(null);
   const durationIntervalRef = useRef(null);
 
@@ -378,6 +378,7 @@ const RoleplayProxySession = ({
 
   /**
    * Queue audio for playback
+   * ElevenLabs sends MP3 audio chunks via base64
    */
   const queueAudio = (arrayBuffer) => {
     audioQueueRef.current.push(arrayBuffer);
@@ -387,7 +388,8 @@ const RoleplayProxySession = ({
   };
 
   /**
-   * Play next audio in queue
+   * Play next audio in queue using HTML5 Audio element
+   * More robust for streaming MP3 chunks than Web Audio API
    */
   const playNextAudio = async () => {
     if (audioQueueRef.current.length === 0) {
@@ -399,24 +401,41 @@ const RoleplayProxySession = ({
     const arrayBuffer = audioQueueRef.current.shift();
 
     try {
-      if (!playbackContextRef.current || playbackContextRef.current.state === 'closed') {
-        playbackContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      // Create blob from array buffer - try MP3 first
+      const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+
+      // Create or reuse audio element
+      if (!audioElementRef.current) {
+        audioElementRef.current = new Audio();
       }
 
-      if (playbackContextRef.current.state === 'suspended') {
-        await playbackContextRef.current.resume();
-      }
+      const audio = audioElementRef.current;
 
-      const audioBuffer = await playbackContextRef.current.decodeAudioData(arrayBuffer.slice(0));
-      const source = playbackContextRef.current.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(playbackContextRef.current.destination);
-
-      source.onended = () => {
+      // Set up event handlers
+      const onEnded = () => {
+        URL.revokeObjectURL(url);
+        audio.removeEventListener('ended', onEnded);
+        audio.removeEventListener('error', onError);
         playNextAudio();
       };
 
-      source.start();
+      const onError = (e) => {
+        console.error('[ProxySession] Audio element error:', e);
+        URL.revokeObjectURL(url);
+        audio.removeEventListener('ended', onEnded);
+        audio.removeEventListener('error', onError);
+        // Try next chunk
+        playNextAudio();
+      };
+
+      audio.addEventListener('ended', onEnded);
+      audio.addEventListener('error', onError);
+
+      audio.src = url;
+      await audio.play();
+      console.log('[ProxySession] Playing audio chunk via Audio element');
+
     } catch (err) {
       console.error('[ProxySession] Audio playback error:', err);
       playNextAudio(); // Try next audio
@@ -475,10 +494,11 @@ const RoleplayProxySession = ({
       captureContextRef.current = null;
     }
 
-    // Close playback audio context
-    if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
-      playbackContextRef.current.close();
-      playbackContextRef.current = null;
+    // Clean up audio playback element
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current.src = '';
+      audioElementRef.current = null;
     }
 
     if (streamRef.current) {
