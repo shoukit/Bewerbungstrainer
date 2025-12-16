@@ -65,9 +65,12 @@ const RoleplayProxySession = ({
 
   // Session state
   const [sessionId, setSessionId] = useState(null);
-  const [status, setStatus] = useState('disconnected'); // disconnected, connecting, connected, analyzing
+  const [status, setStatus] = useState('disconnected'); // disconnected, connecting, connected
   const [error, setError] = useState(null);
   const [transcript, setTranscript] = useState([]);
+
+  // Analysis state - separate from connection status (matches RoleplaySession.jsx)
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Timer state
   const [startTime, setStartTime] = useState(null);
@@ -502,34 +505,21 @@ const RoleplayProxySession = ({
    * End the conversation and perform analysis
    */
   const endConversation = async () => {
-    // 1. IMMEDIATELY set analyzing state and close dialog - BEFORE any cleanup
-    // This matches RoleplaySession.jsx behavior exactly
-    console.log('[ProxySession] 🔴 endConversation called');
+    // Close dialog first
     setShowEndDialog(false);
-    setStatus('analyzing');
-    console.log('[ProxySession] 🔴 setStatus(analyzing) called');
 
-    // 2. Force browser to paint the spinner before continuing
-    // Double requestAnimationFrame ensures the browser actually paints
-    await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          console.log('[ProxySession] 🔴 After paint - spinner should be visible now');
-          resolve();
-        });
-      });
-    });
-
-    // 3. Now do cleanup (after spinner is showing)
-    audioQueueRef.current = [];
-    isPlayingRef.current = false;
-    nextPlayTimeRef.current = 0;
-
+    // Stop audio playback immediately
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
 
+    // Clear audio queue
+    audioQueueRef.current = [];
+    isPlayingRef.current = false;
+    nextPlayTimeRef.current = 0;
+
+    // Stop microphone
     if (mediaRecorderRef.current) {
       if (mediaRecorderRef.current.processor) {
         mediaRecorderRef.current.processor.disconnect();
@@ -545,6 +535,7 @@ const RoleplayProxySession = ({
       streamRef.current = null;
     }
 
+    // Close audio contexts
     if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
       playbackContextRef.current.close().catch(() => {});
       playbackContextRef.current = null;
@@ -554,7 +545,7 @@ const RoleplayProxySession = ({
       captureContextRef.current = null;
     }
 
-    console.log('[ProxySession] Audio cleanup complete');
+    console.log('🏁 [ProxySession] Ending conversation');
 
     // Calculate final duration before async operations
     const finalDuration = startTimeRef.current
@@ -573,17 +564,13 @@ const RoleplayProxySession = ({
     }
 
     if (transcriptRef.current.length === 0) {
-      console.log('[ProxySession] No transcript, skipping analysis');
-      cleanup();
-      if (onNavigateToSession) {
-        onNavigateToSession({ id: sessionId });
-      } else if (onEnd) {
-        onEnd();
-      }
+      setError('Das Gespräch war zu kurz. Bitte versuche es erneut.');
       return;
     }
 
+    // Analyze transcript - SET ANALYZING STATE HERE (matches RoleplaySession.jsx exactly)
     try {
+      setIsAnalyzing(true);
       // Build scenario context for analysis
       const scenarioContext = {
         title: scenario.title || 'Live-Simulation',
@@ -659,24 +646,26 @@ const RoleplayProxySession = ({
       console.log('[ProxySession] Session saved successfully');
 
       // Navigate to session results
-      if (onNavigateToSession) {
-        console.log('[ProxySession] Navigating to session:', sessionId);
-        onNavigateToSession({ id: sessionId });
-      } else if (onEnd) {
-        onEnd();
+      setIsAnalyzing(false);
+      if (onNavigateToSession && sessionId) {
+        const sessionForNavigation = {
+          id: sessionId,
+          scenario_id: scenario.id,
+          transcript: JSON.stringify(transcriptRef.current),
+          feedback_json: analysis.feedbackContent,
+          audio_analysis_json: analysis.audioAnalysisContent,
+          duration: finalDuration,
+          conversation_id: conversationIdRef.current,
+          created_at: new Date().toISOString(),
+        };
+        console.log('🚀 [ProxySession] Navigating to session analysis:', sessionId);
+        onNavigateToSession(sessionForNavigation);
       }
 
     } catch (err) {
-      console.error('[ProxySession] Analysis/save failed:', err);
-      setError(`Analyse fehlgeschlagen: ${err.message}`);
-      // Still navigate to session - it might have partial data
-      if (onNavigateToSession) {
-        onNavigateToSession({ id: sessionId });
-      } else if (onEnd) {
-        onEnd();
-      }
-    } finally {
-      cleanup();
+      console.error('❌ [ProxySession] Analysis failed:', err);
+      setError(err.message || 'Fehler bei der Analyse.');
+      setIsAnalyzing(false);
     }
   };
 
@@ -737,68 +726,30 @@ const RoleplayProxySession = ({
     }
   };
 
-  // Analyzing state - MUST use fixed positioning to overlay entire screen including sidebar
-  if (status === 'analyzing') {
-    console.log('[ProxySession] 🟢 RENDERING SPINNER - status is analyzing');
+  // Analyzing state - matches RoleplaySession.jsx exactly
+  if (isAnalyzing) {
     return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 9999,
-          background: 'linear-gradient(to bottom right, #f8fafc, #eff6ff, #f0fdfa)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-        }}
-      >
-        <div
-          style={{
-            background: 'white',
-            borderRadius: '24px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            padding: '32px',
-            maxWidth: '28rem',
-            width: '100%',
-            textAlign: 'center',
-          }}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center"
         >
-          <Loader2
-            className="animate-spin"
-            style={{
-              width: '64px',
-              height: '64px',
-              margin: '0 auto 16px',
-              color: themedStyles.iconPrimary
-            }}
-          />
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
-            Feedback wird generiert...
-          </h2>
-          <p style={{ color: '#475569' }}>Das kann einen Moment dauern</p>
-          <div style={{ marginTop: '24px' }}>
-            <div style={{
-              width: '100%',
-              background: '#e2e8f0',
-              borderRadius: '9999px',
-              height: '8px',
-              overflow: 'hidden'
-            }}>
-              <div
-                style={{
-                  height: '100%',
-                  width: '60%',
-                  background: themedStyles.headerGradient,
-                  animation: 'pulse 2s infinite',
-                }}
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" style={{ color: themedStyles.primaryAccent }} />
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Feedback wird generiert...</h2>
+          <p className="text-slate-600">Das kann einen Moment dauern</p>
+          <div className="mt-6">
+            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <motion.div
+                className="h-full"
+                style={{ background: themedStyles.headerGradient }}
+                initial={{ width: '0%' }}
+                animate={{ width: '100%' }}
+                transition={{ duration: 3, repeat: Infinity }}
               />
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
