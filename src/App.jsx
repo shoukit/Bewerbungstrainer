@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import OverviewDashboard from './components/OverviewDashboard';
 import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplayDeviceSetup from './components/RoleplayDeviceSetup';
+import RoleplayVariablesPage from './components/RoleplayVariablesPage';
 import RoleplaySession from './components/RoleplaySession';
 import SessionHistory, { SESSION_TABS } from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
@@ -89,6 +90,7 @@ const BrandingLoadingSpinner = () => {
 const VIEWS = {
   OVERVIEW: 'overview',
   DASHBOARD: 'dashboard',
+  ROLEPLAY_VARIABLES: 'roleplay_variables',
   ROLEPLAY_DEVICE_SETUP: 'roleplay_device_setup',
   ROLEPLAY: 'roleplay',
   SIMULATOR: 'simulator',
@@ -443,13 +445,25 @@ function AppContent() {
   };
 
   // ===== ROLEPLAY HANDLERS =====
-  const handleSelectScenario = (scenario, variables = {}) => {
+  const handleSelectScenario = (scenario) => {
     console.log('🎭 [APP] Scenario selected:', scenario);
-    console.log('🎭 [APP] Variables received:', variables);
     setSelectedScenario(scenario);
-    setRoleplayVariables(variables);
+    setRoleplayVariables({});
     setRoleplayMicrophoneId(null); // Reset microphone selection
+    setCurrentView(VIEWS.ROLEPLAY_VARIABLES);
+  };
+
+  const handleRoleplayVariablesNext = (variables) => {
+    console.log('🎭 [APP] Variables submitted:', variables);
+    setRoleplayVariables(variables);
     setCurrentView(VIEWS.ROLEPLAY_DEVICE_SETUP);
+  };
+
+  const handleRoleplayVariablesBack = () => {
+    console.log('🎭 [APP] Variables cancelled - returning to dashboard');
+    setSelectedScenario(null);
+    setRoleplayVariables({});
+    setCurrentView(VIEWS.DASHBOARD);
   };
 
   const handleRoleplayDeviceSetupComplete = ({ selectedMicrophoneId }) => {
@@ -459,11 +473,9 @@ function AppContent() {
   };
 
   const handleRoleplayDeviceSetupBack = () => {
-    console.log('🎭 [APP] Device setup cancelled - returning to dashboard');
-    setSelectedScenario(null);
-    setRoleplayVariables({});
+    console.log('🎭 [APP] Device setup cancelled - returning to variables');
     setRoleplayMicrophoneId(null);
-    setCurrentView(VIEWS.DASHBOARD);
+    setCurrentView(VIEWS.ROLEPLAY_VARIABLES);
   };
 
   const handleEndRoleplay = () => {
@@ -553,6 +565,15 @@ function AppContent() {
   // ===== CONTENT RENDERING =====
   const renderContent = () => {
     switch (currentView) {
+      case VIEWS.ROLEPLAY_VARIABLES:
+        return (
+          <RoleplayVariablesPage
+            scenario={selectedScenario}
+            onBack={handleRoleplayVariablesBack}
+            onNext={handleRoleplayVariablesNext}
+          />
+        );
+
       case VIEWS.ROLEPLAY_DEVICE_SETUP:
         return (
           <RoleplayDeviceSetup

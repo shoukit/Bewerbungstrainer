@@ -23,7 +23,6 @@ import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
 import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
-import RoleplayVariablesDialog from './RoleplayVariablesDialog';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
@@ -123,10 +122,6 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
     difficulty: 'medium',
   });
 
-  // Variables dialog
-  const [selectedScenario, setSelectedScenario] = useState(null);
-  const [showVariablesDialog, setShowVariablesDialog] = useState(false);
-
   // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
     console.log('🔄 [RoleplayDashboard] Loading scenarios...');
@@ -174,26 +169,14 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
       setPendingAction({
         type: 'SELECT_ROLEPLAY_SCENARIO',
         scenario: scenario,
-        variables: {}, // Will be collected after login
       });
       // The requireAuth function will open the login modal
       requireAuth(() => {}, null);
       return;
     }
 
-    setSelectedScenario(scenario);
-    setShowVariablesDialog(true);
-  };
-
-  const handleVariablesSubmit = (variables) => {
-    console.log('📝 [RoleplayDashboard] Variables collected:', variables);
-    setShowVariablesDialog(false);
-    onSelectScenario(selectedScenario, variables);
-  };
-
-  const handleVariablesCancel = () => {
-    setShowVariablesDialog(false);
-    setSelectedScenario(null);
+    // Directly pass scenario to parent - variables will be collected on separate page
+    onSelectScenario(scenario);
   };
 
   const filterScenarios = () => {
@@ -503,13 +486,6 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
         </DialogContent>
       </Dialog>
 
-      {/* Variables Input Dialog */}
-      <RoleplayVariablesDialog
-        open={showVariablesDialog}
-        scenario={selectedScenario}
-        onSubmit={handleVariablesSubmit}
-        onCancel={handleVariablesCancel}
-      />
     </div>
   );
 };
