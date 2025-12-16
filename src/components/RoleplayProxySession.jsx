@@ -509,9 +509,16 @@ const RoleplayProxySession = ({
     setStatus('analyzing');
     console.log('[ProxySession] 🔴 setStatus(analyzing) called');
 
-    // 2. Yield to allow React to re-render with the spinner BEFORE cleanup
-    await new Promise(resolve => setTimeout(resolve, 0));
-    console.log('[ProxySession] 🔴 After yield - spinner should be visible now');
+    // 2. Force browser to paint the spinner before continuing
+    // Double requestAnimationFrame ensures the browser actually paints
+    await new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          console.log('[ProxySession] 🔴 After paint - spinner should be visible now');
+          resolve();
+        });
+      });
+    });
 
     // 3. Now do cleanup (after spinner is showing)
     audioQueueRef.current = [];
