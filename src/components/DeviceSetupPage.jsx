@@ -17,6 +17,8 @@ import {
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
+import MicrophoneSelector from '@/components/MicrophoneSelector';
+import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 
 /**
  * DeviceSelector - Reusable component for selecting audio/video devices
@@ -664,6 +666,7 @@ const DeviceSetupPage = ({
   const [devicesLoading, setDevicesLoading] = useState(true);
   const [micError, setMicError] = useState(null);
   const [cameraError, setCameraError] = useState(null);
+  const [showMicTest, setShowMicTest] = useState(false);
 
   // Partner theming
   const { branding } = usePartner();
@@ -909,26 +912,15 @@ const DeviceSetupPage = ({
                 color: COLORS.slate[900],
                 margin: 0,
               }}>
-                Mikrofon auswählen
+                Mikrofon testen
               </h3>
             </div>
 
-            <DeviceSelector
-              type="audio"
-              devices={audioDevices}
+            <MicrophoneSelector
               selectedDeviceId={selectedMicrophoneId}
               onDeviceChange={setSelectedMicrophoneId}
-              isLoading={devicesLoading}
-              error={micError}
-              onRefresh={loadDevices}
-              primaryAccent={primaryAccent}
-              themedGradient={headerGradient}
+              onTestClick={() => setShowMicTest(true)}
             />
-
-            {/* Microphone Test */}
-            {selectedMicrophoneId && !micError && (
-              <MicrophoneTest deviceId={selectedMicrophoneId} primaryAccent={primaryAccent} />
-            )}
           </div>
 
           {/* Start Button */}
@@ -968,6 +960,13 @@ const DeviceSetupPage = ({
           </button>
         </motion.div>
       )}
+
+      {/* Microphone Test Dialog */}
+      <MicrophoneTestDialog
+        isOpen={showMicTest}
+        onClose={() => setShowMicTest(false)}
+        deviceId={selectedMicrophoneId}
+      />
     </div>
   );
 };
