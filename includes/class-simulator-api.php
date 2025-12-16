@@ -1526,6 +1526,20 @@ AUDIO ZUR ANALYSE:";
             } else {
                 error_log("[SIMULATOR_PARSE] JSON decode failed: " . json_last_error_msg());
                 error_log("[SIMULATOR_PARSE] JSON string preview: " . substr($json_str, 0, 300));
+
+                // Try to repair: Gemini sometimes outputs unescaped quotes inside strings
+                // Pattern: after action marker (*) there's often unescaped dialog quotes
+                $repaired_json = $this->repair_json_string_quotes($json_str);
+                if ($repaired_json !== $json_str) {
+                    error_log("[SIMULATOR_PARSE] Attempting JSON repair...");
+                    $questions = json_decode($repaired_json, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($questions)) {
+                        error_log("[SIMULATOR_PARSE] JSON repair successful! Parsed " . count($questions) . " questions");
+                        return $questions;
+                    } else {
+                        error_log("[SIMULATOR_PARSE] JSON repair failed: " . json_last_error_msg());
+                    }
+                }
             }
         } else {
             error_log("[SIMULATOR_PARSE] No JSON array found in cleaned response");
@@ -1550,6 +1564,64 @@ AUDIO ZUR ANALYSE:";
         error_log("[SIMULATOR_PARSE] FAILED to parse questions!");
         error_log("[SIMULATOR_PARSE] Full response (first 1000 chars): " . substr($response, 0, 1000));
         return array();
+    }
+
+    /**
+     * Repair JSON strings with unescaped quotes
+     *
+     * Gemini sometimes outputs unescaped double quotes inside JSON string values,
+     * typically for dialog after action markers (e.g., *action* "dialog").
+     * This function attempts to fix these by converting internal quotes to single quotes.
+     *
+     * @param string $json The JSON string to repair
+     * @return string The repaired JSON string
+     */
+    private function repair_json_string_quotes($json) {
+        $result = '';
+        $len = strlen($json);
+        $inString = false;
+        $stringStart = -1;
+        $i = 0;
+
+        while ($i < $len) {
+            $char = $json[$i];
+
+            // Handle escape sequences
+            if ($char === '\\' && $i + 1 < $len) {
+                $result .= $char . $json[$i + 1];
+                $i += 2;
+                continue;
+            }
+
+            if ($char === '"') {
+                if (!$inString) {
+                    // Starting a new string
+                    $inString = true;
+                    $stringStart = $i;
+                    $result .= $char;
+                } else {
+                    // Either end of string or unescaped quote inside string
+                    // Look ahead to determine which case
+                    $lookAhead = ltrim(substr($json, $i + 1, 20));
+                    $nextChar = strlen($lookAhead) > 0 ? $lookAhead[0] : '';
+
+                    // If followed by JSON structural characters, this ends the string
+                    if (in_array($nextChar, array(',', '}', ']', ':'))) {
+                        $inString = false;
+                        $result .= $char;
+                    } else {
+                        // This is an unescaped quote inside the string - replace with single quote
+                        $result .= "'";
+                    }
+                }
+            } else {
+                $result .= $char;
+            }
+
+            $i++;
+        }
+
+        return $result;
     }
 
     /**
