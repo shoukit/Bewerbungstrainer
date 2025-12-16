@@ -102,6 +102,31 @@
   #bewerbungstrainer-app {
     @apply bg-background text-foreground;
   }
+
+  /* Override Elementor/WordPress hover styles for headings and text */
+  #bewerbungstrainer-app h1,
+  #bewerbungstrainer-app h2,
+  #bewerbungstrainer-app h3,
+  #bewerbungstrainer-app h4,
+  #bewerbungstrainer-app h5,
+  #bewerbungstrainer-app h6,
+  #bewerbungstrainer-app p,
+  #bewerbungstrainer-app span,
+  #bewerbungstrainer-app div {
+    color: inherit !important;
+  }
+
+  #bewerbungstrainer-app h1:hover,
+  #bewerbungstrainer-app h2:hover,
+  #bewerbungstrainer-app h3:hover,
+  #bewerbungstrainer-app h4:hover,
+  #bewerbungstrainer-app h5:hover,
+  #bewerbungstrainer-app h6:hover,
+  #bewerbungstrainer-app p:hover,
+  #bewerbungstrainer-app span:hover,
+  #bewerbungstrainer-app div:hover {
+    color: inherit !important;
+  }
 }
 
 /* =============================================================================
