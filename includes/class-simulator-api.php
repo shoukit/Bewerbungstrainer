@@ -307,45 +307,58 @@ class Bewerbungstrainer_Simulator_API {
      * Generate questions for a session using Gemini
      */
     public function generate_questions($request) {
+        error_log("[SIMULATOR_QUESTIONS] ========== START generate_questions ==========");
+
         $session_id = intval($request['id']);
+        error_log("[SIMULATOR_QUESTIONS] Session ID: $session_id");
+
         $session = $this->db->get_session($session_id);
 
         if (!$session) {
+            error_log("[SIMULATOR_QUESTIONS] ERROR: Session not found");
             return new WP_Error(
                 'not_found',
                 __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
                 array('status' => 404)
             );
         }
+        error_log("[SIMULATOR_QUESTIONS] Session found, scenario_id: " . $session->scenario_id);
 
         // Get scenario
         $scenario = $this->db->get_scenario($session->scenario_id);
         if (!$scenario) {
+            error_log("[SIMULATOR_QUESTIONS] ERROR: Scenario not found");
             return new WP_Error(
                 'scenario_not_found',
                 __('Szenario nicht gefunden.', 'bewerbungstrainer'),
                 array('status' => 404)
             );
         }
+        error_log("[SIMULATOR_QUESTIONS] Scenario: " . $scenario->title . " (mode: " . ($scenario->mode ?? 'INTERVIEW') . ")");
 
         // Get API key
         $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
         if (empty($api_key)) {
+            error_log("[SIMULATOR_QUESTIONS] ERROR: API key missing");
             return new WP_Error(
                 'missing_api_key',
                 __('Gemini API Key ist nicht konfiguriert.', 'bewerbungstrainer'),
                 array('status' => 500)
             );
         }
+        error_log("[SIMULATOR_QUESTIONS] API key found (length: " . strlen($api_key) . ")");
 
         // Build prompt with variable interpolation
         $variables = $session->variables_json ?: array();
+        error_log("[SIMULATOR_QUESTIONS] Variables: " . json_encode($variables));
+
         $system_prompt = $this->interpolate_variables($scenario->system_prompt, $variables);
         $question_prompt = $scenario->question_generation_prompt ?: $this->get_default_question_prompt();
         $question_prompt = $this->interpolate_variables($question_prompt, $variables);
 
         // Calculate question count
         $question_count = rand($scenario->question_count_min, $scenario->question_count_max);
+        error_log("[SIMULATOR_QUESTIONS] Question count: $question_count (min: {$scenario->question_count_min}, max: {$scenario->question_count_max})");
 
         // Get scenario mode (INTERVIEW or SIMULATION)
         $mode = $scenario->mode ?? 'INTERVIEW';
@@ -358,6 +371,7 @@ class Bewerbungstrainer_Simulator_API {
             $question_count,
             $mode
         );
+        error_log("[SIMULATOR_QUESTIONS] Prompt built, length: " . strlen($full_prompt) . " chars");
 
         // Log prompt to prompts.log
         if (function_exists('bewerbungstrainer_log_prompt')) {
@@ -376,9 +390,11 @@ class Bewerbungstrainer_Simulator_API {
         }
 
         // Call Gemini API
+        error_log("[SIMULATOR_QUESTIONS] Calling Gemini API...");
         $response = $this->call_gemini_api($full_prompt, $api_key);
 
         if (is_wp_error($response)) {
+            error_log("[SIMULATOR_QUESTIONS] ERROR: Gemini API returned WP_Error: " . $response->get_error_message());
             // Log error response
             if (function_exists('bewerbungstrainer_log_response')) {
                 bewerbungstrainer_log_response('SIMULATOR_QUESTIONS', $response->get_error_message(), true);
@@ -386,21 +402,29 @@ class Bewerbungstrainer_Simulator_API {
             return $response;
         }
 
+        error_log("[SIMULATOR_QUESTIONS] Gemini API success, response length: " . strlen($response) . " chars");
+        error_log("[SIMULATOR_QUESTIONS] Response preview: " . substr($response, 0, 500));
+
         // Log successful response
         if (function_exists('bewerbungstrainer_log_response')) {
             bewerbungstrainer_log_response('SIMULATOR_QUESTIONS', $response);
         }
 
         // Parse questions from response
+        error_log("[SIMULATOR_QUESTIONS] Parsing questions from response...");
         $questions = $this->parse_questions_response($response);
 
         if (empty($questions)) {
+            error_log("[SIMULATOR_QUESTIONS] ERROR: parse_questions_response returned empty array!");
+            error_log("[SIMULATOR_QUESTIONS] Full response was: " . $response);
             return new WP_Error(
                 'generation_failed',
                 __('Fehler beim Generieren der Fragen.', 'bewerbungstrainer'),
                 array('status' => 500)
             );
         }
+
+        error_log("[SIMULATOR_QUESTIONS] Successfully parsed " . count($questions) . " questions");
 
         // Update session with questions
         $this->db->update_session($session_id, array(
@@ -1420,30 +1444,47 @@ AUDIO ZUR ANALYSE:";
      * Parse questions response from Gemini
      */
     private function parse_questions_response($response) {
+        error_log("[SIMULATOR_PARSE] Starting to parse questions response");
+        error_log("[SIMULATOR_PARSE] Response length: " . strlen($response));
+
         // Try to extract JSON array from response
         $json_match = null;
 
         // Try to find JSON array
         if (preg_match('/\[[\s\S]*\]/', $response, $json_match)) {
             $json_str = $json_match[0];
+            error_log("[SIMULATOR_PARSE] Found JSON array, length: " . strlen($json_str));
             $questions = json_decode($json_str, true);
 
             if (json_last_error() === JSON_ERROR_NONE && is_array($questions)) {
+                error_log("[SIMULATOR_PARSE] Successfully parsed " . count($questions) . " questions from JSON array");
                 return $questions;
+            } else {
+                error_log("[SIMULATOR_PARSE] JSON decode failed: " . json_last_error_msg());
+                error_log("[SIMULATOR_PARSE] JSON string preview: " . substr($json_str, 0, 300));
             }
+        } else {
+            error_log("[SIMULATOR_PARSE] No JSON array found in response");
         }
 
         // Try to find JSON object with questions array
         if (preg_match('/\{[\s\S]*"questions"[\s\S]*\}/', $response, $json_match)) {
             $json_str = $json_match[0];
+            error_log("[SIMULATOR_PARSE] Found JSON object with questions key");
             $data = json_decode($json_str, true);
 
             if (json_last_error() === JSON_ERROR_NONE && isset($data['questions'])) {
+                error_log("[SIMULATOR_PARSE] Successfully parsed " . count($data['questions']) . " questions from JSON object");
                 return $data['questions'];
+            } else {
+                error_log("[SIMULATOR_PARSE] JSON object decode failed: " . json_last_error_msg());
             }
+        } else {
+            error_log("[SIMULATOR_PARSE] No JSON object with questions key found");
         }
 
-        error_log('Simulator: Failed to parse questions from response: ' . substr($response, 0, 500));
+        error_log("[SIMULATOR_PARSE] FAILED to parse questions!");
+        error_log("[SIMULATOR_PARSE] Full response: " . $response);
         return array();
     }
 
