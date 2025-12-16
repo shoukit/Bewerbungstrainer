@@ -1229,11 +1229,12 @@ AUDIO ZUR ANALYSE:";
      * Call Gemini API (text only) with retry logic and model fallback
      */
     private function call_gemini_api($prompt, $api_key, $max_retries = 3) {
-        // Model fallback order
+        // Model fallback order (same as Smart Briefing)
         $models = array(
             'gemini-2.0-flash-exp',
             'gemini-2.0-flash',
             'gemini-1.5-flash-latest',
+            'gemini-1.5-pro-latest',
         );
 
         $last_error = null;
