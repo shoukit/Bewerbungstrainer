@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import SimulatorDashboard from './SimulatorDashboard';
 import SimulatorVariablesPage from './SimulatorVariablesPage';
-import SimulatorDeviceSetup from './SimulatorDeviceSetup';
 import SimulatorSession from './SimulatorSession';
 import SessionComplete from './SessionComplete';
 
@@ -11,7 +10,6 @@ import SessionComplete from './SessionComplete';
 const VIEWS = {
   DASHBOARD: 'dashboard',
   VARIABLES: 'variables',
-  DEVICE_SETUP: 'device_setup',
   SESSION: 'session',
   COMPLETE: 'complete',
 };
@@ -22,9 +20,8 @@ const VIEWS = {
  * Coordinates the flow between:
  * 1. Dashboard (scenario selection)
  * 2. Variables (variable input - if scenario has variables)
- * 3. Device Setup (microphone selection)
- * 4. Session (training with Q&A)
- * 5. Complete (summary)
+ * 3. Session (preparation + training with Q&A)
+ * 4. Complete (summary)
  */
 const SimulatorApp = ({
   isAuthenticated,
@@ -104,8 +101,8 @@ const SimulatorApp = ({
       setQuestions(sessionQuestions);
       setVariables({});
       setStartFromQuestion(0);
-      // Skip variables, go directly to device setup for repeat sessions
-      setCurrentView(VIEWS.DEVICE_SETUP);
+      // Skip variables, go directly to session for repeat sessions
+      setCurrentView(VIEWS.SESSION);
 
       if (clearPendingRepeatSession) {
         clearPendingRepeatSession();
@@ -141,29 +138,22 @@ const SimulatorApp = ({
   }, []);
 
   /**
-   * Handle variables submitted - go to device setup
+   * Handle variables submitted - go to session preparation
    */
   const handleVariablesNext = useCallback((collectedVariables) => {
     setVariables(collectedVariables);
-    setCurrentView(VIEWS.DEVICE_SETUP);
+    setCurrentView(VIEWS.SESSION);
   }, []);
 
   /**
-   * Handle back from device setup to variables
+   * Handle session created in SimulatorSession
    */
-  const handleBackToVariables = useCallback(() => {
-    setCurrentView(VIEWS.VARIABLES);
-  }, []);
-
-  /**
-   * Handle session start from device setup
-   */
-  const handleStartSession = useCallback((data) => {
+  const handleSessionCreated = useCallback((data) => {
     setActiveSession(data.session);
     setQuestions(data.questions);
-    setVariables(data.variables);
-    setSelectedMicrophoneId(data.selectedMicrophoneId);
-    setCurrentView(VIEWS.SESSION);
+    if (data.selectedMicrophoneId) {
+      setSelectedMicrophoneId(data.selectedMicrophoneId);
+    }
   }, []);
 
   /**
@@ -219,17 +209,6 @@ const SimulatorApp = ({
           />
         );
 
-      case VIEWS.DEVICE_SETUP:
-        return (
-          <SimulatorDeviceSetup
-            scenario={selectedScenario}
-            variables={variables}
-            preloadedQuestions={questions.length > 0 ? questions : null}
-            onBack={handleBackToVariables}
-            onStart={handleStartSession}
-          />
-        );
-
       case VIEWS.SESSION:
         return (
           <SimulatorSession
@@ -237,10 +216,12 @@ const SimulatorApp = ({
             questions={questions}
             scenario={selectedScenario}
             variables={variables}
+            preloadedQuestions={questions.length > 0 ? questions : null}
+            onSessionCreated={handleSessionCreated}
             onComplete={handleSessionComplete}
             onExit={handleSessionExit}
             startFromQuestion={startFromQuestion}
-            selectedMicrophoneId={selectedMicrophoneId}
+            initialMicrophoneId={selectedMicrophoneId}
           />
         );
 
