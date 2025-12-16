@@ -657,6 +657,8 @@ const DeviceSetupPage = ({
   title,
   startButtonLabel = 'Training starten',
   icon: HeaderIcon,
+  extraContent = null, // Additional content to render before start button
+  disabled = false, // External disabled state
 }) => {
   // Device state
   const [audioDevices, setAudioDevices] = useState([]);
@@ -758,7 +760,7 @@ const DeviceSetupPage = ({
   };
 
   // Check if can start
-  const canStart = selectedMicrophoneId && !micError && (!includeVideo || (selectedCameraId && !cameraError));
+  const canStart = selectedMicrophoneId && !micError && (!includeVideo || (selectedCameraId && !cameraError)) && !disabled;
 
   return (
     <div style={{ padding: '24px', paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
@@ -922,6 +924,13 @@ const DeviceSetupPage = ({
               onTestClick={() => setShowMicTest(true)}
             />
           </div>
+
+          {/* Extra Content (e.g., connection mode selector) */}
+          {extraContent && (
+            <div style={{ marginBottom: '24px' }}>
+              {extraContent}
+            </div>
+          )}
 
           {/* Start Button */}
           <button
