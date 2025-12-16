@@ -5,7 +5,6 @@ import FullscreenLoader from '@/components/ui/fullscreen-loader';
 import {
   ArrowLeft,
   Sparkles,
-  Loader2,
   AlertCircle,
   FileText,
   Briefcase,
@@ -406,9 +405,7 @@ const SmartBriefingForm = ({
               padding: '16px 24px',
               borderRadius: '12px',
               border: 'none',
-              background: isGenerating
-                ? '#94a3b8'
-                : `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
+              background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
               color: 'white',
               fontSize: '16px',
               fontWeight: 600,
@@ -418,27 +415,13 @@ const SmartBriefingForm = ({
               justifyContent: 'center',
               gap: '10px',
               transition: 'all 0.2s',
-              boxShadow: isGenerating ? 'none' : `0 4px 14px ${primaryAccent}40`,
+              boxShadow: `0 4px 14px ${primaryAccent}40`,
+              opacity: isGenerating ? 0.7 : 1,
             }}
           >
-            {isGenerating ? (
-              <>
-                <Loader2
-                  size={20}
-                  style={{ animation: 'spin 1s linear infinite' }}
-                />
-                Briefing wird generiert...
-              </>
-            ) : (
-              <>
-                <Sparkles size={20} />
-                Briefing generieren
-              </>
-            )}
+            <Sparkles size={20} />
+            Briefing generieren
           </button>
-          <style>
-            {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
-          </style>
         </form>
       </div>
 
