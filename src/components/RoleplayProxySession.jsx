@@ -737,31 +737,68 @@ const RoleplayProxySession = ({
     }
   };
 
-  // Analyzing state - same as RoleplaySession.jsx
+  // Analyzing state - MUST use fixed positioning to overlay entire screen including sidebar
   if (status === 'analyzing') {
     console.log('[ProxySession] 🟢 RENDERING SPINNER - status is analyzing');
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center"
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          background: 'linear-gradient(to bottom right, #f8fafc, #eff6ff, #f0fdfa)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}
+      >
+        <div
+          style={{
+            background: 'white',
+            borderRadius: '24px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            padding: '32px',
+            maxWidth: '28rem',
+            width: '100%',
+            textAlign: 'center',
+          }}
         >
-          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" style={{ color: themedStyles.iconPrimary }} />
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Feedback wird generiert...</h2>
-          <p className="text-slate-600">Das kann einen Moment dauern</p>
-          <div className="mt-6">
-            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-              <motion.div
-                className="h-full"
-                style={{ background: themedStyles.headerGradient }}
-                initial={{ width: '0%' }}
-                animate={{ width: '100%' }}
-                transition={{ duration: 3, repeat: Infinity }}
+          <Loader2
+            className="animate-spin"
+            style={{
+              width: '64px',
+              height: '64px',
+              margin: '0 auto 16px',
+              color: themedStyles.iconPrimary
+            }}
+          />
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
+            Feedback wird generiert...
+          </h2>
+          <p style={{ color: '#475569' }}>Das kann einen Moment dauern</p>
+          <div style={{ marginTop: '24px' }}>
+            <div style={{
+              width: '100%',
+              background: '#e2e8f0',
+              borderRadius: '9999px',
+              height: '8px',
+              overflow: 'hidden'
+            }}>
+              <div
+                style={{
+                  height: '100%',
+                  width: '60%',
+                  background: themedStyles.headerGradient,
+                  animation: 'pulse 2s infinite',
+                }}
               />
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
