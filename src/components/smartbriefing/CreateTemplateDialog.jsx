@@ -5,7 +5,7 @@
  * Features a user-friendly variable builder for defining form fields.
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -109,6 +109,12 @@ const VariableItem = ({
   primaryAccent,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [localLabel, setLocalLabel] = useState(variable.label);
+
+  // Sync local label when variable changes from outside
+  useEffect(() => {
+    setLocalLabel(variable.label);
+  }, [variable.label]);
 
   const handleChange = (field, value) => {
     onChange({ ...variable, [field]: value });
@@ -131,15 +137,6 @@ const VariableItem = ({
     onChange({ ...variable, options: newOptions });
   };
 
-  // Auto-generate key from label
-  const handleLabelChange = (value) => {
-    handleChange('label', value);
-    // Auto-generate key if empty or was auto-generated
-    if (!variable.key || variable.key === generateKeyFromLabel(variable.label)) {
-      handleChange('key', generateKeyFromLabel(value));
-    }
-  };
-
   const generateKeyFromLabel = (label) => {
     return label
       .toLowerCase()
@@ -147,6 +144,19 @@ const VariableItem = ({
       .replace(/[^a-z0-9]/g, '_')
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
+  };
+
+  // Update label and auto-generate key on blur (when leaving the field)
+  const handleLabelBlur = () => {
+    if (localLabel !== variable.label) {
+      // Update label
+      const updates = { label: localLabel };
+      // Auto-generate key if empty or was auto-generated from previous label
+      if (!variable.key || variable.key === generateKeyFromLabel(variable.label)) {
+        updates.key = generateKeyFromLabel(localLabel);
+      }
+      onChange({ ...variable, ...updates });
+    }
   };
 
   return (
@@ -261,8 +271,9 @@ const VariableItem = ({
                   </label>
                   <input
                     type="text"
-                    value={variable.label}
-                    onChange={(e) => handleLabelChange(e.target.value)}
+                    value={localLabel}
+                    onChange={(e) => setLocalLabel(e.target.value)}
+                    onBlur={handleLabelBlur}
                     placeholder="z.B. Unternehmen"
                     style={{
                       width: '100%',
@@ -433,7 +444,7 @@ const VariableItem = ({
  */
 const IconSelector = ({ selectedIcon, onSelect, primaryAccent }) => {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
       {AVAILABLE_ICONS.map(({ key, icon: Icon, label }) => {
         const isSelected = selectedIcon === key;
         return (
@@ -442,9 +453,9 @@ const IconSelector = ({ selectedIcon, onSelect, primaryAccent }) => {
             onClick={() => onSelect(key)}
             title={label}
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '10px',
+              width: '60px',
+              height: '60px',
+              borderRadius: '12px',
               border: `2px solid ${isSelected ? primaryAccent : '#e2e8f0'}`,
               backgroundColor: isSelected ? `${primaryAccent}15` : 'white',
               display: 'flex',
@@ -454,7 +465,7 @@ const IconSelector = ({ selectedIcon, onSelect, primaryAccent }) => {
               transition: 'all 0.2s',
             }}
           >
-            <Icon size={20} style={{ color: isSelected ? primaryAccent : '#64748b' }} />
+            <Icon size={28} style={{ color: isSelected ? primaryAccent : '#64748b' }} />
           </button>
         );
       })}
