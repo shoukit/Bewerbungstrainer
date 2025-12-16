@@ -502,32 +502,22 @@ const RoleplayProxySession = ({
    * End the conversation and perform analysis
    */
   const endConversation = async () => {
-    // 1. IMMEDIATELY show analyzing state
+    // 1. IMMEDIATELY show analyzing state and close dialog
     setShowEndDialog(false);
     setStatus('analyzing');
 
-    // 2. IMMEDIATELY stop audio playback - clear queue and close context
+    // 2. SYNCHRONOUSLY stop everything (no await - so React can render immediately)
     audioQueueRef.current = [];
     isPlayingRef.current = false;
     nextPlayTimeRef.current = 0;
 
-    if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
-      try {
-        await playbackContextRef.current.close();
-        console.log('[ProxySession] Audio playback stopped immediately');
-      } catch (e) {
-        // Ignore close errors
-      }
-      playbackContextRef.current = null;
-    }
-
-    // 3. IMMEDIATELY close WebSocket
+    // Close WebSocket immediately (sync)
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
 
-    // 4. Stop audio capture (microphone)
+    // Stop audio capture (sync)
     if (mediaRecorderRef.current) {
       if (mediaRecorderRef.current.processor) {
         mediaRecorderRef.current.processor.disconnect();
@@ -538,23 +528,25 @@ const RoleplayProxySession = ({
       mediaRecorderRef.current = null;
     }
 
-    // 5. Stop microphone stream
+    // Stop microphone stream (sync)
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
 
-    // Close capture context
+    // Close audio contexts (fire-and-forget, no await)
+    if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
+      playbackContextRef.current.close().catch(() => {});
+      playbackContextRef.current = null;
+    }
     if (captureContextRef.current && captureContextRef.current.state !== 'closed') {
-      try {
-        await captureContextRef.current.close();
-      } catch (e) {
-        // Ignore close errors
-      }
+      captureContextRef.current.close().catch(() => {});
       captureContextRef.current = null;
     }
 
-    // Calculate final duration
+    console.log('[ProxySession] Audio playback stopped immediately');
+
+    // Calculate final duration before async operations
     const finalDuration = startTimeRef.current
       ? Math.floor((Date.now() - startTimeRef.current) / 1000)
       : duration;
