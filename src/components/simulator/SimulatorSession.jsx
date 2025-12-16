@@ -428,6 +428,23 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
       {/* Recording Buttons */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+        {/* Settings Button */}
+        <button
+          onClick={() => setShowDeviceSettings(true)}
+          style={{
+            padding: '14px',
+            borderRadius: '12px',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Settings size={20} color="#64748b" />
+        </button>
+
         {/* Main Button - Start/Pause/Resume */}
         <button
           onClick={handleMainButtonClick}

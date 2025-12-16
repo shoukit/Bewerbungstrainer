@@ -683,8 +683,25 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
 
             {/* Controls - Mobile */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-              {/* Recording button */}
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {/* Recording button with settings */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                {/* Settings button */}
+                <button
+                  onClick={() => setShowDeviceSettings(true)}
+                  style={{
+                    padding: '14px',
+                    borderRadius: '12px',
+                    background: '#f1f5f9',
+                    border: '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Settings size={20} color="#64748b" />
+                </button>
+
                 {!isRecording ? (
                   <button
                     onClick={startRecording}
@@ -701,7 +718,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      width: '100%',
+                      flex: 1,
                       justifyContent: 'center',
                       boxShadow: stream ? '0 4px 14px rgba(239, 68, 68, 0.4)' : 'none',
                     }}
@@ -724,7 +741,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      width: '100%',
+                      flex: 1,
                       justifyContent: 'center',
                     }}
                   >
@@ -929,8 +946,25 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
 
           {/* Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
-            {/* Recording button */}
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+            {/* Recording button with settings */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              {/* Settings button */}
+              <button
+                onClick={() => setShowDeviceSettings(true)}
+                style={{
+                  padding: '14px',
+                  borderRadius: '12px',
+                  background: '#f1f5f9',
+                  border: '1px solid #e2e8f0',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Settings size={20} color="#64748b" />
+              </button>
+
               {!isRecording ? (
                 <button
                   onClick={startRecording}
