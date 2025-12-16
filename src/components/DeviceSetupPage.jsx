@@ -233,31 +233,70 @@ const DeviceSelector = ({
 };
 
 /**
- * MicrophoneTest - Component to test microphone with audio visualization
+ * MicrophoneTest - Component to test microphone with audio visualization and recording playback
  */
 const MicrophoneTest = ({ deviceId, primaryAccent }) => {
-  const [isTesting, setIsTesting] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [recordedBlob, setRecordedBlob] = useState(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+
   const streamRef = useRef(null);
   const analyserRef = useRef(null);
   const animationRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const audioRef = useRef(null);
+  const durationIntervalRef = useRef(null);
 
-  const startTest = async () => {
+  const startRecording = async () => {
     try {
+      // Clear previous recording
+      setRecordedBlob(null);
+      setRecordingDuration(0);
+      chunksRef.current = [];
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: deviceId ? { deviceId: { exact: deviceId } } : true,
       });
       streamRef.current = stream;
 
+      // Set up audio context for visualization
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      setIsTesting(true);
+      // Set up MediaRecorder for recording
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
 
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        setRecordedBlob(blob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+
+      // Start duration counter
+      const startTime = Date.now();
+      durationIntervalRef.current = setInterval(() => {
+        setRecordingDuration(Math.floor((Date.now() - startTime) / 1000));
+      }, 100);
+
+      // Start audio level visualization
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       const updateLevel = () => {
         analyser.getByteFrequencyData(dataArray);
@@ -267,33 +306,101 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
       };
       updateLevel();
     } catch (err) {
-      console.error('Error testing microphone:', err);
+      console.error('Error starting recording:', err);
     }
   };
 
-  const stopTest = () => {
+  const stopRecording = () => {
+    // Stop duration counter
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+
+    // Stop animation
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     }
+
+    // Stop MediaRecorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+
+    // Stop stream tracks
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
-    setIsTesting(false);
+
+    // Close audio context
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    setIsRecording(false);
     setAudioLevel(0);
   };
 
+  const playRecording = () => {
+    if (!recordedBlob) return;
+
+    const audioUrl = URL.createObjectURL(recordedBlob);
+    const audio = new Audio(audioUrl);
+    audioRef.current = audio;
+
+    audio.onplay = () => setIsPlaying(true);
+    audio.onended = () => {
+      setIsPlaying(false);
+      URL.revokeObjectURL(audioUrl);
+    };
+    audio.onerror = () => {
+      setIsPlaying(false);
+      URL.revokeObjectURL(audioUrl);
+    };
+
+    audio.play();
+  };
+
+  const stopPlayback = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+  };
+
+  const clearRecording = () => {
+    stopPlayback();
+    setRecordedBlob(null);
+    setRecordingDuration(0);
+  };
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopTest();
+      stopRecording();
+      stopPlayback();
     };
   }, []);
 
-  // Stop test when device changes
+  // Stop recording when device changes
   useEffect(() => {
-    if (isTesting) {
-      stopTest();
+    if (isRecording) {
+      stopRecording();
     }
+    // Clear previous recording when device changes
+    clearRecording();
   }, [deviceId]);
+
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div style={{
@@ -302,10 +409,12 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
       borderRadius: '12px',
       marginTop: '8px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        {/* Record/Stop Button */}
         <button
           type="button"
-          onClick={isTesting ? stopTest : startTest}
+          onClick={isRecording ? stopRecording : startRecording}
+          disabled={isPlaying}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -313,51 +422,133 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
             padding: '10px 16px',
             borderRadius: '10px',
             border: 'none',
-            backgroundColor: isTesting ? COLORS.red[500] : primaryAccent,
+            backgroundColor: isRecording ? COLORS.red[500] : primaryAccent,
             color: '#fff',
             fontSize: '14px',
             fontWeight: 600,
-            cursor: 'pointer',
+            cursor: isPlaying ? 'not-allowed' : 'pointer',
+            opacity: isPlaying ? 0.6 : 1,
             transition: 'all 0.2s',
           }}
         >
-          {isTesting ? (
+          {isRecording ? (
             <>
               <Square style={{ width: '16px', height: '16px' }} />
-              Test beenden
+              Stoppen ({formatDuration(recordingDuration)})
             </>
           ) : (
             <>
-              <Play style={{ width: '16px', height: '16px' }} />
-              Mikrofon testen
+              <Mic style={{ width: '16px', height: '16px' }} />
+              Aufnehmen
             </>
           )}
         </button>
-        {isTesting && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.slate[600], fontSize: '13px' }}>
+
+        {/* Playback Button (only show when we have a recording) */}
+        {recordedBlob && !isRecording && (
+          <button
+            type="button"
+            onClick={isPlaying ? stopPlayback : playRecording}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              borderRadius: '10px',
+              border: `2px solid ${primaryAccent}`,
+              backgroundColor: isPlaying ? `${primaryAccent}15` : 'white',
+              color: primaryAccent,
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            {isPlaying ? (
+              <>
+                <Square style={{ width: '16px', height: '16px' }} />
+                Stoppen
+              </>
+            ) : (
+              <>
+                <Play style={{ width: '16px', height: '16px' }} />
+                Abspielen
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Status text */}
+        {isRecording && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.red[500], fontSize: '13px' }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: COLORS.red[500],
+              animation: 'pulse 1s infinite',
+            }} />
+            Aufnahme läuft...
+          </div>
+        )}
+
+        {isPlaying && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.green[600], fontSize: '13px' }}>
             <Volume2 style={{ width: '16px', height: '16px' }} />
-            Sprich etwas...
+            Wiedergabe...
+          </div>
+        )}
+
+        {recordedBlob && !isRecording && !isPlaying && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.slate[500], fontSize: '13px' }}>
+            <CheckCircle style={{ width: '16px', height: '16px', color: COLORS.green[500] }} />
+            Aufnahme bereit ({formatDuration(recordingDuration)})
           </div>
         )}
       </div>
 
-      {/* Audio Level Visualization */}
-      <div style={{
-        height: '8px',
-        backgroundColor: COLORS.slate[200],
-        borderRadius: '4px',
-        overflow: 'hidden',
-      }}>
-        <div
-          style={{
-            height: '100%',
-            width: `${audioLevel}%`,
-            backgroundColor: audioLevel > 70 ? COLORS.green[500] : audioLevel > 30 ? primaryAccent : COLORS.slate[400],
-            borderRadius: '4px',
-            transition: 'width 0.1s ease-out',
-          }}
-        />
-      </div>
+      {/* Audio Level Visualization (only show when recording) */}
+      {isRecording && (
+        <div style={{
+          height: '8px',
+          backgroundColor: COLORS.slate[200],
+          borderRadius: '4px',
+          overflow: 'hidden',
+        }}>
+          <div
+            style={{
+              height: '100%',
+              width: `${audioLevel}%`,
+              backgroundColor: audioLevel > 70 ? COLORS.green[500] : audioLevel > 30 ? COLORS.amber[500] : COLORS.slate[400],
+              borderRadius: '4px',
+              transition: 'width 0.1s ease-out',
+            }}
+          />
+        </div>
+      )}
+
+      {/* Instructions */}
+      {!isRecording && !recordedBlob && (
+        <p style={{
+          margin: 0,
+          fontSize: '13px',
+          color: COLORS.slate[500],
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+        }}>
+          <Volume2 style={{ width: '14px', height: '14px' }} />
+          Nimm etwas auf und spiele es ab, um dein Mikrofon zu testen.
+        </p>
+      )}
+
+      {/* CSS for pulse animation */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 };
@@ -782,3 +973,4 @@ const DeviceSetupPage = ({
 };
 
 export default DeviceSetupPage;
+export { MicrophoneTest };

@@ -3,6 +3,7 @@ import { Settings, X, Mic, Video, RefreshCw, AlertCircle, Check } from 'lucide-r
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
+import { MicrophoneTest } from './DeviceSetupPage';
 
 /**
  * DeviceSettingsDialog Component
@@ -285,6 +286,13 @@ const DeviceSettingsDialog = ({
                     </button>
                   ))}
                 </div>
+
+                {/* Microphone Test */}
+                {pendingMicId && (
+                  <div style={{ marginTop: '12px' }}>
+                    <MicrophoneTest deviceId={pendingMicId} primaryAccent={primaryAccent} />
+                  </div>
+                )}
               </div>
 
               {/* Camera Selection (only for audio-video mode) */}
