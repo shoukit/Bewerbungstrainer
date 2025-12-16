@@ -24,8 +24,6 @@ import AudioVisualizer from './AudioVisualizer';
 import InterviewerProfile from './InterviewerProfile';
 import CoachingPanel from './CoachingPanel';
 import FeedbackModal from './FeedbackModal';
-import MicrophoneSelector from './MicrophoneSelector';
-import MicrophoneTestDialog from './MicrophoneTestDialog';
 import {
   analyzeRoleplayTranscript,
   saveRoleplaySessionAnalysis,
@@ -42,7 +40,7 @@ import wordpressAPI from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 
-const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession }) => {
+const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd, onNavigateToSession }) => {
   // Partner branding and demo code
   const { branding, demoCode } = usePartner();
 
@@ -77,10 +75,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState(null);
   const [isStarted, setIsStarted] = useState(false);
-
-  // Microphone selection state
-  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
-  const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
   // Transcript state
   const [transcript, setTranscript] = useState([]);
@@ -754,17 +748,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                     )}
                   </div>
 
-                  {/* Microphone Selection - Before call starts */}
-                  {!isStarted && (
-                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
-                      <MicrophoneSelector
-                        selectedDeviceId={selectedMicrophoneId}
-                        onDeviceChange={setSelectedMicrophoneId}
-                        onTestClick={() => setShowMicrophoneTest(true)}
-                      />
-                    </div>
-                  )}
-
                   {/* Action Button - Between header and content */}
                   <div className="bg-white px-4 py-3 shadow-xl flex justify-center">
                     {!isStarted ? (
@@ -1281,12 +1264,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
         />
       )}
 
-      {/* Microphone Test Dialog */}
-      <MicrophoneTestDialog
-        isOpen={showMicrophoneTest}
-        onClose={() => setShowMicrophoneTest(false)}
-        deviceId={selectedMicrophoneId}
-      />
     </>
   );
 };
