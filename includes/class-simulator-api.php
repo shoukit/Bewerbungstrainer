@@ -1492,6 +1492,15 @@ AUDIO ZUR ANALYSE:";
         // Remove any leading/trailing whitespace
         $cleaned_response = trim($cleaned_response);
 
+        // Normalize curly/smart quotes to standard ASCII quotes
+        // Gemini sometimes returns typographic quotes which break JSON parsing
+        $cleaned_response = str_replace(
+            array('"', '"', ''', ''', '„', '‟', '‚', '‛'),  // Curly/smart quotes
+            array('"', '"', "'", "'", '"', '"', "'", "'"),   // Standard ASCII quotes
+            $cleaned_response
+        );
+        error_log("[SIMULATOR_PARSE] Normalized curly quotes");
+
         // Try to extract JSON array from response
         $json_match = null;
 
