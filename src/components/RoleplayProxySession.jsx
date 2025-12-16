@@ -502,21 +502,27 @@ const RoleplayProxySession = ({
    * End the conversation and perform analysis
    */
   const endConversation = async () => {
-    // 1. IMMEDIATELY close dialog and stop all audio/connections (synchronous)
+    // 1. IMMEDIATELY set analyzing state and close dialog - BEFORE any cleanup
+    // This matches RoleplaySession.jsx behavior exactly
+    console.log('[ProxySession] 🔴 endConversation called');
     setShowEndDialog(false);
+    setStatus('analyzing');
+    console.log('[ProxySession] 🔴 setStatus(analyzing) called');
 
-    // Stop audio queue immediately
+    // 2. Yield to allow React to re-render with the spinner BEFORE cleanup
+    await new Promise(resolve => setTimeout(resolve, 0));
+    console.log('[ProxySession] 🔴 After yield - spinner should be visible now');
+
+    // 3. Now do cleanup (after spinner is showing)
     audioQueueRef.current = [];
     isPlayingRef.current = false;
     nextPlayTimeRef.current = 0;
 
-    // Close WebSocket immediately
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
 
-    // Stop audio capture
     if (mediaRecorderRef.current) {
       if (mediaRecorderRef.current.processor) {
         mediaRecorderRef.current.processor.disconnect();
@@ -527,13 +533,11 @@ const RoleplayProxySession = ({
       mediaRecorderRef.current = null;
     }
 
-    // Stop microphone stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
 
-    // Close audio contexts (fire-and-forget)
     if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
       playbackContextRef.current.close().catch(() => {});
       playbackContextRef.current = null;
@@ -543,14 +547,7 @@ const RoleplayProxySession = ({
       captureContextRef.current = null;
     }
 
-    console.log('[ProxySession] Audio playback stopped immediately');
-
-    // 2. Show analyzing state
-    setStatus('analyzing');
-
-    // 3. Yield to allow React to re-render with the fullscreen spinner
-    // This is critical - without this, React won't render until the function completes
-    await new Promise(resolve => setTimeout(resolve, 0));
+    console.log('[ProxySession] Audio cleanup complete');
 
     // Calculate final duration before async operations
     const finalDuration = startTimeRef.current
@@ -735,6 +732,7 @@ const RoleplayProxySession = ({
 
   // Analyzing state - same as RoleplaySession.jsx
   if (status === 'analyzing') {
+    console.log('[ProxySession] 🟢 RENDERING SPINNER - status is analyzing');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
         <motion.div
