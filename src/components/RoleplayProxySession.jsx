@@ -78,9 +78,10 @@ const RoleplayProxySession = ({
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const captureContextRef = useRef(null);  // For audio input
+  const playbackContextRef = useRef(null); // For audio output
   const audioQueueRef = useRef([]);
   const isPlayingRef = useRef(false);
-  const audioElementRef = useRef(null);
+  const nextPlayTimeRef = useRef(0); // For seamless audio scheduling
   const transcriptEndRef = useRef(null);
   const durationIntervalRef = useRef(null);
 
@@ -378,7 +379,7 @@ const RoleplayProxySession = ({
 
   /**
    * Queue audio for playback
-   * ElevenLabs sends MP3 audio chunks via base64
+   * ElevenLabs Conversational AI sends raw PCM16 audio
    */
   const queueAudio = (arrayBuffer) => {
     audioQueueRef.current.push(arrayBuffer);
@@ -388,8 +389,8 @@ const RoleplayProxySession = ({
   };
 
   /**
-   * Play next audio in queue using HTML5 Audio element
-   * More robust for streaming MP3 chunks than Web Audio API
+   * Play next audio in queue using Web Audio API
+   * ElevenLabs sends PCM16 audio at specific sample rates (16000, 22050, or 24000 Hz)
    */
   const playNextAudio = async () => {
     if (audioQueueRef.current.length === 0) {
@@ -401,40 +402,53 @@ const RoleplayProxySession = ({
     const arrayBuffer = audioQueueRef.current.shift();
 
     try {
-      // Create blob from array buffer - try MP3 first
-      const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
-      const url = URL.createObjectURL(blob);
+      // ElevenLabs Conversational AI typically outputs at 16000Hz
+      const SAMPLE_RATE = 16000;
 
-      // Create or reuse audio element
-      if (!audioElementRef.current) {
-        audioElementRef.current = new Audio();
+      // Create or resume playback context
+      if (!playbackContextRef.current || playbackContextRef.current.state === 'closed') {
+        playbackContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        nextPlayTimeRef.current = 0;
       }
 
-      const audio = audioElementRef.current;
+      const ctx = playbackContextRef.current;
 
-      // Set up event handlers
-      const onEnded = () => {
-        URL.revokeObjectURL(url);
-        audio.removeEventListener('ended', onEnded);
-        audio.removeEventListener('error', onError);
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+
+      // Convert raw PCM16 bytes to Float32 samples
+      const int16Array = new Int16Array(arrayBuffer);
+      const floatArray = new Float32Array(int16Array.length);
+
+      for (let i = 0; i < int16Array.length; i++) {
+        floatArray[i] = int16Array[i] / 32768.0;
+      }
+
+      // Create audio buffer at source sample rate
+      const audioBuffer = ctx.createBuffer(1, floatArray.length, SAMPLE_RATE);
+      audioBuffer.getChannelData(0).set(floatArray);
+
+      // Create source node
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(ctx.destination);
+
+      // Schedule playback for seamless audio
+      const currentTime = ctx.currentTime;
+      const startTime = Math.max(currentTime, nextPlayTimeRef.current);
+
+      source.start(startTime);
+
+      // Update next play time for seamless scheduling
+      nextPlayTimeRef.current = startTime + audioBuffer.duration;
+
+      // When this chunk ends, play next
+      source.onended = () => {
         playNextAudio();
       };
 
-      const onError = (e) => {
-        console.error('[ProxySession] Audio element error:', e);
-        URL.revokeObjectURL(url);
-        audio.removeEventListener('ended', onEnded);
-        audio.removeEventListener('error', onError);
-        // Try next chunk
-        playNextAudio();
-      };
-
-      audio.addEventListener('ended', onEnded);
-      audio.addEventListener('error', onError);
-
-      audio.src = url;
-      await audio.play();
-      console.log('[ProxySession] Playing audio chunk via Audio element');
+      console.log('[ProxySession] Playing PCM audio chunk, samples:', floatArray.length, 'duration:', audioBuffer.duration.toFixed(2) + 's');
 
     } catch (err) {
       console.error('[ProxySession] Audio playback error:', err);
@@ -494,12 +508,14 @@ const RoleplayProxySession = ({
       captureContextRef.current = null;
     }
 
-    // Clean up audio playback element
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current.src = '';
-      audioElementRef.current = null;
+    // Close playback audio context
+    if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
+      playbackContextRef.current.close();
+      playbackContextRef.current = null;
     }
+
+    // Reset audio scheduling
+    nextPlayTimeRef.current = 0;
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
