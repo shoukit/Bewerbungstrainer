@@ -4,6 +4,7 @@ import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplayDeviceSetup from './components/RoleplayDeviceSetup';
 import RoleplayVariablesPage from './components/RoleplayVariablesPage';
 import RoleplaySession from './components/RoleplaySession';
+import RoleplayProxySession from './components/RoleplayProxySession';
 import CorporateModeSession from './components/CorporateModeSession';
 import SessionHistory, { SESSION_TABS } from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
@@ -94,6 +95,7 @@ const VIEWS = {
   ROLEPLAY_VARIABLES: 'roleplay_variables',
   ROLEPLAY_DEVICE_SETUP: 'roleplay_device_setup',
   ROLEPLAY: 'roleplay',
+  ROLEPLAY_PROXY: 'roleplay_proxy',
   ROLEPLAY_CORPORATE: 'roleplay_corporate',
   SIMULATOR: 'simulator',
   VIDEO_TRAINING: 'video_training',
@@ -477,6 +479,8 @@ function AppContent() {
     // Navigate to appropriate session based on connection mode
     if (connectionMode === 'corporate') {
       setCurrentView(VIEWS.ROLEPLAY_CORPORATE);
+    } else if (connectionMode === 'proxy') {
+      setCurrentView(VIEWS.ROLEPLAY_PROXY);
     } else {
       setCurrentView(VIEWS.ROLEPLAY);
     }
@@ -596,6 +600,17 @@ function AppContent() {
       case VIEWS.ROLEPLAY:
         return (
           <RoleplaySession
+            scenario={selectedScenario}
+            variables={roleplayVariables}
+            selectedMicrophoneId={roleplayMicrophoneId}
+            onEnd={handleEndRoleplay}
+            onNavigateToSession={handleNavigateToSession}
+          />
+        );
+
+      case VIEWS.ROLEPLAY_PROXY:
+        return (
+          <RoleplayProxySession
             scenario={selectedScenario}
             variables={roleplayVariables}
             selectedMicrophoneId={roleplayMicrophoneId}

@@ -3,7 +3,11 @@
  *
  * Tests if WebSocket connections to ElevenLabs are possible.
  * Used to detect corporate firewalls that block WebSocket.
+ * Also tests proxy connectivity for firewall bypass.
  */
+
+// Proxy server URL
+const PROXY_URL = 'wss://karriereheld-ws-proxy.onrender.com/ws';
 
 /**
  * Test WebSocket connectivity to ElevenLabs
@@ -113,6 +117,111 @@ export async function testWebSocketConnectivity(agentId, timeoutMs = 5000) {
 }
 
 /**
+ * Test WebSocket connectivity to our proxy server
+ *
+ * @param {string} agentId - ElevenLabs Agent ID (used for the connection)
+ * @param {number} timeoutMs - Timeout in milliseconds (default: 5000)
+ * @returns {Promise<{success: boolean, error?: string, latency?: number}>}
+ */
+export async function testProxyConnectivity(agentId, timeoutMs = 5000) {
+  console.log('[WebSocketTest] Testing proxy connectivity...');
+
+  if (!agentId) {
+    return {
+      success: false,
+      error: 'No agent ID provided',
+    };
+  }
+
+  const wsUrl = `${PROXY_URL}?agent_id=${agentId}`;
+  const startTime = Date.now();
+
+  return new Promise((resolve) => {
+    let ws = null;
+    let resolved = false;
+
+    const cleanup = () => {
+      if (ws) {
+        try {
+          ws.close();
+        } catch (e) {
+          // Ignore close errors
+        }
+        ws = null;
+      }
+    };
+
+    const resolveOnce = (result) => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        resolve(result);
+      }
+    };
+
+    // Timeout handler
+    const timeoutId = setTimeout(() => {
+      console.log('[WebSocketTest] Proxy connection timeout after', timeoutMs, 'ms');
+      resolveOnce({
+        success: false,
+        error: 'Proxy connection timeout',
+      });
+    }, timeoutMs);
+
+    try {
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        clearTimeout(timeoutId);
+        const latency = Date.now() - startTime;
+        console.log('[WebSocketTest] Proxy connection successful! Latency:', latency, 'ms');
+
+        // Close immediately - we just wanted to test connectivity
+        resolveOnce({
+          success: true,
+          latency: latency,
+        });
+      };
+
+      ws.onerror = (error) => {
+        clearTimeout(timeoutId);
+        console.log('[WebSocketTest] Proxy connection error:', error);
+        resolveOnce({
+          success: false,
+          error: 'Proxy connection failed',
+        });
+      };
+
+      ws.onclose = (event) => {
+        clearTimeout(timeoutId);
+        if (!resolved) {
+          console.log('[WebSocketTest] Proxy connection closed:', event.code, event.reason);
+          if (event.code === 1000) {
+            resolveOnce({
+              success: true,
+              latency: Date.now() - startTime,
+            });
+          } else {
+            resolveOnce({
+              success: false,
+              error: `Proxy connection closed: ${event.code}`,
+            });
+          }
+        }
+      };
+
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.log('[WebSocketTest] Proxy exception:', error);
+      resolveOnce({
+        success: false,
+        error: error.message || 'Failed to connect to proxy',
+      });
+    }
+  });
+}
+
+/**
  * Check if browser supports WebSocket
  *
  * @returns {boolean}
@@ -164,31 +273,75 @@ export async function getCachedWebSocketTest(agentId, forceRetest = false) {
 }
 
 /**
- * Determine the best connection mode based on WebSocket test
+ * Determine the best connection mode based on WebSocket tests
+ *
+ * Priority: websocket (direct) > proxy > corporate (HTTP)
  *
  * @param {string} agentId - ElevenLabs Agent ID
- * @returns {Promise<'websocket' | 'corporate'>}
+ * @returns {Promise<{mode: 'websocket' | 'proxy' | 'corporate', directAvailable: boolean, proxyAvailable: boolean, directLatency?: number, proxyLatency?: number, error?: string}>}
  */
 export async function detectBestConnectionMode(agentId) {
   if (!supportsWebSocket()) {
     console.log('[WebSocketTest] Browser does not support WebSocket, using corporate mode');
-    return 'corporate';
+    return {
+      mode: 'corporate',
+      directAvailable: false,
+      proxyAvailable: false,
+      error: 'Browser does not support WebSocket',
+    };
   }
 
-  const result = await getCachedWebSocketTest(agentId);
+  // Test direct connection first
+  const directResult = await testWebSocketConnectivity(agentId, 5000);
 
-  if (result.success) {
-    console.log('[WebSocketTest] WebSocket available, using live mode');
-    return 'websocket';
-  } else {
-    console.log('[WebSocketTest] WebSocket blocked, using corporate mode:', result.error);
-    return 'corporate';
+  if (directResult.success) {
+    console.log('[WebSocketTest] Direct WebSocket available, using websocket mode');
+    return {
+      mode: 'websocket',
+      directAvailable: true,
+      proxyAvailable: false, // Not tested yet
+      directLatency: directResult.latency,
+    };
   }
+
+  // Direct failed - test proxy
+  console.log('[WebSocketTest] Direct WebSocket failed, testing proxy...');
+  const proxyResult = await testProxyConnectivity(agentId, 5000);
+
+  if (proxyResult.success) {
+    console.log('[WebSocketTest] Proxy available, using proxy mode');
+    return {
+      mode: 'proxy',
+      directAvailable: false,
+      proxyAvailable: true,
+      proxyLatency: proxyResult.latency,
+      error: directResult.error,
+    };
+  }
+
+  // Both failed - use corporate mode
+  console.log('[WebSocketTest] All WebSocket connections blocked, using corporate mode');
+  return {
+    mode: 'corporate',
+    directAvailable: false,
+    proxyAvailable: false,
+    error: 'All WebSocket connections blocked by firewall',
+  };
+}
+
+/**
+ * Get proxy URL
+ * @returns {string}
+ */
+export function getProxyUrl() {
+  return PROXY_URL;
 }
 
 export default {
   testWebSocketConnectivity,
+  testProxyConnectivity,
   supportsWebSocket,
   getCachedWebSocketTest,
   detectBestConnectionMode,
+  getProxyUrl,
 };
