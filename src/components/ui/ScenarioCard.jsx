@@ -230,6 +230,7 @@ const ScenarioCardGridView = ({
   tags = [],
   action = { label: 'Starten', icon: TrendingUp },
   categoryBadge,
+  customActions,
   onClick,
   className = '',
   style = {},
@@ -267,8 +268,15 @@ const ScenarioCardGridView = ({
           </Badge>
         ) : null}
 
-        {/* Right side: Difficulty (if icon shown) + Category + Tags */}
+        {/* Right side: Difficulty (if icon shown) + Category + Tags + Custom Actions */}
         <div className="flex flex-col items-end gap-2">
+          {/* Custom Actions (edit/delete buttons) */}
+          {customActions && (
+            <div onClick={(e) => e.stopPropagation()}>
+              {customActions}
+            </div>
+          )}
+
           {/* Difficulty badge when icon is shown */}
           {icon && difficulty && (
             <Badge className={difficultyConfig.classes}>
@@ -356,6 +364,7 @@ const ScenarioCardListView = ({
   tags = [],
   action = { label: 'Starten', icon: TrendingUp },
   categoryBadge,
+  customActions,
   onClick,
   className = '',
   style = {},
@@ -390,7 +399,7 @@ const ScenarioCardListView = ({
         }}
         className={className}
       >
-        {/* Row 1: Icon + Title + Difficulty Badge */}
+        {/* Row 1: Icon + Title + Difficulty Badge + Custom Actions */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
           {/* Icon */}
           {icon && (
@@ -419,6 +428,13 @@ const ScenarioCardListView = ({
               </span>
             )}
           </div>
+
+          {/* Custom Actions (edit/delete buttons) */}
+          {customActions && (
+            <div onClick={(e) => e.stopPropagation()}>
+              {customActions}
+            </div>
+          )}
 
           {/* Difficulty Badge - always visible */}
           {difficulty && (
@@ -502,6 +518,7 @@ const ScenarioCardListView = ({
  * @param {Array<string>} props.tags - Optional tags shown in header
  * @param {{label: string, icon?: Component}} props.action - Call-to-action button config
  * @param {React.Component} props.categoryBadge - Custom category badge component
+ * @param {React.Component} props.customActions - Custom action buttons (edit/delete for user templates)
  * @param {function} props.onClick - Click handler
  * @param {'grid' | 'list'} props.viewMode - View mode (default: 'grid')
  * @param {string} props.className - Additional CSS classes
@@ -517,6 +534,7 @@ export const ScenarioCard = ({
   tags = [],
   action = { label: 'Starten', icon: TrendingUp },
   categoryBadge,
+  customActions,
   onClick,
   viewMode = 'grid',
   className = '',
@@ -540,6 +558,7 @@ export const ScenarioCard = ({
     tags,
     action,
     categoryBadge,
+    customActions,
     onClick,
     className,
     style,

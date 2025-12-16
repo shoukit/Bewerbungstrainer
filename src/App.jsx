@@ -208,7 +208,7 @@ function AppContent() {
   console.log('🏗️ [APP] App component initialized');
 
   // Auth context and loading state
-  const { isAuthenticated, authLoading, isLoading } = usePartner();
+  const { isAuthenticated, authLoading, isLoading, demoCode } = usePartner();
   const { isAdmin } = useAuth();
 
   // Show loading spinner while branding is loading
@@ -648,6 +648,7 @@ function AppContent() {
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+            demoCode={demoCode}
             onNavigateToSimulator={(variables) => {
               // Navigate to simulator dashboard - variables can be used to pre-fill forms
               console.log('[APP] Navigating to simulator from Smart Briefing with variables:', variables);

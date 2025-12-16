@@ -66,6 +66,27 @@ class Bewerbungstrainer_SmartBriefing_API {
             'permission_callback' => array($this, 'allow_all_users'),
         ));
 
+        // Create custom template (user-created)
+        register_rest_route($this->namespace, '/smartbriefing/templates', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'create_template'),
+            'permission_callback' => array($this, 'allow_all_users'), // Allow demo users too
+        ));
+
+        // Update custom template
+        register_rest_route($this->namespace, '/smartbriefing/templates/(?P<id>\d+)', array(
+            'methods' => 'PUT',
+            'callback' => array($this, 'update_template'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
+        // Delete custom template
+        register_rest_route($this->namespace, '/smartbriefing/templates/(?P<id>\d+)', array(
+            'methods' => 'DELETE',
+            'callback' => array($this, 'delete_template'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
         // ===== Briefing Endpoints =====
 
         // Generate briefing (create and generate content in one call)
@@ -136,7 +157,7 @@ class Bewerbungstrainer_SmartBriefing_API {
     // =========================================================================
 
     /**
-     * Get all templates
+     * Get all templates (system + user's own custom templates)
      */
     public function get_templates($request) {
         $params = $request->get_params();
@@ -144,6 +165,9 @@ class Bewerbungstrainer_SmartBriefing_API {
         $args = array(
             'category' => isset($params['category']) ? $params['category'] : null,
             'is_active' => 1,
+            'user_id' => get_current_user_id(),
+            'demo_code' => isset($params['demo_code']) ? $params['demo_code'] : null,
+            'include_user_templates' => true,
         );
 
         $templates = $this->db->get_templates($args);
@@ -157,6 +181,8 @@ class Bewerbungstrainer_SmartBriefing_API {
                 'icon' => $template->icon,
                 'category' => $template->category,
                 'variables_schema' => $template->variables_schema,
+                'is_custom' => !empty($template->is_custom),
+                'system_prompt' => !empty($template->is_custom) ? $template->system_prompt : null, // Only expose for custom templates
             );
         }, $templates);
 
@@ -181,6 +207,14 @@ class Bewerbungstrainer_SmartBriefing_API {
             );
         }
 
+        $user_id = get_current_user_id();
+        $params = $request->get_params();
+        $demo_code = isset($params['demo_code']) ? $params['demo_code'] : null;
+
+        // Check if user can access this template
+        $is_owner = $this->db->user_owns_template($template, $user_id, $demo_code);
+        $is_system = empty($template->user_id) && empty($template->demo_code);
+
         return new WP_REST_Response(array(
             'success' => true,
             'data' => array(
@@ -190,7 +224,217 @@ class Bewerbungstrainer_SmartBriefing_API {
                 'icon' => $template->icon,
                 'category' => $template->category,
                 'variables_schema' => $template->variables_schema,
+                'is_custom' => !$is_system,
+                'system_prompt' => ($is_owner || $is_system) ? $template->system_prompt : null,
             ),
+        ), 200);
+    }
+
+    /**
+     * Create a custom template (user-created)
+     */
+    public function create_template($request) {
+        $params = $request->get_json_params();
+
+        if (empty($params)) {
+            $params = $request->get_params();
+        }
+
+        // Validate required fields
+        if (empty($params['title'])) {
+            return new WP_Error(
+                'missing_fields',
+                __('Titel ist erforderlich.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        if (empty($params['system_prompt'])) {
+            return new WP_Error(
+                'missing_fields',
+                __('System Prompt ist erforderlich.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get user identification
+        $user_id = get_current_user_id();
+        $demo_code = isset($params['demo_code']) ? strtoupper(sanitize_text_field($params['demo_code'])) : null;
+
+        // Require either logged-in user or demo code
+        if (!$user_id && empty($demo_code)) {
+            return new WP_Error(
+                'unauthorized',
+                __('Du musst angemeldet sein oder einen Demo-Code verwenden.', 'bewerbungstrainer'),
+                array('status' => 401)
+            );
+        }
+
+        // Prepare template data
+        $template_data = array(
+            'title' => sanitize_text_field($params['title']),
+            'description' => isset($params['description']) ? sanitize_textarea_field($params['description']) : '',
+            'icon' => isset($params['icon']) ? sanitize_text_field($params['icon']) : 'file-text',
+            'category' => 'MEINE', // Always set to MEINE for custom templates
+            'system_prompt' => $params['system_prompt'], // Don't over-sanitize the prompt
+            'variables_schema' => isset($params['variables_schema']) ? $params['variables_schema'] : array(),
+            'is_active' => 1,
+            'sort_order' => 0,
+            'user_id' => $user_id ?: null,
+            'demo_code' => $demo_code,
+        );
+
+        $template_id = $this->db->create_template($template_data);
+
+        if (!$template_id) {
+            return new WP_Error(
+                'create_failed',
+                __('Fehler beim Erstellen des Templates.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Get created template
+        $template = $this->db->get_template($template_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'template' => array(
+                    'id' => (int) $template->id,
+                    'title' => $template->title,
+                    'description' => $template->description,
+                    'icon' => $template->icon,
+                    'category' => $template->category,
+                    'variables_schema' => $template->variables_schema,
+                    'system_prompt' => $template->system_prompt,
+                    'is_custom' => true,
+                ),
+            ),
+            'message' => __('Template erfolgreich erstellt.', 'bewerbungstrainer'),
+        ), 201);
+    }
+
+    /**
+     * Update a custom template
+     */
+    public function update_template($request) {
+        $template_id = intval($request['id']);
+        $params = $request->get_json_params();
+
+        if (empty($params)) {
+            $params = $request->get_params();
+        }
+
+        // Get template
+        $template = $this->db->get_template($template_id);
+
+        if (!$template) {
+            return new WP_Error(
+                'not_found',
+                __('Template nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Verify ownership
+        $user_id = get_current_user_id();
+        $demo_code = isset($params['demo_code']) ? $params['demo_code'] : null;
+
+        if (!$this->db->user_owns_template($template, $user_id, $demo_code)) {
+            return new WP_Error(
+                'unauthorized',
+                __('Du bist nicht berechtigt, dieses Template zu bearbeiten.', 'bewerbungstrainer'),
+                array('status' => 403)
+            );
+        }
+
+        // Prepare update data
+        $update_data = array();
+
+        if (isset($params['title'])) {
+            $update_data['title'] = sanitize_text_field($params['title']);
+        }
+
+        if (isset($params['description'])) {
+            $update_data['description'] = sanitize_textarea_field($params['description']);
+        }
+
+        if (isset($params['icon'])) {
+            $update_data['icon'] = sanitize_text_field($params['icon']);
+        }
+
+        if (isset($params['system_prompt'])) {
+            $update_data['system_prompt'] = $params['system_prompt'];
+        }
+
+        if (isset($params['variables_schema'])) {
+            $update_data['variables_schema'] = $params['variables_schema'];
+        }
+
+        if (empty($update_data)) {
+            return new WP_Error(
+                'no_data',
+                __('Keine Daten zum Aktualisieren.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        $result = $this->db->update_template($template_id, $update_data);
+
+        if (!$result) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Aktualisieren des Templates.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Get updated template
+        $template = $this->db->get_template($template_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'template' => array(
+                    'id' => (int) $template->id,
+                    'title' => $template->title,
+                    'description' => $template->description,
+                    'icon' => $template->icon,
+                    'category' => $template->category,
+                    'variables_schema' => $template->variables_schema,
+                    'system_prompt' => $template->system_prompt,
+                    'is_custom' => true,
+                ),
+            ),
+            'message' => __('Template erfolgreich aktualisiert.', 'bewerbungstrainer'),
+        ), 200);
+    }
+
+    /**
+     * Delete a custom template
+     */
+    public function delete_template($request) {
+        $template_id = intval($request['id']);
+        $params = $request->get_params();
+
+        // Get user identification
+        $user_id = get_current_user_id();
+        $demo_code = isset($params['demo_code']) ? $params['demo_code'] : null;
+
+        $result = $this->db->delete_template($template_id, $user_id, $demo_code);
+
+        if (!$result) {
+            return new WP_Error(
+                'delete_failed',
+                __('Fehler beim Löschen des Templates. Möglicherweise bist du nicht berechtigt.', 'bewerbungstrainer'),
+                array('status' => 403)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => __('Template erfolgreich gelöscht.', 'bewerbungstrainer'),
         ), 200);
     }
 
