@@ -93,6 +93,7 @@ const RoleplayProxySession = ({
   const durationIntervalRef = useRef(null);
   const transcriptRef = useRef([]); // Ref for stable transcript access
   const startTimeRef = useRef(null); // Ref for stable startTime access
+  const conversationIdRef = useRef(null); // Ref for ElevenLabs conversation ID (for audio download)
 
   // Responsive handling
   useEffect(() => {
@@ -235,6 +236,12 @@ const RoleplayProxySession = ({
         case 'conversation_initiation_metadata':
           // ElevenLabs is ready - now send our config and start audio
           console.log('[ProxySession] Received initiation metadata, sending config...');
+
+          // Capture conversation_id for later audio download via HTTPS
+          if (data.conversation_initiation_metadata_event?.conversation_id) {
+            conversationIdRef.current = data.conversation_initiation_metadata_event.conversation_id;
+            console.log('[ProxySession] Captured conversation_id:', conversationIdRef.current);
+          }
 
           // Build dynamic variables including interviewer info from scenario
           const dynamicVariables = {
@@ -565,17 +572,34 @@ const RoleplayProxySession = ({
 
       console.log('[ProxySession] Analysis complete, saving to database...');
 
-      // Save analysis to database
+      // Save analysis to database (with conversation_id if available)
       await saveRoleplaySessionAnalysis(
         sessionId,
         transcriptRef.current,
         analysis.feedbackContent,
         finalDuration,
         analysis.audioAnalysisContent,
-        null // No conversation_id in proxy mode
+        conversationIdRef.current // Pass conversation_id for reference
       );
 
       console.log('[ProxySession] Session saved successfully');
+
+      // Try to download and save audio from ElevenLabs via HTTPS
+      if (conversationIdRef.current) {
+        console.log('[ProxySession] Downloading audio from ElevenLabs via HTTPS...');
+        try {
+          const audioResult = await wordpressAPI.saveAudioFromElevenLabs(
+            conversationIdRef.current,
+            sessionId
+          );
+          console.log('[ProxySession] Audio saved successfully:', audioResult);
+        } catch (audioError) {
+          // Log error but don't fail - the session is already saved
+          console.warn('[ProxySession] Failed to save audio (non-critical):', audioError.message);
+        }
+      } else {
+        console.log('[ProxySession] No conversation_id available, skipping audio download');
+      }
 
       // Navigate to session results
       if (onNavigateToSession) {
@@ -640,6 +664,7 @@ const RoleplayProxySession = ({
     }
 
     audioQueueRef.current = [];
+    conversationIdRef.current = null;
     setStatus('disconnected');
   };
 
