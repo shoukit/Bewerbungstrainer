@@ -1495,8 +1495,17 @@ AUDIO ZUR ANALYSE:";
         // Normalize curly/smart quotes to standard ASCII quotes
         // Gemini sometimes returns typographic quotes which break JSON parsing
         $cleaned_response = str_replace(
-            array('"', '"', ''', ''', '„', '‟', '‚', '‛'),  // Curly/smart quotes
-            array('"', '"', "'", "'", '"', '"', "'", "'"),   // Standard ASCII quotes
+            array(
+                "\xE2\x80\x9C",  // " LEFT DOUBLE QUOTATION MARK (U+201C)
+                "\xE2\x80\x9D",  // " RIGHT DOUBLE QUOTATION MARK (U+201D)
+                "\xE2\x80\x98",  // ' LEFT SINGLE QUOTATION MARK (U+2018)
+                "\xE2\x80\x99",  // ' RIGHT SINGLE QUOTATION MARK (U+2019)
+                "\xE2\x80\x9E",  // „ DOUBLE LOW-9 QUOTATION MARK (U+201E)
+                "\xE2\x80\x9F",  // ‟ DOUBLE HIGH-REVERSED-9 QUOTATION MARK (U+201F)
+                "\xE2\x80\x9A",  // ‚ SINGLE LOW-9 QUOTATION MARK (U+201A)
+                "\xE2\x80\x9B",  // ‛ SINGLE HIGH-REVERSED-9 QUOTATION MARK (U+201B)
+            ),
+            array('"', '"', "'", "'", '"', '"', "'", "'"),
             $cleaned_response
         );
         error_log("[SIMULATOR_PARSE] Normalized curly quotes");
