@@ -612,13 +612,14 @@ const RoleplayProxySession = ({
       console.log('[ProxySession] Analysis complete, saving to database...');
 
       // 3. Save analysis to database (with conversation_id if available)
+      // Parameter order: sessionId, transcript, feedbackJson, audioAnalysisJson, duration, conversationId
       await saveRoleplaySessionAnalysis(
         sessionId,
         transcriptRef.current,
         analysis.feedbackContent,
-        finalDuration,
-        analysis.audioAnalysisContent,
-        conversationIdRef.current // Pass conversation_id for reference
+        analysis.audioAnalysisContent, // audioAnalysisJson (4th parameter)
+        finalDuration,                 // duration (5th parameter)
+        conversationIdRef.current      // conversationId (6th parameter)
       );
 
       console.log('[ProxySession] Session saved successfully');
