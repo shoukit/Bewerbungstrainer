@@ -275,19 +275,20 @@ export async function getCachedWebSocketTest(agentId, forceRetest = false) {
 /**
  * Determine the best connection mode based on WebSocket tests
  *
- * Priority: websocket (direct) > proxy > corporate (HTTP)
+ * Priority: websocket (direct) > proxy
+ * If both fail, returns proxy mode with error (UI will show error state)
  *
  * @param {string} agentId - ElevenLabs Agent ID
- * @returns {Promise<{mode: 'websocket' | 'proxy' | 'corporate', directAvailable: boolean, proxyAvailable: boolean, directLatency?: number, proxyLatency?: number, error?: string}>}
+ * @returns {Promise<{mode: 'websocket' | 'proxy', directAvailable: boolean, proxyAvailable: boolean, directLatency?: number, proxyLatency?: number, error?: string}>}
  */
 export async function detectBestConnectionMode(agentId) {
   if (!supportsWebSocket()) {
-    console.log('[WebSocketTest] Browser does not support WebSocket, using corporate mode');
+    console.log('[WebSocketTest] Browser does not support WebSocket');
     return {
-      mode: 'corporate',
+      mode: 'proxy', // Will show error in UI
       directAvailable: false,
       proxyAvailable: false,
-      error: 'Browser does not support WebSocket',
+      error: 'Browser unterstützt keine WebSocket-Verbindungen',
     };
   }
 
@@ -315,17 +316,17 @@ export async function detectBestConnectionMode(agentId) {
       directAvailable: false,
       proxyAvailable: true,
       proxyLatency: proxyResult.latency,
-      error: directResult.error,
+      error: directResult.error, // Note why direct failed
     };
   }
 
-  // Both failed - use corporate mode
-  console.log('[WebSocketTest] All WebSocket connections blocked, using corporate mode');
+  // Both failed - return proxy mode with error (UI will show error state)
+  console.log('[WebSocketTest] All WebSocket connections blocked');
   return {
-    mode: 'corporate',
+    mode: 'proxy', // Default, UI will show error since proxyAvailable is false
     directAvailable: false,
     proxyAvailable: false,
-    error: 'All WebSocket connections blocked by firewall',
+    error: 'Alle WebSocket-Verbindungen werden durch Firewall blockiert',
   };
 }
 

@@ -5,7 +5,6 @@ import RoleplayDeviceSetup from './components/RoleplayDeviceSetup';
 import RoleplayVariablesPage from './components/RoleplayVariablesPage';
 import RoleplaySession from './components/RoleplaySession';
 import RoleplayProxySession from './components/RoleplayProxySession';
-import CorporateModeSession from './components/CorporateModeSession';
 import SessionHistory, { SESSION_TABS } from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
 import { SimulatorApp } from './components/simulator';
@@ -96,7 +95,6 @@ const VIEWS = {
   ROLEPLAY_DEVICE_SETUP: 'roleplay_device_setup',
   ROLEPLAY: 'roleplay',
   ROLEPLAY_PROXY: 'roleplay_proxy',
-  ROLEPLAY_CORPORATE: 'roleplay_corporate',
   SIMULATOR: 'simulator',
   VIDEO_TRAINING: 'video_training',
   SMART_BRIEFING: 'smart_briefing',
@@ -226,7 +224,7 @@ function AppContent() {
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [roleplayVariables, setRoleplayVariables] = useState({});
   const [roleplayMicrophoneId, setRoleplayMicrophoneId] = useState(null);
-  const [roleplayConnectionMode, setRoleplayConnectionMode] = useState('websocket'); // 'websocket' or 'corporate'
+  const [roleplayConnectionMode, setRoleplayConnectionMode] = useState('websocket'); // 'websocket' or 'proxy'
 
   // Session history state
   const [selectedSession, setSelectedSession] = useState(null);
@@ -477,9 +475,7 @@ function AppContent() {
     setRoleplayConnectionMode(connectionMode);
 
     // Navigate to appropriate session based on connection mode
-    if (connectionMode === 'corporate') {
-      setCurrentView(VIEWS.ROLEPLAY_CORPORATE);
-    } else if (connectionMode === 'proxy') {
+    if (connectionMode === 'proxy') {
       setCurrentView(VIEWS.ROLEPLAY_PROXY);
     } else {
       setCurrentView(VIEWS.ROLEPLAY);
@@ -611,17 +607,6 @@ function AppContent() {
       case VIEWS.ROLEPLAY_PROXY:
         return (
           <RoleplayProxySession
-            scenario={selectedScenario}
-            variables={roleplayVariables}
-            selectedMicrophoneId={roleplayMicrophoneId}
-            onEnd={handleEndRoleplay}
-            onNavigateToSession={handleNavigateToSession}
-          />
-        );
-
-      case VIEWS.ROLEPLAY_CORPORATE:
-        return (
-          <CorporateModeSession
             scenario={selectedScenario}
             variables={roleplayVariables}
             selectedMicrophoneId={roleplayMicrophoneId}

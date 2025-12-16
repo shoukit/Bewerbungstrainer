@@ -5,6 +5,7 @@
  * for corporate firewall compatibility.
  *
  * Uses direct WebSocket connection instead of @elevenlabs/react SDK.
+ * Creates proper database sessions and performs analysis like RoleplaySession.
  */
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -31,6 +32,11 @@ import InterviewerProfile from './InterviewerProfile';
 import CoachingPanel from './CoachingPanel';
 import DeviceSettingsDialog from './DeviceSettingsDialog';
 import wordpressAPI from '@/services/wordpress-api';
+import {
+  createRoleplaySession,
+  analyzeRoleplayTranscript,
+  saveRoleplaySessionAnalysis,
+} from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 
@@ -47,8 +53,8 @@ const RoleplayProxySession = ({
   onEnd,
   onNavigateToSession,
 }) => {
-  // Partner branding
-  const { branding } = usePartner();
+  // Partner branding and demo code
+  const { branding, demoCode } = usePartner();
 
   const themedStyles = useMemo(() => {
     const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -57,8 +63,9 @@ const RoleplayProxySession = ({
     return { headerGradient, headerText, primaryAccent };
   }, [branding]);
 
-  // Connection state
-  const [status, setStatus] = useState('disconnected'); // disconnected, connecting, connected
+  // Session state
+  const [sessionId, setSessionId] = useState(null);
+  const [status, setStatus] = useState('disconnected'); // disconnected, connecting, connected, analyzing
   const [error, setError] = useState(null);
   const [transcript, setTranscript] = useState([]);
 
@@ -84,6 +91,8 @@ const RoleplayProxySession = ({
   const nextPlayTimeRef = useRef(0); // For seamless audio scheduling
   const transcriptEndRef = useRef(null);
   const durationIntervalRef = useRef(null);
+  const transcriptRef = useRef([]); // Ref for stable transcript access
+  const startTimeRef = useRef(null); // Ref for stable startTime access
 
   // Responsive handling
   useEffect(() => {
@@ -134,7 +143,29 @@ const RoleplayProxySession = ({
     setError(null);
 
     try {
-      // Get microphone access
+      // Get agent ID
+      const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
+
+      if (!agentId) {
+        throw new Error('Keine Agent-ID konfiguriert');
+      }
+
+      // 1. Create database session FIRST (like RoleplaySession)
+      console.log('[ProxySession] Creating database session...');
+      const sessionData = {
+        agent_id: agentId,
+        scenario_id: scenario.id,
+        variables: variables,
+        user_name: 'Gast',
+        demo_code: demoCode || null,
+        connection_mode: 'proxy',
+      };
+
+      const createdSession = await createRoleplaySession(sessionData);
+      console.log('[ProxySession] Session created:', createdSession.id);
+      setSessionId(createdSession.id);
+
+      // 2. Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           deviceId: localMicrophoneId ? { exact: localMicrophoneId } : undefined,
@@ -146,14 +177,7 @@ const RoleplayProxySession = ({
       });
       streamRef.current = stream;
 
-      // Get agent ID
-      const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
-
-      if (!agentId) {
-        throw new Error('Keine Agent-ID konfiguriert');
-      }
-
-      // Connect to proxy
+      // 3. Connect to proxy
       const wsUrl = `${PROXY_URL}?agent_id=${agentId}`;
       console.log('[ProxySession] Connecting to:', wsUrl);
 
@@ -173,7 +197,10 @@ const RoleplayProxySession = ({
 
       ws.onclose = (event) => {
         console.log('[ProxySession] Disconnected:', event.code, event.reason);
-        setStatus('disconnected');
+        // Only set disconnected if we're not analyzing
+        if (status !== 'analyzing') {
+          setStatus('disconnected');
+        }
       };
 
       ws.onerror = (error) => {
@@ -240,8 +267,10 @@ const RoleplayProxySession = ({
             console.log('[ProxySession] Config sent');
 
             // Now we're truly connected - start audio capture
+            const now = Date.now();
             setStatus('connected');
-            setStartTime(Date.now());
+            setStartTime(now);
+            startTimeRef.current = now; // Keep ref in sync
 
             if (streamRef.current) {
               startAudioCapture(streamRef.current, wsRef.current);
@@ -313,12 +342,18 @@ const RoleplayProxySession = ({
   const addToTranscript = (role, text) => {
     if (!text || text.trim() === '') return;
 
-    setTranscript(prev => [...prev, {
+    const newEntry = {
       role,
       text,
       timestamp: Date.now(),
-      timeLabel: formatDuration(Math.floor((Date.now() - (startTime || Date.now())) / 1000)),
-    }]);
+      timeLabel: formatDuration(Math.floor((Date.now() - (startTimeRef.current || Date.now())) / 1000)),
+    };
+
+    setTranscript(prev => {
+      const updated = [...prev, newEntry];
+      transcriptRef.current = updated; // Keep ref in sync
+      return updated;
+    });
   };
 
   /**
@@ -457,28 +492,110 @@ const RoleplayProxySession = ({
   };
 
   /**
-   * End the conversation
+   * End the conversation and perform analysis
    */
-  const endConversation = () => {
+  const endConversation = async () => {
     setShowEndDialog(false);
-    cleanup();
+    setStatus('analyzing');
 
-    // Navigate to results
-    if (onNavigateToSession && transcript.length > 0) {
-      const sessionData = {
-        id: `proxy_${Date.now()}`,
-        scenario_id: scenario.id,
-        transcript: JSON.stringify(transcript.map(t => ({
-          role: t.role,
-          text: t.text,
-        }))),
-        duration: duration,
-        created_at: new Date().toISOString(),
-        mode: 'proxy',
+    // Close WebSocket
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    // Stop audio capture
+    if (mediaRecorderRef.current) {
+      if (mediaRecorderRef.current.processor) {
+        mediaRecorderRef.current.processor.disconnect();
+      }
+      if (mediaRecorderRef.current.source) {
+        mediaRecorderRef.current.source.disconnect();
+      }
+      mediaRecorderRef.current = null;
+    }
+
+    // Calculate final duration
+    const finalDuration = startTimeRef.current
+      ? Math.floor((Date.now() - startTimeRef.current) / 1000)
+      : duration;
+
+    console.log('[ProxySession] Session ended, duration:', finalDuration);
+    console.log('[ProxySession] Transcript entries:', transcriptRef.current.length);
+
+    // Check if we have a session and transcript
+    if (!sessionId) {
+      console.error('[ProxySession] No session ID, cannot save');
+      cleanup();
+      if (onEnd) onEnd();
+      return;
+    }
+
+    if (transcriptRef.current.length === 0) {
+      console.log('[ProxySession] No transcript, skipping analysis');
+      cleanup();
+      if (onNavigateToSession) {
+        onNavigateToSession({ id: sessionId });
+      } else if (onEnd) {
+        onEnd();
+      }
+      return;
+    }
+
+    try {
+      // Build scenario context for analysis
+      const scenarioContext = {
+        title: scenario.title || 'Live-Simulation',
+        description: scenario.description || '',
+        variables: variables,
+        role_type: scenario.role_type || 'simulation',
+        user_role_label: scenario.user_role_label || 'Teilnehmer',
+        interviewer_profile: scenario.interviewer_profile,
+        feedback_prompt: scenario.feedback_prompt,
       };
-      onNavigateToSession(sessionData);
-    } else if (onEnd) {
-      onEnd();
+
+      console.log('[ProxySession] Starting analysis...');
+
+      // Analyze the transcript (no audio file for proxy mode)
+      const analysis = await analyzeRoleplayTranscript(
+        transcriptRef.current,
+        scenarioContext,
+        null // No audio file in proxy mode
+      );
+
+      console.log('[ProxySession] Analysis complete, saving to database...');
+
+      // Save analysis to database
+      await saveRoleplaySessionAnalysis(
+        sessionId,
+        transcriptRef.current,
+        analysis.feedbackContent,
+        finalDuration,
+        analysis.audioAnalysisContent,
+        null // No conversation_id in proxy mode
+      );
+
+      console.log('[ProxySession] Session saved successfully');
+
+      // Navigate to session results
+      if (onNavigateToSession) {
+        console.log('[ProxySession] Navigating to session:', sessionId);
+        onNavigateToSession({ id: sessionId });
+      } else if (onEnd) {
+        onEnd();
+      }
+
+    } catch (err) {
+      console.error('[ProxySession] Analysis/save failed:', err);
+      setError(`Analyse fehlgeschlagen: ${err.message}`);
+      // Still navigate to session - it might have partial data
+      if (onNavigateToSession) {
+        onNavigateToSession({ id: sessionId });
+      } else if (onEnd) {
+        onEnd();
+      }
+    } finally {
+      cleanup();
     }
   };
 
@@ -537,6 +654,25 @@ const RoleplayProxySession = ({
       });
     }
   };
+
+  // Analyzing state - show loading screen
+  if (status === 'analyzing') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center"
+        >
+          <Loader2 className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-spin" />
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Analysiere Gespräch...</h2>
+          <p className="text-slate-600">
+            Das Transkript wird ausgewertet. Dies dauert einen Moment.
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   // Error state
   if (error && status === 'disconnected') {
