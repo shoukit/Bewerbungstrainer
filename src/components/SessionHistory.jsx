@@ -1304,7 +1304,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   return (
     <div style={{ padding: '24px' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+      <div style={{ marginBottom: '32px', textAlign: 'center', position: 'relative' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -1341,17 +1341,17 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         </p>
       </div>
 
-      {/* Tabs - Responsive: stack vertically on mobile */}
+      {/* Tabs - Responsive: icons on mobile, full tabs on desktop */}
       <style>{`
-        .session-tabs {
-          margin: 0 24px 32px;
+        .session-tabs-desktop {
+          margin: 0 24px 24px;
           display: flex;
           gap: 8px;
           background: #f1f5f9;
           padding: 6px;
           border-radius: 14px;
         }
-        .session-tab-btn {
+        .session-tab-btn-desktop {
           flex: 1;
           padding: 12px 16px;
           border-radius: 10px;
@@ -1364,16 +1364,86 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           gap: 8px;
           transition: all 0.2s;
         }
+        .session-tabs-mobile {
+          margin: 0 16px 16px;
+        }
+        .session-tabs-mobile-icons {
+          display: flex;
+          gap: 8px;
+          justify-content: center;
+          margin-bottom: 12px;
+        }
+        .session-tab-btn-mobile {
+          flex: 1;
+          max-width: 80px;
+          padding: 12px 8px;
+          border-radius: 12px;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          transition: all 0.2s;
+        }
+        .session-tab-mobile-label {
+          text-align: center;
+          font-size: 15px;
+          font-weight: 600;
+          color: #0f172a;
+          padding: 8px 16px;
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .mobile-refresh-btn {
+          display: none;
+        }
+        .desktop-actions {
+          margin: 0 24px 24px;
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+        }
+        @media (min-width: 641px) {
+          .session-tabs-mobile { display: none; }
+        }
         @media (max-width: 640px) {
-          .session-tabs {
-            flex-direction: column;
-          }
-          .session-tab-btn {
-            padding: 14px 16px;
+          .session-tabs-desktop { display: none; }
+          .desktop-actions { display: none; }
+          .mobile-refresh-btn {
+            display: flex !important;
+            position: absolute;
+            top: 0;
+            right: 0;
           }
         }
       `}</style>
-      <div className="session-tabs">
+
+      {/* Mobile: Refresh button in header area */}
+      <button
+        onClick={loadAllData}
+        disabled={isLoading}
+        className="mobile-refresh-btn"
+        style={{
+          padding: '10px',
+          borderRadius: '10px',
+          border: '1px solid #e2e8f0',
+          background: '#fff',
+          color: '#64748b',
+          cursor: isLoading ? 'not-allowed' : 'pointer',
+          opacity: isLoading ? 0.5 : 1,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <RefreshCw style={{ width: '18px', height: '18px' }} className={isLoading ? 'animate-spin' : ''} />
+      </button>
+
+      {/* Desktop Tabs */}
+      <div className="session-tabs-desktop">
         {TAB_CONFIG.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1386,7 +1456,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="session-tab-btn"
+              className="session-tab-btn-desktop"
               style={{
                 background: isActive ? '#fff' : 'transparent',
                 color: isActive ? '#0f172a' : '#64748b',
@@ -1411,8 +1481,51 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         })}
       </div>
 
-      {/* Action buttons */}
-      <div style={{ margin: '0 24px 24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+      {/* Mobile Tabs - Icons with counts + active label below */}
+      <div className="session-tabs-mobile">
+        <div className="session-tabs-mobile-icons">
+          {TAB_CONFIG.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
+                         tab.id === TABS.VIDEO ? videoSessions.length :
+                         tab.id === TABS.BRIEFINGS ? briefings.length :
+                         roleplaySessions.length;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="session-tab-btn-mobile"
+                style={{
+                  background: isActive ? '#fff' : '#f1f5f9',
+                  boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none',
+                  border: isActive ? `2px solid ${primaryAccent}` : '2px solid transparent',
+                }}
+              >
+                <Icon size={20} style={{ color: isActive ? primaryAccent : '#64748b' }} />
+                <span style={{
+                  padding: '2px 6px',
+                  borderRadius: '8px',
+                  background: isActive ? primaryAccent : '#e2e8f0',
+                  color: isActive ? '#fff' : '#64748b',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Active tab label */}
+        <div className="session-tab-mobile-label">
+          {TAB_CONFIG.find(t => t.id === activeTab)?.label}
+        </div>
+      </div>
+
+      {/* Desktop Action buttons */}
+      <div className="desktop-actions">
         <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
           <RefreshCw style={{ width: '16px', height: '16px', marginRight: '8px' }} className={isLoading ? 'animate-spin' : ''} />
           Aktualisieren
