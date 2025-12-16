@@ -226,7 +226,7 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
 /**
  * Audio Recorder Component - With Pause functionality
  */
-const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels }) => {
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels, onOpenSettings }) => {
   const [recordingState, setRecordingState] = useState('idle'); // 'idle' | 'recording' | 'paused'
   const [seconds, setSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -430,7 +430,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
         {/* Settings Button */}
         <button
-          onClick={() => setShowDeviceSettings(true)}
+          onClick={onOpenSettings}
           style={{
             padding: '14px',
             borderRadius: '12px',
@@ -1044,24 +1044,6 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
             <Check size={16} />
             {isMobile ? 'Beenden' : 'Training beenden'}
           </button>
-          {/* Settings Button */}
-          <button
-            onClick={() => setShowDeviceSettings(true)}
-            style={{
-              padding: isMobile ? '10px' : '8px',
-              borderRadius: '8px',
-              background: '#f1f5f9',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#64748b',
-            }}
-            title="Geräte-Einstellungen"
-          >
-            <Settings size={18} />
-          </button>
           <button
             onClick={handleCancelClick}
             style={{
@@ -1493,6 +1475,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                 primaryAccent={primaryAccent}
                 isSubmitting={isSubmitting}
                 labels={labels}
+                onOpenSettings={() => setShowDeviceSettings(true)}
               />
 
               {/* Error State - Mobile */}
@@ -1548,6 +1531,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                   primaryAccent={primaryAccent}
                   isSubmitting={isSubmitting}
                   labels={labels}
+                  onOpenSettings={() => setShowDeviceSettings(true)}
                 />
 
                 {/* Error State */}
