@@ -603,7 +603,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
               color: COLORS.slate[600],
               margin: '4px 0 0 0',
             }}>
-              {scenario.title} • {questions.length} {questionsLabel}
+              {scenario.title}
             </p>
           </div>
         </div>
@@ -697,7 +697,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
         }}
       >
         <Play style={{ width: '24px', height: '24px' }} />
-        Gespräch starten
+        Training starten
       </button>
 
       {/* Tips Section - THIRD */}
