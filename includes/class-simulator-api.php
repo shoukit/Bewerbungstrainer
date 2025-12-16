@@ -1492,8 +1492,9 @@ AUDIO ZUR ANALYSE:";
         // Remove any leading/trailing whitespace
         $cleaned_response = trim($cleaned_response);
 
-        // Normalize curly/smart quotes to standard ASCII quotes
-        // Gemini sometimes returns typographic quotes which break JSON parsing
+        // Normalize curly/smart quotes to SINGLE quotes (safe inside JSON strings)
+        // Converting curly double quotes to straight double quotes breaks JSON
+        // because they appear inside string content (e.g., "He said "Hello"" becomes invalid)
         $cleaned_response = str_replace(
             array(
                 "\xE2\x80\x9C",  // " LEFT DOUBLE QUOTATION MARK (U+201C)
@@ -1505,10 +1506,10 @@ AUDIO ZUR ANALYSE:";
                 "\xE2\x80\x9A",  // ‚ SINGLE LOW-9 QUOTATION MARK (U+201A)
                 "\xE2\x80\x9B",  // ‛ SINGLE HIGH-REVERSED-9 QUOTATION MARK (U+201B)
             ),
-            array('"', '"', "'", "'", '"', '"', "'", "'"),
+            array("'", "'", "'", "'", "'", "'", "'", "'"),  // All to single quotes
             $cleaned_response
         );
-        error_log("[SIMULATOR_PARSE] Normalized curly quotes");
+        error_log("[SIMULATOR_PARSE] Normalized curly quotes to single quotes");
 
         // Try to extract JSON array from response
         $json_match = null;
