@@ -957,9 +957,9 @@ Gib konkrete Formulierungsvorschläge.',
         );
 
         if ($session) {
-            $session->variables_json = json_decode($session->variables_json, true);
-            $session->questions_json = json_decode($session->questions_json, true);
-            $session->summary_feedback_json = json_decode($session->summary_feedback_json, true);
+            $session->variables_json = $session->variables_json ? json_decode($session->variables_json, true) : null;
+            $session->questions_json = $session->questions_json ? json_decode($session->questions_json, true) : null;
+            $session->summary_feedback_json = $session->summary_feedback_json ? json_decode($session->summary_feedback_json, true) : null;
         }
 
         return $session;
@@ -985,9 +985,9 @@ Gib konkrete Formulierungsvorschläge.',
         );
 
         if ($session) {
-            $session->variables_json = json_decode($session->variables_json, true);
-            $session->questions_json = json_decode($session->questions_json, true);
-            $session->summary_feedback_json = json_decode($session->summary_feedback_json, true);
+            $session->variables_json = $session->variables_json ? json_decode($session->variables_json, true) : null;
+            $session->questions_json = $session->questions_json ? json_decode($session->questions_json, true) : null;
+            $session->summary_feedback_json = $session->summary_feedback_json ? json_decode($session->summary_feedback_json, true) : null;
         }
 
         return $session;
