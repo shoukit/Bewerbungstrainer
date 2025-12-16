@@ -1339,7 +1339,39 @@ AUDIO ZUR ANALYSE:";
                 $response_body = wp_remote_retrieve_body($response);
                 $data = json_decode($response_body, true);
 
+                // Log full response structure for debugging
+                error_log("[SIMULATOR] Gemini API response structure: " . substr(json_encode($data), 0, 500));
+
+                // Check for safety blocks
+                if (isset($data['candidates'][0]['finishReason']) && $data['candidates'][0]['finishReason'] === 'SAFETY') {
+                    error_log("[SIMULATOR] Response blocked by safety filter!");
+                    $last_error = new WP_Error(
+                        'safety_blocked',
+                        __('Antwort wurde durch Sicherheitsfilter blockiert.', 'bewerbungstrainer'),
+                        array('status' => 500)
+                    );
+                    if ($attempt < $max_retries) {
+                        sleep(1);
+                    }
+                    continue;
+                }
+
+                // Check for empty candidates
+                if (empty($data['candidates'])) {
+                    error_log("[SIMULATOR] No candidates in response! Full response: " . json_encode($data));
+                    $last_error = new WP_Error(
+                        'no_candidates',
+                        __('Keine Antwort von Gemini erhalten.', 'bewerbungstrainer'),
+                        array('status' => 500)
+                    );
+                    if ($attempt < $max_retries) {
+                        sleep(1);
+                    }
+                    continue;
+                }
+
                 if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                    error_log("[SIMULATOR] Invalid response structure. Candidate: " . json_encode($data['candidates'][0]));
                     $last_error = new WP_Error(
                         'invalid_response',
                         __('Ungültige Antwort von Gemini API.', 'bewerbungstrainer'),
@@ -1353,8 +1385,9 @@ AUDIO ZUR ANALYSE:";
                 }
 
                 // Success!
-                error_log("[SIMULATOR] Gemini API success with model: $model");
-                return $data['candidates'][0]['content']['parts'][0]['text'];
+                $text_response = $data['candidates'][0]['content']['parts'][0]['text'];
+                error_log("[SIMULATOR] Gemini API success with model: $model, response length: " . strlen($text_response));
+                return $text_response;
             }
         }
 
@@ -1447,11 +1480,23 @@ AUDIO ZUR ANALYSE:";
         error_log("[SIMULATOR_PARSE] Starting to parse questions response");
         error_log("[SIMULATOR_PARSE] Response length: " . strlen($response));
 
+        // Clean response: remove markdown code blocks if present
+        $cleaned_response = $response;
+
+        // Remove ```json ... ``` wrapper
+        if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/', $response, $markdown_match)) {
+            $cleaned_response = $markdown_match[1];
+            error_log("[SIMULATOR_PARSE] Removed markdown code block wrapper");
+        }
+
+        // Remove any leading/trailing whitespace
+        $cleaned_response = trim($cleaned_response);
+
         // Try to extract JSON array from response
         $json_match = null;
 
         // Try to find JSON array
-        if (preg_match('/\[[\s\S]*\]/', $response, $json_match)) {
+        if (preg_match('/\[[\s\S]*\]/', $cleaned_response, $json_match)) {
             $json_str = $json_match[0];
             error_log("[SIMULATOR_PARSE] Found JSON array, length: " . strlen($json_str));
             $questions = json_decode($json_str, true);
@@ -1464,11 +1509,11 @@ AUDIO ZUR ANALYSE:";
                 error_log("[SIMULATOR_PARSE] JSON string preview: " . substr($json_str, 0, 300));
             }
         } else {
-            error_log("[SIMULATOR_PARSE] No JSON array found in response");
+            error_log("[SIMULATOR_PARSE] No JSON array found in cleaned response");
         }
 
         // Try to find JSON object with questions array
-        if (preg_match('/\{[\s\S]*"questions"[\s\S]*\}/', $response, $json_match)) {
+        if (preg_match('/\{[\s\S]*"questions"[\s\S]*\}/', $cleaned_response, $json_match)) {
             $json_str = $json_match[0];
             error_log("[SIMULATOR_PARSE] Found JSON object with questions key");
             $data = json_decode($json_str, true);
@@ -1484,7 +1529,7 @@ AUDIO ZUR ANALYSE:";
         }
 
         error_log("[SIMULATOR_PARSE] FAILED to parse questions!");
-        error_log("[SIMULATOR_PARSE] Full response: " . $response);
+        error_log("[SIMULATOR_PARSE] Full response (first 1000 chars): " . substr($response, 0, 1000));
         return array();
     }
 
