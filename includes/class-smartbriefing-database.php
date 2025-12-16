@@ -80,6 +80,53 @@ class Bewerbungstrainer_SmartBriefing_Database {
 
         $current_version = get_option('bewerbungstrainer_smartbriefing_db_version', '1.0.0');
 
+        // Migration 1.2.0: Add user_id and demo_code columns to templates table for custom templates
+        if (version_compare($current_version, '1.2.0', '<')) {
+            error_log('[SMARTBRIEFING] Running migration to 1.2.0...');
+
+            // Check if user_id column exists in templates table
+            $user_id_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SHOW COLUMNS FROM {$this->table_templates} LIKE %s",
+                    'user_id'
+                )
+            );
+
+            if (empty($user_id_exists)) {
+                error_log('[SMARTBRIEFING] Adding user_id and demo_code columns to templates table...');
+
+                // Add user_id column (NULL = system template, value = user-created template)
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_templates} ADD COLUMN `user_id` bigint(20) UNSIGNED DEFAULT NULL AFTER `sort_order`"
+                );
+
+                // Add demo_code column for demo users
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_templates} ADD COLUMN `demo_code` varchar(50) DEFAULT NULL AFTER `user_id`"
+                );
+
+                // Add index for user_id
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_templates} ADD KEY `user_id` (`user_id`)"
+                );
+
+                // Add index for demo_code
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_templates} ADD KEY `demo_code` (`demo_code`)"
+                );
+
+                if ($wpdb->last_error) {
+                    error_log('[SMARTBRIEFING] Error adding user template columns: ' . $wpdb->last_error);
+                } else {
+                    error_log('[SMARTBRIEFING] User template columns added successfully');
+                }
+            }
+
+            // Update version
+            update_option('bewerbungstrainer_smartbriefing_db_version', '1.2.0');
+            error_log('[SMARTBRIEFING] Migration to 1.2.0 completed');
+        }
+
         // Migration 1.1.0: Add title column to briefings table and create sections table
         if (version_compare($current_version, '1.1.0', '<')) {
             error_log('[SMARTBRIEFING] Running migration to 1.1.0...');
@@ -155,6 +202,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
         $charset_collate = $wpdb->get_charset_collate();
 
         // Templates table - stores configurable briefing templates
+        // user_id = NULL means system template, user_id = value means user-created template
         $table_templates = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_templates';
         $sql_templates = "CREATE TABLE IF NOT EXISTS `$table_templates` (
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -166,12 +214,16 @@ class Bewerbungstrainer_SmartBriefing_Database {
             `variables_schema` longtext NOT NULL,
             `is_active` tinyint(1) DEFAULT 1,
             `sort_order` int DEFAULT 0,
+            `user_id` bigint(20) UNSIGNED DEFAULT NULL,
+            `demo_code` varchar(50) DEFAULT NULL,
             `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
             `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
             KEY `is_active` (`is_active`),
             KEY `category` (`category`),
-            KEY `sort_order` (`sort_order`)
+            KEY `sort_order` (`sort_order`),
+            KEY `user_id` (`user_id`),
+            KEY `demo_code` (`demo_code`)
         ) $charset_collate;";
 
         // Briefings table - stores user-generated briefings (UserBriefing container)
@@ -461,7 +513,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
     // =========================================================================
 
     /**
-     * Get all active templates
+     * Get all active templates (system templates + user's own templates)
      *
      * @param array $args Query arguments
      * @return array Array of template objects
@@ -474,6 +526,9 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             'is_active' => 1,
             'orderby' => 'sort_order',
             'order' => 'ASC',
+            'user_id' => null,      // Include user's templates
+            'demo_code' => null,    // Include demo user's templates
+            'include_user_templates' => true, // Include user-created templates
         );
 
         $args = wp_parse_args($args, $defaults);
@@ -491,6 +546,26 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             $where_values[] = $args['category'];
         }
 
+        // Build ownership filter:
+        // - System templates (user_id IS NULL)
+        // - OR User's own templates (user_id = current user OR demo_code matches)
+        if ($args['include_user_templates']) {
+            $ownership_conditions = array('user_id IS NULL');
+
+            if ($args['user_id']) {
+                $ownership_conditions[] = $wpdb->prepare('user_id = %d', $args['user_id']);
+            }
+
+            if (!empty($args['demo_code'])) {
+                $ownership_conditions[] = $wpdb->prepare('demo_code = %s', strtoupper($args['demo_code']));
+            }
+
+            $where[] = '(' . implode(' OR ', $ownership_conditions) . ')';
+        } else {
+            // Only system templates
+            $where[] = 'user_id IS NULL';
+        }
+
         $where_clause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
         // Validate orderby
@@ -501,7 +576,8 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
 
         $args['order'] = strtoupper($args['order']) === 'DESC' ? 'DESC' : 'ASC';
 
-        $query = "SELECT * FROM {$this->table_templates} {$where_clause} ORDER BY {$args['orderby']} {$args['order']}";
+        // Order by: user templates first (category = MEINE), then by sort_order
+        $query = "SELECT * FROM {$this->table_templates} {$where_clause} ORDER BY CASE WHEN user_id IS NOT NULL THEN 0 ELSE 1 END, {$args['orderby']} {$args['order']}";
 
         if (!empty($where_values)) {
             $templates = $wpdb->get_results($wpdb->prepare($query, ...$where_values));
@@ -509,9 +585,55 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             $templates = $wpdb->get_results($query);
         }
 
+        // Parse JSON fields and add is_custom flag
+        foreach ($templates as &$template) {
+            $template->variables_schema = json_decode($template->variables_schema, true);
+            $template->is_custom = !empty($template->user_id) || !empty($template->demo_code);
+        }
+
+        return $templates;
+    }
+
+    /**
+     * Get only user's custom templates
+     *
+     * @param int $user_id User ID
+     * @param string $demo_code Demo code
+     * @return array Array of template objects
+     */
+    public function get_user_templates($user_id = null, $demo_code = null) {
+        global $wpdb;
+
+        $where = array('is_active = 1');
+        $where_values = array();
+
+        $ownership_conditions = array();
+
+        if ($user_id) {
+            $ownership_conditions[] = 'user_id = %d';
+            $where_values[] = $user_id;
+        }
+
+        if (!empty($demo_code)) {
+            $ownership_conditions[] = 'demo_code = %s';
+            $where_values[] = strtoupper($demo_code);
+        }
+
+        if (empty($ownership_conditions)) {
+            return array();
+        }
+
+        $where[] = '(' . implode(' OR ', $ownership_conditions) . ')';
+        $where_clause = 'WHERE ' . implode(' AND ', $where);
+
+        $query = "SELECT * FROM {$this->table_templates} {$where_clause} ORDER BY created_at DESC";
+
+        $templates = $wpdb->get_results($wpdb->prepare($query, ...$where_values));
+
         // Parse JSON fields
         foreach ($templates as &$template) {
             $template->variables_schema = json_decode($template->variables_schema, true);
+            $template->is_custom = true;
         }
 
         return $templates;
@@ -558,6 +680,8 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             'variables_schema' => '[]',
             'is_active' => 1,
             'sort_order' => 0,
+            'user_id' => null,      // NULL for system templates, user ID for custom
+            'demo_code' => null,    // Demo code for demo users
         );
 
         $data = wp_parse_args($data, $defaults);
@@ -565,6 +689,11 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
         // Ensure variables_schema is JSON string
         if (is_array($data['variables_schema'])) {
             $data['variables_schema'] = json_encode($data['variables_schema']);
+        }
+
+        // For user-created templates, always set category to MEINE
+        if (!empty($data['user_id']) || !empty($data['demo_code'])) {
+            $data['category'] = 'MEINE';
         }
 
         $result = $wpdb->insert(
@@ -578,8 +707,10 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
                 'variables_schema' => $data['variables_schema'],
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
+                'user_id' => $data['user_id'] ? intval($data['user_id']) : null,
+                'demo_code' => $data['demo_code'] ? strtoupper(sanitize_text_field($data['demo_code'])) : null,
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s')
         );
 
         if ($result === false) {
@@ -659,10 +790,30 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
      * Delete a template
      *
      * @param int $template_id Template ID
+     * @param int $user_id User ID for ownership check (optional)
+     * @param string $demo_code Demo code for ownership check (optional)
      * @return bool True on success, false on failure
      */
-    public function delete_template($template_id) {
+    public function delete_template($template_id, $user_id = null, $demo_code = null) {
         global $wpdb;
+
+        // Check if it's a user template and verify ownership
+        $template = $this->get_template($template_id);
+        if (!$template) {
+            return false;
+        }
+
+        // System templates (user_id IS NULL) cannot be deleted via this method
+        if (empty($template->user_id) && empty($template->demo_code)) {
+            error_log('[SMARTBRIEFING] Cannot delete system template');
+            return false;
+        }
+
+        // Verify ownership
+        if (!$this->user_owns_template($template, $user_id, $demo_code)) {
+            error_log('[SMARTBRIEFING] User does not own this template');
+            return false;
+        }
 
         $result = $wpdb->delete(
             $this->table_templates,
@@ -676,6 +827,37 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
         }
 
         return true;
+    }
+
+    /**
+     * Check if user owns a template
+     *
+     * @param object $template Template object
+     * @param int $user_id User ID
+     * @param string $demo_code Demo code
+     * @return bool True if user owns the template
+     */
+    public function user_owns_template($template, $user_id = null, $demo_code = null) {
+        if (!$template) {
+            return false;
+        }
+
+        // System templates are not owned by any user
+        if (empty($template->user_id) && empty($template->demo_code)) {
+            return false;
+        }
+
+        // Check user_id ownership
+        if ($user_id && !empty($template->user_id) && (int)$template->user_id === (int)$user_id) {
+            return true;
+        }
+
+        // Check demo_code ownership
+        if (!empty($demo_code) && !empty($template->demo_code) && strtoupper($template->demo_code) === strtoupper($demo_code)) {
+            return true;
+        }
+
+        return false;
     }
 
     // =========================================================================
