@@ -465,24 +465,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
           {scenario?.title}
         </h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* Settings Button */}
-          <button
-            onClick={() => setShowDeviceSettings(true)}
-            style={{
-              padding: isMobile ? '10px' : '8px',
-              borderRadius: '8px',
-              background: '#f1f5f9',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#64748b',
-            }}
-            title="Geräte-Einstellungen"
-          >
-            <Settings size={18} />
-          </button>
           <button
             onClick={handleExit}
             style={{
