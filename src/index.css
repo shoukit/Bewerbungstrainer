@@ -104,6 +104,26 @@
   }
 }
 
+/* =============================================================================
+   iOS SAFARI ZOOM FIX
+   Prevent automatic zoom on input focus by ensuring font-size >= 16px
+   ============================================================================= */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari only */
+  #bewerbungstrainer-app input,
+  #bewerbungstrainer-app input[type="text"],
+  #bewerbungstrainer-app input[type="email"],
+  #bewerbungstrainer-app input[type="password"],
+  #bewerbungstrainer-app input[type="number"],
+  #bewerbungstrainer-app input[type="search"],
+  #bewerbungstrainer-app input[type="tel"],
+  #bewerbungstrainer-app input[type="url"],
+  #bewerbungstrainer-app textarea,
+  #bewerbungstrainer-app select {
+    font-size: 16px !important;
+  }
+}
+
 /* Custom animations */
 @keyframes fade-in {
   from {

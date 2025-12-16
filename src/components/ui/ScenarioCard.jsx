@@ -343,13 +343,8 @@ const ScenarioCardGridView = ({
 
 /**
  * ScenarioCardListView - List/row view of the card
- *
- * Mobile Layout (< 640px):
- *   Row 1: Title (full width) + Difficulty Badge
- *   Row 2: [Icon] Meta info... [Action]
- *
- * Desktop Layout (>= 640px):
- *   [Icon] | Title + Description + Meta | Badges + Action
+ * Uses inline styles for better compatibility with WordPress/Elementor
+ * Responsive: stacks vertically on mobile, horizontal on desktop
  */
 const ScenarioCardListView = ({
   title,
@@ -368,34 +363,36 @@ const ScenarioCardListView = ({
   headerText,
   primaryAccent,
   difficultyConfig,
-}) => (
-  <motion.div
-    variants={{
-      hidden: { opacity: 0, x: -20 },
-      visible: { opacity: 1, x: 0 },
-    }}
-    whileHover={{ scale: 1.01 }}
-    whileTap={{ scale: 0.99 }}
-  >
-    <div
-      onClick={onClick}
-      className={`bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-4 cursor-pointer border border-slate-100 ${className}`}
-      style={style}
-    >
-      {/* Mobile Layout: Title on top row */}
-      <div className="sm:hidden">
-        {/* Row 1: Title + Difficulty */}
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <h3 className="text-base font-bold text-slate-900 flex-1">{title}</h3>
-          {difficulty && (
-            <Badge className={`${difficultyConfig.classes} flex-shrink-0`}>
-              {difficultyConfig.label}
-            </Badge>
-          )}
-        </div>
+}) => {
+  // Check if we're on mobile (will be used for initial render, CSS handles the rest)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
 
-        {/* Row 2: Icon + Meta + Action */}
-        <div className="flex items-center gap-3">
+  return (
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, x: -20 },
+        visible: { opacity: 1, x: 0 },
+      }}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+    >
+      <div
+        onClick={onClick}
+        style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '16px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          padding: '16px',
+          cursor: 'pointer',
+          border: '1px solid #f1f5f9',
+          transition: 'all 0.3s',
+          ...style,
+        }}
+        className={className}
+      >
+        {/* Row 1: Icon + Title + Difficulty Badge */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+          {/* Icon */}
           {icon && (
             <IconContainer
               icon={icon}
@@ -404,98 +401,89 @@ const ScenarioCardListView = ({
               size="sm"
             />
           )}
-          <div className="flex-1 flex items-center gap-3 text-xs text-slate-500">
-            {meta.slice(0, 2).map((item, idx) => (
-              <MetaItem key={idx} icon={item.icon} text={item.text} />
-            ))}
-          </div>
-          {action && (
-            <div
-              className="flex items-center gap-1 text-sm font-semibold"
-              style={{ color: primaryAccent }}
-            >
-              {action.icon && <action.icon className="w-4 h-4" />}
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Desktop Layout: Horizontal row */}
-      <div className="hidden sm:flex items-center gap-4">
-        {/* Icon */}
-        {icon && (
-          <IconContainer
-            icon={icon}
-            gradient={headerGradient}
-            textColor={headerText}
-            size="md"
-          />
-        )}
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          {/* Title Row */}
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-base font-bold text-slate-900 truncate">{title}</h3>
+          {/* Title & Subtitle */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 style={{
+              fontSize: '15px',
+              fontWeight: 700,
+              color: '#0f172a',
+              margin: 0,
+              lineHeight: 1.3,
+            }}>
+              {title}
+            </h3>
             {subtitle && (
-              <span
-                className="text-xs font-semibold"
-                style={{ color: primaryAccent }}
-              >
+              <span style={{ fontSize: '12px', fontWeight: 600, color: primaryAccent }}>
                 {subtitle}
               </span>
             )}
           </div>
 
-          {/* Description */}
-          {description && (
-            <p className="text-slate-600 text-sm line-clamp-1 mb-1">
-              {description}
-            </p>
-          )}
-
-          {/* Meta information */}
-          <div className="flex items-center gap-3 text-xs text-slate-500">
-            {meta.slice(0, 3).map((item, idx) => (
-              <MetaItem key={idx} icon={item.icon} text={item.text} />
-            ))}
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Tags (only first one in list view) */}
-          {tags.length > 0 && (
-            <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs hidden md:inline">
-              {tags[0]}
-            </span>
-          )}
-
-          {/* Category badge */}
-          {categoryBadge}
-
-          {/* Difficulty badge */}
+          {/* Difficulty Badge - always visible */}
           {difficulty && (
             <Badge className={difficultyConfig.classes}>
               {difficultyConfig.label}
             </Badge>
           )}
+        </div>
 
-          {/* Action button */}
-          {action && (
-            <div
-              className="flex items-center gap-1 text-sm font-semibold ml-2"
-              style={{ color: primaryAccent }}
-            >
-              <span>{action.label}</span>
-              {action.icon && <action.icon className="w-4 h-4" />}
-            </div>
-          )}
+        {/* Row 2: Description (if exists) */}
+        {description && (
+          <p style={{
+            color: '#475569',
+            fontSize: '13px',
+            margin: '0 0 8px 0',
+            lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>
+            {description}
+          </p>
+        )}
+
+        {/* Row 3: Meta + Category + Action */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '8px',
+        }}>
+          {/* Meta information */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: '#64748b' }}>
+            {meta.slice(0, 2).map((item, idx) => (
+              <MetaItem key={idx} icon={item.icon} text={item.text} />
+            ))}
+          </div>
+
+          {/* Category + Action */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Category badge */}
+            {categoryBadge}
+
+            {/* Action button */}
+            {action && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: primaryAccent,
+              }}>
+                <span>{action.label}</span>
+                {action.icon && <action.icon style={{ width: '16px', height: '16px' }} />}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 // =============================================================================
 // MAIN COMPONENT
