@@ -108,6 +108,7 @@ const MicrophoneSelector = ({
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
         {/* Dropdown button */}
         <button
+          type="button"
           onClick={() => !disabled && !isLoading && setIsOpen(!isOpen)}
           disabled={disabled || isLoading}
           style={{
@@ -163,6 +164,7 @@ const MicrophoneSelector = ({
         {/* Test button */}
         {onTestClick && !error && (
           <button
+            type="button"
             onClick={onTestClick}
             disabled={disabled || isLoading || !selectedDeviceId}
             style={{
@@ -188,6 +190,7 @@ const MicrophoneSelector = ({
         {/* Refresh button on error */}
         {error && (
           <button
+            type="button"
             onClick={loadDevices}
             style={{
               display: 'flex',
@@ -236,6 +239,7 @@ const MicrophoneSelector = ({
           }}>
             {devices.map((device, index) => (
               <button
+                type="button"
                 key={device.deviceId || index}
                 onClick={() => handleSelect(device.deviceId)}
                 style={{
