@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { usePartner } from '../../context/PartnerContext';
 import wordpressAPI from '../../services/wordpress-api';
+import FullscreenLoader from '@/components/ui/fullscreen-loader';
 import {
   ArrowLeft,
   Sparkles,
-  Loader2,
   AlertCircle,
   FileText,
   Briefcase,
@@ -261,14 +261,15 @@ const SmartBriefingForm = ({
   }
 
   return (
-    <div
-      style={{
-        padding: '24px',
-        maxWidth: '700px',
-        margin: '0 auto',
-      }}
-    >
-      {/* Back Button */}
+    <>
+      <div
+        style={{
+          padding: '24px',
+          maxWidth: '700px',
+          margin: '0 auto',
+        }}
+      >
+        {/* Back Button */}
       <button
         onClick={onBack}
         disabled={isGenerating}
@@ -404,9 +405,7 @@ const SmartBriefingForm = ({
               padding: '16px 24px',
               borderRadius: '12px',
               border: 'none',
-              background: isGenerating
-                ? '#94a3b8'
-                : `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
+              background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
               color: 'white',
               fontSize: '16px',
               fontWeight: 600,
@@ -416,51 +415,25 @@ const SmartBriefingForm = ({
               justifyContent: 'center',
               gap: '10px',
               transition: 'all 0.2s',
-              boxShadow: isGenerating ? 'none' : `0 4px 14px ${primaryAccent}40`,
+              boxShadow: `0 4px 14px ${primaryAccent}40`,
+              opacity: isGenerating ? 0.7 : 1,
             }}
           >
-            {isGenerating ? (
-              <>
-                <Loader2
-                  size={20}
-                  style={{ animation: 'spin 1s linear infinite' }}
-                />
-                Briefing wird generiert...
-              </>
-            ) : (
-              <>
-                <Sparkles size={20} />
-                Briefing generieren
-              </>
-            )}
+            <Sparkles size={20} />
+            Briefing generieren
           </button>
-          <style>
-            {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
-          </style>
         </form>
       </div>
 
-      {/* Info Box */}
-      {isGenerating && (
-        <div
-          style={{
-            marginTop: '24px',
-            padding: '16px 20px',
-            backgroundColor: `${primaryAccent}08`,
-            borderRadius: '12px',
-            border: `1px solid ${primaryAccent}20`,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Lightbulb size={18} style={{ color: primaryAccent }} />
-            <p style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>
-              Die KI analysiert deine Angaben und erstellt ein massgeschneidertes Briefing.
-              Dies kann einige Sekunden dauern...
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+
+      {/* Fullscreen Loading Overlay */}
+      <FullscreenLoader
+        isLoading={isGenerating}
+        message="Smart Briefing wird erstellt..."
+        subMessage="Die KI analysiert deine Angaben und erstellt ein maßgeschneidertes Briefing."
+      />
+    </>
   );
 };
 

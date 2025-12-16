@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import VideoTrainingDashboard from './VideoTrainingDashboard';
-import VideoTrainingWizard from './VideoTrainingWizard';
+import VideoTrainingVariablesPage from './VideoTrainingVariablesPage';
+import VideoTrainingDeviceSetup from './VideoTrainingDeviceSetup';
 import VideoTrainingSession from './VideoTrainingSession';
 import VideoTrainingComplete from './VideoTrainingComplete';
 
@@ -9,7 +10,8 @@ import VideoTrainingComplete from './VideoTrainingComplete';
  */
 const VIEWS = {
   DASHBOARD: 'dashboard',
-  WIZARD: 'wizard',
+  VARIABLES: 'variables',
+  DEVICE_SETUP: 'device_setup',
   SESSION: 'session',
   COMPLETE: 'complete',
 };
@@ -19,9 +21,10 @@ const VIEWS = {
  *
  * Coordinates the flow between:
  * 1. Dashboard (scenario selection)
- * 2. Wizard (variable input)
- * 3. Session (video recording)
- * 4. Complete (results)
+ * 2. Variables (variable input - if scenario has variables)
+ * 3. Device Setup (camera and microphone selection)
+ * 4. Session (video recording)
+ * 5. Complete (results)
  */
 const VideoTrainingApp = ({
   isAuthenticated,
@@ -37,6 +40,8 @@ const VideoTrainingApp = ({
   const [questions, setQuestions] = useState([]);
   const [variables, setVariables] = useState({});
   const [completedSession, setCompletedSession] = useState(null);
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  const [selectedCameraId, setSelectedCameraId] = useState(null);
 
   // Track pending scenario for after login (internal state for dashboard flow)
   const [internalPendingScenario, setInternalPendingScenario] = useState(null);
@@ -46,19 +51,19 @@ const VideoTrainingApp = ({
     if (externalPendingScenario && isAuthenticated) {
       console.log('[VIDEO TRAINING] Processing external pending scenario after login:', externalPendingScenario.title);
       setSelectedScenario(externalPendingScenario);
-      setCurrentView(VIEWS.WIZARD);
+      setCurrentView(VIEWS.VARIABLES);
       if (clearPendingScenario) {
         clearPendingScenario();
       }
     }
   }, [externalPendingScenario, isAuthenticated, clearPendingScenario]);
 
-  // Handle internal pending scenario after login - automatically open wizard
+  // Handle internal pending scenario after login - automatically open variables page
   useEffect(() => {
     if (internalPendingScenario && isAuthenticated) {
       console.log('[VIDEO TRAINING] Processing internal pending scenario after login:', internalPendingScenario.title);
       setSelectedScenario(internalPendingScenario);
-      setCurrentView(VIEWS.WIZARD);
+      setCurrentView(VIEWS.VARIABLES);
       setInternalPendingScenario(null);
     }
   }, [internalPendingScenario, isAuthenticated]);
@@ -74,11 +79,11 @@ const VideoTrainingApp = ({
   const handleSelectScenario = useCallback((scenario) => {
     console.log('[VIDEO TRAINING] Scenario selected:', scenario.title);
     setSelectedScenario(scenario);
-    setCurrentView(VIEWS.WIZARD);
+    setCurrentView(VIEWS.VARIABLES);
   }, []);
 
   /**
-   * Handle back from wizard to dashboard
+   * Handle back from variables to dashboard
    */
   const handleBackToDashboard = useCallback(() => {
     console.log('[VIDEO TRAINING] Returning to dashboard');
@@ -87,17 +92,37 @@ const VideoTrainingApp = ({
     setQuestions([]);
     setVariables({});
     setCompletedSession(null);
+    setSelectedMicrophoneId(null);
+    setSelectedCameraId(null);
     setCurrentView(VIEWS.DASHBOARD);
   }, []);
 
   /**
-   * Handle session start from wizard
+   * Handle variables submitted - go to device setup
+   */
+  const handleVariablesNext = useCallback((collectedVariables) => {
+    console.log('[VIDEO TRAINING] Variables collected, going to device setup');
+    setVariables(collectedVariables);
+    setCurrentView(VIEWS.DEVICE_SETUP);
+  }, []);
+
+  /**
+   * Handle back from device setup to variables
+   */
+  const handleBackToVariables = useCallback(() => {
+    setCurrentView(VIEWS.VARIABLES);
+  }, []);
+
+  /**
+   * Handle session start from device setup
    */
   const handleStartSession = useCallback((data) => {
     console.log('[VIDEO TRAINING] Starting session with', data.questions.length, 'questions');
     setActiveSession(data.session);
     setQuestions(data.questions);
     setVariables(data.variables);
+    setSelectedMicrophoneId(data.selectedMicrophoneId);
+    setSelectedCameraId(data.selectedCameraId);
     setCurrentView(VIEWS.SESSION);
   }, []);
 
@@ -126,7 +151,9 @@ const VideoTrainingApp = ({
     setActiveSession(null);
     setQuestions([]);
     setCompletedSession(null);
-    setCurrentView(VIEWS.WIZARD);
+    setSelectedMicrophoneId(null);
+    setSelectedCameraId(null);
+    setCurrentView(VIEWS.VARIABLES);
   }, []);
 
   /**
@@ -145,11 +172,21 @@ const VideoTrainingApp = ({
           />
         );
 
-      case VIEWS.WIZARD:
+      case VIEWS.VARIABLES:
         return (
-          <VideoTrainingWizard
+          <VideoTrainingVariablesPage
             scenario={selectedScenario}
             onBack={handleBackToDashboard}
+            onNext={handleVariablesNext}
+          />
+        );
+
+      case VIEWS.DEVICE_SETUP:
+        return (
+          <VideoTrainingDeviceSetup
+            scenario={selectedScenario}
+            variables={variables}
+            onBack={handleBackToVariables}
             onStart={handleStartSession}
           />
         );
@@ -163,6 +200,8 @@ const VideoTrainingApp = ({
             variables={variables}
             onComplete={handleSessionComplete}
             onExit={handleSessionExit}
+            selectedMicrophoneId={selectedMicrophoneId}
+            selectedCameraId={selectedCameraId}
           />
         );
 

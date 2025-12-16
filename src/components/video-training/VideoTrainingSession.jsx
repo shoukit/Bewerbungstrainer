@@ -1,12 +1,13 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Video, VideoOff, Mic, MicOff, StopCircle, PlayCircle, ChevronLeft, ChevronRight,
-  Clock, AlertCircle, Loader2, Lightbulb, X, Check, Camera, RefreshCw
+  Clock, AlertCircle, Loader2, Lightbulb, X, Check, Camera, RefreshCw, Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
+import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
 
 /**
  * ProgressBar - Shows question progress
@@ -123,7 +124,7 @@ const QuestionTips = ({ tips, primaryAccent }) => {
 /**
  * VideoTrainingSession - Video recording component
  */
-const VideoTrainingSession = ({ session, questions, scenario, variables, onComplete, onExit }) => {
+const VideoTrainingSession = ({ session, questions, scenario, variables, onComplete, onExit, selectedMicrophoneId: initialMicId, selectedCameraId: initialCameraId }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -135,6 +136,11 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Device selection state
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(initialMicId || null);
+  const [selectedCameraId, setSelectedCameraId] = useState(initialCameraId || null);
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
 
   // Mobile detection - using shared hook
   const isMobile = useMobile();
@@ -157,13 +163,27 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     };
   }, []);
 
-  // Initialize camera
-  const initializeCamera = async () => {
+  // Initialize camera with selected devices
+  const initializeCamera = async (micId = selectedMicrophoneId, camId = selectedCameraId) => {
     try {
       setCameraError(null);
+
+      // Stop existing stream if any
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+
+      const videoConstraints = camId
+        ? { deviceId: { exact: camId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' };
+
+      const audioConstraints = micId
+        ? { deviceId: { exact: micId } }
+        : true;
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: true,
+        video: videoConstraints,
+        audio: audioConstraints,
       });
       setStream(mediaStream);
       if (videoRef.current) {
@@ -172,6 +192,23 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     } catch (err) {
       console.error('[VIDEO TRAINING] Camera error:', err);
       setCameraError('Kamera konnte nicht gestartet werden. Bitte erlaube den Zugriff auf Kamera und Mikrofon.');
+    }
+  };
+
+  // Handle device change from settings dialog
+  const handleMicrophoneChange = (deviceId) => {
+    setSelectedMicrophoneId(deviceId);
+    // If recording, don't reinitialize - changes will take effect next session
+    if (!isRecording) {
+      initializeCamera(deviceId, selectedCameraId);
+    }
+  };
+
+  const handleCameraChange = (deviceId) => {
+    setSelectedCameraId(deviceId);
+    // If recording, don't reinitialize - changes will take effect next session
+    if (!isRecording) {
+      initializeCamera(selectedMicrophoneId, deviceId);
     }
   };
 
@@ -427,25 +464,27 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
         }}>
           {scenario?.title}
         </h1>
-        <button
-          onClick={handleExit}
-          style={{
-            padding: isMobile ? '10px 14px' : '8px 16px',
-            borderRadius: '8px',
-            background: '#f1f5f9',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            color: '#64748b',
-            fontSize: '14px',
-          }}
-        >
-          <X size={16} />
-          Abbrechen
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            onClick={handleExit}
+            style={{
+              padding: isMobile ? '10px 14px' : '8px 16px',
+              borderRadius: '8px',
+              background: '#f1f5f9',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              color: '#64748b',
+              fontSize: '14px',
+            }}
+          >
+            <X size={16} />
+            Abbrechen
+          </button>
+        </div>
       </div>
 
       {/* Progress */}
@@ -626,8 +665,25 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
 
             {/* Controls - Mobile */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-              {/* Recording button */}
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {/* Recording button with settings */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                {/* Settings button */}
+                <button
+                  onClick={() => setShowDeviceSettings(true)}
+                  style={{
+                    padding: '14px',
+                    borderRadius: '12px',
+                    background: '#f1f5f9',
+                    border: '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Settings size={20} color="#64748b" />
+                </button>
+
                 {!isRecording ? (
                   <button
                     onClick={startRecording}
@@ -644,7 +700,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      width: '100%',
+                      flex: 1,
                       justifyContent: 'center',
                       boxShadow: stream ? '0 4px 14px rgba(239, 68, 68, 0.4)' : 'none',
                     }}
@@ -667,7 +723,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      width: '100%',
+                      flex: 1,
                       justifyContent: 'center',
                     }}
                   >
@@ -872,8 +928,25 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
 
           {/* Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
-            {/* Recording button */}
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+            {/* Recording button with settings */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              {/* Settings button */}
+              <button
+                onClick={() => setShowDeviceSettings(true)}
+                style={{
+                  padding: '14px',
+                  borderRadius: '12px',
+                  background: '#f1f5f9',
+                  border: '1px solid #e2e8f0',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Settings size={20} color="#64748b" />
+              </button>
+
               {!isRecording ? (
                 <button
                   onClick={startRecording}
@@ -1086,6 +1159,17 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
           @keyframes spin { to { transform: rotate(360deg); } }
         `}
       </style>
+
+      {/* Device Settings Dialog */}
+      <DeviceSettingsDialog
+        isOpen={showDeviceSettings}
+        onClose={() => setShowDeviceSettings(false)}
+        mode="audio-video"
+        selectedMicrophoneId={selectedMicrophoneId}
+        onMicrophoneChange={handleMicrophoneChange}
+        selectedCameraId={selectedCameraId}
+        onCameraChange={handleCameraChange}
+      />
     </div>
   );
 };

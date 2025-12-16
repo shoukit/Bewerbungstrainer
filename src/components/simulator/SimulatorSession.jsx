@@ -18,13 +18,16 @@ import {
   Target,
   MessageSquare,
   ArrowLeft,
-  Check
+  Check,
+  Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
+import FullscreenLoader from '@/components/ui/fullscreen-loader';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
@@ -224,7 +227,7 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
 /**
  * Audio Recorder Component - With Pause functionality
  */
-const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels }) => {
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels, onOpenSettings }) => {
   const [recordingState, setRecordingState] = useState('idle'); // 'idle' | 'recording' | 'paused'
   const [seconds, setSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -426,6 +429,23 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
       {/* Recording Buttons */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+        {/* Settings Button */}
+        <button
+          onClick={onOpenSettings}
+          style={{
+            padding: '14px',
+            borderRadius: '12px',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Settings size={20} color="#64748b" />
+        </button>
+
         {/* Main Button - Start/Pause/Resume */}
         <button
           onClick={handleMainButtonClick}
@@ -493,7 +513,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
  * Shows preparation tips before starting the interview
  * Order: Microphone test, Start button, then Tips
  */
-const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selectedMicrophoneId, onMicrophoneChange, onMicrophoneTest, themedGradient, primaryAccent, primaryAccentLight }) => {
+const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selectedMicrophoneId, onMicrophoneChange, onMicrophoneTest, themedGradient, primaryAccent, primaryAccentLight, isLoading }) => {
   // Mode-based labels
   const isSimulation = scenario?.mode === 'SIMULATION';
   const questionsLabel = isSimulation ? 'Situationen' : 'Fragen';
@@ -656,22 +676,24 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
       {/* Start Button - SECOND (before tips) */}
       <button
         onClick={onStart}
+        disabled={isLoading}
         style={{
           width: '100%',
           padding: '18px 28px',
           borderRadius: '14px',
           border: 'none',
-          background: themedGradient,
+          background: isLoading ? COLORS.slate[300] : themedGradient,
           color: 'white',
           fontSize: '18px',
           fontWeight: 600,
-          cursor: 'pointer',
+          cursor: isLoading ? 'not-allowed' : 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '12px',
-          boxShadow: `0 4px 12px ${primaryAccent}4d`,
+          boxShadow: isLoading ? 'none' : `0 4px 12px ${primaryAccent}4d`,
           marginBottom: '24px',
+          opacity: isLoading ? 0.7 : 1,
         }}
       >
         <Play style={{ width: '24px', height: '24px' }} />
@@ -786,7 +808,18 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
  * Simulator Session Component
  * Two-column layout like VideoTraining
  */
-const SimulatorSession = ({ session, questions, scenario, variables, onComplete, onExit, startFromQuestion = 0 }) => {
+const SimulatorSession = ({
+  session: initialSession,
+  questions: initialQuestions,
+  scenario,
+  variables,
+  preloadedQuestions,
+  onSessionCreated,
+  onComplete,
+  onExit,
+  startFromQuestion = 0,
+  initialMicrophoneId,
+}) => {
   // Mobile detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -795,6 +828,14 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Internal state for session and questions (can be created during preparation)
+  const [session, setSession] = useState(initialSession);
+  const [questions, setQuestions] = useState(initialQuestions || []);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [sessionCreateError, setSessionCreateError] = useState(null);
+
+  const { demoCode } = usePartner();
 
   // Mode-based labels (INTERVIEW vs SIMULATION)
   const isSimulation = scenario?.mode === 'SIMULATION';
@@ -818,8 +859,9 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     recommendedTime: isSimulation ? 'Empfohlene Reaktionszeit' : 'Empfohlene Antwortzeit',
   };
 
-  // Determine if this is a continuation (skip preparation)
+  // Determine if this is a continuation (skip preparation) or repeat (has preloaded questions)
   const isContinuation = startFromQuestion > 0;
+  const isRepeat = preloadedQuestions && preloadedQuestions.length > 0;
 
   // Initialize with previously answered questions when continuing
   const initialAnsweredQuestions = isContinuation
@@ -835,8 +877,9 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
   const [completedAnswers, setCompletedAnswers] = useState([]);
   const [answeredQuestions, setAnsweredQuestions] = useState(initialAnsweredQuestions);
 
-  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(initialMicrophoneId || null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
 
   // Confirmation dialog states
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -946,8 +989,68 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
     onExit();
   };
 
-  const handleStartInterview = () => {
-    setPhase('interview');
+  const handleStartInterview = async () => {
+    // If we already have a session and questions (continuation or repeat), just start
+    if (session && questions.length > 0) {
+      setPhase('interview');
+      return;
+    }
+
+    // Otherwise, create session and generate questions
+    setIsCreatingSession(true);
+    setSessionCreateError(null);
+
+    try {
+      // 1. Create session with variables
+      const sessionResponse = await wordpressAPI.createSimulatorSession({
+        scenario_id: scenario.id,
+        variables: variables,
+        demo_code: demoCode || null,
+        questions: preloadedQuestions || null,
+      });
+
+      if (!sessionResponse.success) {
+        throw new Error(sessionResponse.message || 'Fehler beim Erstellen der Session');
+      }
+
+      const newSession = sessionResponse.data.session;
+
+      // 2. Generate or use preloaded questions
+      let newQuestions;
+      if (preloadedQuestions && preloadedQuestions.length > 0) {
+        console.log('🔁 [SimulatorSession] Using preloaded questions for repeat session');
+        newQuestions = preloadedQuestions;
+        await wordpressAPI.updateSimulatorSessionQuestions(newSession.id, newQuestions);
+      } else {
+        const questionsResponse = await wordpressAPI.generateSimulatorQuestions(newSession.id);
+        if (!questionsResponse.success) {
+          throw new Error(questionsResponse.message || 'Fehler beim Generieren der Fragen');
+        }
+        newQuestions = questionsResponse.data.questions;
+      }
+
+      // 3. Update internal state
+      setSession({ ...newSession, questions_json: newQuestions });
+      setQuestions(newQuestions);
+
+      // 4. Notify parent
+      if (onSessionCreated) {
+        onSessionCreated({
+          session: { ...newSession, questions_json: newQuestions },
+          questions: newQuestions,
+          selectedMicrophoneId: selectedMicrophoneId,
+        });
+      }
+
+      // 5. Start interview
+      setPhase('interview');
+
+    } catch (err) {
+      console.error('Error creating session:', err);
+      setSessionCreateError(err.message || 'Ein Fehler ist aufgetreten');
+    } finally {
+      setIsCreatingSession(false);
+    }
   };
 
   // Show preparation view first
@@ -966,11 +1069,40 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
           themedGradient={buttonGradient}
           primaryAccent={primaryAccent}
           primaryAccentLight={primaryAccentLight}
+          isLoading={isCreatingSession}
         />
         <MicrophoneTestDialog
           isOpen={showMicrophoneTest}
           onClose={() => setShowMicrophoneTest(false)}
           deviceId={selectedMicrophoneId}
+        />
+
+        {/* Error Display */}
+        {sessionCreateError && (
+          <div style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 24px',
+            borderRadius: '12px',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#dc2626',
+            fontSize: '14px',
+            fontWeight: 500,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            zIndex: 100,
+          }}>
+            {sessionCreateError}
+          </div>
+        )}
+
+        {/* Fullscreen Loading Overlay */}
+        <FullscreenLoader
+          isLoading={isCreatingSession}
+          message={isSimulation ? "Situationen werden generiert..." : "Fragen werden generiert..."}
+          subMessage="Die KI erstellt personalisierte Inhalte basierend auf deinen Angaben."
         />
       </>
     );
@@ -1455,6 +1587,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                 primaryAccent={primaryAccent}
                 isSubmitting={isSubmitting}
                 labels={labels}
+                onOpenSettings={() => setShowDeviceSettings(true)}
               />
 
               {/* Error State - Mobile */}
@@ -1510,6 +1643,7 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
                   primaryAccent={primaryAccent}
                   isSubmitting={isSubmitting}
                   labels={labels}
+                  onOpenSettings={() => setShowDeviceSettings(true)}
                 />
 
                 {/* Error State */}
@@ -1613,6 +1747,14 @@ const SimulatorSession = ({ session, questions, scenario, variables, onComplete,
         </div>
       )}
 
+      {/* Device Settings Dialog */}
+      <DeviceSettingsDialog
+        isOpen={showDeviceSettings}
+        onClose={() => setShowDeviceSettings(false)}
+        mode="audio"
+        selectedMicrophoneId={selectedMicrophoneId}
+        onMicrophoneChange={setSelectedMicrophoneId}
+      />
     </div>
   );
 };

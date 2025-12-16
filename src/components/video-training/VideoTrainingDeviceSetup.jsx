@@ -1,0 +1,145 @@
+import React, { useState } from 'react';
+import { Video } from 'lucide-react';
+import DeviceSetupPage from '@/components/DeviceSetupPage';
+import FullscreenLoader from '@/components/ui/fullscreen-loader';
+import { usePartner } from '@/context/PartnerContext';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
+
+/**
+ * VideoTrainingDeviceSetup Component
+ *
+ * Wraps DeviceSetupPage (audio-video mode) and handles:
+ * 1. Camera and microphone selection
+ * 2. Session creation
+ * 3. Question generation
+ * 4. Transition to session
+ */
+const VideoTrainingDeviceSetup = ({
+  scenario,
+  variables,
+  onBack,
+  onStart,
+}) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
+  const { demoCode } = usePartner();
+
+  const handleStart = async ({ selectedMicrophoneId, selectedCameraId }) => {
+    setSubmitError(null);
+    setIsSubmitting(true);
+
+    try {
+      const apiUrl = getWPApiUrl();
+
+      // 1. Create session
+      console.log('[VIDEO TRAINING] Creating session...');
+      const createResponse = await fetch(`${apiUrl}/video-training/sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': getWPNonce(),
+        },
+        body: JSON.stringify({
+          scenario_id: scenario.id,
+          variables: variables,
+          demo_code: demoCode || null,
+        }),
+      });
+
+      if (!createResponse.ok) {
+        const errorData = await createResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Fehler beim Erstellen der Session');
+      }
+
+      const createData = await createResponse.json();
+      const session = createData.data?.session || createData.session;
+
+      if (!session) {
+        throw new Error('Keine Session-ID erhalten');
+      }
+
+      console.log('[VIDEO TRAINING] Session created:', session.id);
+
+      // 2. Generate questions
+      console.log('[VIDEO TRAINING] Generating questions...');
+      const questionsResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': getWPNonce(),
+        },
+        body: JSON.stringify({ variables }),
+      });
+
+      if (!questionsResponse.ok) {
+        const errorData = await questionsResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Fehler beim Generieren der Fragen');
+      }
+
+      const questionsData = await questionsResponse.json();
+      const questions = questionsData.data?.questions || questionsData.questions || [];
+
+      console.log('[VIDEO TRAINING] Generated', questions.length, 'questions');
+
+      // 3. Start the session
+      onStart({
+        session: { ...session, questions },
+        questions: questions,
+        scenario: scenario,
+        variables: variables,
+        selectedMicrophoneId: selectedMicrophoneId,
+        selectedCameraId: selectedCameraId,
+      });
+
+    } catch (err) {
+      console.error('[VIDEO TRAINING] Error starting session:', err);
+      setSubmitError(err.message || 'Ein Fehler ist aufgetreten');
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <DeviceSetupPage
+        mode="audio-video"
+        scenario={scenario}
+        onBack={onBack}
+        onStart={handleStart}
+        title={scenario?.title}
+        startButtonLabel="Video-Training starten"
+        icon={Video}
+      />
+
+      {/* Error Display */}
+      {submitError && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: '12px 24px',
+          borderRadius: '12px',
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          color: '#dc2626',
+          fontSize: '14px',
+          fontWeight: 500,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          zIndex: 100,
+        }}>
+          {submitError}
+        </div>
+      )}
+
+      {/* Fullscreen Loading Overlay */}
+      <FullscreenLoader
+        isLoading={isSubmitting}
+        message="Fragen werden generiert..."
+        subMessage="Die KI erstellt personalisierte Fragen basierend auf deinen Angaben."
+      />
+    </>
+  );
+};
+
+export default VideoTrainingDeviceSetup;

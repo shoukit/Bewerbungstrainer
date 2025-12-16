@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronDown,
   Lightbulb,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -24,8 +25,7 @@ import AudioVisualizer from './AudioVisualizer';
 import InterviewerProfile from './InterviewerProfile';
 import CoachingPanel from './CoachingPanel';
 import FeedbackModal from './FeedbackModal';
-import MicrophoneSelector from './MicrophoneSelector';
-import MicrophoneTestDialog from './MicrophoneTestDialog';
+import DeviceSettingsDialog from './DeviceSettingsDialog';
 import {
   analyzeRoleplayTranscript,
   saveRoleplaySessionAnalysis,
@@ -42,7 +42,7 @@ import wordpressAPI from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 
-const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession }) => {
+const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd, onNavigateToSession }) => {
   // Partner branding and demo code
   const { branding, demoCode } = usePartner();
 
@@ -78,10 +78,6 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
   const [error, setError] = useState(null);
   const [isStarted, setIsStarted] = useState(false);
 
-  // Microphone selection state
-  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
-  const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
-
   // Transcript state
   const [transcript, setTranscript] = useState([]);
   const [showTranscript, setShowTranscript] = useState(true); // Transcript panel visibility
@@ -100,6 +96,10 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
   const [showTranscriptOnMobile, setShowTranscriptOnMobile] = useState(false);
   const [showProfileOnMobile, setShowProfileOnMobile] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  // Device settings state
+  const [localMicrophoneId, setLocalMicrophoneId] = useState(selectedMicrophoneId);
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
 
   // Live coaching state
   const [dynamicCoaching, setDynamicCoaching] = useState(null);
@@ -403,11 +403,11 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
 
       // Use official SDK - pass variables as dynamicVariables (same as standard interview)
       // Also pass the selected microphone deviceId if available
-      console.log('🎤 [RoleplaySession] Starting session with microphone:', selectedMicrophoneId || 'default');
+      console.log('🎤 [RoleplaySession] Starting session with microphone:', localMicrophoneId || 'default');
       conversationIdRef.current = await conversation.startSession({
         agentId: agentId,
         dynamicVariables: enhancedVariables,
-        ...(selectedMicrophoneId && { inputDeviceId: selectedMicrophoneId }),
+        ...(localMicrophoneId && { inputDeviceId: localMicrophoneId }),
       });
 
       console.log('✅ [RoleplaySession] Session started:', conversationIdRef.current);
@@ -754,24 +754,21 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
                     )}
                   </div>
 
-                  {/* Microphone Selection - Before call starts */}
-                  {!isStarted && (
-                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
-                      <MicrophoneSelector
-                        selectedDeviceId={selectedMicrophoneId}
-                        onDeviceChange={setSelectedMicrophoneId}
-                        onTestClick={() => setShowMicrophoneTest(true)}
-                      />
-                    </div>
-                  )}
-
                   {/* Action Button - Between header and content */}
-                  <div className="bg-white px-4 py-3 shadow-xl flex justify-center">
+                  <div className="bg-white px-4 py-3 shadow-xl flex justify-center gap-3">
+                    {/* Settings Button */}
+                    <button
+                      onClick={() => setShowDeviceSettings(true)}
+                      className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors"
+                      title="Geräte-Einstellungen"
+                    >
+                      <Settings className="w-5 h-5 text-slate-600" />
+                    </button>
                     {!isStarted ? (
                       <Button
                         onClick={handleStartCall}
                         size="lg"
-                        disabled={!selectedMicrophoneId}
+                        disabled={!localMicrophoneId}
                         className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Mic className="w-5 h-5 mr-2" />
@@ -1281,11 +1278,13 @@ const RoleplaySession = ({ scenario, variables = {}, onEnd, onNavigateToSession 
         />
       )}
 
-      {/* Microphone Test Dialog */}
-      <MicrophoneTestDialog
-        isOpen={showMicrophoneTest}
-        onClose={() => setShowMicrophoneTest(false)}
-        deviceId={selectedMicrophoneId}
+      {/* Device Settings Dialog */}
+      <DeviceSettingsDialog
+        isOpen={showDeviceSettings}
+        onClose={() => setShowDeviceSettings(false)}
+        mode="audio"
+        selectedMicrophoneId={localMicrophoneId}
+        onMicrophoneChange={setLocalMicrophoneId}
       />
     </>
   );

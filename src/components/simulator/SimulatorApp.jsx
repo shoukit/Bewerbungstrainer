@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import SimulatorDashboard from './SimulatorDashboard';
-import SimulatorWizard from './SimulatorWizard';
+import SimulatorVariablesPage from './SimulatorVariablesPage';
 import SimulatorSession from './SimulatorSession';
 import SessionComplete from './SessionComplete';
 
@@ -9,7 +9,7 @@ import SessionComplete from './SessionComplete';
  */
 const VIEWS = {
   DASHBOARD: 'dashboard',
-  WIZARD: 'wizard',
+  VARIABLES: 'variables',
   SESSION: 'session',
   COMPLETE: 'complete',
 };
@@ -19,8 +19,8 @@ const VIEWS = {
  *
  * Coordinates the flow between:
  * 1. Dashboard (scenario selection)
- * 2. Wizard (variable input)
- * 3. Session (training with Q&A)
+ * 2. Variables (variable input - if scenario has variables)
+ * 3. Session (preparation + training with Q&A)
  * 4. Complete (summary)
  */
 const SimulatorApp = ({
@@ -39,6 +39,7 @@ const SimulatorApp = ({
   const [questions, setQuestions] = useState([]);
   const [variables, setVariables] = useState({});
   const [completedSession, setCompletedSession] = useState(null);
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
 
   // Track pending scenario for after login
   const [pendingScenario, setPendingScenario] = useState(null);
@@ -46,17 +47,17 @@ const SimulatorApp = ({
   // Track which question to start from when continuing
   const [startFromQuestion, setStartFromQuestion] = useState(0);
 
-  // Handle pending scenario after login - automatically open wizard
+  // Handle pending scenario after login - automatically open variables page
   useEffect(() => {
     if (pendingScenario && isAuthenticated) {
       console.log('🔐 [SimulatorApp] Processing pending scenario after login:', pendingScenario.title);
       setSelectedScenario(pendingScenario);
-      setCurrentView(VIEWS.WIZARD);
+      setCurrentView(VIEWS.VARIABLES);
       setPendingScenario(null);
     }
   }, [pendingScenario, isAuthenticated]);
 
-  // Handle pending continue session - resume existing session
+  // Handle pending continue session - resume existing session (go directly to session)
   useEffect(() => {
     if (pendingContinueSession && isAuthenticated) {
       const { session, scenario } = pendingContinueSession;
@@ -84,7 +85,7 @@ const SimulatorApp = ({
     }
   }, [pendingContinueSession, isAuthenticated, clearPendingContinueSession]);
 
-  // Handle pending repeat session - new session with same questions
+  // Handle pending repeat session - new session with same questions (go to device setup)
   useEffect(() => {
     if (pendingRepeatSession && isAuthenticated) {
       const { session, scenario } = pendingRepeatSession;
@@ -100,8 +101,8 @@ const SimulatorApp = ({
       setQuestions(sessionQuestions);
       setVariables({});
       setStartFromQuestion(0);
-      // Go to wizard to create a new session with pre-loaded questions
-      setCurrentView(VIEWS.WIZARD);
+      // Skip variables, go directly to session for repeat sessions
+      setCurrentView(VIEWS.SESSION);
 
       if (clearPendingRepeatSession) {
         clearPendingRepeatSession();
@@ -119,11 +120,11 @@ const SimulatorApp = ({
    */
   const handleSelectScenario = useCallback((scenario) => {
     setSelectedScenario(scenario);
-    setCurrentView(VIEWS.WIZARD);
+    setCurrentView(VIEWS.VARIABLES);
   }, []);
 
   /**
-   * Handle back from wizard to dashboard
+   * Handle back from variables to dashboard
    */
   const handleBackToDashboard = useCallback(() => {
     setSelectedScenario(null);
@@ -132,17 +133,27 @@ const SimulatorApp = ({
     setVariables({});
     setCompletedSession(null);
     setStartFromQuestion(0);
+    setSelectedMicrophoneId(null);
     setCurrentView(VIEWS.DASHBOARD);
   }, []);
 
   /**
-   * Handle session start from wizard
+   * Handle variables submitted - go to session preparation
    */
-  const handleStartSession = useCallback((data) => {
+  const handleVariablesNext = useCallback((collectedVariables) => {
+    setVariables(collectedVariables);
+    setCurrentView(VIEWS.SESSION);
+  }, []);
+
+  /**
+   * Handle session created in SimulatorSession
+   */
+  const handleSessionCreated = useCallback((data) => {
     setActiveSession(data.session);
     setQuestions(data.questions);
-    setVariables(data.variables);
-    setCurrentView(VIEWS.SESSION);
+    if (data.selectedMicrophoneId) {
+      setSelectedMicrophoneId(data.selectedMicrophoneId);
+    }
   }, []);
 
   /**
@@ -169,7 +180,8 @@ const SimulatorApp = ({
     setQuestions([]);
     setCompletedSession(null);
     setStartFromQuestion(0);
-    setCurrentView(VIEWS.WIZARD);
+    setSelectedMicrophoneId(null);
+    setCurrentView(VIEWS.VARIABLES);
   }, []);
 
   /**
@@ -188,13 +200,12 @@ const SimulatorApp = ({
           />
         );
 
-      case VIEWS.WIZARD:
+      case VIEWS.VARIABLES:
         return (
-          <SimulatorWizard
+          <SimulatorVariablesPage
             scenario={selectedScenario}
             onBack={handleBackToDashboard}
-            onStart={handleStartSession}
-            preloadedQuestions={questions.length > 0 ? questions : null}
+            onNext={handleVariablesNext}
           />
         );
 
@@ -205,9 +216,12 @@ const SimulatorApp = ({
             questions={questions}
             scenario={selectedScenario}
             variables={variables}
+            preloadedQuestions={questions.length > 0 ? questions : null}
+            onSessionCreated={handleSessionCreated}
             onComplete={handleSessionComplete}
             onExit={handleSessionExit}
             startFromQuestion={startFromQuestion}
+            initialMicrophoneId={selectedMicrophoneId}
           />
         );
 
