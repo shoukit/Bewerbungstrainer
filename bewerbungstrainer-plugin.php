@@ -207,6 +207,9 @@ class Bewerbungstrainer_Plugin {
         // Load Usage Limits class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-usage-limits.php';
 
+        // Load Corporate Interview API (HTTP-based fallback for WebSocket-blocked environments)
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-corporate-interview-api.php';
+
         // Load API class after its dependencies
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-shortcodes.php';

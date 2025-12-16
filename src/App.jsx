@@ -4,6 +4,7 @@ import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplayDeviceSetup from './components/RoleplayDeviceSetup';
 import RoleplayVariablesPage from './components/RoleplayVariablesPage';
 import RoleplaySession from './components/RoleplaySession';
+import CorporateModeSession from './components/CorporateModeSession';
 import SessionHistory, { SESSION_TABS } from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
 import { SimulatorApp } from './components/simulator';
@@ -93,6 +94,7 @@ const VIEWS = {
   ROLEPLAY_VARIABLES: 'roleplay_variables',
   ROLEPLAY_DEVICE_SETUP: 'roleplay_device_setup',
   ROLEPLAY: 'roleplay',
+  ROLEPLAY_CORPORATE: 'roleplay_corporate',
   SIMULATOR: 'simulator',
   VIDEO_TRAINING: 'video_training',
   SMART_BRIEFING: 'smart_briefing',
@@ -222,6 +224,7 @@ function AppContent() {
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [roleplayVariables, setRoleplayVariables] = useState({});
   const [roleplayMicrophoneId, setRoleplayMicrophoneId] = useState(null);
+  const [roleplayConnectionMode, setRoleplayConnectionMode] = useState('websocket'); // 'websocket' or 'corporate'
 
   // Session history state
   const [selectedSession, setSelectedSession] = useState(null);
@@ -466,10 +469,17 @@ function AppContent() {
     setCurrentView(VIEWS.DASHBOARD);
   };
 
-  const handleRoleplayDeviceSetupComplete = ({ selectedMicrophoneId }) => {
-    console.log('🎭 [APP] Device setup complete, microphone:', selectedMicrophoneId);
+  const handleRoleplayDeviceSetupComplete = ({ selectedMicrophoneId, connectionMode = 'websocket' }) => {
+    console.log('🎭 [APP] Device setup complete, microphone:', selectedMicrophoneId, 'mode:', connectionMode);
     setRoleplayMicrophoneId(selectedMicrophoneId);
-    setCurrentView(VIEWS.ROLEPLAY);
+    setRoleplayConnectionMode(connectionMode);
+
+    // Navigate to appropriate session based on connection mode
+    if (connectionMode === 'corporate') {
+      setCurrentView(VIEWS.ROLEPLAY_CORPORATE);
+    } else {
+      setCurrentView(VIEWS.ROLEPLAY);
+    }
   };
 
   const handleRoleplayDeviceSetupBack = () => {
@@ -586,6 +596,17 @@ function AppContent() {
       case VIEWS.ROLEPLAY:
         return (
           <RoleplaySession
+            scenario={selectedScenario}
+            variables={roleplayVariables}
+            selectedMicrophoneId={roleplayMicrophoneId}
+            onEnd={handleEndRoleplay}
+            onNavigateToSession={handleNavigateToSession}
+          />
+        );
+
+      case VIEWS.ROLEPLAY_CORPORATE:
+        return (
+          <CorporateModeSession
             scenario={selectedScenario}
             variables={roleplayVariables}
             selectedMicrophoneId={roleplayMicrophoneId}
