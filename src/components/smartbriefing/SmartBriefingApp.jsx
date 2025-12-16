@@ -4,6 +4,7 @@ import SmartBriefingForm from './SmartBriefingForm';
 import BriefingResult from './BriefingResult';
 import BriefingList from './BriefingList';
 import BriefingWorkbook from './BriefingWorkbook';
+import CreateTemplateDialog from './CreateTemplateDialog';
 
 /**
  * View states for the smart briefing flow
@@ -32,6 +33,7 @@ const SmartBriefingApp = ({
   setPendingAction,
   onNavigateToSimulator,
   onNavigateToHistory,
+  demoCode,
 }) => {
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -40,6 +42,11 @@ const SmartBriefingApp = ({
 
   // Track pending template for after login
   const [pendingTemplate, setPendingTemplate] = useState(null);
+
+  // Template creation/editing dialog state
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Handle pending template after login - automatically open form
   useEffect(() => {
@@ -143,6 +150,41 @@ const SmartBriefingApp = ({
   }, [onNavigateToSimulator]);
 
   /**
+   * Handle create new custom template
+   */
+  const handleCreateTemplate = useCallback(() => {
+    console.log('[SmartBriefing] Opening create template dialog');
+    setEditingTemplate(null);
+    setTemplateDialogOpen(true);
+  }, []);
+
+  /**
+   * Handle edit custom template
+   */
+  const handleEditTemplate = useCallback((template) => {
+    console.log('[SmartBriefing] Opening edit template dialog:', template.title);
+    setEditingTemplate(template);
+    setTemplateDialogOpen(true);
+  }, []);
+
+  /**
+   * Handle template dialog close
+   */
+  const handleTemplateDialogClose = useCallback(() => {
+    setTemplateDialogOpen(false);
+    setEditingTemplate(null);
+  }, []);
+
+  /**
+   * Handle template saved (created or updated)
+   */
+  const handleTemplateSaved = useCallback((template) => {
+    console.log('[SmartBriefing] Template saved:', template.title);
+    // Trigger refresh of dashboard
+    setRefreshKey(prev => prev + 1);
+  }, []);
+
+  /**
    * Render current view
    */
   const renderContent = () => {
@@ -190,11 +232,15 @@ const SmartBriefingApp = ({
       default:
         return (
           <SmartBriefingDashboard
+            key={refreshKey}
             onSelectTemplate={handleSelectTemplate}
             onShowList={onNavigateToHistory}
+            onCreateTemplate={handleCreateTemplate}
+            onEditTemplate={handleEditTemplate}
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+            demoCode={demoCode}
           />
         );
     }
@@ -203,6 +249,15 @@ const SmartBriefingApp = ({
   return (
     <div style={{ minHeight: '100%' }}>
       {renderContent()}
+
+      {/* Template Creation/Editing Dialog */}
+      <CreateTemplateDialog
+        isOpen={templateDialogOpen}
+        onClose={handleTemplateDialogClose}
+        onSave={handleTemplateSaved}
+        editTemplate={editingTemplate}
+        demoCode={demoCode}
+      />
     </div>
   );
 };

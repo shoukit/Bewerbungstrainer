@@ -130,6 +130,9 @@ const MobileFilterSheet = ({
   // Custom filters (render prop)
   renderCustomFilters,
 
+  // Custom actions (e.g., "Create Template" button)
+  customActions,
+
   children,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -237,6 +240,9 @@ const MobileFilterSheet = ({
 
           {/* Custom filters */}
           {renderCustomFilters && renderCustomFilters()}
+
+          {/* Custom actions (e.g., Create Template button) */}
+          {customActions}
 
           {/* View Toggle */}
           {showViewToggle && viewMode && (
@@ -424,6 +430,13 @@ const MobileFilterSheet = ({
           </div>
         )}
       </div>
+
+      {/* Custom actions on mobile (separate row) */}
+      {customActions && (
+        <div style={{ marginTop: '8px' }}>
+          {customActions}
+        </div>
+      )}
 
       {/* Filter Sheet Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
