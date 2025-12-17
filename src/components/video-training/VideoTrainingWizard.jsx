@@ -440,11 +440,23 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   useEffect(() => {
     loadDevices();
 
-    // Listen for device changes
-    const handleDeviceChange = () => loadDevices();
+    // Debounce device change handler to prevent loops on iPad Chrome
+    // iPad Chrome can trigger devicechange when getUserMedia is called
+    let debounceTimer = null;
+    const handleDeviceChange = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        loadDevices();
+      }, 500);
+    };
     navigator.mediaDevices?.addEventListener('devicechange', handleDeviceChange);
 
     return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
       navigator.mediaDevices?.removeEventListener('devicechange', handleDeviceChange);
     };
   }, []);
