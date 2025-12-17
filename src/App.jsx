@@ -15,6 +15,7 @@ import UsageLimitsDisplay from './components/UsageLimitsDisplay';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
 import { LoginModal } from './components/LoginModal';
+import { DisclaimerModal, useDisclaimerModal } from './components/DisclaimerModal';
 import { ToastProvider } from './components/Toast';
 import { Loader2 } from 'lucide-react';
 
@@ -238,6 +239,13 @@ function AppContent() {
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
 
+  // Disclaimer modal state
+  const {
+    isOpen: isDisclaimerModalOpen,
+    closeDisclaimerModal,
+    checkDisclaimerStatus,
+  } = useDisclaimerModal();
+
   // Pending action state - stores action to execute after successful login
   const [pendingAction, setPendingAction] = useState(null);
 
@@ -259,6 +267,15 @@ function AppContent() {
 
   // Reset key for video training - increments to trigger reset to dashboard
   const [videoTrainingResetKey, setVideoTrainingResetKey] = useState(0);
+
+  // Check disclaimer status on initial auth (page load when already logged in)
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      console.log('[APP] User authenticated, checking disclaimer status...');
+      checkDisclaimerStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, authLoading]);
 
   /**
    * Execute a pending action after successful login
@@ -812,14 +829,29 @@ function AppContent() {
             // Clear pending action if user cancels login
             setPendingAction(null);
           }}
-          onLoginSuccess={(user) => {
-            console.log('✅ [APP] User logged in:', user.displayName);
+          onLoginSuccess={async (user) => {
+            console.log('[APP] User logged in:', user.displayName);
+
+            // Check disclaimer status after login
+            console.log('[APP] Checking disclaimer status after login...');
+            await checkDisclaimerStatus();
+
             // Execute pending action if there was one
             if (pendingAction) {
-              console.log('🔐 [APP] Executing pending action after login:', pendingAction.type);
+              console.log('[APP] Executing pending action after login:', pendingAction.type);
               executePendingAction(pendingAction);
               setPendingAction(null);
             }
+          }}
+        />
+
+        {/* Disclaimer Modal */}
+        <DisclaimerModal
+          isOpen={isDisclaimerModalOpen}
+          onClose={closeDisclaimerModal}
+          onAcknowledge={(dontShowAgain) => {
+            console.log('[APP] Disclaimer acknowledged, dont_show_again:', dontShowAgain);
+            closeDisclaimerModal();
           }}
         />
     </>
