@@ -155,7 +155,6 @@ const RoleplayProxySession = ({
       }
 
       // 1. Create database session FIRST (like RoleplaySession)
-      console.log('[ProxySession] Creating database session...');
       const sessionData = {
         agent_id: agentId,
         scenario_id: scenario.id,
@@ -166,7 +165,6 @@ const RoleplayProxySession = ({
       };
 
       const createdSession = await createRoleplaySession(sessionData);
-      console.log('[ProxySession] Session created:', createdSession.id);
       setSessionId(createdSession.id);
 
       // 2. Get microphone access
@@ -183,7 +181,6 @@ const RoleplayProxySession = ({
 
       // 3. Connect to proxy
       const wsUrl = `${PROXY_URL}?agent_id=${agentId}`;
-      console.log('[ProxySession] Connecting to:', wsUrl);
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -191,7 +188,6 @@ const RoleplayProxySession = ({
       ws.binaryType = 'arraybuffer';
 
       ws.onopen = () => {
-        console.log('[ProxySession] Connected to proxy');
         // Don't set connected yet - wait for conversation_initiation_metadata
       };
 
@@ -200,7 +196,6 @@ const RoleplayProxySession = ({
       };
 
       ws.onclose = (event) => {
-        console.log('[ProxySession] Disconnected:', event.code, event.reason);
         // Only set disconnected if we're not analyzing
         if (status !== 'analyzing') {
           setStatus('disconnected');
@@ -233,17 +228,14 @@ const RoleplayProxySession = ({
     // Text data = JSON
     try {
       const data = JSON.parse(event.data);
-      console.log('[ProxySession] Received message type:', data.type);
 
       switch (data.type) {
         case 'conversation_initiation_metadata':
           // ElevenLabs is ready - now send our config and start audio
-          console.log('[ProxySession] Received initiation metadata, sending config...');
 
           // Capture conversation_id for later audio download via HTTPS
           if (data.conversation_initiation_metadata_event?.conversation_id) {
             conversationIdRef.current = data.conversation_initiation_metadata_event.conversation_id;
-            console.log('[ProxySession] Captured conversation_id:', conversationIdRef.current);
           }
 
           // Build dynamic variables including interviewer info from scenario
@@ -254,8 +246,6 @@ const RoleplayProxySession = ({
             interviewer_role: scenario?.interviewer_profile?.role || '',
             interviewer_company: scenario?.interviewer_profile?.company || '',
           };
-
-          console.log('[ProxySession] Dynamic variables:', dynamicVariables);
 
           // Send our configuration
           // Note: ElevenLabs expects dynamic_variables at root level
@@ -274,7 +264,6 @@ const RoleplayProxySession = ({
 
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify(initMessage));
-            console.log('[ProxySession] Config sent');
 
             // Now we're truly connected - start audio capture
             const now = Date.now();
@@ -316,7 +305,6 @@ const RoleplayProxySession = ({
 
         case 'interruption':
           // User interrupted - clear audio queue
-          console.log('[ProxySession] Interruption detected');
           audioQueueRef.current = [];
           break;
 
@@ -339,7 +327,8 @@ const RoleplayProxySession = ({
           break;
 
         default:
-          console.log('[ProxySession] Unhandled message type:', data.type, data);
+          // Unhandled message types ignored
+          break;
       }
     } catch (err) {
       console.error('[ProxySession] Message parse error:', err);
@@ -415,8 +404,6 @@ const RoleplayProxySession = ({
 
       // Store processor for cleanup
       mediaRecorderRef.current = { processor, source, audioContext };
-
-      console.log('[ProxySession] Audio capture started (PCM16 @ 16kHz)');
     } catch (err) {
       console.error('[ProxySession] Failed to start audio capture:', err);
     }
@@ -492,9 +479,6 @@ const RoleplayProxySession = ({
       source.onended = () => {
         playNextAudio();
       };
-
-      console.log('[ProxySession] Playing PCM audio chunk, samples:', floatArray.length, 'duration:', audioBuffer.duration.toFixed(2) + 's');
-
     } catch (err) {
       console.error('[ProxySession] Audio playback error:', err);
       playNextAudio(); // Try next audio
@@ -545,15 +529,10 @@ const RoleplayProxySession = ({
       captureContextRef.current = null;
     }
 
-    console.log('🏁 [ProxySession] Ending conversation');
-
     // Calculate final duration before async operations
     const finalDuration = startTimeRef.current
       ? Math.floor((Date.now() - startTimeRef.current) / 1000)
       : duration;
-
-    console.log('[ProxySession] Session ended, duration:', finalDuration);
-    console.log('[ProxySession] Transcript entries:', transcriptRef.current.length);
 
     // Check if we have a session and transcript
     if (!sessionId) {
@@ -587,50 +566,37 @@ const RoleplayProxySession = ({
       let audioUrl = null;
 
       if (conversationIdRef.current) {
-        console.log('[ProxySession] Step 1: Downloading audio from ElevenLabs via HTTPS...');
         try {
           const audioResult = await wordpressAPI.saveAudioFromElevenLabs(
             conversationIdRef.current,
             sessionId
           );
-          console.log('[ProxySession] Audio saved successfully:', audioResult);
 
           // Get the audio URL from the response (API returns 'url', not 'audio_url')
           audioUrl = audioResult?.data?.url;
 
           // Fetch the audio as a Blob for Gemini analysis
           if (audioUrl) {
-            console.log('[ProxySession] Fetching audio blob from:', audioUrl);
             try {
               const audioResponse = await fetch(audioUrl);
               if (audioResponse.ok) {
                 audioBlob = await audioResponse.blob();
-                console.log('[ProxySession] Audio blob fetched, size:', audioBlob.size, 'type:', audioBlob.type);
-              } else {
-                console.warn('[ProxySession] Failed to fetch audio blob:', audioResponse.status);
               }
             } catch (fetchError) {
               console.warn('[ProxySession] Failed to fetch audio blob:', fetchError.message);
             }
           }
         } catch (audioError) {
-          console.warn('[ProxySession] Failed to save audio (non-critical):', audioError.message);
+          console.warn('[ProxySession] Failed to save audio:', audioError.message);
         }
-      } else {
-        console.log('[ProxySession] No conversation_id available, skipping audio download');
       }
 
       // 2. Run analysis WITH the audio blob (if available)
-      console.log('[ProxySession] Step 2: Starting analysis...');
-      console.log('[ProxySession] Audio blob available:', !!audioBlob);
-
       const analysis = await analyzeRoleplayTranscript(
         transcriptRef.current,
         scenarioContext,
         audioBlob // Pass audio blob for Gemini audio analysis
       );
-
-      console.log('[ProxySession] Analysis complete, saving to database...');
 
       // 3. Save analysis to database (with conversation_id if available)
       // Parameter order: sessionId, transcript, feedbackJson, audioAnalysisJson, duration, conversationId
@@ -642,8 +608,6 @@ const RoleplayProxySession = ({
         finalDuration,                 // duration (5th parameter)
         conversationIdRef.current      // conversationId (6th parameter)
       );
-
-      console.log('[ProxySession] Session saved successfully');
 
       // Navigate to session results
       setIsAnalyzing(false);
@@ -658,7 +622,6 @@ const RoleplayProxySession = ({
           conversation_id: conversationIdRef.current,
           created_at: new Date().toISOString(),
         };
-        console.log('🚀 [ProxySession] Navigating to session analysis:', sessionId);
         onNavigateToSession(sessionForNavigation);
       }
 

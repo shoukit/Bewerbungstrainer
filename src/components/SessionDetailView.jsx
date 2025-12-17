@@ -44,7 +44,6 @@ function useAudioPlayer(sessionId, conversationId) {
     if (!conversationId) return;
 
     const audioUrl = getRoleplaySessionAudioUrl(sessionId);
-    console.log('🎵 [AUDIO] Loading audio:', audioUrl);
 
     setIsLoading(true);
     setAudioError(null);

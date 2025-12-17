@@ -461,7 +461,6 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
     const loadStats = async () => {
       try {
         const response = await wordpressAPI.getGameStats();
-        console.log('🎮 [RhetorikGym] Stats response:', response);
         if (response.success && response.data) {
           setUserStats({
             totalGames: response.data.total_games || 0,
@@ -483,7 +482,6 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
   // Handle pending mode after login - automatically open topic selection
   useEffect(() => {
     if (pendingMode && isAuthenticated) {
-      console.log('🔐 [RhetorikGym] Processing pending mode after login:', pendingMode.title);
       setSelectedMode(pendingMode);
       setCurrentView(VIEWS.TOPIC);
       setPendingMode(null);
@@ -498,7 +496,6 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
   const handleSelectMode = (mode) => {
     // Check authentication before allowing mode selection
     if (!isAuthenticated) {
-      console.log('🔐 [RhetorikGym] Auth required - storing pending mode:', mode.title);
       // Store the mode as pending
       setPendingMode(mode);
       // Open login modal

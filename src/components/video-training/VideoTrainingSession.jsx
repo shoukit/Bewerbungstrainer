@@ -316,7 +316,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       formData.append('timeline', JSON.stringify(timeline));
 
       // Upload video using FormData
-      console.log('[VIDEO TRAINING] Uploading video (size: ' + (videoBlob.size / 1024 / 1024).toFixed(2) + ' MB)...');
       const uploadResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/video`, {
         method: 'POST',
         headers: {
@@ -336,13 +335,11 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       }
 
       const uploadData = await uploadResponse.json();
-      console.log('[VIDEO TRAINING] Video uploaded:', uploadData);
 
       setIsUploading(false);
       setIsAnalyzing(true);
 
       // Analyze video
-      console.log('[VIDEO TRAINING] Analyzing video...');
       const analyzeResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/analyze`, {
         method: 'POST',
         headers: {
@@ -356,7 +353,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       }
 
       const analyzeData = await analyzeResponse.json();
-      console.log('[VIDEO TRAINING] Analysis complete:', analyzeData);
 
       // Complete session
       onComplete({
