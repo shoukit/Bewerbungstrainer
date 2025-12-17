@@ -376,6 +376,9 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   // Track when we last loaded devices to prevent loops on iPad Chrome
   const lastLoadTimeRef = useRef(0);
   const isLoadingRef = useRef(false);
+  // Use refs to track selected devices without causing useCallback recreation
+  const selectedMicRef = useRef(null);
+  const selectedCamRef = useRef(null);
 
   const { branding, demoCode } = usePartner();
 
@@ -383,7 +386,11 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   const themedGradient = branding?.headerGradient || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
   const primaryAccent = branding?.primaryAccent || '#3A7FA7';
 
-  // Load available devices on mount
+  // Keep refs in sync with state
+  selectedMicRef.current = selectedMicrophoneId;
+  selectedCamRef.current = selectedCameraId;
+
+  // Load available devices on mount - use refs to avoid recreating callback
   const loadDevices = useCallback(async (fromDeviceChange = false) => {
     // Prevent re-entrancy and ignore devicechange events triggered by our own getUserMedia
     if (isLoadingRef.current) return;
@@ -419,7 +426,8 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         setAudioDevices([]);
       } else {
         setAudioDevices(audioInputs);
-        if (!selectedMicrophoneId) {
+        // Use ref to check current value without dependency
+        if (!selectedMicRef.current) {
           const defaultMic = audioInputs.find(d => d.deviceId === 'default') || audioInputs[0];
           setSelectedMicrophoneId(defaultMic.deviceId);
         }
@@ -431,7 +439,8 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         setVideoDevices([]);
       } else {
         setVideoDevices(videoInputs);
-        if (!selectedCameraId) {
+        // Use ref to check current value without dependency
+        if (!selectedCamRef.current) {
           const defaultCam = videoInputs.find(d => d.deviceId === 'default') || videoInputs[0];
           setSelectedCameraId(defaultCam.deviceId);
         }
@@ -455,7 +464,7 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       isLoadingRef.current = false;
       lastLoadTimeRef.current = Date.now(); // Update again after completion
     }
-  }, [selectedMicrophoneId, selectedCameraId]);
+  }, []); // No dependencies - uses refs instead
 
   useEffect(() => {
     loadDevices(false);

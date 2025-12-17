@@ -673,6 +673,9 @@ const DeviceSetupPage = ({
   // Track when we last loaded devices to prevent loops on iPad Chrome
   const lastLoadTimeRef = useRef(0);
   const isLoadingRef = useRef(false);
+  // Use refs to track selected devices without causing useCallback recreation
+  const selectedMicRef = useRef(null);
+  const selectedCamRef = useRef(null);
 
   // Partner theming
   const { branding } = usePartner();
@@ -683,7 +686,11 @@ const DeviceSetupPage = ({
 
   const includeVideo = mode === 'audio-video';
 
-  // Load devices
+  // Keep refs in sync with state
+  selectedMicRef.current = selectedMicrophoneId;
+  selectedCamRef.current = selectedCameraId;
+
+  // Load devices - use refs to avoid recreating callback when device IDs change
   const loadDevices = useCallback(async (fromDeviceChange = false) => {
     // Prevent re-entrancy and ignore devicechange events triggered by our own getUserMedia
     if (isLoadingRef.current) return;
@@ -722,7 +729,8 @@ const DeviceSetupPage = ({
         setAudioDevices([]);
       } else {
         setAudioDevices(audioInputs);
-        if (!selectedMicrophoneId) {
+        // Use ref to check current value without dependency
+        if (!selectedMicRef.current) {
           const defaultMic = audioInputs.find(d => d.deviceId === 'default') || audioInputs[0];
           setSelectedMicrophoneId(defaultMic.deviceId);
         }
@@ -735,7 +743,8 @@ const DeviceSetupPage = ({
           setVideoDevices([]);
         } else {
           setVideoDevices(videoInputs);
-          if (!selectedCameraId) {
+          // Use ref to check current value without dependency
+          if (!selectedCamRef.current) {
             const defaultCam = videoInputs.find(d => d.deviceId === 'default') || videoInputs[0];
             setSelectedCameraId(defaultCam.deviceId);
           }
@@ -758,7 +767,7 @@ const DeviceSetupPage = ({
       isLoadingRef.current = false;
       lastLoadTimeRef.current = Date.now(); // Update again after completion
     }
-  }, [includeVideo, selectedMicrophoneId, selectedCameraId]);
+  }, [includeVideo]); // Only depend on includeVideo which doesn't change
 
   useEffect(() => {
     loadDevices(false);
