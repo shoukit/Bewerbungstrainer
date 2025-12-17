@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePartner } from '../../context/PartnerContext';
+import { DEFAULT_BRANDING } from '../../config/partners';
 import wordpressAPI from '../../services/wordpress-api';
 import FullscreenLoader from '@/components/ui/fullscreen-loader';
 import {
@@ -170,14 +171,15 @@ const SmartBriefingForm = ({
   onBriefingGenerated,
   isAuthenticated,
 }) => {
-  const { config } = usePartner();
+  const { branding } = usePartner();
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  // Get primary accent color from partner config
-  const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
+  // Get themed styles from partner branding
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const buttonGradient = branding?.['--button-gradient'] || DEFAULT_BRANDING['--button-gradient'];
   const IconComponent = ICON_MAP[template?.icon] || FileText;
 
   // Initialize form data from template defaults
@@ -403,7 +405,7 @@ const SmartBriefingForm = ({
               padding: '16px 24px',
               borderRadius: '12px',
               border: 'none',
-              background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
+              background: buttonGradient,
               color: 'white',
               fontSize: '16px',
               fontWeight: 600,
