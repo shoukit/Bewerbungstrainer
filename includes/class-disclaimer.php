@@ -142,17 +142,19 @@ class Bewerbungstrainer_Disclaimer {
         ));
 
         // Check if user needs to see disclaimer
+        // Uses allow_all_users to handle nonce validation more gracefully after login
         register_rest_route($this->namespace, '/disclaimer/status', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_disclaimer_status'),
-            'permission_callback' => array($this, 'check_user_logged_in'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // Acknowledge disclaimer
+        // Uses allow_all_users to handle nonce validation more gracefully after login
         register_rest_route($this->namespace, '/disclaimer/acknowledge', array(
             'methods' => 'POST',
             'callback' => array($this, 'acknowledge_disclaimer'),
-            'permission_callback' => array($this, 'check_user_logged_in'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // Admin: Get all disclaimers
@@ -175,6 +177,15 @@ class Bewerbungstrainer_Disclaimer {
             'callback' => array($this, 'admin_update_disclaimer'),
             'permission_callback' => array($this, 'check_is_admin'),
         ));
+    }
+
+    /**
+     * Permission callback: Allow all users
+     * This is used for endpoints that need to work during the login process
+     * when WordPress cookie authentication may not be fully synchronized yet.
+     */
+    public function allow_all_users($request) {
+        return true;
     }
 
     /**
@@ -233,6 +244,15 @@ class Bewerbungstrainer_Disclaimer {
 
         $user_id = get_current_user_id();
 
+        // If user is not logged in, don't require disclaimer
+        if (!$user_id) {
+            return new WP_REST_Response(array(
+                'success' => true,
+                'needs_acknowledgment' => false,
+                'message' => 'Nicht eingeloggt',
+            ), 200);
+        }
+
         // Get current active disclaimer
         $disclaimer = $wpdb->get_row(
             "SELECT id, version, title, content, created_at
@@ -288,6 +308,15 @@ class Bewerbungstrainer_Disclaimer {
         global $wpdb;
 
         $user_id = get_current_user_id();
+
+        // Check if user is logged in
+        if (!$user_id) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => 'Nicht eingeloggt',
+            ), 401);
+        }
+
         $params = $request->get_json_params();
 
         $disclaimer_id = isset($params['disclaimer_id']) ? intval($params['disclaimer_id']) : 0;
