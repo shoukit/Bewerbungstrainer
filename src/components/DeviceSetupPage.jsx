@@ -720,11 +720,22 @@ const DeviceSetupPage = ({
 
       // Enumerate devices
       const allDevices = await navigator.mediaDevices.enumerateDevices();
+
+      // Debug logging to help diagnose device recognition issues
+      console.log('[DeviceSetupPage] All detected devices:', allDevices.map(d => ({
+        kind: d.kind,
+        label: d.label || '(no label)',
+        deviceId: d.deviceId?.substring(0, 8) + '...'
+      })));
+
       const audioInputs = allDevices.filter(device => device.kind === 'audioinput');
       const videoInputs = allDevices.filter(device => device.kind === 'videoinput');
 
+      console.log('[DeviceSetupPage] Audio inputs:', audioInputs.length, 'Video inputs:', videoInputs.length);
+
       // Set audio devices
       if (audioInputs.length === 0) {
+        console.warn('[DeviceSetupPage] No audioinput devices found');
         setMicError('Kein Mikrofon gefunden');
         setAudioDevices([]);
       } else {
