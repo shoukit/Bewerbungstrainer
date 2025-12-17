@@ -472,11 +472,6 @@ class Bewerbungstrainer_API {
      * @return WP_Error|null|bool
      */
     public function disable_cookie_check_for_public_endpoints($result) {
-        // If another auth method already succeeded or failed, don't override it
-        if (true === $result || is_wp_error($result)) {
-            return $result;
-        }
-
         // Get the current REST route
         $route = $_SERVER['REQUEST_URI'] ?? '';
 
@@ -506,9 +501,16 @@ class Bewerbungstrainer_API {
         // Check if this is a public endpoint
         foreach ($public_endpoints as $endpoint) {
             if (strpos($route, $endpoint) !== false) {
-                // Allow the request without cookie authentication
+                // For public endpoints, override any cookie authentication errors
+                // This allows demo users and users with invalid cookies to still access public endpoints
                 return true;
             }
+        }
+
+        // For non-public endpoints, respect existing authentication results
+        // If another auth method already succeeded, keep it
+        if (true === $result) {
+            return $result;
         }
 
         return $result;
