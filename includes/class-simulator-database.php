@@ -574,7 +574,7 @@ Gib konkrete Formulierungsvorschläge.',
             'difficulty' => null,
             'is_active' => 1,
             'orderby' => 'sort_order',
-            'order' => 'ASC',
+            'order' => 'DESC',  // Higher sort_order = shown first (more intuitive)
         );
 
         $args = wp_parse_args($args, $defaults);
@@ -607,7 +607,9 @@ Gib konkrete Formulierungsvorschläge.',
 
         $args['order'] = strtoupper($args['order']) === 'DESC' ? 'DESC' : 'ASC';
 
-        $query = "SELECT * FROM {$this->table_scenarios} {$where_clause} ORDER BY {$args['orderby']} {$args['order']}";
+        // Add secondary sort by id for consistent ordering when primary sort values are equal
+        $secondary_sort = ($args['orderby'] !== 'id') ? ', id ASC' : '';
+        $query = "SELECT * FROM {$this->table_scenarios} {$where_clause} ORDER BY {$args['orderby']} {$args['order']}{$secondary_sort}";
 
         if (!empty($where_values)) {
             $scenarios = $wpdb->get_results($wpdb->prepare($query, ...$where_values));
