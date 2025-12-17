@@ -131,16 +131,19 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="disclaimer-modal-title"
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-        {/* Header */}
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col"
+        style={{ maxHeight: 'calc(100dvh - 32px)' }}
+      >
+        {/* Header - fixed at top */}
         <div
-          className="px-6 py-5"
+          className="px-6 py-5 flex-shrink-0 rounded-t-2xl"
           style={{ background: headerGradient, color: headerText }}
         >
           <div className="flex items-center gap-3">
@@ -161,8 +164,8 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
+        {/* Content - scrollable */}
+        <div className="p-6 overflow-y-auto flex-1">
           {/* Error message */}
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-3">
