@@ -496,6 +496,9 @@ class Bewerbungstrainer_API {
             '/bewerbungstrainer/v1/smartbriefing/generate',
             '/bewerbungstrainer/v1/smartbriefing/sections',
             '/bewerbungstrainer/v1/usage-limits',
+            '/bewerbungstrainer/v1/disclaimer/current',
+            '/bewerbungstrainer/v1/disclaimer/status',
+            '/bewerbungstrainer/v1/disclaimer/acknowledge',
         );
 
         // Check if this is a public endpoint
