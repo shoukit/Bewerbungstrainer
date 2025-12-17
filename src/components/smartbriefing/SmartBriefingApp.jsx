@@ -51,7 +51,6 @@ const SmartBriefingApp = ({
   // Handle pending template after login - automatically open form
   useEffect(() => {
     if (pendingTemplate && isAuthenticated) {
-      console.log('[SmartBriefing] Processing pending template after login:', pendingTemplate.title);
       setSelectedTemplate(pendingTemplate);
       setCurrentView(VIEWS.FORM);
       setPendingTemplate(null);
@@ -67,7 +66,6 @@ const SmartBriefingApp = ({
    * Handle template selection from dashboard
    */
   const handleSelectTemplate = useCallback((template) => {
-    console.log('[SmartBriefing] Template selected:', template.title);
     setSelectedTemplate(template);
     setCurrentView(VIEWS.FORM);
   }, []);
@@ -86,7 +84,6 @@ const SmartBriefingApp = ({
    * Handle briefing generated - now goes to workbook instead of result
    */
   const handleBriefingGenerated = useCallback((briefing) => {
-    console.log('[SmartBriefing] Briefing generated:', briefing.id);
     setGeneratedBriefing(briefing);
     setSelectedBriefing(briefing);
     // Go directly to workbook view for the new section-based experience
@@ -123,7 +120,6 @@ const SmartBriefingApp = ({
    * Handle open briefing from list
    */
   const handleOpenBriefing = useCallback((briefing) => {
-    console.log('[SmartBriefing] Opening briefing:', briefing.id);
     setSelectedBriefing(briefing);
     setCurrentView(VIEWS.WORKBOOK);
   }, []);
@@ -141,7 +137,6 @@ const SmartBriefingApp = ({
    * Bridge feature: Pre-fill simulator with briefing variables
    */
   const handleStartSimulation = useCallback((variables) => {
-    console.log('[SmartBriefing] Starting simulation with variables:', variables);
 
     if (onNavigateToSimulator) {
       // Navigate to simulator with pre-filled variables
@@ -153,7 +148,6 @@ const SmartBriefingApp = ({
    * Handle create new custom template
    */
   const handleCreateTemplate = useCallback(() => {
-    console.log('[SmartBriefing] Opening create template dialog');
     setEditingTemplate(null);
     setTemplateDialogOpen(true);
   }, []);
@@ -162,7 +156,6 @@ const SmartBriefingApp = ({
    * Handle edit custom template
    */
   const handleEditTemplate = useCallback((template) => {
-    console.log('[SmartBriefing] Opening edit template dialog:', template.title);
     setEditingTemplate(template);
     setTemplateDialogOpen(true);
   }, []);
@@ -179,7 +172,6 @@ const SmartBriefingApp = ({
    * Handle template saved (created or updated)
    */
   const handleTemplateSaved = useCallback((template) => {
-    console.log('[SmartBriefing] Template saved:', template.title);
     // Trigger refresh of dashboard
     setRefreshKey(prev => prev + 1);
   }, []);

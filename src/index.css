@@ -324,6 +324,16 @@
   color: inherit;
 }
 
+/* Fix for session sidebar tab buttons - override Elementor's red hover */
+#bewerbungstrainer-app button[data-tab-button="true"],
+#bewerbungstrainer-app button[data-tab-button="true"]:hover,
+#bewerbungstrainer-app button[data-tab-button="true"]:focus,
+#bewerbungstrainer-app button[data-tab-button="true"]:active {
+  color: inherit !important;
+  background-color: inherit !important;
+  border-color: inherit !important;
+}
+
 /* Override Elementor's form element styles */
 #bewerbungstrainer-app select,
 #bewerbungstrainer-app select:hover,

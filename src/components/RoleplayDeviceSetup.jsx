@@ -244,7 +244,6 @@ const RoleplayDeviceSetup = ({
       const agentId = scenario?.agent_id || wordpressAPI.getElevenLabsAgentId();
 
       if (!agentId) {
-        console.log('[DeviceSetup] No agent ID configured');
         setConnectionMode('websocket'); // Default to websocket, will show error
         setConnectionError('Keine Agent-ID konfiguriert');
         setDirectAvailable(false);
@@ -253,10 +252,8 @@ const RoleplayDeviceSetup = ({
         return;
       }
 
-      console.log('[DeviceSetup] Testing connections...');
       const result = await detectBestConnectionMode(agentId);
 
-      console.log('[DeviceSetup] Connection test result:', result);
 
       setConnectionMode(result.mode);
       setDirectAvailable(result.directAvailable);

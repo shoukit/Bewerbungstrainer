@@ -124,7 +124,6 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
 
   // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
-    console.log('🔄 [RoleplayDashboard] Loading scenarios...');
     loadScenarios();
   }, []);
 
@@ -136,7 +135,6 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   // Handle pending scenario after login - automatically open variables dialog
   useEffect(() => {
     if (pendingScenario && isAuthenticated) {
-      console.log('🔐 [RoleplayDashboard] Processing pending scenario after login:', pendingScenario.title);
       setSelectedScenario(pendingScenario);
       setShowVariablesDialog(true);
       // Clear the pending scenario
@@ -164,7 +162,6 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   const handleScenarioClick = (scenario) => {
     // Check authentication before allowing scenario selection
     if (!isAuthenticated) {
-      console.log('🔐 [RoleplayDashboard] Auth required - storing pending action for scenario:', scenario.title);
       // Store the scenario selection as pending action
       setPendingAction({
         type: 'SELECT_ROLEPLAY_SCENARIO',
@@ -183,13 +180,6 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
     // First, filter by partner's allowed modules (white-label filtering)
     let filtered = filterByPartner([...scenarios]);
 
-    // Log filtering for debugging in white-label mode
-    if (isWhiteLabel) {
-      console.log('🏷️ [RoleplayDashboard] Partner filtering applied:', {
-        total: scenarios.length,
-        afterPartnerFilter: filtered.length,
-      });
-    }
 
     // Category filter
     if (selectedCategory) {

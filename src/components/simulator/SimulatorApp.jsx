@@ -50,7 +50,6 @@ const SimulatorApp = ({
   // Handle pending scenario after login - automatically open variables page
   useEffect(() => {
     if (pendingScenario && isAuthenticated) {
-      console.log('🔐 [SimulatorApp] Processing pending scenario after login:', pendingScenario.title);
       setSelectedScenario(pendingScenario);
       setCurrentView(VIEWS.VARIABLES);
       setPendingScenario(null);
@@ -61,7 +60,6 @@ const SimulatorApp = ({
   useEffect(() => {
     if (pendingContinueSession && isAuthenticated) {
       const { session, scenario } = pendingContinueSession;
-      console.log('🔄 [SimulatorApp] Continuing session:', session.id);
 
       // Parse questions from the session (API returns 'questions', database stores 'questions_json')
       const questionsData = session.questions || session.questions_json;
@@ -89,7 +87,6 @@ const SimulatorApp = ({
   useEffect(() => {
     if (pendingRepeatSession && isAuthenticated) {
       const { session, scenario } = pendingRepeatSession;
-      console.log('🔁 [SimulatorApp] Repeating session with same questions:', session.id);
 
       // Parse questions from the session (API returns 'questions', database stores 'questions_json')
       const questionsData = session.questions || session.questions_json;

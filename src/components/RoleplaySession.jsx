@@ -164,7 +164,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
     // Check if this message warrants coaching
     if (!shouldGenerateCoaching({ role: 'agent', text: agentMessage })) {
-      console.log('[COACHING] Skipping short/filler message');
       return;
     }
 
@@ -181,7 +180,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       });
 
       setDynamicCoaching(coaching);
-      console.log('[COACHING] New coaching generated:', coaching);
     } catch (error) {
       console.error('[COACHING] Failed to generate coaching:', error);
     } finally {
@@ -200,15 +198,12 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       },
     },
     onConnect: () => {
-      console.log('✅ [RoleplaySession] Connected to ElevenLabs');
-      console.log('📝 [RoleplaySession] System prompt:', scenario.content?.substring(0, 100) + '...');
-      console.log('💬 [RoleplaySession] First message:', scenario.initial_message);
       const now = Date.now();
       setStartTime(now);
       startTimeRef.current = now; // Also set ref for stable access in callbacks
     },
     onDisconnect: () => {
-      console.log('ℹ️ [RoleplaySession] Disconnected from ElevenLabs');
+      // Session disconnected
     },
     onMessage: (message) => {
       if (message.source === 'ai' || message.source === 'user') {
@@ -229,8 +224,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
         const minutes = Math.floor(messageStartSeconds / 60);
         const seconds = messageStartSeconds % 60;
         const timeLabel = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-        console.log('📝 [RoleplaySession] Message started at', timeLabel, '- elapsedTime:', messageStartSeconds, '(ended at', messageEndSeconds + 's)');
 
         const newEntry = {
           role: message.source === 'ai' ? 'agent' : 'user',
@@ -275,12 +268,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   // Handle agent ending the call
   useEffect(() => {
     if (conversation.status === 'disconnected' && transcript.length > 0 && !isAnalyzing && !showFeedback) {
-      console.log('🔔 [RoleplaySession] Agent ended the call - starting analysis', {
-        status: conversation.status,
-        transcriptLength: transcript.length,
-        isAnalyzing,
-        showFeedback
-      });
       handleEndConversation();
     }
   }, [conversation.status, transcript.length, isAnalyzing, showFeedback]);
@@ -386,9 +373,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       const createdSession = await createRoleplaySession(sessionData);
       setSessionId(createdSession.id);
 
-      console.log('🚀 [RoleplaySession] Starting:', agentId);
-      console.log('🚀 [RoleplaySession] Variables:', variables);
-
       // Auto-inject interviewer variables from profile
       const enhancedVariables = { ...variables };
       if (scenario.interviewer_profile) {
@@ -398,19 +382,15 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
         if (scenario.interviewer_profile.role) {
           enhancedVariables.interviewer_role = scenario.interviewer_profile.role;
         }
-        console.log('✨ [RoleplaySession] Enhanced with interviewer variables:', enhancedVariables);
       }
 
       // Use official SDK - pass variables as dynamicVariables (same as standard interview)
       // Also pass the selected microphone deviceId if available
-      console.log('🎤 [RoleplaySession] Starting session with microphone:', localMicrophoneId || 'default');
       conversationIdRef.current = await conversation.startSession({
         agentId: agentId,
         dynamicVariables: enhancedVariables,
         ...(localMicrophoneId && { inputDeviceId: localMicrophoneId }),
       });
-
-      console.log('✅ [RoleplaySession] Session started:', conversationIdRef.current);
 
       // Log the ElevenLabs system prompt to prompts.log
       const systemPrompt = buildSystemPrompt();
@@ -440,8 +420,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       conversation.endSession();
     }
 
-    console.log('🏁 [RoleplaySession] Ending conversation');
-
     // Check if transcript is empty
     if (transcript.length === 0) {
       setError('Das Gespräch war zu kurz. Bitte versuche es erneut.');
@@ -467,24 +445,14 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       let audioBlob = null;
       if (sessionId && conversationIdRef.current) {
         try {
-          console.log('💾 [RoleplaySession] Saving conversation_id to database first...');
           await updateRoleplaySessionConversationId(sessionId, conversationIdRef.current);
-          console.log('✅ [RoleplaySession] conversation_id saved');
 
           // Step 2: Fetch audio via WordPress proxy
           // The proxy uses the conversation_id we just saved to fetch from ElevenLabs
-          console.log('🎵 [RoleplaySession] Fetching audio via WordPress proxy...');
           audioBlob = await fetchRoleplaySessionAudio(sessionId, 10, 3000);
-
-          if (audioBlob) {
-            console.log('✅ [RoleplaySession] Audio fetched successfully:', audioBlob.size, 'bytes');
-          } else {
-            console.warn('⚠️ [RoleplaySession] Audio not available, continuing without audio analysis');
-          }
         } catch (audioError) {
           // Audio fetch failed - continue without audio analysis
-          console.warn('⚠️ [RoleplaySession] Could not fetch audio for analysis:', audioError.message);
-          console.warn('⚠️ [RoleplaySession] Make sure "Audio Saving" is enabled in ElevenLabs Agent settings');
+          console.warn('[RoleplaySession] Could not fetch audio for analysis:', audioError.message);
         }
       }
 
@@ -517,7 +485,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
           conversation_id: conversationIdRef.current,
           created_at: new Date().toISOString(),
         };
-        console.log('🚀 [RoleplaySession] Navigating to session analysis:', sessionId);
         onNavigateToSession(sessionForNavigation);
       } else {
         // Fallback: Show feedback modal if onNavigateToSession not provided

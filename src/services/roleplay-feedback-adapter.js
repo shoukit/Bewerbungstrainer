@@ -49,9 +49,6 @@ function decodeObjectStrings(data) {
  * @returns {Promise<object>} Analysis results with feedback and audio analysis
  */
 export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}, audioFile = null) {
-  console.log('🎭 [Roleplay Feedback] Starting analysis...');
-  console.log('🎭 [Roleplay Feedback] Transcript entries:', transcript.length);
-  console.log('🎭 [Roleplay Feedback] Scenario context:', scenarioContext);
 
   if (!transcript || transcript.length === 0) {
     throw new Error('Transkript ist leer. Das Gespräch muss mindestens einen Austausch enthalten.');
@@ -60,7 +57,6 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
   // Format transcript for Gemini
   const formattedTranscript = formatTranscriptForGemini(transcript, scenarioContext);
 
-  console.log('🎭 [Roleplay Feedback] Formatted transcript:', formattedTranscript.substring(0, 200) + '...');
 
   // Get Gemini API key
   const geminiApiKey = wordpressAPI.getGeminiApiKey();
@@ -80,16 +76,13 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
     userRoleLabel: scenarioContext.user_role_label || 'Bewerber',
     agentRoleLabel: scenarioContext.interviewer_profile?.role || 'Gesprächspartner',
   };
-  console.log('🎭 [Roleplay Feedback] Role options:', roleOptions);
 
   try {
     // Generate feedback (transcript analysis)
-    console.log('🎭 [Roleplay Feedback] Generating feedback...');
 
     // Use custom feedback prompt from scenario if available
     const customPrompt = scenarioContext.feedback_prompt || null;
     if (customPrompt) {
-      console.log('🎭 [Roleplay Feedback] Using custom feedback prompt from scenario');
     }
 
     results.feedbackContent = await generateInterviewFeedback(
@@ -99,7 +92,6 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
       customPrompt, // customPrompt as 4th parameter
       roleOptions // roleOptions as 5th parameter
     );
-    console.log('✅ [Roleplay Feedback] Feedback generated successfully');
   } catch (error) {
     console.error('❌ [Roleplay Feedback] Failed to generate feedback:', error);
     throw new Error(`Fehler bei der Feedback-Generierung: ${error.message}`);
@@ -108,14 +100,12 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
   // Generate audio analysis if audio file is provided
   if (audioFile) {
     try {
-      console.log('🎭 [Roleplay Feedback] Generating audio analysis...');
       results.audioAnalysisContent = await generateAudioAnalysis(
         audioFile,
         geminiApiKey,
         'gemini-1.5-flash', // modelName
         roleOptions // pass same role options for audio analysis
       );
-      console.log('✅ [Roleplay Feedback] Audio analysis generated successfully');
     } catch (error) {
       console.error('❌ [Roleplay Feedback] Failed to generate audio analysis:', error);
 
@@ -133,7 +123,6 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
     }
   }
 
-  console.log('✅ [Roleplay Feedback] Analysis complete');
 
   return results;
 }
@@ -199,15 +188,6 @@ export async function saveRoleplaySessionAnalysis(
   duration = 0,
   conversationId = null
 ) {
-  console.log('💾 [Roleplay Feedback] ========= SAVING SESSION ANALYSIS =========');
-  console.log('💾 [Roleplay Feedback] Session ID:', sessionId);
-  console.log('💾 [Roleplay Feedback] Conversation ID:', conversationId);
-  console.log('💾 [Roleplay Feedback] Duration:', duration);
-  console.log('💾 [Roleplay Feedback] feedbackJson type:', typeof feedbackJson);
-  console.log('💾 [Roleplay Feedback] feedbackJson length:', feedbackJson?.length || 0);
-  console.log('💾 [Roleplay Feedback] feedbackJson preview:', feedbackJson?.substring?.(0, 200) || 'null/undefined');
-  console.log('💾 [Roleplay Feedback] audioAnalysisJson type:', typeof audioAnalysisJson);
-  console.log('💾 [Roleplay Feedback] audioAnalysisJson length:', audioAnalysisJson?.length || 0);
 
   try {
     // Prepare transcript (ensure it's a string)
@@ -215,7 +195,6 @@ export async function saveRoleplaySessionAnalysis(
     if (Array.isArray(transcript)) {
       transcriptString = JSON.stringify(transcript);
     }
-    console.log('💾 [Roleplay Feedback] transcript entries:', Array.isArray(transcript) ? transcript.length : 'already string');
 
     // Prepare update data
     const updateData = {
@@ -232,8 +211,6 @@ export async function saveRoleplaySessionAnalysis(
       updateData.conversation_id = conversationId;
     }
 
-    console.log('💾 [Roleplay Feedback] Sending update data with keys:', Object.keys(updateData));
-    console.log('💾 [Roleplay Feedback] Full request body length:', JSON.stringify(updateData).length);
 
     // Update session via API
     const response = await wordpressAPI.request(`/roleplays/sessions/${sessionId}`, {
@@ -241,26 +218,20 @@ export async function saveRoleplaySessionAnalysis(
       body: JSON.stringify(updateData),
     });
 
-    console.log('✅ [Roleplay Feedback] API Response:', response);
-    console.log('✅ [Roleplay Feedback] Response.data:', response?.data);
-    console.log('✅ [Roleplay Feedback] Response feedback_json:', response?.data?.feedback_json ? 'present' : 'null');
 
     // Update usage limits if duration > 0
     if (duration > 0) {
       try {
-        console.log('💾 [Roleplay Feedback] Updating usage limits with duration:', duration);
         await wordpressAPI.request(`/roleplays/sessions/${sessionId}/duration`, {
           method: 'POST',
           body: JSON.stringify({ duration_seconds: duration }),
         });
-        console.log('✅ [Roleplay Feedback] Usage limits updated successfully');
       } catch (usageError) {
         // Log error but don't fail the save operation
         console.warn('⚠️ [Roleplay Feedback] Failed to update usage limits:', usageError.message);
       }
     }
 
-    console.log('💾 [Roleplay Feedback] ========= SAVE COMPLETE =========');
 
     return response.data;
   } catch (error) {
@@ -278,18 +249,12 @@ export async function saveRoleplaySessionAnalysis(
  * @returns {Promise<object>} Session data with analysis
  */
 export async function getRoleplaySessionAnalysis(sessionId) {
-  console.log('📖 [Roleplay Feedback] Loading session analysis...');
-  console.log('📖 [Roleplay Feedback] Session ID:', sessionId);
 
   try {
     const response = await wordpressAPI.request(`/roleplays/sessions/${sessionId}`, {
       method: 'GET',
     });
 
-    console.log('✅ [Roleplay Feedback] Session analysis loaded successfully');
-    console.log('📡 [Roleplay Feedback] Raw API response:', response);
-    console.log('📡 [Roleplay Feedback] Response.data:', response.data);
-    console.log('📡 [Roleplay Feedback] feedback_json in response:', response.data?.feedback_json);
 
     return response.data;
   } catch (error) {
@@ -305,8 +270,6 @@ export async function getRoleplaySessionAnalysis(sessionId) {
  * @returns {Promise<object>} Sessions data with pagination
  */
 export async function getRoleplaySessions(params = {}) {
-  console.log('📋 [Roleplay Feedback] Loading user sessions...');
-  console.log('📋 [Roleplay Feedback] Params:', params);
 
   try {
     const queryString = new URLSearchParams(params).toString();
@@ -316,8 +279,6 @@ export async function getRoleplaySessions(params = {}) {
       method: 'GET',
     });
 
-    console.log('✅ [Roleplay Feedback] Sessions loaded successfully');
-    console.log('✅ [Roleplay Feedback] Sessions count:', response.data?.length || 0);
 
     return response;
   } catch (error) {
@@ -348,9 +309,6 @@ export function getRoleplaySessionAudioUrl(sessionId) {
  * @returns {Promise<Blob|null>} Audio blob or null if not available
  */
 export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retryDelayMs = 3000) {
-  console.log('🎵 [Roleplay Feedback] Fetching audio via WordPress proxy...');
-  console.log(`🆔 [Roleplay Feedback] Session ID: ${sessionId}`);
-  console.log(`🔄 [Roleplay Feedback] Max retries: ${maxRetries}, delay: ${retryDelayMs}ms`);
 
   const audioUrl = getRoleplaySessionAudioUrl(sessionId);
 
@@ -358,7 +316,6 @@ export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retr
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`📤 [Roleplay Feedback] Attempt ${attempt}/${maxRetries} - Fetching audio...`);
 
       const response = await fetch(audioUrl, {
         method: 'GET',
@@ -368,13 +325,9 @@ export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retr
         credentials: 'same-origin',
       });
 
-      console.log(`📥 [Roleplay Feedback] Response status: ${response.status}`);
 
       if (response.ok) {
         const audioBlob = await response.blob();
-        console.log(`✅ [Roleplay Feedback] Audio fetched successfully on attempt ${attempt}`);
-        console.log(`📊 [Roleplay Feedback] Audio size: ${audioBlob.size} bytes`);
-        console.log(`🎵 [Roleplay Feedback] Audio type: ${audioBlob.type}`);
 
         if (audioBlob.size === 0) {
           console.warn('⚠️ [Roleplay Feedback] Audio blob is empty, retrying...');
@@ -390,7 +343,6 @@ export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retr
 
       // 404 means audio not ready yet - retry
       if (response.status === 404 && attempt < maxRetries) {
-        console.log(`⏳ [Roleplay Feedback] Audio not ready yet (404), waiting ${retryDelayMs}ms before retry...`);
         await delay(retryDelayMs);
         continue;
       }
@@ -423,9 +375,6 @@ export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retr
  * @returns {Promise<object>} Updated session data
  */
 export async function updateRoleplaySessionConversationId(sessionId, conversationId) {
-  console.log('💾 [Roleplay Feedback] Updating session with conversation_id...');
-  console.log('💾 [Roleplay Feedback] Session ID:', sessionId);
-  console.log('💾 [Roleplay Feedback] Conversation ID:', conversationId);
 
   try {
     const response = await wordpressAPI.request(`/roleplays/sessions/${sessionId}`, {
@@ -435,7 +384,6 @@ export async function updateRoleplaySessionConversationId(sessionId, conversatio
       }),
     });
 
-    console.log('✅ [Roleplay Feedback] Session conversation_id updated successfully');
     return response.data;
   } catch (error) {
     console.error('❌ [Roleplay Feedback] Failed to update session conversation_id:', error);
@@ -450,8 +398,6 @@ export async function updateRoleplaySessionConversationId(sessionId, conversatio
  * @returns {Promise<object>} Created session data
  */
 export async function createRoleplaySession(sessionData) {
-  console.log('📝 [Roleplay Feedback] Creating new session...');
-  console.log('📝 [Roleplay Feedback] Session data:', sessionData);
 
   try {
     const response = await wordpressAPI.request('/roleplays/sessions', {
@@ -459,8 +405,6 @@ export async function createRoleplaySession(sessionData) {
       body: JSON.stringify(sessionData),
     });
 
-    console.log('✅ [Roleplay Feedback] Session created successfully');
-    console.log('✅ [Roleplay Feedback] Session ID:', response.data.id);
 
     return response.data;
   } catch (error) {
@@ -475,7 +419,6 @@ export async function createRoleplaySession(sessionData) {
  * @returns {Promise<array>} Array of scenarios
  */
 export async function getRoleplayScenarios() {
-  console.log('📋 [Roleplay Feedback] Loading scenarios...');
 
   try {
     // Use direct fetch like VideoTrainingDashboard (no Content-Type header for GET)
@@ -492,8 +435,6 @@ export async function getRoleplayScenarios() {
 
     const data = await response.json();
 
-    console.log('✅ [Roleplay Feedback] Scenarios loaded successfully');
-    console.log('✅ [Roleplay Feedback] Scenarios count:', data.data?.length || 0);
 
     // Decode Unicode escapes in scenario data (e.g., "u00f6" -> "ö")
     return decodeObjectStrings(data.data || []);
@@ -510,15 +451,12 @@ export async function getRoleplayScenarios() {
  * @returns {Promise<object>} Scenario data
  */
 export async function getRoleplayScenario(scenarioId) {
-  console.log('📋 [Roleplay Feedback] Loading scenario...');
-  console.log('📋 [Roleplay Feedback] Scenario ID:', scenarioId);
 
   try {
     const response = await wordpressAPI.request(`/roleplays/${scenarioId}`, {
       method: 'GET',
     });
 
-    console.log('✅ [Roleplay Feedback] Scenario loaded successfully');
 
     // Decode Unicode escapes in scenario data (e.g., "u00f6" -> "ö")
     return decodeObjectStrings(response.data);
@@ -535,8 +473,6 @@ export async function getRoleplayScenario(scenarioId) {
  * @returns {Promise<object>} Custom scenario data
  */
 export async function createCustomRoleplayScenario(scenarioData) {
-  console.log('🎨 [Roleplay Feedback] Creating custom scenario...');
-  console.log('🎨 [Roleplay Feedback] Scenario data:', scenarioData);
 
   try {
     const response = await wordpressAPI.request('/roleplays/custom', {
@@ -544,7 +480,6 @@ export async function createCustomRoleplayScenario(scenarioData) {
       body: JSON.stringify(scenarioData),
     });
 
-    console.log('✅ [Roleplay Feedback] Custom scenario created successfully');
 
     return response.data;
   } catch (error) {

@@ -114,7 +114,6 @@ function VideoTrainingWizard({ onComplete }) {
    * Initialize camera and microphone
    */
   const initializeDevices = async () => {
-    console.log('🎥 Initializing devices...');
     setErrors({}); // Clear any previous errors
 
     try {
@@ -124,25 +123,17 @@ function VideoTrainingWizard({ onComplete }) {
       }
 
       // First, check what devices are available (without labels yet)
-      console.log('📱 Checking available devices...');
       const initialDevices = await navigator.mediaDevices.enumerateDevices();
-      console.log('📱 Initial devices check:', initialDevices);
 
       const hasVideo = initialDevices.some(d => d.kind === 'videoinput');
       const hasAudio = initialDevices.some(d => d.kind === 'audioinput');
-
-      console.log('📹 Has video devices:', hasVideo);
-      console.log('🎤 Has audio devices:', hasAudio);
 
       if (!hasVideo && !hasAudio) {
         throw new Error('Keine Kamera oder Mikrofon gefunden. Bitte stelle sicher, dass Geräte angeschlossen sind.');
       }
 
-      // IMPORTANT: Request camera access with appropriate constraints
+      // Request camera access with appropriate constraints
       // Try to get both, but allow for partial success
-      console.log('🎥 Requesting camera and microphone access...');
-      console.log('⚠️ Please allow camera and microphone access in your browser!');
-
       let stream = null;
 
       // Try to get both video and audio
@@ -151,18 +142,14 @@ function VideoTrainingWizard({ onComplete }) {
           video: hasVideo,
           audio: hasAudio
         });
-        console.log('✅ Got both camera and microphone');
       } catch (bothError) {
-        console.warn('⚠️ Could not get both devices, trying individually...', bothError);
-
         // Try video only
         if (hasVideo) {
           try {
             const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-            console.log('✅ Got camera only');
             stream = videoStream;
           } catch (videoError) {
-            console.error('❌ Could not get camera:', videoError);
+            console.error('Could not get camera:', videoError);
           }
         }
 
@@ -170,10 +157,9 @@ function VideoTrainingWizard({ onComplete }) {
         if (!stream && hasAudio) {
           try {
             const audioStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-            console.log('✅ Got microphone only');
             stream = audioStream;
           } catch (audioError) {
-            console.error('❌ Could not get microphone:', audioError);
+            console.error('Could not get microphone:', audioError);
           }
         }
 
@@ -182,21 +168,13 @@ function VideoTrainingWizard({ onComplete }) {
         }
       }
 
-      console.log('✅ Media access granted');
-      console.log('📹 Video tracks:', stream.getVideoTracks().length);
-      console.log('🎤 Audio tracks:', stream.getAudioTracks().length);
-
       setCameraStream(stream);
 
       // NOW get available devices (with proper labels)
       const devices = await navigator.mediaDevices.enumerateDevices();
-      console.log('📱 All devices (with labels):', devices);
 
       const videoDevices = devices.filter(d => d.kind === 'videoinput');
       const audioDevices = devices.filter(d => d.kind === 'audioinput');
-
-      console.log('📹 Video devices found:', videoDevices.length, videoDevices);
-      console.log('🎤 Audio devices found:', audioDevices.length, audioDevices);
 
       setAvailableDevices({
         video: videoDevices,
@@ -209,7 +187,6 @@ function VideoTrainingWizard({ onComplete }) {
 
       if (videoTrack) {
         const settings = videoTrack.getSettings();
-        console.log('📹 Active video device:', settings.deviceId);
         setSelectedDevices(prev => ({
           ...prev,
           video: settings.deviceId || (videoDevices[0]?.deviceId || '')
@@ -217,7 +194,6 @@ function VideoTrainingWizard({ onComplete }) {
       }
       if (audioTrack) {
         const settings = audioTrack.getSettings();
-        console.log('🎤 Active audio device:', settings.deviceId);
         setSelectedDevices(prev => ({
           ...prev,
           audio: settings.deviceId || (audioDevices[0]?.deviceId || '')
@@ -236,7 +212,6 @@ function VideoTrainingWizard({ onComplete }) {
         });
       }
 
-      console.log('✅ Device initialization complete');
 
     } catch (error) {
       console.error('❌ Error accessing devices:', error);

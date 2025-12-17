@@ -207,6 +207,9 @@ class Bewerbungstrainer_Plugin {
         // Load Usage Limits class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-usage-limits.php';
 
+        // Load Disclaimer class
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-disclaimer.php';
+
         // Load Corporate Interview API (HTTP-based fallback for WebSocket-blocked environments)
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-corporate-interview-api.php';
 
@@ -311,6 +314,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create usage limits table
         Bewerbungstrainer_Usage_Limits::create_tables();
+
+        // Create disclaimer tables
+        Bewerbungstrainer_Disclaimer::create_tables();
 
         // Create upload directory for audio files
         $upload_dir = wp_upload_dir();
@@ -468,6 +474,9 @@ class Bewerbungstrainer_Plugin {
 
         // Initialize Usage Limits
         Bewerbungstrainer_Usage_Limits::get_instance();
+
+        // Initialize Disclaimer
+        Bewerbungstrainer_Disclaimer::get_instance();
 
         // Initialize audio handler
         Bewerbungstrainer_Audio_Handler::get_instance();

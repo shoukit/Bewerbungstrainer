@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mic, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -21,6 +21,10 @@ const MicrophoneSelector = ({
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
 
+  // Track when we last loaded devices to prevent loops on iPad Chrome
+  const lastLoadTimeRef = useRef(0);
+  const isLoadingRef = useRef(false);
+
   // Partner theming
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -31,7 +35,21 @@ const MicrophoneSelector = ({
   /**
    * Request microphone permission and enumerate devices
    */
-  const loadDevices = async () => {
+  const loadDevices = async (fromDeviceChange = false) => {
+    // Prevent re-entrancy and ignore devicechange events triggered by our own getUserMedia
+    if (isLoadingRef.current) return;
+
+    // If this is from a devicechange event, check if it's too soon after last load
+    // iPad Chrome triggers devicechange when getUserMedia is called
+    if (fromDeviceChange) {
+      const timeSinceLastLoad = Date.now() - lastLoadTimeRef.current;
+      if (timeSinceLastLoad < 2000) {
+        return; // Ignore devicechange events within 2 seconds of last load
+      }
+    }
+
+    isLoadingRef.current = true;
+    lastLoadTimeRef.current = Date.now();
     setIsLoading(true);
     setError(null);
 
@@ -67,16 +85,31 @@ const MicrophoneSelector = ({
       setDevices([]);
     } finally {
       setIsLoading(false);
+      isLoadingRef.current = false;
+      lastLoadTimeRef.current = Date.now(); // Update again after completion
     }
   };
 
   useEffect(() => {
-    loadDevices();
+    loadDevices(false);
 
-    const handleDeviceChange = () => loadDevices();
+    // Handle device changes (e.g., plugging in a new microphone)
+    // Use debounce + time check to prevent loops on iPad Chrome
+    let debounceTimer = null;
+    const handleDeviceChange = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        loadDevices(true); // Mark as from devicechange event
+      }, 500);
+    };
     navigator.mediaDevices?.addEventListener('devicechange', handleDeviceChange);
 
     return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
       navigator.mediaDevices?.removeEventListener('devicechange', handleDeviceChange);
     };
   }, []);

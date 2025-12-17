@@ -19,9 +19,9 @@ import wordpressAPI from './wordpress-api.js';
 
 /**
  * Enable/disable detailed prompt logging
- * Set to true to see full prompts in console
+ * Set to true for development debugging only
  */
-const DEBUG_PROMPTS = true;
+const DEBUG_PROMPTS = false;
 
 /**
  * Logs a Gemini prompt with full context for debugging
@@ -187,15 +187,17 @@ async function callGeminiWithFallback({ apiKey, content, context }) {
     throw new Error(ERROR_MESSAGES.API_KEY_MISSING);
   }
 
-  console.log(`🚀 ${logPrefix} Starting request...`);
-  console.log(`🔑 ${logPrefix} API Key: ${maskApiKey(apiKey)}`);
+  if (DEBUG_PROMPTS) {
+    console.log(`🚀 ${logPrefix} Starting request...`);
+    console.log(`🔑 ${logPrefix} API Key: ${maskApiKey(apiKey)}`);
+  }
 
   let lastError = null;
 
   // Try each model in sequence
   for (const currentModel of GEMINI_MODELS.FALLBACK_ORDER) {
     try {
-      console.log(`🔄 ${logPrefix} Trying model: ${currentModel}`);
+      if (DEBUG_PROMPTS) console.log(`🔄 ${logPrefix} Trying model: ${currentModel}`);
 
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: currentModel });
@@ -204,7 +206,7 @@ async function callGeminiWithFallback({ apiKey, content, context }) {
       const response = await result.response;
       const text = response.text();
 
-      console.log(`✅ ${logPrefix} Success with ${currentModel} (${text.length} chars)`);
+      if (DEBUG_PROMPTS) console.log(`✅ ${logPrefix} Success with ${currentModel} (${text.length} chars)`);
       return text;
 
     } catch (error) {
@@ -213,7 +215,7 @@ async function callGeminiWithFallback({ apiKey, content, context }) {
 
       // Only try next model for 404 errors
       if (isModelNotFoundError(error)) {
-        console.log(`⚠️ ${logPrefix} Model not found, trying next...`);
+        if (DEBUG_PROMPTS) console.log(`⚠️ ${logPrefix} Model not found, trying next...`);
         continue;
       }
 
@@ -244,7 +246,7 @@ export async function listAvailableModels(apiKey) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const models = await genAI.listModels();
 
-  console.log(`📋 [GEMINI] Found ${models.length} models`);
+  if (DEBUG_PROMPTS) console.log(`📋 [GEMINI] Found ${models.length} models`);
   return models;
 }
 
@@ -274,10 +276,12 @@ export async function generateInterviewFeedback(
     throw new Error(ERROR_MESSAGES.TRANSCRIPT_EMPTY);
   }
 
-  console.log(`📝 [GEMINI FEEDBACK] Transcript length: ${transcript.length} chars`);
-  console.log(`📝 [GEMINI FEEDBACK] Custom prompt: ${customPrompt ? 'Yes' : 'No'}`);
-  console.log(`📝 [GEMINI FEEDBACK] Role type: ${roleOptions.roleType || 'interview (default)'}`);
-  console.log(`📝 [GEMINI FEEDBACK] User role label: ${roleOptions.userRoleLabel || 'Bewerber (default)'}`);
+  if (DEBUG_PROMPTS) {
+    console.log(`📝 [GEMINI FEEDBACK] Transcript length: ${transcript.length} chars`);
+    console.log(`📝 [GEMINI FEEDBACK] Custom prompt: ${customPrompt ? 'Yes' : 'No'}`);
+    console.log(`📝 [GEMINI FEEDBACK] Role type: ${roleOptions.roleType || 'interview (default)'}`);
+    console.log(`📝 [GEMINI FEEDBACK] User role label: ${roleOptions.userRoleLabel || 'Bewerber (default)'}`);
+  }
 
   // Build prompt - pass role options to getFeedbackPrompt
   const prompt = customPrompt
@@ -356,15 +360,17 @@ export async function generateAudioAnalysis(
   const agentRoleLabel = roleOptions.agentRoleLabel || 'Gesprächspartner';
   const roleType = roleOptions.roleType || 'interview';
 
-  console.log(`🎵 [GEMINI AUDIO] File size: ${audioFile.size} bytes`);
-  console.log(`🎵 [GEMINI AUDIO] File type: ${audioFile.type}`);
-  console.log(`🎵 [GEMINI AUDIO] Role type: ${roleType}`);
-  console.log(`🎵 [GEMINI AUDIO] User role: ${userRoleLabel}`);
+  if (DEBUG_PROMPTS) {
+    console.log(`🎵 [GEMINI AUDIO] File size: ${audioFile.size} bytes`);
+    console.log(`🎵 [GEMINI AUDIO] File type: ${audioFile.type}`);
+    console.log(`🎵 [GEMINI AUDIO] Role type: ${roleType}`);
+    console.log(`🎵 [GEMINI AUDIO] User role: ${userRoleLabel}`);
+  }
 
   // Convert audio to base64
-  console.log('🔄 [GEMINI AUDIO] Converting audio to base64...');
+  if (DEBUG_PROMPTS) console.log('🔄 [GEMINI AUDIO] Converting audio to base64...');
   const audioPart = await audioFileToBase64(audioFile);
-  console.log('✅ [GEMINI AUDIO] Audio converted');
+  if (DEBUG_PROMPTS) console.log('✅ [GEMINI AUDIO] Audio converted');
 
   // Build content array with prompt and audio
   const prompt = getAudioAnalysisPrompt({ userRoleLabel, agentRoleLabel, roleType });
@@ -435,9 +441,11 @@ export async function analyzeRhetoricGame(
     throw new Error(ERROR_MESSAGES.AUDIO_FILE_MISSING);
   }
 
-  console.log(`🎮 [GEMINI GAME] Starting rhetoric game analysis`);
-  console.log(`🎮 [GEMINI GAME] Topic: ${topic}`);
-  console.log(`🎮 [GEMINI GAME] File size: ${audioFile.size} bytes`);
+  if (DEBUG_PROMPTS) {
+    console.log(`🎮 [GEMINI GAME] Starting rhetoric game analysis`);
+    console.log(`🎮 [GEMINI GAME] Topic: ${topic}`);
+    console.log(`🎮 [GEMINI GAME] File size: ${audioFile.size} bytes`);
+  }
 
   // Convert audio to base64
   const audioPart = await audioFileToBase64(audioFile);
@@ -478,8 +486,10 @@ export async function analyzeRhetoricGame(
 
     const result = JSON.parse(cleanedResponse);
 
-    console.log(`✅ [GEMINI GAME] Analysis complete`);
-    console.log(`✅ [GEMINI GAME] Transcript: ${result.transcript?.substring(0, 50)}...`);
+    if (DEBUG_PROMPTS) {
+      console.log(`✅ [GEMINI GAME] Analysis complete`);
+      console.log(`✅ [GEMINI GAME] Transcript: ${result.transcript?.substring(0, 50)}...`);
+    }
 
     // Return simplified format - scoring is done locally
     return {

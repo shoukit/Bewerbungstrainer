@@ -75,14 +75,14 @@ class Bewerbungstrainer_Game_API {
         register_rest_route($namespace, '/game/sessions', array(
             'methods' => 'POST',
             'callback' => array($this, 'create_game_session'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // GET /game/sessions - Get user's game sessions
         register_rest_route($namespace, '/game/sessions', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_game_sessions'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // GET /game/sessions/(?P<id>\d+) - Get specific session
@@ -112,7 +112,7 @@ class Bewerbungstrainer_Game_API {
         register_rest_route($namespace, '/game/stats', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_user_stats'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'allow_all_users'),
         ));
 
         // GET /game/leaderboard - Get leaderboard
@@ -135,6 +135,27 @@ class Bewerbungstrainer_Game_API {
      */
     public function check_user_permission() {
         return is_user_logged_in();
+    }
+
+    /**
+     * Permission callback - allow all users (logged in or not)
+     * For game sessions, we do internal user checks in the endpoint methods
+     */
+    public function allow_all_users($request) {
+        // If user is logged in, verify nonce for security
+        if (is_user_logged_in()) {
+            $nonce = $request->get_header('X-WP-Nonce');
+            if (!$nonce) {
+                $nonce = $request->get_param('_wpnonce');
+            }
+            if ($nonce && wp_verify_nonce($nonce, 'wp_rest')) {
+                return true;
+            }
+            // For logged-in users without valid nonce, still allow (demo users may not have proper cookies)
+            return true;
+        }
+        // For non-logged-in users, allow access (demo code users)
+        return true;
     }
 
     // ===== Scenario Template Endpoints =====

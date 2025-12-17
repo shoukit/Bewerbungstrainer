@@ -21,7 +21,6 @@ function VideoTrainingApp() {
    * Handle wizard completion
    */
   const handleWizardComplete = (data) => {
-    console.log('Wizard completed with data:', data);
     setTrainingData(data);
     setCurrentStep('recording');
   };
@@ -30,7 +29,6 @@ function VideoTrainingApp() {
    * Handle recording completion
    */
   const handleRecordingComplete = (results) => {
-    console.log('Recording completed with results:', results);
     setAnalysisResults(results);
     setCurrentStep('feedback');
   };

@@ -26,9 +26,6 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  * @throws {Error} - If the download fails or audio saving is not enabled
  */
 export async function downloadConversationAudio(conversationId, apiKey, maxRetries = 5, retryDelayMs = 3000) {
-  console.log('🎵 [ELEVENLABS] Starting conversation audio download...');
-  console.log(`🆔 [ELEVENLABS] Conversation ID: ${conversationId}`);
-  console.log(`🔄 [ELEVENLABS] Max retries: ${maxRetries}, delay: ${retryDelayMs}ms`);
 
   if (!conversationId) {
     throw new Error('Conversation ID is required');
@@ -40,16 +37,13 @@ export async function downloadConversationAudio(conversationId, apiKey, maxRetri
 
   // Log API key (partially masked for security)
   const maskedKey = apiKey.substring(0, 8) + '...' + apiKey.substring(apiKey.length - 4);
-  console.log(`🔑 [ELEVENLABS] API Key: ${maskedKey}`);
 
   const url = `${ELEVENLABS_API_BASE}/convai/conversations/${conversationId}/audio`;
-  console.log(`📡 [ELEVENLABS] Request URL: ${url}`);
 
   let lastError = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`📤 [ELEVENLABS] Attempt ${attempt}/${maxRetries} - Sending download request...`);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -58,14 +52,10 @@ export async function downloadConversationAudio(conversationId, apiKey, maxRetri
         },
       });
 
-      console.log(`📥 [ELEVENLABS] Response status: ${response.status} ${response.statusText}`);
 
       if (response.ok) {
         // Get the audio blob
         const audioBlob = await response.blob();
-        console.log(`✅ [ELEVENLABS] Audio downloaded successfully on attempt ${attempt}`);
-        console.log(`📊 [ELEVENLABS] Audio size: ${audioBlob.size} bytes`);
-        console.log(`🎵 [ELEVENLABS] Audio type: ${audioBlob.type}`);
 
         if (audioBlob.size === 0) {
           throw new Error('Das heruntergeladene Audio ist leer. Möglicherweise wurde keine Audio-Aufnahme gespeichert.');
@@ -92,7 +82,6 @@ export async function downloadConversationAudio(conversationId, apiKey, maxRetri
 
       // For 404, retry since audio might not be ready yet
       if (response.status === 404 && attempt < maxRetries) {
-        console.log(`⏳ [ELEVENLABS] Audio not ready yet (404), waiting ${retryDelayMs}ms before retry...`);
         await delay(retryDelayMs);
         continue;
       }
@@ -126,8 +115,6 @@ export async function downloadConversationAudio(conversationId, apiKey, maxRetri
 
       // Retry for network errors
       if (attempt < maxRetries) {
-        console.log(`⚠️ [ELEVENLABS] Error on attempt ${attempt}, retrying in ${retryDelayMs}ms...`);
-        console.log(`⚠️ [ELEVENLABS] Error: ${error.message}`);
         await delay(retryDelayMs);
       }
     }
@@ -146,8 +133,6 @@ export async function downloadConversationAudio(conversationId, apiKey, maxRetri
  * @returns {Promise<Object>} - Conversation details
  */
 export async function getConversationInfo(conversationId, apiKey) {
-  console.log('📋 [ELEVENLABS] Fetching conversation info...');
-  console.log(`🆔 [ELEVENLABS] Conversation ID: ${conversationId}`);
 
   if (!conversationId) {
     throw new Error('Conversation ID is required');
@@ -158,7 +143,6 @@ export async function getConversationInfo(conversationId, apiKey) {
   }
 
   const url = `${ELEVENLABS_API_BASE}/convai/conversations/${conversationId}`;
-  console.log(`📡 [ELEVENLABS] Request URL: ${url}`);
 
   try {
     const response = await fetch(url, {
@@ -168,7 +152,6 @@ export async function getConversationInfo(conversationId, apiKey) {
       },
     });
 
-    console.log(`📥 [ELEVENLABS] Response status: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -184,8 +167,6 @@ export async function getConversationInfo(conversationId, apiKey) {
     }
 
     const conversationData = await response.json();
-    console.log('✅ [ELEVENLABS] Conversation info retrieved successfully');
-    console.log('📊 [ELEVENLABS] Conversation data:', conversationData);
 
     return conversationData;
 

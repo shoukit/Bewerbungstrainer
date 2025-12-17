@@ -51,7 +51,6 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
         if (isDemoUser) {
           // Mark demo process as pending - user will be logged out on refresh if not completed
           localStorage.setItem('bewerbungstrainer_demo_pending', 'true');
-          console.log('[LOGIN] Demo process pending, will logout on refresh if not completed');
 
           // Store user data and show demo modal
           setDemoUser(result.user);
@@ -87,11 +86,9 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
 
   // Handle demo code success
   const handleDemoSuccess = (code) => {
-    console.log('[LOGIN] Demo code activated:', code);
 
     // Clear the demo pending flag - process is now complete
     localStorage.removeItem('bewerbungstrainer_demo_pending');
-    console.log('[LOGIN] Demo process completed, pending flag cleared');
 
     // Store the demo code in context
     if (setDemoCode) {
@@ -116,7 +113,6 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
 
   // Handle demo modal close (cancel demo registration)
   const handleDemoCancel = async () => {
-    console.log('[LOGIN] Demo registration cancelled, logging out...');
 
     // Clear the demo pending flag
     localStorage.removeItem('bewerbungstrainer_demo_pending');

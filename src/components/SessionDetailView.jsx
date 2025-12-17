@@ -44,7 +44,6 @@ function useAudioPlayer(sessionId, conversationId) {
     if (!conversationId) return;
 
     const audioUrl = getRoleplaySessionAudioUrl(sessionId);
-    console.log('🎵 [AUDIO] Loading audio:', audioUrl);
 
     setIsLoading(true);
     setAudioError(null);
@@ -258,7 +257,6 @@ function SessionDetailView({ session, onBack }) {
   const handleJumpToTimestamp = useCallback(
     (timeString) => {
       const seconds = parseTimestamp(timeString);
-      console.log(`🎯 [SESSION] Jump to ${timeString} (${seconds}s)`);
       audio.seekToTime(seconds);
       if (audio.audioRef.current && !audio.isPlaying) {
         audio.audioRef.current.play().catch(() => {});

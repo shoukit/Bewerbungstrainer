@@ -740,11 +740,9 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
             transcript: fullResult.transcript,
             analysis_json: JSON.stringify(fullResult),
           };
-          console.log('🎮 [GameSession] Saving game session:', sessionData);
-          const saveResult = await wordpressAPI.createGameSession(sessionData);
-          console.log('🎮 [GameSession] Save result:', saveResult);
+          await wordpressAPI.createGameSession(sessionData);
         } catch (saveError) {
-          console.error('🎮 [GameSession] Failed to save game session:', saveError);
+          console.error('[GameSession] Failed to save game session:', saveError);
         }
       } catch (analysisError) {
         console.error('Analysis failed:', analysisError);

@@ -44,7 +44,6 @@ import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
 
-console.log('📦 [SESSION_HISTORY] SessionHistory module loaded');
 
 /**
  * Tab configuration
@@ -881,7 +880,6 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
 };
 
 const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession, initialTab, onNavigateToModule }) => {
-  console.log('🏗️ [SESSION_HISTORY] SessionHistory component initialized');
 
   // Partner branding
   const { branding, demoCode, isDemoUser } = usePartner();
@@ -1077,7 +1075,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Handle session click
   const handleSessionClick = (session) => {
     // Use unified TrainingSessionDetailView for all session types
-    console.log('Session clicked:', activeTab, session);
     setSelectedTrainingSession(session);
     setSelectedSessionType(activeTab);
   };

@@ -670,6 +670,13 @@ const DeviceSetupPage = ({
   const [cameraError, setCameraError] = useState(null);
   const [showMicTest, setShowMicTest] = useState(false);
 
+  // Track when we last loaded devices to prevent loops on iPad Chrome
+  const lastLoadTimeRef = useRef(0);
+  const isLoadingRef = useRef(false);
+  // Use refs to track selected devices without causing useCallback recreation
+  const selectedMicRef = useRef(null);
+  const selectedCamRef = useRef(null);
+
   // Partner theming
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -679,8 +686,26 @@ const DeviceSetupPage = ({
 
   const includeVideo = mode === 'audio-video';
 
-  // Load devices
-  const loadDevices = useCallback(async () => {
+  // Keep refs in sync with state
+  selectedMicRef.current = selectedMicrophoneId;
+  selectedCamRef.current = selectedCameraId;
+
+  // Load devices - use refs to avoid recreating callback when device IDs change
+  const loadDevices = useCallback(async (fromDeviceChange = false) => {
+    // Prevent re-entrancy and ignore devicechange events triggered by our own getUserMedia
+    if (isLoadingRef.current) return;
+
+    // If this is from a devicechange event, check if it's too soon after last load
+    // iPad Chrome triggers devicechange when getUserMedia is called
+    if (fromDeviceChange) {
+      const timeSinceLastLoad = Date.now() - lastLoadTimeRef.current;
+      if (timeSinceLastLoad < 2000) {
+        return; // Ignore devicechange events within 2 seconds of last load
+      }
+    }
+
+    isLoadingRef.current = true;
+    lastLoadTimeRef.current = Date.now();
     setDevicesLoading(true);
     setMicError(null);
     if (includeVideo) setCameraError(null);
@@ -704,7 +729,8 @@ const DeviceSetupPage = ({
         setAudioDevices([]);
       } else {
         setAudioDevices(audioInputs);
-        if (!selectedMicrophoneId) {
+        // Use ref to check current value without dependency
+        if (!selectedMicRef.current) {
           const defaultMic = audioInputs.find(d => d.deviceId === 'default') || audioInputs[0];
           setSelectedMicrophoneId(defaultMic.deviceId);
         }
@@ -717,7 +743,8 @@ const DeviceSetupPage = ({
           setVideoDevices([]);
         } else {
           setVideoDevices(videoInputs);
-          if (!selectedCameraId) {
+          // Use ref to check current value without dependency
+          if (!selectedCamRef.current) {
             const defaultCam = videoInputs.find(d => d.deviceId === 'default') || videoInputs[0];
             setSelectedCameraId(defaultCam.deviceId);
           }
@@ -737,16 +764,31 @@ const DeviceSetupPage = ({
       }
     } finally {
       setDevicesLoading(false);
+      isLoadingRef.current = false;
+      lastLoadTimeRef.current = Date.now(); // Update again after completion
     }
-  }, [includeVideo, selectedMicrophoneId, selectedCameraId]);
+  }, [includeVideo]); // Only depend on includeVideo which doesn't change
 
   useEffect(() => {
-    loadDevices();
+    loadDevices(false);
 
-    const handleDeviceChange = () => loadDevices();
+    // Handle device changes (e.g., plugging in a new microphone)
+    // Use debounce + time check to prevent loops on iPad Chrome
+    let debounceTimer = null;
+    const handleDeviceChange = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        loadDevices(true); // Mark as from devicechange event
+      }, 500);
+    };
     navigator.mediaDevices?.addEventListener('devicechange', handleDeviceChange);
 
     return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
       navigator.mediaDevices?.removeEventListener('devicechange', handleDeviceChange);
     };
   }, []);

@@ -180,7 +180,6 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   const handleSelectScenario = (scenario) => {
     // Check authentication before allowing scenario selection
     if (!isAuthenticated) {
-      console.log('🔐 [SimulatorDashboard] Auth required - storing pending scenario:', scenario.title);
       // Store the scenario as pending
       if (setPendingScenario) {
         setPendingScenario(scenario);
@@ -229,7 +228,6 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
 
   // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
-    console.log('🔄 [SimulatorDashboard] Loading scenarios...');
     loadScenarios();
   }, []);
 

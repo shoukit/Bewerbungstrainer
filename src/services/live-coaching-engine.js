@@ -119,7 +119,6 @@ export async function generateLiveCoaching({
   }
 
   if (!nextAgentInput || nextAgentInput.trim().length === 0) {
-    console.log(`${logPrefix} No agent input to analyze`);
     return DEFAULT_COACHING;
   }
 
@@ -133,12 +132,10 @@ export async function generateLiveCoaching({
     nextAgentInput,
   });
 
-  console.log(`${logPrefix} Generating coaching for: "${nextAgentInput.substring(0, 50)}..."`);
 
   // Try each model until one works
   for (const modelName of COACHING_FALLBACK_MODELS) {
     try {
-      console.log(`${logPrefix} Trying model: ${modelName}`);
 
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: modelName });
@@ -147,14 +144,10 @@ export async function generateLiveCoaching({
       const response = await result.response;
       const text = response.text();
 
-      console.log(`${logPrefix} Success with ${modelName}`);
 
       const coaching = parseCoachingResponse(text);
 
       // Log result for debugging
-      console.log(`${logPrefix} Generated impulses:`, coaching.content_impulses);
-      console.log(`${logPrefix} Behavioral cue:`, coaching.behavioral_cue);
-      console.log(`${logPrefix} Strategic bridge:`, coaching.strategic_bridge);
 
       return coaching;
 
@@ -162,7 +155,6 @@ export async function generateLiveCoaching({
       console.error(`${logPrefix} Error with ${modelName}:`, error.message);
 
       if (isModelNotFoundError(error)) {
-        console.log(`${logPrefix} Model not found, trying next...`);
         continue;
       }
 

@@ -33,7 +33,6 @@ const VideoTrainingDeviceSetup = ({
       const apiUrl = getWPApiUrl();
 
       // 1. Create session
-      console.log('[VIDEO TRAINING] Creating session...');
       const createResponse = await fetch(`${apiUrl}/video-training/sessions`, {
         method: 'POST',
         headers: {
@@ -59,10 +58,8 @@ const VideoTrainingDeviceSetup = ({
         throw new Error('Keine Session-ID erhalten');
       }
 
-      console.log('[VIDEO TRAINING] Session created:', session.id);
 
       // 2. Generate questions
-      console.log('[VIDEO TRAINING] Generating questions...');
       const questionsResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/questions`, {
         method: 'POST',
         headers: {
@@ -80,7 +77,6 @@ const VideoTrainingDeviceSetup = ({
       const questionsData = await questionsResponse.json();
       const questions = questionsData.data?.questions || questionsData.questions || [];
 
-      console.log('[VIDEO TRAINING] Generated', questions.length, 'questions');
 
       // 3. Start the session
       onStart({

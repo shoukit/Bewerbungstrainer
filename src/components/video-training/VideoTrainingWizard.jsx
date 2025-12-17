@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft, Video, Info, Loader2, AlertCircle, ChevronRight, Settings, Sparkles, Mic, Camera, ChevronDown, RefreshCw } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { motion } from 'framer-motion';
@@ -373,14 +373,39 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   const [micError, setMicError] = useState(null);
   const [cameraError, setCameraError] = useState(null);
 
+  // Track when we last loaded devices to prevent loops on iPad Chrome
+  const lastLoadTimeRef = useRef(0);
+  const isLoadingRef = useRef(false);
+  // Use refs to track selected devices without causing useCallback recreation
+  const selectedMicRef = useRef(null);
+  const selectedCamRef = useRef(null);
+
   const { branding, demoCode } = usePartner();
 
   // Get themed styles
   const themedGradient = branding?.headerGradient || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
   const primaryAccent = branding?.primaryAccent || '#3A7FA7';
 
-  // Load available devices on mount
-  const loadDevices = useCallback(async () => {
+  // Keep refs in sync with state
+  selectedMicRef.current = selectedMicrophoneId;
+  selectedCamRef.current = selectedCameraId;
+
+  // Load available devices on mount - use refs to avoid recreating callback
+  const loadDevices = useCallback(async (fromDeviceChange = false) => {
+    // Prevent re-entrancy and ignore devicechange events triggered by our own getUserMedia
+    if (isLoadingRef.current) return;
+
+    // If this is from a devicechange event, check if it's too soon after last load
+    // iPad Chrome triggers devicechange when getUserMedia is called
+    if (fromDeviceChange) {
+      const timeSinceLastLoad = Date.now() - lastLoadTimeRef.current;
+      if (timeSinceLastLoad < 2000) {
+        return; // Ignore devicechange events within 2 seconds of last load
+      }
+    }
+
+    isLoadingRef.current = true;
+    lastLoadTimeRef.current = Date.now();
     setDevicesLoading(true);
     setMicError(null);
     setCameraError(null);
@@ -401,7 +426,8 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         setAudioDevices([]);
       } else {
         setAudioDevices(audioInputs);
-        if (!selectedMicrophoneId) {
+        // Use ref to check current value without dependency
+        if (!selectedMicRef.current) {
           const defaultMic = audioInputs.find(d => d.deviceId === 'default') || audioInputs[0];
           setSelectedMicrophoneId(defaultMic.deviceId);
         }
@@ -413,7 +439,8 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         setVideoDevices([]);
       } else {
         setVideoDevices(videoInputs);
-        if (!selectedCameraId) {
+        // Use ref to check current value without dependency
+        if (!selectedCamRef.current) {
           const defaultCam = videoInputs.find(d => d.deviceId === 'default') || videoInputs[0];
           setSelectedCameraId(defaultCam.deviceId);
         }
@@ -434,17 +461,31 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       setVideoDevices([]);
     } finally {
       setDevicesLoading(false);
+      isLoadingRef.current = false;
+      lastLoadTimeRef.current = Date.now(); // Update again after completion
     }
-  }, [selectedMicrophoneId, selectedCameraId]);
+  }, []); // No dependencies - uses refs instead
 
   useEffect(() => {
-    loadDevices();
+    loadDevices(false);
 
-    // Listen for device changes
-    const handleDeviceChange = () => loadDevices();
+    // Handle device changes (e.g., plugging in a new microphone)
+    // Use debounce + time check to prevent loops on iPad Chrome
+    let debounceTimer = null;
+    const handleDeviceChange = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        loadDevices(true); // Mark as from devicechange event
+      }, 500);
+    };
     navigator.mediaDevices?.addEventListener('devicechange', handleDeviceChange);
 
     return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
       navigator.mediaDevices?.removeEventListener('devicechange', handleDeviceChange);
     };
   }, []);
@@ -490,7 +531,6 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       const apiUrl = getWPApiUrl();
 
       // Step 1: Create session
-      console.log('[VIDEO TRAINING] Creating session...');
       const createResponse = await fetch(`${apiUrl}/video-training/sessions`, {
         method: 'POST',
         headers: {
@@ -515,10 +555,8 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       }
 
       const session = createData.data.session;
-      console.log('[VIDEO TRAINING] Session created:', session.id);
 
       // Step 2: Generate questions
-      console.log('[VIDEO TRAINING] Generating questions...');
       const questionsResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/questions`, {
         method: 'POST',
         headers: {
@@ -537,7 +575,6 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         throw new Error('Fehler beim Generieren der Fragen');
       }
 
-      console.log('[VIDEO TRAINING] Questions generated:', questionsData.data.questions.length);
 
       // Start the session with selected devices
       onStart({

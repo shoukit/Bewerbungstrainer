@@ -168,6 +168,7 @@ const SessionSidebar = ({
 
         {/* Coaching Tab */}
         <button
+          data-tab-button="true"
           onClick={() => setActiveTab('coaching')}
           onMouseEnter={() => setHoveredTab('coaching')}
           onMouseLeave={() => setHoveredTab(null)}
@@ -194,6 +195,7 @@ const SessionSidebar = ({
 
         {/* Analysen Tab */}
         <button
+          data-tab-button="true"
           onClick={() => setActiveTab('analysen')}
           onMouseEnter={() => setHoveredTab('analysen')}
           onMouseLeave={() => setHoveredTab(null)}
