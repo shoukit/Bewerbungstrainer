@@ -77,7 +77,6 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
       const data = await response.json();
 
       if (data.success) {
-        console.log('[DISCLAIMER] Acknowledged, dont_show_again:', dontShowAgain);
         if (onAcknowledge) {
           onAcknowledge(dontShowAgain);
         }

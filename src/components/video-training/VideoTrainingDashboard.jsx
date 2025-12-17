@@ -109,7 +109,6 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
 
   // Fetch scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
-    console.log('🔄 [VideoTrainingDashboard] Loading scenarios...');
     fetchScenarios();
   }, []);
 

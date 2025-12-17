@@ -1018,7 +1018,6 @@ const SimulatorSession = ({
       // 2. Generate or use preloaded questions
       let newQuestions;
       if (preloadedQuestions && preloadedQuestions.length > 0) {
-        console.log('🔁 [SimulatorSession] Using preloaded questions for repeat session');
         newQuestions = preloadedQuestions;
         await wordpressAPI.updateSimulatorSessionQuestions(newSession.id, newQuestions);
       } else {

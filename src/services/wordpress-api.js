@@ -42,7 +42,6 @@ class WordPressAPI {
 
         // Always get fresh nonce at request time
         const currentNonce = this.getNonce();
-        console.log(`🔐 [WordPressAPI] Request to ${endpoint} with nonce: ${currentNonce?.substring(0, 10)}...`);
 
         const defaultOptions = {
             headers: {
@@ -328,11 +327,9 @@ class WordPressAPI {
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                console.log(`🔄 [SimulatorAPI] Generating questions (attempt ${attempt}/${maxRetries})...`);
                 const result = await this.request(`/simulator/sessions/${sessionId}/questions`, {
                     method: 'POST'
                 });
-                console.log(`✅ [SimulatorAPI] Questions generated successfully on attempt ${attempt}`);
                 return result;
             } catch (error) {
                 lastError = error;
@@ -341,7 +338,6 @@ class WordPressAPI {
                 if (attempt < maxRetries) {
                     // Wait before retrying (exponential backoff: 1s, 2s, 4s)
                     const waitTime = Math.pow(2, attempt - 1) * 1000;
-                    console.log(`⏳ [SimulatorAPI] Retrying in ${waitTime/1000}s...`);
                     await new Promise(resolve => setTimeout(resolve, waitTime));
                 }
             }
@@ -718,7 +714,6 @@ class WordPressAPI {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
-            console.log(`📝 [WordPressAPI] Logged prompt: ${scenario}`);
         } catch (error) {
             // Don't throw - logging should not break the main flow
             console.warn(`⚠️ [WordPressAPI] Failed to log prompt: ${error.message}`);
@@ -738,7 +733,6 @@ class WordPressAPI {
                 method: 'GET'
             });
 
-            console.log('📊 [WordPressAPI] Usage limits:', response.data);
             return response.data;
         } catch (error) {
             console.error('❌ [WordPressAPI] Failed to get usage limits:', error);

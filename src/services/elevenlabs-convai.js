@@ -56,7 +56,6 @@ class ElevenLabsConvAIService {
     this.startTime = Date.now();
     this.transcript = [];
 
-    console.log('[ElevenLabs ConvAI] Starting conversation with agent:', agentId);
 
     try {
       // Request microphone access
@@ -83,7 +82,6 @@ class ElevenLabsConvAIService {
    */
   async initAudioInput() {
     try {
-      console.log('[ElevenLabs ConvAI] Requesting microphone access...');
 
       this.micStream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -93,7 +91,6 @@ class ElevenLabsConvAIService {
         },
       });
 
-      console.log('[ElevenLabs ConvAI] Microphone access granted');
 
       // Setup audio context for monitoring
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -149,13 +146,11 @@ class ElevenLabsConvAIService {
     return new Promise((resolve, reject) => {
       const wsUrl = `wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${this.agentId}`;
 
-      console.log('[ElevenLabs ConvAI] Connecting to:', wsUrl);
 
       this.ws = new WebSocket(wsUrl);
 
       // Setup event handlers
       this.ws.onopen = () => {
-        console.log('[ElevenLabs ConvAI] WebSocket connected');
         this.isConnected = true;
         this.isConnecting = false;
 
@@ -182,12 +177,8 @@ class ElevenLabsConvAIService {
           initMessage.conversation_config_override.agent.dynamic_variables = options.variables;
         }
 
-        console.log('[ElevenLabs ConvAI] 📤 Sending to ElevenLabs');
-        console.log('[ElevenLabs ConvAI] Variables:', JSON.stringify(options.variables, null, 2));
-        console.log('[ElevenLabs ConvAI] Full message:', JSON.stringify(initMessage, null, 2));
 
         this.ws.send(JSON.stringify(initMessage));
-        console.log('[ElevenLabs ConvAI] ✅ Init sent');
 
         if (this.onConnected) {
           this.onConnected();
@@ -208,7 +199,6 @@ class ElevenLabsConvAIService {
       };
 
       this.ws.onclose = (event) => {
-        console.log('[ElevenLabs ConvAI] WebSocket closed:', event.code, event.reason);
         this.isConnected = false;
 
         this.cleanup();
@@ -250,7 +240,6 @@ class ElevenLabsConvAIService {
 
       // Parse JSON message
       const message = JSON.parse(event.data);
-      console.log('[ElevenLabs ConvAI] Received message:', message.type);
 
       if (this.onMessage) {
         this.onMessage(message);
@@ -260,7 +249,6 @@ class ElevenLabsConvAIService {
       switch (message.type) {
         case 'conversation_initiation_metadata':
           this.conversationId = message.conversation_initiation_metadata_event?.conversation_id;
-          console.log('[ElevenLabs ConvAI] Conversation ID:', this.conversationId);
           break;
 
         case 'audio':
@@ -277,7 +265,6 @@ class ElevenLabsConvAIService {
           // User (customer) speech transcription
           const userText = message.user_transcription_event?.user_transcript;
           if (userText) {
-            console.log('[ElevenLabs ConvAI] User said:', userText);
             this.transcript.push({
               role: 'user',
               text: userText,
@@ -298,7 +285,6 @@ class ElevenLabsConvAIService {
           // Agent speech transcription
           const agentText = message.agent_response_event?.agent_response;
           if (agentText) {
-            console.log('[ElevenLabs ConvAI] Agent said:', agentText);
             this.transcript.push({
               role: 'agent',
               text: agentText,
@@ -316,7 +302,6 @@ class ElevenLabsConvAIService {
           break;
 
         case 'interruption':
-          console.log('[ElevenLabs ConvAI] User interrupted agent');
           break;
 
         case 'ping':
@@ -327,7 +312,6 @@ class ElevenLabsConvAIService {
           break;
 
         case 'conversation_end':
-          console.log('[ElevenLabs ConvAI] Conversation ended by agent');
           if (this.onEnd) {
             this.onEnd();
           }
@@ -335,7 +319,6 @@ class ElevenLabsConvAIService {
           break;
 
         default:
-          console.log('[ElevenLabs ConvAI] Unknown message type:', message.type);
       }
     } catch (error) {
       console.error('[ElevenLabs ConvAI] Error handling message:', error);
@@ -365,12 +348,10 @@ class ElevenLabsConvAIService {
    * Stop the conversation
    */
   stopConversation() {
-    console.log('[ElevenLabs ConvAI] Stopping conversation');
 
     // Calculate duration
     if (this.startTime) {
       this.duration = Math.round((Date.now() - this.startTime) / 1000); // in seconds
-      console.log('[ElevenLabs ConvAI] Conversation duration:', this.duration, 'seconds');
     }
 
     // Close WebSocket

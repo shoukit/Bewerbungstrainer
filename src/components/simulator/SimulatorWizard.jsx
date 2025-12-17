@@ -339,7 +339,6 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
       let questions;
       if (preloadedQuestions && preloadedQuestions.length > 0) {
         // Use preloaded questions - skip generation
-        console.log('🔁 [SimulatorWizard] Using preloaded questions for repeat session');
         questions = preloadedQuestions;
         // Update session with questions_json
         await wordpressAPI.updateSimulatorSessionQuestions(session.id, questions);

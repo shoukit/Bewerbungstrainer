@@ -257,7 +257,6 @@ function SessionDetailView({ session, onBack }) {
   const handleJumpToTimestamp = useCallback(
     (timeString) => {
       const seconds = parseTimestamp(timeString);
-      console.log(`🎯 [SESSION] Jump to ${timeString} (${seconds}s)`);
       audio.seekToTime(seconds);
       if (audio.audioRef.current && !audio.isPlaying) {
         audio.audioRef.current.play().catch(() => {});

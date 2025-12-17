@@ -49,7 +49,6 @@ const VideoTrainingApp = ({
   // Handle external pending scenario from App.jsx (after login redirect)
   useEffect(() => {
     if (externalPendingScenario && isAuthenticated) {
-      console.log('[VIDEO TRAINING] Processing external pending scenario after login:', externalPendingScenario.title);
       setSelectedScenario(externalPendingScenario);
       setCurrentView(VIEWS.VARIABLES);
       if (clearPendingScenario) {
@@ -61,7 +60,6 @@ const VideoTrainingApp = ({
   // Handle internal pending scenario after login - automatically open variables page
   useEffect(() => {
     if (internalPendingScenario && isAuthenticated) {
-      console.log('[VIDEO TRAINING] Processing internal pending scenario after login:', internalPendingScenario.title);
       setSelectedScenario(internalPendingScenario);
       setCurrentView(VIEWS.VARIABLES);
       setInternalPendingScenario(null);
@@ -77,7 +75,6 @@ const VideoTrainingApp = ({
    * Handle scenario selection from dashboard
    */
   const handleSelectScenario = useCallback((scenario) => {
-    console.log('[VIDEO TRAINING] Scenario selected:', scenario.title);
     setSelectedScenario(scenario);
     setCurrentView(VIEWS.VARIABLES);
   }, []);
@@ -86,7 +83,6 @@ const VideoTrainingApp = ({
    * Handle back from variables to dashboard
    */
   const handleBackToDashboard = useCallback(() => {
-    console.log('[VIDEO TRAINING] Returning to dashboard');
     setSelectedScenario(null);
     setActiveSession(null);
     setQuestions([]);
@@ -101,7 +97,6 @@ const VideoTrainingApp = ({
    * Handle variables submitted - go to device setup
    */
   const handleVariablesNext = useCallback((collectedVariables) => {
-    console.log('[VIDEO TRAINING] Variables collected, going to device setup');
     setVariables(collectedVariables);
     setCurrentView(VIEWS.DEVICE_SETUP);
   }, []);
@@ -117,7 +112,6 @@ const VideoTrainingApp = ({
    * Handle session start from device setup
    */
   const handleStartSession = useCallback((data) => {
-    console.log('[VIDEO TRAINING] Starting session with', data.questions.length, 'questions');
     setActiveSession(data.session);
     setQuestions(data.questions);
     setVariables(data.variables);
@@ -130,7 +124,6 @@ const VideoTrainingApp = ({
    * Handle session completion
    */
   const handleSessionComplete = useCallback((data) => {
-    console.log('[VIDEO TRAINING] Session completed:', data.session?.id);
     setCompletedSession(data.session);
     setCurrentView(VIEWS.COMPLETE);
   }, []);
@@ -146,7 +139,6 @@ const VideoTrainingApp = ({
    * Handle starting a new session with same scenario
    */
   const handleStartNew = useCallback(() => {
-    console.log('[VIDEO TRAINING] Starting new session with same scenario');
     // Reset session data but keep scenario
     setActiveSession(null);
     setQuestions([]);

@@ -4,7 +4,6 @@ import { User, Briefcase, Building, ChevronRight, CheckCircle, Sparkles, Target,
 import wordpressAPI from '../services/wordpress-api';
 import ConversationStyleSelector from './ConversationStyleSelector';
 
-console.log('📦 [USER_WIZARD] UserWizard module loaded');
 
 /**
  * UserWizard Component
@@ -15,8 +14,6 @@ console.log('📦 [USER_WIZARD] UserWizard module loaded');
  * - company: The company they're applying to
  */
 function UserWizard({ onComplete, initialData = null }) {
-  console.log('🧙 [USER_WIZARD] UserWizard component render');
-  console.log('🧙 [USER_WIZARD] Props:', {
     onComplete: typeof onComplete,
     initialData
   });
@@ -83,20 +80,14 @@ function UserWizard({ onComplete, initialData = null }) {
    * Moves to the next step
    */
   const handleNext = useCallback(() => {
-    console.log('➡️ [USER_WIZARD] handleNext called, step:', step);
     if (validateStep(step)) {
       if (step < totalSteps) {
-        console.log('➡️ [USER_WIZARD] Moving to step:', step + 1);
         setStep(step + 1);
       } else {
         // Final step - submit the form
-        console.log('✅ [USER_WIZARD] Final step - calling onComplete');
-        console.log('✅ [USER_WIZARD] formData:', formData);
-        console.log('✅ [USER_WIZARD] onComplete type:', typeof onComplete);
         onComplete(formData);
       }
     } else {
-      console.log('❌ [USER_WIZARD] Validation failed for step:', step);
     }
   }, [step, totalSteps, formData, onComplete, validateStep]);
 

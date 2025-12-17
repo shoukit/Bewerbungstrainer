@@ -80,14 +80,12 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
       // Code is valid - check if already activated
       if (result.is_activated) {
         // Code already has contact details - skip step 2 and complete
-        console.log('[DEMO] Code already activated, skipping contact form:', demoCode.toUpperCase());
         setIsSuccess(true);
         if (onSuccess) {
           onSuccess(demoCode.toUpperCase().trim());
         }
       } else {
         // Code is new - go to step 2 for contact details
-        console.log('[DEMO] Code valid but new, showing contact form');
         setCurrentStep(2);
       }
     } catch (err) {
@@ -159,7 +157,6 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
       const result = await response.json();
 
       if (result.success) {
-        console.log('[DEMO] Code activated successfully:', demoCode.toUpperCase());
         setIsSuccess(true);
         if (onSuccess) {
           onSuccess(demoCode.toUpperCase().trim());

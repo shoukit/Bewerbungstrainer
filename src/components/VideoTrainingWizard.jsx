@@ -114,7 +114,6 @@ function VideoTrainingWizard({ onComplete }) {
    * Initialize camera and microphone
    */
   const initializeDevices = async () => {
-    console.log('🎥 Initializing devices...');
     setErrors({}); // Clear any previous errors
 
     try {
@@ -213,7 +212,6 @@ function VideoTrainingWizard({ onComplete }) {
         });
       }
 
-      console.log('✅ Device initialization complete');
 
     } catch (error) {
       console.error('❌ Error accessing devices:', error);

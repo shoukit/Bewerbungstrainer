@@ -240,7 +240,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       };
 
       mediaRecorder.onstop = () => {
-        console.log('[VIDEO TRAINING] Recording stopped');
       };
 
       mediaRecorder.start(1000); // Collect data every second
@@ -258,7 +257,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
         setRecordingTime((prev) => prev + 1);
       }, 1000);
 
-      console.log('[VIDEO TRAINING] Recording started');
     } catch (err) {
       console.error('[VIDEO TRAINING] Recording error:', err);
       setError('Fehler beim Starten der Aufnahme');

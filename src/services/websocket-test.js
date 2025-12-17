@@ -17,7 +17,6 @@ const PROXY_URL = 'wss://karriereheld-ws-proxy.onrender.com/ws';
  * @returns {Promise<{success: boolean, error?: string, latency?: number}>}
  */
 export async function testWebSocketConnectivity(agentId, timeoutMs = 5000) {
-  console.log('[WebSocketTest] Starting connectivity test...');
 
   if (!agentId) {
     return {
@@ -54,7 +53,6 @@ export async function testWebSocketConnectivity(agentId, timeoutMs = 5000) {
 
     // Timeout handler
     const timeoutId = setTimeout(() => {
-      console.log('[WebSocketTest] Connection timeout after', timeoutMs, 'ms');
       resolveOnce({
         success: false,
         error: 'Connection timeout - WebSocket may be blocked by firewall',
@@ -67,7 +65,6 @@ export async function testWebSocketConnectivity(agentId, timeoutMs = 5000) {
       ws.onopen = () => {
         clearTimeout(timeoutId);
         const latency = Date.now() - startTime;
-        console.log('[WebSocketTest] Connection successful! Latency:', latency, 'ms');
 
         // Close immediately - we just wanted to test connectivity
         resolveOnce({
@@ -78,7 +75,6 @@ export async function testWebSocketConnectivity(agentId, timeoutMs = 5000) {
 
       ws.onerror = (error) => {
         clearTimeout(timeoutId);
-        console.log('[WebSocketTest] Connection error:', error);
         resolveOnce({
           success: false,
           error: 'WebSocket connection failed - may be blocked by firewall',
@@ -89,7 +85,6 @@ export async function testWebSocketConnectivity(agentId, timeoutMs = 5000) {
         clearTimeout(timeoutId);
         // If we already resolved successfully, ignore close
         if (!resolved) {
-          console.log('[WebSocketTest] Connection closed:', event.code, event.reason);
           // Code 1000 is normal close, anything else might indicate a problem
           if (event.code === 1000) {
             resolveOnce({
@@ -107,7 +102,6 @@ export async function testWebSocketConnectivity(agentId, timeoutMs = 5000) {
 
     } catch (error) {
       clearTimeout(timeoutId);
-      console.log('[WebSocketTest] Exception:', error);
       resolveOnce({
         success: false,
         error: error.message || 'Failed to create WebSocket connection',
@@ -124,7 +118,6 @@ export async function testWebSocketConnectivity(agentId, timeoutMs = 5000) {
  * @returns {Promise<{success: boolean, error?: string, latency?: number}>}
  */
 export async function testProxyConnectivity(agentId, timeoutMs = 5000) {
-  console.log('[WebSocketTest] Testing proxy connectivity...');
 
   if (!agentId) {
     return {
@@ -161,7 +154,6 @@ export async function testProxyConnectivity(agentId, timeoutMs = 5000) {
 
     // Timeout handler
     const timeoutId = setTimeout(() => {
-      console.log('[WebSocketTest] Proxy connection timeout after', timeoutMs, 'ms');
       resolveOnce({
         success: false,
         error: 'Proxy connection timeout',
@@ -174,7 +166,6 @@ export async function testProxyConnectivity(agentId, timeoutMs = 5000) {
       ws.onopen = () => {
         clearTimeout(timeoutId);
         const latency = Date.now() - startTime;
-        console.log('[WebSocketTest] Proxy connection successful! Latency:', latency, 'ms');
 
         // Close immediately - we just wanted to test connectivity
         resolveOnce({
@@ -185,7 +176,6 @@ export async function testProxyConnectivity(agentId, timeoutMs = 5000) {
 
       ws.onerror = (error) => {
         clearTimeout(timeoutId);
-        console.log('[WebSocketTest] Proxy connection error:', error);
         resolveOnce({
           success: false,
           error: 'Proxy connection failed',
@@ -195,7 +185,6 @@ export async function testProxyConnectivity(agentId, timeoutMs = 5000) {
       ws.onclose = (event) => {
         clearTimeout(timeoutId);
         if (!resolved) {
-          console.log('[WebSocketTest] Proxy connection closed:', event.code, event.reason);
           if (event.code === 1000) {
             resolveOnce({
               success: true,
@@ -212,7 +201,6 @@ export async function testProxyConnectivity(agentId, timeoutMs = 5000) {
 
     } catch (error) {
       clearTimeout(timeoutId);
-      console.log('[WebSocketTest] Proxy exception:', error);
       resolveOnce({
         success: false,
         error: error.message || 'Failed to connect to proxy',
@@ -249,7 +237,6 @@ export async function getCachedWebSocketTest(agentId, forceRetest = false) {
       if (cached) {
         const { result, timestamp } = JSON.parse(cached);
         if (Date.now() - timestamp < CACHE_DURATION) {
-          console.log('[WebSocketTest] Using cached result');
           return { ...result, cached: true };
         }
       }
@@ -283,7 +270,6 @@ export async function getCachedWebSocketTest(agentId, forceRetest = false) {
  */
 export async function detectBestConnectionMode(agentId) {
   if (!supportsWebSocket()) {
-    console.log('[WebSocketTest] Browser does not support WebSocket');
     return {
       mode: 'proxy', // Will show error in UI
       directAvailable: false,
@@ -296,7 +282,6 @@ export async function detectBestConnectionMode(agentId) {
   const directResult = await testWebSocketConnectivity(agentId, 5000);
 
   if (directResult.success) {
-    console.log('[WebSocketTest] Direct WebSocket available, using websocket mode');
     return {
       mode: 'websocket',
       directAvailable: true,
@@ -306,11 +291,9 @@ export async function detectBestConnectionMode(agentId) {
   }
 
   // Direct failed - test proxy
-  console.log('[WebSocketTest] Direct WebSocket failed, testing proxy...');
   const proxyResult = await testProxyConnectivity(agentId, 5000);
 
   if (proxyResult.success) {
-    console.log('[WebSocketTest] Proxy available, using proxy mode');
     return {
       mode: 'proxy',
       directAvailable: false,
@@ -321,7 +304,6 @@ export async function detectBestConnectionMode(agentId) {
   }
 
   // Both failed - return proxy mode with error (UI will show error state)
-  console.log('[WebSocketTest] All WebSocket connections blocked');
   return {
     mode: 'proxy', // Default, UI will show error since proxyAvailable is false
     directAvailable: false,

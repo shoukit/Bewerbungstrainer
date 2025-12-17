@@ -26,8 +26,6 @@ import SimulatorScenarioManager from './components/admin/SimulatorScenarioManage
 import VideoTrainingManager from './components/admin/VideoTrainingManager';
 import PartnerManager from './components/admin/PartnerManager';
 
-console.log('📦 [APP] App.jsx module loaded');
-
 /**
  * Loading Spinner Component
  * Shown while partner branding is being loaded
@@ -206,7 +204,6 @@ function getWPHeaderHeight() {
  * AppContent - Inner component with access to auth context
  */
 function AppContent() {
-  console.log('🏗️ [APP] App component initialized');
 
   // Auth context and loading state
   const { isAuthenticated, authLoading, isLoading, demoCode } = usePartner();
@@ -271,7 +268,6 @@ function AppContent() {
   // Check disclaimer status on initial auth (page load when already logged in)
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      console.log('[APP] User authenticated, checking disclaimer status...');
       checkDisclaimerStatus();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -283,7 +279,6 @@ function AppContent() {
   const executePendingAction = useCallback((action) => {
     if (!action) return;
 
-    console.log('🔐 [APP] Executing pending action:', action.type);
 
     switch (action.type) {
       case 'SELECT_ROLEPLAY_SCENARIO':
@@ -330,7 +325,6 @@ function AppContent() {
     }
 
     // User not logged in - store pending action and show login modal
-    console.log('🔐 [APP] Auth required - storing pending action');
     if (actionData) {
       setPendingAction(actionData);
     }
@@ -410,7 +404,6 @@ function AppContent() {
 
   // ===== NAVIGATION HANDLER =====
   const handleSidebarNavigate = (viewId) => {
-    console.log('🧭 [APP] Sidebar navigation to:', viewId);
 
     // Scroll to top on every navigation
     scrollToTop();
@@ -466,7 +459,6 @@ function AppContent() {
 
   // ===== ROLEPLAY HANDLERS =====
   const handleSelectScenario = (scenario) => {
-    console.log('🎭 [APP] Scenario selected:', scenario);
     setSelectedScenario(scenario);
     setRoleplayVariables({});
     setRoleplayMicrophoneId(null); // Reset microphone selection
@@ -474,20 +466,17 @@ function AppContent() {
   };
 
   const handleRoleplayVariablesNext = (variables) => {
-    console.log('🎭 [APP] Variables submitted:', variables);
     setRoleplayVariables(variables);
     setCurrentView(VIEWS.ROLEPLAY_DEVICE_SETUP);
   };
 
   const handleRoleplayVariablesBack = () => {
-    console.log('🎭 [APP] Variables cancelled - returning to dashboard');
     setSelectedScenario(null);
     setRoleplayVariables({});
     setCurrentView(VIEWS.DASHBOARD);
   };
 
   const handleRoleplayDeviceSetupComplete = ({ selectedMicrophoneId, connectionMode = 'websocket' }) => {
-    console.log('🎭 [APP] Device setup complete, microphone:', selectedMicrophoneId, 'mode:', connectionMode);
     setRoleplayMicrophoneId(selectedMicrophoneId);
     setRoleplayConnectionMode(connectionMode);
 
@@ -500,20 +489,17 @@ function AppContent() {
   };
 
   const handleRoleplayDeviceSetupBack = () => {
-    console.log('🎭 [APP] Device setup cancelled - returning to variables');
     setRoleplayMicrophoneId(null);
     setCurrentView(VIEWS.ROLEPLAY_VARIABLES);
   };
 
   const handleEndRoleplay = () => {
-    console.log('🎭 [APP] Roleplay ended - returning to dashboard');
     setSelectedScenario(null);
     setRoleplayVariables({});
     setCurrentView(VIEWS.DASHBOARD);
   };
 
   const handleNavigateToSession = (session) => {
-    console.log('🎭 [APP] Navigating to session analysis:', session.id);
     setSelectedScenario(null);
     setRoleplayVariables({});
     setSelectedSession(session);
@@ -522,20 +508,17 @@ function AppContent() {
 
   // ===== HISTORY HANDLERS =====
   const handleOpenHistory = (tab = null) => {
-    console.log('📜 [APP] Opening session history with tab:', tab);
     setHistoryInitialTab(tab);
     setCurrentView(VIEWS.HISTORY);
   };
 
   const handleCloseHistory = () => {
-    console.log('📜 [APP] Closing session history');
     setHistoryInitialTab(null);
     setCurrentView(VIEWS.DASHBOARD);
   };
 
   // Navigate to history with a specific tab
   const handleNavigateToHistoryWithTab = (tabId) => {
-    console.log('📜 [APP] Navigating to history with tab:', tabId);
     const tabMap = {
       'briefings': SESSION_TABS.BRIEFINGS,
       'simulator': SESSION_TABS.SIMULATOR,
@@ -547,45 +530,38 @@ function AppContent() {
   };
 
   const handleSelectSession = (session) => {
-    console.log('📜 [APP] Session selected:', session.id);
     setSelectedSession(session);
     setCurrentView(VIEWS.SESSION_DETAIL);
   };
 
   const handleCloseSessionDetail = () => {
-    console.log('📜 [APP] Closing session detail');
     setSelectedSession(null);
     setCurrentView(VIEWS.HISTORY);
   };
 
   // ===== SIMULATOR SESSION HANDLERS =====
   const handleContinueSession = (session, scenario) => {
-    console.log('🔄 [APP] Continuing simulator session:', session.id);
     setPendingContinueSession({ session, scenario });
     setCurrentView(VIEWS.SIMULATOR);
   };
 
   const handleRepeatSession = (session, scenario) => {
-    console.log('🔁 [APP] Repeating simulator session with same questions:', session.id);
     setPendingRepeatSession({ session, scenario });
     setCurrentView(VIEWS.SIMULATOR);
   };
 
   // ===== RHETORIK-GYM HANDLERS =====
   const handleStartGame = (config) => {
-    console.log('🎮 [APP] Starting game with config:', config);
     setGameConfig(config);
     setCurrentView(VIEWS.GYM_SESSION);
   };
 
   const handleGameBack = () => {
-    console.log('🎮 [APP] Returning to gym dashboard');
     setGameConfig(null);
     setCurrentView(VIEWS.GYM_KLASSIKER);
   };
 
   const handleGameComplete = (result) => {
-    console.log('🎮 [APP] Game completed with result:', result);
     // Could navigate to a results view or stay in session
   };
 
@@ -668,7 +644,6 @@ function AppContent() {
             demoCode={demoCode}
             onNavigateToSimulator={(variables) => {
               // Navigate to simulator dashboard - variables can be used to pre-fill forms
-              console.log('[APP] Navigating to simulator from Smart Briefing with variables:', variables);
               // Store variables for potential use in simulator
               // The simulator can access these via props or context if needed
               setCurrentView(VIEWS.SIMULATOR);
@@ -830,15 +805,12 @@ function AppContent() {
             setPendingAction(null);
           }}
           onLoginSuccess={async (user) => {
-            console.log('[APP] User logged in:', user.displayName);
 
             // Check disclaimer status after login
-            console.log('[APP] Checking disclaimer status after login...');
             await checkDisclaimerStatus();
 
             // Execute pending action if there was one
             if (pendingAction) {
-              console.log('[APP] Executing pending action after login:', pendingAction.type);
               executePendingAction(pendingAction);
               setPendingAction(null);
             }
@@ -850,7 +822,6 @@ function AppContent() {
           isOpen={isDisclaimerModalOpen}
           onClose={closeDisclaimerModal}
           onAcknowledge={(dontShowAgain) => {
-            console.log('[APP] Disclaimer acknowledged, dont_show_again:', dontShowAgain);
             closeDisclaimerModal();
           }}
         />

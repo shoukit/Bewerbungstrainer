@@ -112,7 +112,6 @@ export function useProxyConversation({
       const proxyUrl = getProxyUrl();
       const wsUrl = `${proxyUrl}?agent_id=${agentId}`;
 
-      console.log('[ProxyConversation] Connecting to proxy:', wsUrl);
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -121,7 +120,6 @@ export function useProxyConversation({
       conversationIdRef.current = `proxy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       ws.onopen = () => {
-        console.log('[ProxyConversation] Connected to proxy');
         setStatus('connected');
 
         // Send initial configuration with overrides
@@ -180,7 +178,6 @@ export function useProxyConversation({
       };
 
       ws.onclose = (event) => {
-        console.log('[ProxyConversation] Disconnected:', event.code, event.reason);
         setStatus('disconnected');
         cleanup();
         onDisconnect?.();
@@ -254,7 +251,6 @@ export function useProxyConversation({
    * End the conversation session
    */
   const endSession = useCallback(() => {
-    console.log('[ProxyConversation] Ending session');
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.close(1000, 'User ended conversation');

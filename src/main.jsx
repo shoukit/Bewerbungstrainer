@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-console.log('🚀 [MAIN] Script loaded - starting initialization');
 
 // Keep track of whether we've already mounted to prevent double mounting
 let hasAlreadyMounted = false;
@@ -13,7 +12,6 @@ let reactRoot = null;
 function initReactApp() {
   // Prevent double mounting
   if (hasAlreadyMounted) {
-    console.log('⚠️ Bewerbungstrainer: App already mounted, skipping...');
     return;
   }
 
@@ -33,7 +31,6 @@ function initReactApp() {
   }
 
   try {
-    console.log('✅ Bewerbungstrainer: Mounting React app on:', rootElement.id);
 
     // Clear loading content safely
     while (rootElement.firstChild) {
@@ -47,7 +44,6 @@ function initReactApp() {
       </StrictMode>
     );
     hasAlreadyMounted = true;
-    console.log('✅ Bewerbungstrainer: React app mounted successfully');
   } catch (error) {
     console.error('❌ Bewerbungstrainer: Failed to mount React app:', error);
   }
@@ -69,7 +65,6 @@ function waitForDOMAndMount() {
 
   // Strategy 1: If element is already available, mount after a small delay
   if (document.getElementById('bewerbungstrainer-app') || document.getElementById('root')) {
-    console.log('✅ Bewerbungstrainer: Element found immediately, scheduling mount...');
     // Small delay to let other scripts initialize first
     setTimeout(safeMount, 50);
     return;
@@ -77,11 +72,9 @@ function waitForDOMAndMount() {
 
   // Strategy 2: Wait for DOMContentLoaded
   if (document.readyState === 'loading') {
-    console.log('⏳ Bewerbungstrainer: Waiting for DOMContentLoaded...');
     document.addEventListener('DOMContentLoaded', () => setTimeout(safeMount, 50));
   } else {
     // Strategy 3: DOM is already loaded, but element might not be rendered yet
-    console.log('⏳ Bewerbungstrainer: DOM loaded, waiting for element...');
 
     let attempts = 0;
     const maxAttempts = 50; // 5 seconds max
@@ -91,7 +84,6 @@ function waitForDOMAndMount() {
 
       if (document.getElementById('bewerbungstrainer-app') || document.getElementById('root')) {
         clearInterval(checkInterval);
-        console.log(`✅ Bewerbungstrainer: Element found after ${attempts * 100}ms`);
         setTimeout(safeMount, 50);
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval);

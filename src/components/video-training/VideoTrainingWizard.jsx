@@ -490,7 +490,6 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       const apiUrl = getWPApiUrl();
 
       // Step 1: Create session
-      console.log('[VIDEO TRAINING] Creating session...');
       const createResponse = await fetch(`${apiUrl}/video-training/sessions`, {
         method: 'POST',
         headers: {
@@ -515,10 +514,8 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       }
 
       const session = createData.data.session;
-      console.log('[VIDEO TRAINING] Session created:', session.id);
 
       // Step 2: Generate questions
-      console.log('[VIDEO TRAINING] Generating questions...');
       const questionsResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/questions`, {
         method: 'POST',
         headers: {
@@ -537,7 +534,6 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         throw new Error('Fehler beim Generieren der Fragen');
       }
 
-      console.log('[VIDEO TRAINING] Questions generated:', questionsData.data.questions.length);
 
       // Start the session with selected devices
       onStart({

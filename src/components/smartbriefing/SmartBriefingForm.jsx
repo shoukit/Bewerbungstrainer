@@ -232,7 +232,6 @@ const SmartBriefingForm = ({
     setApiError(null);
 
     try {
-      console.log('[SmartBriefing] Generating briefing with variables:', formData);
 
       const response = await wordpressAPI.request('/smartbriefing/generate', {
         method: 'POST',
@@ -243,7 +242,6 @@ const SmartBriefingForm = ({
       });
 
       if (response.success && response.data?.briefing) {
-        console.log('[SmartBriefing] Briefing generated successfully');
         onBriefingGenerated(response.data.briefing);
       } else {
         throw new Error('Unerwartete API-Antwort');

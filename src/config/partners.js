@@ -526,7 +526,6 @@ export async function fetchPartnerConfig(partnerId) {
     ? `${apiUrl}/config?partner_slug=${encodeURIComponent(partnerId)}`
     : `${apiUrl}/config`;
 
-  console.log('🌐 [Partners] Fetching config from:', endpoint);
 
   try {
     const response = await fetch(endpoint, {
@@ -544,7 +543,6 @@ export async function fetchPartnerConfig(partnerId) {
     const result = await response.json();
 
     if (result.success && result.data) {
-      console.log('✅ [Partners] Config loaded from API:', result.data.name);
       return result.data;
     }
 
@@ -558,7 +556,6 @@ export async function fetchPartnerConfig(partnerId) {
     // Fallback to mock partners for development/testing
     const mockPartner = getPartnerConfig(partnerId);
     if (mockPartner) {
-      console.log('📦 [Partners] Using mock fallback:', mockPartner.name);
       return mockPartner;
     }
 
@@ -576,8 +573,6 @@ export async function loginUser(username, password) {
   const apiUrl = getApiBaseUrl();
   const endpoint = `${apiUrl}/login`;
 
-  console.log('🔐 [Partners] Attempting login for:', username);
-  console.log('🔐 [Partners] Current nonce before login:', window.bewerbungstrainerConfig?.nonce?.substring(0, 10) + '...');
 
   try {
     const response = await fetch(endpoint, {
@@ -592,19 +587,15 @@ export async function loginUser(username, password) {
     const result = await response.json();
 
     if (response.ok && result.success) {
-      console.log('✅ [Partners] Login successful:', result.data.user.displayName);
-      console.log('🔑 [Partners] Nonce returned from server:', result.data.nonce ? 'YES' : 'NO');
 
       // Update the nonce in bewerbungstrainerConfig if a new one was returned
       if (result.data.nonce && window.bewerbungstrainerConfig) {
-        console.log('🔑 [Partners] Updating nonce to:', result.data.nonce.substring(0, 10) + '...');
         window.bewerbungstrainerConfig.nonce = result.data.nonce;
         window.bewerbungstrainerConfig.currentUser = {
           id: result.data.user.id,
           name: result.data.user.displayName,
           firstName: result.data.user.firstName,
         };
-        console.log('✅ [Partners] Nonce updated successfully');
       } else if (!result.data.nonce) {
         console.warn('⚠️ [Partners] Server did not return a new nonce! API calls may fail.');
         console.warn('⚠️ [Partners] Current nonce:', window.bewerbungstrainerConfig?.nonce?.substring(0, 10) + '...');
@@ -641,7 +632,6 @@ export async function logoutUser() {
   const apiUrl = getApiBaseUrl();
   const endpoint = `${apiUrl}/logout`;
 
-  console.log('🚪 [Partners] Logging out...');
 
   try {
     const response = await fetch(endpoint, {
@@ -655,7 +645,6 @@ export async function logoutUser() {
     const result = await response.json();
 
     if (result.success) {
-      console.log('✅ [Partners] Logout successful');
 
       // Clear user from bewerbungstrainerConfig
       if (window.bewerbungstrainerConfig) {

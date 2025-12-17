@@ -50,7 +50,6 @@ const SimulatorDeviceSetup = ({
       let questions;
       if (preloadedQuestions && preloadedQuestions.length > 0) {
         // Use preloaded questions - skip generation
-        console.log('🔁 [SimulatorDeviceSetup] Using preloaded questions for repeat session');
         questions = preloadedQuestions;
         // Update session with questions_json
         await wordpressAPI.updateSimulatorSessionQuestions(session.id, questions);

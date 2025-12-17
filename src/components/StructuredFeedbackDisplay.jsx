@@ -593,7 +593,6 @@ const FeedbackAccordion = ({
 function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
   // Parse JSON if needed
   const data = useMemo(() => {
-    console.log('📊 [FEEDBACK_DISPLAY] Received feedback prop:', feedback ? 'exists' : 'null', typeof feedback);
     if (!feedback) return null;
     if (typeof feedback === 'string') {
       try {
@@ -604,20 +603,17 @@ function StructuredFeedbackDisplay({ feedback, isLoading = false }) {
           jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
         }
         const parsed = JSON.parse(jsonString);
-        console.log('✅ [FEEDBACK_DISPLAY] Parsed from string:', parsed);
         return parsed;
       } catch (e) {
         console.error('❌ [FEEDBACK_DISPLAY] Failed to parse feedback:', e);
         return null;
       }
     }
-    console.log('✅ [FEEDBACK_DISPLAY] Using object directly:', feedback);
     return feedback;
   }, [feedback]);
 
   // Determine if this is the new format (has overall_analysis) or old format (has rating)
   const isNewFormat = data?.overall_analysis !== undefined;
-  console.log('📊 [FEEDBACK_DISPLAY] Data:', data, 'isNewFormat:', isNewFormat);
 
   // Loading state
   if (isLoading) {
