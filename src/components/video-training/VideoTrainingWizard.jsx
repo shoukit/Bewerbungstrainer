@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft, Video, Info, Loader2, AlertCircle, ChevronRight, Settings, Sparkles, Mic, Camera, ChevronDown, RefreshCw } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { motion } from 'framer-motion';
@@ -373,6 +373,10 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   const [micError, setMicError] = useState(null);
   const [cameraError, setCameraError] = useState(null);
 
+  // Track when we last loaded devices to prevent loops on iPad Chrome
+  const lastLoadTimeRef = useRef(0);
+  const isLoadingRef = useRef(false);
+
   const { branding, demoCode } = usePartner();
 
   // Get themed styles
@@ -380,7 +384,21 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   const primaryAccent = branding?.primaryAccent || '#3A7FA7';
 
   // Load available devices on mount
-  const loadDevices = useCallback(async () => {
+  const loadDevices = useCallback(async (fromDeviceChange = false) => {
+    // Prevent re-entrancy and ignore devicechange events triggered by our own getUserMedia
+    if (isLoadingRef.current) return;
+
+    // If this is from a devicechange event, check if it's too soon after last load
+    // iPad Chrome triggers devicechange when getUserMedia is called
+    if (fromDeviceChange) {
+      const timeSinceLastLoad = Date.now() - lastLoadTimeRef.current;
+      if (timeSinceLastLoad < 2000) {
+        return; // Ignore devicechange events within 2 seconds of last load
+      }
+    }
+
+    isLoadingRef.current = true;
+    lastLoadTimeRef.current = Date.now();
     setDevicesLoading(true);
     setMicError(null);
     setCameraError(null);
@@ -434,21 +452,23 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       setVideoDevices([]);
     } finally {
       setDevicesLoading(false);
+      isLoadingRef.current = false;
+      lastLoadTimeRef.current = Date.now(); // Update again after completion
     }
   }, [selectedMicrophoneId, selectedCameraId]);
 
   useEffect(() => {
-    loadDevices();
+    loadDevices(false);
 
-    // Debounce device change handler to prevent loops on iPad Chrome
-    // iPad Chrome can trigger devicechange when getUserMedia is called
+    // Handle device changes (e.g., plugging in a new microphone)
+    // Use debounce + time check to prevent loops on iPad Chrome
     let debounceTimer = null;
     const handleDeviceChange = () => {
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }
       debounceTimer = setTimeout(() => {
-        loadDevices();
+        loadDevices(true); // Mark as from devicechange event
       }, 500);
     };
     navigator.mediaDevices?.addEventListener('devicechange', handleDeviceChange);
