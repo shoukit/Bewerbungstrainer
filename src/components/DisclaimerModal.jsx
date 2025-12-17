@@ -95,26 +95,24 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
     }
   };
 
-  // Handle backdrop click (close modal)
+  // Prevent backdrop click from closing - user must click the button
   const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      // For disclaimer, we require acknowledgment, so just acknowledge with default
-      handleAcknowledge();
-    }
+    // Do nothing - disclaimer must be acknowledged via button
+    e.stopPropagation();
   };
 
-  // Handle escape key
+  // Prevent escape key from closing - user must click the button
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen) {
-        // Acknowledge with current checkbox state
-        handleAcknowledge();
+        // Do nothing - disclaimer must be acknowledged via button
+        e.preventDefault();
       }
     };
 
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, dontShowAgain, disclaimer]);
+  }, [isOpen]);
 
   if (!isOpen || !disclaimer) {
     return null;
