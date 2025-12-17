@@ -499,6 +499,8 @@ class Bewerbungstrainer_API {
             '/bewerbungstrainer/v1/disclaimer/current',
             '/bewerbungstrainer/v1/disclaimer/status',
             '/bewerbungstrainer/v1/disclaimer/acknowledge',
+            '/bewerbungstrainer/v1/game/stats',
+            '/bewerbungstrainer/v1/game/sessions',
         );
 
         // Check if this is a public endpoint
