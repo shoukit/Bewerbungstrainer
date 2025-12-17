@@ -60,9 +60,21 @@ const MicrophoneSelector = ({
 
       // Now enumerate devices with labels
       const allDevices = await navigator.mediaDevices.enumerateDevices();
+
+      // Debug logging to help diagnose device recognition issues
+      console.log('[MicrophoneSelector] All detected devices:', allDevices.map(d => ({
+        kind: d.kind,
+        label: d.label || '(no label)',
+        deviceId: d.deviceId?.substring(0, 8) + '...'
+      })));
+
       const audioInputs = allDevices.filter(device => device.kind === 'audioinput');
 
+      console.log('[MicrophoneSelector] Audio input devices:', audioInputs.length, audioInputs.map(d => d.label || d.deviceId?.substring(0, 8)));
+
       if (audioInputs.length === 0) {
+        console.warn('[MicrophoneSelector] No audioinput devices found. All device kinds:',
+          [...new Set(allDevices.map(d => d.kind))]);
         setError('Kein Mikrofon gefunden');
         setDevices([]);
       } else {
@@ -220,26 +232,32 @@ const MicrophoneSelector = ({
           </button>
         )}
 
-        {/* Refresh button on error */}
-        {error && (
-          <button
-            type="button"
-            onClick={loadDevices}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '12px 16px',
-              borderRadius: '12px',
-              border: `2px solid ${COLORS.slate[200]}`,
-              backgroundColor: COLORS.white,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            <RefreshCw style={{ width: '20px', height: '20px', color: COLORS.slate[600] }} />
-          </button>
-        )}
+        {/* Refresh button - always visible to allow device refresh */}
+        <button
+          type="button"
+          onClick={() => loadDevices(false)}
+          disabled={isLoading}
+          title="Geräteliste aktualisieren"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: `2px solid ${COLORS.slate[200]}`,
+            backgroundColor: COLORS.white,
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? 0.5 : 1,
+            transition: 'all 0.2s',
+          }}
+        >
+          <RefreshCw style={{
+            width: '20px',
+            height: '20px',
+            color: COLORS.slate[600],
+            animation: isLoading ? 'spin 1s linear infinite' : 'none',
+          }} />
+        </button>
       </div>
 
       {/* Dropdown menu */}
@@ -339,6 +357,73 @@ const MicrophoneSelector = ({
           </div>
         </>
       )}
+
+      {/* Helper text when devices are loaded but user might have issues */}
+      {!error && devices.length > 0 && devices.length < 3 && (
+        <div style={{
+          marginTop: '10px',
+          fontSize: '12px',
+          color: COLORS.slate[500],
+          lineHeight: 1.4,
+        }}>
+          Dein Headset wird nicht angezeigt? Klicke auf "Aktualisieren" nach dem Anschließen oder prüfe die Bluetooth-Verbindung (Headset-Modus statt Audio-Modus).
+        </div>
+      )}
+
+      {/* Troubleshooting hint when no microphone found */}
+      {error === 'Kein Mikrofon gefunden' && (
+        <div style={{
+          marginTop: '12px',
+          padding: '12px 14px',
+          backgroundColor: COLORS.amber[50],
+          border: `1px solid ${COLORS.amber[200]}`,
+          borderRadius: '10px',
+          fontSize: '13px',
+          color: COLORS.amber[800],
+          lineHeight: 1.5,
+        }}>
+          <div style={{ fontWeight: 600, marginBottom: '6px' }}>
+            💡 Tipps zur Fehlerbehebung:
+          </div>
+          <ul style={{ margin: 0, paddingLeft: '18px' }}>
+            <li>Bei <strong>Bluetooth-Headsets</strong>: Stelle sicher, dass das Headset im "Headset"- oder "Hands-Free"-Modus verbunden ist (nicht nur "Audio")</li>
+            <li>Bei <strong>USB-Headsets</strong>: Trenne das Gerät kurz und schließe es erneut an</li>
+            <li>Prüfe die <strong>Systemeinstellungen</strong> deines Computers, ob das Mikrofon dort erkannt wird</li>
+            <li>Versuche einen anderen <strong>Browser</strong> (Chrome/Edge empfohlen)</li>
+          </ul>
+        </div>
+      )}
+
+      {/* Hint for permission denied */}
+      {error === 'Mikrofonzugriff verweigert' && (
+        <div style={{
+          marginTop: '12px',
+          padding: '12px 14px',
+          backgroundColor: COLORS.amber[50],
+          border: `1px solid ${COLORS.amber[200]}`,
+          borderRadius: '10px',
+          fontSize: '13px',
+          color: COLORS.amber[800],
+          lineHeight: 1.5,
+        }}>
+          <div style={{ fontWeight: 600, marginBottom: '6px' }}>
+            💡 So erlaubst du den Mikrofonzugriff:
+          </div>
+          <ul style={{ margin: 0, paddingLeft: '18px' }}>
+            <li>Klicke auf das <strong>Schloss-Symbol</strong> in der Adressleiste deines Browsers</li>
+            <li>Setze "Mikrofon" auf <strong>"Zulassen"</strong></li>
+            <li>Lade die Seite neu und versuche es erneut</li>
+          </ul>
+        </div>
+      )}
+
+      {/* CSS for spin animation */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

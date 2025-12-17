@@ -21,6 +21,85 @@ if (!defined('ABSPATH')) {
 
 // Define plugin constants
 define('BEWERBUNGSTRAINER_VERSION', '1.0.0');
+
+/**
+ * ONE-TIME IMPORT: SprintEins Partner
+ * This code runs once and creates the partner, then sets an option to prevent re-running.
+ * You can delete this block after the import is complete.
+ */
+add_action('init', function() {
+    // Only run once
+    if (get_option('_sprinteins_partner_imported')) {
+        return;
+    }
+
+    // Check if partner already exists
+    $existing = get_posts(array(
+        'post_type' => 'whitelabel_partner',
+        'meta_key' => '_partner_slug',
+        'meta_value' => 'sprinteins',
+        'posts_per_page' => 1,
+    ));
+
+    if (!empty($existing)) {
+        update_option('_sprinteins_partner_imported', true);
+        return;
+    }
+
+    // SprintEins Branding - Coral/Pink primary color
+    $primary_color = '#F0506E';
+    $primary_color_hover = '#D94460';
+    $primary_color_light = '#FEF2F4';
+
+    $branding = array(
+        '--app-bg-color' => 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
+        '--sidebar-bg-color' => '#ffffff',
+        '--sidebar-text-color' => '#1a1a1a',
+        '--sidebar-text-muted' => '#6b7280',
+        '--sidebar-active-bg' => $primary_color_light,
+        '--sidebar-active-text' => $primary_color,
+        '--sidebar-hover-bg' => '#f9fafb',
+        '--card-bg-color' => '#ffffff',
+        '--primary-accent' => $primary_color,
+        '--primary-accent-light' => $primary_color_light,
+        '--primary-accent-hover' => $primary_color_hover,
+        '--button-gradient' => $primary_color,
+        '--button-gradient-hover' => $primary_color_hover,
+        '--button-solid' => $primary_color,
+        '--button-solid-hover' => $primary_color_hover,
+        '--button-text' => '#ffffff',
+        '--header-gradient' => 'linear-gradient(135deg, ' . $primary_color . ' 0%, #E8446A 100%)',
+        '--header-text' => '#ffffff',
+        '--icon-primary' => $primary_color,
+        '--icon-secondary' => '#E8446A',
+        '--icon-muted' => '#9ca3af',
+        '--text-main' => '#1a1a1a',
+        '--text-secondary' => '#4b5563',
+        '--text-muted' => '#9ca3af',
+        '--border-color' => '#e5e7eb',
+        '--border-color-light' => '#f3f4f6',
+        '--focus-ring' => 'rgba(240, 80, 110, 0.3)',
+    );
+
+    // Create the partner
+    $post_id = wp_insert_post(array(
+        'post_type' => 'whitelabel_partner',
+        'post_title' => 'SprintEins',
+        'post_status' => 'publish',
+        'post_name' => 'sprinteins',
+    ));
+
+    if (!is_wp_error($post_id)) {
+        update_post_meta($post_id, '_partner_slug', 'sprinteins');
+        update_post_meta($post_id, '_partner_branding', $branding);
+        update_post_meta($post_id, '_partner_visible_modules', array(
+            'dashboard', 'roleplay', 'simulator', 'video_training', 'gym', 'history', 'smart_briefing'
+        ));
+    }
+
+    // Mark as imported
+    update_option('_sprinteins_partner_imported', true);
+}, 20);
 define('BEWERBUNGSTRAINER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BEWERBUNGSTRAINER_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('BEWERBUNGSTRAINER_PLUGIN_BASENAME', plugin_basename(__FILE__));

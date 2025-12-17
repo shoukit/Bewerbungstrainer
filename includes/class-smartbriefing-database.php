@@ -525,7 +525,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             'category' => null,
             'is_active' => 1,
             'orderby' => 'sort_order',
-            'order' => 'ASC',
+            'order' => 'DESC',  // Higher sort_order = shown first (more intuitive)
             'user_id' => null,      // Include user's templates
             'demo_code' => null,    // Include demo user's templates
             'include_user_templates' => true, // Include user-created templates
@@ -576,8 +576,10 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
 
         $args['order'] = strtoupper($args['order']) === 'DESC' ? 'DESC' : 'ASC';
 
+        // Add secondary sort by id for consistent ordering when primary sort values are equal
+        $secondary_sort = ($args['orderby'] !== 'id') ? ', id ASC' : '';
         // Order by: user templates first (category = MEINE), then by sort_order
-        $query = "SELECT * FROM {$this->table_templates} {$where_clause} ORDER BY CASE WHEN user_id IS NOT NULL THEN 0 ELSE 1 END, {$args['orderby']} {$args['order']}";
+        $query = "SELECT * FROM {$this->table_templates} {$where_clause} ORDER BY CASE WHEN user_id IS NOT NULL THEN 0 ELSE 1 END, {$args['orderby']} {$args['order']}{$secondary_sort}";
 
         if (!empty($where_values)) {
             $templates = $wpdb->get_results($wpdb->prepare($query, ...$where_values));

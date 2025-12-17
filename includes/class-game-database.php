@@ -238,7 +238,7 @@ class Bewerbungstrainer_Game_Database {
             'difficulty' => null,
             'active_only' => true,
             'orderby' => 'sort_order',
-            'order' => 'ASC'
+            'order' => 'DESC'  // Higher sort_order = shown first (more intuitive)
         );
 
         $args = wp_parse_args($args, $defaults);
@@ -265,7 +265,9 @@ class Bewerbungstrainer_Game_Database {
         }
         $args['order'] = strtoupper($args['order']) === 'DESC' ? 'DESC' : 'ASC';
 
-        $sql = "SELECT * FROM {$this->table_scenario_templates} {$where_clause} ORDER BY {$args['orderby']} {$args['order']}";
+        // Add secondary sort by id for consistent ordering when primary sort values are equal
+        $secondary_sort = ($args['orderby'] !== 'id') ? ', id ASC' : '';
+        $sql = "SELECT * FROM {$this->table_scenario_templates} {$where_clause} ORDER BY {$args['orderby']} {$args['order']}{$secondary_sort}";
 
         return $wpdb->get_results($sql);
     }

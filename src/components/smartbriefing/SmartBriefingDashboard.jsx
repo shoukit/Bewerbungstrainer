@@ -29,6 +29,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { COLORS } from '@/config/colors';
+import { DEFAULT_BRANDING } from '@/config/partners';
 import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
 import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 
@@ -105,7 +106,7 @@ const SmartBriefingDashboard = ({
   setPendingAction,
   demoCode,
 }) => {
-  const { config, branding } = usePartner();
+  const { branding } = usePartner();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -114,8 +115,10 @@ const SmartBriefingDashboard = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Get primary accent color from partner config
-  const primaryAccent = branding?.['--primary-accent'] || config?.buttonGradientStart || '#3A7FA7';
+  // Partner theming
+  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
   // Fetch templates function
   const fetchTemplates = useCallback(async () => {
@@ -252,13 +255,13 @@ const SmartBriefingDashboard = ({
                 width: '48px',
                 height: '48px',
                 borderRadius: '12px',
-                background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
+                background: headerGradient,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Sparkles size={24} style={{ color: 'white' }} />
+              <Sparkles size={24} style={{ color: headerText }} />
             </div>
             <div>
               <h1

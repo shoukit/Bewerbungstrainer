@@ -30,20 +30,6 @@ const OverviewDashboard = ({ onNavigate }) => {
   // Feature cards data
   const features = [
     {
-      id: 'simulator',
-      icon: Target,
-      title: 'Szenario-Training',
-      subtitle: 'Gezielte Vorbereitung',
-      description: 'Trainiere mit vorbereiteten Fragen und erhalte sofortiges KI-Feedback zu jeder Antwort. Perfekt für die systematische Vorbereitung auf entscheidende Gespräche, Verhandlungen und Pitches.',
-      highlights: [
-        'Vordefinierte Business-Szenarien',
-        'Sofortiges Feedback nach jeder Antwort',
-        'Strukturierte Auswertung',
-      ],
-      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-      accentColor: '#10B981',
-    },
-    {
       id: 'smart_briefing',
       icon: Sparkles,
       title: 'Smart Briefing',
@@ -56,6 +42,20 @@ const OverviewDashboard = ({ onNavigate }) => {
       ],
       gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
       accentColor: '#EC4899',
+    },
+    {
+      id: 'simulator',
+      icon: Target,
+      title: 'Szenario-Training',
+      subtitle: 'Gezielte Vorbereitung',
+      description: 'Trainiere mit vorbereiteten Fragen und erhalte sofortiges KI-Feedback zu jeder Antwort. Perfekt für die systematische Vorbereitung auf entscheidende Gespräche, Verhandlungen und Pitches.',
+      highlights: [
+        'Vordefinierte Business-Szenarien',
+        'Sofortiges Feedback nach jeder Antwort',
+        'Strukturierte Auswertung',
+      ],
+      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+      accentColor: '#10B981',
     },
     {
       id: 'video_training',
