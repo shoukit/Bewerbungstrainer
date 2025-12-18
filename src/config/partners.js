@@ -462,27 +462,42 @@ export function isModuleAllowed(partner, moduleId) {
  *
  * @param {Array} scenarios - Array of scenario objects
  * @param {Object} partner - Partner configuration object
- * @param {string} scenarioType - Type of scenarios: 'roleplay', 'simulator', or 'video_training'
+ * @param {string} scenarioType - Type of scenarios: 'roleplay', 'simulator', 'video_training', or 'briefings'
  * @returns {Array} Filtered scenarios
  */
 export function filterScenariosByVisibility(scenarios, partner, scenarioType) {
-  // If no partner or no scenarios, return all (default/Karriereheld mode)
-  if (!partner || !scenarios) return scenarios;
+  // If no scenarios, return empty
+  if (!scenarios) return [];
+
+  // If no partner, return all (default Karriereheld mode - no restrictions)
+  if (!partner) return scenarios;
 
   // Check if partner has visible_scenarios configuration
   const visibleScenarios = partner.visible_scenarios;
 
-  // If no visible_scenarios config exists, fall back to legacy filtering
-  if (!visibleScenarios || typeof visibleScenarios !== 'object') {
-    // Use legacy filtering as fallback
+  // If visible_scenarios is undefined/null, fall back to legacy filtering
+  // This handles backwards compatibility for partners created before this feature
+  if (visibleScenarios === undefined || visibleScenarios === null) {
     return filterScenariosByPartner(scenarios, partner);
   }
 
+  // If visible_scenarios is an empty array [] (not an object with keys),
+  // it means config wasn't properly saved yet - use legacy filtering
+  if (Array.isArray(visibleScenarios) && visibleScenarios.length === 0) {
+    return filterScenariosByPartner(scenarios, partner);
+  }
+
+  // Now we know visible_scenarios is an object with keys
   // Get the allowed scenario IDs for this type
   const allowedForType = visibleScenarios[scenarioType];
 
-  // If no configuration for this type, return empty array (new scenarios are hidden by default)
-  if (!allowedForType || !Array.isArray(allowedForType)) {
+  // If this type is not configured at all, return empty (new scenarios are hidden by default)
+  if (allowedForType === undefined || allowedForType === null) {
+    return [];
+  }
+
+  // If not an array, return empty
+  if (!Array.isArray(allowedForType)) {
     return [];
   }
 
@@ -491,7 +506,7 @@ export function filterScenariosByVisibility(scenarios, partner, scenarioType) {
     return scenarios;
   }
 
-  // If the array is empty, return empty (no scenarios visible)
+  // If the array is empty, return empty (no scenarios visible - intentional selection)
   if (allowedForType.length === 0) {
     return [];
   }

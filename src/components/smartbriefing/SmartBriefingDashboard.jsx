@@ -106,7 +106,7 @@ const SmartBriefingDashboard = ({
   setPendingAction,
   demoCode,
 }) => {
-  const { branding } = usePartner();
+  const { branding, filterScenariosByType } = usePartner();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -217,9 +217,10 @@ const SmartBriefingDashboard = ({
     [templates]
   );
 
-  // Filter templates by category and search
+  // Filter templates by partner visibility, category and search
   const filteredTemplates = useMemo(() => {
-    let filtered = [...templates];
+    // First, filter by partner's visible templates (white-label filtering)
+    let filtered = filterScenariosByType([...templates], 'briefings');
 
     // Category filter
     if (selectedCategory) {
@@ -236,7 +237,7 @@ const SmartBriefingDashboard = ({
     }
 
     return filtered;
-  }, [templates, selectedCategory, searchQuery]);
+  }, [templates, selectedCategory, searchQuery, filterScenariosByType]);
 
   return (
     <div

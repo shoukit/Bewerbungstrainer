@@ -727,8 +727,28 @@ class Bewerbungstrainer_Whitelabel_Partners {
             }
         }
 
+        // 4. Smart Briefing templates (Database table)
+        $briefing_table = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_templates';
+        $briefing_templates = $wpdb->get_results(
+            "SELECT id, title, category FROM {$briefing_table} WHERE is_active = 1 ORDER BY title ASC"
+        );
+        if ($briefing_templates) {
+            foreach ($briefing_templates as $template) {
+                $all_scenarios['briefings'][] = array(
+                    'id' => (int) $template->id,
+                    'title' => $template->title,
+                    'category' => $template->category,
+                );
+            }
+        }
+
         // Define scenario types with their labels
         $scenario_types = array(
+            'briefings' => array(
+                'label' => 'Smart Briefings',
+                'icon' => '📚',
+                'color' => '#dc2626',
+            ),
             'roleplay' => array(
                 'label' => 'Live-Simulationen',
                 'icon' => '🎭',
@@ -750,11 +770,11 @@ class Bewerbungstrainer_Whitelabel_Partners {
         <style>
             .scenario-visibility-container {
                 display: grid;
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(4, 1fr);
                 gap: 20px;
                 margin-top: 10px;
             }
-            @media (max-width: 1200px) {
+            @media (max-width: 1400px) {
                 .scenario-visibility-container {
                     grid-template-columns: repeat(2, 1fr);
                 }
@@ -1054,7 +1074,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
 
         // Save visible scenarios (new checkbox-based system)
         $visible_scenarios = array();
-        $scenario_types = array('roleplay', 'simulator', 'video_training');
+        $scenario_types = array('briefings', 'roleplay', 'simulator', 'video_training');
 
         foreach ($scenario_types as $type) {
             // Check if "all" was selected for this type
