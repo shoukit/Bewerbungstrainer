@@ -80,6 +80,37 @@ class Bewerbungstrainer_SmartBriefing_Database {
 
         $current_version = get_option('bewerbungstrainer_smartbriefing_db_version', '1.0.0');
 
+        // Migration 1.3.0: Add allow_custom_variables column to templates table
+        if (version_compare($current_version, '1.3.0', '<')) {
+            error_log('[SMARTBRIEFING] Running migration to 1.3.0...');
+
+            // Check if allow_custom_variables column exists in templates table
+            $allow_custom_vars_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SHOW COLUMNS FROM {$this->table_templates} LIKE %s",
+                    'allow_custom_variables'
+                )
+            );
+
+            if (empty($allow_custom_vars_exists)) {
+                error_log('[SMARTBRIEFING] Adding allow_custom_variables column to templates table...');
+
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_templates} ADD COLUMN `allow_custom_variables` tinyint(1) DEFAULT 0 AFTER `demo_code`"
+                );
+
+                if ($wpdb->last_error) {
+                    error_log('[SMARTBRIEFING] Error adding allow_custom_variables column: ' . $wpdb->last_error);
+                } else {
+                    error_log('[SMARTBRIEFING] allow_custom_variables column added successfully');
+                }
+            }
+
+            // Update version
+            update_option('bewerbungstrainer_smartbriefing_db_version', '1.3.0');
+            error_log('[SMARTBRIEFING] Migration to 1.3.0 completed');
+        }
+
         // Migration 1.2.0: Add user_id and demo_code columns to templates table for custom templates
         if (version_compare($current_version, '1.2.0', '<')) {
             error_log('[SMARTBRIEFING] Running migration to 1.2.0...');
@@ -216,6 +247,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
             `sort_order` int DEFAULT 0,
             `user_id` bigint(20) UNSIGNED DEFAULT NULL,
             `demo_code` varchar(50) DEFAULT NULL,
+            `allow_custom_variables` tinyint(1) DEFAULT 0,
             `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
             `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
@@ -282,7 +314,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
         self::insert_default_templates();
 
         // Update version to latest
-        update_option('bewerbungstrainer_smartbriefing_db_version', '1.1.0');
+        update_option('bewerbungstrainer_smartbriefing_db_version', '1.3.0');
     }
 
     /**
@@ -684,6 +716,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             'sort_order' => 0,
             'user_id' => null,      // NULL for system templates, user ID for custom
             'demo_code' => null,    // Demo code for demo users
+            'allow_custom_variables' => 0,  // Allow users to add custom variables
         );
 
         $data = wp_parse_args($data, $defaults);
@@ -711,8 +744,9 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
                 'sort_order' => intval($data['sort_order']),
                 'user_id' => $data['user_id'] ? intval($data['user_id']) : null,
                 'demo_code' => $data['demo_code'] ? strtoupper(sanitize_text_field($data['demo_code'])) : null,
+                'allow_custom_variables' => intval($data['allow_custom_variables']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%d')
         );
 
         if ($result === false) {
@@ -738,7 +772,8 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
 
         $allowed_fields = array(
             'title', 'description', 'icon', 'category',
-            'system_prompt', 'variables_schema', 'is_active', 'sort_order'
+            'system_prompt', 'variables_schema', 'is_active', 'sort_order',
+            'allow_custom_variables'
         );
 
         foreach ($allowed_fields as $field) {
@@ -760,7 +795,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
                 $update_data[$field] = $value;
 
                 // Determine format
-                if (in_array($field, array('is_active', 'sort_order'))) {
+                if (in_array($field, array('is_active', 'sort_order', 'allow_custom_variables'))) {
                     $update_format[] = '%d';
                 } else {
                     $update_format[] = '%s';

@@ -183,6 +183,7 @@ class Bewerbungstrainer_SmartBriefing_API {
                 'variables_schema' => $template->variables_schema,
                 'is_custom' => !empty($template->is_custom),
                 'system_prompt' => !empty($template->is_custom) ? $template->system_prompt : null, // Only expose for custom templates
+                'allow_custom_variables' => !empty($template->allow_custom_variables),
             );
         }, $templates);
 
@@ -226,6 +227,7 @@ class Bewerbungstrainer_SmartBriefing_API {
                 'variables_schema' => $template->variables_schema,
                 'is_custom' => !$is_system,
                 'system_prompt' => ($is_owner || $is_system) ? $template->system_prompt : null,
+                'allow_custom_variables' => !empty($template->allow_custom_variables),
             ),
         ), 200);
     }
