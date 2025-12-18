@@ -640,15 +640,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
 
             <hr style="margin: 15px 0;" />
 
-            <p><strong>Zusätzliche Szenarien (Simulator)</strong></p>
-            <p class="description">
-                Geben Sie Szenario-Slugs ein (kommagetrennt), die zusätzlich erlaubt sein sollen:
-            </p>
-            <?php
-            $custom_scenarios = get_post_meta($post->ID, '_partner_custom_scenarios', true);
-            ?>
-            <textarea name="partner_custom_scenarios" rows="3" style="width: 100%;"
-                      placeholder="z.B. gehaltsverhandlung, vorstellungsgespraech"><?php echo esc_textarea($custom_scenarios); ?></textarea>
+            <?php $this->render_scenario_visibility_section($post); ?>
         </div>
 
         <script>
@@ -660,6 +652,147 @@ class Bewerbungstrainer_Whitelabel_Partners {
                     $list.find('input[type="checkbox"]').prop('checked', false);
                 } else {
                     $list.css({ opacity: 1, 'pointer-events': 'auto' });
+                }
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * Render scenario visibility section with checkboxes for each scenario type
+     */
+    private function render_scenario_visibility_section($post) {
+        // Get saved visible scenarios
+        $visible_scenarios = get_post_meta($post->ID, '_partner_visible_scenarios', true);
+        if (!is_array($visible_scenarios)) {
+            $visible_scenarios = array();
+        }
+
+        // Define scenario types with their labels
+        $scenario_types = array(
+            'roleplay_scenario' => array(
+                'label' => 'Live-Simulationen',
+                'icon' => '🎭',
+                'module' => 'roleplay',
+            ),
+            'simulator_scenario' => array(
+                'label' => 'Szenario-Training',
+                'icon' => '📋',
+                'module' => 'simulator',
+            ),
+            'video_training_scenario' => array(
+                'label' => 'Wirkungs-Analyse',
+                'icon' => '🎥',
+                'module' => 'video_training',
+            ),
+        );
+
+        ?>
+        <div class="scenario-visibility-section">
+            <p><strong>Szenario-Sichtbarkeit</strong></p>
+            <p class="description">
+                Wählen Sie die Szenarien aus, die dieser Partner sehen kann.<br>
+                <strong>Neue Szenarien sind standardmäßig nicht sichtbar</strong> – Sie müssen sie hier explizit aktivieren.
+            </p>
+
+            <?php foreach ($scenario_types as $post_type => $type_info): ?>
+                <?php
+                // Fetch all scenarios of this type
+                $scenarios = get_posts(array(
+                    'post_type' => $post_type,
+                    'posts_per_page' => -1,
+                    'post_status' => 'publish',
+                    'orderby' => 'title',
+                    'order' => 'ASC',
+                ));
+
+                if (empty($scenarios)) {
+                    continue;
+                }
+
+                // Get saved scenarios for this type
+                $type_key = $type_info['module'];
+                $saved_for_type = isset($visible_scenarios[$type_key]) && is_array($visible_scenarios[$type_key])
+                    ? $visible_scenarios[$type_key]
+                    : array();
+
+                // Check if "all" is selected for this type
+                $all_selected = in_array('__all__', $saved_for_type);
+                ?>
+                <div class="scenario-type-group" style="margin: 15px 0; padding: 12px; background: #f9f9f9; border-left: 4px solid #0073aa; border-radius: 4px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                        <strong style="font-size: 14px;">
+                            <?php echo $type_info['icon']; ?> <?php echo esc_html($type_info['label']); ?>
+                            <span style="color: #666; font-weight: normal; font-size: 12px;">(<?php echo count($scenarios); ?> Szenarien)</span>
+                        </strong>
+                        <label style="font-size: 12px; color: #666;">
+                            <input type="checkbox"
+                                   class="select-all-scenarios"
+                                   data-type="<?php echo esc_attr($type_key); ?>"
+                                   <?php checked($all_selected); ?> />
+                            Alle auswählen
+                        </label>
+                    </div>
+
+                    <div class="scenarios-list" data-type="<?php echo esc_attr($type_key); ?>"
+                         style="max-height: 200px; overflow-y: auto; padding: 5px; <?php echo $all_selected ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+                        <?php foreach ($scenarios as $scenario): ?>
+                            <?php
+                            $is_checked = $all_selected || in_array($scenario->ID, $saved_for_type);
+                            $difficulty = get_post_meta($scenario->ID, '_roleplay_difficulty', true);
+                            $difficulty_badge = '';
+                            if ($difficulty) {
+                                $difficulty_colors = array(
+                                    'easy' => '#4caf50',
+                                    'medium' => '#ff9800',
+                                    'hard' => '#f44336',
+                                );
+                                $color = isset($difficulty_colors[$difficulty]) ? $difficulty_colors[$difficulty] : '#999';
+                                $difficulty_badge = sprintf(
+                                    '<span style="background: %s; color: white; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">%s</span>',
+                                    $color,
+                                    esc_html(ucfirst($difficulty))
+                                );
+                            }
+                            ?>
+                            <label style="display: block; padding: 4px 8px; margin: 2px 0; background: white; border-radius: 3px; cursor: pointer;">
+                                <input type="checkbox"
+                                       name="partner_visible_scenarios[<?php echo esc_attr($type_key); ?>][]"
+                                       value="<?php echo esc_attr($scenario->ID); ?>"
+                                       <?php checked($is_checked); ?> />
+                                <?php echo esc_html($scenario->post_title); ?>
+                                <?php echo $difficulty_badge; ?>
+                                <span style="color: #999; font-size: 11px;">(ID: <?php echo $scenario->ID; ?>)</span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Hidden input to track "all selected" state -->
+                    <input type="hidden"
+                           name="partner_visible_scenarios_all[<?php echo esc_attr($type_key); ?>]"
+                           value="<?php echo $all_selected ? '1' : '0'; ?>"
+                           class="all-selected-flag"
+                           data-type="<?php echo esc_attr($type_key); ?>" />
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Handle "Alle auswählen" checkbox
+            $('.select-all-scenarios').on('change', function() {
+                var type = $(this).data('type');
+                var $list = $('.scenarios-list[data-type="' + type + '"]');
+                var $flag = $('.all-selected-flag[data-type="' + type + '"]');
+
+                if ($(this).is(':checked')) {
+                    $list.css({ opacity: 0.5, 'pointer-events': 'none' });
+                    $list.find('input[type="checkbox"]').prop('checked', true);
+                    $flag.val('1');
+                } else {
+                    $list.css({ opacity: 1, 'pointer-events': 'auto' });
+                    $flag.val('0');
                 }
             });
         });
@@ -763,7 +896,30 @@ class Bewerbungstrainer_Whitelabel_Partners {
             update_post_meta($post_id, '_partner_modules', $modules);
         }
 
-        // Save custom scenarios
+        // Save visible scenarios (new checkbox-based system)
+        $visible_scenarios = array();
+        $scenario_types = array('roleplay', 'simulator', 'video_training');
+
+        foreach ($scenario_types as $type) {
+            // Check if "all" was selected for this type
+            $all_selected = isset($_POST['partner_visible_scenarios_all'][$type]) &&
+                           $_POST['partner_visible_scenarios_all'][$type] === '1';
+
+            if ($all_selected) {
+                // Store special marker for "all scenarios"
+                $visible_scenarios[$type] = array('__all__');
+            } elseif (isset($_POST['partner_visible_scenarios'][$type]) && is_array($_POST['partner_visible_scenarios'][$type])) {
+                // Store selected scenario IDs
+                $visible_scenarios[$type] = array_map('absint', $_POST['partner_visible_scenarios'][$type]);
+            } else {
+                // No scenarios selected for this type
+                $visible_scenarios[$type] = array();
+            }
+        }
+
+        update_post_meta($post_id, '_partner_visible_scenarios', $visible_scenarios);
+
+        // Keep legacy custom scenarios for backwards compatibility (but deprecated)
         if (isset($_POST['partner_custom_scenarios'])) {
             update_post_meta($post_id, '_partner_custom_scenarios', sanitize_textarea_field($_POST['partner_custom_scenarios']));
         }
@@ -1294,12 +1450,13 @@ class Bewerbungstrainer_Whitelabel_Partners {
      */
     private function get_default_config() {
         return array(
-            'id'       => 'default',
-            'slug'     => 'default',
-            'name'     => 'Karriereheld',
-            'branding' => $this->default_branding,
-            'logo_url' => null,
-            'modules'  => array(), // Empty = all allowed
+            'id'                => 'default',
+            'slug'              => 'default',
+            'name'              => 'Karriereheld',
+            'branding'          => $this->default_branding,
+            'logo_url'          => null,
+            'modules'           => array(), // Empty = all allowed
+            'visible_scenarios' => array(), // Empty = all scenarios visible
         );
     }
 
@@ -1326,7 +1483,13 @@ class Bewerbungstrainer_Whitelabel_Partners {
             $modules = array();
         }
 
-        // Add custom scenarios to modules
+        // Get visible scenarios (new checkbox-based system)
+        $visible_scenarios = get_post_meta($post_id, '_partner_visible_scenarios', true);
+        if (!is_array($visible_scenarios)) {
+            $visible_scenarios = array();
+        }
+
+        // Legacy: Add custom scenarios to modules for backwards compatibility
         $custom_scenarios = get_post_meta($post_id, '_partner_custom_scenarios', true);
         if (!empty($custom_scenarios)) {
             $custom_array = array_map('trim', explode(',', $custom_scenarios));
@@ -1341,12 +1504,13 @@ class Bewerbungstrainer_Whitelabel_Partners {
         }
 
         return array(
-            'id'       => $slug,
-            'slug'     => $slug,
-            'name'     => $post->post_title,
-            'branding' => $branding,
-            'logo_url' => $logo_url,
-            'modules'  => $modules,
+            'id'                => $slug,
+            'slug'              => $slug,
+            'name'              => $post->post_title,
+            'branding'          => $branding,
+            'logo_url'          => $logo_url,
+            'modules'           => $modules,
+            'visible_scenarios' => $visible_scenarios,
         );
     }
 

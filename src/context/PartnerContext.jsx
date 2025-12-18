@@ -4,6 +4,7 @@ import {
   getPartnerConfig,
   fetchPartnerConfig,
   filterScenariosByPartner,
+  filterScenariosByVisibility,
   isModuleAllowed,
   loginUser,
   logoutUser,
@@ -220,10 +221,21 @@ export function PartnerProvider({ children }) {
   };
 
   /**
-   * Filter scenarios based on partner's allowed modules
+   * Legacy: Filter scenarios based on partner's allowed modules
    */
   const filterScenarios = (scenarios) => {
     return filterScenariosByPartner(scenarios, partner);
+  };
+
+  /**
+   * Filter scenarios by visibility configuration
+   * Uses the new checkbox-based system where scenarios are explicitly selected per type
+   * @param {Array} scenarios - Array of scenario objects
+   * @param {string} scenarioType - Type: 'roleplay', 'simulator', or 'video_training'
+   * @returns {Array} Filtered scenarios
+   */
+  const filterScenariosByType = (scenarios, scenarioType) => {
+    return filterScenariosByVisibility(scenarios, partner, scenarioType);
   };
 
   /**
@@ -393,6 +405,7 @@ export function PartnerProvider({ children }) {
 
     // Helper functions
     filterScenarios,
+    filterScenariosByType,
     checkModuleAllowed,
     getBranding,
     getLogoUrl,

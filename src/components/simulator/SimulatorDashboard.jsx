@@ -163,8 +163,8 @@ const CategoryFilterBar = ({ selectedCategory, onSelectCategory, primaryAccent }
  * Displays available training scenarios in a grid layout
  */
 const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario, onNavigateToHistory }) => {
-  // Partner theming
-  const { branding } = usePartner();
+  // Partner theming and scenario filtering
+  const { branding, filterScenariosByType } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -197,9 +197,10 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filter scenarios by category, search, and difficulty
+  // Filter scenarios by partner visibility, category, search, and difficulty
   const filteredScenarios = useMemo(() => {
-    let filtered = [...scenarios];
+    // First, filter by partner's visible scenarios (white-label filtering)
+    let filtered = filterScenariosByType([...scenarios], 'simulator');
 
     // Category filter
     if (selectedCategory) {
@@ -224,7 +225,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
     }
 
     return filtered;
-  }, [scenarios, selectedCategory, searchQuery, difficultyFilter]);
+  }, [scenarios, selectedCategory, searchQuery, difficultyFilter, filterScenariosByType]);
 
   // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {

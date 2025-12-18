@@ -457,7 +457,56 @@ export function isModuleAllowed(partner, moduleId) {
 }
 
 /**
- * Filter scenarios based on partner's allowed modules
+ * Filter scenarios based on partner's visible_scenarios configuration
+ * This is the new system that uses explicit scenario IDs per type
+ *
+ * @param {Array} scenarios - Array of scenario objects
+ * @param {Object} partner - Partner configuration object
+ * @param {string} scenarioType - Type of scenarios: 'roleplay', 'simulator', or 'video_training'
+ * @returns {Array} Filtered scenarios
+ */
+export function filterScenariosByVisibility(scenarios, partner, scenarioType) {
+  // If no partner or no scenarios, return all (default/Karriereheld mode)
+  if (!partner || !scenarios) return scenarios;
+
+  // Check if partner has visible_scenarios configuration
+  const visibleScenarios = partner.visible_scenarios;
+
+  // If no visible_scenarios config exists, fall back to legacy filtering
+  if (!visibleScenarios || typeof visibleScenarios !== 'object') {
+    // Use legacy filtering as fallback
+    return filterScenariosByPartner(scenarios, partner);
+  }
+
+  // Get the allowed scenario IDs for this type
+  const allowedForType = visibleScenarios[scenarioType];
+
+  // If no configuration for this type, return empty array (new scenarios are hidden by default)
+  if (!allowedForType || !Array.isArray(allowedForType)) {
+    return [];
+  }
+
+  // If '__all__' is in the array, return all scenarios
+  if (allowedForType.includes('__all__')) {
+    return scenarios;
+  }
+
+  // If the array is empty, return empty (no scenarios visible)
+  if (allowedForType.length === 0) {
+    return [];
+  }
+
+  // Filter by exact ID match
+  return scenarios.filter(scenario => {
+    const scenarioId = Number(scenario.id);
+    return allowedForType.includes(scenarioId);
+  });
+}
+
+/**
+ * Legacy: Filter scenarios based on partner's allowed modules
+ * This function is kept for backwards compatibility with older partner configurations
+ *
  * @param {Array} scenarios - Array of scenario objects
  * @param {Object} partner - Partner configuration object
  * @returns {Array} Filtered scenarios

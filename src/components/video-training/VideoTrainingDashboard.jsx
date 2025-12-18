@@ -63,7 +63,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  const { branding } = usePartner();
+  const { branding, filterScenariosByType } = usePartner();
 
   // Get themed styles
   const themedGradient = branding?.headerGradient || branding?.['--header-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
@@ -81,9 +81,10 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
     return Array.from(types);
   }, [scenarios]);
 
-  // Filter scenarios by search, difficulty, and category
+  // Filter scenarios by partner visibility, search, difficulty, and category
   const filteredScenarios = useMemo(() => {
-    let filtered = [...scenarios];
+    // First, filter by partner's visible scenarios (white-label filtering)
+    let filtered = filterScenariosByType([...scenarios], 'video_training');
 
     // Category filter
     if (selectedCategory) {
@@ -105,7 +106,7 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
     }
 
     return filtered;
-  }, [scenarios, selectedCategory, searchQuery, difficultyFilter]);
+  }, [scenarios, selectedCategory, searchQuery, difficultyFilter, filterScenariosByType]);
 
   // Fetch scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
