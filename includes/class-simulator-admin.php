@@ -377,23 +377,30 @@ class Bewerbungstrainer_Simulator_Admin {
             'sort_order'
         ), ';');
 
-        // Clean up data: decode HTML entities and remove excessive escaping
-        $clean_text = function($text) {
-            if (empty($text)) return '';
-            // Decode HTML entities (e.g., &amp; -> &)
-            $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            // Remove excessive backslash escaping from legacy data
-            while (strpos($text, '\\\\') !== false) {
-                $text = str_replace('\\\\', '\\', $text);
-            }
-            return $text;
-        };
-
         // Data rows
         foreach ($scenarios as $scenario) {
-            $input_config = is_array($scenario->input_configuration)
-                ? json_encode($scenario->input_configuration, JSON_UNESCAPED_UNICODE)
-                : $scenario->input_configuration;
+            // Clean up data: decode HTML entities and remove excessive escaping
+            $clean_text = function($text) {
+                if (empty($text)) return '';
+                // Decode HTML entities (e.g., &amp; -> &)
+                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                // Remove excessive backslash escaping from legacy data
+                while (strpos($text, '\\\\') !== false) {
+                    $text = str_replace('\\\\', '\\', $text);
+                }
+                return $text;
+            };
+
+            // Clean JSON config - decode and re-encode with proper flags
+            $input_config = $scenario->input_configuration;
+            if (is_array($input_config)) {
+                $input_config = json_encode($input_config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            } elseif (is_string($input_config) && !empty($input_config)) {
+                $decoded = json_decode($input_config, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $input_config = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+            }
 
             fputcsv($output, array(
                 $scenario->id,

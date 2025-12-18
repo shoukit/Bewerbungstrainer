@@ -889,21 +889,26 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'status'
         ), ';');
 
-        // Clean up data: decode HTML entities and remove excessive escaping
-        $clean_text = function($text) {
-            if (empty($text)) return '';
-            // Decode HTML entities (e.g., &amp; -> &)
-            $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            // Remove excessive backslash escaping from legacy data
-            while (strpos($text, '\\\\') !== false) {
-                $text = str_replace('\\\\', '\\', $text);
-            }
-            return $text;
-        };
-
         // Data rows
         foreach ($scenarios as $scenario) {
             $post = get_post($scenario['id']);
+
+            // Clean up data: decode HTML entities and remove excessive escaping
+            $clean_text = function($text) {
+                if (empty($text)) return '';
+                // Decode HTML entities (e.g., &amp; -> &)
+                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                // Remove excessive backslash escaping from legacy data
+                while (strpos($text, '\\\\') !== false) {
+                    $text = str_replace('\\\\', '\\', $text);
+                }
+                return $text;
+            };
+
+            // Clean JSON schema - encode with proper flags
+            $vars_schema = is_array($scenario['variables_schema'])
+                ? json_encode($scenario['variables_schema'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                : '[]';
 
             fputcsv($output, array(
                 $scenario['id'],
@@ -915,7 +920,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 $scenario['difficulty'],
                 $scenario['role_type'],
                 $clean_text($scenario['user_role_label']),
-                json_encode($scenario['variables_schema'], JSON_UNESCAPED_UNICODE),
+                $vars_schema,
                 implode(',', $scenario['tags']),
                 $clean_text($scenario['interviewer_profile']['name']),
                 $clean_text($scenario['interviewer_profile']['role']),

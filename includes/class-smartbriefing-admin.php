@@ -376,10 +376,6 @@ class Bewerbungstrainer_SmartBriefing_Admin {
 
         // Data rows
         foreach ($templates as $template) {
-            $vars_schema = is_array($template->variables_schema)
-                ? json_encode($template->variables_schema, JSON_UNESCAPED_UNICODE)
-                : $template->variables_schema;
-
             // Clean up data: decode HTML entities and remove excessive escaping
             $clean_text = function($text) {
                 if (empty($text)) return '';
@@ -391,6 +387,18 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 }
                 return $text;
             };
+
+            // Clean JSON schema - decode and re-encode with proper flags
+            $vars_schema = $template->variables_schema;
+            if (is_array($vars_schema)) {
+                $vars_schema = json_encode($vars_schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            } elseif (is_string($vars_schema) && !empty($vars_schema)) {
+                // Decode existing JSON, clean it, and re-encode
+                $decoded = json_decode($vars_schema, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $vars_schema = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+            }
 
             fputcsv($output, array(
                 $template->id,
