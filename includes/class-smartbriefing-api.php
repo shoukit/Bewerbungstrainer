@@ -1423,6 +1423,81 @@ class Bewerbungstrainer_SmartBriefing_API {
     }
 
     /**
+     * Build the complete prompt from structured template fields
+     *
+     * Combines ai_role, auto-generated variables section, ai_task, and ai_behavior
+     * Falls back to legacy system_prompt if new fields are empty
+     *
+     * @param object $template Template object
+     * @param array $variables Variables from user input (includes custom variables)
+     * @return string The complete system prompt
+     */
+    private function build_structured_prompt($template, $variables) {
+        $prompt_parts = array();
+
+        // Check if we have the new structured fields
+        $has_new_structure = !empty($template->ai_role) || !empty($template->ai_task);
+        $has_legacy_prompt = !empty($template->system_prompt);
+
+        // 1. AI Role - "Die KI agiert als" (or fallback)
+        if (!empty($template->ai_role)) {
+            $prompt_parts[] = $this->interpolate_variables($template->ai_role, $variables);
+        } elseif (!$has_new_structure && $has_legacy_prompt) {
+            // Use legacy system_prompt if no new structure
+            $prompt_parts[] = $this->interpolate_variables($template->system_prompt, $variables);
+        } else {
+            // Fallback: Generate a sensible default role based on template
+            $template_title = !empty($template->title) ? $template->title : 'Briefing';
+            $prompt_parts[] = "Du bist ein professioneller Coach und Experte für {$template_title}. Erstelle ein maßgeschneidertes, praxisnahes Briefing für den Nutzer basierend auf seinen Angaben.";
+        }
+
+        // 2. Auto-inject ALL variables as "User-Daten" section - ALWAYS
+        if (!empty($variables) && is_array($variables)) {
+            $user_data_lines = array();
+            $user_data_lines[] = "\n=== USER-DATEN (Alle erfassten Variablen) ===";
+
+            // Get variable labels from schema if available
+            $schema_labels = array();
+            if (!empty($template->variables_schema) && is_array($template->variables_schema)) {
+                foreach ($template->variables_schema as $field) {
+                    if (isset($field['key']) && isset($field['label'])) {
+                        $schema_labels[$field['key']] = $field['label'];
+                    }
+                }
+            }
+
+            foreach ($variables as $key => $value) {
+                if ($value !== '' && $value !== null) {
+                    // Use label from schema if available, otherwise format the key nicely
+                    $label = isset($schema_labels[$key])
+                        ? $schema_labels[$key]
+                        : ucfirst(str_replace('_', ' ', $key));
+                    $user_data_lines[] = "- {$label}: {$value}";
+                }
+            }
+
+            if (count($user_data_lines) > 1) { // More than just the header
+                $prompt_parts[] = implode("\n", $user_data_lines);
+            }
+        }
+
+        // 3. AI Task - "Was" the AI should produce
+        if (!empty($template->ai_task)) {
+            $prompt_parts[] = "\n" . $this->interpolate_variables($template->ai_task, $variables);
+        } elseif (!$has_new_structure && !$has_legacy_prompt) {
+            // Fallback: Generate a sensible default task
+            $prompt_parts[] = "\n=== AUFGABE ===\nErstelle ein strukturiertes Briefing mit 4-6 Abschnitten. Jeder Abschnitt soll 3-5 konkrete, umsetzbare Punkte enthalten. Beziehe dich auf ALLE oben genannten User-Daten und passe die Inhalte individuell an.";
+        }
+
+        // 4. AI Behavior - How the AI should behave
+        if (!empty($template->ai_behavior)) {
+            $prompt_parts[] = "\n" . $this->interpolate_variables($template->ai_behavior, $variables);
+        }
+
+        return implode("\n", $prompt_parts);
+    }
+
+    /**
      * Interpolate variables in a string
      *
      * Supports:
