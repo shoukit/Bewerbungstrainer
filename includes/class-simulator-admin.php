@@ -51,6 +51,7 @@ class Bewerbungstrainer_Simulator_Admin {
     private function init_hooks() {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'handle_form_actions'));
+        add_action('admin_init', array($this, 'handle_csv_actions'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
     }
 
@@ -314,6 +315,187 @@ class Bewerbungstrainer_Simulator_Admin {
     }
 
     /**
+     * Handle CSV import/export actions
+     */
+    public function handle_csv_actions() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        // Export CSV
+        if (isset($_GET['action']) && $_GET['action'] === 'export_csv' && isset($_GET['page']) && $_GET['page'] === 'simulator-scenarios') {
+            if (!wp_verify_nonce($_GET['_wpnonce'], 'export_simulator_scenarios')) {
+                wp_die('Security check failed');
+            }
+            $this->export_scenarios_csv();
+            exit;
+        }
+
+        // Import CSV
+        if (isset($_POST['simulator_import_csv']) && isset($_FILES['csv_file'])) {
+            if (!wp_verify_nonce($_POST['_wpnonce'], 'import_simulator_scenarios')) {
+                wp_die('Security check failed');
+            }
+            $this->import_scenarios_csv($_FILES['csv_file']);
+        }
+    }
+
+    /**
+     * Export scenarios to CSV
+     */
+    private function export_scenarios_csv() {
+        $scenarios = $this->db->get_scenarios(array('is_active' => null));
+
+        $filename = 'simulator-scenarios-' . date('Y-m-d-His') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+
+        // UTF-8 BOM for Excel
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // CSV Header
+        fputcsv($output, array(
+            'id',
+            'title',
+            'description',
+            'icon',
+            'difficulty',
+            'category',
+            'mode',
+            'system_prompt',
+            'question_generation_prompt',
+            'feedback_prompt',
+            'input_configuration',
+            'question_count_min',
+            'question_count_max',
+            'time_limit_per_question',
+            'allow_retry',
+            'is_active',
+            'sort_order'
+        ), ';');
+
+        // Data rows
+        foreach ($scenarios as $scenario) {
+            $input_config = is_array($scenario->input_configuration)
+                ? json_encode($scenario->input_configuration, JSON_UNESCAPED_UNICODE)
+                : $scenario->input_configuration;
+
+            fputcsv($output, array(
+                $scenario->id,
+                $scenario->title,
+                $scenario->description,
+                $scenario->icon,
+                $scenario->difficulty,
+                $scenario->category,
+                $scenario->mode ?? 'INTERVIEW',
+                $scenario->system_prompt,
+                $scenario->question_generation_prompt,
+                $scenario->feedback_prompt,
+                $input_config,
+                $scenario->question_count_min,
+                $scenario->question_count_max,
+                $scenario->time_limit_per_question,
+                $scenario->allow_retry,
+                $scenario->is_active,
+                $scenario->sort_order
+            ), ';');
+        }
+
+        fclose($output);
+    }
+
+    /**
+     * Import scenarios from CSV
+     */
+    private function import_scenarios_csv($file) {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            wp_redirect(admin_url('admin.php?page=simulator-scenarios&import_error=upload'));
+            exit;
+        }
+
+        $handle = fopen($file['tmp_name'], 'r');
+        if (!$handle) {
+            wp_redirect(admin_url('admin.php?page=simulator-scenarios&import_error=read'));
+            exit;
+        }
+
+        // Skip BOM if present
+        $bom = fread($handle, 3);
+        if ($bom !== chr(0xEF) . chr(0xBB) . chr(0xBF)) {
+            rewind($handle);
+        }
+
+        // Get header row
+        $header = fgetcsv($handle, 0, ';');
+        if (!$header || !in_array('title', $header)) {
+            fclose($handle);
+            wp_redirect(admin_url('admin.php?page=simulator-scenarios&import_error=format'));
+            exit;
+        }
+
+        $imported = 0;
+        $updated = 0;
+
+        while (($row = fgetcsv($handle, 0, ';')) !== false) {
+            if (count($row) < count($header)) {
+                continue;
+            }
+
+            $data = array_combine($header, $row);
+
+            // Parse input_configuration JSON
+            if (!empty($data['input_configuration'])) {
+                $input_config = json_decode($data['input_configuration'], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $data['input_configuration'] = json_encode($input_config, JSON_UNESCAPED_UNICODE);
+                }
+            }
+
+            // Prepare scenario data
+            $scenario_data = array(
+                'title' => sanitize_text_field($data['title'] ?? ''),
+                'description' => sanitize_textarea_field($data['description'] ?? ''),
+                'icon' => sanitize_text_field($data['icon'] ?? 'briefcase'),
+                'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
+                'category' => sanitize_text_field($data['category'] ?? 'CAREER'),
+                'mode' => in_array($data['mode'] ?? '', array('INTERVIEW', 'SIMULATION')) ? $data['mode'] : 'INTERVIEW',
+                'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
+                'question_generation_prompt' => wp_kses_post($data['question_generation_prompt'] ?? ''),
+                'feedback_prompt' => wp_kses_post($data['feedback_prompt'] ?? ''),
+                'input_configuration' => $data['input_configuration'] ?? '[]',
+                'question_count_min' => intval($data['question_count_min'] ?? 8),
+                'question_count_max' => intval($data['question_count_max'] ?? 12),
+                'time_limit_per_question' => intval($data['time_limit_per_question'] ?? 120),
+                'allow_retry' => intval($data['allow_retry'] ?? 1),
+                'is_active' => intval($data['is_active'] ?? 1),
+                'sort_order' => intval($data['sort_order'] ?? 0),
+            );
+
+            // Check if updating existing by ID
+            if (!empty($data['id']) && is_numeric($data['id'])) {
+                $existing = $this->db->get_scenario(intval($data['id']));
+                if ($existing) {
+                    $this->db->update_scenario(intval($data['id']), $scenario_data);
+                    $updated++;
+                    continue;
+                }
+            }
+
+            // Create new
+            $this->db->create_scenario($scenario_data);
+            $imported++;
+        }
+
+        fclose($handle);
+
+        wp_redirect(admin_url('admin.php?page=simulator-scenarios&imported=' . $imported . '&updated=' . $updated));
+        exit;
+    }
+
+    /**
      * Render scenarios list page
      */
     public function render_scenarios_page() {
@@ -330,11 +512,37 @@ class Bewerbungstrainer_Simulator_Admin {
         if (isset($_GET['created'])) {
             echo '<div class="notice notice-success is-dismissible"><p>Szenario erstellt.</p></div>';
         }
+        if (isset($_GET['imported'])) {
+            $imported = intval($_GET['imported']);
+            $updated = isset($_GET['updated']) ? intval($_GET['updated']) : 0;
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Szenario(s) importiert, %d aktualisiert.', $imported, $updated) . '</p></div>';
+        }
+        if (isset($_GET['import_error'])) {
+            $errors = array(
+                'upload' => 'Fehler beim Hochladen der Datei.',
+                'read' => 'Fehler beim Lesen der Datei.',
+                'format' => 'Ungültiges CSV-Format. Bitte exportiere zuerst eine Vorlage.',
+            );
+            $error_msg = $errors[$_GET['import_error']] ?? 'Unbekannter Fehler beim Import.';
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error_msg) . '</p></div>';
+        }
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline">Szenario-Training - Szenarien</h1>
             <a href="<?php echo admin_url('admin.php?page=simulator-scenario-new'); ?>" class="page-title-action">Neues Szenario hinzufügen</a>
+            <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=simulator-scenarios&action=export_csv'), 'export_simulator_scenarios'); ?>" class="page-title-action">CSV Export</a>
             <hr class="wp-header-end">
+
+            <!-- Import Form -->
+            <div style="margin: 15px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4; border-radius: 4px;">
+                <form method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 10px;">
+                    <?php wp_nonce_field('import_simulator_scenarios'); ?>
+                    <label><strong>CSV Import:</strong></label>
+                    <input type="file" name="csv_file" accept=".csv" required>
+                    <button type="submit" name="simulator_import_csv" class="button">Importieren</button>
+                    <span class="description">CSV-Datei mit Semikolon (;) als Trennzeichen</span>
+                </form>
+            </div>
 
             <table class="wp-list-table widefat fixed striped">
                 <thead>

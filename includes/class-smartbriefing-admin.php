@@ -51,6 +51,7 @@ class Bewerbungstrainer_SmartBriefing_Admin {
     private function init_hooks() {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'handle_form_actions'));
+        add_action('admin_init', array($this, 'handle_csv_actions'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
     }
 
@@ -250,6 +251,10 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             'icon' => sanitize_text_field($post['icon'] ?? 'file-text'),
             'category' => sanitize_text_field($post['category'] ?? 'CAREER'),
             'system_prompt' => wp_kses_post($post['system_prompt'] ?? ''),
+            'ai_role' => wp_kses_post($post['ai_role'] ?? ''),
+            'ai_task' => wp_kses_post($post['ai_task'] ?? ''),
+            'ai_behavior' => wp_kses_post($post['ai_behavior'] ?? ''),
+            'allow_custom_variables' => isset($post['allow_custom_variables']) ? 1 : 0,
             'variables_schema' => json_encode($variables_schema, JSON_UNESCAPED_UNICODE),
             'is_active' => isset($post['is_active']) ? 1 : 0,
             'sort_order' => intval($post['sort_order'] ?? 0),
@@ -311,6 +316,176 @@ class Bewerbungstrainer_SmartBriefing_Admin {
     }
 
     /**
+     * Handle CSV import/export actions
+     */
+    public function handle_csv_actions() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        // Export CSV
+        if (isset($_GET['action']) && $_GET['action'] === 'export_csv' && isset($_GET['page']) && $_GET['page'] === 'smartbriefing-templates') {
+            if (!wp_verify_nonce($_GET['_wpnonce'], 'export_smartbriefing_templates')) {
+                wp_die('Security check failed');
+            }
+            $this->export_templates_csv();
+            exit;
+        }
+
+        // Import CSV
+        if (isset($_POST['smartbriefing_import_csv']) && isset($_FILES['csv_file'])) {
+            if (!wp_verify_nonce($_POST['_wpnonce'], 'import_smartbriefing_templates')) {
+                wp_die('Security check failed');
+            }
+            $this->import_templates_csv($_FILES['csv_file']);
+        }
+    }
+
+    /**
+     * Export templates to CSV
+     */
+    private function export_templates_csv() {
+        $templates = $this->db->get_templates(array('is_active' => null));
+
+        $filename = 'smartbriefing-templates-' . date('Y-m-d-His') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+
+        // UTF-8 BOM for Excel
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // CSV Header
+        fputcsv($output, array(
+            'id',
+            'title',
+            'description',
+            'icon',
+            'category',
+            'system_prompt',
+            'ai_role',
+            'ai_task',
+            'ai_behavior',
+            'allow_custom_variables',
+            'variables_schema',
+            'is_active',
+            'sort_order'
+        ), ';');
+
+        // Data rows
+        foreach ($templates as $template) {
+            $vars_schema = is_array($template->variables_schema)
+                ? json_encode($template->variables_schema, JSON_UNESCAPED_UNICODE)
+                : $template->variables_schema;
+
+            fputcsv($output, array(
+                $template->id,
+                $template->title,
+                $template->description,
+                $template->icon,
+                $template->category,
+                $template->system_prompt,
+                $template->ai_role ?? '',
+                $template->ai_task ?? '',
+                $template->ai_behavior ?? '',
+                $template->allow_custom_variables ?? 0,
+                $vars_schema,
+                $template->is_active,
+                $template->sort_order
+            ), ';');
+        }
+
+        fclose($output);
+    }
+
+    /**
+     * Import templates from CSV
+     */
+    private function import_templates_csv($file) {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            wp_redirect(admin_url('admin.php?page=smartbriefing-templates&import_error=upload'));
+            exit;
+        }
+
+        $handle = fopen($file['tmp_name'], 'r');
+        if (!$handle) {
+            wp_redirect(admin_url('admin.php?page=smartbriefing-templates&import_error=read'));
+            exit;
+        }
+
+        // Skip BOM if present
+        $bom = fread($handle, 3);
+        if ($bom !== chr(0xEF) . chr(0xBB) . chr(0xBF)) {
+            rewind($handle);
+        }
+
+        // Get header row
+        $header = fgetcsv($handle, 0, ';');
+        if (!$header || !in_array('title', $header)) {
+            fclose($handle);
+            wp_redirect(admin_url('admin.php?page=smartbriefing-templates&import_error=format'));
+            exit;
+        }
+
+        $imported = 0;
+        $updated = 0;
+
+        while (($row = fgetcsv($handle, 0, ';')) !== false) {
+            if (count($row) < count($header)) {
+                continue;
+            }
+
+            $data = array_combine($header, $row);
+
+            // Parse variables_schema JSON
+            $vars_schema = '[]';
+            if (!empty($data['variables_schema'])) {
+                $parsed = json_decode($data['variables_schema'], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $vars_schema = json_encode($parsed, JSON_UNESCAPED_UNICODE);
+                }
+            }
+
+            // Prepare template data
+            $template_data = array(
+                'title' => sanitize_text_field($data['title'] ?? ''),
+                'description' => sanitize_textarea_field($data['description'] ?? ''),
+                'icon' => sanitize_text_field($data['icon'] ?? 'file-text'),
+                'category' => sanitize_text_field($data['category'] ?? 'CAREER'),
+                'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
+                'ai_role' => wp_kses_post($data['ai_role'] ?? ''),
+                'ai_task' => wp_kses_post($data['ai_task'] ?? ''),
+                'ai_behavior' => wp_kses_post($data['ai_behavior'] ?? ''),
+                'allow_custom_variables' => intval($data['allow_custom_variables'] ?? 0),
+                'variables_schema' => $vars_schema,
+                'is_active' => intval($data['is_active'] ?? 1),
+                'sort_order' => intval($data['sort_order'] ?? 0),
+            );
+
+            // Check if updating existing by ID
+            if (!empty($data['id']) && is_numeric($data['id'])) {
+                $existing = $this->db->get_template(intval($data['id']));
+                if ($existing) {
+                    $this->db->update_template(intval($data['id']), $template_data);
+                    $updated++;
+                    continue;
+                }
+            }
+
+            // Create new
+            $this->db->create_template($template_data);
+            $imported++;
+        }
+
+        fclose($handle);
+
+        wp_redirect(admin_url('admin.php?page=smartbriefing-templates&imported=' . $imported . '&csv_updated=' . $updated));
+        exit;
+    }
+
+    /**
      * Render templates list page
      */
     public function render_templates_page() {
@@ -327,11 +502,37 @@ class Bewerbungstrainer_SmartBriefing_Admin {
         if (isset($_GET['created'])) {
             echo '<div class="notice notice-success is-dismissible"><p>Template erstellt.</p></div>';
         }
+        if (isset($_GET['imported'])) {
+            $imported = intval($_GET['imported']);
+            $updated = isset($_GET['csv_updated']) ? intval($_GET['csv_updated']) : 0;
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Template(s) importiert, %d aktualisiert.', $imported, $updated) . '</p></div>';
+        }
+        if (isset($_GET['import_error'])) {
+            $errors = array(
+                'upload' => 'Fehler beim Hochladen der Datei.',
+                'read' => 'Fehler beim Lesen der Datei.',
+                'format' => 'Ungültiges CSV-Format. Bitte exportiere zuerst eine Vorlage.',
+            );
+            $error_msg = $errors[$_GET['import_error']] ?? 'Unbekannter Fehler beim Import.';
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error_msg) . '</p></div>';
+        }
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline">Smart Briefing - Templates</h1>
             <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new'); ?>" class="page-title-action">Neues Template hinzufügen</a>
+            <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=smartbriefing-templates&action=export_csv'), 'export_smartbriefing_templates'); ?>" class="page-title-action">CSV Export</a>
             <hr class="wp-header-end">
+
+            <!-- Import Form -->
+            <div style="margin: 15px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4; border-radius: 4px;">
+                <form method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 10px;">
+                    <?php wp_nonce_field('import_smartbriefing_templates'); ?>
+                    <label><strong>CSV Import:</strong></label>
+                    <input type="file" name="csv_file" accept=".csv" required>
+                    <button type="submit" name="smartbriefing_import_csv" class="button">Importieren</button>
+                    <span class="description">CSV-Datei mit Semikolon (;) als Trennzeichen</span>
+                </form>
+            </div>
 
             <p class="description">
                 Mit Smart Briefing können Nutzer strukturierte Vorbereitungs-Dossiers für Gespräche, Verhandlungen und andere Situationen generieren lassen.
@@ -430,6 +631,10 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             'icon' => 'file-text',
             'category' => 'CAREER',
             'system_prompt' => '',
+            'ai_role' => '',
+            'ai_task' => '',
+            'ai_behavior' => '',
+            'allow_custom_variables' => 0,
             'variables_schema' => array(),
             'is_active' => 1,
             'sort_order' => 0,
@@ -530,20 +735,49 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                                 </div>
                             </div>
 
-                            <!-- System Prompt -->
+                            <!-- Structured Prompt Fields -->
                             <div class="postbox">
-                                <h2 class="hndle"><span>KI-Prompt</span></h2>
+                                <h2 class="hndle"><span>KI-Prompt (Strukturiert)</span></h2>
                                 <div class="inside">
                                     <div class="prompt-help">
                                         <strong>Variable Platzhalter:</strong> Verwende <code>${variable_key}</code> um Benutzereingaben in den Prompt einzufügen.
                                         <br>Beispiel: <code>${target_company}</code> wird durch den vom Nutzer eingegebenen Firmennamen ersetzt.
                                         <br>Für optionale Variablen: <code>${?key:Prefix }</code> - wird nur eingefügt wenn die Variable einen Wert hat.
+                                        <br><br><strong>Hinweis:</strong> Alle vom Nutzer erfassten Variablen werden automatisch als "User-Daten" in den Prompt eingefügt.
                                     </div>
-                                    <textarea name="system_prompt" id="system_prompt" rows="15" class="large-text code"><?php echo esc_textarea($data['system_prompt']); ?></textarea>
-                                    <p class="description">
-                                        Der vollständige Prompt, der an die KI gesendet wird. Definiere die Struktur und den Inhalt des Briefings.
-                                        Das Ergebnis sollte im Markdown-Format sein.
+
+                                    <!-- Default Values Button -->
+                                    <p style="margin-bottom: 20px;">
+                                        <button type="button" class="button" id="fill-defaults-btn">📝 Standard einfügen</button>
+                                        <span class="description" style="margin-left: 10px;">Fügt bewährte Standardwerte für Karriere-Briefings ein</span>
                                     </p>
+
+                                    <table class="form-table">
+                                        <tr>
+                                            <th><label for="ai_role">KI-Rolle (Persona)</label></th>
+                                            <td>
+                                                <textarea name="ai_role" id="ai_role" rows="3" class="large-text code"><?php echo esc_textarea($data['ai_role'] ?? ''); ?></textarea>
+                                                <p class="description">Wer ist die KI? Z.B. "Du bist ein strategischer Karriere-Coach..."</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><label for="ai_task">KI-Aufgabe (Was)</label></th>
+                                            <td>
+                                                <textarea name="ai_task" id="ai_task" rows="12" class="large-text code"><?php echo esc_textarea($data['ai_task'] ?? ''); ?></textarea>
+                                                <p class="description">Was soll die KI erstellen? Definiere Struktur und Abschnitte des Briefings.</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><label for="ai_behavior">KI-Verhalten (Wie)</label></th>
+                                            <td>
+                                                <textarea name="ai_behavior" id="ai_behavior" rows="3" class="large-text code"><?php echo esc_textarea($data['ai_behavior'] ?? ''); ?></textarea>
+                                                <p class="description">Wie soll die KI antworten? Tonalität, Stil, spezielle Anweisungen.</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <!-- Legacy system_prompt (hidden, for backward compatibility) -->
+                                    <input type="hidden" name="system_prompt" id="system_prompt" value="<?php echo esc_attr($data['system_prompt'] ?? ''); ?>">
                                 </div>
                             </div>
 
@@ -580,6 +814,13 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                                                 <input type="checkbox" name="is_active" value="1" <?php checked($data['is_active'], 1); ?>>
                                                 Aktiv (für Nutzer sichtbar)
                                             </label>
+                                        </p>
+                                        <p>
+                                            <label>
+                                                <input type="checkbox" name="allow_custom_variables" value="1" <?php checked($data['allow_custom_variables'] ?? 0, 1); ?>>
+                                                Nutzer kann eigene Variablen hinzufügen
+                                            </label>
+                                            <br><span class="description" style="font-size: 11px; color: #666;">Zeigt "Zusätzliche Variablen" im Frontend</span>
                                         </p>
                                         <p>
                                             <label for="sort_order">Reihenfolge:</label>
@@ -709,6 +950,41 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 var $item = $(this).closest('.smartbriefing-variable-item');
                 var key = $(this).val();
                 $item.find('.variable-key-preview').text('${' + key + '}');
+            });
+
+            // Fill default values button
+            $('#fill-defaults-btn').on('click', function() {
+                var defaultRole = 'Du bist ein strategischer Karriere-Coach. Erstelle ein maßgeschneidertes Briefing für den Nutzer.';
+
+                var defaultTask = `Generiere eine strukturierte Checkliste in Markdown.
+
+Struktur:
+### 1. Dein Personal Pitch 👤
+[Erstelle 5 provokante Leitfragen, um die Story für \${role_name} zu schärfen.]
+
+### 2. Fachliche "Must-Haves" für \${target_company} 🛠️
+[Liste 6-7 konkrete Fachbegriffe, Tools oder Trends, die für diese Firma aktuell entscheidend sind.]
+
+### 3. Insider-Wissen & Kultur 🏢
+[Was muss man über \${target_company} wissen? Werte, aktuelle News?]
+
+### 4. Smart Questions ❓
+[5 intelligente Rückfragen an den Recruiter.]`;
+
+                var defaultBehavior = 'Sei motivierend, spezifisch und professionell und achte strikt bei der Beantwortung der Fragen auf das Karrierelevel, so dass es angemessen ist.';
+
+                // Only fill if fields are empty, or confirm overwrite
+                var hasContent = $('#ai_role').val().trim() || $('#ai_task').val().trim() || $('#ai_behavior').val().trim();
+
+                if (hasContent) {
+                    if (!confirm('Die bestehenden Werte werden überschrieben. Fortfahren?')) {
+                        return;
+                    }
+                }
+
+                $('#ai_role').val(defaultRole);
+                $('#ai_task').val(defaultTask);
+                $('#ai_behavior').val(defaultBehavior);
             });
         });
         </script>

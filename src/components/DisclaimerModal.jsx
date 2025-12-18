@@ -131,33 +131,38 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      style={{ zIndex: 99999 }}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="disclaimer-modal-title"
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col"
-        style={{ maxHeight: 'calc(100dvh - 32px)' }}
+        className="bg-white rounded-2xl shadow-2xl w-full flex flex-col"
+        style={{
+          maxHeight: 'min(85vh, 600px)',
+          maxWidth: '520px',
+          width: '100%',
+        }}
       >
         {/* Header - fixed at top */}
         <div
-          className="px-6 py-5 flex-shrink-0 rounded-t-2xl"
+          className="px-4 sm:px-6 py-4 flex-shrink-0 rounded-t-2xl"
           style={{ background: headerGradient, color: headerText }}
         >
           <div className="flex items-center gap-3">
             <div
-              className="p-2 rounded-xl"
+              className="p-2 rounded-xl hidden sm:flex"
               style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
             >
-              <Shield className="w-6 h-6" style={{ color: headerText }} />
+              <Shield className="w-5 h-5" style={{ color: headerText }} />
             </div>
             <div>
-              <h2 id="disclaimer-modal-title" className="text-xl font-semibold" style={{ color: headerText }}>
+              <h2 id="disclaimer-modal-title" className="text-lg sm:text-xl font-semibold" style={{ color: headerText }}>
                 {disclaimer.title}
               </h2>
-              <p className="text-sm mt-0.5" style={{ color: headerText, opacity: 0.8 }}>
+              <p className="text-xs sm:text-sm mt-0.5" style={{ color: headerText, opacity: 0.8 }}>
                 Version {disclaimer.version}
               </p>
             </div>
@@ -165,32 +170,35 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
         </div>
 
         {/* Content - scrollable */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1">
           {/* Error message */}
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-3">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Disclaimer content */}
-          <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 mb-5">
+          {/* Disclaimer content - scrollable box */}
+          <div
+            className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4 overflow-y-auto"
+            style={{ maxHeight: '180px' }}
+          >
             <div className="text-gray-700 text-sm leading-relaxed">
               {formatContent(disclaimer.content)}
             </div>
           </div>
 
           {/* Info box */}
-          <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100 mb-5">
-            <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-700">
+          <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-blue-50 rounded-xl border border-blue-100 mb-4">
+            <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs sm:text-sm text-blue-700">
               Mit der Bestätigung akzeptieren Sie diese Nutzungshinweise für {partnerName}.
             </p>
           </div>
 
           {/* Don't show again checkbox */}
-          <label className="flex items-center gap-3 cursor-pointer group mb-6">
+          <label className="flex items-center gap-3 cursor-pointer group mb-4 sm:mb-5">
             <div className="relative">
               <input
                 type="checkbox"
@@ -223,8 +231,8 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
             disabled={isLoading}
             style={{
               width: '100%',
-              padding: '14px 24px',
-              fontSize: '16px',
+              padding: '12px 20px',
+              fontSize: '15px',
               fontWeight: 600,
               color: sidebarTextColor,
               background: isLoading ? '#94a3b8' : buttonGradient,
@@ -256,8 +264,8 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
                   fill="none"
                   viewBox="0 0 24 24"
                   style={{
-                    width: '20px',
-                    height: '20px',
+                    width: '18px',
+                    height: '18px',
                     color: sidebarTextColor,
                     animation: 'spin 1s linear infinite',
                   }}
@@ -265,17 +273,17 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
                   <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span style={{ color: sidebarTextColor, fontSize: '16px', fontWeight: 600 }}>Wird gespeichert...</span>
+                <span style={{ color: sidebarTextColor, fontSize: '15px', fontWeight: 600 }}>Wird gespeichert...</span>
               </>
             ) : (
-              <span style={{ color: sidebarTextColor, fontSize: '16px', fontWeight: 600 }}>
+              <span style={{ color: sidebarTextColor, fontSize: '15px', fontWeight: 600 }}>
                 Verstanden
               </span>
             )}
           </button>
 
           {/* Help text */}
-          <p className="text-xs text-center text-gray-500 mt-4">
+          <p className="text-xs text-center text-gray-500 mt-3">
             {dontShowAgain
               ? 'Sie werden diesen Hinweis bei zukünftigen Anmeldungen nicht mehr sehen.'
               : 'Dieser Hinweis wird bei jeder Anmeldung angezeigt.'

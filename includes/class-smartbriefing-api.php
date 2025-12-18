@@ -183,6 +183,7 @@ class Bewerbungstrainer_SmartBriefing_API {
                 'variables_schema' => $template->variables_schema,
                 'is_custom' => !empty($template->is_custom),
                 'system_prompt' => !empty($template->is_custom) ? $template->system_prompt : null, // Only expose for custom templates
+                'allow_custom_variables' => !empty($template->allow_custom_variables),
             );
         }, $templates);
 
@@ -226,6 +227,7 @@ class Bewerbungstrainer_SmartBriefing_API {
                 'variables_schema' => $template->variables_schema,
                 'is_custom' => !$is_system,
                 'system_prompt' => ($is_owner || $is_system) ? $template->system_prompt : null,
+                'allow_custom_variables' => !empty($template->allow_custom_variables),
             ),
         ), 200);
     }
@@ -485,6 +487,14 @@ class Bewerbungstrainer_SmartBriefing_API {
         $user_id = get_current_user_id();
         $variables = isset($params['variables']) ? $params['variables'] : array();
 
+        // Merge custom variables (always allowed)
+        $custom_variables = isset($params['custom_variables']) ? $params['custom_variables'] : array();
+        if (!empty($custom_variables) && is_array($custom_variables)) {
+            // Custom variables take precedence
+            $variables = array_merge($variables, $custom_variables);
+            error_log('[SMARTBRIEFING] Custom variables added: ' . json_encode(array_keys($custom_variables)));
+        }
+
         // Generate title from variables or date
         $briefing_title = $this->generate_briefing_title($template, $variables);
 
@@ -509,8 +519,8 @@ class Bewerbungstrainer_SmartBriefing_API {
             );
         }
 
-        // Build prompt with variable interpolation
-        $system_prompt = $this->interpolate_variables($template->system_prompt, $variables);
+        // Build prompt using structured fields (includes all variables in User-Daten section)
+        $system_prompt = $this->build_structured_prompt($template, $variables);
 
         // Build full prompt requesting JSON output
         $full_prompt = $this->build_briefing_prompt_json($system_prompt, $variables, $template->title);
@@ -1420,6 +1430,81 @@ class Bewerbungstrainer_SmartBriefing_API {
         }
 
         return trim($markdown);
+    }
+
+    /**
+     * Build the complete prompt from structured template fields
+     *
+     * Combines ai_role, auto-generated variables section, ai_task, and ai_behavior
+     * Falls back to legacy system_prompt if new fields are empty
+     *
+     * @param object $template Template object
+     * @param array $variables Variables from user input (includes custom variables)
+     * @return string The complete system prompt
+     */
+    private function build_structured_prompt($template, $variables) {
+        $prompt_parts = array();
+
+        // Check if we have the new structured fields
+        $has_new_structure = !empty($template->ai_role) || !empty($template->ai_task);
+        $has_legacy_prompt = !empty($template->system_prompt);
+
+        // 1. AI Role - "Die KI agiert als" (or fallback)
+        if (!empty($template->ai_role)) {
+            $prompt_parts[] = $this->interpolate_variables($template->ai_role, $variables);
+        } elseif (!$has_new_structure && $has_legacy_prompt) {
+            // Use legacy system_prompt if no new structure
+            $prompt_parts[] = $this->interpolate_variables($template->system_prompt, $variables);
+        } else {
+            // Fallback: Generate a sensible default role based on template
+            $template_title = !empty($template->title) ? $template->title : 'Briefing';
+            $prompt_parts[] = "Du bist ein professioneller Coach und Experte für {$template_title}. Erstelle ein maßgeschneidertes, praxisnahes Briefing für den Nutzer basierend auf seinen Angaben.";
+        }
+
+        // 2. Auto-inject ALL variables as "User-Daten" section - ALWAYS
+        if (!empty($variables) && is_array($variables)) {
+            $user_data_lines = array();
+            $user_data_lines[] = "\n=== USER-DATEN (Alle erfassten Variablen) ===";
+
+            // Get variable labels from schema if available
+            $schema_labels = array();
+            if (!empty($template->variables_schema) && is_array($template->variables_schema)) {
+                foreach ($template->variables_schema as $field) {
+                    if (isset($field['key']) && isset($field['label'])) {
+                        $schema_labels[$field['key']] = $field['label'];
+                    }
+                }
+            }
+
+            foreach ($variables as $key => $value) {
+                if ($value !== '' && $value !== null) {
+                    // Use label from schema if available, otherwise format the key nicely
+                    $label = isset($schema_labels[$key])
+                        ? $schema_labels[$key]
+                        : ucfirst(str_replace('_', ' ', $key));
+                    $user_data_lines[] = "- {$label}: {$value}";
+                }
+            }
+
+            if (count($user_data_lines) > 1) { // More than just the header
+                $prompt_parts[] = implode("\n", $user_data_lines);
+            }
+        }
+
+        // 3. AI Task - "Was" the AI should produce
+        if (!empty($template->ai_task)) {
+            $prompt_parts[] = "\n" . $this->interpolate_variables($template->ai_task, $variables);
+        } elseif (!$has_new_structure && !$has_legacy_prompt) {
+            // Fallback: Generate a sensible default task
+            $prompt_parts[] = "\n=== AUFGABE ===\nErstelle ein strukturiertes Briefing mit 4-6 Abschnitten. Jeder Abschnitt soll 3-5 konkrete, umsetzbare Punkte enthalten. Beziehe dich auf ALLE oben genannten User-Daten und passe die Inhalte individuell an.";
+        }
+
+        // 4. AI Behavior - How the AI should behave
+        if (!empty($template->ai_behavior)) {
+            $prompt_parts[] = "\n" . $this->interpolate_variables($template->ai_behavior, $variables);
+        }
+
+        return implode("\n", $prompt_parts);
     }
 
     /**
