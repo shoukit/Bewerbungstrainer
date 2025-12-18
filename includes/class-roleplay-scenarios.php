@@ -50,6 +50,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
         // Handle CSV import on edit.php page load (more reliable for custom post types)
         add_action('load-edit.php', array($this, 'handle_import_on_load'));
+        error_log('[ROLEPLAY] Hooks registered, current action: ' . current_action());
 
         // Add bulk action for export
         add_filter('bulk_actions-edit-' . self::POST_TYPE, array($this, 'add_bulk_actions'));
@@ -867,13 +868,19 @@ class Bewerbungstrainer_Roleplay_Scenarios {
      * Handle CSV import on edit.php page load (triggered by load-edit.php hook)
      */
     public function handle_import_on_load() {
+        // Debug: Log every call to this function
+        error_log('[ROLEPLAY IMPORT] handle_import_on_load ENTRY - GET: ' . print_r($_GET, true));
+        error_log('[ROLEPLAY IMPORT] handle_import_on_load ENTRY - POST keys: ' . implode(', ', array_keys($_POST)));
+
         // Only process on our post type
         if (!isset($_GET['post_type']) || $_GET['post_type'] !== self::POST_TYPE) {
+            error_log('[ROLEPLAY IMPORT] Wrong post_type or not set, returning');
             return;
         }
 
         // Check if this is an import request
         if (!isset($_POST['roleplay_import_action'])) {
+            error_log('[ROLEPLAY IMPORT] No roleplay_import_action in POST, returning');
             return;
         }
 
