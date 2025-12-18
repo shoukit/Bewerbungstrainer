@@ -56,6 +56,32 @@ const SessionSidebar = ({
     return null;
   }, [feedback]);
 
+  // Generate unique ID for scoped styles
+  const styleId = useMemo(() => `session-sidebar-${Math.random().toString(36).substr(2, 9)}`, []);
+
+  // Dynamic CSS to override Elementor's !important rules
+  const dynamicStyles = useMemo(() => `
+    /* Override Elementor's button hover styles for this sidebar's tabs */
+    [data-sidebar-id="${styleId}"] button[data-tab-button="true"] {
+      background-color: transparent !important;
+      color: ${COLORS.slate[500]} !important;
+      border-bottom: 2px solid transparent !important;
+    }
+    [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:hover {
+      background-color: ${COLORS.slate[50]} !important;
+      color: ${COLORS.slate[700]} !important;
+    }
+    [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"] {
+      background-color: ${primaryAccentLight} !important;
+      color: ${primaryAccent} !important;
+      border-bottom: 2px solid ${primaryAccent} !important;
+    }
+    [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:hover {
+      background-color: ${primaryAccentLight} !important;
+      color: ${primaryAccent} !important;
+    }
+  `, [styleId, primaryAccent, primaryAccentLight]);
+
   if (isCollapsed) {
     return (
       <motion.div
@@ -86,19 +112,23 @@ const SessionSidebar = ({
   }
 
   return (
-    <motion.div
-      initial={{ width: 0, opacity: 0 }}
-      animate={{ width: '100%', opacity: 1 }}
-      style={{
-        backgroundColor: 'white',
-        borderLeft: `1px solid ${COLORS.slate[200]}`,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        height: 'calc(100vh - 120px)',
-        maxHeight: '800px',
-      }}
-    >
+    <>
+      {/* Dynamic styles to override Elementor's !important rules */}
+      <style>{dynamicStyles}</style>
+      <motion.div
+        data-sidebar-id={styleId}
+        initial={{ width: 0, opacity: 0 }}
+        animate={{ width: '100%', opacity: 1 }}
+        style={{
+          backgroundColor: 'white',
+          borderLeft: `1px solid ${COLORS.slate[200]}`,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          height: 'calc(100vh - 120px)',
+          maxHeight: '800px',
+        }}
+      >
       {/* Header - Partner Theme Gradient with inline styles */}
       <div style={{
         background: headerGradient,
@@ -169,6 +199,7 @@ const SessionSidebar = ({
         {/* Coaching Tab */}
         <button
           data-tab-button="true"
+          data-active={activeTab === 'coaching' ? 'true' : undefined}
           onClick={() => setActiveTab('coaching')}
           onMouseEnter={() => setHoveredTab('coaching')}
           onMouseLeave={() => setHoveredTab(null)}
@@ -196,6 +227,7 @@ const SessionSidebar = ({
         {/* Analysen Tab */}
         <button
           data-tab-button="true"
+          data-active={activeTab === 'analysen' ? 'true' : undefined}
           onClick={() => setActiveTab('analysen')}
           onMouseEnter={() => setHoveredTab('analysen')}
           onMouseLeave={() => setHoveredTab(null)}
@@ -257,6 +289,7 @@ const SessionSidebar = ({
       </div>
 
     </motion.div>
+    </>
   );
 };
 
