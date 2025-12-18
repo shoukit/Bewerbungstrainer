@@ -815,7 +815,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         </div>
         <div style="display: inline-block; margin-left: 10px;">
             <form method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 5px;">
-                <?php wp_nonce_field('import_roleplay_scenarios'); ?>
+                <?php wp_nonce_field('import_roleplay_scenarios', 'roleplay_import_nonce'); ?>
                 <input type="file" name="csv_file" accept=".csv" required style="width: 180px;">
                 <button type="submit" name="roleplay_import_csv" class="button"><?php _e('Import', 'bewerbungstrainer'); ?></button>
             </form>
@@ -842,7 +842,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
         // Import CSV
         if (isset($_POST['roleplay_import_csv']) && isset($_FILES['csv_file'])) {
-            if (!wp_verify_nonce($_POST['_wpnonce'], 'import_roleplay_scenarios')) {
+            if (!wp_verify_nonce($_POST['roleplay_import_nonce'], 'import_roleplay_scenarios')) {
                 wp_die('Security check failed');
             }
             $this->import_scenarios_csv($_FILES['csv_file']);
