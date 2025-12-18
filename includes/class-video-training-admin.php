@@ -351,6 +351,18 @@ class Bewerbungstrainer_Video_Training_Admin {
             'sort_order'
         ), ';');
 
+        // Clean up data: decode HTML entities and remove excessive escaping
+        $clean_text = function($text) {
+            if (empty($text)) return '';
+            // Decode HTML entities (e.g., &amp; -> &)
+            $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            // Remove excessive backslash escaping from legacy data
+            while (strpos($text, '\\\\') !== false) {
+                $text = str_replace('\\\\', '\\', $text);
+            }
+            return $text;
+        };
+
         // Data rows
         foreach ($scenarios as $scenario) {
             $input_config = is_array($scenario->input_configuration)
@@ -359,15 +371,15 @@ class Bewerbungstrainer_Video_Training_Admin {
 
             fputcsv($output, array(
                 $scenario->id,
-                $scenario->title,
-                $scenario->description,
+                $clean_text($scenario->title),
+                $clean_text($scenario->description),
                 $scenario->icon,
                 $scenario->difficulty,
                 $scenario->category,
                 $scenario->scenario_type,
-                $scenario->system_prompt,
-                $scenario->question_generation_prompt,
-                $scenario->feedback_prompt,
+                $clean_text($scenario->system_prompt),
+                $clean_text($scenario->question_generation_prompt),
+                $clean_text($scenario->feedback_prompt),
                 $input_config,
                 $scenario->question_count,
                 $scenario->time_limit_per_question,

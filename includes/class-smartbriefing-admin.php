@@ -380,16 +380,28 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 ? json_encode($template->variables_schema, JSON_UNESCAPED_UNICODE)
                 : $template->variables_schema;
 
+            // Clean up data: decode HTML entities and remove excessive escaping
+            $clean_text = function($text) {
+                if (empty($text)) return '';
+                // Decode HTML entities (e.g., &amp; -> &)
+                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                // Remove excessive backslash escaping from legacy data
+                while (strpos($text, '\\\\') !== false) {
+                    $text = str_replace('\\\\', '\\', $text);
+                }
+                return $text;
+            };
+
             fputcsv($output, array(
                 $template->id,
-                $template->title,
-                $template->description,
+                $clean_text($template->title),
+                $clean_text($template->description),
                 $template->icon,
                 $template->category,
-                $template->system_prompt,
-                $template->ai_role ?? '',
-                $template->ai_task ?? '',
-                $template->ai_behavior ?? '',
+                $clean_text($template->system_prompt),
+                $clean_text($template->ai_role ?? ''),
+                $clean_text($template->ai_task ?? ''),
+                $clean_text($template->ai_behavior ?? ''),
                 $template->allow_custom_variables ?? 0,
                 $vars_schema,
                 $template->is_active,

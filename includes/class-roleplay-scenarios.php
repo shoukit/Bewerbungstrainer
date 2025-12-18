@@ -889,30 +889,42 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'status'
         ), ';');
 
+        // Clean up data: decode HTML entities and remove excessive escaping
+        $clean_text = function($text) {
+            if (empty($text)) return '';
+            // Decode HTML entities (e.g., &amp; -> &)
+            $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            // Remove excessive backslash escaping from legacy data
+            while (strpos($text, '\\\\') !== false) {
+                $text = str_replace('\\\\', '\\', $text);
+            }
+            return $text;
+        };
+
         // Data rows
         foreach ($scenarios as $scenario) {
             $post = get_post($scenario['id']);
 
             fputcsv($output, array(
                 $scenario['id'],
-                $scenario['title'],
-                $scenario['description'],
-                $post->post_content,
+                $clean_text($scenario['title']),
+                $clean_text($scenario['description']),
+                $clean_text($post->post_content),
                 $scenario['agent_id'],
-                $scenario['initial_message'],
+                $clean_text($scenario['initial_message']),
                 $scenario['difficulty'],
                 $scenario['role_type'],
-                $scenario['user_role_label'],
+                $clean_text($scenario['user_role_label']),
                 json_encode($scenario['variables_schema'], JSON_UNESCAPED_UNICODE),
                 implode(',', $scenario['tags']),
-                $scenario['interviewer_profile']['name'],
-                $scenario['interviewer_profile']['role'],
+                $clean_text($scenario['interviewer_profile']['name']),
+                $clean_text($scenario['interviewer_profile']['role']),
                 $scenario['interviewer_profile']['image_url'],
-                $scenario['interviewer_profile']['properties'],
-                $scenario['interviewer_profile']['typical_objections'],
-                $scenario['interviewer_profile']['important_questions'],
-                $scenario['coaching_hints'],
-                get_post_meta($scenario['id'], '_roleplay_feedback_prompt', true),
+                $clean_text($scenario['interviewer_profile']['properties']),
+                $clean_text($scenario['interviewer_profile']['typical_objections']),
+                $clean_text($scenario['interviewer_profile']['important_questions']),
+                $clean_text($scenario['coaching_hints']),
+                $clean_text(get_post_meta($scenario['id'], '_roleplay_feedback_prompt', true)),
                 $post->post_status
             ), ';');
         }
