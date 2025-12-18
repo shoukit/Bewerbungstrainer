@@ -250,6 +250,9 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             'icon' => sanitize_text_field($post['icon'] ?? 'file-text'),
             'category' => sanitize_text_field($post['category'] ?? 'CAREER'),
             'system_prompt' => wp_kses_post($post['system_prompt'] ?? ''),
+            'ai_role' => wp_kses_post($post['ai_role'] ?? ''),
+            'ai_task' => wp_kses_post($post['ai_task'] ?? ''),
+            'ai_behavior' => wp_kses_post($post['ai_behavior'] ?? ''),
             'variables_schema' => json_encode($variables_schema, JSON_UNESCAPED_UNICODE),
             'is_active' => isset($post['is_active']) ? 1 : 0,
             'sort_order' => intval($post['sort_order'] ?? 0),
@@ -430,6 +433,9 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             'icon' => 'file-text',
             'category' => 'CAREER',
             'system_prompt' => '',
+            'ai_role' => '',
+            'ai_task' => '',
+            'ai_behavior' => '',
             'variables_schema' => array(),
             'is_active' => 1,
             'sort_order' => 0,
@@ -530,20 +536,49 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                                 </div>
                             </div>
 
-                            <!-- System Prompt -->
+                            <!-- Structured Prompt Fields -->
                             <div class="postbox">
-                                <h2 class="hndle"><span>KI-Prompt</span></h2>
+                                <h2 class="hndle"><span>KI-Prompt (Strukturiert)</span></h2>
                                 <div class="inside">
                                     <div class="prompt-help">
                                         <strong>Variable Platzhalter:</strong> Verwende <code>${variable_key}</code> um Benutzereingaben in den Prompt einzufügen.
                                         <br>Beispiel: <code>${target_company}</code> wird durch den vom Nutzer eingegebenen Firmennamen ersetzt.
                                         <br>Für optionale Variablen: <code>${?key:Prefix }</code> - wird nur eingefügt wenn die Variable einen Wert hat.
+                                        <br><br><strong>Hinweis:</strong> Alle vom Nutzer erfassten Variablen werden automatisch als "User-Daten" in den Prompt eingefügt.
                                     </div>
-                                    <textarea name="system_prompt" id="system_prompt" rows="15" class="large-text code"><?php echo esc_textarea($data['system_prompt']); ?></textarea>
-                                    <p class="description">
-                                        Der vollständige Prompt, der an die KI gesendet wird. Definiere die Struktur und den Inhalt des Briefings.
-                                        Das Ergebnis sollte im Markdown-Format sein.
+
+                                    <!-- Default Values Button -->
+                                    <p style="margin-bottom: 20px;">
+                                        <button type="button" class="button" id="fill-defaults-btn">📝 Standard einfügen</button>
+                                        <span class="description" style="margin-left: 10px;">Fügt bewährte Standardwerte für Karriere-Briefings ein</span>
                                     </p>
+
+                                    <table class="form-table">
+                                        <tr>
+                                            <th><label for="ai_role">KI-Rolle (Persona)</label></th>
+                                            <td>
+                                                <textarea name="ai_role" id="ai_role" rows="3" class="large-text code"><?php echo esc_textarea($data['ai_role'] ?? ''); ?></textarea>
+                                                <p class="description">Wer ist die KI? Z.B. "Du bist ein strategischer Karriere-Coach..."</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><label for="ai_task">KI-Aufgabe (Was)</label></th>
+                                            <td>
+                                                <textarea name="ai_task" id="ai_task" rows="12" class="large-text code"><?php echo esc_textarea($data['ai_task'] ?? ''); ?></textarea>
+                                                <p class="description">Was soll die KI erstellen? Definiere Struktur und Abschnitte des Briefings.</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><label for="ai_behavior">KI-Verhalten (Wie)</label></th>
+                                            <td>
+                                                <textarea name="ai_behavior" id="ai_behavior" rows="3" class="large-text code"><?php echo esc_textarea($data['ai_behavior'] ?? ''); ?></textarea>
+                                                <p class="description">Wie soll die KI antworten? Tonalität, Stil, spezielle Anweisungen.</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <!-- Legacy system_prompt (hidden, for backward compatibility) -->
+                                    <input type="hidden" name="system_prompt" id="system_prompt" value="<?php echo esc_attr($data['system_prompt'] ?? ''); ?>">
                                 </div>
                             </div>
 
@@ -709,6 +744,41 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 var $item = $(this).closest('.smartbriefing-variable-item');
                 var key = $(this).val();
                 $item.find('.variable-key-preview').text('${' + key + '}');
+            });
+
+            // Fill default values button
+            $('#fill-defaults-btn').on('click', function() {
+                var defaultRole = 'Du bist ein strategischer Karriere-Coach. Erstelle ein maßgeschneidertes Briefing für den Nutzer.';
+
+                var defaultTask = `Generiere eine strukturierte Checkliste in Markdown.
+
+Struktur:
+### 1. Dein Personal Pitch 👤
+[Erstelle 5 provokante Leitfragen, um die Story für \${role_name} zu schärfen.]
+
+### 2. Fachliche "Must-Haves" für \${target_company} 🛠️
+[Liste 6-7 konkrete Fachbegriffe, Tools oder Trends, die für diese Firma aktuell entscheidend sind.]
+
+### 3. Insider-Wissen & Kultur 🏢
+[Was muss man über \${target_company} wissen? Werte, aktuelle News?]
+
+### 4. Smart Questions ❓
+[5 intelligente Rückfragen an den Recruiter.]`;
+
+                var defaultBehavior = 'Sei motivierend, spezifisch und professionell und achte strikt bei der Beantwortung der Fragen auf das Karrierelevel, so dass es angemessen ist.';
+
+                // Only fill if fields are empty, or confirm overwrite
+                var hasContent = $('#ai_role').val().trim() || $('#ai_task').val().trim() || $('#ai_behavior').val().trim();
+
+                if (hasContent) {
+                    if (!confirm('Die bestehenden Werte werden überschrieben. Fortfahren?')) {
+                        return;
+                    }
+                }
+
+                $('#ai_role').val(defaultRole);
+                $('#ai_task').val(defaultTask);
+                $('#ai_behavior').val(defaultBehavior);
             });
         });
         </script>
