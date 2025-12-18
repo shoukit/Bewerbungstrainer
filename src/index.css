@@ -324,14 +324,11 @@
   color: inherit;
 }
 
-/* Fix for session sidebar tab buttons - override Elementor's red hover */
-#bewerbungstrainer-app button[data-tab-button="true"],
-#bewerbungstrainer-app button[data-tab-button="true"]:hover,
-#bewerbungstrainer-app button[data-tab-button="true"]:focus,
-#bewerbungstrainer-app button[data-tab-button="true"]:active {
-  color: inherit !important;
-  background-color: inherit !important;
-  border-color: inherit !important;
+/* Fix for session sidebar tab buttons - let inline styles handle colors (partner branding) */
+/* Note: Do NOT use !important here as it blocks the inline styles from SessionSidebar.jsx */
+#bewerbungstrainer-app button[data-tab-button="true"] {
+  /* Reset Elementor defaults without blocking inline styles */
+  outline: none;
 }
 
 /* Override Elementor's form element styles */
