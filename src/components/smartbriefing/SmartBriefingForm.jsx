@@ -494,92 +494,94 @@ const SmartBriefingForm = ({
             />
           ))}
 
-          {/* Custom Variables Section */}
-          <div
-            style={{
-              marginTop: '24px',
-              marginBottom: '20px',
-              paddingTop: '20px',
-              borderTop: '1px solid #f1f5f9',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setShowCustomVariables(!showCustomVariables)}
+          {/* Custom Variables Section - only shown if template allows */}
+          {template.allow_custom_variables && (
+            <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '0',
-                border: 'none',
-                background: 'none',
-                color: '#64748b',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                marginBottom: showCustomVariables ? '16px' : '0',
+                marginTop: '24px',
+                marginBottom: '20px',
+                paddingTop: '20px',
+                borderTop: '1px solid #f1f5f9',
               }}
             >
-              {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-              <Plus size={16} />
-              Zusätzliche Variablen hinzufügen (optional)
-            </button>
-
-            {showCustomVariables && (
-              <div
+              <button
+                type="button"
+                onClick={() => setShowCustomVariables(!showCustomVariables)}
                 style={{
-                  backgroundColor: '#f8fafc',
-                  borderRadius: '12px',
-                  padding: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '0',
+                  border: 'none',
+                  background: 'none',
+                  color: '#64748b',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  marginBottom: showCustomVariables ? '16px' : '0',
                 }}
               >
-                <p
+                {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                <Plus size={16} />
+                Zusätzliche Variablen hinzufügen (optional)
+              </button>
+
+              {showCustomVariables && (
+                <div
                   style={{
-                    fontSize: '13px',
-                    color: '#64748b',
-                    margin: '0 0 12px 0',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '12px',
+                    padding: '16px',
                   }}
                 >
-                  Füge eigene Variablen hinzu, die in die Briefing-Generierung einfließen sollen.
-                </p>
+                  <p
+                    style={{
+                      fontSize: '13px',
+                      color: '#64748b',
+                      margin: '0 0 12px 0',
+                    }}
+                  >
+                    Füge eigene Variablen hinzu, die in die Briefing-Generierung einfließen sollen.
+                  </p>
 
-                {customVariables.length > 0 && (
-                  <div style={{ marginBottom: '12px' }}>
-                    {customVariables.map((cv, index) => (
-                      <CustomVariableItem
-                        key={index}
-                        variable={cv}
-                        index={index}
-                        onChange={updateCustomVariable}
-                        onDelete={deleteCustomVariable}
-                        primaryAccent={primaryAccent}
-                      />
-                    ))}
-                  </div>
-                )}
+                  {customVariables.length > 0 && (
+                    <div style={{ marginBottom: '12px' }}>
+                      {customVariables.map((cv, index) => (
+                        <CustomVariableItem
+                          key={index}
+                          variable={cv}
+                          index={index}
+                          onChange={updateCustomVariable}
+                          onDelete={deleteCustomVariable}
+                          primaryAccent={primaryAccent}
+                        />
+                      ))}
+                    </div>
+                  )}
 
-                <button
-                  type="button"
-                  onClick={addCustomVariable}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    border: '1px dashed #cbd5e1',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    color: '#64748b',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Plus size={14} />
-                  Variable hinzufügen
-                </button>
-              </div>
-            )}
-          </div>
+                  <button
+                    type="button"
+                    onClick={addCustomVariable}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '8px 12px',
+                      border: '1px dashed #cbd5e1',
+                      borderRadius: '8px',
+                      backgroundColor: 'white',
+                      color: '#64748b',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Plus size={14} />
+                    Variable hinzufügen
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* API Error */}
           {apiError && (

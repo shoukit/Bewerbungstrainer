@@ -253,6 +253,7 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             'ai_role' => wp_kses_post($post['ai_role'] ?? ''),
             'ai_task' => wp_kses_post($post['ai_task'] ?? ''),
             'ai_behavior' => wp_kses_post($post['ai_behavior'] ?? ''),
+            'allow_custom_variables' => isset($post['allow_custom_variables']) ? 1 : 0,
             'variables_schema' => json_encode($variables_schema, JSON_UNESCAPED_UNICODE),
             'is_active' => isset($post['is_active']) ? 1 : 0,
             'sort_order' => intval($post['sort_order'] ?? 0),
@@ -436,6 +437,7 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             'ai_role' => '',
             'ai_task' => '',
             'ai_behavior' => '',
+            'allow_custom_variables' => 0,
             'variables_schema' => array(),
             'is_active' => 1,
             'sort_order' => 0,
@@ -615,6 +617,13 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                                                 <input type="checkbox" name="is_active" value="1" <?php checked($data['is_active'], 1); ?>>
                                                 Aktiv (für Nutzer sichtbar)
                                             </label>
+                                        </p>
+                                        <p>
+                                            <label>
+                                                <input type="checkbox" name="allow_custom_variables" value="1" <?php checked($data['allow_custom_variables'] ?? 0, 1); ?>>
+                                                Nutzer kann eigene Variablen hinzufügen
+                                            </label>
+                                            <br><span class="description" style="font-size: 11px; color: #666;">Zeigt "Zusätzliche Variablen" im Frontend</span>
                                         </p>
                                         <p>
                                             <label for="sort_order">Reihenfolge:</label>
