@@ -48,6 +48,9 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         // Handle CSV import/export
         add_action('admin_init', array($this, 'handle_csv_actions'));
 
+        // Handle CSV import via admin_post hook (more reliable for form submissions)
+        add_action('admin_post_import_roleplay_scenarios', array($this, 'handle_import_csv'));
+
         // Add bulk action for export
         add_filter('bulk_actions-edit-' . self::POST_TYPE, array($this, 'add_bulk_actions'));
 
@@ -798,8 +801,9 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(__('%d Szenario(s) importiert, %d aktualisiert.', 'bewerbungstrainer'), $imported, $updated) . '</p></div>';
         }
         if (isset($_GET['import_error'])) {
+            $error_code = isset($_GET['error_code']) ? ' (Code: ' . esc_html($_GET['error_code']) . ')' : '';
             $errors = array(
-                'upload' => __('Fehler beim Hochladen der Datei.', 'bewerbungstrainer'),
+                'upload' => __('Fehler beim Hochladen der Datei.', 'bewerbungstrainer') . $error_code,
                 'read' => __('Fehler beim Lesen der Datei.', 'bewerbungstrainer'),
                 'format' => __('Ungültiges CSV-Format. Bitte exportiere zuerst eine Vorlage.', 'bewerbungstrainer'),
             );
@@ -814,10 +818,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             </a>
         </div>
         <div style="display: inline-block; margin-left: 10px;">
-            <form method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 5px;">
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 5px;">
+                <input type="hidden" name="action" value="import_roleplay_scenarios">
                 <?php wp_nonce_field('import_roleplay_scenarios', 'roleplay_import_nonce'); ?>
                 <input type="file" name="csv_file" accept=".csv" required style="width: 180px;">
-                <button type="submit" name="roleplay_import_csv" class="button"><?php _e('Import', 'bewerbungstrainer'); ?></button>
+                <button type="submit" class="button"><?php _e('Import', 'bewerbungstrainer'); ?></button>
             </form>
         </div>
         <?php
@@ -840,13 +845,47 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             exit;
         }
 
-        // Import CSV
-        if (isset($_POST['roleplay_import_csv']) && isset($_FILES['csv_file'])) {
-            if (!wp_verify_nonce($_POST['roleplay_import_nonce'], 'import_roleplay_scenarios')) {
-                wp_die('Security check failed');
+        // Import CSV - kept for backwards compatibility (admin_init based)
+        if (isset($_POST['roleplay_import_csv'])) {
+            // Check if file was uploaded
+            if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+                $error_code = isset($_FILES['csv_file']) ? $_FILES['csv_file']['error'] : 'no_file';
+                wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=upload&error_code=' . $error_code));
+                exit;
             }
+
+            // Verify nonce
+            if (!isset($_POST['roleplay_import_nonce']) || !wp_verify_nonce($_POST['roleplay_import_nonce'], 'import_roleplay_scenarios')) {
+                wp_die('Security check failed - Invalid nonce');
+            }
+
             $this->import_scenarios_csv($_FILES['csv_file']);
         }
+    }
+
+    /**
+     * Handle CSV import via admin_post hook (dedicated handler for form submissions)
+     */
+    public function handle_import_csv() {
+        // Verify user capabilities
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized access');
+        }
+
+        // Verify nonce
+        if (!isset($_POST['roleplay_import_nonce']) || !wp_verify_nonce($_POST['roleplay_import_nonce'], 'import_roleplay_scenarios')) {
+            wp_die('Security check failed - Invalid nonce');
+        }
+
+        // Check if file was uploaded
+        if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+            $error_code = isset($_FILES['csv_file']) ? $_FILES['csv_file']['error'] : 'no_file';
+            wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=upload&error_code=' . $error_code));
+            exit;
+        }
+
+        // Process the import
+        $this->import_scenarios_csv($_FILES['csv_file']);
     }
 
     /**
