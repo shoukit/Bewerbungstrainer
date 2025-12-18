@@ -971,10 +971,13 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         $imported = 0;
         $updated = 0;
 
-        // Helper to restore newlines from literal \n
+        // Helper to restore newlines from various formats (\\n, \n, /n)
         $restore_newlines = function($text) {
             if (empty($text)) return '';
-            return str_replace('\\n', "\n", $text);
+            // Handle different newline escape formats
+            $text = str_replace('/n', "\n", $text);   // Handle /n format
+            $text = str_replace('\\n', "\n", $text);  // Handle \n format
+            return $text;
         };
 
         while (($row = fgetcsv($handle, 0, ';')) !== false) {
@@ -1004,17 +1007,22 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 if ($existing && $existing->post_type === self::POST_TYPE) {
                     $post_data['ID'] = intval($data['id']);
                     $post_id = wp_update_post($post_data);
-                    $updated++;
+                    if ($post_id && !is_wp_error($post_id)) {
+                        $updated++;
+                    }
                 }
             }
 
             // Create new if not updating
-            if (!$post_id) {
+            if (!$post_id || $post_id === 0) {
                 $post_id = wp_insert_post($post_data);
-                $imported++;
+                if ($post_id && !is_wp_error($post_id) && $post_id > 0) {
+                    $imported++;
+                }
             }
 
-            if (!$post_id || is_wp_error($post_id)) {
+            // Skip if post creation/update failed
+            if (!$post_id || is_wp_error($post_id) || $post_id === 0) {
                 continue;
             }
 
