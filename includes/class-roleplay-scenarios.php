@@ -48,9 +48,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         // Handle CSV import/export
         add_action('admin_init', array($this, 'handle_csv_actions'));
 
-        // Handle CSV import on edit.php page load (more reliable for custom post types)
-        add_action('load-edit.php', array($this, 'handle_import_on_load'));
-        error_log('[ROLEPLAY] Hooks registered, current action: ' . current_action());
+        // Add import submenu page
+        add_action('admin_menu', array($this, 'add_import_submenu'), 20);
+
+        // Handle CSV import on import page
+        add_action('admin_init', array($this, 'handle_import_page_submission'));
 
         // Add bulk action for export
         add_filter('bulk_actions-edit-' . self::POST_TYPE, array($this, 'add_bulk_actions'));
@@ -819,12 +821,9 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             </a>
         </div>
         <div style="display: inline-block; margin-left: 10px;">
-            <form method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 5px;">
-                <input type="hidden" name="roleplay_import_action" value="1">
-                <?php wp_nonce_field('import_roleplay_scenarios', 'roleplay_import_nonce'); ?>
-                <input type="file" name="csv_file" accept=".csv" required style="width: 180px;">
-                <button type="submit" class="button"><?php _e('Import', 'bewerbungstrainer'); ?></button>
-            </form>
+            <a href="<?php echo admin_url('admin.php?page=roleplay-scenarios-import'); ?>" class="button">
+                <?php _e('CSV Import', 'bewerbungstrainer'); ?>
+            </a>
         </div>
         <?php
     }
@@ -865,52 +864,111 @@ class Bewerbungstrainer_Roleplay_Scenarios {
     }
 
     /**
-     * Handle CSV import on edit.php page load (triggered by load-edit.php hook)
+     * Add import submenu page
      */
-    public function handle_import_on_load() {
-        // Debug: Log every call to this function
-        error_log('[ROLEPLAY IMPORT] handle_import_on_load ENTRY - GET: ' . print_r($_GET, true));
-        error_log('[ROLEPLAY IMPORT] handle_import_on_load ENTRY - POST keys: ' . implode(', ', array_keys($_POST)));
+    public function add_import_submenu() {
+        add_submenu_page(
+            'edit.php?post_type=' . self::POST_TYPE,
+            __('CSV Import', 'bewerbungstrainer'),
+            __('CSV Import', 'bewerbungstrainer'),
+            'manage_options',
+            'roleplay-scenarios-import',
+            array($this, 'render_import_page')
+        );
+    }
 
-        // Only process on our post type
-        if (!isset($_GET['post_type']) || $_GET['post_type'] !== self::POST_TYPE) {
-            error_log('[ROLEPLAY IMPORT] Wrong post_type or not set, returning');
+    /**
+     * Render the import page
+     */
+    public function render_import_page() {
+        // Show notices
+        if (isset($_GET['imported'])) {
+            $imported = intval($_GET['imported']);
+            $updated = isset($_GET['csv_updated']) ? intval($_GET['csv_updated']) : 0;
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(__('%d Szenario(s) importiert, %d aktualisiert.', 'bewerbungstrainer'), $imported, $updated) . '</p></div>';
+        }
+        if (isset($_GET['import_error'])) {
+            $error_code = isset($_GET['error_code']) ? ' (Code: ' . esc_html($_GET['error_code']) . ')' : '';
+            $errors = array(
+                'upload' => __('Fehler beim Hochladen der Datei.', 'bewerbungstrainer') . $error_code,
+                'read' => __('Fehler beim Lesen der Datei.', 'bewerbungstrainer'),
+                'format' => __('Ungültiges CSV-Format. Bitte exportiere zuerst eine Vorlage.', 'bewerbungstrainer'),
+            );
+            $error_msg = $errors[$_GET['import_error']] ?? __('Unbekannter Fehler beim Import.', 'bewerbungstrainer');
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error_msg) . '</p></div>';
+        }
+        ?>
+        <div class="wrap">
+            <h1><?php _e('Live-Simulationen CSV Import', 'bewerbungstrainer'); ?></h1>
+
+            <div class="card" style="max-width: 600px; padding: 20px; margin-top: 20px;">
+                <h2><?php _e('CSV-Datei importieren', 'bewerbungstrainer'); ?></h2>
+                <p><?php _e('Wähle eine CSV-Datei zum Importieren. Die Datei sollte das gleiche Format haben wie der CSV-Export.', 'bewerbungstrainer'); ?></p>
+
+                <form method="post" enctype="multipart/form-data" style="margin-top: 20px;">
+                    <?php wp_nonce_field('import_roleplay_scenarios', 'roleplay_import_nonce'); ?>
+                    <input type="hidden" name="roleplay_import_action" value="1">
+
+                    <p>
+                        <input type="file" name="csv_file" accept=".csv" required style="width: 100%;">
+                    </p>
+
+                    <p style="margin-top: 15px;">
+                        <button type="submit" class="button button-primary"><?php _e('Importieren', 'bewerbungstrainer'); ?></button>
+                        <a href="<?php echo admin_url('edit.php?post_type=' . self::POST_TYPE); ?>" class="button"><?php _e('Zurück zur Übersicht', 'bewerbungstrainer'); ?></a>
+                    </p>
+                </form>
+            </div>
+
+            <div class="card" style="max-width: 600px; padding: 20px; margin-top: 20px;">
+                <h2><?php _e('Hinweise', 'bewerbungstrainer'); ?></h2>
+                <ul style="list-style: disc; margin-left: 20px;">
+                    <li><?php _e('Die CSV-Datei muss Semikolon (;) als Trennzeichen verwenden.', 'bewerbungstrainer'); ?></li>
+                    <li><?php _e('Die erste Zeile muss die Spaltenüberschriften enthalten.', 'bewerbungstrainer'); ?></li>
+                    <li><?php _e('Wenn eine ID angegeben ist, wird der bestehende Eintrag aktualisiert.', 'bewerbungstrainer'); ?></li>
+                    <li><?php _e('Exportiere zuerst eine Vorlage, um das korrekte Format zu sehen.', 'bewerbungstrainer'); ?></li>
+                </ul>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Handle import page form submission
+     */
+    public function handle_import_page_submission() {
+        // Only process on our import page
+        if (!isset($_GET['page']) || $_GET['page'] !== 'roleplay-scenarios-import') {
             return;
         }
 
         // Check if this is an import request
         if (!isset($_POST['roleplay_import_action'])) {
-            error_log('[ROLEPLAY IMPORT] No roleplay_import_action in POST, returning');
             return;
         }
 
-        error_log('[ROLEPLAY IMPORT] handle_import_on_load called');
-        error_log('[ROLEPLAY IMPORT] POST: ' . print_r($_POST, true));
-        error_log('[ROLEPLAY IMPORT] FILES: ' . print_r($_FILES, true));
+        error_log('[ROLEPLAY IMPORT] handle_import_page_submission called');
 
         // Verify user capabilities
         if (!current_user_can('manage_options')) {
-            error_log('[ROLEPLAY IMPORT] User does not have manage_options capability');
             wp_die('Unauthorized access');
         }
 
         // Verify nonce
         if (!isset($_POST['roleplay_import_nonce']) || !wp_verify_nonce($_POST['roleplay_import_nonce'], 'import_roleplay_scenarios')) {
-            error_log('[ROLEPLAY IMPORT] Nonce verification failed');
             wp_die('Security check failed - Invalid nonce');
         }
 
         // Check if file was uploaded
         if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
             $error_code = isset($_FILES['csv_file']) ? $_FILES['csv_file']['error'] : 'no_file';
-            error_log('[ROLEPLAY IMPORT] File upload error: ' . $error_code);
-            wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=upload&error_code=' . $error_code));
+            wp_redirect(admin_url('admin.php?page=roleplay-scenarios-import&import_error=upload&error_code=' . $error_code));
             exit;
         }
 
-        error_log('[ROLEPLAY IMPORT] Starting import...');
-        // Process the import
-        $this->import_scenarios_csv($_FILES['csv_file']);
+        error_log('[ROLEPLAY IMPORT] Processing file upload...');
+        // Process the import (redirect to import page instead of edit.php)
+        $this->import_scenarios_csv($_FILES['csv_file'], 'admin.php?page=roleplay-scenarios-import');
     }
 
     /**
@@ -1005,20 +1063,27 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
     /**
      * Import scenarios from CSV
+     *
+     * @param array $file The uploaded file from $_FILES
+     * @param string $redirect_base Optional base URL for redirects (default: edit.php?post_type=roleplay_scenario)
      */
-    private function import_scenarios_csv($file) {
+    private function import_scenarios_csv($file, $redirect_base = null) {
+        if ($redirect_base === null) {
+            $redirect_base = 'edit.php?post_type=' . self::POST_TYPE;
+        }
+
         error_log('[ROLEPLAY IMPORT] import_scenarios_csv called');
         error_log('[ROLEPLAY IMPORT] File: ' . print_r($file, true));
 
         if ($file['error'] !== UPLOAD_ERR_OK) {
             error_log('[ROLEPLAY IMPORT] File upload error: ' . $file['error']);
-            wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=upload'));
+            wp_redirect(admin_url($redirect_base . '&import_error=upload'));
             exit;
         }
 
         $handle = fopen($file['tmp_name'], 'r');
         if (!$handle) {
-            wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=read'));
+            wp_redirect(admin_url($redirect_base . '&import_error=read'));
             exit;
         }
 
@@ -1032,7 +1097,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         $header = fgetcsv($handle, 0, ';');
         if (!$header || !in_array('title', $header)) {
             fclose($handle);
-            wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=format'));
+            wp_redirect(admin_url($redirect_base . '&import_error=format'));
             exit;
         }
 
@@ -1137,7 +1202,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
         error_log('[ROLEPLAY IMPORT] Done! Imported: ' . $imported . ', Updated: ' . $updated);
 
-        wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&imported=' . $imported . '&csv_updated=' . $updated));
+        wp_redirect(admin_url($redirect_base . '&imported=' . $imported . '&csv_updated=' . $updated));
         exit;
     }
 }
