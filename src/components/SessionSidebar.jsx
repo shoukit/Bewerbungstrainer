@@ -60,25 +60,47 @@ const SessionSidebar = ({
   const styleId = useMemo(() => `session-sidebar-${Math.random().toString(36).substr(2, 9)}`, []);
 
   // Dynamic CSS to override Elementor's !important rules
+  // Use highest possible specificity with #bewerbungstrainer-app prefix
   const dynamicStyles = useMemo(() => `
-    /* Override Elementor's button hover styles for this sidebar's tabs */
-    [data-sidebar-id="${styleId}"] button[data-tab-button="true"] {
+    /* Override ALL Elementor/WordPress button styles for this sidebar's tabs */
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"],
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:link,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:visited,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:hover,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:focus,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:active {
       background-color: transparent !important;
+      background-image: none !important;
       color: ${COLORS.slate[500]} !important;
+      border: none !important;
       border-bottom: 2px solid transparent !important;
+      border-color: transparent !important;
+      outline: none !important;
+      box-shadow: none !important;
+      text-decoration: none !important;
     }
-    [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:hover {
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:hover,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:focus {
       background-color: ${COLORS.slate[50]} !important;
       color: ${COLORS.slate[700]} !important;
+      border-bottom: 2px solid transparent !important;
     }
-    [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"] {
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"],
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:link,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:visited,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:hover,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:focus,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:active {
       background-color: ${primaryAccentLight} !important;
       color: ${primaryAccent} !important;
+      border: none !important;
       border-bottom: 2px solid ${primaryAccent} !important;
     }
-    [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:hover {
-      background-color: ${primaryAccentLight} !important;
-      color: ${primaryAccent} !important;
+    /* Also override icon colors inside buttons */
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"] svg,
+    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:hover svg {
+      color: inherit !important;
+      fill: currentColor !important;
     }
   `, [styleId, primaryAccent, primaryAccentLight]);
 
