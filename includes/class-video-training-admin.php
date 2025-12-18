@@ -353,21 +353,42 @@ class Bewerbungstrainer_Video_Training_Admin {
 
         // Data rows
         foreach ($scenarios as $scenario) {
-            $input_config = is_array($scenario->input_configuration)
-                ? json_encode($scenario->input_configuration, JSON_UNESCAPED_UNICODE)
-                : $scenario->input_configuration;
+            // Clean up data: decode HTML entities, remove excessive escaping, and convert newlines
+            $clean_text = function($text) {
+                if (empty($text)) return '';
+                // Decode HTML entities (e.g., &amp; -> &)
+                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                // Remove excessive backslash escaping from legacy data
+                while (strpos($text, '\\\\') !== false) {
+                    $text = str_replace('\\\\', '\\', $text);
+                }
+                // Replace actual newlines with literal \n for CSV compatibility
+                $text = str_replace(array("\r\n", "\r", "\n"), '\\n', $text);
+                return $text;
+            };
+
+            // Clean JSON config - decode and re-encode with proper flags
+            $input_config = $scenario->input_configuration;
+            if (is_array($input_config)) {
+                $input_config = json_encode($input_config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            } elseif (is_string($input_config) && !empty($input_config)) {
+                $decoded = json_decode($input_config, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $input_config = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+            }
 
             fputcsv($output, array(
                 $scenario->id,
-                $scenario->title,
-                $scenario->description,
+                $clean_text($scenario->title),
+                $clean_text($scenario->description),
                 $scenario->icon,
                 $scenario->difficulty,
                 $scenario->category,
                 $scenario->scenario_type,
-                $scenario->system_prompt,
-                $scenario->question_generation_prompt,
-                $scenario->feedback_prompt,
+                $clean_text($scenario->system_prompt),
+                $clean_text($scenario->question_generation_prompt),
+                $clean_text($scenario->feedback_prompt),
                 $input_config,
                 $scenario->question_count,
                 $scenario->time_limit_per_question,
@@ -414,6 +435,12 @@ class Bewerbungstrainer_Video_Training_Admin {
         $imported = 0;
         $updated = 0;
 
+        // Helper to restore newlines from literal \n
+        $restore_newlines = function($text) {
+            if (empty($text)) return '';
+            return str_replace('\\n', "\n", $text);
+        };
+
         while (($row = fgetcsv($handle, 0, ';')) !== false) {
             if (count($row) < count($header)) {
                 continue;
@@ -430,17 +457,17 @@ class Bewerbungstrainer_Video_Training_Admin {
                 }
             }
 
-            // Prepare scenario data
+            // Prepare scenario data (restore newlines in text fields)
             $scenario_data = array(
-                'title' => sanitize_text_field($data['title'] ?? ''),
-                'description' => sanitize_textarea_field($data['description'] ?? ''),
+                'title' => sanitize_text_field($restore_newlines($data['title'] ?? '')),
+                'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
                 'icon' => sanitize_text_field($data['icon'] ?? 'video'),
                 'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
                 'category' => sanitize_text_field($data['category'] ?? ''),
                 'scenario_type' => sanitize_text_field($data['scenario_type'] ?? 'interview'),
-                'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
-                'question_generation_prompt' => wp_kses_post($data['question_generation_prompt'] ?? ''),
-                'feedback_prompt' => wp_kses_post($data['feedback_prompt'] ?? ''),
+                'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
+                'question_generation_prompt' => wp_kses_post($restore_newlines($data['question_generation_prompt'] ?? '')),
+                'feedback_prompt' => wp_kses_post($restore_newlines($data['feedback_prompt'] ?? '')),
                 'input_configuration' => $input_config,
                 'question_count' => intval($data['question_count'] ?? 5),
                 'time_limit_per_question' => intval($data['time_limit_per_question'] ?? 120),

@@ -376,20 +376,42 @@ class Bewerbungstrainer_SmartBriefing_Admin {
 
         // Data rows
         foreach ($templates as $template) {
-            $vars_schema = is_array($template->variables_schema)
-                ? json_encode($template->variables_schema, JSON_UNESCAPED_UNICODE)
-                : $template->variables_schema;
+            // Clean up data: decode HTML entities, remove excessive escaping, and convert newlines
+            $clean_text = function($text) {
+                if (empty($text)) return '';
+                // Decode HTML entities (e.g., &amp; -> &)
+                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                // Remove excessive backslash escaping from legacy data
+                while (strpos($text, '\\\\') !== false) {
+                    $text = str_replace('\\\\', '\\', $text);
+                }
+                // Replace actual newlines with literal \n for CSV compatibility
+                $text = str_replace(array("\r\n", "\r", "\n"), '\\n', $text);
+                return $text;
+            };
+
+            // Clean JSON schema - decode and re-encode with proper flags
+            $vars_schema = $template->variables_schema;
+            if (is_array($vars_schema)) {
+                $vars_schema = json_encode($vars_schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            } elseif (is_string($vars_schema) && !empty($vars_schema)) {
+                // Decode existing JSON, clean it, and re-encode
+                $decoded = json_decode($vars_schema, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $vars_schema = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+            }
 
             fputcsv($output, array(
                 $template->id,
-                $template->title,
-                $template->description,
+                $clean_text($template->title),
+                $clean_text($template->description),
                 $template->icon,
                 $template->category,
-                $template->system_prompt,
-                $template->ai_role ?? '',
-                $template->ai_task ?? '',
-                $template->ai_behavior ?? '',
+                $clean_text($template->system_prompt),
+                $clean_text($template->ai_role ?? ''),
+                $clean_text($template->ai_task ?? ''),
+                $clean_text($template->ai_behavior ?? ''),
                 $template->allow_custom_variables ?? 0,
                 $vars_schema,
                 $template->is_active,
@@ -439,6 +461,12 @@ class Bewerbungstrainer_SmartBriefing_Admin {
 
             $data = array_combine($header, $row);
 
+            // Helper to restore newlines from \n placeholder
+            $restore_newlines = function($text) {
+                if (empty($text)) return '';
+                return str_replace('\\n', "\n", $text);
+            };
+
             // Parse variables_schema JSON
             $vars_schema = '[]';
             if (!empty($data['variables_schema'])) {
@@ -448,16 +476,16 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 }
             }
 
-            // Prepare template data
+            // Prepare template data - restore newlines for text fields
             $template_data = array(
                 'title' => sanitize_text_field($data['title'] ?? ''),
-                'description' => sanitize_textarea_field($data['description'] ?? ''),
+                'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
                 'icon' => sanitize_text_field($data['icon'] ?? 'file-text'),
                 'category' => sanitize_text_field($data['category'] ?? 'CAREER'),
-                'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
-                'ai_role' => wp_kses_post($data['ai_role'] ?? ''),
-                'ai_task' => wp_kses_post($data['ai_task'] ?? ''),
-                'ai_behavior' => wp_kses_post($data['ai_behavior'] ?? ''),
+                'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
+                'ai_role' => wp_kses_post($restore_newlines($data['ai_role'] ?? '')),
+                'ai_task' => wp_kses_post($restore_newlines($data['ai_task'] ?? '')),
+                'ai_behavior' => wp_kses_post($restore_newlines($data['ai_behavior'] ?? '')),
                 'allow_custom_variables' => intval($data['allow_custom_variables'] ?? 0),
                 'variables_schema' => $vars_schema,
                 'is_active' => intval($data['is_active'] ?? 1),

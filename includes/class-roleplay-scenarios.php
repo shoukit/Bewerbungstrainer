@@ -893,26 +893,45 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         foreach ($scenarios as $scenario) {
             $post = get_post($scenario['id']);
 
+            // Clean up data: decode HTML entities, remove excessive escaping, and convert newlines
+            $clean_text = function($text) {
+                if (empty($text)) return '';
+                // Decode HTML entities (e.g., &amp; -> &)
+                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                // Remove excessive backslash escaping from legacy data
+                while (strpos($text, '\\\\') !== false) {
+                    $text = str_replace('\\\\', '\\', $text);
+                }
+                // Replace actual newlines with literal \n for CSV compatibility
+                $text = str_replace(array("\r\n", "\r", "\n"), '\\n', $text);
+                return $text;
+            };
+
+            // Clean JSON schema - encode with proper flags
+            $vars_schema = is_array($scenario['variables_schema'])
+                ? json_encode($scenario['variables_schema'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                : '[]';
+
             fputcsv($output, array(
                 $scenario['id'],
-                $scenario['title'],
-                $scenario['description'],
-                $post->post_content,
+                $clean_text($scenario['title']),
+                $clean_text($scenario['description']),
+                $clean_text($post->post_content),
                 $scenario['agent_id'],
-                $scenario['initial_message'],
+                $clean_text($scenario['initial_message']),
                 $scenario['difficulty'],
                 $scenario['role_type'],
-                $scenario['user_role_label'],
-                json_encode($scenario['variables_schema'], JSON_UNESCAPED_UNICODE),
+                $clean_text($scenario['user_role_label']),
+                $vars_schema,
                 implode(',', $scenario['tags']),
-                $scenario['interviewer_profile']['name'],
-                $scenario['interviewer_profile']['role'],
+                $clean_text($scenario['interviewer_profile']['name']),
+                $clean_text($scenario['interviewer_profile']['role']),
                 $scenario['interviewer_profile']['image_url'],
-                $scenario['interviewer_profile']['properties'],
-                $scenario['interviewer_profile']['typical_objections'],
-                $scenario['interviewer_profile']['important_questions'],
-                $scenario['coaching_hints'],
-                get_post_meta($scenario['id'], '_roleplay_feedback_prompt', true),
+                $clean_text($scenario['interviewer_profile']['properties']),
+                $clean_text($scenario['interviewer_profile']['typical_objections']),
+                $clean_text($scenario['interviewer_profile']['important_questions']),
+                $clean_text($scenario['coaching_hints']),
+                $clean_text(get_post_meta($scenario['id'], '_roleplay_feedback_prompt', true)),
                 $post->post_status
             ), ';');
         }
@@ -952,6 +971,12 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         $imported = 0;
         $updated = 0;
 
+        // Helper to restore newlines from literal \n
+        $restore_newlines = function($text) {
+            if (empty($text)) return '';
+            return str_replace('\\n', "\n", $text);
+        };
+
         while (($row = fgetcsv($handle, 0, ';')) !== false) {
             if (count($row) < count($header)) {
                 continue;
@@ -964,11 +989,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 continue;
             }
 
-            // Prepare post data
+            // Prepare post data (restore newlines in text fields)
             $post_data = array(
                 'post_type' => self::POST_TYPE,
-                'post_title' => sanitize_text_field($data['title']),
-                'post_content' => wp_kses_post($data['content'] ?? ''),
+                'post_title' => sanitize_text_field($restore_newlines($data['title'])),
+                'post_content' => wp_kses_post($restore_newlines($data['content'] ?? '')),
                 'post_status' => in_array($data['status'] ?? '', array('publish', 'draft')) ? $data['status'] : 'publish',
             );
 
@@ -993,23 +1018,23 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 continue;
             }
 
-            // Update meta fields
-            update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($data['description'] ?? ''));
+            // Update meta fields (restore newlines in text fields)
+            update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($restore_newlines($data['description'] ?? '')));
             update_post_meta($post_id, '_roleplay_agent_id', sanitize_text_field($data['agent_id'] ?? ''));
-            update_post_meta($post_id, '_roleplay_initial_message', sanitize_textarea_field($data['initial_message'] ?? ''));
+            update_post_meta($post_id, '_roleplay_initial_message', sanitize_textarea_field($restore_newlines($data['initial_message'] ?? '')));
             update_post_meta($post_id, '_roleplay_difficulty', sanitize_text_field($data['difficulty'] ?? 'medium'));
             update_post_meta($post_id, '_roleplay_role_type', sanitize_text_field($data['role_type'] ?? 'interview'));
-            update_post_meta($post_id, '_roleplay_user_role_label', sanitize_text_field($data['user_role_label'] ?? 'Bewerber'));
-            update_post_meta($post_id, '_roleplay_feedback_prompt', sanitize_textarea_field($data['feedback_prompt'] ?? ''));
-            update_post_meta($post_id, '_roleplay_coaching_hints', sanitize_textarea_field($data['coaching_hints'] ?? ''));
+            update_post_meta($post_id, '_roleplay_user_role_label', sanitize_text_field($restore_newlines($data['user_role_label'] ?? 'Bewerber')));
+            update_post_meta($post_id, '_roleplay_feedback_prompt', sanitize_textarea_field($restore_newlines($data['feedback_prompt'] ?? '')));
+            update_post_meta($post_id, '_roleplay_coaching_hints', sanitize_textarea_field($restore_newlines($data['coaching_hints'] ?? '')));
 
             // Interviewer profile
-            update_post_meta($post_id, '_roleplay_interviewer_name', sanitize_text_field($data['interviewer_name'] ?? ''));
-            update_post_meta($post_id, '_roleplay_interviewer_role', sanitize_text_field($data['interviewer_role'] ?? ''));
+            update_post_meta($post_id, '_roleplay_interviewer_name', sanitize_text_field($restore_newlines($data['interviewer_name'] ?? '')));
+            update_post_meta($post_id, '_roleplay_interviewer_role', sanitize_text_field($restore_newlines($data['interviewer_role'] ?? '')));
             update_post_meta($post_id, '_roleplay_interviewer_image', esc_url_raw($data['interviewer_image'] ?? ''));
-            update_post_meta($post_id, '_roleplay_interviewer_properties', sanitize_textarea_field($data['interviewer_properties'] ?? ''));
-            update_post_meta($post_id, '_roleplay_interviewer_objections', sanitize_textarea_field($data['interviewer_objections'] ?? ''));
-            update_post_meta($post_id, '_roleplay_interviewer_questions', sanitize_textarea_field($data['interviewer_questions'] ?? ''));
+            update_post_meta($post_id, '_roleplay_interviewer_properties', sanitize_textarea_field($restore_newlines($data['interviewer_properties'] ?? '')));
+            update_post_meta($post_id, '_roleplay_interviewer_objections', sanitize_textarea_field($restore_newlines($data['interviewer_objections'] ?? '')));
+            update_post_meta($post_id, '_roleplay_interviewer_questions', sanitize_textarea_field($restore_newlines($data['interviewer_questions'] ?? '')));
 
             // Variables schema
             if (!empty($data['variables_schema'])) {
