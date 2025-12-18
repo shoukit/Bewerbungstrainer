@@ -39,6 +39,11 @@ import {
 } from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import {
+  generateLiveCoaching,
+  shouldGenerateCoaching,
+  extractCoachingContext,
+} from '@/services/live-coaching-engine';
 
 // Proxy URL - can be configured
 const PROXY_URL = 'wss://karriereheld-ws-proxy.onrender.com/ws';
@@ -97,6 +102,10 @@ const RoleplayProxySession = ({
   const transcriptRef = useRef([]); // Ref for stable transcript access
   const startTimeRef = useRef(null); // Ref for stable startTime access
   const conversationIdRef = useRef(null); // Ref for ElevenLabs conversation ID (for audio download)
+
+  // Live coaching state
+  const [dynamicCoaching, setDynamicCoaching] = useState(null);
+  const [isCoachingGenerating, setIsCoachingGenerating] = useState(false);
 
   // Responsive handling
   useEffect(() => {
@@ -293,6 +302,10 @@ const RoleplayProxySession = ({
           // AI response text
           if (data.agent_response_event?.agent_response) {
             addToTranscript('agent', data.agent_response_event.agent_response);
+            // Generate live coaching when agent speaks
+            setTimeout(() => {
+              handleGenerateCoaching(data.agent_response_event.agent_response, transcriptRef.current);
+            }, 100);
           }
           break;
 
@@ -353,6 +366,41 @@ const RoleplayProxySession = ({
       transcriptRef.current = updated; // Keep ref in sync
       return updated;
     });
+  };
+
+  /**
+   * Generate live coaching when agent speaks
+   */
+  const handleGenerateCoaching = async (agentMessage, currentTranscript) => {
+    const geminiApiKey = wordpressAPI.getGeminiApiKey();
+    if (!geminiApiKey) {
+      console.warn('[COACHING] No Gemini API key available');
+      return;
+    }
+
+    // Check if this message warrants coaching
+    if (!shouldGenerateCoaching({ role: 'agent', text: agentMessage })) {
+      return;
+    }
+
+    try {
+      setIsCoachingGenerating(true);
+      // Clear previous coaching immediately for fresh UI
+      setDynamicCoaching(null);
+
+      const coaching = await generateLiveCoaching({
+        apiKey: geminiApiKey,
+        nextAgentInput: agentMessage,
+        transcriptHistory: currentTranscript.slice(-4), // Last 4 messages for context
+        scenarioContext: extractCoachingContext(scenario),
+      });
+
+      setDynamicCoaching(coaching);
+    } catch (error) {
+      console.error('[COACHING] Failed to generate coaching:', error);
+    } finally {
+      setIsCoachingGenerating(false);
+    }
   };
 
   /**
@@ -757,7 +805,12 @@ const RoleplayProxySession = ({
           {/* LEFT COLUMN - Coaching Panel */}
           {!isMobile && (
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="relative h-full">
-              <CoachingPanel hints={scenario.coaching_hints} isConnected={status === 'connected'} />
+              <CoachingPanel
+                hints={scenario.coaching_hints}
+                dynamicCoaching={dynamicCoaching}
+                isGenerating={isCoachingGenerating}
+                isConnected={status === 'connected'}
+              />
             </motion.div>
           )}
 
