@@ -167,6 +167,14 @@ const BRIEFING_ICON_MAP = {
 const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText, primaryAccent }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Listen for resize events
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -199,6 +207,127 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
     }
   };
 
+  // Mobile-optimized card layout
+  if (isMobile) {
+    return (
+      <motion.div
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div
+          onClick={onClick}
+          style={{
+            background: '#fff',
+            borderRadius: '16px',
+            padding: '16px',
+            cursor: 'pointer',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+          }}
+        >
+          {/* Top row: Icon + Title + Delete */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}30)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon style={{ width: '22px', height: '22px', color: primaryAccent }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h3 style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                color: '#0f172a',
+                marginBottom: '4px',
+                lineHeight: '1.3',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}>
+                {briefing.title || 'Briefing'}
+              </h3>
+              <div style={{ fontSize: '13px', color: '#64748b' }}>
+                {formatDate(briefing.created_at)}
+              </div>
+            </div>
+            <button
+              onClick={handleDeleteClick}
+              disabled={isDeleting}
+              style={{
+                padding: '8px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: '#94a3b8',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              title="Löschen"
+            >
+              {isDeleting ? (
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <Trash2 size={18} />
+              )}
+            </button>
+          </div>
+
+          {/* Bottom row: Template badge + Arrow */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            paddingTop: '12px',
+            borderTop: '1px solid #f1f5f9',
+          }}>
+            <span style={{
+              backgroundColor: `${primaryAccent}15`,
+              color: primaryAccent,
+              padding: '4px 10px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: 500,
+              maxWidth: '70%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {briefing.template_title}
+            </span>
+            <ChevronRight size={22} style={{ color: '#94a3b8', flexShrink: 0 }} />
+          </div>
+        </div>
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDeleteDialog
+          isOpen={showDeleteDialog}
+          onClose={() => setShowDeleteDialog(false)}
+          onConfirm={handleConfirmDelete}
+          title="Briefing löschen"
+          description="Möchtest du dieses Briefing wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+          isDeleting={isDeleting}
+        />
+      </motion.div>
+    );
+  }
+
+  // Desktop layout
   return (
     <motion.div
       variants={{
@@ -1403,6 +1532,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           justify-content: flex-end;
           gap: 12px;
         }
+        .sessions-list-container {
+          margin: 0 24px;
+        }
         @media (min-width: 641px) {
           .session-tabs-mobile { display: none; }
         }
@@ -1414,6 +1546,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             position: absolute;
             top: 0;
             right: 0;
+          }
+          .sessions-list-container {
+            margin: 0 16px;
           }
         }
       `}</style>
@@ -1554,7 +1689,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       </div>
 
       {/* Sessions List */}
-      <div style={{ margin: '0 24px' }}>
+      <div className="sessions-list-container">
         {activeSessions.length === 0 ? (
           <div style={{
             textAlign: 'center',
