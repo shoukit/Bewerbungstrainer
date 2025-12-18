@@ -379,7 +379,7 @@ class Bewerbungstrainer_Simulator_Admin {
 
         // Data rows
         foreach ($scenarios as $scenario) {
-            // Clean up data: decode HTML entities and remove excessive escaping
+            // Clean up data: decode HTML entities, remove excessive escaping, and convert newlines
             $clean_text = function($text) {
                 if (empty($text)) return '';
                 // Decode HTML entities (e.g., &amp; -> &)
@@ -388,6 +388,8 @@ class Bewerbungstrainer_Simulator_Admin {
                 while (strpos($text, '\\\\') !== false) {
                     $text = str_replace('\\\\', '\\', $text);
                 }
+                // Replace actual newlines with literal \n for CSV compatibility
+                $text = str_replace(array("\r\n", "\r", "\n"), '\\n', $text);
                 return $text;
             };
 
@@ -465,6 +467,12 @@ class Bewerbungstrainer_Simulator_Admin {
 
             $data = array_combine($header, $row);
 
+            // Helper to restore newlines from \n placeholder
+            $restore_newlines = function($text) {
+                if (empty($text)) return '';
+                return str_replace('\\n', "\n", $text);
+            };
+
             // Parse input_configuration JSON
             if (!empty($data['input_configuration'])) {
                 $input_config = json_decode($data['input_configuration'], true);
@@ -473,17 +481,17 @@ class Bewerbungstrainer_Simulator_Admin {
                 }
             }
 
-            // Prepare scenario data
+            // Prepare scenario data - restore newlines for text fields
             $scenario_data = array(
                 'title' => sanitize_text_field($data['title'] ?? ''),
-                'description' => sanitize_textarea_field($data['description'] ?? ''),
+                'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
                 'icon' => sanitize_text_field($data['icon'] ?? 'briefcase'),
                 'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
                 'category' => sanitize_text_field($data['category'] ?? 'CAREER'),
                 'mode' => in_array($data['mode'] ?? '', array('INTERVIEW', 'SIMULATION')) ? $data['mode'] : 'INTERVIEW',
-                'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
-                'question_generation_prompt' => wp_kses_post($data['question_generation_prompt'] ?? ''),
-                'feedback_prompt' => wp_kses_post($data['feedback_prompt'] ?? ''),
+                'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
+                'question_generation_prompt' => wp_kses_post($restore_newlines($data['question_generation_prompt'] ?? '')),
+                'feedback_prompt' => wp_kses_post($restore_newlines($data['feedback_prompt'] ?? '')),
                 'input_configuration' => $data['input_configuration'] ?? '[]',
                 'question_count_min' => intval($data['question_count_min'] ?? 8),
                 'question_count_max' => intval($data['question_count_max'] ?? 12),

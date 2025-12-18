@@ -353,7 +353,7 @@ class Bewerbungstrainer_Video_Training_Admin {
 
         // Data rows
         foreach ($scenarios as $scenario) {
-            // Clean up data: decode HTML entities and remove excessive escaping
+            // Clean up data: decode HTML entities, remove excessive escaping, and convert newlines
             $clean_text = function($text) {
                 if (empty($text)) return '';
                 // Decode HTML entities (e.g., &amp; -> &)
@@ -362,6 +362,8 @@ class Bewerbungstrainer_Video_Training_Admin {
                 while (strpos($text, '\\\\') !== false) {
                     $text = str_replace('\\\\', '\\', $text);
                 }
+                // Replace actual newlines with literal \n for CSV compatibility
+                $text = str_replace(array("\r\n", "\r", "\n"), '\\n', $text);
                 return $text;
             };
 
@@ -433,6 +435,12 @@ class Bewerbungstrainer_Video_Training_Admin {
         $imported = 0;
         $updated = 0;
 
+        // Helper to restore newlines from literal \n
+        $restore_newlines = function($text) {
+            if (empty($text)) return '';
+            return str_replace('\\n', "\n", $text);
+        };
+
         while (($row = fgetcsv($handle, 0, ';')) !== false) {
             if (count($row) < count($header)) {
                 continue;
@@ -449,17 +457,17 @@ class Bewerbungstrainer_Video_Training_Admin {
                 }
             }
 
-            // Prepare scenario data
+            // Prepare scenario data (restore newlines in text fields)
             $scenario_data = array(
-                'title' => sanitize_text_field($data['title'] ?? ''),
-                'description' => sanitize_textarea_field($data['description'] ?? ''),
+                'title' => sanitize_text_field($restore_newlines($data['title'] ?? '')),
+                'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
                 'icon' => sanitize_text_field($data['icon'] ?? 'video'),
                 'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
                 'category' => sanitize_text_field($data['category'] ?? ''),
                 'scenario_type' => sanitize_text_field($data['scenario_type'] ?? 'interview'),
-                'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
-                'question_generation_prompt' => wp_kses_post($data['question_generation_prompt'] ?? ''),
-                'feedback_prompt' => wp_kses_post($data['feedback_prompt'] ?? ''),
+                'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
+                'question_generation_prompt' => wp_kses_post($restore_newlines($data['question_generation_prompt'] ?? '')),
+                'feedback_prompt' => wp_kses_post($restore_newlines($data['feedback_prompt'] ?? '')),
                 'input_configuration' => $input_config,
                 'question_count' => intval($data['question_count'] ?? 5),
                 'time_limit_per_question' => intval($data['time_limit_per_question'] ?? 120),

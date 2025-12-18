@@ -376,7 +376,7 @@ class Bewerbungstrainer_SmartBriefing_Admin {
 
         // Data rows
         foreach ($templates as $template) {
-            // Clean up data: decode HTML entities and remove excessive escaping
+            // Clean up data: decode HTML entities, remove excessive escaping, and convert newlines
             $clean_text = function($text) {
                 if (empty($text)) return '';
                 // Decode HTML entities (e.g., &amp; -> &)
@@ -385,6 +385,8 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 while (strpos($text, '\\\\') !== false) {
                     $text = str_replace('\\\\', '\\', $text);
                 }
+                // Replace actual newlines with literal \n for CSV compatibility
+                $text = str_replace(array("\r\n", "\r", "\n"), '\\n', $text);
                 return $text;
             };
 
@@ -459,6 +461,12 @@ class Bewerbungstrainer_SmartBriefing_Admin {
 
             $data = array_combine($header, $row);
 
+            // Helper to restore newlines from \n placeholder
+            $restore_newlines = function($text) {
+                if (empty($text)) return '';
+                return str_replace('\\n', "\n", $text);
+            };
+
             // Parse variables_schema JSON
             $vars_schema = '[]';
             if (!empty($data['variables_schema'])) {
@@ -468,16 +476,16 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 }
             }
 
-            // Prepare template data
+            // Prepare template data - restore newlines for text fields
             $template_data = array(
                 'title' => sanitize_text_field($data['title'] ?? ''),
-                'description' => sanitize_textarea_field($data['description'] ?? ''),
+                'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
                 'icon' => sanitize_text_field($data['icon'] ?? 'file-text'),
                 'category' => sanitize_text_field($data['category'] ?? 'CAREER'),
-                'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
-                'ai_role' => wp_kses_post($data['ai_role'] ?? ''),
-                'ai_task' => wp_kses_post($data['ai_task'] ?? ''),
-                'ai_behavior' => wp_kses_post($data['ai_behavior'] ?? ''),
+                'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
+                'ai_role' => wp_kses_post($restore_newlines($data['ai_role'] ?? '')),
+                'ai_task' => wp_kses_post($restore_newlines($data['ai_task'] ?? '')),
+                'ai_behavior' => wp_kses_post($restore_newlines($data['ai_behavior'] ?? '')),
                 'allow_custom_variables' => intval($data['allow_custom_variables'] ?? 0),
                 'variables_schema' => $vars_schema,
                 'is_active' => intval($data['is_active'] ?? 1),
