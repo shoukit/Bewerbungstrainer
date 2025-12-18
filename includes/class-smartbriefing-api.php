@@ -485,6 +485,14 @@ class Bewerbungstrainer_SmartBriefing_API {
         $user_id = get_current_user_id();
         $variables = isset($params['variables']) ? $params['variables'] : array();
 
+        // Merge custom variables (always allowed)
+        $custom_variables = isset($params['custom_variables']) ? $params['custom_variables'] : array();
+        if (!empty($custom_variables) && is_array($custom_variables)) {
+            // Custom variables take precedence
+            $variables = array_merge($variables, $custom_variables);
+            error_log('[SMARTBRIEFING] Custom variables added: ' . json_encode(array_keys($custom_variables)));
+        }
+
         // Generate title from variables or date
         $briefing_title = $this->generate_briefing_title($template, $variables);
 
@@ -509,8 +517,8 @@ class Bewerbungstrainer_SmartBriefing_API {
             );
         }
 
-        // Build prompt with variable interpolation
-        $system_prompt = $this->interpolate_variables($template->system_prompt, $variables);
+        // Build prompt using structured fields (includes all variables in User-Daten section)
+        $system_prompt = $this->build_structured_prompt($template, $variables);
 
         // Build full prompt requesting JSON output
         $full_prompt = $this->build_briefing_prompt_json($system_prompt, $variables, $template->title);

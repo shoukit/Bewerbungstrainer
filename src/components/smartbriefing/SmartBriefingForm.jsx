@@ -22,6 +22,10 @@ import {
   Shield,
   Compass,
   Rocket,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 /**
@@ -161,6 +165,85 @@ const FormField = ({ field, value, onChange, error, primaryAccent }) => {
 };
 
 /**
+ * Custom Variable Item Component - Vertical Layout
+ * Variable name on top, multiline textarea below
+ */
+const CustomVariableItem = ({ variable, index, onChange, onDelete, primaryAccent }) => {
+  return (
+    <div
+      style={{
+        backgroundColor: 'white',
+        border: '1px solid #e2e8f0',
+        borderRadius: '8px',
+        padding: '12px',
+        marginBottom: '12px',
+      }}
+    >
+      {/* Header with variable name and delete button */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '8px',
+        }}
+      >
+        <input
+          type="text"
+          value={variable.key || ''}
+          onChange={(e) => onChange(index, 'key', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+          placeholder="variable_name"
+          style={{
+            padding: '8px 12px',
+            borderRadius: '6px',
+            border: '1px solid #e2e8f0',
+            fontSize: '14px',
+            fontFamily: 'monospace',
+            backgroundColor: '#f8fafc',
+            flex: 1,
+            marginRight: '8px',
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => onDelete(index)}
+          style={{
+            padding: '8px',
+            border: 'none',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            color: '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>
+
+      {/* Multiline textarea for value */}
+      <textarea
+        value={variable.value || ''}
+        onChange={(e) => onChange(index, 'value', e.target.value)}
+        placeholder="Wert eingeben... (mehrzeilig möglich)"
+        rows={3}
+        style={{
+          width: '100%',
+          padding: '10px 12px',
+          borderRadius: '6px',
+          border: '1px solid #e2e8f0',
+          fontSize: '14px',
+          resize: 'vertical',
+          minHeight: '80px',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
+  );
+};
+
+/**
  * SmartBriefingForm Component
  *
  * Handles variable input and briefing generation
@@ -176,6 +259,10 @@ const SmartBriefingForm = ({
   const [errors, setErrors] = useState({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [apiError, setApiError] = useState(null);
+
+  // Custom variables state
+  const [customVariables, setCustomVariables] = useState([]);
+  const [showCustomVariables, setShowCustomVariables] = useState(false);
 
   // Get themed styles from partner branding
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -193,7 +280,25 @@ const SmartBriefingForm = ({
       });
       setFormData(initialData);
     }
+    // Reset custom variables when template changes
+    setCustomVariables([]);
+    setShowCustomVariables(false);
   }, [template]);
+
+  // Custom variables handlers
+  const addCustomVariable = () => {
+    setCustomVariables([...customVariables, { key: '', value: '' }]);
+  };
+
+  const updateCustomVariable = (index, field, value) => {
+    const updated = [...customVariables];
+    updated[index][field] = value;
+    setCustomVariables(updated);
+  };
+
+  const deleteCustomVariable = (index) => {
+    setCustomVariables(customVariables.filter((_, i) => i !== index));
+  };
 
   // Handle field change
   const handleFieldChange = (key, value) => {
@@ -234,13 +339,27 @@ const SmartBriefingForm = ({
     setApiError(null);
 
     try {
+      // Build custom variables object from array
+      const customVarsObj = {};
+      customVariables.forEach((cv) => {
+        if (cv.key && cv.value) {
+          customVarsObj[cv.key] = cv.value;
+        }
+      });
+
+      const requestBody = {
+        template_id: template.id,
+        variables: formData,
+      };
+
+      // Include custom_variables if there are any
+      if (Object.keys(customVarsObj).length > 0) {
+        requestBody.custom_variables = customVarsObj;
+      }
 
       const response = await wordpressAPI.request('/smartbriefing/generate', {
         method: 'POST',
-        body: JSON.stringify({
-          template_id: template.id,
-          variables: formData,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.success && response.data?.briefing) {
@@ -374,6 +493,93 @@ const SmartBriefingForm = ({
               primaryAccent={primaryAccent}
             />
           ))}
+
+          {/* Custom Variables Section */}
+          <div
+            style={{
+              marginTop: '24px',
+              marginBottom: '20px',
+              paddingTop: '20px',
+              borderTop: '1px solid #f1f5f9',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setShowCustomVariables(!showCustomVariables)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '0',
+                border: 'none',
+                background: 'none',
+                color: '#64748b',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                marginBottom: showCustomVariables ? '16px' : '0',
+              }}
+            >
+              {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              <Plus size={16} />
+              Zusätzliche Variablen hinzufügen (optional)
+            </button>
+
+            {showCustomVariables && (
+              <div
+                style={{
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '12px',
+                  padding: '16px',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '13px',
+                    color: '#64748b',
+                    margin: '0 0 12px 0',
+                  }}
+                >
+                  Füge eigene Variablen hinzu, die in die Briefing-Generierung einfließen sollen.
+                </p>
+
+                {customVariables.length > 0 && (
+                  <div style={{ marginBottom: '12px' }}>
+                    {customVariables.map((cv, index) => (
+                      <CustomVariableItem
+                        key={index}
+                        variable={cv}
+                        index={index}
+                        onChange={updateCustomVariable}
+                        onDelete={deleteCustomVariable}
+                        primaryAccent={primaryAccent}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={addCustomVariable}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    border: '1px dashed #cbd5e1',
+                    borderRadius: '8px',
+                    backgroundColor: 'white',
+                    color: '#64748b',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Plus size={14} />
+                  Variable hinzufügen
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* API Error */}
           {apiError && (
