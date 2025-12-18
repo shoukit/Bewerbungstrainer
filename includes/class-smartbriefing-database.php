@@ -80,6 +80,43 @@ class Bewerbungstrainer_SmartBriefing_Database {
 
         $current_version = get_option('bewerbungstrainer_smartbriefing_db_version', '1.0.0');
 
+        // Migration 1.4.0: Add ai_role, ai_task, ai_behavior columns to templates table
+        if (version_compare($current_version, '1.4.0', '<')) {
+            error_log('[SMARTBRIEFING] Running migration to 1.4.0...');
+
+            // Check if ai_role column exists in templates table
+            $ai_role_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SHOW COLUMNS FROM {$this->table_templates} LIKE %s",
+                    'ai_role'
+                )
+            );
+
+            if (empty($ai_role_exists)) {
+                error_log('[SMARTBRIEFING] Adding ai_role, ai_task, ai_behavior columns to templates table...');
+
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_templates} ADD COLUMN `ai_role` longtext DEFAULT NULL AFTER `system_prompt`"
+                );
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_templates} ADD COLUMN `ai_task` longtext DEFAULT NULL AFTER `ai_role`"
+                );
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_templates} ADD COLUMN `ai_behavior` longtext DEFAULT NULL AFTER `ai_task`"
+                );
+
+                if ($wpdb->last_error) {
+                    error_log('[SMARTBRIEFING] Error adding structured prompt columns: ' . $wpdb->last_error);
+                } else {
+                    error_log('[SMARTBRIEFING] Structured prompt columns added successfully');
+                }
+            }
+
+            // Update version
+            update_option('bewerbungstrainer_smartbriefing_db_version', '1.4.0');
+            error_log('[SMARTBRIEFING] Migration to 1.4.0 completed');
+        }
+
         // Migration 1.3.0: Add allow_custom_variables column to templates table
         if (version_compare($current_version, '1.3.0', '<')) {
             error_log('[SMARTBRIEFING] Running migration to 1.3.0...');
@@ -242,6 +279,9 @@ class Bewerbungstrainer_SmartBriefing_Database {
             `icon` varchar(50) DEFAULT 'file-text',
             `category` varchar(100) DEFAULT 'CAREER',
             `system_prompt` longtext NOT NULL,
+            `ai_role` longtext DEFAULT NULL,
+            `ai_task` longtext DEFAULT NULL,
+            `ai_behavior` longtext DEFAULT NULL,
             `variables_schema` longtext NOT NULL,
             `is_active` tinyint(1) DEFAULT 1,
             `sort_order` int DEFAULT 0,
@@ -314,7 +354,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
         self::insert_default_templates();
 
         // Update version to latest
-        update_option('bewerbungstrainer_smartbriefing_db_version', '1.3.0');
+        update_option('bewerbungstrainer_smartbriefing_db_version', '1.4.0');
     }
 
     /**
@@ -711,6 +751,9 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             'icon' => 'file-text',
             'category' => 'CAREER',
             'system_prompt' => '',
+            'ai_role' => null,      // Structured prompt: KI-Rolle (Persona)
+            'ai_task' => null,      // Structured prompt: KI-Aufgabe (Was)
+            'ai_behavior' => null,  // Structured prompt: KI-Verhalten (Wie)
             'variables_schema' => '[]',
             'is_active' => 1,
             'sort_order' => 0,
@@ -739,6 +782,9 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
                 'icon' => sanitize_text_field($data['icon']),
                 'category' => sanitize_text_field($data['category']),
                 'system_prompt' => $data['system_prompt'],
+                'ai_role' => $data['ai_role'],
+                'ai_task' => $data['ai_task'],
+                'ai_behavior' => $data['ai_behavior'],
                 'variables_schema' => $data['variables_schema'],
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
@@ -746,7 +792,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
                 'demo_code' => $data['demo_code'] ? strtoupper(sanitize_text_field($data['demo_code'])) : null,
                 'allow_custom_variables' => intval($data['allow_custom_variables']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%d')
         );
 
         if ($result === false) {
@@ -772,7 +818,8 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
 
         $allowed_fields = array(
             'title', 'description', 'icon', 'category',
-            'system_prompt', 'variables_schema', 'is_active', 'sort_order',
+            'system_prompt', 'ai_role', 'ai_task', 'ai_behavior',
+            'variables_schema', 'is_active', 'sort_order',
             'allow_custom_variables'
         );
 
