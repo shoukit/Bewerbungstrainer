@@ -264,6 +264,9 @@ const SmartBriefingForm = ({
   const [customVariables, setCustomVariables] = useState([]);
   const [showCustomVariables, setShowCustomVariables] = useState(false);
 
+  // Variables section collapsed state (collapsed by default)
+  const [isVariablesExpanded, setIsVariablesExpanded] = useState(false);
+
   // Get themed styles from partner branding
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const buttonGradient = branding?.['--button-gradient'] || DEFAULT_BRANDING['--button-gradient'];
@@ -384,6 +387,7 @@ const SmartBriefingForm = ({
       <div
         style={{
           padding: '24px',
+          paddingTop: '32px',
           maxWidth: '700px',
           margin: '0 auto',
         }}
@@ -469,118 +473,151 @@ const SmartBriefingForm = ({
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         }}
       >
-        <h2
+        {/* Collapsible Variables Section Header */}
+        <button
+          type="button"
+          onClick={() => setIsVariablesExpanded(!isVariablesExpanded)}
           style={{
-            fontSize: '16px',
-            fontWeight: 600,
-            color: '#0f172a',
-            margin: '0 0 20px 0',
-            paddingBottom: '16px',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 0 16px 0',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
             borderBottom: '1px solid #f1f5f9',
+            marginBottom: isVariablesExpanded ? '20px' : '0',
           }}
         >
-          Deine Angaben
-        </h2>
+          <h2
+            style={{
+              fontSize: '16px',
+              fontWeight: 600,
+              color: '#0f172a',
+              margin: 0,
+            }}
+          >
+            Deine Angaben
+          </h2>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#64748b',
+              fontSize: '13px',
+            }}
+          >
+            <span>{isVariablesExpanded ? 'Einklappen' : 'Ausklappen'}</span>
+            {isVariablesExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </div>
+        </button>
 
         <form onSubmit={handleSubmit}>
-          {template.variables_schema?.map((field) => (
-            <FormField
-              key={field.key}
-              field={field}
-              value={formData[field.key]}
-              onChange={handleFieldChange}
-              error={errors[field.key]}
-              primaryAccent={primaryAccent}
-            />
-          ))}
+          {/* Collapsible Variables Content */}
+          {isVariablesExpanded && (
+            <>
+              {template.variables_schema?.map((field) => (
+                <FormField
+                  key={field.key}
+                  field={field}
+                  value={formData[field.key]}
+                  onChange={handleFieldChange}
+                  error={errors[field.key]}
+                  primaryAccent={primaryAccent}
+                />
+              ))}
 
-          {/* Custom Variables Section - only shown if template allows */}
-          {template.allow_custom_variables && (
-            <div
-              style={{
-                marginTop: '24px',
-                marginBottom: '20px',
-                paddingTop: '20px',
-                borderTop: '1px solid #f1f5f9',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setShowCustomVariables(!showCustomVariables)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '0',
-                  border: 'none',
-                  background: 'none',
-                  color: '#64748b',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  marginBottom: showCustomVariables ? '16px' : '0',
-                }}
-              >
-                {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                <Plus size={16} />
-                Zusätzliche Variablen hinzufügen (optional)
-              </button>
-
-              {showCustomVariables && (
+              {/* Custom Variables Section - only shown if template allows */}
+              {template.allow_custom_variables && (
                 <div
                   style={{
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '12px',
-                    padding: '16px',
+                    marginTop: '24px',
+                    marginBottom: '20px',
+                    paddingTop: '20px',
+                    borderTop: '1px solid #f1f5f9',
                   }}
                 >
-                  <p
-                    style={{
-                      fontSize: '13px',
-                      color: '#64748b',
-                      margin: '0 0 12px 0',
-                    }}
-                  >
-                    Füge eigene Variablen hinzu, die in die Briefing-Generierung einfließen sollen.
-                  </p>
-
-                  {customVariables.length > 0 && (
-                    <div style={{ marginBottom: '12px' }}>
-                      {customVariables.map((cv, index) => (
-                        <CustomVariableItem
-                          key={index}
-                          variable={cv}
-                          index={index}
-                          onChange={updateCustomVariable}
-                          onDelete={deleteCustomVariable}
-                          primaryAccent={primaryAccent}
-                        />
-                      ))}
-                    </div>
-                  )}
-
                   <button
                     type="button"
-                    onClick={addCustomVariable}
+                    onClick={() => setShowCustomVariables(!showCustomVariables)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '8px 12px',
-                      border: '1px dashed #cbd5e1',
-                      borderRadius: '8px',
-                      backgroundColor: 'white',
+                      gap: '8px',
+                      padding: '0',
+                      border: 'none',
+                      background: 'none',
                       color: '#64748b',
-                      fontSize: '13px',
+                      fontSize: '14px',
+                      fontWeight: 500,
                       cursor: 'pointer',
+                      marginBottom: showCustomVariables ? '16px' : '0',
                     }}
                   >
-                    <Plus size={14} />
-                    Variable hinzufügen
+                    {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    <Plus size={16} />
+                    Zusätzliche Variablen hinzufügen (optional)
                   </button>
+
+                  {showCustomVariables && (
+                    <div
+                      style={{
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '12px',
+                        padding: '16px',
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: '13px',
+                          color: '#64748b',
+                          margin: '0 0 12px 0',
+                        }}
+                      >
+                        Füge eigene Variablen hinzu, die in die Briefing-Generierung einfließen sollen.
+                      </p>
+
+                      {customVariables.length > 0 && (
+                        <div style={{ marginBottom: '12px' }}>
+                          {customVariables.map((cv, index) => (
+                            <CustomVariableItem
+                              key={index}
+                              variable={cv}
+                              index={index}
+                              onChange={updateCustomVariable}
+                              onDelete={deleteCustomVariable}
+                              primaryAccent={primaryAccent}
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={addCustomVariable}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 12px',
+                          border: '1px dashed #cbd5e1',
+                          borderRadius: '8px',
+                          backgroundColor: 'white',
+                          color: '#64748b',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Plus size={14} />
+                        Variable hinzufügen
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
 
           {/* API Error */}
@@ -625,6 +662,7 @@ const SmartBriefingForm = ({
               transition: 'all 0.2s',
               boxShadow: `0 4px 14px ${primaryAccent}40`,
               opacity: isGenerating ? 0.7 : 1,
+              marginTop: isVariablesExpanded ? '0' : '20px',
             }}
           >
             <Sparkles size={20} />
