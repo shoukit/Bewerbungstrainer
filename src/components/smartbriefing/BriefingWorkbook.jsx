@@ -824,6 +824,7 @@ const BriefingWorkbook = ({
   const [loading, setLoading] = useState(!initialBriefing?.sections);
   const [error, setError] = useState(null);
   const [expandedSections, setExpandedSections] = useState({});
+  const [isVariablesExpanded, setIsVariablesExpanded] = useState(false);
 
   // Get primary accent color from partner config
   const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
@@ -1014,32 +1015,62 @@ const BriefingWorkbook = ({
 
         </div>
 
-        {/* Variables display */}
+        {/* Collapsible Variables display */}
         {briefing.variables && Object.keys(briefing.variables).length > 0 && (
           <div
             style={{
               marginTop: '16px',
               paddingTop: '16px',
               borderTop: '1px solid #f1f5f9',
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '8px',
             }}
           >
-            {Object.entries(briefing.variables).map(([key, value]) => (
-              <span
-                key={key}
+            <button
+              onClick={() => setIsVariablesExpanded(!isVariablesExpanded)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                padding: '0',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748b' }}>
+                Deine Angaben ({Object.keys(briefing.variables).length})
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8' }}>
+                <span style={{ fontSize: '12px' }}>{isVariablesExpanded ? 'Einklappen' : 'Ausklappen'}</span>
+                {isVariablesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </div>
+            </button>
+
+            {isVariablesExpanded && (
+              <div
                 style={{
-                  backgroundColor: '#f1f5f9',
-                  padding: '6px 12px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  color: '#64748b',
+                  marginTop: '12px',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px',
                 }}
               >
-                <strong style={{ color: '#374151' }}>{getVariableDisplayName(key)}:</strong> {value}
-              </span>
-            ))}
+                {Object.entries(briefing.variables).map(([key, value]) => (
+                  <span
+                    key={key}
+                    style={{
+                      backgroundColor: '#f1f5f9',
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      color: '#64748b',
+                    }}
+                  >
+                    <strong style={{ color: '#374151' }}>{getVariableDisplayName(key)}:</strong> {value}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
