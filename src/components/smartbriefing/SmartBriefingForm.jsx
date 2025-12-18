@@ -264,9 +264,6 @@ const SmartBriefingForm = ({
   const [customVariables, setCustomVariables] = useState([]);
   const [showCustomVariables, setShowCustomVariables] = useState(false);
 
-  // Variables section collapsed state (collapsed by default)
-  const [isVariablesExpanded, setIsVariablesExpanded] = useState(false);
-
   // Get themed styles from partner branding
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const buttonGradient = branding?.['--button-gradient'] || DEFAULT_BRANDING['--button-gradient'];
@@ -473,52 +470,23 @@ const SmartBriefingForm = ({
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         }}
       >
-        {/* Collapsible Variables Section Header */}
-        <button
-          type="button"
-          onClick={() => setIsVariablesExpanded(!isVariablesExpanded)}
+        {/* Variables Section Header */}
+        <h2
           style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 0 16px 0',
-            border: 'none',
-            background: 'none',
-            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: 600,
+            color: '#0f172a',
+            margin: '0 0 20px 0',
+            paddingBottom: '16px',
             borderBottom: '1px solid #f1f5f9',
-            marginBottom: isVariablesExpanded ? '20px' : '0',
           }}
         >
-          <h2
-            style={{
-              fontSize: '16px',
-              fontWeight: 600,
-              color: '#0f172a',
-              margin: 0,
-            }}
-          >
-            Deine Angaben
-          </h2>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              color: '#64748b',
-              fontSize: '13px',
-            }}
-          >
-            <span>{isVariablesExpanded ? 'Einklappen' : 'Ausklappen'}</span>
-            {isVariablesExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </div>
-        </button>
+          Deine Angaben
+        </h2>
 
         <form onSubmit={handleSubmit}>
-          {/* Collapsible Variables Content */}
-          {isVariablesExpanded && (
-            <>
-              {template.variables_schema?.map((field) => (
+          {/* Form Fields */}
+          {template.variables_schema?.map((field) => (
                 <FormField
                   key={field.key}
                   field={field}
@@ -617,8 +585,6 @@ const SmartBriefingForm = ({
                   )}
                 </div>
               )}
-            </>
-          )}
 
           {/* API Error */}
           {apiError && (
@@ -662,7 +628,6 @@ const SmartBriefingForm = ({
               transition: 'all 0.2s',
               boxShadow: `0 4px 14px ${primaryAccent}40`,
               opacity: isGenerating ? 0.7 : 1,
-              marginTop: isVariablesExpanded ? '0' : '20px',
             }}
           >
             <Sparkles size={20} />
