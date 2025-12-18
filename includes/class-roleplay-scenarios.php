@@ -50,6 +50,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
         // Handle CSV import via admin_post hook (more reliable for form submissions)
         add_action('admin_post_import_roleplay_scenarios', array($this, 'handle_import_csv'));
+        error_log('[ROLEPLAY] admin_post_import_roleplay_scenarios hook registered');
 
         // Add bulk action for export
         add_filter('bulk_actions-edit-' . self::POST_TYPE, array($this, 'add_bulk_actions'));
@@ -867,8 +868,13 @@ class Bewerbungstrainer_Roleplay_Scenarios {
      * Handle CSV import via admin_post hook (dedicated handler for form submissions)
      */
     public function handle_import_csv() {
+        error_log('[ROLEPLAY IMPORT] handle_import_csv called');
+        error_log('[ROLEPLAY IMPORT] POST: ' . print_r($_POST, true));
+        error_log('[ROLEPLAY IMPORT] FILES: ' . print_r($_FILES, true));
+
         // Verify user capabilities
         if (!current_user_can('manage_options')) {
+            error_log('[ROLEPLAY IMPORT] User does not have manage_options capability');
             wp_die('Unauthorized access');
         }
 
@@ -982,7 +988,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
      * Import scenarios from CSV
      */
     private function import_scenarios_csv($file) {
+        error_log('[ROLEPLAY IMPORT] import_scenarios_csv called');
+        error_log('[ROLEPLAY IMPORT] File: ' . print_r($file, true));
+
         if ($file['error'] !== UPLOAD_ERR_OK) {
+            error_log('[ROLEPLAY IMPORT] File upload error: ' . $file['error']);
             wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=upload'));
             exit;
         }
@@ -1028,8 +1038,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
             // Skip empty titles
             if (empty($data['title'])) {
+                error_log('[ROLEPLAY IMPORT] Skipping row with empty title');
                 continue;
             }
+
+            error_log('[ROLEPLAY IMPORT] Processing: ' . $data['title']);
 
             // Prepare post data (restore newlines in text fields)
             $post_data = array(
@@ -1046,6 +1059,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 if ($existing && $existing->post_type === self::POST_TYPE) {
                     $post_data['ID'] = intval($data['id']);
                     $post_id = wp_update_post($post_data);
+                    error_log('[ROLEPLAY IMPORT] Updated existing post: ' . $post_id);
                     if ($post_id && !is_wp_error($post_id)) {
                         $updated++;
                     }
@@ -1055,6 +1069,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             // Create new if not updating
             if (!$post_id || $post_id === 0) {
                 $post_id = wp_insert_post($post_data);
+                error_log('[ROLEPLAY IMPORT] Created new post: ' . ($post_id ? $post_id : 'FAILED'));
                 if ($post_id && !is_wp_error($post_id) && $post_id > 0) {
                     $imported++;
                 }
@@ -1062,6 +1077,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
             // Skip if post creation/update failed
             if (!$post_id || is_wp_error($post_id) || $post_id === 0) {
+                error_log('[ROLEPLAY IMPORT] Post creation failed for: ' . $data['title']);
                 continue;
             }
 
@@ -1099,6 +1115,8 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         }
 
         fclose($handle);
+
+        error_log('[ROLEPLAY IMPORT] Done! Imported: ' . $imported . ', Updated: ' . $updated);
 
         wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&imported=' . $imported . '&csv_updated=' . $updated));
         exit;
