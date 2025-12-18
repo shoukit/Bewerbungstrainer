@@ -44,6 +44,15 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
         // Save meta box data
         add_action('save_post_' . self::POST_TYPE, array($this, 'save_meta_boxes'), 10, 2);
+
+        // Handle CSV import/export
+        add_action('admin_init', array($this, 'handle_csv_actions'));
+
+        // Add bulk action for export
+        add_filter('bulk_actions-edit-' . self::POST_TYPE, array($this, 'add_bulk_actions'));
+
+        // Add export/import buttons to post list
+        add_action('restrict_manage_posts', array($this, 'add_import_export_buttons'));
     }
 
     /**
@@ -764,5 +773,262 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             </tr>
         </table>
         <?php
+    }
+
+    /**
+     * Add bulk actions
+     */
+    public function add_bulk_actions($bulk_actions) {
+        $bulk_actions['export_csv'] = __('CSV Export', 'bewerbungstrainer');
+        return $bulk_actions;
+    }
+
+    /**
+     * Add import/export buttons to post list
+     */
+    public function add_import_export_buttons($post_type) {
+        if ($post_type !== self::POST_TYPE) {
+            return;
+        }
+
+        // Show import notices
+        if (isset($_GET['imported'])) {
+            $imported = intval($_GET['imported']);
+            $updated = isset($_GET['csv_updated']) ? intval($_GET['csv_updated']) : 0;
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(__('%d Szenario(s) importiert, %d aktualisiert.', 'bewerbungstrainer'), $imported, $updated) . '</p></div>';
+        }
+        if (isset($_GET['import_error'])) {
+            $errors = array(
+                'upload' => __('Fehler beim Hochladen der Datei.', 'bewerbungstrainer'),
+                'read' => __('Fehler beim Lesen der Datei.', 'bewerbungstrainer'),
+                'format' => __('Ungültiges CSV-Format. Bitte exportiere zuerst eine Vorlage.', 'bewerbungstrainer'),
+            );
+            $error_msg = $errors[$_GET['import_error']] ?? __('Unbekannter Fehler beim Import.', 'bewerbungstrainer');
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error_msg) . '</p></div>';
+        }
+
+        ?>
+        <div style="display: inline-block; margin-left: 15px;">
+            <a href="<?php echo wp_nonce_url(admin_url('edit.php?post_type=' . self::POST_TYPE . '&action=export_csv'), 'export_roleplay_scenarios'); ?>" class="button">
+                <?php _e('CSV Export', 'bewerbungstrainer'); ?>
+            </a>
+        </div>
+        <div style="display: inline-block; margin-left: 10px;">
+            <form method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 5px;">
+                <?php wp_nonce_field('import_roleplay_scenarios'); ?>
+                <input type="file" name="csv_file" accept=".csv" required style="width: 180px;">
+                <button type="submit" name="roleplay_import_csv" class="button"><?php _e('Import', 'bewerbungstrainer'); ?></button>
+            </form>
+        </div>
+        <?php
+    }
+
+    /**
+     * Handle CSV import/export actions
+     */
+    public function handle_csv_actions() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        // Export CSV
+        if (isset($_GET['action']) && $_GET['action'] === 'export_csv' && isset($_GET['post_type']) && $_GET['post_type'] === self::POST_TYPE) {
+            if (!wp_verify_nonce($_GET['_wpnonce'], 'export_roleplay_scenarios')) {
+                wp_die('Security check failed');
+            }
+            $this->export_scenarios_csv();
+            exit;
+        }
+
+        // Import CSV
+        if (isset($_POST['roleplay_import_csv']) && isset($_FILES['csv_file'])) {
+            if (!wp_verify_nonce($_POST['_wpnonce'], 'import_roleplay_scenarios')) {
+                wp_die('Security check failed');
+            }
+            $this->import_scenarios_csv($_FILES['csv_file']);
+        }
+    }
+
+    /**
+     * Export scenarios to CSV
+     */
+    private function export_scenarios_csv() {
+        $scenarios = $this->get_all_scenarios(array('post_status' => array('publish', 'draft')));
+
+        $filename = 'roleplay-scenarios-' . date('Y-m-d-His') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+
+        // UTF-8 BOM for Excel
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // CSV Header
+        fputcsv($output, array(
+            'id',
+            'title',
+            'description',
+            'content',
+            'agent_id',
+            'initial_message',
+            'difficulty',
+            'role_type',
+            'user_role_label',
+            'variables_schema',
+            'tags',
+            'interviewer_name',
+            'interviewer_role',
+            'interviewer_image',
+            'interviewer_properties',
+            'interviewer_objections',
+            'interviewer_questions',
+            'coaching_hints',
+            'feedback_prompt',
+            'status'
+        ), ';');
+
+        // Data rows
+        foreach ($scenarios as $scenario) {
+            $post = get_post($scenario['id']);
+
+            fputcsv($output, array(
+                $scenario['id'],
+                $scenario['title'],
+                $scenario['description'],
+                $post->post_content,
+                $scenario['agent_id'],
+                $scenario['initial_message'],
+                $scenario['difficulty'],
+                $scenario['role_type'],
+                $scenario['user_role_label'],
+                json_encode($scenario['variables_schema'], JSON_UNESCAPED_UNICODE),
+                implode(',', $scenario['tags']),
+                $scenario['interviewer_profile']['name'],
+                $scenario['interviewer_profile']['role'],
+                $scenario['interviewer_profile']['image_url'],
+                $scenario['interviewer_profile']['properties'],
+                $scenario['interviewer_profile']['typical_objections'],
+                $scenario['interviewer_profile']['important_questions'],
+                $scenario['coaching_hints'],
+                get_post_meta($scenario['id'], '_roleplay_feedback_prompt', true),
+                $post->post_status
+            ), ';');
+        }
+
+        fclose($output);
+    }
+
+    /**
+     * Import scenarios from CSV
+     */
+    private function import_scenarios_csv($file) {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=upload'));
+            exit;
+        }
+
+        $handle = fopen($file['tmp_name'], 'r');
+        if (!$handle) {
+            wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=read'));
+            exit;
+        }
+
+        // Skip BOM if present
+        $bom = fread($handle, 3);
+        if ($bom !== chr(0xEF) . chr(0xBB) . chr(0xBF)) {
+            rewind($handle);
+        }
+
+        // Get header row
+        $header = fgetcsv($handle, 0, ';');
+        if (!$header || !in_array('title', $header)) {
+            fclose($handle);
+            wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&import_error=format'));
+            exit;
+        }
+
+        $imported = 0;
+        $updated = 0;
+
+        while (($row = fgetcsv($handle, 0, ';')) !== false) {
+            if (count($row) < count($header)) {
+                continue;
+            }
+
+            $data = array_combine($header, $row);
+
+            // Skip empty titles
+            if (empty($data['title'])) {
+                continue;
+            }
+
+            // Prepare post data
+            $post_data = array(
+                'post_type' => self::POST_TYPE,
+                'post_title' => sanitize_text_field($data['title']),
+                'post_content' => wp_kses_post($data['content'] ?? ''),
+                'post_status' => in_array($data['status'] ?? '', array('publish', 'draft')) ? $data['status'] : 'publish',
+            );
+
+            // Check if updating existing by ID
+            $post_id = null;
+            if (!empty($data['id']) && is_numeric($data['id'])) {
+                $existing = get_post(intval($data['id']));
+                if ($existing && $existing->post_type === self::POST_TYPE) {
+                    $post_data['ID'] = intval($data['id']);
+                    $post_id = wp_update_post($post_data);
+                    $updated++;
+                }
+            }
+
+            // Create new if not updating
+            if (!$post_id) {
+                $post_id = wp_insert_post($post_data);
+                $imported++;
+            }
+
+            if (!$post_id || is_wp_error($post_id)) {
+                continue;
+            }
+
+            // Update meta fields
+            update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($data['description'] ?? ''));
+            update_post_meta($post_id, '_roleplay_agent_id', sanitize_text_field($data['agent_id'] ?? ''));
+            update_post_meta($post_id, '_roleplay_initial_message', sanitize_textarea_field($data['initial_message'] ?? ''));
+            update_post_meta($post_id, '_roleplay_difficulty', sanitize_text_field($data['difficulty'] ?? 'medium'));
+            update_post_meta($post_id, '_roleplay_role_type', sanitize_text_field($data['role_type'] ?? 'interview'));
+            update_post_meta($post_id, '_roleplay_user_role_label', sanitize_text_field($data['user_role_label'] ?? 'Bewerber'));
+            update_post_meta($post_id, '_roleplay_feedback_prompt', sanitize_textarea_field($data['feedback_prompt'] ?? ''));
+            update_post_meta($post_id, '_roleplay_coaching_hints', sanitize_textarea_field($data['coaching_hints'] ?? ''));
+
+            // Interviewer profile
+            update_post_meta($post_id, '_roleplay_interviewer_name', sanitize_text_field($data['interviewer_name'] ?? ''));
+            update_post_meta($post_id, '_roleplay_interviewer_role', sanitize_text_field($data['interviewer_role'] ?? ''));
+            update_post_meta($post_id, '_roleplay_interviewer_image', esc_url_raw($data['interviewer_image'] ?? ''));
+            update_post_meta($post_id, '_roleplay_interviewer_properties', sanitize_textarea_field($data['interviewer_properties'] ?? ''));
+            update_post_meta($post_id, '_roleplay_interviewer_objections', sanitize_textarea_field($data['interviewer_objections'] ?? ''));
+            update_post_meta($post_id, '_roleplay_interviewer_questions', sanitize_textarea_field($data['interviewer_questions'] ?? ''));
+
+            // Variables schema
+            if (!empty($data['variables_schema'])) {
+                $vars = json_decode($data['variables_schema'], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    update_post_meta($post_id, '_roleplay_variables_schema', wp_json_encode($vars));
+                }
+            }
+
+            // Tags
+            if (!empty($data['tags'])) {
+                $tags = array_map('trim', explode(',', $data['tags']));
+                wp_set_post_terms($post_id, $tags, 'roleplay_scenario_tag');
+            }
+        }
+
+        fclose($handle);
+
+        wp_redirect(admin_url('edit.php?post_type=' . self::POST_TYPE . '&imported=' . $imported . '&csv_updated=' . $updated));
+        exit;
     }
 }
