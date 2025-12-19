@@ -98,6 +98,12 @@ class Bewerbungstrainer_Video_Training_Database {
             $this->add_demo_code_column();
             update_option('bewerbungstrainer_video_training_migration_version', '1.0.3');
         }
+
+        // Migration 4: Add target_audience column
+        if (version_compare($current_version, '1.0.4', '<')) {
+            $this->add_target_audience_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.4');
+        }
     }
 
     /**
@@ -126,6 +132,30 @@ class Bewerbungstrainer_Video_Training_Database {
     }
 
     /**
+     * Add target_audience column to scenarios table if it doesn't exist
+     */
+    private function add_target_audience_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'target_audience'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[VIDEO TRAINING] Adding target_audience column to scenarios table...');
+            $result = $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `target_audience` varchar(255) DEFAULT NULL AFTER `difficulty`");
+            if ($result === false) {
+                error_log('[VIDEO TRAINING] Error adding target_audience column: ' . $wpdb->last_error);
+            } else {
+                error_log('[VIDEO TRAINING] target_audience column added successfully');
+            }
+        }
+    }
+
+    /**
      * Create video training database tables
      */
     public static function create_tables() {
@@ -141,6 +171,7 @@ class Bewerbungstrainer_Video_Training_Database {
             `description` text DEFAULT NULL,
             `icon` varchar(50) DEFAULT 'video',
             `difficulty` varchar(20) DEFAULT 'intermediate',
+            `target_audience` varchar(255) DEFAULT NULL,
             `category` varchar(100) DEFAULT NULL,
             `scenario_type` enum('self_presentation', 'interview', 'pitch', 'negotiation', 'custom') NOT NULL DEFAULT 'interview',
             `system_prompt` longtext NOT NULL,
@@ -584,6 +615,7 @@ Gib konkretes, umsetzbares Feedback.',
             'description' => null,
             'icon' => 'video',
             'difficulty' => 'intermediate',
+            'target_audience' => null,
             'category' => null,
             'scenario_type' => 'interview',
             'system_prompt' => '',
@@ -613,6 +645,7 @@ Gib konkretes, umsetzbares Feedback.',
                 'description' => sanitize_textarea_field($data['description']),
                 'icon' => sanitize_text_field($data['icon']),
                 'difficulty' => $data['difficulty'],
+                'target_audience' => sanitize_text_field($data['target_audience']),
                 'category' => sanitize_text_field($data['category']),
                 'scenario_type' => $data['scenario_type'],
                 'system_prompt' => $data['system_prompt'],
@@ -627,7 +660,7 @@ Gib konkretes, umsetzbares Feedback.',
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
         );
 
         if ($result === false) {

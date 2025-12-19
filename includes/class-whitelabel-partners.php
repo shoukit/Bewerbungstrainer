@@ -716,13 +716,14 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 'id' => $scenario->ID,
                 'title' => $scenario->post_title,
                 'difficulty' => get_post_meta($scenario->ID, '_roleplay_difficulty', true),
+                'target_audience' => get_post_meta($scenario->ID, '_roleplay_target_audience', true),
             );
         }
 
         // 2. Simulator scenarios (Database table)
         $simulator_table = $wpdb->prefix . 'bewerbungstrainer_simulator_scenarios';
         $simulator_scenarios = $wpdb->get_results(
-            "SELECT id, title, difficulty FROM {$simulator_table} WHERE is_active = 1 ORDER BY title ASC"
+            "SELECT id, title, difficulty, target_audience FROM {$simulator_table} WHERE is_active = 1 ORDER BY title ASC"
         );
         if ($simulator_scenarios) {
             foreach ($simulator_scenarios as $scenario) {
@@ -730,6 +731,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
                     'id' => (int) $scenario->id,
                     'title' => $scenario->title,
                     'difficulty' => $scenario->difficulty,
+                    'target_audience' => $scenario->target_audience,
                 );
             }
         }
@@ -737,7 +739,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
         // 3. Video Training scenarios (Database table)
         $video_table = $wpdb->prefix . 'bewerbungstrainer_video_scenarios';
         $video_scenarios = $wpdb->get_results(
-            "SELECT id, title, difficulty FROM {$video_table} WHERE is_active = 1 ORDER BY title ASC"
+            "SELECT id, title, difficulty, target_audience FROM {$video_table} WHERE is_active = 1 ORDER BY title ASC"
         );
         if ($video_scenarios) {
             foreach ($video_scenarios as $scenario) {
@@ -745,6 +747,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
                     'id' => (int) $scenario->id,
                     'title' => $scenario->title,
                     'difficulty' => $scenario->difficulty,
+                    'target_audience' => $scenario->target_audience,
                 );
             }
         }
@@ -752,7 +755,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
         // 4. Smart Briefing templates (Database table)
         $briefing_table = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_templates';
         $briefing_templates = $wpdb->get_results(
-            "SELECT id, title, category FROM {$briefing_table} WHERE is_active = 1 ORDER BY title ASC"
+            "SELECT id, title, category, target_audience FROM {$briefing_table} WHERE is_active = 1 ORDER BY title ASC"
         );
         if ($briefing_templates) {
             foreach ($briefing_templates as $template) {
@@ -760,6 +763,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
                     'id' => (int) $template->id,
                     'title' => $template->title,
                     'category' => $template->category,
+                    'target_audience' => $template->target_audience,
                 );
             }
         }
@@ -859,9 +863,18 @@ class Bewerbungstrainer_Whitelabel_Partners {
             .scenario-item input[type="checkbox"] {
                 margin-right: 10px;
             }
-            .scenario-item .title {
+            .scenario-item .title-container {
                 flex: 1;
+            }
+            .scenario-item .title {
                 font-size: 13px;
+                display: block;
+            }
+            .scenario-item .target-audience {
+                font-size: 11px;
+                color: #666;
+                display: block;
+                margin-top: 2px;
             }
             .scenario-item .difficulty-badge {
                 font-size: 10px;
@@ -935,12 +948,18 @@ class Bewerbungstrainer_Whitelabel_Partners {
                                 $difficulty = $scenario['difficulty'];
                                 $difficulty_class = $difficulty ? 'difficulty-' . $difficulty : '';
                                 ?>
+                                <?php $target_audience = isset($scenario['target_audience']) ? $scenario['target_audience'] : ''; ?>
                                 <label class="scenario-item">
                                     <input type="checkbox"
                                            name="partner_visible_scenarios[<?php echo esc_attr($type_key); ?>][]"
                                            value="<?php echo esc_attr($scenario['id']); ?>"
                                            <?php checked($is_checked); ?> />
-                                    <span class="title"><?php echo esc_html($scenario['title']); ?></span>
+                                    <span class="title-container">
+                                        <span class="title"><?php echo esc_html($scenario['title']); ?></span>
+                                        <?php if ($target_audience): ?>
+                                            <span class="target-audience"><?php echo esc_html($target_audience); ?></span>
+                                        <?php endif; ?>
+                                    </span>
                                     <?php if ($difficulty): ?>
                                         <span class="difficulty-badge <?php echo esc_attr($difficulty_class); ?>">
                                             <?php echo esc_html(ucfirst($difficulty)); ?>

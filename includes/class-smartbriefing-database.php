@@ -80,6 +80,37 @@ class Bewerbungstrainer_SmartBriefing_Database {
 
         $current_version = get_option('bewerbungstrainer_smartbriefing_db_version', '1.0.0');
 
+        // Migration 1.5.0: Add target_audience column to templates table
+        if (version_compare($current_version, '1.5.0', '<')) {
+            error_log('[SMARTBRIEFING] Running migration to 1.5.0...');
+
+            // Check if target_audience column exists in templates table
+            $target_audience_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SHOW COLUMNS FROM {$this->table_templates} LIKE %s",
+                    'target_audience'
+                )
+            );
+
+            if (empty($target_audience_exists)) {
+                error_log('[SMARTBRIEFING] Adding target_audience column to templates table...');
+
+                $wpdb->query(
+                    "ALTER TABLE {$this->table_templates} ADD COLUMN `target_audience` varchar(255) DEFAULT NULL AFTER `category`"
+                );
+
+                if ($wpdb->last_error) {
+                    error_log('[SMARTBRIEFING] Error adding target_audience column: ' . $wpdb->last_error);
+                } else {
+                    error_log('[SMARTBRIEFING] target_audience column added successfully');
+                }
+            }
+
+            // Update version
+            update_option('bewerbungstrainer_smartbriefing_db_version', '1.5.0');
+            error_log('[SMARTBRIEFING] Migration to 1.5.0 completed');
+        }
+
         // Migration 1.4.0: Add ai_role, ai_task, ai_behavior columns to templates table
         if (version_compare($current_version, '1.4.0', '<')) {
             error_log('[SMARTBRIEFING] Running migration to 1.4.0...');
@@ -278,6 +309,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
             `description` text DEFAULT NULL,
             `icon` varchar(50) DEFAULT 'file-text',
             `category` varchar(100) DEFAULT 'CAREER',
+            `target_audience` varchar(255) DEFAULT NULL,
             `system_prompt` longtext NOT NULL,
             `ai_role` longtext DEFAULT NULL,
             `ai_task` longtext DEFAULT NULL,
@@ -750,6 +782,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             'description' => null,
             'icon' => 'file-text',
             'category' => 'CAREER',
+            'target_audience' => null,
             'system_prompt' => '',
             'ai_role' => null,      // Structured prompt: KI-Rolle (Persona)
             'ai_task' => null,      // Structured prompt: KI-Aufgabe (Was)
@@ -781,6 +814,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
                 'description' => sanitize_textarea_field($data['description']),
                 'icon' => sanitize_text_field($data['icon']),
                 'category' => sanitize_text_field($data['category']),
+                'target_audience' => sanitize_text_field($data['target_audience']),
                 'system_prompt' => $data['system_prompt'],
                 'ai_role' => $data['ai_role'],
                 'ai_task' => $data['ai_task'],
@@ -792,7 +826,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
                 'demo_code' => $data['demo_code'] ? strtoupper(sanitize_text_field($data['demo_code'])) : null,
                 'allow_custom_variables' => intval($data['allow_custom_variables']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%d')
         );
 
         if ($result === false) {
@@ -817,7 +851,7 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
         $update_format = array();
 
         $allowed_fields = array(
-            'title', 'description', 'icon', 'category',
+            'title', 'description', 'icon', 'category', 'target_audience',
             'system_prompt', 'ai_role', 'ai_task', 'ai_behavior',
             'variables_schema', 'is_active', 'sort_order',
             'allow_custom_variables'
