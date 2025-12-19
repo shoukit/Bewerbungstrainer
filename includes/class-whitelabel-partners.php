@@ -768,6 +768,22 @@ class Bewerbungstrainer_Whitelabel_Partners {
             }
         }
 
+        // Extract all unique audience groups from all scenarios (split by ;)
+        $all_audience_groups = array();
+        foreach ($all_scenarios as $type_scenarios) {
+            foreach ($type_scenarios as $scenario) {
+                if (!empty($scenario['target_audience'])) {
+                    $groups = array_map('trim', explode(';', $scenario['target_audience']));
+                    foreach ($groups as $group) {
+                        if (!empty($group) && !in_array($group, $all_audience_groups)) {
+                            $all_audience_groups[] = $group;
+                        }
+                    }
+                }
+            }
+        }
+        sort($all_audience_groups);
+
         // Define scenario types with their labels
         $scenario_types = array(
             'briefings' => array(
@@ -896,12 +912,96 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 color: #666;
                 font-style: italic;
             }
+            /* Audience Group Filter Styles */
+            .audience-group-filter {
+                background: #f0f7ff;
+                border: 1px solid #c3dafe;
+                border-radius: 8px;
+                padding: 15px 20px;
+                margin-bottom: 20px;
+            }
+            .audience-group-filter h4 {
+                margin: 0 0 12px 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1e40af;
+            }
+            .audience-group-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .audience-group-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 14px;
+                background: #fff;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 500;
+                color: #475569;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .audience-group-btn:hover {
+                background: #f1f5f9;
+                border-color: #94a3b8;
+            }
+            .audience-group-btn.active {
+                background: #3b82f6;
+                border-color: #3b82f6;
+                color: #fff;
+            }
+            .audience-group-btn .count {
+                background: rgba(0,0,0,0.1);
+                padding: 2px 6px;
+                border-radius: 10px;
+                font-size: 11px;
+            }
+            .audience-group-btn.active .count {
+                background: rgba(255,255,255,0.25);
+            }
         </style>
 
         <p class="description" style="margin-bottom: 15px;">
             Wählen Sie die Szenarien aus, die dieser Partner sehen kann.<br>
             <strong>Neue Szenarien sind standardmäßig nicht sichtbar</strong> – Sie müssen sie hier explizit aktivieren.
         </p>
+
+        <?php if (!empty($all_audience_groups)): ?>
+        <div class="audience-group-filter">
+            <h4>🎯 Schnellauswahl nach Zielgruppe</h4>
+            <p class="description" style="margin: 0 0 10px 0; font-size: 12px;">
+                Klicken Sie auf eine Zielgruppe, um alle zugehörigen Szenarien in allen Bereichen zu aktivieren.
+            </p>
+            <div class="audience-group-buttons">
+                <?php
+                // Count scenarios per audience group
+                foreach ($all_audience_groups as $group):
+                    $group_count = 0;
+                    foreach ($all_scenarios as $type_scenarios) {
+                        foreach ($type_scenarios as $scenario) {
+                            if (!empty($scenario['target_audience'])) {
+                                $scenario_groups = array_map('trim', explode(';', $scenario['target_audience']));
+                                if (in_array($group, $scenario_groups)) {
+                                    $group_count++;
+                                }
+                            }
+                        }
+                    }
+                ?>
+                    <button type="button"
+                            class="audience-group-btn"
+                            data-group="<?php echo esc_attr($group); ?>">
+                        <?php echo esc_html($group); ?>
+                        <span class="count"><?php echo $group_count; ?></span>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <div class="scenario-visibility-container">
             <?php foreach ($scenario_types as $type_key => $type_info): ?>
@@ -948,8 +1048,16 @@ class Bewerbungstrainer_Whitelabel_Partners {
                                 $difficulty = $scenario['difficulty'];
                                 $difficulty_class = $difficulty ? 'difficulty-' . $difficulty : '';
                                 ?>
-                                <?php $target_audience = isset($scenario['target_audience']) ? $scenario['target_audience'] : ''; ?>
-                                <label class="scenario-item">
+                                <?php
+                                $target_audience = isset($scenario['target_audience']) ? $scenario['target_audience'] : '';
+                                // Parse audience groups for data attribute
+                                $audience_groups_array = array();
+                                if (!empty($target_audience)) {
+                                    $audience_groups_array = array_map('trim', explode(';', $target_audience));
+                                }
+                                $audience_groups_json = htmlspecialchars(json_encode($audience_groups_array), ENT_QUOTES, 'UTF-8');
+                                ?>
+                                <label class="scenario-item" data-audience-groups="<?php echo $audience_groups_json; ?>">
                                     <input type="checkbox"
                                            name="partner_visible_scenarios[<?php echo esc_attr($type_key); ?>][]"
                                            value="<?php echo esc_attr($scenario['id']); ?>"
@@ -1012,6 +1120,91 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 var count = $list.find('input[type="checkbox"]:checked').length;
                 $('.selected-count[data-type="' + type + '"]').text(count + ' ausgewählt');
             }
+
+            function updateAllSelectedCounts() {
+                $('.scenario-type-list').each(function() {
+                    var type = $(this).data('type');
+                    updateSelectedCount(type);
+                });
+            }
+
+            // Handle audience group filter buttons
+            $('.audience-group-btn').on('click', function() {
+                var group = $(this).data('group');
+                var $btn = $(this);
+                var isActive = $btn.hasClass('active');
+
+                if (isActive) {
+                    // Deactivate: uncheck all scenarios with this group
+                    $btn.removeClass('active');
+                    $('.scenario-item').each(function() {
+                        var $item = $(this);
+                        var groups = $item.data('audience-groups') || [];
+                        if (groups.indexOf(group) !== -1) {
+                            $item.find('input[type="checkbox"]').prop('checked', false);
+                        }
+                    });
+                } else {
+                    // Activate: check all scenarios with this group
+                    $btn.addClass('active');
+                    $('.scenario-item').each(function() {
+                        var $item = $(this);
+                        var groups = $item.data('audience-groups') || [];
+                        if (groups.indexOf(group) !== -1) {
+                            // Also uncheck "Alle auswählen" and enable the list
+                            var $list = $item.closest('.scenario-type-list');
+                            var type = $list.data('type');
+                            var $selectAll = $('.select-all-scenarios[data-type="' + type + '"]');
+                            var $flag = $('.all-selected-flag[data-type="' + type + '"]');
+
+                            if ($selectAll.is(':checked')) {
+                                $selectAll.prop('checked', false);
+                                $list.removeClass('disabled');
+                                $flag.val('0');
+                            }
+
+                            $item.find('input[type="checkbox"]').prop('checked', true);
+                        }
+                    });
+                }
+
+                updateAllSelectedCounts();
+            });
+
+            // Update audience group button states based on current selections
+            function updateAudienceGroupButtons() {
+                $('.audience-group-btn').each(function() {
+                    var $btn = $(this);
+                    var group = $btn.data('group');
+                    var allChecked = true;
+                    var anyFound = false;
+
+                    $('.scenario-item').each(function() {
+                        var $item = $(this);
+                        var groups = $item.data('audience-groups') || [];
+                        if (groups.indexOf(group) !== -1) {
+                            anyFound = true;
+                            if (!$item.find('input[type="checkbox"]').is(':checked')) {
+                                allChecked = false;
+                            }
+                        }
+                    });
+
+                    if (anyFound && allChecked) {
+                        $btn.addClass('active');
+                    } else {
+                        $btn.removeClass('active');
+                    }
+                });
+            }
+
+            // Update button states when individual checkboxes change
+            $('.scenario-item input[type="checkbox"]').on('change', function() {
+                updateAudienceGroupButtons();
+            });
+
+            // Initial update
+            updateAudienceGroupButtons();
         });
         </script>
         <?php
