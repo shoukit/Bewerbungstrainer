@@ -262,6 +262,8 @@ class Bewerbungstrainer_Whitelabel_Partners {
         }
 
         $description = get_post_meta($post->ID, '_partner_description', true);
+        $dashboard_title = get_post_meta($post->ID, '_partner_dashboard_title', true);
+        $dashboard_hook = get_post_meta($post->ID, '_partner_dashboard_hook', true);
         ?>
         <table class="form-table">
             <tr>
@@ -278,6 +280,25 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 <th><label for="partner_description">Beschreibung</label></th>
                 <td>
                     <textarea id="partner_description" name="partner_description" rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="partner_dashboard_title">Dashboard-Titel</label></th>
+                <td>
+                    <input type="text" id="partner_dashboard_title" name="partner_dashboard_title" value="<?php echo esc_attr($dashboard_title); ?>" class="large-text" placeholder="z.B. Karriere & Placement" />
+                    <p class="description">
+                        Wird auf dem Dashboard unter "Willkommen im Trainingscenter" angezeigt.<br>
+                        Leer lassen für Standard-Ansicht ohne Titel.
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="partner_dashboard_hook">Marketing-Hook</label></th>
+                <td>
+                    <textarea id="partner_dashboard_hook" name="partner_dashboard_hook" rows="3" class="large-text" placeholder="z.B. Vom Berufseinstieg bis zum Jobwechsel. Kein Bewerber geht mehr unvorbereitet ins Rennen."><?php echo esc_textarea($dashboard_hook); ?></textarea>
+                    <p class="description">
+                        Beschreibungstext unterhalb des Dashboard-Titels.
+                    </p>
                 </td>
             </tr>
         </table>
@@ -1016,6 +1037,16 @@ class Bewerbungstrainer_Whitelabel_Partners {
             update_post_meta($post_id, '_partner_description', sanitize_textarea_field($_POST['partner_description']));
         }
 
+        // Save dashboard title
+        if (isset($_POST['partner_dashboard_title'])) {
+            update_post_meta($post_id, '_partner_dashboard_title', sanitize_text_field($_POST['partner_dashboard_title']));
+        }
+
+        // Save dashboard marketing hook
+        if (isset($_POST['partner_dashboard_hook'])) {
+            update_post_meta($post_id, '_partner_dashboard_hook', sanitize_textarea_field($_POST['partner_dashboard_hook']));
+        }
+
         // Save branding
         if (isset($_POST['partner_branding']) && is_array($_POST['partner_branding'])) {
             $branding = array();
@@ -1680,6 +1711,10 @@ class Bewerbungstrainer_Whitelabel_Partners {
             $slug = $post->post_name;
         }
 
+        // Get dashboard customization fields
+        $dashboard_title = get_post_meta($post_id, '_partner_dashboard_title', true);
+        $dashboard_hook = get_post_meta($post_id, '_partner_dashboard_hook', true);
+
         return array(
             'id'                => $slug,
             'slug'              => $slug,
@@ -1688,6 +1723,8 @@ class Bewerbungstrainer_Whitelabel_Partners {
             'logo_url'          => $logo_url,
             'modules'           => $modules,
             'visible_scenarios' => $visible_scenarios,
+            'dashboard_title'   => $dashboard_title ?: null,
+            'dashboard_hook'    => $dashboard_hook ?: null,
         );
     }
 

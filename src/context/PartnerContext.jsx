@@ -414,6 +414,8 @@ export function PartnerProvider({ children }) {
     branding: partner?.branding || DEFAULT_BRANDING,
     logoUrl: partner?.logo_url || null,
     partnerName: partner?.name || 'Karriereheld',
+    dashboardTitle: partner?.dashboard_title || null,
+    dashboardHook: partner?.dashboard_hook || null,
 
     // Authentication
     user,

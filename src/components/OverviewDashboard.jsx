@@ -20,7 +20,7 @@ import { DEFAULT_BRANDING } from '@/config/partners';
  */
 const OverviewDashboard = ({ onNavigate }) => {
   // Get partner branding
-  const { branding, partnerName, isWhiteLabel } = usePartner();
+  const { branding, partnerName, isWhiteLabel, dashboardTitle, dashboardHook } = usePartner();
 
   // Get themed styles
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -155,6 +155,46 @@ const OverviewDashboard = ({ onNavigate }) => {
             Trainingscenter
           </span>
         </h1>
+
+        {/* Partner Dashboard Title and Hook (only shown when configured) */}
+        {(dashboardTitle || dashboardHook) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+            style={{
+              marginBottom: '24px',
+              padding: '20px 24px',
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(147, 51, 234, 0.06) 100%)',
+              borderRadius: '16px',
+              border: '1px solid rgba(59, 130, 246, 0.15)',
+              maxWidth: '700px',
+              margin: '0 auto 24px',
+            }}
+          >
+            {dashboardTitle && (
+              <h2 style={{
+                fontSize: 'clamp(20px, 3vw, 26px)',
+                fontWeight: 700,
+                color: '#0f172a',
+                marginBottom: dashboardHook ? '8px' : '0',
+                lineHeight: 1.3,
+              }}>
+                {dashboardTitle}
+              </h2>
+            )}
+            {dashboardHook && (
+              <p style={{
+                fontSize: 'clamp(15px, 2vw, 17px)',
+                color: '#475569',
+                margin: 0,
+                lineHeight: 1.6,
+              }}>
+                {dashboardHook}
+              </p>
+            )}
+          </motion.div>
+        )}
 
         {/* Subtitle */}
         <p style={{
