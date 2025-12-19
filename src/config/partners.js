@@ -458,7 +458,9 @@ export function isModuleAllowed(partner, moduleId) {
 
 /**
  * Filter scenarios based on partner's visible_scenarios configuration
- * This is the new system that uses explicit scenario IDs per type
+ *
+ * WICHTIG: Partner müssen Szenarien EXPLIZIT auswählen.
+ * Wenn keine Szenarien ausgewählt sind, werden KEINE angezeigt.
  *
  * @param {Array} scenarios - Array of scenario objects
  * @param {Object} partner - Partner configuration object
@@ -466,47 +468,40 @@ export function isModuleAllowed(partner, moduleId) {
  * @returns {Array} Filtered scenarios
  */
 export function filterScenariosByVisibility(scenarios, partner, scenarioType) {
-  // If no scenarios, return empty
-  if (!scenarios) return [];
+  // If no scenarios provided, return empty
+  if (!scenarios || !Array.isArray(scenarios)) {
+    return [];
+  }
 
-  // If no partner, return all (default Karriereheld mode - no restrictions)
-  if (!partner) return scenarios;
+  // If no partner (default Karriereheld mode), return all - no restrictions
+  if (!partner) {
+    return scenarios;
+  }
 
-  // Check if partner has visible_scenarios configuration
+  // Get visible_scenarios configuration from partner
   const visibleScenarios = partner.visible_scenarios;
 
-  // If visible_scenarios is undefined/null, fall back to legacy filtering
-  // This handles backwards compatibility for partners created before this feature
-  if (visibleScenarios === undefined || visibleScenarios === null) {
-    return filterScenariosByPartner(scenarios, partner);
+  // If visible_scenarios is not configured or is an array (not object), return empty
+  // Partners MUST have scenarios explicitly configured
+  if (!visibleScenarios || Array.isArray(visibleScenarios) || typeof visibleScenarios !== 'object') {
+    console.log('[FILTER] No valid visible_scenarios config for partner - returning empty');
+    return [];
   }
 
-  // If visible_scenarios is an empty array [] (not an object with keys),
-  // it means config wasn't properly saved yet - use legacy filtering
-  if (Array.isArray(visibleScenarios) && visibleScenarios.length === 0) {
-    return filterScenariosByPartner(scenarios, partner);
-  }
-
-  // Now we know visible_scenarios is an object with keys
-  // Get the allowed scenario IDs for this type
+  // Get the allowed scenario IDs for this specific type
   const allowedForType = visibleScenarios[scenarioType];
 
-  // If this type is not configured at all, return empty (new scenarios are hidden by default)
-  if (allowedForType === undefined || allowedForType === null) {
+  // If this type is not configured, return empty
+  if (!allowedForType || !Array.isArray(allowedForType)) {
     return [];
   }
 
-  // If not an array, return empty
-  if (!Array.isArray(allowedForType)) {
-    return [];
-  }
-
-  // If '__all__' is in the array, return all scenarios
+  // If '__all__' marker is present, return all scenarios
   if (allowedForType.includes('__all__')) {
     return scenarios;
   }
 
-  // If the array is empty, return empty (no scenarios visible - intentional selection)
+  // If array is empty, return empty (no scenarios selected = none visible)
   if (allowedForType.length === 0) {
     return [];
   }
