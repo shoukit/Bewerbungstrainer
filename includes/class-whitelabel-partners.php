@@ -104,6 +104,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
      */
     private $available_modules = array(
         'dashboard' => 'Dashboard',
+        'briefings' => 'Smart Briefings',
         'roleplay' => 'Live-Simulation (Roleplay)',
         'simulator' => 'Szenario-Training (Simulator)',
         'video_training' => 'Wirkungs-Analyse',
