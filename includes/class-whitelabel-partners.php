@@ -963,6 +963,35 @@ class Bewerbungstrainer_Whitelabel_Partners {
             .audience-group-btn.active .count {
                 background: rgba(255,255,255,0.25);
             }
+            .audience-group-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid #c3dafe;
+            }
+            .audience-action-btn {
+                padding: 6px 12px;
+                background: #fff;
+                border: 1px solid #cbd5e1;
+                border-radius: 4px;
+                font-size: 12px;
+                color: #64748b;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .audience-action-btn:hover {
+                background: #f1f5f9;
+                border-color: #94a3b8;
+            }
+            .audience-action-btn.danger {
+                color: #dc2626;
+                border-color: #fecaca;
+            }
+            .audience-action-btn.danger:hover {
+                background: #fef2f2;
+                border-color: #f87171;
+            }
         </style>
 
         <p class="description" style="margin-bottom: 15px;">
@@ -999,6 +1028,14 @@ class Bewerbungstrainer_Whitelabel_Partners {
                         <span class="count"><?php echo $group_count; ?></span>
                     </button>
                 <?php endforeach; ?>
+            </div>
+            <div class="audience-group-actions">
+                <button type="button" class="audience-action-btn" id="select-all-global">
+                    ✓ Alle Szenarien auswählen
+                </button>
+                <button type="button" class="audience-action-btn danger" id="deselect-all-global">
+                    ✗ Alle Szenarien abwählen
+                </button>
             </div>
         </div>
         <?php endif; ?>
@@ -1200,6 +1237,34 @@ class Bewerbungstrainer_Whitelabel_Partners {
 
             // Update button states when individual checkboxes change
             $('.scenario-item input[type="checkbox"]').on('change', function() {
+                updateAudienceGroupButtons();
+            });
+
+            // Global select all button
+            $('#select-all-global').on('click', function() {
+                // Uncheck all "Alle auswählen" checkboxes first
+                $('.select-all-scenarios').prop('checked', false);
+                $('.scenario-type-list').removeClass('disabled');
+                $('.all-selected-flag').val('0');
+
+                // Check all individual scenario checkboxes
+                $('.scenario-item input[type="checkbox"]').prop('checked', true);
+
+                updateAllSelectedCounts();
+                updateAudienceGroupButtons();
+            });
+
+            // Global deselect all button
+            $('#deselect-all-global').on('click', function() {
+                // Uncheck all "Alle auswählen" checkboxes
+                $('.select-all-scenarios').prop('checked', false);
+                $('.scenario-type-list').removeClass('disabled');
+                $('.all-selected-flag').val('0');
+
+                // Uncheck all individual scenario checkboxes
+                $('.scenario-item input[type="checkbox"]').prop('checked', false);
+
+                updateAllSelectedCounts();
                 updateAudienceGroupButtons();
             });
 
