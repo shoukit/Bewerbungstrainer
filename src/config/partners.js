@@ -459,8 +459,9 @@ export function isModuleAllowed(partner, moduleId) {
 /**
  * Filter scenarios based on partner's visible_scenarios configuration
  *
- * WICHTIG: Partner müssen Szenarien EXPLIZIT auswählen.
- * Wenn keine Szenarien ausgewählt sind, werden KEINE angezeigt.
+ * WICHTIG:
+ * - Ohne Partner (default Karriereheld): ALLE Szenarien sichtbar
+ * - Mit Partner: NUR explizit ausgewählte Szenarien sichtbar
  *
  * @param {Array} scenarios - Array of scenario objects
  * @param {Object} partner - Partner configuration object
@@ -473,8 +474,8 @@ export function filterScenariosByVisibility(scenarios, partner, scenarioType) {
     return [];
   }
 
-  // If no partner (default Karriereheld mode), return all - no restrictions
-  if (!partner) {
+  // If no partner OR default partner (no branding), return all - no restrictions
+  if (!partner || partner.slug === 'default' || partner.id === 'default') {
     return scenarios;
   }
 
@@ -484,7 +485,6 @@ export function filterScenariosByVisibility(scenarios, partner, scenarioType) {
   // If visible_scenarios is not configured or is an array (not object), return empty
   // Partners MUST have scenarios explicitly configured
   if (!visibleScenarios || Array.isArray(visibleScenarios) || typeof visibleScenarios !== 'object') {
-    console.log('[FILTER] No valid visible_scenarios config for partner - returning empty');
     return [];
   }
 
