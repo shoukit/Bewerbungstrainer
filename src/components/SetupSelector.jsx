@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings2, ChevronDown, Check, X, Sparkles, Loader2 } from 'lucide-react';
+import { ChevronDown, Check, X, Sparkles, Loader2 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
+import { sanitizeColor } from '@/utils/colorUtils';
 
 /**
  * SetupSelector - Compact setup selector with popup modal
@@ -20,7 +21,6 @@ const SetupSelector = () => {
 
   // Get partner-branded colors
   const primaryAccent = branding?.['--primary-accent'] || '#3A7FA7';
-  const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
 
   const handleSelectSetup = (setupId) => {
     setSelectedSetup(setupId);
@@ -31,6 +31,9 @@ const SetupSelector = () => {
     clearSelectedSetup();
     setIsModalOpen(false);
   };
+
+  // Sanitize current setup color
+  const currentSetupColor = currentSetup ? sanitizeColor(currentSetup.color) : null;
 
   // Don't render anything while loading
   if (setupsLoading) {
@@ -63,7 +66,7 @@ const SetupSelector = () => {
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{
-                backgroundColor: currentSetup ? `${currentSetup.color}15` : '#f1f5f9',
+                backgroundColor: currentSetupColor ? `${currentSetupColor}15` : '#f1f5f9',
               }}
             >
               {currentSetup ? (
@@ -108,117 +111,122 @@ const SetupSelector = () => {
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999]"
             />
 
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-              className="fixed inset-4 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-2xl bg-white rounded-2xl shadow-2xl z-[10000] flex flex-col max-h-[calc(100vh-32px)] sm:max-h-[85vh] overflow-hidden"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 flex-shrink-0">
-                <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                    Trainings-Setup wählen
-                  </h2>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    Wähle deinen Schwerpunkt für passende Trainingsszenarien
-                  </p>
+            {/* Modal - properly centered */}
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+                className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden pointer-events-auto"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 flex-shrink-0">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                      Trainings-Setup wählen
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      Wähle deinen Schwerpunkt für passende Trainingsszenarien
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors flex-shrink-0"
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <X size={18} />
-                </button>
-              </div>
 
-              {/* Body - Scrollable */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {availableSetups.map((setup) => {
-                    const isSelected = currentSetup?.id === setup.id;
-                    return (
-                      <button
-                        key={setup.id}
-                        onClick={() => handleSelectSetup(setup.id)}
-                        className={`relative p-4 rounded-xl text-left transition-all border-2 hover:shadow-md ${
-                          isSelected
-                            ? 'border-current shadow-sm'
-                            : 'border-gray-100 hover:border-gray-200 bg-white'
-                        }`}
-                        style={{
-                          borderColor: isSelected ? setup.color : undefined,
-                          backgroundColor: isSelected ? `${setup.color}05` : undefined,
-                        }}
-                      >
-                        {/* Selected checkmark */}
-                        {isSelected && (
-                          <div
-                            className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: setup.color }}
-                          >
-                            <Check size={12} className="text-white" strokeWidth={3} />
-                          </div>
-                        )}
+                {/* Body - Scrollable */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {availableSetups.map((setup) => {
+                      const isSelected = currentSetup?.id === setup.id;
+                      // Sanitize each setup's color
+                      const safeColor = sanitizeColor(setup.color);
 
-                        {/* Icon */}
-                        <div
-                          className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
-                          style={{ backgroundColor: `${setup.color}12` }}
+                      return (
+                        <button
+                          key={setup.id}
+                          onClick={() => handleSelectSetup(setup.id)}
+                          className={`relative p-4 rounded-xl text-left transition-all border-2 hover:shadow-md ${
+                            isSelected
+                              ? 'shadow-sm'
+                              : 'border-gray-100 hover:border-gray-200 bg-white'
+                          }`}
+                          style={{
+                            borderColor: isSelected ? safeColor : undefined,
+                            backgroundColor: isSelected ? `${safeColor}08` : undefined,
+                          }}
                         >
-                          <span className="text-2xl">{setup.icon}</span>
-                        </div>
+                          {/* Selected checkmark */}
+                          {isSelected && (
+                            <div
+                              className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: safeColor }}
+                            >
+                              <Check size={12} className="text-white" strokeWidth={3} />
+                            </div>
+                          )}
 
-                        {/* Title */}
-                        <h3 className="text-sm font-semibold text-gray-900 mb-1 pr-6">
-                          {setup.name}
-                        </h3>
-
-                        {/* Description */}
-                        <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
-                          {setup.description}
-                        </p>
-
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-1.5">
-                          <span
-                            className="inline-flex text-[10px] px-2 py-0.5 rounded-full font-medium"
-                            style={{
-                              backgroundColor: `${setup.color}15`,
-                              color: setup.color,
-                            }}
+                          {/* Icon */}
+                          <div
+                            className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+                            style={{ backgroundColor: `${safeColor}15` }}
                           >
-                            {setup.focus}
-                          </span>
-                          <span className="inline-flex text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
-                            {setup.targetGroup}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                            <span className="text-2xl">{setup.icon}</span>
+                          </div>
 
-              {/* Footer */}
-              <div className="flex items-center justify-between p-4 sm:p-5 border-t border-gray-100 bg-gray-50/80 flex-shrink-0">
-                <button
-                  onClick={handleShowAll}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-                >
-                  Alle Szenarien anzeigen
-                </button>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
-                  style={{ background: primaryAccent }}
-                >
-                  Fertig
-                </button>
-              </div>
-            </motion.div>
+                          {/* Title */}
+                          <h3 className="text-sm font-semibold text-gray-900 mb-1 pr-6">
+                            {setup.name}
+                          </h3>
+
+                          {/* Description */}
+                          <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
+                            {setup.description}
+                          </p>
+
+                          {/* Tags */}
+                          <div className="flex flex-wrap gap-1.5">
+                            <span
+                              className="inline-flex text-[10px] px-2 py-0.5 rounded-full font-medium"
+                              style={{
+                                backgroundColor: `${safeColor}15`,
+                                color: safeColor,
+                              }}
+                            >
+                              {setup.focus}
+                            </span>
+                            <span className="inline-flex text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                              {setup.targetGroup}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between p-4 sm:p-5 border-t border-gray-100 bg-gray-50/80 flex-shrink-0">
+                  <button
+                    onClick={handleShowAll}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                  >
+                    Alle Szenarien anzeigen
+                  </button>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+                    style={{ background: primaryAccent }}
+                  >
+                    Fertig
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
