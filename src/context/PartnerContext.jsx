@@ -52,6 +52,35 @@ export function PartnerProvider({ children }) {
     return null;
   });
 
+  /**
+   * Load setup preference from user profile
+   */
+  const loadUserSetupPreference = async () => {
+    try {
+      const apiUrl = window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+      const response = await fetch(`${apiUrl}/user/setup`, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+          'X-WP-Nonce': window.bewerbungstrainerConfig?.nonce || '',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.setup_id && SCENARIO_SETUPS[data.data.setup_id]) {
+          setSelectedSetupState(data.data.setup_id);
+          // Also update localStorage to stay in sync
+          localStorage.setItem('bewerbungstrainer_selected_setup', data.data.setup_id);
+          return data.data.setup_id;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load setup from user profile:', error);
+    }
+    return null;
+  };
+
   // Initialize partner from URL on mount - now fetches from API
   useEffect(() => {
     const initializePartner = async () => {
@@ -166,6 +195,11 @@ export function PartnerProvider({ children }) {
         // Check admin status
         const adminStatus = await checkAdminStatus();
         setIsAdmin(adminStatus);
+
+        // Load setup preference from user profile
+        if (!isDemoUsername) {
+          await loadUserSetupPreference();
+        }
       } else {
         // Try to get current user from API (in case cookies are set but config wasn't updated)
         try {
@@ -191,6 +225,11 @@ export function PartnerProvider({ children }) {
             // Check admin status
             const adminStatus = await checkAdminStatus();
             setIsAdmin(adminStatus);
+
+            // Load setup preference from user profile
+            if (!apiIsDemoUser) {
+              await loadUserSetupPreference();
+            }
           }
         } catch (error) {
         }
@@ -390,19 +429,37 @@ export function PartnerProvider({ children }) {
    * Set selected scenario setup
    * @param {string} setupId - The setup ID to select (e.g., 'karriere-placement')
    */
-  const setSelectedSetup = useCallback((setupId) => {
-    if (setupId && SCENARIO_SETUPS[setupId]) {
-      setSelectedSetupState(setupId);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('bewerbungstrainer_selected_setup', setupId);
-      }
-    } else {
-      setSelectedSetupState(null);
-      if (typeof window !== 'undefined') {
+  const setSelectedSetup = useCallback(async (setupId) => {
+    const newSetup = setupId && SCENARIO_SETUPS[setupId] ? setupId : null;
+    setSelectedSetupState(newSetup);
+
+    // Save to localStorage as fallback
+    if (typeof window !== 'undefined') {
+      if (newSetup) {
+        localStorage.setItem('bewerbungstrainer_selected_setup', newSetup);
+      } else {
         localStorage.removeItem('bewerbungstrainer_selected_setup');
       }
     }
-  }, []);
+
+    // Save to user profile if authenticated
+    if (isAuthenticated && !isDemoUser) {
+      try {
+        const apiUrl = window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+        await fetch(`${apiUrl}/user/setup`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': window.bewerbungstrainerConfig?.nonce || '',
+          },
+          body: JSON.stringify({ setup_id: newSetup }),
+        });
+      } catch (error) {
+        console.error('Failed to save setup to user profile:', error);
+      }
+    }
+  }, [isAuthenticated, isDemoUser]);
 
   /**
    * Clear selected setup
