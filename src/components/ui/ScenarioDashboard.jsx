@@ -26,10 +26,10 @@ import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
 import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 
 /**
- * Default Category Badge Component
- * Uses dynamic categories from useCategories hook
+ * Single Category Badge Component
+ * Renders a single category badge
  */
-const DefaultCategoryBadge = ({ category, getCategoryConfig }) => {
+const SingleCategoryBadge = ({ category, getCategoryConfig }) => {
   const config = getCategoryConfig(category);
 
   if (!config) return null;
@@ -54,6 +54,27 @@ const DefaultCategoryBadge = ({ category, getCategoryConfig }) => {
       {config.shortLabel}
     </span>
   );
+};
+
+/**
+ * Default Category Badge Component
+ * Uses dynamic categories from useCategories hook
+ * Supports both single category (string) and multiple categories (array)
+ */
+const DefaultCategoryBadge = ({ category, getCategoryConfig }) => {
+  // Handle array of categories
+  if (Array.isArray(category)) {
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        {category.map((cat, index) => (
+          <SingleCategoryBadge key={index} category={cat} getCategoryConfig={getCategoryConfig} />
+        ))}
+      </div>
+    );
+  }
+
+  // Handle single category (string)
+  return <SingleCategoryBadge category={category} getCategoryConfig={getCategoryConfig} />;
 };
 
 /**

@@ -713,6 +713,14 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
         foreach ($templates as &$template) {
             $template->variables_schema = json_decode($template->variables_schema, true);
             $template->is_custom = !empty($template->user_id) || !empty($template->demo_code);
+
+            // Parse category if it's a JSON array string (e.g., from CSV import)
+            if (!empty($template->category) && is_string($template->category) && strpos($template->category, '[') === 0) {
+                $parsed_category = json_decode($template->category, true);
+                if (is_array($parsed_category)) {
+                    $template->category = $parsed_category;
+                }
+            }
         }
 
         return $templates;
@@ -781,6 +789,14 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
 
         if ($template) {
             $template->variables_schema = json_decode($template->variables_schema, true);
+
+            // Parse category if it's a JSON array string (e.g., from CSV import)
+            if (!empty($template->category) && is_string($template->category) && strpos($template->category, '[') === 0) {
+                $parsed_category = json_decode($template->category, true);
+                if (is_array($parsed_category)) {
+                    $template->category = $parsed_category;
+                }
+            }
         }
 
         return $template;
