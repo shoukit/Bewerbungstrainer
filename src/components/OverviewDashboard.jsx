@@ -254,40 +254,14 @@ const OverviewDashboard = ({ onNavigate }) => {
       </motion.div>
 
       {/* Setup Selector - Allow users to select their training focus */}
-      {!isWhiteLabel && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.4 }}
-          className="w-full px-4 lg:px-8 mb-10"
-        >
-          <SetupSelector />
-        </motion.div>
-      )}
-
-      {/* Current Setup Banner - Show when a setup is selected */}
-      {currentSetup && isWhiteLabel && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="w-full px-4 lg:px-8 mb-8"
-        >
-          <div
-            className="flex items-center gap-4 p-4 rounded-xl border-2"
-            style={{
-              backgroundColor: `${currentSetup.color}10`,
-              borderColor: `${currentSetup.color}30`,
-            }}
-          >
-            <span className="text-3xl">{currentSetup.icon}</span>
-            <div>
-              <div className="font-bold text-gray-900">{currentSetup.name}</div>
-              <div className="text-sm text-gray-600">{currentSetup.focus}</div>
-            </div>
-          </div>
-        </motion.div>
-      )}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.4 }}
+        className="w-full px-4 lg:px-8 mb-10"
+      >
+        <SetupSelector />
+      </motion.div>
 
       {/* Feature Cards Grid - responsive with min 2 per row on larger screens */}
       <motion.div
