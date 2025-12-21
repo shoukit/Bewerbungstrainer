@@ -715,9 +715,17 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             $template->is_custom = !empty($template->user_id) || !empty($template->demo_code);
 
             // Parse category if it's a JSON array string (e.g., from CSV import)
+            // Handles double-encoded JSON like: ["[\"karriere\",\"fuehrung\"]"]
             if (!empty($template->category) && is_string($template->category) && strpos($template->category, '[') === 0) {
                 $parsed_category = json_decode($template->category, true);
                 if (is_array($parsed_category)) {
+                    // Check for double-encoded JSON: array with single string element that looks like JSON
+                    if (count($parsed_category) === 1 && is_string($parsed_category[0]) && strpos($parsed_category[0], '[') === 0) {
+                        $double_parsed = json_decode($parsed_category[0], true);
+                        if (is_array($double_parsed)) {
+                            $parsed_category = $double_parsed;
+                        }
+                    }
                     $template->category = $parsed_category;
                 }
             }
@@ -791,9 +799,17 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
             $template->variables_schema = json_decode($template->variables_schema, true);
 
             // Parse category if it's a JSON array string (e.g., from CSV import)
+            // Handles double-encoded JSON like: ["[\"karriere\",\"fuehrung\"]"]
             if (!empty($template->category) && is_string($template->category) && strpos($template->category, '[') === 0) {
                 $parsed_category = json_decode($template->category, true);
                 if (is_array($parsed_category)) {
+                    // Check for double-encoded JSON: array with single string element that looks like JSON
+                    if (count($parsed_category) === 1 && is_string($parsed_category[0]) && strpos($parsed_category[0], '[') === 0) {
+                        $double_parsed = json_decode($parsed_category[0], true);
+                        if (is_array($double_parsed)) {
+                            $parsed_category = $double_parsed;
+                        }
+                    }
                     $template->category = $parsed_category;
                 }
             }
