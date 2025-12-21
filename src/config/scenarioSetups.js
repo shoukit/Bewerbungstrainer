@@ -91,12 +91,15 @@ export function getSetupByName(name) {
  * @returns {boolean}
  */
 export function scenarioBelongsToSetup(scenario, setupId) {
+  // If no target_audience or no setupId, scenario doesn't belong to any setup
   if (!scenario?.target_audience || !setupId) {
+    console.log(`[SETUP-FILTER] "${scenario?.title}" excluded: no target_audience="${scenario?.target_audience}" or setupId="${setupId}"`);
     return false;
   }
 
   const setup = getSetupById(setupId);
   if (!setup) {
+    console.log(`[SETUP-FILTER] "${scenario?.title}" excluded: setup "${setupId}" not found in config`);
     return false;
   }
 
@@ -107,11 +110,14 @@ export function scenarioBelongsToSetup(scenario, setupId) {
   const setupSlug = setup.id?.toLowerCase();
   const setupName = setup.name?.toLowerCase();
 
-  return audiences.some(audience =>
+  const matches = audiences.some(audience =>
     audience === setupSlug ||
     audience === setupName ||
     audience === setupId.toLowerCase()
   );
+
+  console.log(`[SETUP-FILTER] "${scenario?.title}" target_audience="${scenario.target_audience}" setupId="${setupId}" → ${matches ? 'INCLUDED' : 'EXCLUDED'}`);
+  return matches;
 }
 
 /**
@@ -126,10 +132,14 @@ export function filterScenariosBySetup(scenarios, setupId) {
   }
 
   if (!setupId) {
+    console.log(`[SETUP-FILTER] No setupId provided, returning all ${scenarios.length} scenarios`);
     return scenarios; // No filter, return all
   }
 
-  return scenarios.filter(scenario => scenarioBelongsToSetup(scenario, setupId));
+  console.log(`[SETUP-FILTER] Filtering ${scenarios.length} scenarios by setupId="${setupId}"`);
+  const filtered = scenarios.filter(scenario => scenarioBelongsToSetup(scenario, setupId));
+  console.log(`[SETUP-FILTER] Result: ${filtered.length} scenarios match setupId="${setupId}"`);
+  return filtered;
 }
 
 /**
