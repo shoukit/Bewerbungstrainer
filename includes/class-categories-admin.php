@@ -544,4 +544,29 @@ class Bewerbungstrainer_Categories_Admin {
         }
         return array();
     }
+
+    /**
+     * Get all active categories as associative array
+     * Static helper to get all categories indexed by slug
+     *
+     * @return array Associative array of categories keyed by slug
+     */
+    public static function get_all_categories() {
+        $db = Bewerbungstrainer_Categories_Database::get_instance();
+        $categories = $db->get_categories();
+
+        $result = array();
+        foreach ($categories as $cat) {
+            $result[$cat->slug] = array(
+                'id' => $cat->id,
+                'name' => $cat->name,
+                'slug' => $cat->slug,
+                'icon' => $cat->icon,
+                'color' => $cat->color,
+                'description' => $cat->description,
+            );
+        }
+
+        return $result;
+    }
 }
