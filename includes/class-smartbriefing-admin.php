@@ -218,6 +218,11 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             exit;
         }
 
+        // Handle bulk actions
+        if (isset($_POST['smartbriefing_bulk_action']) && wp_verify_nonce($_POST['_wpnonce'], 'smartbriefing_bulk_action')) {
+            $this->handle_bulk_action();
+        }
+
         // Handle form submission
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['smartbriefing_template_nonce'])) {
             if (!wp_verify_nonce($_POST['smartbriefing_template_nonce'], 'save_smartbriefing_template')) {
@@ -237,6 +242,74 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             }
             exit;
         }
+    }
+
+    /**
+     * Handle bulk action
+     */
+    private function handle_bulk_action() {
+        $action = sanitize_text_field($_POST['bulk_action'] ?? '');
+        $template_ids = isset($_POST['template_ids']) ? array_map('intval', $_POST['template_ids']) : array();
+
+        if (empty($template_ids)) {
+            wp_redirect(admin_url('admin.php?page=smartbriefing-templates&error=no_selection'));
+            exit;
+        }
+
+        $updated = 0;
+
+        switch ($action) {
+            case 'update_categories':
+                $categories = isset($_POST['bulk_categories']) ? array_map('sanitize_text_field', $_POST['bulk_categories']) : array();
+                $category_json = wp_json_encode($categories);
+                foreach ($template_ids as $id) {
+                    $result = $this->db->update_template($id, array('category' => $category_json));
+                    if ($result !== false) {
+                        $updated++;
+                    }
+                }
+                break;
+
+            case 'update_setups':
+                $setups = isset($_POST['bulk_setups']) ? array_map('sanitize_text_field', $_POST['bulk_setups']) : array();
+                $setups_string = implode('; ', $setups);
+                foreach ($template_ids as $id) {
+                    $result = $this->db->update_template($id, array('target_audience' => $setups_string));
+                    if ($result !== false) {
+                        $updated++;
+                    }
+                }
+                break;
+
+            case 'activate':
+                foreach ($template_ids as $id) {
+                    $result = $this->db->update_template($id, array('is_active' => 1));
+                    if ($result !== false) {
+                        $updated++;
+                    }
+                }
+                break;
+
+            case 'deactivate':
+                foreach ($template_ids as $id) {
+                    $result = $this->db->update_template($id, array('is_active' => 0));
+                    if ($result !== false) {
+                        $updated++;
+                    }
+                }
+                break;
+
+            case 'delete':
+                foreach ($template_ids as $id) {
+                    if ($this->db->delete_template($id)) {
+                        $updated++;
+                    }
+                }
+                break;
+        }
+
+        wp_redirect(admin_url('admin.php?page=smartbriefing-templates&bulk_updated=' . $updated));
+        exit;
     }
 
     /**
@@ -535,8 +608,33 @@ class Bewerbungstrainer_SmartBriefing_Admin {
      * Render templates list page
      */
     public function render_templates_page() {
+        // Get filter values
+        $filter_category = isset($_GET['filter_category']) ? sanitize_text_field($_GET['filter_category']) : '';
+        $filter_setup = isset($_GET['filter_setup']) ? sanitize_text_field($_GET['filter_setup']) : '';
+
         // Get all templates including inactive ones
         $templates = $this->db->get_templates(array('is_active' => null));
+
+        // Apply filters
+        if ($filter_category || $filter_setup) {
+            $templates = array_filter($templates, function($template) use ($filter_category, $filter_setup) {
+                $matches = true;
+                if ($filter_category) {
+                    $categories = Bewerbungstrainer_Categories_Admin::get_categories_array($template->category ?? '');
+                    $matches = $matches && in_array($filter_category, $categories);
+                }
+                if ($filter_setup) {
+                    $setups = array_filter(array_map('trim', explode(';', $template->target_audience ?? '')));
+                    $matches = $matches && in_array($filter_setup, $setups);
+                }
+                return $matches;
+            });
+        }
+
+        // Get all categories and setups for filters
+        $all_categories = Bewerbungstrainer_Categories_Admin::get_all_categories();
+        $setups_manager = Bewerbungstrainer_Scenario_Setups::get_instance();
+        $all_setups = $setups_manager->get_all_setups(true);
 
         // Show notices
         if (isset($_GET['deleted'])) {
@@ -550,8 +648,8 @@ class Bewerbungstrainer_SmartBriefing_Admin {
         }
         if (isset($_GET['imported'])) {
             $imported = intval($_GET['imported']);
-            $updated = isset($_GET['csv_updated']) ? intval($_GET['csv_updated']) : 0;
-            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Template(s) importiert, %d aktualisiert.', $imported, $updated) . '</p></div>';
+            $csv_updated = isset($_GET['csv_updated']) ? intval($_GET['csv_updated']) : 0;
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Template(s) importiert, %d aktualisiert.', $imported, $csv_updated) . '</p></div>';
         }
         if (isset($_GET['import_error'])) {
             $errors = array(
@@ -562,101 +660,279 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             $error_msg = $errors[$_GET['import_error']] ?? 'Unbekannter Fehler beim Import.';
             echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error_msg) . '</p></div>';
         }
+        if (isset($_GET['bulk_updated'])) {
+            $count = intval($_GET['bulk_updated']);
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Template(s) aktualisiert.', $count) . '</p></div>';
+        }
+        if (isset($_GET['error']) && $_GET['error'] === 'no_selection') {
+            echo '<div class="notice notice-warning is-dismissible"><p>Bitte wähle mindestens ein Template aus.</p></div>';
+        }
         ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline">Smart Briefing - Templates</h1>
-            <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new'); ?>" class="page-title-action">Neues Template hinzufügen</a>
+            <h1 class="wp-heading-inline">Smart Briefing Templates</h1>
+            <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new'); ?>" class="page-title-action">Neu hinzufügen</a>
             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=smartbriefing-templates&action=export_csv'), 'export_smartbriefing_templates'); ?>" class="page-title-action">CSV Export</a>
             <hr class="wp-header-end">
 
-            <!-- Import Form -->
-            <div style="margin: 15px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4; border-radius: 4px;">
-                <form method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 10px;">
+            <!-- Filter Bar -->
+            <div class="tablenav top">
+                <form method="get" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <input type="hidden" name="page" value="smartbriefing-templates">
+
+                    <!-- Category Filter -->
+                    <select name="filter_category">
+                        <option value="">Alle Kategorien</option>
+                        <?php foreach ($all_categories as $cat): ?>
+                            <option value="<?php echo esc_attr($cat['slug']); ?>" <?php selected($filter_category, $cat['slug']); ?>>
+                                <?php echo esc_html($cat['icon'] . ' ' . $cat['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <!-- Setup Filter -->
+                    <select name="filter_setup">
+                        <option value="">Alle Setups</option>
+                        <?php foreach ($all_setups as $setup): ?>
+                            <option value="<?php echo esc_attr($setup['slug']); ?>" <?php selected($filter_setup, $setup['slug']); ?>>
+                                <?php echo esc_html($setup['icon'] . ' ' . $setup['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <button type="submit" class="button">Filtern</button>
+                    <?php if ($filter_category || $filter_setup): ?>
+                        <a href="<?php echo admin_url('admin.php?page=smartbriefing-templates'); ?>" class="button">Filter zurücksetzen</a>
+                    <?php endif; ?>
+
+                    <!-- CSV Import -->
+                    <span style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                        <strong>CSV Import:</strong>
+                        <input type="file" name="csv_file" accept=".csv" form="csv-import-form">
+                        <button type="submit" form="csv-import-form" name="smartbriefing_import_csv" class="button">Importieren</button>
+                    </span>
+                </form>
+                <form id="csv-import-form" method="post" enctype="multipart/form-data" style="display:none;">
                     <?php wp_nonce_field('import_smartbriefing_templates'); ?>
-                    <label><strong>CSV Import:</strong></label>
-                    <input type="file" name="csv_file" accept=".csv" required>
-                    <button type="submit" name="smartbriefing_import_csv" class="button">Importieren</button>
-                    <span class="description">CSV-Datei mit Semikolon (;) als Trennzeichen</span>
                 </form>
             </div>
 
-            <p class="description">
-                Mit Smart Briefing können Nutzer strukturierte Vorbereitungs-Dossiers für Gespräche, Verhandlungen und andere Situationen generieren lassen.
-            </p>
+            <!-- Bulk Actions Form -->
+            <form method="post" id="bulk-action-form">
+                <?php wp_nonce_field('smartbriefing_bulk_action'); ?>
 
-            <table class="wp-list-table widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th style="width: 50px;">ID</th>
-                        <th>Titel</th>
-                        <th style="width: 100px;">Icon</th>
-                        <th style="width: 120px;">Kategorie</th>
-                        <th style="width: 100px;">Variablen</th>
-                        <th style="width: 80px;">Aktiv</th>
-                        <th style="width: 150px;">Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($templates)): ?>
+                <!-- Bulk Action Bar -->
+                <div class="tablenav top" style="margin-top: 10px;">
+                    <div class="alignleft actions bulkactions">
+                        <select name="bulk_action" id="bulk-action-select">
+                            <option value="">Bulk-Aktionen</option>
+                            <option value="update_categories">Kategorien setzen</option>
+                            <option value="update_setups">Setups setzen</option>
+                            <option value="activate">Aktivieren</option>
+                            <option value="deactivate">Deaktivieren</option>
+                            <option value="delete">Löschen</option>
+                        </select>
+                        <button type="submit" name="smartbriefing_bulk_action" class="button action">Anwenden</button>
+                    </div>
+
+                    <!-- Bulk Categories Selection (hidden by default) -->
+                    <div id="bulk-categories-select" style="display: none; margin-left: 20px;" class="alignleft">
+                        <strong>Kategorien:</strong>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
+                            <?php foreach ($all_categories as $cat): ?>
+                                <label style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: <?php echo esc_attr($cat['color']); ?>20; border: 1px solid <?php echo esc_attr($cat['color']); ?>40; border-radius: 4px; cursor: pointer;">
+                                    <input type="checkbox" name="bulk_categories[]" value="<?php echo esc_attr($cat['slug']); ?>">
+                                    <?php echo esc_html($cat['icon'] . ' ' . $cat['name']); ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Setups Selection (hidden by default) -->
+                    <div id="bulk-setups-select" style="display: none; margin-left: 20px;" class="alignleft">
+                        <strong>Setups:</strong>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
+                            <?php foreach ($all_setups as $setup): ?>
+                                <label style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: <?php echo esc_attr($setup['color']); ?>20; border: 1px solid <?php echo esc_attr($setup['color']); ?>40; border-radius: 4px; cursor: pointer;">
+                                    <input type="checkbox" name="bulk_setups[]" value="<?php echo esc_attr($setup['slug']); ?>">
+                                    <?php echo esc_html($setup['icon'] . ' ' . $setup['name']); ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
                         <tr>
-                            <td colspan="7">Keine Templates gefunden. <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new'); ?>">Erstelle dein erstes Template</a>.</td>
+                            <td class="manage-column column-cb check-column" style="width: 30px;">
+                                <input type="checkbox" id="cb-select-all">
+                            </td>
+                            <th style="width: 50px;">ID</th>
+                            <th>Titel</th>
+                            <th style="width: 60px;">Icon</th>
+                            <th style="width: 180px;">Kategorien</th>
+                            <th style="width: 180px;">Setups</th>
+                            <th style="width: 80px;">Variablen</th>
+                            <th style="width: 60px;">Aktiv</th>
+                            <th style="width: 120px;">Aktionen</th>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($templates as $template): ?>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($templates)): ?>
                             <tr>
-                                <td><?php echo esc_html($template->id); ?></td>
-                                <td>
-                                    <strong>
-                                        <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new&id=' . $template->id); ?>">
-                                            <?php echo esc_html($template->title); ?>
-                                        </a>
-                                    </strong>
-                                    <br>
-                                    <span class="description"><?php echo esc_html(wp_trim_words($template->description, 10)); ?></span>
-                                </td>
-                                <td>
-                                    <span class="dashicons dashicons-<?php echo esc_attr($this->get_dashicon($template->icon)); ?>"></span>
-                                    <?php echo esc_html($template->icon); ?>
-                                </td>
-                                <td>
-                                    <?php
-                                    $cat_db = Bewerbungstrainer_Categories_Database::get_instance();
-                                    $cat_obj = $cat_db->get_category_by_slug($template->category);
-                                    if ($cat_obj) {
-                                        $cat_color = esc_attr($cat_obj->color);
-                                        $cat_name = esc_html($cat_obj->short_name ?: $cat_obj->name);
-                                        echo '<span style="color: ' . $cat_color . ';">' . $cat_name . '</span>';
-                                    } else {
-                                        echo esc_html($template->category);
-                                    }
-                                    ?>
-                                </td>
-                                <td>
-                                    <?php
-                                    $vars = is_array($template->variables_schema) ? $template->variables_schema : array();
-                                    echo count($vars);
-                                    ?>
-                                </td>
-                                <td>
-                                    <?php if ($template->is_active): ?>
-                                        <span style="color: #22c55e;">&#10004; Ja</span>
-                                    <?php else: ?>
-                                        <span style="color: #999;">&#10008; Nein</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new&id=' . $template->id); ?>" class="button button-small">Bearbeiten</a>
-                                    <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=smartbriefing-templates&action=delete&id=' . $template->id), 'delete_smartbriefing_template_' . $template->id); ?>"
-                                       class="button button-small button-link-delete"
-                                       onclick="return confirm('Wirklich löschen?');">Löschen</a>
-                                </td>
+                                <td colspan="9">Keine Templates gefunden. <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new'); ?>">Erstelle dein erstes Template</a>.</td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                        <?php else: ?>
+                            <?php foreach ($templates as $template): ?>
+                                <?php
+                                $categories = Bewerbungstrainer_Categories_Admin::get_categories_array($template->category ?? '');
+                                $setups = array_filter(array_map('trim', explode(';', $template->target_audience ?? '')));
+                                $vars = is_array($template->variables_schema) ? $template->variables_schema : (json_decode($template->variables_schema ?? '[]', true) ?: array());
+                                ?>
+                                <tr>
+                                    <th scope="row" class="check-column">
+                                        <input type="checkbox" name="template_ids[]" value="<?php echo esc_attr($template->id); ?>">
+                                    </th>
+                                    <td><?php echo esc_html($template->id); ?></td>
+                                    <td>
+                                        <strong>
+                                            <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new&id=' . $template->id); ?>">
+                                                <?php echo esc_html($template->title); ?>
+                                            </a>
+                                        </strong>
+                                        <?php if ($template->description): ?>
+                                            <br><span class="description"><?php echo esc_html(wp_trim_words($template->description, 10)); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo esc_html($this->get_icon_display($template->icon ?? 'file-text')); ?>
+                                    </td>
+                                    <td>
+                                        <?php $this->render_category_badges($categories, $all_categories); ?>
+                                    </td>
+                                    <td>
+                                        <?php $this->render_setup_badges($setups, $all_setups); ?>
+                                    </td>
+                                    <td><?php echo count($vars); ?></td>
+                                    <td>
+                                        <?php if ($template->is_active): ?>
+                                            <span style="color: #22c55e;">&#10003;</span>
+                                        <?php else: ?>
+                                            <span style="color: #94a3b8;">&#10007;</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <a href="<?php echo admin_url('admin.php?page=smartbriefing-template-new&id=' . $template->id); ?>" class="button button-small">Bearbeiten</a>
+                                        <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=smartbriefing-templates&action=delete&id=' . $template->id), 'delete_smartbriefing_template_' . $template->id); ?>"
+                                           class="button button-small button-link-delete"
+                                           onclick="return confirm('Wirklich löschen?');">Löschen</a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </form>
+
+            <script>
+            jQuery(document).ready(function($) {
+                // Select all checkbox
+                $('#cb-select-all').on('change', function() {
+                    $('input[name="template_ids[]"]').prop('checked', this.checked);
+                });
+
+                // Show/hide bulk action options based on selected action
+                $('#bulk-action-select').on('change', function() {
+                    var action = $(this).val();
+                    $('#bulk-categories-select, #bulk-setups-select').hide();
+                    if (action === 'update_categories') {
+                        $('#bulk-categories-select').show();
+                    } else if (action === 'update_setups') {
+                        $('#bulk-setups-select').show();
+                    }
+                });
+
+                // Confirm delete action
+                $('#bulk-action-form').on('submit', function(e) {
+                    var action = $('#bulk-action-select').val();
+                    if (action === 'delete') {
+                        if (!confirm('Ausgewählte Templates wirklich löschen?')) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                });
+            });
+            </script>
         </div>
         <?php
+    }
+
+    /**
+     * Render category badges
+     */
+    private function render_category_badges($categories, $all_categories) {
+        if (empty($categories)) {
+            echo '<span style="color: #94a3b8;">—</span>';
+            return;
+        }
+        $category_map = array();
+        foreach ($all_categories as $cat) {
+            $category_map[$cat['slug']] = $cat;
+        }
+        echo '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+        foreach ($categories as $slug) {
+            if (isset($category_map[$slug])) {
+                $cat = $category_map[$slug];
+                echo '<span style="display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; background: ' . esc_attr($cat['color']) . '20; border-radius: 3px; font-size: 11px;">';
+                echo esc_html($cat['icon'] . ' ' . $cat['name']);
+                echo '</span>';
+            }
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Render setup badges
+     */
+    private function render_setup_badges($setups, $all_setups) {
+        if (empty($setups)) {
+            echo '<span style="color: #94a3b8;">—</span>';
+            return;
+        }
+        $setup_map = array();
+        foreach ($all_setups as $setup) {
+            $setup_map[$setup['slug']] = $setup;
+        }
+        echo '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+        foreach ($setups as $slug) {
+            if (isset($setup_map[$slug])) {
+                $setup = $setup_map[$slug];
+                echo '<span style="display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; background: ' . esc_attr($setup['color']) . '20; border-radius: 3px; font-size: 11px;">';
+                echo esc_html($setup['icon'] . ' ' . $setup['name']);
+                echo '</span>';
+            }
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Get icon display
+     */
+    private function get_icon_display($icon) {
+        $icon_map = array(
+            'file-text' => '📄',
+            'briefcase' => '💼',
+            'banknote' => '💰',
+            'user' => '👤',
+            'handshake' => '🤝',
+            'users' => '👥',
+            'presentation' => '📊',
+            'mic' => '🎤',
+            'graduation-cap' => '🎓',
+            'building' => '🏢',
+        );
+        return isset($icon_map[$icon]) ? $icon_map[$icon] : $icon;
     }
 
     /**
