@@ -207,11 +207,14 @@ const SmartBriefingDashboard = ({
     }
   };
 
-  // Get unique categories from templates (using dynamic categories)
-  const templateCategories = useMemo(() =>
-    [...new Set(templates.map(t => t.category))],
-    [templates]
-  );
+  // Get unique categories from templates (flattening multi-category arrays)
+  const templateCategories = useMemo(() => {
+    const allCategories = templates.flatMap(t => {
+      if (Array.isArray(t.category)) return t.category;
+      return t.category ? [t.category] : [];
+    });
+    return [...new Set(allCategories.filter(Boolean))];
+  }, [templates]);
 
   // Get formatted categories for filter UI
   const availableCategories = useMemo(() =>

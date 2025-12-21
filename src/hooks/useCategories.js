@@ -176,8 +176,40 @@ export function useCategories() {
   /**
    * Get category configuration for display
    * Matches scenario category field to centralized categories
+   * Supports both single category (string) and multiple categories (array)
+   * For arrays, returns config for the first matched category
    */
   const getCategoryConfig = useCallback((categoryValue) => {
+    // Handle array of categories - return config for first matched category
+    if (Array.isArray(categoryValue)) {
+      for (const cat of categoryValue) {
+        const category = getCategoryBySlug(cat);
+        if (category) {
+          return {
+            key: category.slug,
+            label: category.name,
+            shortLabel: category.shortName || category.name,
+            icon: getIconComponent(category.icon),
+            IconComponent: getIconComponent(category.icon),
+            color: category.color,
+            bgColor: category.bgColor,
+          };
+        }
+      }
+      // No match found in array - use first value as fallback
+      const firstValue = categoryValue[0] || 'unknown';
+      return {
+        key: firstValue,
+        label: firstValue,
+        shortLabel: firstValue,
+        icon: DEFAULT_ICON,
+        IconComponent: DEFAULT_ICON,
+        color: '#64748b',
+        bgColor: '#f1f5f9',
+      };
+    }
+
+    // Handle single category (string)
     const category = getCategoryBySlug(categoryValue);
 
     if (!category) {
@@ -206,7 +238,7 @@ export function useCategories() {
 
   /**
    * Get all categories formatted for filter UI
-   * @param {Array} scenarioCategories - Array of category slugs/values from scenarios
+   * @param {Array} scenarioCategories - Array of category values from scenarios (each can be string or array)
    * @returns {Array} Category configs for filter buttons
    */
   const getCategoriesForFilter = useCallback((scenarioCategories = []) => {
@@ -226,28 +258,59 @@ export function useCategories() {
     }
 
     // Match scenario categories to centralized categories
+    // scenarioCategories can now contain arrays (multi-category scenarios)
     const matchedCategories = new Map();
 
     scenarioCategories.forEach(scenarioCat => {
-      const config = getCategoryConfig(scenarioCat);
-      if (config && config.key !== 'unknown' && !matchedCategories.has(config.key)) {
-        matchedCategories.set(config.key, config);
+      // Handle array of categories (multi-category scenario)
+      if (Array.isArray(scenarioCat)) {
+        scenarioCat.forEach(cat => {
+          const category = getCategoryBySlug(cat);
+          if (category && !matchedCategories.has(category.slug)) {
+            matchedCategories.set(category.slug, {
+              key: category.slug,
+              label: category.name,
+              shortLabel: category.shortName || category.name,
+              icon: getIconComponent(category.icon),
+              IconComponent: getIconComponent(category.icon),
+              color: category.color,
+              bgColor: category.bgColor,
+            });
+          }
+        });
+      } else {
+        // Handle single category (string)
+        const config = getCategoryConfig(scenarioCat);
+        if (config && config.key !== 'unknown' && !matchedCategories.has(config.key)) {
+          matchedCategories.set(config.key, config);
+        }
       }
     });
 
     return Array.from(matchedCategories.values());
-  }, [categories, getCategoryConfig]);
+  }, [categories, getCategoryConfig, getCategoryBySlug]);
 
   /**
    * Check if a category value matches a category slug
+   * Supports both single category (string) and multiple categories (array)
    */
   const matchesCategory = useCallback((scenarioCategory, filterCategory) => {
     if (!scenarioCategory || !filterCategory) return false;
 
+    const normalizedFilter = normalizeForMatching(filterCategory);
+
+    // Handle array of categories - check if ANY match
+    if (Array.isArray(scenarioCategory)) {
+      return scenarioCategory.some(cat => {
+        const normalizedScenario = normalizeForMatching(cat);
+        const aliasedScenario = CATEGORY_ALIASES[normalizedScenario] || normalizedScenario;
+        return aliasedScenario === normalizedFilter;
+      });
+    }
+
+    // Handle single category (string)
     const normalizedScenario = normalizeForMatching(scenarioCategory);
     const aliasedScenario = CATEGORY_ALIASES[normalizedScenario] || normalizedScenario;
-
-    const normalizedFilter = normalizeForMatching(filterCategory);
 
     return aliasedScenario === normalizedFilter;
   }, []);

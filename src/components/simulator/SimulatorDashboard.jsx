@@ -113,9 +113,13 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
     return filterScenariosBySetupAndPartner([...scenarios], 'simulator');
   }, [scenarios, filterScenariosBySetupAndPartner]);
 
-  // Get unique categories from scenarios
+  // Get unique categories from scenarios (flattening multi-category arrays)
   const scenarioCategories = useMemo(() => {
-    return [...new Set(baseFilteredScenarios.map(s => s.category).filter(Boolean))];
+    const allCategories = baseFilteredScenarios.flatMap(s => {
+      if (Array.isArray(s.category)) return s.category;
+      return s.category ? [s.category] : [];
+    });
+    return [...new Set(allCategories.filter(Boolean))];
   }, [baseFilteredScenarios]);
 
   // Get available categories for filter UI (dynamically from API)

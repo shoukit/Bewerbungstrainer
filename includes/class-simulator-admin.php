@@ -251,7 +251,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'description' => sanitize_textarea_field($post['description'] ?? ''),
             'icon' => sanitize_text_field($post['icon'] ?? 'briefcase'),
             'difficulty' => sanitize_text_field($post['difficulty'] ?? 'intermediate'),
-            'category' => sanitize_text_field($post['category'] ?? ''),
+            'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($post['categories'] ?? array()),
             'target_audience' => $target_audience,
             'mode' => $mode,
             'system_prompt' => wp_kses_post($post['system_prompt'] ?? ''),
@@ -497,7 +497,7 @@ class Bewerbungstrainer_Simulator_Admin {
                 'icon' => sanitize_text_field($data['icon'] ?? 'briefcase'),
                 'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
                 'target_audience' => sanitize_text_field($restore_newlines($data['target_audience'] ?? '')),
-                'category' => sanitize_text_field($data['category'] ?? 'CAREER'),
+                'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($data['category'] ?? array()),
                 'mode' => in_array($data['mode'] ?? '', array('INTERVIEW', 'SIMULATION')) ? $data['mode'] : 'INTERVIEW',
                 'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
                 'question_generation_prompt' => wp_kses_post($restore_newlines($data['question_generation_prompt'] ?? '')),
@@ -685,7 +685,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'description' => '',
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
-            'category' => 'CAREER',
+            'category' => json_encode(array()),
             'system_prompt' => 'Du bist ein erfahrener HR-Manager und führst ein professionelles Gespräch. Der Bewerber ist ${name} und bewirbt sich für die Position ${position}.',
             'question_generation_prompt' => '',
             'feedback_prompt' => '',
@@ -705,8 +705,8 @@ class Bewerbungstrainer_Simulator_Admin {
             $data['input_configuration'] = json_decode($data['input_configuration'], true) ?? array();
         }
 
-        // Normalize legacy category values to new enum format
-        $data['category'] = $this->normalize_category($data['category'] ?? 'CAREER');
+        // Ensure category is array for checkboxes
+        $data['category'] = Bewerbungstrainer_Categories_Admin::get_categories_array($data['category'] ?? array());
         ?>
         <div class="wrap">
             <h1><?php echo $is_edit ? 'Szenario bearbeiten' : 'Neues Szenario erstellen'; ?></h1>
@@ -763,10 +763,10 @@ class Bewerbungstrainer_Simulator_Admin {
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><label for="category">Kategorie</label></th>
+                                            <th><label>Kategorien</label></th>
                                             <td>
-                                                <?php Bewerbungstrainer_Categories_Admin::render_category_dropdown($data['category'], 'category'); ?>
-                                                <p class="description">
+                                                <?php Bewerbungstrainer_Categories_Admin::render_category_checkboxes($data['category'], 'categories'); ?>
+                                                <p class="description" style="margin-top: 8px;">
                                                     Thematische Einordnung des Szenarios für die Filterung im Dashboard.<br>
                                                     <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-categories'); ?>">Kategorien verwalten</a>
                                                 </p>

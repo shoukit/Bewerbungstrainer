@@ -209,7 +209,7 @@ class Bewerbungstrainer_Video_Training_Admin {
             'description' => sanitize_textarea_field($data['description'] ?? ''),
             'icon' => sanitize_text_field($data['icon'] ?? 'video'),
             'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
-            'category' => sanitize_text_field($data['category'] ?? ''),
+            'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($data['categories'] ?? array()),
             'target_audience' => $target_audience,
             'scenario_type' => sanitize_text_field($data['scenario_type'] ?? 'interview'),
             'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
@@ -473,7 +473,7 @@ class Bewerbungstrainer_Video_Training_Admin {
                 'icon' => sanitize_text_field($data['icon'] ?? 'video'),
                 'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
                 'target_audience' => sanitize_text_field($restore_newlines($data['target_audience'] ?? '')),
-                'category' => sanitize_text_field($data['category'] ?? ''),
+                'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($data['category'] ?? array()),
                 'scenario_type' => sanitize_text_field($data['scenario_type'] ?? 'interview'),
                 'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
                 'question_generation_prompt' => wp_kses_post($restore_newlines($data['question_generation_prompt'] ?? '')),
@@ -629,7 +629,7 @@ class Bewerbungstrainer_Video_Training_Admin {
             'description' => '',
             'icon' => 'video',
             'difficulty' => 'intermediate',
-            'category' => '',
+            'category' => json_encode(array()),
             'scenario_type' => 'interview',
             'system_prompt' => '',
             'question_generation_prompt' => '',
@@ -724,11 +724,14 @@ class Bewerbungstrainer_Video_Training_Admin {
 
                     <tr>
                         <th scope="row">
-                            <label for="category"><?php _e('Kategorie', 'bewerbungstrainer'); ?></label>
+                            <label><?php _e('Kategorien', 'bewerbungstrainer'); ?></label>
                         </th>
                         <td>
-                            <?php Bewerbungstrainer_Categories_Admin::render_category_dropdown($values['category'], 'category'); ?>
-                            <p class="description">
+                            <?php Bewerbungstrainer_Categories_Admin::render_category_checkboxes(
+                                Bewerbungstrainer_Categories_Admin::get_categories_array($values['category']),
+                                'categories'
+                            ); ?>
+                            <p class="description" style="margin-top: 8px;">
                                 <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-categories'); ?>"><?php _e('Kategorien verwalten', 'bewerbungstrainer'); ?></a>
                             </p>
                         </td>

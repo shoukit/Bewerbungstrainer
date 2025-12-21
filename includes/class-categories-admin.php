@@ -404,12 +404,13 @@ class Bewerbungstrainer_Categories_Admin {
     }
 
     /**
-     * Render category dropdown for other admin forms
+     * Render category dropdown for other admin forms (single selection)
      * Static method so it can be called from other admin classes
      *
      * @param string $selected_slug Currently selected category slug
      * @param string $name Form field name
      * @param bool $required Whether the field is required
+     * @deprecated Use render_category_checkboxes for multi-select
      */
     public static function render_category_dropdown($selected_slug = '', $name = 'category', $required = false) {
         $db = Bewerbungstrainer_Categories_Database::get_instance();
@@ -426,5 +427,120 @@ class Bewerbungstrainer_Categories_Admin {
             <?php endforeach; ?>
         </select>
         <?php
+    }
+
+    /**
+     * Render category checkboxes for other admin forms (multi-selection)
+     * Static method so it can be called from other admin classes
+     *
+     * @param array|string $selected_slugs Currently selected category slugs (array or JSON string)
+     * @param string $name Form field name (will add [] for array)
+     * @param bool $required Whether at least one selection is required
+     */
+    public static function render_category_checkboxes($selected_slugs = array(), $name = 'categories', $required = false) {
+        $db = Bewerbungstrainer_Categories_Database::get_instance();
+        $categories = $db->get_categories();
+
+        // Handle JSON string input
+        if (is_string($selected_slugs)) {
+            $decoded = json_decode($selected_slugs, true);
+            $selected_slugs = is_array($decoded) ? $decoded : ($selected_slugs ? array($selected_slugs) : array());
+        }
+
+        // Ensure it's an array
+        if (!is_array($selected_slugs)) {
+            $selected_slugs = array();
+        }
+
+        $field_name = $name . '[]';
+        $required_class = $required ? 'required-checkboxes' : '';
+        ?>
+        <div class="categories-checkboxes <?php echo esc_attr($required_class); ?>" id="<?php echo esc_attr($name); ?>_container" style="display: flex; flex-wrap: wrap; gap: 12px;">
+            <?php foreach ($categories as $category) :
+                $is_checked = in_array($category->slug, $selected_slugs);
+                $checkbox_id = $name . '_' . $category->slug;
+            ?>
+                <label for="<?php echo esc_attr($checkbox_id); ?>" style="
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 8px 14px;
+                    border-radius: 8px;
+                    border: 2px solid <?php echo $is_checked ? esc_attr($category->color) : '#e2e8f0'; ?>;
+                    background: <?php echo $is_checked ? esc_attr($category->color) . '15' : '#fff'; ?>;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-weight: <?php echo $is_checked ? '600' : '400'; ?>;
+                    color: <?php echo $is_checked ? esc_attr($category->color) : '#475569'; ?>;
+                ">
+                    <input
+                        type="checkbox"
+                        name="<?php echo esc_attr($field_name); ?>"
+                        id="<?php echo esc_attr($checkbox_id); ?>"
+                        value="<?php echo esc_attr($category->slug); ?>"
+                        <?php checked($is_checked); ?>
+                        style="margin: 0;"
+                        onchange="this.parentElement.style.borderColor = this.checked ? '<?php echo esc_attr($category->color); ?>' : '#e2e8f0'; this.parentElement.style.background = this.checked ? '<?php echo esc_attr($category->color); ?>15' : '#fff'; this.parentElement.style.fontWeight = this.checked ? '600' : '400'; this.parentElement.style.color = this.checked ? '<?php echo esc_attr($category->color); ?>' : '#475569';"
+                    >
+                    <span style="
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 4px;
+                        background: <?php echo esc_attr($category->color); ?>;
+                        color: white;
+                        font-size: 10px;
+                    "><?php echo esc_html(substr($category->icon, 0, 2)); ?></span>
+                    <?php echo esc_html($category->short_name ?: $category->name); ?>
+                </label>
+            <?php endforeach; ?>
+        </div>
+        <?php if ($required) : ?>
+            <p class="description" style="margin-top: 8px; color: #64748b;">Mindestens eine Kategorie muss ausgewählt werden.</p>
+        <?php endif; ?>
+        <?php
+    }
+
+    /**
+     * Parse categories from form submission
+     * Static helper to handle both single and multi-select
+     *
+     * @param array|string $input The form input (can be array from checkboxes or string from dropdown)
+     * @return string JSON encoded array of category slugs
+     */
+    public static function parse_categories_input($input) {
+        if (is_array($input)) {
+            // Multi-select checkboxes
+            $slugs = array_map('sanitize_title', array_filter($input));
+            return json_encode(array_values($slugs));
+        } elseif (is_string($input) && !empty($input)) {
+            // Single dropdown value - convert to array
+            return json_encode(array(sanitize_title($input)));
+        }
+        return json_encode(array());
+    }
+
+    /**
+     * Get categories array from stored value
+     * Static helper to decode stored category data
+     *
+     * @param string|array $stored The stored value (JSON string or array)
+     * @return array Array of category slugs
+     */
+    public static function get_categories_array($stored) {
+        if (is_array($stored)) {
+            return $stored;
+        }
+        if (is_string($stored)) {
+            $decoded = json_decode($stored, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+            // Legacy: single string value
+            return !empty($stored) ? array($stored) : array();
+        }
+        return array();
     }
 }

@@ -255,7 +255,7 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             'title' => sanitize_text_field($post['title'] ?? ''),
             'description' => sanitize_textarea_field($post['description'] ?? ''),
             'icon' => sanitize_text_field($post['icon'] ?? 'file-text'),
-            'category' => sanitize_text_field($post['category'] ?? 'CAREER'),
+            'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($post['categories'] ?? array()),
             'target_audience' => $target_audience,
             'system_prompt' => wp_kses_post($post['system_prompt'] ?? ''),
             'ai_role' => wp_kses_post($post['ai_role'] ?? ''),
@@ -486,11 +486,18 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             }
 
             // Prepare template data - restore newlines for text fields
+            // Handle category: can be array or string (legacy)
+            $category_value = $data['category'] ?? array();
+            if (is_array($category_value)) {
+                $category_json = json_encode(array_map('sanitize_text_field', $category_value));
+            } else {
+                $category_json = json_encode(array(sanitize_text_field($category_value)));
+            }
             $template_data = array(
                 'title' => sanitize_text_field($data['title'] ?? ''),
                 'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
                 'icon' => sanitize_text_field($data['icon'] ?? 'file-text'),
-                'category' => sanitize_text_field($data['category'] ?? 'CAREER'),
+                'category' => $category_json,
                 'target_audience' => sanitize_text_field($restore_newlines($data['target_audience'] ?? '')),
                 'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
                 'ai_role' => wp_kses_post($restore_newlines($data['ai_role'] ?? '')),
@@ -756,10 +763,10 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><label for="category">Kategorie</label></th>
+                                            <th><label>Kategorien</label></th>
                                             <td>
-                                                <?php Bewerbungstrainer_Categories_Admin::render_category_dropdown($data['category'], 'category'); ?>
-                                                <p class="description">
+                                                <?php Bewerbungstrainer_Categories_Admin::render_category_checkboxes($data['category'], 'categories'); ?>
+                                                <p class="description" style="margin-top: 8px;">
                                                     <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-categories'); ?>">Kategorien verwalten</a>
                                                 </p>
                                             </td>
