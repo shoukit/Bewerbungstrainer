@@ -5,6 +5,85 @@ import { usePartner } from '@/context/PartnerContext';
 import { sanitizeColor } from '@/utils/colorUtils';
 
 /**
+ * Individual Setup Card with hover state management
+ */
+const SetupCard = ({ setup, isSelected, onSelect }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const safeColor = sanitizeColor(setup.color);
+
+  // Determine border and background colors based on state
+  const getBorderColor = () => {
+    if (isSelected) return safeColor;
+    if (isHovered) return '#d1d5db'; // gray-300
+    return '#f3f4f6'; // gray-100
+  };
+
+  const getBackgroundColor = () => {
+    if (isSelected) return `${safeColor}08`;
+    if (isHovered) return '#f9fafb'; // gray-50
+    return 'white';
+  };
+
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="relative p-4 rounded-xl text-left transition-all border-2"
+      style={{
+        borderColor: getBorderColor(),
+        backgroundColor: getBackgroundColor(),
+        boxShadow: isHovered || isSelected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+      }}
+    >
+      {/* Selected checkmark */}
+      {isSelected && (
+        <div
+          className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: safeColor }}
+        >
+          <Check size={12} className="text-white" strokeWidth={3} />
+        </div>
+      )}
+
+      {/* Icon */}
+      <div
+        className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+        style={{ backgroundColor: `${safeColor}15` }}
+      >
+        <span className="text-2xl">{setup.icon}</span>
+      </div>
+
+      {/* Title */}
+      <h3 className="text-sm font-semibold text-gray-900 mb-1 pr-6">
+        {setup.name}
+      </h3>
+
+      {/* Description */}
+      <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
+        {setup.description}
+      </p>
+
+      {/* Tags */}
+      <div className="flex flex-wrap gap-1.5">
+        <span
+          className="inline-flex text-[10px] px-2 py-0.5 rounded-full font-medium"
+          style={{
+            backgroundColor: `${safeColor}15`,
+            color: safeColor,
+          }}
+        >
+          {setup.focus}
+        </span>
+        <span className="inline-flex text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+          {setup.targetGroup}
+        </span>
+      </div>
+    </button>
+  );
+};
+
+/**
  * SetupSelector - Compact setup selector with popup modal
  */
 const SetupSelector = () => {
@@ -141,71 +220,14 @@ const SetupSelector = () => {
                 {/* Body - Scrollable */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {availableSetups.map((setup) => {
-                      const isSelected = currentSetup?.id === setup.id;
-                      // Sanitize each setup's color
-                      const safeColor = sanitizeColor(setup.color);
-
-                      return (
-                        <button
-                          key={setup.id}
-                          onClick={() => handleSelectSetup(setup.id)}
-                          className={`relative p-4 rounded-xl text-left transition-all border-2 hover:shadow-md ${
-                            isSelected
-                              ? 'shadow-sm'
-                              : 'border-gray-100 hover:border-gray-200 bg-white'
-                          }`}
-                          style={{
-                            borderColor: isSelected ? safeColor : undefined,
-                            backgroundColor: isSelected ? `${safeColor}08` : undefined,
-                          }}
-                        >
-                          {/* Selected checkmark */}
-                          {isSelected && (
-                            <div
-                              className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
-                              style={{ backgroundColor: safeColor }}
-                            >
-                              <Check size={12} className="text-white" strokeWidth={3} />
-                            </div>
-                          )}
-
-                          {/* Icon */}
-                          <div
-                            className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
-                            style={{ backgroundColor: `${safeColor}15` }}
-                          >
-                            <span className="text-2xl">{setup.icon}</span>
-                          </div>
-
-                          {/* Title */}
-                          <h3 className="text-sm font-semibold text-gray-900 mb-1 pr-6">
-                            {setup.name}
-                          </h3>
-
-                          {/* Description */}
-                          <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
-                            {setup.description}
-                          </p>
-
-                          {/* Tags */}
-                          <div className="flex flex-wrap gap-1.5">
-                            <span
-                              className="inline-flex text-[10px] px-2 py-0.5 rounded-full font-medium"
-                              style={{
-                                backgroundColor: `${safeColor}15`,
-                                color: safeColor,
-                              }}
-                            >
-                              {setup.focus}
-                            </span>
-                            <span className="inline-flex text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
-                              {setup.targetGroup}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {availableSetups.map((setup) => (
+                      <SetupCard
+                        key={setup.id}
+                        setup={setup}
+                        isSelected={currentSetup?.id === setup.id}
+                        onSelect={() => handleSelectSetup(setup.id)}
+                      />
+                    ))}
                   </div>
                 </div>
 
