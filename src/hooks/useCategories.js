@@ -42,7 +42,7 @@ const DEFAULT_ICON = Folder;
  * Get icon component from icon name
  */
 const getIconComponent = (iconName) => {
-  if (!iconName) return DEFAULT_ICON;
+  if (!iconName || typeof iconName !== 'string') return DEFAULT_ICON;
   return ICON_MAP[iconName.toLowerCase()] || DEFAULT_ICON;
 };
 
@@ -51,7 +51,8 @@ const getIconComponent = (iconName) => {
  * Handles various formats: "CAREER", "career", "Karriere", "karriere", etc.
  */
 const normalizeForMatching = (value) => {
-  if (!value) return '';
+  // Only process strings
+  if (!value || typeof value !== 'string') return '';
   return value
     .toLowerCase()
     .replace(/ä/g, 'ae')

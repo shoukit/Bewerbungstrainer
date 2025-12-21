@@ -219,11 +219,12 @@ const SmartBriefingDashboard = ({
     return [...new Set(allCategories)];
   }, [templates]);
 
-  // Get formatted categories for filter UI
-  const availableCategories = useMemo(() =>
-    getCategoriesForFilter(templateCategories),
-    [templateCategories, getCategoriesForFilter]
-  );
+  // Get formatted categories for filter UI - only categories with valid labels
+  const availableCategories = useMemo(() => {
+    const cats = getCategoriesForFilter(templateCategories);
+    // Extra safeguard: filter out any categories without proper labels
+    return cats.filter(cat => cat && cat.label && cat.label.trim());
+  }, [templateCategories, getCategoriesForFilter]);
 
   // Filter templates by partner visibility, setup, category and search
   const filteredTemplates = useMemo(() => {

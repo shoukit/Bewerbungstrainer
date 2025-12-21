@@ -125,9 +125,11 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
     return [...new Set(allCategories)];
   }, [baseFilteredScenarios]);
 
-  // Get available categories for filter UI (dynamically from API)
+  // Get available categories for filter UI - only categories with valid labels
   const availableCategories = useMemo(() => {
-    return getCategoriesForFilter(scenarioCategories);
+    const cats = getCategoriesForFilter(scenarioCategories);
+    // Extra safeguard: filter out any categories without proper labels
+    return cats.filter(cat => cat && cat.label && cat.label.trim());
   }, [scenarioCategories, getCategoriesForFilter]);
 
   // Filter scenarios by partner visibility, setup, category, search, and difficulty

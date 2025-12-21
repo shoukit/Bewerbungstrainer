@@ -62,9 +62,11 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
     return [...new Set(allCategories)];
   }, [scenarios]);
 
-  // Compute available categories for filter UI (dynamically from API)
+  // Compute available categories for filter UI - only categories with valid labels
   const availableCategories = useMemo(() => {
-    return getCategoriesForFilter(scenarioCategories);
+    const cats = getCategoriesForFilter(scenarioCategories);
+    // Extra safeguard: filter out any categories without proper labels
+    return cats.filter(cat => cat && cat.label && cat.label.trim());
   }, [scenarioCategories, getCategoriesForFilter]);
 
   // Custom scenario dialog
