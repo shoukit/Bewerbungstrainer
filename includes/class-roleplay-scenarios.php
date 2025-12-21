@@ -186,6 +186,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         $feedback_prompt = get_post_meta($post->ID, '_roleplay_feedback_prompt', true);
         $role_type = get_post_meta($post->ID, '_roleplay_role_type', true) ?: 'interview';
         $user_role_label = get_post_meta($post->ID, '_roleplay_user_role_label', true) ?: 'Bewerber';
+        $category = get_post_meta($post->ID, '_roleplay_category', true);
 
         ?>
         <table class="form-table">
@@ -266,6 +267,22 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                     <?php $this->render_setups_checkboxes($target_audience); ?>
                     <p class="description">
                         <?php _e('Wähle die Setups, in denen dieses Szenario angezeigt werden soll.', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label><?php _e('Kategorien', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <?php
+                    $category_array = Bewerbungstrainer_Categories_Admin::get_categories_array($category);
+                    Bewerbungstrainer_Categories_Admin::render_category_checkboxes($category_array, 'roleplay_categories');
+                    ?>
+                    <p class="description">
+                        <?php _e('Thematische Einordnung des Szenarios für die Filterung im Dashboard.', 'bewerbungstrainer'); ?>
+                        <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-categories'); ?>"><?php _e('Kategorien verwalten', 'bewerbungstrainer'); ?></a>
                     </p>
                 </td>
             </tr>
@@ -515,6 +532,10 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_target_audience', '');
         }
 
+        // Save categories (from checkboxes array to JSON)
+        $category_json = Bewerbungstrainer_Categories_Admin::parse_categories_input($_POST['roleplay_categories'] ?? array());
+        update_post_meta($post_id, '_roleplay_category', $category_json);
+
         // Save description
         if (isset($_POST['roleplay_description'])) {
             update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($_POST['roleplay_description']));
@@ -647,6 +668,10 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             $user_role_label = 'Bewerber'; // Default for backwards compatibility
         }
 
+        // Get category (JSON array)
+        $category_json = get_post_meta($post->ID, '_roleplay_category', true);
+        $category = Bewerbungstrainer_Categories_Admin::get_categories_array($category_json);
+
         return array(
             'id' => $post->ID,
             'title' => get_the_title($post),
@@ -656,6 +681,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'initial_message' => get_post_meta($post->ID, '_roleplay_initial_message', true),
             'difficulty' => get_post_meta($post->ID, '_roleplay_difficulty', true),
             'target_audience' => get_post_meta($post->ID, '_roleplay_target_audience', true),
+            'category' => $category,
             'role_type' => $role_type,
             'user_role_label' => $user_role_label,
             'variables_schema' => $variables,
@@ -1019,6 +1045,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'initial_message',
             'difficulty',
             'target_audience',
+            'category',
             'role_type',
             'user_role_label',
             'variables_schema',
@@ -1057,6 +1084,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 ? json_encode($scenario['variables_schema'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
                 : '[]';
 
+            // Category as JSON array
+            $category_json = is_array($scenario['category'])
+                ? json_encode($scenario['category'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                : '[]';
+
             fputcsv($output, array(
                 $scenario['id'],
                 $clean_text($scenario['title']),
@@ -1066,6 +1098,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 $clean_text($scenario['initial_message']),
                 $scenario['difficulty'],
                 $clean_text($scenario['target_audience'] ?? ''),
+                $category_json,
                 $scenario['role_type'],
                 $clean_text($scenario['user_role_label']),
                 $vars_schema,
@@ -1195,6 +1228,18 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_initial_message', sanitize_textarea_field($restore_newlines($data['initial_message'] ?? '')));
             update_post_meta($post_id, '_roleplay_difficulty', sanitize_text_field($data['difficulty'] ?? 'medium'));
             update_post_meta($post_id, '_roleplay_target_audience', sanitize_text_field($restore_newlines($data['target_audience'] ?? '')));
+
+            // Category (JSON array)
+            if (!empty($data['category'])) {
+                $category = json_decode($data['category'], true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($category)) {
+                    update_post_meta($post_id, '_roleplay_category', wp_json_encode($category));
+                } else {
+                    // Fallback: treat as single category slug
+                    update_post_meta($post_id, '_roleplay_category', wp_json_encode(array(sanitize_title($data['category']))));
+                }
+            }
+
             update_post_meta($post_id, '_roleplay_role_type', sanitize_text_field($data['role_type'] ?? 'interview'));
             update_post_meta($post_id, '_roleplay_user_role_label', sanitize_text_field($restore_newlines($data['user_role_label'] ?? 'Bewerber')));
             update_post_meta($post_id, '_roleplay_feedback_prompt', sanitize_textarea_field($restore_newlines($data['feedback_prompt'] ?? '')));
