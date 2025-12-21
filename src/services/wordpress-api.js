@@ -720,6 +720,53 @@ class WordPressAPI {
         }
     }
 
+    // ===== Categories API Methods =====
+
+    /**
+     * Get all categories from centralized category system
+     * Categories are used for filtering scenarios across all modules
+     * @returns {Promise<Array>} Array of category objects
+     */
+    async getCategories() {
+        try {
+            const response = await this.request('/categories', {
+                method: 'GET'
+            });
+
+            if (response.success && response.data?.categories) {
+                return response.data.categories;
+            }
+
+            console.warn('[WordPressAPI] Unexpected categories response format');
+            return [];
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to fetch categories:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get a single category by ID
+     * @param {number} categoryId - Category ID
+     * @returns {Promise<object|null>} Category object or null
+     */
+    async getCategory(categoryId) {
+        try {
+            const response = await this.request(`/categories/${categoryId}`, {
+                method: 'GET'
+            });
+
+            if (response.success && response.data?.category) {
+                return response.data.category;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to fetch category:', error);
+            return null;
+        }
+    }
+
     /**
      * Get usage limits for current user
      *

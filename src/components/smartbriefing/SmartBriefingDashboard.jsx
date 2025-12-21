@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { usePartner } from '../../context/PartnerContext';
 import wordpressAPI from '../../services/wordpress-api';
+import { useCategories } from '@/hooks/useCategories';
 import {
   FileText,
   Briefcase,
@@ -27,6 +28,7 @@ import {
   Pencil,
   Trash2,
   Heart,
+  Folder,
 } from 'lucide-react';
 import { COLORS } from '@/config/colors';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -52,24 +54,17 @@ const ICON_MAP = {
   'shield': Shield,
   'compass': Compass,
   'rocket': Rocket,
-};
-
-/**
- * Category configuration with icons for MobileFilterSheet
- */
-const CATEGORIES = {
-  MEINE: { label: 'Meine', color: '#ec4899', bgColor: '#fdf2f8', icon: Heart },
-  CAREER: { label: 'Karriere', color: '#3b82f6', bgColor: '#eff6ff', icon: Briefcase },
-  SALES: { label: 'Vertrieb', color: '#22c55e', bgColor: '#f0fdf4', icon: TrendingUp },
-  LEADERSHIP: { label: 'Führung', color: '#a855f7', bgColor: '#faf5ff', icon: Users },
-  COMMUNICATION: { label: 'Kommunikation', color: '#f59e0b', bgColor: '#fffbeb', icon: MessageCircle },
+  'heart': Heart,
+  'folder': Folder,
+  'trending-up': TrendingUp,
 };
 
 /**
  * Category Badge Component for Smart Briefing
+ * Uses dynamic categories from useCategories hook
  */
-const SmartBriefingCategoryBadge = ({ category }) => {
-  const config = CATEGORIES[category] || CATEGORIES.CAREER;
+const SmartBriefingCategoryBadge = ({ category, getCategoryConfig }) => {
+  const config = getCategoryConfig(category);
   return (
     <span
       style={{
@@ -80,13 +75,13 @@ const SmartBriefingCategoryBadge = ({ category }) => {
         borderRadius: '16px',
         fontSize: '11px',
         fontWeight: 600,
-        backgroundColor: `${config.color}15`,
+        backgroundColor: config.bgColor,
         color: config.color,
         textTransform: 'uppercase',
         letterSpacing: '0.5px',
       }}
     >
-      {config.label}
+      {config.shortLabel}
     </span>
   );
 };
@@ -107,6 +102,7 @@ const SmartBriefingDashboard = ({
   demoCode,
 }) => {
   const { branding, filterScenariosBySetupAndPartner } = usePartner();
+  const { getCategoryConfig, getCategoriesForFilter, matchesCategory } = useCategories();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -211,10 +207,16 @@ const SmartBriefingDashboard = ({
     }
   };
 
-  // Get unique categories from templates
-  const availableCategories = useMemo(() =>
+  // Get unique categories from templates (using dynamic categories)
+  const templateCategories = useMemo(() =>
     [...new Set(templates.map(t => t.category))],
     [templates]
+  );
+
+  // Get formatted categories for filter UI
+  const availableCategories = useMemo(() =>
+    getCategoriesForFilter(templateCategories),
+    [templateCategories, getCategoriesForFilter]
   );
 
   // Filter templates by partner visibility, setup, category and search
@@ -222,9 +224,9 @@ const SmartBriefingDashboard = ({
     // First, filter by partner's visible templates AND selected setup
     let filtered = filterScenariosBySetupAndPartner([...templates], 'briefings');
 
-    // Category filter
+    // Category filter (using matchesCategory for flexible matching)
     if (selectedCategory) {
-      filtered = filtered.filter(t => t.category === selectedCategory);
+      filtered = filtered.filter(t => matchesCategory(t.category, selectedCategory));
     }
 
     // Search filter
@@ -311,16 +313,13 @@ const SmartBriefingDashboard = ({
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Briefings durchsuchen..."
-            categories={availableCategories.map(cat => {
-              const catConfig = CATEGORIES[cat] || { label: cat, color: '#64748b', bgColor: '#f1f5f9', icon: FileText };
-              return {
-                key: cat,
-                label: catConfig.label,
-                color: catConfig.color,
-                bgColor: catConfig.bgColor,
-                icon: catConfig.icon,
-              };
-            })}
+            categories={availableCategories.map(cat => ({
+              key: cat.key,
+              label: cat.label,
+              color: cat.color,
+              bgColor: cat.bgColor,
+              icon: cat.IconComponent || cat.icon,
+            }))}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
             showCategories={availableCategories.length > 1}
@@ -452,7 +451,7 @@ const SmartBriefingDashboard = ({
                     title={template.title}
                     description={template.description}
                     icon={IconComponent}
-                    categoryBadge={<SmartBriefingCategoryBadge category={template.category} />}
+                    categoryBadge={<SmartBriefingCategoryBadge category={template.category} getCategoryConfig={getCategoryConfig} />}
                     meta={[
                       { text: `${variableCount} Eingabefeld${variableCount !== 1 ? 'er' : ''}` },
                     ]}

@@ -17,6 +17,7 @@ import {
   Banknote,
   Presentation,
   User,
+  Folder,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
@@ -24,63 +25,9 @@ import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { getRoleplayScenarios, createCustomRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
+import { useCategories } from '@/hooks/useCategories';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
-
-/**
- * Category type configuration for roleplay scenarios
- */
-const CATEGORY_CONFIG = {
-  vorstellungsgespraech: {
-    label: 'Vorstellungsgespräch',
-    icon: Briefcase,
-    color: '#3A7FA7',
-    bgColor: '#E8F4F8',
-  },
-  gehaltsverhandlung: {
-    label: 'Gehaltsverhandlung',
-    icon: Banknote,
-    color: '#059669',
-    bgColor: '#d1fae5',
-  },
-  fuehrungsgespraech: {
-    label: 'Führungsgespräch',
-    icon: Users,
-    color: '#7c3aed',
-    bgColor: '#ede9fe',
-  },
-  praesentation: {
-    label: 'Präsentation',
-    icon: Presentation,
-    color: '#d97706',
-    bgColor: '#fef3c7',
-  },
-  selbstvorstellung: {
-    label: 'Selbstvorstellung',
-    icon: User,
-    color: '#ec4899',
-    bgColor: '#fce7f3',
-  },
-  training: {
-    label: 'Training',
-    icon: Target,
-    color: '#64748b',
-    bgColor: '#f1f5f9',
-  },
-};
-
-/**
- * Normalize category string for matching
- */
-const normalizeCategory = (category) => {
-  if (!category) return null;
-  return category.toLowerCase()
-    .replace(/ä/g, 'ae')
-    .replace(/ö/g, 'oe')
-    .replace(/ü/g, 'ue')
-    .replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]/g, '');
-};
 
 const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenticated, requireAuth, setPendingAction, pendingScenario, clearPendingScenario, onNavigateToHistory }) => {
   const [scenarios, setScenarios] = useState([]);
@@ -90,6 +37,7 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
 
   // Partner context for white-label module filtering and setup filtering
   const { filterScenariosBySetupAndPartner, isWhiteLabel, partnerName, branding } = usePartner();
+  const { getCategoryConfig, getCategoriesForFilter, matchesCategory } = useCategories();
 
   // Get themed styles
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -102,17 +50,15 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
 
-  // Compute available categories from scenarios
-  const availableCategories = useMemo(() => {
-    const categories = new Set();
-    scenarios.forEach(scenario => {
-      const normalized = normalizeCategory(scenario.category);
-      if (normalized && CATEGORY_CONFIG[normalized]) {
-        categories.add(normalized);
-      }
-    });
-    return Array.from(categories);
+  // Get unique categories from scenarios
+  const scenarioCategories = useMemo(() => {
+    return [...new Set(scenarios.map(s => s.category).filter(Boolean))];
   }, [scenarios]);
+
+  // Compute available categories for filter UI (dynamically from API)
+  const availableCategories = useMemo(() => {
+    return getCategoriesForFilter(scenarioCategories);
+  }, [scenarioCategories, getCategoriesForFilter]);
 
   // Custom scenario dialog
   const [showCustomDialog, setShowCustomDialog] = useState(false);
@@ -181,10 +127,10 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
     let filtered = filterScenariosBySetupAndPartner([...scenarios], 'roleplay');
 
 
-    // Category filter
+    // Category filter (using matchesCategory for flexible matching)
     if (selectedCategory) {
       filtered = filtered.filter(scenario =>
-        normalizeCategory(scenario.category) === selectedCategory
+        matchesCategory(scenario.category, selectedCategory)
       );
     }
 
@@ -336,12 +282,12 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               searchPlaceholder="Szenarien durchsuchen..."
-              categories={availableCategories.map(key => ({
-                key,
-                label: CATEGORY_CONFIG[key]?.label || key,
-                color: CATEGORY_CONFIG[key]?.color,
-                bgColor: CATEGORY_CONFIG[key]?.bgColor,
-                icon: CATEGORY_CONFIG[key]?.icon,
+              categories={availableCategories.map(cat => ({
+                key: cat.key,
+                label: cat.label,
+                color: cat.color,
+                bgColor: cat.bgColor,
+                icon: cat.IconComponent || cat.icon,
               }))}
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}

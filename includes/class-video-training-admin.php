@@ -727,9 +727,10 @@ class Bewerbungstrainer_Video_Training_Admin {
                             <label for="category"><?php _e('Kategorie', 'bewerbungstrainer'); ?></label>
                         </th>
                         <td>
-                            <input type="text" name="category" id="category" class="regular-text"
-                                   value="<?php echo esc_attr($values['category']); ?>"
-                                   placeholder="z.B. presentation, interview, pitch">
+                            <?php Bewerbungstrainer_Categories_Admin::render_category_dropdown($values['category'], 'category'); ?>
+                            <p class="description">
+                                <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-categories'); ?>"><?php _e('Kategorien verwalten', 'bewerbungstrainer'); ?></a>
+                            </p>
                         </td>
                     </tr>
 

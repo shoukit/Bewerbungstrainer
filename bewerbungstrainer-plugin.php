@@ -258,6 +258,11 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
 
+        // Load Categories classes (centralized for all modules)
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-categories-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-categories-api.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-categories-admin.php';
+
         // Load Simulator classes
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-api.php';
@@ -390,6 +395,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create smart briefing database tables
         Bewerbungstrainer_SmartBriefing_Database::create_tables();
+
+        // Create categories database table (centralized for all modules)
+        Bewerbungstrainer_Categories_Database::create_tables();
 
         // Create demo codes table
         Bewerbungstrainer_Demo_Codes::create_tables();
@@ -546,6 +554,15 @@ class Bewerbungstrainer_Plugin {
         // Initialize Smart Briefing Admin (only in admin area)
         if (is_admin()) {
             Bewerbungstrainer_SmartBriefing_Admin::get_instance();
+        }
+
+        // Initialize Categories (centralized for all modules)
+        Bewerbungstrainer_Categories_Database::get_instance();
+        Bewerbungstrainer_Categories_API::get_instance();
+
+        // Initialize Categories Admin (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_Categories_Admin::get_instance();
         }
 
         // Initialize White-Label Partners

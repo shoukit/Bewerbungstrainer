@@ -14,19 +14,15 @@ import {
   LayoutGrid,
   Clock,
   FolderOpen,
+  Folder,
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
+import { useCategories } from '@/hooks/useCategories';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
 import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/ScenarioCard';
 import MobileFilterSheet from '@/components/ui/MobileFilterSheet';
-import {
-  SCENARIO_CATEGORIES,
-  SCENARIO_CATEGORY_CONFIG,
-  normalizeCategory,
-  getScenarioCategoryConfig
-} from '@/config/constants';
 
 /**
  * Icon mapping for scenarios
@@ -41,32 +37,15 @@ const ICON_MAP = {
 };
 
 /**
- * Category icon mapping
- */
-const CATEGORY_ICON_MAP = {
-  Briefcase: Briefcase,
-  Target: Target,
-  TrendingUp: TrendingUp,
-  MessageCircle: MessageCircle,
-};
-
-/**
- * Get category icon component
- */
-const getCategoryIcon = (iconName) => {
-  return CATEGORY_ICON_MAP[iconName] || Briefcase;
-};
-
-/**
  * Category Badge Component
+ * Uses dynamic categories from useCategories hook
  */
-const CategoryBadge = ({ category }) => {
-  const normalizedCategory = normalizeCategory(category);
-  const config = getScenarioCategoryConfig(normalizedCategory);
+const CategoryBadge = ({ category, getCategoryConfig }) => {
+  const config = getCategoryConfig(category);
 
   if (!config) return null;
 
-  const CategoryIcon = getCategoryIcon(config.icon);
+  const CategoryIcon = config.IconComponent || config.icon || Folder;
 
   return (
     <span
@@ -89,75 +68,6 @@ const CategoryBadge = ({ category }) => {
 };
 
 /**
- * Category Filter Bar Component
- */
-const CategoryFilterBar = ({ selectedCategory, onSelectCategory, primaryAccent }) => {
-  const categories = [
-    { key: null, label: 'Alle', icon: LayoutGrid },
-    { key: SCENARIO_CATEGORIES.CAREER, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.CAREER] },
-    { key: SCENARIO_CATEGORIES.LEADERSHIP, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.LEADERSHIP] },
-    { key: SCENARIO_CATEGORIES.SALES, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.SALES] },
-    { key: SCENARIO_CATEGORIES.COMMUNICATION, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.COMMUNICATION] },
-  ];
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '10px',
-        marginBottom: '24px',
-        padding: '0 24px',
-      }}
-    >
-      {categories.map((cat) => {
-        const isSelected = selectedCategory === cat.key;
-        const IconComponent = cat.key === null
-          ? LayoutGrid
-          : getCategoryIcon(cat.icon);
-        const chipColor = cat.key === null ? primaryAccent : cat.color;
-
-        return (
-          <button
-            key={cat.key || 'all'}
-            onClick={() => onSelectCategory(cat.key)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              borderRadius: '24px',
-              fontSize: '14px',
-              fontWeight: 600,
-              border: `2px solid ${isSelected ? chipColor : COLORS.slate[200]}`,
-              backgroundColor: isSelected ? (cat.key === null ? `${primaryAccent}15` : cat.bgColor) : 'white',
-              color: isSelected ? chipColor : COLORS.slate[600],
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (!isSelected) {
-                e.target.style.borderColor = chipColor;
-                e.target.style.backgroundColor = cat.key === null ? `${primaryAccent}10` : cat.bgColor;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isSelected) {
-                e.target.style.borderColor = COLORS.slate[200];
-                e.target.style.backgroundColor = 'white';
-              }
-            }}
-          >
-            <IconComponent style={{ width: '16px', height: '16px' }} />
-            {cat.key === null ? 'Alle' : cat.shortLabel}
-          </button>
-        );
-      })}
-    </div>
-  );
-};
-
-/**
  * Simulator Dashboard Component
  *
  * Displays available training scenarios in a grid layout
@@ -165,6 +75,7 @@ const CategoryFilterBar = ({ selectedCategory, onSelectCategory, primaryAccent }
 const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, setPendingScenario, onNavigateToHistory }) => {
   // Partner theming and scenario filtering (includes setup filtering)
   const { branding, filterScenariosBySetupAndPartner } = usePartner();
+  const { getCategoryConfig, getCategoriesForFilter, matchesCategory } = useCategories();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -202,28 +113,23 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
     return filterScenariosBySetupAndPartner([...scenarios], 'simulator');
   }, [scenarios, filterScenariosBySetupAndPartner]);
 
-  // Get available categories from base filtered scenarios
-  const availableCategories = useMemo(() => {
-    const categories = new Set();
-    baseFilteredScenarios.forEach(scenario => {
-      const normalizedCategory = normalizeCategory(scenario.category);
-      if (normalizedCategory && SCENARIO_CATEGORY_CONFIG[normalizedCategory]) {
-        categories.add(normalizedCategory);
-      }
-    });
-    return Array.from(categories);
+  // Get unique categories from scenarios
+  const scenarioCategories = useMemo(() => {
+    return [...new Set(baseFilteredScenarios.map(s => s.category).filter(Boolean))];
   }, [baseFilteredScenarios]);
+
+  // Get available categories for filter UI (dynamically from API)
+  const availableCategories = useMemo(() => {
+    return getCategoriesForFilter(scenarioCategories);
+  }, [scenarioCategories, getCategoriesForFilter]);
 
   // Filter scenarios by partner visibility, setup, category, search, and difficulty
   const filteredScenarios = useMemo(() => {
     let filtered = [...baseFilteredScenarios];
 
-    // Category filter
+    // Category filter (using matchesCategory for flexible matching)
     if (selectedCategory) {
-      filtered = filtered.filter(scenario => {
-        const normalizedCategory = normalizeCategory(scenario.category);
-        return normalizedCategory === selectedCategory;
-      });
+      filtered = filtered.filter(scenario => matchesCategory(scenario.category, selectedCategory));
     }
 
     // Search filter
@@ -408,10 +314,13 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Szenarien durchsuchen..."
-            categories={availableCategories.map(key => ({
-              key,
-              ...SCENARIO_CATEGORY_CONFIG[key],
-              icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[key]?.icon),
+            categories={availableCategories.map(cat => ({
+              key: cat.key,
+              label: cat.label,
+              shortLabel: cat.shortLabel,
+              color: cat.color,
+              bgColor: cat.bgColor,
+              icon: cat.IconComponent || cat.icon,
             }))}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
@@ -446,7 +355,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
                 description={scenario.description}
                 difficulty={scenario.difficulty}
                 icon={IconComponent}
-                categoryBadge={scenario.category ? <CategoryBadge category={scenario.category} /> : null}
+                categoryBadge={scenario.category ? <CategoryBadge category={scenario.category} getCategoryConfig={getCategoryConfig} /> : null}
                 meta={[
                   { text: `${scenario.question_count_min}-${scenario.question_count_max} Fragen` },
                   { icon: Clock, text: `${Math.round(scenario.time_limit_per_question / 60)} Min/Frage` },
@@ -479,7 +388,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
           </h3>
           <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>
             {selectedCategory
-              ? `In der Kategorie "${SCENARIO_CATEGORY_CONFIG[selectedCategory]?.shortLabel || selectedCategory}" sind keine Szenarien verfügbar.`
+              ? `In der ausgewählten Kategorie sind keine Szenarien verfügbar.`
               : 'Bitte kontaktieren Sie den Administrator.'}
           </p>
           {selectedCategory && baseFilteredScenarios.length > 0 && (

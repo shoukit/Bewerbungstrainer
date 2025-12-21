@@ -765,13 +765,11 @@ class Bewerbungstrainer_Simulator_Admin {
                                         <tr>
                                             <th><label for="category">Kategorie</label></th>
                                             <td>
-                                                <select name="category" id="category" class="regular-text">
-                                                    <option value="CAREER" <?php selected($data['category'], 'CAREER'); ?>>Bewerbung & Karriere</option>
-                                                    <option value="LEADERSHIP" <?php selected($data['category'], 'LEADERSHIP'); ?>>Leadership & Führung</option>
-                                                    <option value="SALES" <?php selected($data['category'], 'SALES'); ?>>Vertrieb & Verhandlung</option>
-                                                    <option value="COMMUNICATION" <?php selected($data['category'], 'COMMUNICATION'); ?>>Kommunikation & Konflikt</option>
-                                                </select>
-                                                <p class="description">Thematische Einordnung des Szenarios für die Filterung im Dashboard.</p>
+                                                <?php Bewerbungstrainer_Categories_Admin::render_category_dropdown($data['category'], 'category'); ?>
+                                                <p class="description">
+                                                    Thematische Einordnung des Szenarios für die Filterung im Dashboard.<br>
+                                                    <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-categories'); ?>">Kategorien verwalten</a>
+                                                </p>
                                             </td>
                                         </tr>
                                         <tr>

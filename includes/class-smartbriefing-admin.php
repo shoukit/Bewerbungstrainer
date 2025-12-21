@@ -612,13 +612,15 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                                 </td>
                                 <td>
                                     <?php
-                                    $cat_labels = array(
-                                        'CAREER' => '<span style="color: #3b82f6;">Karriere</span>',
-                                        'SALES' => '<span style="color: #22c55e;">Vertrieb</span>',
-                                        'LEADERSHIP' => '<span style="color: #a855f7;">Führung</span>',
-                                        'COMMUNICATION' => '<span style="color: #f59e0b;">Kommunikation</span>',
-                                    );
-                                    echo $cat_labels[$template->category] ?? esc_html($template->category);
+                                    $cat_db = Bewerbungstrainer_Categories_Database::get_instance();
+                                    $cat_obj = $cat_db->get_category_by_slug($template->category);
+                                    if ($cat_obj) {
+                                        $cat_color = esc_attr($cat_obj->color);
+                                        $cat_name = esc_html($cat_obj->short_name ?: $cat_obj->name);
+                                        echo '<span style="color: ' . $cat_color . ';">' . $cat_name . '</span>';
+                                    } else {
+                                        echo esc_html($template->category);
+                                    }
                                     ?>
                                 </td>
                                 <td>
@@ -704,13 +706,9 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             'rocket' => 'Rakete',
         );
 
-        // Available categories
-        $categories = array(
-            'CAREER' => 'Karriere',
-            'SALES' => 'Vertrieb',
-            'LEADERSHIP' => 'Führung',
-            'COMMUNICATION' => 'Kommunikation',
-        );
+        // Get categories from centralized database
+        $categories_db = Bewerbungstrainer_Categories_Database::get_instance();
+        $categories_list = $categories_db->get_categories();
         ?>
         <div class="wrap">
             <h1><?php echo $is_edit ? 'Template bearbeiten' : 'Neues Briefing-Template'; ?></h1>
@@ -760,13 +758,10 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                                         <tr>
                                             <th><label for="category">Kategorie</label></th>
                                             <td>
-                                                <select name="category" id="category">
-                                                    <?php foreach ($categories as $cat_key => $cat_label): ?>
-                                                        <option value="<?php echo esc_attr($cat_key); ?>" <?php selected($data['category'], $cat_key); ?>>
-                                                            <?php echo esc_html($cat_label); ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
+                                                <?php Bewerbungstrainer_Categories_Admin::render_category_dropdown($data['category'], 'category'); ?>
+                                                <p class="description">
+                                                    <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-categories'); ?>">Kategorien verwalten</a>
+                                                </p>
                                             </td>
                                         </tr>
                                         <tr>
