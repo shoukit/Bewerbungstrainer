@@ -84,7 +84,8 @@ class Bewerbungstrainer_Categories_Admin {
             'Kategorien',
             'manage_options',
             'bewerbungstrainer-categories',
-            array($this, 'render_admin_page')
+            array($this, 'render_admin_page'),
+            12 // Position: settings section
         );
     }
 

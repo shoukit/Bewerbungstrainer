@@ -113,7 +113,8 @@ class Bewerbungstrainer_Usage_Limits {
             __('Nutzungslimits', 'bewerbungstrainer'),
             'manage_options',
             'bewerbungstrainer-usage-limits',
-            array($this, 'render_admin_page')
+            array($this, 'render_admin_page'),
+            14 // Position: settings section
         );
     }
 

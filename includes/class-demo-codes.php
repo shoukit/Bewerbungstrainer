@@ -58,7 +58,8 @@ class Bewerbungstrainer_Demo_Codes {
             __('Demo-Codes', 'bewerbungstrainer'),
             'manage_options',
             'bewerbungstrainer-demo-codes',
-            array($this, 'render_admin_page')
+            array($this, 'render_admin_page'),
+            13 // Position: settings section
         );
     }
 

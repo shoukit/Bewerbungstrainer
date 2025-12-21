@@ -66,7 +66,8 @@ class Bewerbungstrainer_Simulator_Admin {
             __('Szenario-Training', 'bewerbungstrainer'),
             'manage_options',
             'simulator-scenarios',
-            array($this, 'render_scenarios_page')
+            array($this, 'render_scenarios_page'),
+            2 // Position: after Live-Simulationen
         );
 
         // Submenu: Add New (hidden, accessed via link)

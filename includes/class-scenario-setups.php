@@ -199,7 +199,8 @@ class Bewerbungstrainer_Scenario_Setups {
             'Trainings-Setups',
             'manage_options',
             'bewerbungstrainer-setups',
-            array($this, 'render_admin_page')
+            array($this, 'render_admin_page'),
+            11 // Position: settings section
         );
     }
 

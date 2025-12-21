@@ -66,7 +66,8 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             __('Smart Briefing', 'bewerbungstrainer'),
             'manage_options',
             'smartbriefing-templates',
-            array($this, 'render_templates_page')
+            array($this, 'render_templates_page'),
+            4 // Position: after Wirkungs-Analyse
         );
 
         // Submenu: Add New (hidden, accessed via link)

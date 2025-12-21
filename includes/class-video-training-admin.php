@@ -58,11 +58,12 @@ class Bewerbungstrainer_Video_Training_Admin {
         // Submenu under Bewerbungstrainer
         add_submenu_page(
             'bewerbungstrainer',
-            __('Video Training', 'bewerbungstrainer'),
-            __('Video Training', 'bewerbungstrainer'),
+            __('Wirkungs-Analyse', 'bewerbungstrainer'),
+            __('Wirkungs-Analyse', 'bewerbungstrainer'),
             'manage_options',
             'bewerbungstrainer-video-training',
-            array($this, 'render_admin_page')
+            array($this, 'render_admin_page'),
+            3 // Position: after Szenario-Training
         );
 
         // Submenu: Add New (hidden, accessed via link)
