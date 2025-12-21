@@ -57,8 +57,18 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         // Add bulk action for export
         add_filter('bulk_actions-edit-' . self::POST_TYPE, array($this, 'add_bulk_actions'));
 
+        // Handle bulk actions
+        add_filter('handle_bulk_actions-edit-' . self::POST_TYPE, array($this, 'handle_bulk_actions'), 10, 3);
+
         // Add export/import buttons to post list
         add_action('restrict_manage_posts', array($this, 'add_import_export_buttons'));
+
+        // Add custom columns
+        add_filter('manage_' . self::POST_TYPE . '_posts_columns', array($this, 'add_custom_columns'));
+        add_action('manage_' . self::POST_TYPE . '_posts_custom_column', array($this, 'render_custom_columns'), 10, 2);
+
+        // Filter query for category/setup filters
+        add_action('pre_get_posts', array($this, 'filter_scenarios_query'));
     }
 
     /**
@@ -834,7 +844,179 @@ class Bewerbungstrainer_Roleplay_Scenarios {
      */
     public function add_bulk_actions($bulk_actions) {
         $bulk_actions['export_csv'] = __('CSV Export', 'bewerbungstrainer');
+        $bulk_actions['update_categories'] = __('Kategorien aktualisieren', 'bewerbungstrainer');
+        $bulk_actions['update_setups'] = __('Setups aktualisieren', 'bewerbungstrainer');
         return $bulk_actions;
+    }
+
+    /**
+     * Handle bulk actions
+     */
+    public function handle_bulk_actions($redirect_to, $doaction, $post_ids) {
+        if ($doaction === 'update_categories' && !empty($post_ids)) {
+            $categories = isset($_REQUEST['bulk_categories']) ? (array)$_REQUEST['bulk_categories'] : array();
+            $category_json = wp_json_encode(array_map('sanitize_text_field', $categories));
+
+            foreach ($post_ids as $post_id) {
+                update_post_meta($post_id, '_roleplay_category', $category_json);
+            }
+
+            $redirect_to = add_query_arg('bulk_updated', count($post_ids), $redirect_to);
+        }
+
+        if ($doaction === 'update_setups' && !empty($post_ids)) {
+            $setups = isset($_REQUEST['bulk_setups']) ? (array)$_REQUEST['bulk_setups'] : array();
+            $setups_string = implode('; ', array_map('sanitize_text_field', $setups));
+
+            foreach ($post_ids as $post_id) {
+                update_post_meta($post_id, '_roleplay_target_audience', $setups_string);
+            }
+
+            $redirect_to = add_query_arg('bulk_updated', count($post_ids), $redirect_to);
+        }
+
+        return $redirect_to;
+    }
+
+    /**
+     * Add custom columns to post list
+     */
+    public function add_custom_columns($columns) {
+        $new_columns = array();
+
+        foreach ($columns as $key => $value) {
+            $new_columns[$key] = $value;
+
+            // Insert after title
+            if ($key === 'title') {
+                $new_columns['categories'] = __('Kategorien', 'bewerbungstrainer');
+                $new_columns['setups'] = __('Setups', 'bewerbungstrainer');
+            }
+        }
+
+        return $new_columns;
+    }
+
+    /**
+     * Render custom columns
+     */
+    public function render_custom_columns($column, $post_id) {
+        switch ($column) {
+            case 'categories':
+                $category_json = get_post_meta($post_id, '_roleplay_category', true);
+                $categories = Bewerbungstrainer_Categories_Admin::get_categories_array($category_json);
+
+                if (!empty($categories)) {
+                    $all_categories = Bewerbungstrainer_Categories_Admin::get_all_categories();
+                    $badges = array();
+
+                    foreach ($categories as $cat_slug) {
+                        if (isset($all_categories[$cat_slug])) {
+                            $cat = $all_categories[$cat_slug];
+                            $badges[] = sprintf(
+                                '<span style="display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 4px; font-size: 12px; background: %s20; color: %s; border: 1px solid %s40;">%s %s</span>',
+                                esc_attr($cat['color']),
+                                esc_attr($cat['color']),
+                                esc_attr($cat['color']),
+                                esc_html($cat['icon']),
+                                esc_html($cat['name'])
+                            );
+                        } else {
+                            $badges[] = sprintf(
+                                '<span style="display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 4px; font-size: 12px; background: #f0f0f0; color: #666;">%s</span>',
+                                esc_html($cat_slug)
+                            );
+                        }
+                    }
+
+                    echo implode(' ', $badges);
+                } else {
+                    echo '<span style="color: #999;">—</span>';
+                }
+                break;
+
+            case 'setups':
+                $target_audience = get_post_meta($post_id, '_roleplay_target_audience', true);
+                $setup_slugs = array_filter(array_map('trim', explode(';', $target_audience)));
+
+                if (!empty($setup_slugs)) {
+                    $setups_manager = Bewerbungstrainer_Scenario_Setups::get_instance();
+                    $all_setups = $setups_manager->get_all_setups();
+                    $badges = array();
+
+                    foreach ($setup_slugs as $slug) {
+                        $setup = null;
+                        foreach ($all_setups as $s) {
+                            if ($s['slug'] === $slug) {
+                                $setup = $s;
+                                break;
+                            }
+                        }
+
+                        if ($setup) {
+                            $badges[] = sprintf(
+                                '<span style="display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 4px; font-size: 12px; background: %s20; color: %s; border: 1px solid %s40;">%s %s</span>',
+                                esc_attr($setup['color']),
+                                esc_attr($setup['color']),
+                                esc_attr($setup['color']),
+                                esc_html($setup['icon']),
+                                esc_html($setup['name'])
+                            );
+                        } else {
+                            $badges[] = sprintf(
+                                '<span style="display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 4px; font-size: 12px; background: #f0f0f0; color: #666;">%s</span>',
+                                esc_html($slug)
+                            );
+                        }
+                    }
+
+                    echo implode(' ', $badges);
+                } else {
+                    echo '<span style="color: #999;">—</span>';
+                }
+                break;
+        }
+    }
+
+    /**
+     * Filter scenarios query based on category/setup filters
+     */
+    public function filter_scenarios_query($query) {
+        if (!is_admin() || !$query->is_main_query()) {
+            return;
+        }
+
+        $screen = get_current_screen();
+        if (!$screen || $screen->post_type !== self::POST_TYPE) {
+            return;
+        }
+
+        $meta_query = array();
+
+        // Filter by category
+        if (!empty($_GET['filter_category'])) {
+            $category = sanitize_text_field($_GET['filter_category']);
+            $meta_query[] = array(
+                'key' => '_roleplay_category',
+                'value' => $category,
+                'compare' => 'LIKE'
+            );
+        }
+
+        // Filter by setup
+        if (!empty($_GET['filter_setup'])) {
+            $setup = sanitize_text_field($_GET['filter_setup']);
+            $meta_query[] = array(
+                'key' => '_roleplay_target_audience',
+                'value' => $setup,
+                'compare' => 'LIKE'
+            );
+        }
+
+        if (!empty($meta_query)) {
+            $meta_query['relation'] = 'AND';
+            $query->set('meta_query', $meta_query);
+        }
     }
 
     /**
@@ -861,8 +1043,39 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             $error_msg = $errors[$_GET['import_error']] ?? __('Unbekannter Fehler beim Import.', 'bewerbungstrainer');
             echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error_msg) . '</p></div>';
         }
+        if (isset($_GET['bulk_updated'])) {
+            $updated = intval($_GET['bulk_updated']);
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(__('%d Szenario(s) aktualisiert.', 'bewerbungstrainer'), $updated) . '</p></div>';
+        }
+
+        // Get categories and setups for filters
+        $all_categories = Bewerbungstrainer_Categories_Admin::get_all_categories();
+        $setups_manager = Bewerbungstrainer_Scenario_Setups::get_instance();
+        $all_setups = $setups_manager->get_all_setups();
+
+        $selected_category = isset($_GET['filter_category']) ? sanitize_text_field($_GET['filter_category']) : '';
+        $selected_setup = isset($_GET['filter_setup']) ? sanitize_text_field($_GET['filter_setup']) : '';
 
         ?>
+        <!-- Filter Dropdowns -->
+        <select name="filter_category" style="margin-left: 5px;">
+            <option value=""><?php _e('Alle Kategorien', 'bewerbungstrainer'); ?></option>
+            <?php foreach ($all_categories as $slug => $cat): ?>
+                <option value="<?php echo esc_attr($slug); ?>" <?php selected($selected_category, $slug); ?>>
+                    <?php echo esc_html($cat['icon'] . ' ' . $cat['name']); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <select name="filter_setup" style="margin-left: 5px;">
+            <option value=""><?php _e('Alle Setups', 'bewerbungstrainer'); ?></option>
+            <?php foreach ($all_setups as $setup): ?>
+                <option value="<?php echo esc_attr($setup['slug']); ?>" <?php selected($selected_setup, $setup['slug']); ?>>
+                    <?php echo esc_html($setup['icon'] . ' ' . $setup['name']); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
         <div style="display: inline-block; margin-left: 15px;">
             <a href="<?php echo wp_nonce_url(admin_url('edit.php?post_type=' . self::POST_TYPE . '&action=export_csv'), 'export_roleplay_scenarios'); ?>" class="button">
                 <?php _e('CSV Export', 'bewerbungstrainer'); ?>
@@ -873,6 +1086,48 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 <?php _e('CSV Import', 'bewerbungstrainer'); ?>
             </a>
         </div>
+
+        <!-- Bulk Action UI for Categories and Setups -->
+        <div id="bulk-categories-ui" style="display: none; margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+            <strong><?php _e('Kategorien für ausgewählte Szenarien:', 'bewerbungstrainer'); ?></strong>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                <?php foreach ($all_categories as $slug => $cat): ?>
+                    <label style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: <?php echo esc_attr($cat['color']); ?>20; border: 1px solid <?php echo esc_attr($cat['color']); ?>40; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" name="bulk_categories[]" value="<?php echo esc_attr($slug); ?>">
+                        <span><?php echo esc_html($cat['icon'] . ' ' . $cat['name']); ?></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div id="bulk-setups-ui" style="display: none; margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+            <strong><?php _e('Setups für ausgewählte Szenarien:', 'bewerbungstrainer'); ?></strong>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                <?php foreach ($all_setups as $setup): ?>
+                    <label style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: <?php echo esc_attr($setup['color']); ?>20; border: 1px solid <?php echo esc_attr($setup['color']); ?>40; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" name="bulk_setups[]" value="<?php echo esc_attr($setup['slug']); ?>">
+                        <span><?php echo esc_html($setup['icon'] . ' ' . $setup['name']); ?></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Show/hide bulk action UI based on selection
+            $('select[name="action"], select[name="action2"]').on('change', function() {
+                var action = $(this).val();
+                $('#bulk-categories-ui').toggle(action === 'update_categories');
+                $('#bulk-setups-ui').toggle(action === 'update_setups');
+            });
+
+            // Initial check
+            var action1 = $('select[name="action"]').val();
+            var action2 = $('select[name="action2"]').val();
+            $('#bulk-categories-ui').toggle(action1 === 'update_categories' || action2 === 'update_categories');
+            $('#bulk-setups-ui').toggle(action1 === 'update_setups' || action2 === 'update_setups');
+        });
+        </script>
         <?php
     }
 
