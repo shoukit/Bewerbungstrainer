@@ -88,8 +88,8 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Partner context for white-label module filtering
-  const { filterScenariosByType, isWhiteLabel, partnerName, branding } = usePartner();
+  // Partner context for white-label module filtering and setup filtering
+  const { filterScenariosBySetupAndPartner, isWhiteLabel, partnerName, branding } = usePartner();
 
   // Get themed styles
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -127,10 +127,10 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
     loadScenarios();
   }, []);
 
-  // Filter scenarios when search, filters, or partner changes
+  // Filter scenarios when search, filters, partner, or setup changes
   useEffect(() => {
     filterScenarios();
-  }, [scenarios, searchQuery, difficultyFilter, selectedCategory, filterScenariosByType]);
+  }, [scenarios, searchQuery, difficultyFilter, selectedCategory, filterScenariosBySetupAndPartner]);
 
   // Handle pending scenario after login - automatically open variables dialog
   useEffect(() => {
@@ -177,8 +177,8 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   };
 
   const filterScenarios = () => {
-    // First, filter by partner's visible scenarios (white-label filtering)
-    let filtered = filterScenariosByType([...scenarios], 'roleplay');
+    // First, filter by partner's visible scenarios AND selected setup
+    let filtered = filterScenariosBySetupAndPartner([...scenarios], 'roleplay');
 
 
     // Category filter

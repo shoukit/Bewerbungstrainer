@@ -11,6 +11,7 @@ import {
   getCurrentUser,
   DEFAULT_BRANDING,
 } from '@/config/partners';
+import { filterScenariosBySetup as filterBySetup, SCENARIO_SETUPS, SCENARIO_SETUPS_LIST } from '@/config/scenarioSetups';
 
 /**
  * Partner Context
@@ -41,6 +42,15 @@ export function PartnerProvider({ children }) {
     return null;
   });
   const [isDemoUser, setIsDemoUser] = useState(false);
+
+  // Scenario Setup selection state
+  const [selectedSetup, setSelectedSetupState] = useState(() => {
+    // Initialize from localStorage if available
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bewerbungstrainer_selected_setup') || null;
+    }
+    return null;
+  });
 
   // Initialize partner from URL on mount - now fetches from API
   useEffect(() => {
@@ -377,6 +387,60 @@ export function PartnerProvider({ children }) {
   }, [setDemoCode]);
 
   /**
+   * Set selected scenario setup
+   * @param {string} setupId - The setup ID to select (e.g., 'karriere-placement')
+   */
+  const setSelectedSetup = useCallback((setupId) => {
+    if (setupId && SCENARIO_SETUPS[setupId]) {
+      setSelectedSetupState(setupId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bewerbungstrainer_selected_setup', setupId);
+      }
+    } else {
+      setSelectedSetupState(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('bewerbungstrainer_selected_setup');
+      }
+    }
+  }, []);
+
+  /**
+   * Clear selected setup
+   */
+  const clearSelectedSetup = useCallback(() => {
+    setSelectedSetup(null);
+  }, [setSelectedSetup]);
+
+  /**
+   * Get current setup object
+   */
+  const getCurrentSetup = useCallback(() => {
+    if (selectedSetup && SCENARIO_SETUPS[selectedSetup]) {
+      return SCENARIO_SETUPS[selectedSetup];
+    }
+    return null;
+  }, [selectedSetup]);
+
+  /**
+   * Filter scenarios by setup AND partner visibility
+   * This combines setup filtering with partner configuration
+   * @param {Array} scenarios - Array of scenario objects
+   * @param {string} scenarioType - Type: 'roleplay', 'simulator', 'video_training', 'briefings'
+   * @returns {Array} Filtered scenarios
+   */
+  const filterScenariosBySetupAndPartner = useCallback((scenarios, scenarioType) => {
+    // First apply partner visibility filter
+    let filtered = filterScenariosByVisibility(scenarios, partner, scenarioType);
+
+    // Then apply setup filter if a setup is selected
+    if (selectedSetup) {
+      filtered = filterBySetup(filtered, selectedSetup);
+    }
+
+    return filtered;
+  }, [partner, selectedSetup]);
+
+  /**
    * Refresh user data from API
    */
   const refreshUser = useCallback(async () => {
@@ -431,6 +495,15 @@ export function PartnerProvider({ children }) {
     isDemoUser,
     setDemoCode,
     clearDemoCode,
+
+    // Scenario Setup selection
+    selectedSetup,
+    currentSetup: getCurrentSetup(),
+    setSelectedSetup,
+    clearSelectedSetup,
+    filterScenariosBySetupAndPartner,
+    availableSetups: SCENARIO_SETUPS_LIST,
+    SCENARIO_SETUPS,
   };
 
   return (
