@@ -184,6 +184,8 @@ export function useCategories() {
     // Handle array of categories - return config for first matched category
     if (Array.isArray(categoryValue)) {
       for (const cat of categoryValue) {
+        // Skip non-string values in array
+        if (typeof cat !== 'string') continue;
         const category = getCategoryBySlug(cat);
         if (category) {
           return {
@@ -197,12 +199,12 @@ export function useCategories() {
           };
         }
       }
-      // No match found in array - use first value as fallback
-      const firstValue = categoryValue[0] || 'unknown';
+      // No match found in array - use first string value as fallback
+      const firstValue = categoryValue.find(v => typeof v === 'string') || 'unknown';
       return {
-        key: firstValue,
-        label: firstValue,
-        shortLabel: firstValue,
+        key: String(firstValue),
+        label: String(firstValue),
+        shortLabel: String(firstValue),
         icon: DEFAULT_ICON,
         IconComponent: DEFAULT_ICON,
         color: '#64748b',
@@ -210,7 +212,19 @@ export function useCategories() {
       };
     }
 
-    // Handle single category (string)
+    // Handle single category (string only)
+    if (typeof categoryValue !== 'string') {
+      return {
+        key: 'unknown',
+        label: 'Unbekannt',
+        shortLabel: 'Unbekannt',
+        icon: DEFAULT_ICON,
+        IconComponent: DEFAULT_ICON,
+        color: '#64748b',
+        bgColor: '#f1f5f9',
+      };
+    }
+
     const category = getCategoryBySlug(categoryValue);
 
     if (!category) {
