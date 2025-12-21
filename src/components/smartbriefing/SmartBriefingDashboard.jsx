@@ -210,10 +210,13 @@ const SmartBriefingDashboard = ({
   // Get unique categories from templates (flattening multi-category arrays)
   const templateCategories = useMemo(() => {
     const allCategories = templates.flatMap(t => {
-      if (Array.isArray(t.category)) return t.category;
-      return t.category ? [t.category] : [];
+      if (Array.isArray(t.category)) {
+        // Filter out empty strings from array
+        return t.category.filter(c => c && typeof c === 'string' && c.trim());
+      }
+      return t.category && typeof t.category === 'string' && t.category.trim() ? [t.category] : [];
     });
-    return [...new Set(allCategories.filter(Boolean))];
+    return [...new Set(allCategories)];
   }, [templates]);
 
   // Get formatted categories for filter UI

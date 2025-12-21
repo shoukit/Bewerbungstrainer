@@ -239,7 +239,7 @@ export function useCategories() {
   /**
    * Get all categories formatted for filter UI
    * @param {Array} scenarioCategories - Array of category values from scenarios (each can be string or array)
-   * @returns {Array} Category configs for filter buttons
+   * @returns {Array} Category configs for filter buttons - only returns matched categories
    */
   const getCategoriesForFilter = useCallback((scenarioCategories = []) => {
     if (!categories.length) return [];
@@ -258,13 +258,17 @@ export function useCategories() {
     }
 
     // Match scenario categories to centralized categories
-    // scenarioCategories can now contain arrays (multi-category scenarios)
+    // Only include categories that actually match - no fallbacks for unknown values
     const matchedCategories = new Map();
 
     scenarioCategories.forEach(scenarioCat => {
+      // Skip empty/falsy values
+      if (!scenarioCat) return;
+
       // Handle array of categories (multi-category scenario)
       if (Array.isArray(scenarioCat)) {
         scenarioCat.forEach(cat => {
+          if (!cat || typeof cat !== 'string' || !cat.trim()) return;
           const category = getCategoryBySlug(cat);
           if (category && !matchedCategories.has(category.slug)) {
             matchedCategories.set(category.slug, {
@@ -278,17 +282,25 @@ export function useCategories() {
             });
           }
         });
-      } else {
-        // Handle single category (string)
-        const config = getCategoryConfig(scenarioCat);
-        if (config && config.key !== 'unknown' && !matchedCategories.has(config.key)) {
-          matchedCategories.set(config.key, config);
+      } else if (typeof scenarioCat === 'string' && scenarioCat.trim()) {
+        // Handle single category (string) - only add if it matches a known category
+        const category = getCategoryBySlug(scenarioCat);
+        if (category && !matchedCategories.has(category.slug)) {
+          matchedCategories.set(category.slug, {
+            key: category.slug,
+            label: category.name,
+            shortLabel: category.shortName || category.name,
+            icon: getIconComponent(category.icon),
+            IconComponent: getIconComponent(category.icon),
+            color: category.color,
+            bgColor: category.bgColor,
+          });
         }
       }
     });
 
     return Array.from(matchedCategories.values());
-  }, [categories, getCategoryConfig, getCategoryBySlug]);
+  }, [categories, getCategoryBySlug]);
 
   /**
    * Check if a category value matches a category slug

@@ -53,10 +53,13 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
   // Get unique categories from scenarios (flattening multi-category arrays)
   const scenarioCategories = useMemo(() => {
     const allCategories = scenarios.flatMap(s => {
-      if (Array.isArray(s.category)) return s.category;
-      return s.category ? [s.category] : [];
+      if (Array.isArray(s.category)) {
+        // Filter out empty strings from array
+        return s.category.filter(c => c && typeof c === 'string' && c.trim());
+      }
+      return s.category && typeof s.category === 'string' && s.category.trim() ? [s.category] : [];
     });
-    return [...new Set(allCategories.filter(Boolean))];
+    return [...new Set(allCategories)];
   }, [scenarios]);
 
   // Compute available categories for filter UI (dynamically from API)
