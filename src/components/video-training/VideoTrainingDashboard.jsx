@@ -307,10 +307,22 @@ const VideoTrainingDashboard = ({ onSelectScenario, isAuthenticated, requireAuth
 
       {/* Empty state */}
       {filteredScenarios.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <Video size={64} color="#cbd5e1" style={{ marginBottom: '16px' }} />
-          <h3 style={{ color: '#64748b', fontWeight: 500 }}>Keine Szenarien verfügbar</h3>
-          <p style={{ color: '#94a3b8', fontSize: '14px' }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '48px 24px',
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <Video size={48} color="#cbd5e1" />
+          </div>
+          <h3 style={{ color: '#64748b', margin: '0 0 8px 0', fontWeight: 500 }}>
+            Keine Szenarien verfügbar
+          </h3>
+          <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>
             Bitte kontaktieren Sie den Administrator.
           </p>
         </div>

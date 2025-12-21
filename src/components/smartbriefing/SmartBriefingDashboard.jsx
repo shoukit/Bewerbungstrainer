@@ -423,15 +423,18 @@ const SmartBriefingDashboard = ({
               style={{
                 textAlign: 'center',
                 padding: '48px 24px',
-                backgroundColor: '#f8fafc',
+                backgroundColor: 'white',
                 borderRadius: '16px',
+                border: '1px solid #e2e8f0',
               }}
             >
-              <FileText size={48} style={{ color: '#cbd5e1', marginBottom: '16px' }} />
-              <h3 style={{ color: '#64748b', margin: '0 0 8px 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+                <FileText size={48} style={{ color: '#cbd5e1' }} />
+              </div>
+              <h3 style={{ color: '#64748b', margin: '0 0 8px 0', fontWeight: 500 }}>
                 Keine Templates gefunden
               </h3>
-              <p style={{ color: '#94a3b8', margin: 0 }}>
+              <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>
                 {selectedCategory
                   ? 'In dieser Kategorie sind keine Templates verfügbar.'
                   : 'Es wurden noch keine Briefing-Templates erstellt.'}

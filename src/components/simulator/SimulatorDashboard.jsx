@@ -197,10 +197,26 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Get base filtered scenarios (by partner and setup)
+  const baseFilteredScenarios = useMemo(() => {
+    return filterScenariosBySetupAndPartner([...scenarios], 'simulator');
+  }, [scenarios, filterScenariosBySetupAndPartner]);
+
+  // Get available categories from base filtered scenarios
+  const availableCategories = useMemo(() => {
+    const categories = new Set();
+    baseFilteredScenarios.forEach(scenario => {
+      const normalizedCategory = normalizeCategory(scenario.category);
+      if (normalizedCategory && SCENARIO_CATEGORY_CONFIG[normalizedCategory]) {
+        categories.add(normalizedCategory);
+      }
+    });
+    return Array.from(categories);
+  }, [baseFilteredScenarios]);
+
   // Filter scenarios by partner visibility, setup, category, search, and difficulty
   const filteredScenarios = useMemo(() => {
-    // First, filter by partner's visible scenarios AND selected setup
-    let filtered = filterScenariosBySetupAndPartner([...scenarios], 'simulator');
+    let filtered = [...baseFilteredScenarios];
 
     // Category filter
     if (selectedCategory) {
@@ -225,7 +241,7 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
     }
 
     return filtered;
-  }, [scenarios, selectedCategory, searchQuery, difficultyFilter, filterScenariosBySetupAndPartner]);
+  }, [baseFilteredScenarios, selectedCategory, searchQuery, difficultyFilter]);
 
   // Load scenarios on mount (public endpoint - no auth required)
   useEffect(() => {
@@ -392,14 +408,14 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Szenarien durchsuchen..."
-            categories={[
-              { key: SCENARIO_CATEGORIES.CAREER, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.CAREER], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.CAREER].icon) },
-              { key: SCENARIO_CATEGORIES.LEADERSHIP, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.LEADERSHIP], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.LEADERSHIP].icon) },
-              { key: SCENARIO_CATEGORIES.SALES, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.SALES], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.SALES].icon) },
-              { key: SCENARIO_CATEGORIES.COMMUNICATION, ...SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.COMMUNICATION], icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[SCENARIO_CATEGORIES.COMMUNICATION].icon) },
-            ]}
+            categories={availableCategories.map(key => ({
+              key,
+              ...SCENARIO_CATEGORY_CONFIG[key],
+              icon: getCategoryIcon(SCENARIO_CATEGORY_CONFIG[key]?.icon),
+            }))}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
+            showCategories={availableCategories.length > 0}
             difficultyOptions={[
               { value: 'all', label: 'Alle Schwierigkeiten' },
               { value: 'easy', label: 'Einfach' },
@@ -446,18 +462,27 @@ const SimulatorDashboard = ({ onSelectScenario, isAuthenticated, requireAuth, se
 
       {/* Empty State */}
       {filteredScenarios.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '60px 20px',
-          color: COLORS.slate[600]
-        }}>
-          <Mic style={{ width: '48px', height: '48px', marginBottom: '16px', opacity: 0.5 }} />
-          <p>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '48px 24px',
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <Mic style={{ width: '48px', height: '48px', color: '#cbd5e1' }} />
+          </div>
+          <h3 style={{ color: '#64748b', margin: '0 0 8px 0', fontWeight: 500 }}>
+            Keine Trainingsszenarien verfügbar.
+          </h3>
+          <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>
             {selectedCategory
-              ? `Keine Szenarien in der Kategorie "${SCENARIO_CATEGORY_CONFIG[selectedCategory]?.shortLabel || selectedCategory}" gefunden.`
-              : 'Keine Trainingsszenarien verfügbar.'}
+              ? `In der Kategorie "${SCENARIO_CATEGORY_CONFIG[selectedCategory]?.shortLabel || selectedCategory}" sind keine Szenarien verfügbar.`
+              : 'Bitte kontaktieren Sie den Administrator.'}
           </p>
-          {selectedCategory && scenarios.length > 0 && (
+          {selectedCategory && baseFilteredScenarios.length > 0 && (
             <button
               onClick={() => setSelectedCategory(null)}
               style={{

@@ -365,9 +365,24 @@ const RoleplayDashboard = ({ onSelectScenario, onBack, onOpenHistory, isAuthenti
       {/* Scenarios Grid */}
       <div>
         {filteredScenarios.length === 0 ? (
-          <div className="text-center py-12">
-            <Sparkles className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600">Keine Szenarien gefunden.</p>
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '48px 24px',
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <Sparkles style={{ width: '48px', height: '48px', color: '#cbd5e1' }} />
+            </div>
+            <h3 style={{ color: '#64748b', margin: '0 0 8px 0', fontWeight: 500 }}>
+              Keine Szenarien gefunden.
+            </h3>
+            <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>
+              Bitte kontaktieren Sie den Administrator.
+            </p>
           </div>
         ) : (
           <ScenarioCardGrid viewMode={viewMode}>
