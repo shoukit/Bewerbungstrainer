@@ -136,6 +136,11 @@ const SetupSelector = () => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full"
       >
+        {/* Description text above the selector */}
+        <p className="text-sm text-gray-500 mb-2 px-1">
+          Filtere Trainingsszenarien nach deinem Fokus
+        </p>
+
         <button
           onClick={() => setIsModalOpen(true)}
           className="w-full flex items-center justify-between gap-3 p-3 sm:p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all cursor-pointer group"
