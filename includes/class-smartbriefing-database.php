@@ -111,6 +111,24 @@ class Bewerbungstrainer_SmartBriefing_Database {
             error_log('[SMARTBRIEFING] Migration to 1.5.0 completed');
         }
 
+        // Migration 1.6.0: Expand category column to varchar(500) for multi-category support
+        if (version_compare($current_version, '1.6.0', '<')) {
+            error_log('[SMARTBRIEFING] Running migration to 1.6.0...');
+
+            $wpdb->query(
+                "ALTER TABLE {$this->table_templates} MODIFY COLUMN `category` varchar(500) DEFAULT 'CAREER'"
+            );
+
+            if ($wpdb->last_error) {
+                error_log('[SMARTBRIEFING] Error expanding category column: ' . $wpdb->last_error);
+            } else {
+                error_log('[SMARTBRIEFING] category column expanded to varchar(500) successfully');
+            }
+
+            update_option('bewerbungstrainer_smartbriefing_db_version', '1.6.0');
+            error_log('[SMARTBRIEFING] Migration to 1.6.0 completed');
+        }
+
         // Migration 1.4.0: Add ai_role, ai_task, ai_behavior columns to templates table
         if (version_compare($current_version, '1.4.0', '<')) {
             error_log('[SMARTBRIEFING] Running migration to 1.4.0...');
@@ -308,7 +326,7 @@ class Bewerbungstrainer_SmartBriefing_Database {
             `title` varchar(255) NOT NULL,
             `description` text DEFAULT NULL,
             `icon` varchar(50) DEFAULT 'file-text',
-            `category` varchar(100) DEFAULT 'CAREER',
+            `category` varchar(500) DEFAULT 'CAREER',
             `target_audience` varchar(255) DEFAULT NULL,
             `system_prompt` longtext NOT NULL,
             `ai_role` longtext DEFAULT NULL,

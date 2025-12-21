@@ -71,6 +71,8 @@ class Bewerbungstrainer_Simulator_Database {
             $this->maybe_add_mode_column();
             // Check if target_audience column exists, add if not
             $this->maybe_add_target_audience_column();
+            // Expand category column to varchar(500) for multi-category support
+            $this->maybe_expand_category_column();
             // Run category migration for existing installations
             self::migrate_category_values();
         }
@@ -118,6 +120,27 @@ class Bewerbungstrainer_Simulator_Database {
     }
 
     /**
+     * Expand category column to varchar(500) for multi-category support
+     */
+    private function maybe_expand_category_column() {
+        global $wpdb;
+
+        // Check current column size
+        $column_info = $wpdb->get_row(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'category'
+            )
+        );
+
+        if ($column_info && strpos($column_info->Type, 'varchar(100)') !== false) {
+            error_log('[SIMULATOR] Expanding category column to varchar(500)...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` MODIFY COLUMN `category` varchar(500) DEFAULT NULL");
+            error_log('[SIMULATOR] category column expanded successfully');
+        }
+    }
+
+    /**
      * Add demo_code column to sessions table if it doesn't exist
      */
     private function maybe_add_demo_code_column() {
@@ -155,7 +178,7 @@ class Bewerbungstrainer_Simulator_Database {
             `icon` varchar(50) DEFAULT 'briefcase',
             `difficulty` varchar(20) DEFAULT 'intermediate',
             `target_audience` varchar(255) DEFAULT NULL,
-            `category` varchar(100) DEFAULT NULL,
+            `category` varchar(500) DEFAULT NULL,
             `mode` varchar(20) DEFAULT 'INTERVIEW',
             `system_prompt` longtext NOT NULL,
             `question_generation_prompt` longtext DEFAULT NULL,

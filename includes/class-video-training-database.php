@@ -104,6 +104,37 @@ class Bewerbungstrainer_Video_Training_Database {
             $this->add_target_audience_column();
             update_option('bewerbungstrainer_video_training_migration_version', '1.0.4');
         }
+
+        // Migration 5: Expand category column to varchar(500) for multi-category support
+        if (version_compare($current_version, '1.0.5', '<')) {
+            $this->expand_category_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.5');
+        }
+    }
+
+    /**
+     * Expand category column to varchar(500) for multi-category support
+     */
+    private function expand_category_column() {
+        global $wpdb;
+
+        // Check current column size
+        $column_info = $wpdb->get_row(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'category'
+            )
+        );
+
+        if ($column_info && strpos($column_info->Type, 'varchar(100)') !== false) {
+            error_log('[VIDEO TRAINING] Expanding category column to varchar(500)...');
+            $result = $wpdb->query("ALTER TABLE `{$this->table_scenarios}` MODIFY COLUMN `category` varchar(500) DEFAULT NULL");
+            if ($result === false) {
+                error_log('[VIDEO TRAINING] Error expanding category column: ' . $wpdb->last_error);
+            } else {
+                error_log('[VIDEO TRAINING] category column expanded successfully');
+            }
+        }
     }
 
     /**
@@ -172,7 +203,7 @@ class Bewerbungstrainer_Video_Training_Database {
             `icon` varchar(50) DEFAULT 'video',
             `difficulty` varchar(20) DEFAULT 'intermediate',
             `target_audience` varchar(255) DEFAULT NULL,
-            `category` varchar(100) DEFAULT NULL,
+            `category` varchar(500) DEFAULT NULL,
             `scenario_type` enum('self_presentation', 'interview', 'pitch', 'negotiation', 'custom') NOT NULL DEFAULT 'interview',
             `system_prompt` longtext NOT NULL,
             `question_generation_prompt` longtext DEFAULT NULL,
