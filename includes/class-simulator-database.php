@@ -69,6 +69,10 @@ class Bewerbungstrainer_Simulator_Database {
             $this->maybe_add_demo_code_column();
             // Check if mode column exists, add if not
             $this->maybe_add_mode_column();
+            // Check if target_audience column exists, add if not
+            $this->maybe_add_target_audience_column();
+            // Expand category column to varchar(500) for multi-category support
+            $this->maybe_expand_category_column();
             // Run category migration for existing installations
             self::migrate_category_values();
         }
@@ -92,6 +96,47 @@ class Bewerbungstrainer_Simulator_Database {
             $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `mode` varchar(20) DEFAULT 'INTERVIEW' AFTER `category`");
             $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD INDEX `mode` (`mode`)");
             error_log('[SIMULATOR] mode column added successfully');
+        }
+    }
+
+    /**
+     * Add target_audience column to scenarios table if it doesn't exist
+     */
+    private function maybe_add_target_audience_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'target_audience'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding target_audience column to scenarios table...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `target_audience` varchar(255) DEFAULT NULL AFTER `difficulty`");
+            error_log('[SIMULATOR] target_audience column added successfully');
+        }
+    }
+
+    /**
+     * Expand category column to varchar(500) for multi-category support
+     */
+    private function maybe_expand_category_column() {
+        global $wpdb;
+
+        // Check current column size
+        $column_info = $wpdb->get_row(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'category'
+            )
+        );
+
+        if ($column_info && strpos($column_info->Type, 'varchar(100)') !== false) {
+            error_log('[SIMULATOR] Expanding category column to varchar(500)...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` MODIFY COLUMN `category` varchar(500) DEFAULT NULL");
+            error_log('[SIMULATOR] category column expanded successfully');
         }
     }
 
@@ -132,7 +177,8 @@ class Bewerbungstrainer_Simulator_Database {
             `description` text DEFAULT NULL,
             `icon` varchar(50) DEFAULT 'briefcase',
             `difficulty` varchar(20) DEFAULT 'intermediate',
-            `category` varchar(100) DEFAULT NULL,
+            `target_audience` varchar(255) DEFAULT NULL,
+            `category` varchar(500) DEFAULT NULL,
             `mode` varchar(20) DEFAULT 'INTERVIEW',
             `system_prompt` longtext NOT NULL,
             `question_generation_prompt` longtext DEFAULT NULL,
@@ -662,6 +708,7 @@ Gib konkrete Formulierungsvorschläge.',
             'description' => null,
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
+            'target_audience' => null,
             'category' => null,
             'mode' => 'INTERVIEW',
             'system_prompt' => '',
@@ -690,6 +737,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'description' => sanitize_textarea_field($data['description']),
                 'icon' => sanitize_text_field($data['icon']),
                 'difficulty' => $data['difficulty'],
+                'target_audience' => sanitize_text_field($data['target_audience']),
                 'category' => sanitize_text_field($data['category']),
                 'mode' => sanitize_text_field($data['mode']),
                 'system_prompt' => $data['system_prompt'],
@@ -703,7 +751,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
         );
 
         if ($result === false) {
@@ -728,7 +776,7 @@ Gib konkrete Formulierungsvorschläge.',
         $update_format = array();
 
         $allowed_fields = array(
-            'title', 'description', 'icon', 'difficulty', 'category', 'mode',
+            'title', 'description', 'icon', 'difficulty', 'target_audience', 'category', 'mode',
             'system_prompt', 'question_generation_prompt', 'feedback_prompt',
             'input_configuration', 'question_count_min', 'question_count_max',
             'time_limit_per_question', 'allow_retry', 'is_active', 'sort_order'

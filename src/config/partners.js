@@ -457,7 +457,66 @@ export function isModuleAllowed(partner, moduleId) {
 }
 
 /**
- * Filter scenarios based on partner's allowed modules
+ * Filter scenarios based on partner's visible_scenarios configuration
+ *
+ * WICHTIG:
+ * - Ohne Partner (default Karriereheld): ALLE Szenarien sichtbar
+ * - Mit Partner: NUR explizit ausgewählte Szenarien sichtbar
+ *
+ * @param {Array} scenarios - Array of scenario objects
+ * @param {Object} partner - Partner configuration object
+ * @param {string} scenarioType - Type of scenarios: 'roleplay', 'simulator', 'video_training', or 'briefings'
+ * @returns {Array} Filtered scenarios
+ */
+export function filterScenariosByVisibility(scenarios, partner, scenarioType) {
+  // If no scenarios provided, return empty
+  if (!scenarios || !Array.isArray(scenarios)) {
+    return [];
+  }
+
+  // If no partner OR default partner (no branding), return all - no restrictions
+  if (!partner || partner.slug === 'default' || partner.id === 'default') {
+    return scenarios;
+  }
+
+  // Get visible_scenarios configuration from partner
+  const visibleScenarios = partner.visible_scenarios;
+
+  // If visible_scenarios is not configured or is an array (not object), return empty
+  // Partners MUST have scenarios explicitly configured
+  if (!visibleScenarios || Array.isArray(visibleScenarios) || typeof visibleScenarios !== 'object') {
+    return [];
+  }
+
+  // Get the allowed scenario IDs for this specific type
+  const allowedForType = visibleScenarios[scenarioType];
+
+  // If this type is not configured, return empty
+  if (!allowedForType || !Array.isArray(allowedForType)) {
+    return [];
+  }
+
+  // If '__all__' marker is present, return all scenarios
+  if (allowedForType.includes('__all__')) {
+    return scenarios;
+  }
+
+  // If array is empty, return empty (no scenarios selected = none visible)
+  if (allowedForType.length === 0) {
+    return [];
+  }
+
+  // Filter by exact ID match
+  return scenarios.filter(scenario => {
+    const scenarioId = Number(scenario.id);
+    return allowedForType.includes(scenarioId);
+  });
+}
+
+/**
+ * Legacy: Filter scenarios based on partner's allowed modules
+ * This function is kept for backwards compatibility with older partner configurations
+ *
  * @param {Array} scenarios - Array of scenario objects
  * @param {Object} partner - Partner configuration object
  * @returns {Array} Filtered scenarios

@@ -139,6 +139,20 @@ class Bewerbungstrainer_API {
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
+        // Get user setup preference
+        register_rest_route($this->namespace, '/user/setup', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_user_setup'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Save user setup preference
+        register_rest_route($this->namespace, '/user/setup', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'save_user_setup'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
         // Get settings (API keys, etc.)
         register_rest_route($this->namespace, '/settings', array(
             'methods' => 'GET',
@@ -870,6 +884,51 @@ class Bewerbungstrainer_API {
                 'display_name' => $user->display_name,
                 'first_name' => get_user_meta($user->ID, 'first_name', true),
                 'last_name' => get_user_meta($user->ID, 'last_name', true),
+            ),
+        ), 200);
+    }
+
+    /**
+     * Get user's scenario setup preference
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function get_user_setup($request) {
+        $user_id = get_current_user_id();
+        $setup_id = get_user_meta($user_id, 'bewerbungstrainer_setup', true);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'setup_id' => $setup_id ?: null,
+            ),
+        ), 200);
+    }
+
+    /**
+     * Save user's scenario setup preference
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response Response object
+     */
+    public function save_user_setup($request) {
+        $user_id = get_current_user_id();
+        $setup_id = $request->get_param('setup_id');
+
+        // Validate setup_id - allow null/empty to clear
+        if (empty($setup_id)) {
+            delete_user_meta($user_id, 'bewerbungstrainer_setup');
+        } else {
+            // Sanitize and save
+            $setup_id = sanitize_text_field($setup_id);
+            update_user_meta($user_id, 'bewerbungstrainer_setup', $setup_id);
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'setup_id' => $setup_id ?: null,
             ),
         ), 200);
     }

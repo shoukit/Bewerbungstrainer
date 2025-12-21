@@ -63,7 +63,7 @@ export const SCENARIO_CATEGORY_CONFIG = {
  * @returns {object|null} - Category config or null if not found
  */
 export function getScenarioCategoryConfig(categoryKey) {
-  if (!categoryKey) return null;
+  if (!categoryKey || typeof categoryKey !== 'string') return null;
   // Handle both uppercase keys and legacy lowercase values
   const normalizedKey = categoryKey.toUpperCase();
   return SCENARIO_CATEGORY_CONFIG[normalizedKey] || null;
@@ -88,7 +88,7 @@ export const LEGACY_CATEGORY_MAP = {
  * @returns {string} - Normalized category key
  */
 export function normalizeCategory(category) {
-  if (!category) return null;
+  if (!category || typeof category !== 'string') return null;
   const upper = category.toUpperCase();
   // If it's already a valid category key, return it
   if (SCENARIO_CATEGORIES[upper]) {

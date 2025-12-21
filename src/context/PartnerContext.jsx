@@ -4,12 +4,14 @@ import {
   getPartnerConfig,
   fetchPartnerConfig,
   filterScenariosByPartner,
+  filterScenariosByVisibility,
   isModuleAllowed,
   loginUser,
   logoutUser,
   getCurrentUser,
   DEFAULT_BRANDING,
 } from '@/config/partners';
+import { filterScenariosBySetup as filterBySetup, SCENARIO_SETUPS as FALLBACK_SETUPS, SCENARIO_SETUPS_LIST as FALLBACK_SETUPS_LIST } from '@/config/scenarioSetups';
 
 /**
  * Partner Context
@@ -24,6 +26,10 @@ const PartnerContext = createContext(null);
 export function PartnerProvider({ children }) {
   const [partner, setPartner] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Setups from database
+  const [setupsFromDb, setSetupsFromDb] = useState(null);
+  const [setupsLoading, setSetupsLoading] = useState(true);
 
   // Authentication state
   const [user, setUser] = useState(null);
@@ -40,6 +46,115 @@ export function PartnerProvider({ children }) {
     return null;
   });
   const [isDemoUser, setIsDemoUser] = useState(false);
+
+  // Scenario Setup selection state
+  const [selectedSetup, setSelectedSetupState] = useState(() => {
+    // Initialize from localStorage if available
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bewerbungstrainer_selected_setup') || null;
+    }
+    return null;
+  });
+
+  /**
+   * Get SCENARIO_SETUPS object (from DB or fallback)
+   */
+  const getSetupsObject = useCallback(() => {
+    if (setupsFromDb) {
+      const obj = {};
+      setupsFromDb.forEach(s => {
+        obj[s.slug] = {
+          id: s.slug,
+          name: s.name,
+          description: s.description,
+          icon: s.icon,
+          color: s.color,
+          focus: s.focus,
+          targetGroup: s.target_group,
+        };
+      });
+      return obj;
+    }
+    return FALLBACK_SETUPS;
+  }, [setupsFromDb]);
+
+  /**
+   * Get setups list (from DB or fallback)
+   */
+  const getSetupsList = useCallback(() => {
+    if (setupsFromDb) {
+      return setupsFromDb.map(s => ({
+        id: s.slug,
+        name: s.name,
+        description: s.description,
+        icon: s.icon,
+        color: s.color,
+        focus: s.focus,
+        targetGroup: s.target_group,
+      }));
+    }
+    return FALLBACK_SETUPS_LIST;
+  }, [setupsFromDb]);
+
+  /**
+   * Load setups from database
+   */
+  const loadSetupsFromApi = async () => {
+    try {
+      const apiUrl = window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+      const response = await fetch(`${apiUrl}/setups`, {
+        method: 'GET',
+        credentials: 'same-origin',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.setups) {
+          setSetupsFromDb(data.data.setups);
+          return data.data.setups;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load setups from API:', error);
+    }
+    setSetupsLoading(false);
+    return null;
+  };
+
+  /**
+   * Load setup preference from user profile
+   */
+  const loadUserSetupPreference = async () => {
+    const setupsObj = getSetupsObject();
+    try {
+      const apiUrl = window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+      const response = await fetch(`${apiUrl}/user/setup`, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+          'X-WP-Nonce': window.bewerbungstrainerConfig?.nonce || '',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.setup_id && setupsObj[data.data.setup_id]) {
+          setSelectedSetupState(data.data.setup_id);
+          // Also update localStorage to stay in sync
+          localStorage.setItem('bewerbungstrainer_selected_setup', data.data.setup_id);
+          return data.data.setup_id;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load setup from user profile:', error);
+    }
+    return null;
+  };
+
+  // Load setups from API on mount
+  useEffect(() => {
+    loadSetupsFromApi().then(() => setSetupsLoading(false));
+  }, []);
 
   // Initialize partner from URL on mount - now fetches from API
   useEffect(() => {
@@ -155,6 +270,11 @@ export function PartnerProvider({ children }) {
         // Check admin status
         const adminStatus = await checkAdminStatus();
         setIsAdmin(adminStatus);
+
+        // Load setup preference from user profile
+        if (!isDemoUsername) {
+          await loadUserSetupPreference();
+        }
       } else {
         // Try to get current user from API (in case cookies are set but config wasn't updated)
         try {
@@ -180,6 +300,11 @@ export function PartnerProvider({ children }) {
             // Check admin status
             const adminStatus = await checkAdminStatus();
             setIsAdmin(adminStatus);
+
+            // Load setup preference from user profile
+            if (!apiIsDemoUser) {
+              await loadUserSetupPreference();
+            }
           }
         } catch (error) {
         }
@@ -220,10 +345,21 @@ export function PartnerProvider({ children }) {
   };
 
   /**
-   * Filter scenarios based on partner's allowed modules
+   * Legacy: Filter scenarios based on partner's allowed modules
    */
   const filterScenarios = (scenarios) => {
     return filterScenariosByPartner(scenarios, partner);
+  };
+
+  /**
+   * Filter scenarios by visibility configuration
+   * Uses the new checkbox-based system where scenarios are explicitly selected per type
+   * @param {Array} scenarios - Array of scenario objects
+   * @param {string} scenarioType - Type: 'roleplay', 'simulator', or 'video_training'
+   * @returns {Array} Filtered scenarios
+   */
+  const filterScenariosByType = (scenarios, scenarioType) => {
+    return filterScenariosByVisibility(scenarios, partner, scenarioType);
   };
 
   /**
@@ -365,6 +501,80 @@ export function PartnerProvider({ children }) {
   }, [setDemoCode]);
 
   /**
+   * Set selected scenario setup
+   * @param {string} setupId - The setup ID to select (e.g., 'karriere-placement')
+   */
+  const setSelectedSetup = useCallback(async (setupId) => {
+    const setupsObj = getSetupsObject();
+    const newSetup = setupId && setupsObj[setupId] ? setupId : null;
+    setSelectedSetupState(newSetup);
+
+    // Save to localStorage as fallback
+    if (typeof window !== 'undefined') {
+      if (newSetup) {
+        localStorage.setItem('bewerbungstrainer_selected_setup', newSetup);
+      } else {
+        localStorage.removeItem('bewerbungstrainer_selected_setup');
+      }
+    }
+
+    // Save to user profile if authenticated
+    if (isAuthenticated && !isDemoUser) {
+      try {
+        const apiUrl = window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+        await fetch(`${apiUrl}/user/setup`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': window.bewerbungstrainerConfig?.nonce || '',
+          },
+          body: JSON.stringify({ setup_id: newSetup }),
+        });
+      } catch (error) {
+        console.error('Failed to save setup to user profile:', error);
+      }
+    }
+  }, [isAuthenticated, isDemoUser, getSetupsObject]);
+
+  /**
+   * Clear selected setup
+   */
+  const clearSelectedSetup = useCallback(() => {
+    setSelectedSetup(null);
+  }, [setSelectedSetup]);
+
+  /**
+   * Get current setup object
+   */
+  const getCurrentSetup = useCallback(() => {
+    const setupsObj = getSetupsObject();
+    if (selectedSetup && setupsObj[selectedSetup]) {
+      return setupsObj[selectedSetup];
+    }
+    return null;
+  }, [selectedSetup, getSetupsObject]);
+
+  /**
+   * Filter scenarios by setup AND partner visibility
+   * This combines setup filtering with partner configuration
+   * @param {Array} scenarios - Array of scenario objects
+   * @param {string} scenarioType - Type: 'roleplay', 'simulator', 'video_training', 'briefings'
+   * @returns {Array} Filtered scenarios
+   */
+  const filterScenariosBySetupAndPartner = useCallback((scenarios, scenarioType) => {
+    // First apply partner visibility filter
+    let filtered = filterScenariosByVisibility(scenarios, partner, scenarioType);
+
+    // Then apply setup filter if a setup is selected
+    if (selectedSetup) {
+      filtered = filterBySetup(filtered, selectedSetup);
+    }
+
+    return filtered;
+  }, [partner, selectedSetup]);
+
+  /**
    * Refresh user data from API
    */
   const refreshUser = useCallback(async () => {
@@ -393,6 +603,7 @@ export function PartnerProvider({ children }) {
 
     // Helper functions
     filterScenarios,
+    filterScenariosByType,
     checkModuleAllowed,
     getBranding,
     getLogoUrl,
@@ -401,6 +612,8 @@ export function PartnerProvider({ children }) {
     branding: partner?.branding || DEFAULT_BRANDING,
     logoUrl: partner?.logo_url || null,
     partnerName: partner?.name || 'Karriereheld',
+    dashboardTitle: partner?.dashboard_title || null,
+    dashboardHook: partner?.dashboard_hook || null,
 
     // Authentication
     user,
@@ -416,6 +629,16 @@ export function PartnerProvider({ children }) {
     isDemoUser,
     setDemoCode,
     clearDemoCode,
+
+    // Scenario Setup selection
+    selectedSetup,
+    currentSetup: getCurrentSetup(),
+    setSelectedSetup,
+    clearSelectedSetup,
+    filterScenariosBySetupAndPartner,
+    availableSetups: getSetupsList(),
+    SCENARIO_SETUPS: getSetupsObject(),
+    setupsLoading,
   };
 
   return (

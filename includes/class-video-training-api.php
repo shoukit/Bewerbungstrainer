@@ -181,7 +181,7 @@ class Bewerbungstrainer_Video_Training_API {
                 'description' => $scenario->description,
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
-                'category' => $scenario->category,
+                'category' => Bewerbungstrainer_Categories_Admin::get_categories_array($scenario->category),
                 'scenario_type' => $scenario->scenario_type,
                 'input_configuration' => $scenario->input_configuration,
                 'question_count' => (int) $scenario->question_count,
@@ -189,6 +189,7 @@ class Bewerbungstrainer_Video_Training_API {
                 'total_time_limit' => (int) $scenario->total_time_limit,
                 'enable_tips' => (bool) $scenario->enable_tips,
                 'enable_navigation' => (bool) $scenario->enable_navigation,
+                'target_audience' => $scenario->target_audience ?? '',
             );
         }, $scenarios);
 
@@ -221,7 +222,7 @@ class Bewerbungstrainer_Video_Training_API {
                 'description' => $scenario->description,
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
-                'category' => $scenario->category,
+                'category' => Bewerbungstrainer_Categories_Admin::get_categories_array($scenario->category),
                 'scenario_type' => $scenario->scenario_type,
                 'system_prompt' => $scenario->system_prompt,
                 'input_configuration' => $scenario->input_configuration,

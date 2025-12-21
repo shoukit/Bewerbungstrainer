@@ -258,6 +258,11 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
 
+        // Load Categories classes (centralized for all modules)
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-categories-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-categories-api.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-categories-admin.php';
+
         // Load Simulator classes
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-simulator-api.php';
@@ -279,6 +284,9 @@ class Bewerbungstrainer_Plugin {
 
         // Load White-Label Partners class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whitelabel-partners.php';
+
+        // Load Scenario Setups class
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-scenario-setups.php';
 
         // Load Demo Codes class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-demo-codes.php';
@@ -311,6 +319,9 @@ class Bewerbungstrainer_Plugin {
         // Add main admin menu (priority 9 to ensure it runs before sub-menus)
         add_action('admin_menu', array($this, 'add_admin_menu'), 9);
 
+        // Reorder submenu items (priority 998 to run after all submenus are added)
+        add_action('admin_menu', array($this, 'reorder_admin_submenu'), 998);
+
         // Remove duplicate submenu entry (priority 999 to run after all submenus are added)
         add_action('admin_menu', array($this, 'remove_duplicate_submenu'), 999);
 
@@ -342,6 +353,57 @@ class Bewerbungstrainer_Plugin {
     }
 
     /**
+     * Reorder admin submenu items for better organization
+     * Custom Post Types don't support position parameter, so we reorder manually
+     */
+    public function reorder_admin_submenu() {
+        global $submenu;
+
+        if (!isset($submenu['bewerbungstrainer'])) {
+            return;
+        }
+
+        // Define the desired order with menu slugs
+        $desired_order = array(
+            // Main features (1-4)
+            'edit.php?post_type=roleplay_scenario',  // 1: Live-Simulationen
+            'simulator-scenarios',                    // 2: Szenario-Training
+            'bewerbungstrainer-video-training',       // 3: Wirkungs-Analyse
+            'smartbriefing-templates',                // 4: Smart Briefing
+            // Settings (10+)
+            'edit.php?post_type=whitelabel_partner',  // 10: Partner Branding
+            'bewerbungstrainer-setups',               // 11: Trainings-Setups
+            'bewerbungstrainer-categories',           // 12: Kategorien
+            'bewerbungstrainer-demo-codes',           // 13: Demo-Codes
+            'bewerbungstrainer-usage-limits',         // 14: Nutzungslimits
+        );
+
+        // Build reordered array
+        $reordered = array();
+        $remaining = array();
+
+        // First, add items in desired order
+        foreach ($desired_order as $slug) {
+            foreach ($submenu['bewerbungstrainer'] as $key => $item) {
+                if ($item[2] === $slug) {
+                    $reordered[] = $item;
+                    break;
+                }
+            }
+        }
+
+        // Then add any remaining items not in our list
+        foreach ($submenu['bewerbungstrainer'] as $item) {
+            if (!in_array($item[2], $desired_order)) {
+                $remaining[] = $item;
+            }
+        }
+
+        // Combine: ordered items first, then remaining
+        $submenu['bewerbungstrainer'] = array_merge($reordered, $remaining);
+    }
+
+    /**
      * Remove duplicate "Karriereheld" submenu entry
      */
     public function remove_duplicate_submenu() {
@@ -360,9 +422,10 @@ class Bewerbungstrainer_Plugin {
             <div class="card" style="max-width: 600px; margin-top: 20px;">
                 <h2><?php _e('Module', 'bewerbungstrainer'); ?></h2>
                 <ul style="list-style: disc; margin-left: 20px;">
-                    <li><strong><?php _e('Szenario-Training', 'bewerbungstrainer'); ?></strong> - <?php _e('Verwalten Sie strukturierte Trainingsszenarien mit Fragen und Feedback.', 'bewerbungstrainer'); ?></li>
-                    <li><strong><?php _e('Video Training', 'bewerbungstrainer'); ?></strong> - <?php _e('Verwalten Sie Video-Aufnahme-Szenarien für visuelles Training.', 'bewerbungstrainer'); ?></li>
-                    <li><strong><?php _e('Smart Briefing', 'bewerbungstrainer'); ?></strong> - <?php _e('KI-gestützte Vorbereitungs-Dossiers für Gespräche und Verhandlungen.', 'bewerbungstrainer'); ?></li>
+                    <li><strong><?php _e('Live-Simulationen', 'bewerbungstrainer'); ?></strong> - <?php _e('Realistische Echtzeit-Gespräche mit KI-Interviewer.', 'bewerbungstrainer'); ?></li>
+                    <li><strong><?php _e('Szenario-Training', 'bewerbungstrainer'); ?></strong> - <?php _e('Strukturiertes Q&A mit sofortigem Feedback.', 'bewerbungstrainer'); ?></li>
+                    <li><strong><?php _e('Wirkungs-Analyse', 'bewerbungstrainer'); ?></strong> - <?php _e('Video-Training mit Körpersprache-Feedback.', 'bewerbungstrainer'); ?></li>
+                    <li><strong><?php _e('Smart Briefing', 'bewerbungstrainer'); ?></strong> - <?php _e('KI-generierte Wissenspakete zur Vorbereitung.', 'bewerbungstrainer'); ?></li>
                 </ul>
             </div>
         </div>
@@ -387,6 +450,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create smart briefing database tables
         Bewerbungstrainer_SmartBriefing_Database::create_tables();
+
+        // Create categories database table (centralized for all modules)
+        Bewerbungstrainer_Categories_Database::create_tables();
 
         // Create demo codes table
         Bewerbungstrainer_Demo_Codes::create_tables();
@@ -543,6 +609,15 @@ class Bewerbungstrainer_Plugin {
         // Initialize Smart Briefing Admin (only in admin area)
         if (is_admin()) {
             Bewerbungstrainer_SmartBriefing_Admin::get_instance();
+        }
+
+        // Initialize Categories (centralized for all modules)
+        Bewerbungstrainer_Categories_Database::get_instance();
+        Bewerbungstrainer_Categories_API::get_instance();
+
+        // Initialize Categories Admin (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_Categories_Admin::get_instance();
         }
 
         // Initialize White-Label Partners

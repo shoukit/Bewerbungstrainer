@@ -58,11 +58,12 @@ class Bewerbungstrainer_Video_Training_Admin {
         // Submenu under Bewerbungstrainer
         add_submenu_page(
             'bewerbungstrainer',
-            __('Video Training', 'bewerbungstrainer'),
-            __('Video Training', 'bewerbungstrainer'),
+            __('Wirkungs-Analyse', 'bewerbungstrainer'),
+            __('Wirkungs-Analyse', 'bewerbungstrainer'),
             'manage_options',
             'bewerbungstrainer-video-training',
-            array($this, 'render_admin_page')
+            array($this, 'render_admin_page'),
+            3 // Position: after Szenario-Training
         );
 
         // Submenu: Add New (hidden, accessed via link)
@@ -127,6 +128,79 @@ class Bewerbungstrainer_Video_Training_Admin {
                 $this->handle_toggle_active(intval($_GET['scenario_id']));
             }
         }
+
+        // Bulk actions
+        if (isset($_POST['video_bulk_action']) && wp_verify_nonce($_POST['_wpnonce'], 'video_bulk_action')) {
+            $this->handle_bulk_action();
+        }
+    }
+
+    /**
+     * Handle bulk action
+     */
+    private function handle_bulk_action() {
+        $action = sanitize_text_field($_POST['bulk_action'] ?? '');
+        $scenario_ids = isset($_POST['scenario_ids']) ? array_map('intval', $_POST['scenario_ids']) : array();
+
+        if (empty($scenario_ids)) {
+            wp_redirect(admin_url('admin.php?page=bewerbungstrainer-video-training&error=no_selection'));
+            exit;
+        }
+
+        $updated = 0;
+
+        switch ($action) {
+            case 'update_categories':
+                $categories = isset($_POST['bulk_categories']) ? array_map('sanitize_text_field', $_POST['bulk_categories']) : array();
+                $category_json = wp_json_encode($categories);
+                foreach ($scenario_ids as $id) {
+                    $result = $this->db->update_scenario($id, array('category' => $category_json));
+                    if ($result !== false) {
+                        $updated++;
+                    }
+                }
+                break;
+
+            case 'update_setups':
+                $setups = isset($_POST['bulk_setups']) ? array_map('sanitize_text_field', $_POST['bulk_setups']) : array();
+                $setups_string = implode('; ', $setups);
+                foreach ($scenario_ids as $id) {
+                    $result = $this->db->update_scenario($id, array('target_audience' => $setups_string));
+                    if ($result !== false) {
+                        $updated++;
+                    }
+                }
+                break;
+
+            case 'activate':
+                foreach ($scenario_ids as $id) {
+                    $result = $this->db->update_scenario($id, array('is_active' => 1));
+                    if ($result !== false) {
+                        $updated++;
+                    }
+                }
+                break;
+
+            case 'deactivate':
+                foreach ($scenario_ids as $id) {
+                    $result = $this->db->update_scenario($id, array('is_active' => 0));
+                    if ($result !== false) {
+                        $updated++;
+                    }
+                }
+                break;
+
+            case 'delete':
+                foreach ($scenario_ids as $id) {
+                    if ($this->db->delete_scenario($id)) {
+                        $updated++;
+                    }
+                }
+                break;
+        }
+
+        wp_redirect(admin_url('admin.php?page=bewerbungstrainer-video-training&bulk_updated=' . $updated));
+        exit;
     }
 
     /**
@@ -198,12 +272,19 @@ class Bewerbungstrainer_Video_Training_Admin {
      * Sanitize scenario data from form
      */
     private function sanitize_scenario_data($data) {
+        // Handle target_audience (checkboxes array to semicolon-separated string)
+        $target_audience = '';
+        if (isset($data['target_audience']) && is_array($data['target_audience'])) {
+            $target_audience = implode('; ', array_map('sanitize_text_field', $data['target_audience']));
+        }
+
         $sanitized = array(
             'title' => sanitize_text_field($data['title'] ?? ''),
             'description' => sanitize_textarea_field($data['description'] ?? ''),
             'icon' => sanitize_text_field($data['icon'] ?? 'video'),
             'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
-            'category' => sanitize_text_field($data['category'] ?? ''),
+            'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($data['categories'] ?? array()),
+            'target_audience' => $target_audience,
             'scenario_type' => sanitize_text_field($data['scenario_type'] ?? 'interview'),
             'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
             'question_generation_prompt' => wp_kses_post($data['question_generation_prompt'] ?? ''),
@@ -336,6 +417,7 @@ class Bewerbungstrainer_Video_Training_Admin {
             'description',
             'icon',
             'difficulty',
+            'target_audience',
             'category',
             'scenario_type',
             'system_prompt',
@@ -384,6 +466,7 @@ class Bewerbungstrainer_Video_Training_Admin {
                 $clean_text($scenario->description),
                 $scenario->icon,
                 $scenario->difficulty,
+                $clean_text($scenario->target_audience ?? ''),
                 $scenario->category,
                 $scenario->scenario_type,
                 $clean_text($scenario->system_prompt),
@@ -463,7 +546,8 @@ class Bewerbungstrainer_Video_Training_Admin {
                 'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
                 'icon' => sanitize_text_field($data['icon'] ?? 'video'),
                 'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
-                'category' => sanitize_text_field($data['category'] ?? ''),
+                'target_audience' => sanitize_text_field($restore_newlines($data['target_audience'] ?? '')),
+                'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($data['category'] ?? array()),
                 'scenario_type' => sanitize_text_field($data['scenario_type'] ?? 'interview'),
                 'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
                 'question_generation_prompt' => wp_kses_post($restore_newlines($data['question_generation_prompt'] ?? '')),
@@ -503,7 +587,32 @@ class Bewerbungstrainer_Video_Training_Admin {
      * Render scenarios list
      */
     private function render_scenarios_list() {
+        // Get filter values
+        $filter_category = isset($_GET['filter_category']) ? sanitize_text_field($_GET['filter_category']) : '';
+        $filter_setup = isset($_GET['filter_setup']) ? sanitize_text_field($_GET['filter_setup']) : '';
+
         $scenarios = $this->db->get_scenarios(array('is_active' => null));
+
+        // Apply filters
+        if ($filter_category || $filter_setup) {
+            $scenarios = array_filter($scenarios, function($scenario) use ($filter_category, $filter_setup) {
+                $matches = true;
+                if ($filter_category) {
+                    $categories = Bewerbungstrainer_Categories_Admin::get_categories_array($scenario->category ?? '');
+                    $matches = $matches && in_array($filter_category, $categories);
+                }
+                if ($filter_setup) {
+                    $setups = array_filter(array_map('trim', explode(';', $scenario->target_audience ?? '')));
+                    $matches = $matches && in_array($filter_setup, $setups);
+                }
+                return $matches;
+            });
+        }
+
+        // Get all categories and setups for filters
+        $all_categories = Bewerbungstrainer_Categories_Admin::get_all_categories();
+        $setups_manager = Bewerbungstrainer_Scenario_Setups::get_instance();
+        $all_setups = $setups_manager->get_all_setups(true);
 
         // Show import notices
         if (isset($_GET['imported'])) {
@@ -520,89 +629,299 @@ class Bewerbungstrainer_Video_Training_Admin {
             $error_msg = $errors[$_GET['import_error']] ?? 'Unbekannter Fehler beim Import.';
             echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error_msg) . '</p></div>';
         }
+        if (isset($_GET['bulk_updated'])) {
+            $count = intval($_GET['bulk_updated']);
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Szenario(s) aktualisiert.', $count) . '</p></div>';
+        }
+        if (isset($_GET['error']) && $_GET['error'] === 'no_selection') {
+            echo '<div class="notice notice-warning is-dismissible"><p>Bitte wähle mindestens ein Szenario aus.</p></div>';
+        }
         ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline"><?php _e('Video Training Szenarien', 'bewerbungstrainer'); ?></h1>
+            <h1 class="wp-heading-inline"><?php _e('Wirkungs-Analyse Szenarien', 'bewerbungstrainer'); ?></h1>
             <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-video-training&action=new'); ?>" class="page-title-action">
-                <?php _e('Neues Szenario', 'bewerbungstrainer'); ?>
+                <?php _e('Neu hinzufügen', 'bewerbungstrainer'); ?>
             </a>
             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=bewerbungstrainer-video-training&action=export_csv'), 'export_video_scenarios'); ?>" class="page-title-action">
                 <?php _e('CSV Export', 'bewerbungstrainer'); ?>
             </a>
             <hr class="wp-header-end">
 
-            <!-- Import Form -->
-            <div style="margin: 15px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4; border-radius: 4px;">
-                <form method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 10px;">
+            <!-- Filter Bar -->
+            <div class="tablenav top">
+                <form method="get" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <input type="hidden" name="page" value="bewerbungstrainer-video-training">
+
+                    <!-- Category Filter -->
+                    <select name="filter_category">
+                        <option value=""><?php _e('Alle Kategorien', 'bewerbungstrainer'); ?></option>
+                        <?php foreach ($all_categories as $cat): ?>
+                            <option value="<?php echo esc_attr($cat['slug']); ?>" <?php selected($filter_category, $cat['slug']); ?>>
+                                <?php echo esc_html($cat['icon'] . ' ' . $cat['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <!-- Setup Filter -->
+                    <select name="filter_setup">
+                        <option value=""><?php _e('Alle Setups', 'bewerbungstrainer'); ?></option>
+                        <?php foreach ($all_setups as $setup): ?>
+                            <option value="<?php echo esc_attr($setup['slug']); ?>" <?php selected($filter_setup, $setup['slug']); ?>>
+                                <?php echo esc_html($setup['icon'] . ' ' . $setup['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <button type="submit" class="button"><?php _e('Filtern', 'bewerbungstrainer'); ?></button>
+                    <?php if ($filter_category || $filter_setup): ?>
+                        <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-video-training'); ?>" class="button"><?php _e('Filter zurücksetzen', 'bewerbungstrainer'); ?></a>
+                    <?php endif; ?>
+
+                    <!-- CSV Import -->
+                    <span style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                        <strong>CSV Import:</strong>
+                        <input type="file" name="csv_file" accept=".csv" form="csv-import-form">
+                        <button type="submit" form="csv-import-form" name="video_import_csv" class="button"><?php _e('Importieren', 'bewerbungstrainer'); ?></button>
+                    </span>
+                </form>
+                <form id="csv-import-form" method="post" enctype="multipart/form-data" style="display:none;">
                     <?php wp_nonce_field('import_video_scenarios'); ?>
-                    <label><strong>CSV Import:</strong></label>
-                    <input type="file" name="csv_file" accept=".csv" required>
-                    <button type="submit" name="video_import_csv" class="button"><?php _e('Importieren', 'bewerbungstrainer'); ?></button>
-                    <span class="description"><?php _e('CSV-Datei mit Semikolon (;) als Trennzeichen', 'bewerbungstrainer'); ?></span>
                 </form>
             </div>
 
-            <p class="description">
-                <?php _e('Verwalten Sie die Video-Training Szenarien. Benutzer können diese für ihre Video-Aufnahmen auswählen.', 'bewerbungstrainer'); ?>
-            </p>
+            <!-- Bulk Actions Form -->
+            <form method="post" id="bulk-action-form">
+                <?php wp_nonce_field('video_bulk_action'); ?>
 
-            <table class="wp-list-table widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th width="5%"><?php _e('ID', 'bewerbungstrainer'); ?></th>
-                        <th width="20%"><?php _e('Titel', 'bewerbungstrainer'); ?></th>
-                        <th width="15%"><?php _e('Typ', 'bewerbungstrainer'); ?></th>
-                        <th width="10%"><?php _e('Schwierigkeit', 'bewerbungstrainer'); ?></th>
-                        <th width="10%"><?php _e('Fragen', 'bewerbungstrainer'); ?></th>
-                        <th width="10%"><?php _e('Status', 'bewerbungstrainer'); ?></th>
-                        <th width="10%"><?php _e('Reihenfolge', 'bewerbungstrainer'); ?></th>
-                        <th width="20%"><?php _e('Aktionen', 'bewerbungstrainer'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($scenarios)): ?>
+                <!-- Bulk Action Bar -->
+                <div class="tablenav top" style="margin-top: 10px;">
+                    <div class="alignleft actions bulkactions">
+                        <select name="bulk_action" id="bulk-action-select">
+                            <option value=""><?php _e('Bulk-Aktionen', 'bewerbungstrainer'); ?></option>
+                            <option value="update_categories"><?php _e('Kategorien setzen', 'bewerbungstrainer'); ?></option>
+                            <option value="update_setups"><?php _e('Setups setzen', 'bewerbungstrainer'); ?></option>
+                            <option value="activate"><?php _e('Aktivieren', 'bewerbungstrainer'); ?></option>
+                            <option value="deactivate"><?php _e('Deaktivieren', 'bewerbungstrainer'); ?></option>
+                            <option value="delete"><?php _e('Löschen', 'bewerbungstrainer'); ?></option>
+                        </select>
+                        <button type="submit" name="video_bulk_action" class="button action"><?php _e('Anwenden', 'bewerbungstrainer'); ?></button>
+                    </div>
+
+                    <!-- Bulk Categories Selection (hidden by default) -->
+                    <div id="bulk-categories-select" style="display: none; margin-left: 20px;" class="alignleft">
+                        <strong><?php _e('Kategorien:', 'bewerbungstrainer'); ?></strong>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
+                            <?php foreach ($all_categories as $cat): ?>
+                                <label style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: <?php echo esc_attr($cat['color']); ?>20; border: 1px solid <?php echo esc_attr($cat['color']); ?>40; border-radius: 4px; cursor: pointer;">
+                                    <input type="checkbox" name="bulk_categories[]" value="<?php echo esc_attr($cat['slug']); ?>">
+                                    <?php echo esc_html($cat['icon'] . ' ' . $cat['name']); ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Setups Selection (hidden by default) -->
+                    <div id="bulk-setups-select" style="display: none; margin-left: 20px;" class="alignleft">
+                        <strong><?php _e('Setups:', 'bewerbungstrainer'); ?></strong>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
+                            <?php foreach ($all_setups as $setup): ?>
+                                <label style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: <?php echo esc_attr($setup['color']); ?>20; border: 1px solid <?php echo esc_attr($setup['color']); ?>40; border-radius: 4px; cursor: pointer;">
+                                    <input type="checkbox" name="bulk_setups[]" value="<?php echo esc_attr($setup['slug']); ?>">
+                                    <?php echo esc_html($setup['icon'] . ' ' . $setup['name']); ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
                         <tr>
-                            <td colspan="8"><?php _e('Keine Szenarien gefunden.', 'bewerbungstrainer'); ?></td>
+                            <td class="manage-column column-cb check-column" style="width: 30px;">
+                                <input type="checkbox" id="cb-select-all">
+                            </td>
+                            <th style="width: 50px;"><?php _e('ID', 'bewerbungstrainer'); ?></th>
+                            <th><?php _e('Titel', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 60px;"><?php _e('Icon', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 120px;"><?php _e('Modus', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 180px;"><?php _e('Kategorien', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 180px;"><?php _e('Setups', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 80px;"><?php _e('Variablen', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 70px;"><?php _e('Fragen', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 70px;"><?php _e('Aktiv', 'bewerbungstrainer'); ?></th>
+                            <th style="width: 120px;"><?php _e('Aktionen', 'bewerbungstrainer'); ?></th>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($scenarios as $scenario): ?>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($scenarios)): ?>
                             <tr>
-                                <td><?php echo esc_html($scenario->id); ?></td>
-                                <td>
-                                    <strong><?php echo esc_html($scenario->title); ?></strong>
-                                    <?php if ($scenario->description): ?>
-                                        <br><small><?php echo esc_html(wp_trim_words($scenario->description, 10)); ?></small>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo esc_html($this->get_scenario_type_label($scenario->scenario_type)); ?></td>
-                                <td><?php echo esc_html($this->get_difficulty_label($scenario->difficulty)); ?></td>
-                                <td><?php echo esc_html($scenario->question_count); ?></td>
-                                <td>
-                                    <?php if ($scenario->is_active): ?>
-                                        <span class="dashicons dashicons-yes-alt" style="color: green;"></span> <?php _e('Aktiv', 'bewerbungstrainer'); ?>
-                                    <?php else: ?>
-                                        <span class="dashicons dashicons-no-alt" style="color: red;"></span> <?php _e('Inaktiv', 'bewerbungstrainer'); ?>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo esc_html($scenario->sort_order); ?></td>
-                                <td>
-                                    <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-video-training&action=edit&scenario_id=' . $scenario->id); ?>" class="button button-small">
-                                        <?php _e('Bearbeiten', 'bewerbungstrainer'); ?>
-                                    </a>
-                                    <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=bewerbungstrainer-video-training&action=toggle_active&scenario_id=' . $scenario->id), 'toggle_video_scenario_' . $scenario->id); ?>" class="button button-small">
-                                        <?php echo $scenario->is_active ? __('Deaktivieren', 'bewerbungstrainer') : __('Aktivieren', 'bewerbungstrainer'); ?>
-                                    </a>
-                                    <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=bewerbungstrainer-video-training&action=delete&scenario_id=' . $scenario->id), 'delete_video_scenario_' . $scenario->id); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php _e('Szenario wirklich löschen?', 'bewerbungstrainer'); ?>');">
-                                        <?php _e('Löschen', 'bewerbungstrainer'); ?>
-                                    </a>
-                                </td>
+                                <td colspan="11"><?php _e('Keine Szenarien gefunden.', 'bewerbungstrainer'); ?></td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                        <?php else: ?>
+                            <?php foreach ($scenarios as $scenario): ?>
+                                <?php
+                                $categories = Bewerbungstrainer_Categories_Admin::get_categories_array($scenario->category ?? '');
+                                $setups = array_filter(array_map('trim', explode(';', $scenario->target_audience ?? '')));
+                                $input_config = is_array($scenario->input_configuration) ? $scenario->input_configuration : (json_decode($scenario->input_configuration ?? '[]', true) ?: array());
+                                ?>
+                                <tr>
+                                    <th scope="row" class="check-column">
+                                        <input type="checkbox" name="scenario_ids[]" value="<?php echo esc_attr($scenario->id); ?>">
+                                    </th>
+                                    <td><?php echo esc_html($scenario->id); ?></td>
+                                    <td>
+                                        <strong>
+                                            <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-video-training&action=edit&scenario_id=' . $scenario->id); ?>">
+                                                <?php echo esc_html($scenario->title); ?>
+                                            </a>
+                                        </strong>
+                                        <?php if ($scenario->description): ?>
+                                            <br><span class="description"><?php echo esc_html(wp_trim_words($scenario->description, 10)); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo esc_html($this->get_icon_display($scenario->icon ?? 'video')); ?>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $type = $scenario->scenario_type ?? 'interview';
+                                        $type_colors = array(
+                                            'interview' => '#3b82f6',
+                                            'self_presentation' => '#22c55e',
+                                            'pitch' => '#a855f7',
+                                            'negotiation' => '#f59e0b',
+                                            'custom' => '#6b7280',
+                                        );
+                                        $color = $type_colors[$type] ?? '#6b7280';
+                                        ?>
+                                        <span style="color: <?php echo esc_attr($color); ?>;"><?php echo esc_html($this->get_scenario_type_label($type)); ?></span>
+                                    </td>
+                                    <td>
+                                        <?php $this->render_category_badges($categories); ?>
+                                    </td>
+                                    <td>
+                                        <?php $this->render_setup_badges($setups, $all_setups); ?>
+                                    </td>
+                                    <td><?php echo count($input_config); ?></td>
+                                    <td><?php echo esc_html($scenario->question_count); ?></td>
+                                    <td>
+                                        <?php if ($scenario->is_active): ?>
+                                            <span style="color: #22c55e;">&#10003;</span>
+                                        <?php else: ?>
+                                            <span style="color: #94a3b8;">&#10007;</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-video-training&action=edit&scenario_id=' . $scenario->id); ?>" class="button button-small">
+                                            <?php _e('Bearbeiten', 'bewerbungstrainer'); ?>
+                                        </a>
+                                        <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=bewerbungstrainer-video-training&action=delete&scenario_id=' . $scenario->id), 'delete_video_scenario_' . $scenario->id); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php _e('Szenario wirklich löschen?', 'bewerbungstrainer'); ?>');">
+                                            <?php _e('Löschen', 'bewerbungstrainer'); ?>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </form>
+
+            <script>
+            jQuery(document).ready(function($) {
+                // Select all checkbox
+                $('#cb-select-all').on('change', function() {
+                    $('input[name="scenario_ids[]"]').prop('checked', this.checked);
+                });
+
+                // Show/hide bulk action options based on selected action
+                $('#bulk-action-select').on('change', function() {
+                    var action = $(this).val();
+                    $('#bulk-categories-select, #bulk-setups-select').hide();
+                    if (action === 'update_categories') {
+                        $('#bulk-categories-select').show();
+                    } else if (action === 'update_setups') {
+                        $('#bulk-setups-select').show();
+                    }
+                });
+
+                // Confirm delete action
+                $('#bulk-action-form').on('submit', function(e) {
+                    var action = $('#bulk-action-select').val();
+                    if (action === 'delete') {
+                        if (!confirm('<?php _e('Ausgewählte Szenarien wirklich löschen?', 'bewerbungstrainer'); ?>')) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                });
+            });
+            </script>
         </div>
         <?php
+    }
+
+    /**
+     * Render category badges
+     */
+    private function render_category_badges($categories) {
+        if (empty($categories)) {
+            echo '<span style="color: #94a3b8;">—</span>';
+            return;
+        }
+        $all_categories = Bewerbungstrainer_Categories_Admin::get_all_categories();
+        $category_map = array();
+        foreach ($all_categories as $cat) {
+            $category_map[$cat['slug']] = $cat;
+        }
+        echo '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+        foreach ($categories as $slug) {
+            if (isset($category_map[$slug])) {
+                $cat = $category_map[$slug];
+                echo '<span style="display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; background: ' . esc_attr($cat['color']) . '20; border-radius: 3px; font-size: 11px;">';
+                echo esc_html($cat['icon'] . ' ' . $cat['name']);
+                echo '</span>';
+            }
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Render setup badges
+     */
+    private function render_setup_badges($setups, $all_setups) {
+        if (empty($setups)) {
+            echo '<span style="color: #94a3b8;">—</span>';
+            return;
+        }
+        $setup_map = array();
+        foreach ($all_setups as $setup) {
+            $setup_map[$setup['slug']] = $setup;
+        }
+        echo '<div style="display: flex; flex-wrap: wrap; gap: 4px;">';
+        foreach ($setups as $slug) {
+            if (isset($setup_map[$slug])) {
+                $setup = $setup_map[$slug];
+                echo '<span style="display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; background: ' . esc_attr($setup['color']) . '20; border-radius: 3px; font-size: 11px;">';
+                echo esc_html($setup['icon'] . ' ' . $setup['name']);
+                echo '</span>';
+            }
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Get icon display
+     */
+    private function get_icon_display($icon) {
+        $icon_map = array(
+            'video' => '📹',
+            'briefcase' => '💼',
+            'user' => '👤',
+            'presentation' => '📊',
+            'handshake' => '🤝',
+            'mic' => '🎤',
+        );
+        return isset($icon_map[$icon]) ? $icon_map[$icon] : $icon;
     }
 
     /**
@@ -619,7 +938,7 @@ class Bewerbungstrainer_Video_Training_Admin {
             'description' => '',
             'icon' => 'video',
             'difficulty' => 'intermediate',
-            'category' => '',
+            'category' => json_encode(array()),
             'scenario_type' => 'interview',
             'system_prompt' => '',
             'question_generation_prompt' => '',
@@ -714,12 +1033,26 @@ class Bewerbungstrainer_Video_Training_Admin {
 
                     <tr>
                         <th scope="row">
-                            <label for="category"><?php _e('Kategorie', 'bewerbungstrainer'); ?></label>
+                            <label><?php _e('Kategorien', 'bewerbungstrainer'); ?></label>
                         </th>
                         <td>
-                            <input type="text" name="category" id="category" class="regular-text"
-                                   value="<?php echo esc_attr($values['category']); ?>"
-                                   placeholder="z.B. presentation, interview, pitch">
+                            <?php Bewerbungstrainer_Categories_Admin::render_category_checkboxes(
+                                Bewerbungstrainer_Categories_Admin::get_categories_array($values['category']),
+                                'categories'
+                            ); ?>
+                            <p class="description" style="margin-top: 8px;">
+                                <a href="<?php echo admin_url('admin.php?page=bewerbungstrainer-categories'); ?>"><?php _e('Kategorien verwalten', 'bewerbungstrainer'); ?></a>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">
+                            <label><?php _e('Trainings-Setups', 'bewerbungstrainer'); ?></label>
+                        </th>
+                        <td>
+                            <?php $this->render_setups_checkboxes($values['target_audience'] ?? ''); ?>
+                            <p class="description">Wähle die Setups, in denen dieses Szenario angezeigt werden soll.</p>
                         </td>
                     </tr>
 
@@ -866,5 +1199,35 @@ class Bewerbungstrainer_Video_Training_Admin {
         );
 
         return isset($labels[$difficulty]) ? $labels[$difficulty] : $difficulty;
+    }
+
+    /**
+     * Render checkboxes for setup selection
+     */
+    private function render_setups_checkboxes($current_value = '') {
+        // Get all active setups from database
+        $setups_manager = Bewerbungstrainer_Scenario_Setups::get_instance();
+        $setups = $setups_manager->get_all_setups(true);
+
+        // Parse current value (semicolon-separated slugs)
+        $selected_slugs = array_filter(array_map('trim', explode(';', $current_value)));
+
+        if (empty($setups)) {
+            echo '<p class="description">Keine Setups verfügbar. <a href="' . admin_url('admin.php?page=bewerbungstrainer-setups') . '">Setups verwalten</a></p>';
+            return;
+        }
+
+        echo '<div class="setups-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px;">';
+        foreach ($setups as $setup) {
+            $checked = in_array($setup['slug'], $selected_slugs) ? 'checked' : '';
+            ?>
+            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: <?php echo esc_attr($setup['color']); ?>10; border: 2px solid <?php echo esc_attr($setup['color']); ?>30; border-radius: 8px; cursor: pointer;">
+                <input type="checkbox" name="target_audience[]" value="<?php echo esc_attr($setup['slug']); ?>" <?php echo $checked; ?> style="margin: 0;">
+                <span style="font-size: 16px;"><?php echo esc_html($setup['icon']); ?></span>
+                <span style="font-weight: 500; color: #333;"><?php echo esc_html($setup['name']); ?></span>
+            </label>
+            <?php
+        }
+        echo '</div>';
     }
 }

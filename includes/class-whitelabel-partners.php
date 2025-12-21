@@ -104,6 +104,7 @@ class Bewerbungstrainer_Whitelabel_Partners {
      */
     private $available_modules = array(
         'dashboard' => 'Dashboard',
+        'briefings' => 'Smart Briefings',
         'roleplay' => 'Live-Simulation (Roleplay)',
         'simulator' => 'Szenario-Training (Simulator)',
         'video_training' => 'Wirkungs-Analyse',
@@ -237,6 +238,16 @@ class Bewerbungstrainer_Whitelabel_Partners {
             'side',
             'default'
         );
+
+        // Scenario Visibility Meta Box (main content area for better layout)
+        add_meta_box(
+            'whitelabel_partner_scenarios',
+            'Szenario-Sichtbarkeit',
+            array($this, 'render_scenario_visibility_meta_box'),
+            $this->post_type,
+            'normal',
+            'default'
+        );
     }
 
     /**
@@ -251,6 +262,8 @@ class Bewerbungstrainer_Whitelabel_Partners {
         }
 
         $description = get_post_meta($post->ID, '_partner_description', true);
+        $dashboard_title = get_post_meta($post->ID, '_partner_dashboard_title', true);
+        $dashboard_hook = get_post_meta($post->ID, '_partner_dashboard_hook', true);
         ?>
         <table class="form-table">
             <tr>
@@ -267,6 +280,25 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 <th><label for="partner_description">Beschreibung</label></th>
                 <td>
                     <textarea id="partner_description" name="partner_description" rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="partner_dashboard_title">Dashboard-Titel</label></th>
+                <td>
+                    <input type="text" id="partner_dashboard_title" name="partner_dashboard_title" value="<?php echo esc_attr($dashboard_title); ?>" class="large-text" placeholder="z.B. Karriere & Placement" />
+                    <p class="description">
+                        Wird auf dem Dashboard unter "Willkommen im Trainingscenter" angezeigt.<br>
+                        Leer lassen für Standard-Ansicht ohne Titel.
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="partner_dashboard_hook">Marketing-Hook</label></th>
+                <td>
+                    <textarea id="partner_dashboard_hook" name="partner_dashboard_hook" rows="3" class="large-text" placeholder="z.B. Vom Berufseinstieg bis zum Jobwechsel. Kein Bewerber geht mehr unvorbereitet ins Rennen."><?php echo esc_textarea($dashboard_hook); ?></textarea>
+                    <p class="description">
+                        Beschreibungstext unterhalb des Dashboard-Titels.
+                    </p>
                 </td>
             </tr>
         </table>
@@ -638,17 +670,6 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 <?php endforeach; ?>
             </div>
 
-            <hr style="margin: 15px 0;" />
-
-            <p><strong>Zusätzliche Szenarien (Simulator)</strong></p>
-            <p class="description">
-                Geben Sie Szenario-Slugs ein (kommagetrennt), die zusätzlich erlaubt sein sollen:
-            </p>
-            <?php
-            $custom_scenarios = get_post_meta($post->ID, '_partner_custom_scenarios', true);
-            ?>
-            <textarea name="partner_custom_scenarios" rows="3" style="width: 100%;"
-                      placeholder="z.B. gehaltsverhandlung, vorstellungsgespraech"><?php echo esc_textarea($custom_scenarios); ?></textarea>
         </div>
 
         <script>
@@ -662,6 +683,593 @@ class Bewerbungstrainer_Whitelabel_Partners {
                     $list.css({ opacity: 1, 'pointer-events': 'auto' });
                 }
             });
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * Render scenario visibility meta box with checkboxes for each scenario type
+     */
+    public function render_scenario_visibility_meta_box($post) {
+        global $wpdb;
+
+        // Get saved visible scenarios
+        $visible_scenarios = get_post_meta($post->ID, '_partner_visible_scenarios', true);
+        if (!is_array($visible_scenarios)) {
+            $visible_scenarios = array();
+        }
+
+        // Fetch all scenarios from different sources
+        $all_scenarios = array();
+
+        // 1. Roleplay scenarios (Custom Post Type)
+        $roleplay_scenarios = get_posts(array(
+            'post_type' => 'roleplay_scenario',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'orderby' => 'title',
+            'order' => 'ASC',
+        ));
+        foreach ($roleplay_scenarios as $scenario) {
+            $all_scenarios['roleplay'][] = array(
+                'id' => $scenario->ID,
+                'title' => $scenario->post_title,
+                'difficulty' => get_post_meta($scenario->ID, '_roleplay_difficulty', true),
+                'target_audience' => get_post_meta($scenario->ID, '_roleplay_target_audience', true),
+            );
+        }
+
+        // 2. Simulator scenarios (Database table)
+        $simulator_table = $wpdb->prefix . 'bewerbungstrainer_simulator_scenarios';
+        $simulator_scenarios = $wpdb->get_results(
+            "SELECT id, title, difficulty, target_audience FROM {$simulator_table} WHERE is_active = 1 ORDER BY title ASC"
+        );
+        if ($simulator_scenarios) {
+            foreach ($simulator_scenarios as $scenario) {
+                $all_scenarios['simulator'][] = array(
+                    'id' => (int) $scenario->id,
+                    'title' => $scenario->title,
+                    'difficulty' => $scenario->difficulty,
+                    'target_audience' => $scenario->target_audience,
+                );
+            }
+        }
+
+        // 3. Video Training scenarios (Database table)
+        $video_table = $wpdb->prefix . 'bewerbungstrainer_video_scenarios';
+        $video_scenarios = $wpdb->get_results(
+            "SELECT id, title, difficulty, target_audience FROM {$video_table} WHERE is_active = 1 ORDER BY title ASC"
+        );
+        if ($video_scenarios) {
+            foreach ($video_scenarios as $scenario) {
+                $all_scenarios['video_training'][] = array(
+                    'id' => (int) $scenario->id,
+                    'title' => $scenario->title,
+                    'difficulty' => $scenario->difficulty,
+                    'target_audience' => $scenario->target_audience,
+                );
+            }
+        }
+
+        // 4. Smart Briefing templates (Database table)
+        $briefing_table = $wpdb->prefix . 'bewerbungstrainer_smartbriefing_templates';
+        $briefing_templates = $wpdb->get_results(
+            "SELECT id, title, category, target_audience FROM {$briefing_table} WHERE is_active = 1 ORDER BY title ASC"
+        );
+        if ($briefing_templates) {
+            foreach ($briefing_templates as $template) {
+                $all_scenarios['briefings'][] = array(
+                    'id' => (int) $template->id,
+                    'title' => $template->title,
+                    'category' => $template->category,
+                    'target_audience' => $template->target_audience,
+                );
+            }
+        }
+
+        // Extract all unique audience groups from all scenarios (split by ;)
+        $all_audience_groups = array();
+        foreach ($all_scenarios as $type_scenarios) {
+            foreach ($type_scenarios as $scenario) {
+                if (!empty($scenario['target_audience'])) {
+                    $groups = array_map('trim', explode(';', $scenario['target_audience']));
+                    foreach ($groups as $group) {
+                        if (!empty($group) && !in_array($group, $all_audience_groups)) {
+                            $all_audience_groups[] = $group;
+                        }
+                    }
+                }
+            }
+        }
+        sort($all_audience_groups);
+
+        // Define scenario types with their labels
+        $scenario_types = array(
+            'briefings' => array(
+                'label' => 'Smart Briefings',
+                'icon' => '📚',
+                'color' => '#dc2626',
+            ),
+            'roleplay' => array(
+                'label' => 'Live-Simulationen',
+                'icon' => '🎭',
+                'color' => '#9333ea',
+            ),
+            'simulator' => array(
+                'label' => 'Szenario-Training',
+                'icon' => '📋',
+                'color' => '#0073aa',
+            ),
+            'video_training' => array(
+                'label' => 'Wirkungs-Analyse',
+                'icon' => '🎥',
+                'color' => '#059669',
+            ),
+        );
+
+        ?>
+        <style>
+            .scenario-visibility-container {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+                margin-top: 10px;
+            }
+            @media (max-width: 1400px) {
+                .scenario-visibility-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+            @media (max-width: 800px) {
+                .scenario-visibility-container {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .scenario-type-box {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                overflow: hidden;
+                background: #fff;
+            }
+            .scenario-type-header {
+                padding: 12px 15px;
+                color: #fff;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .scenario-type-header h4 {
+                margin: 0;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            .scenario-type-header .count {
+                background: rgba(255,255,255,0.2);
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-size: 12px;
+            }
+            .scenario-type-controls {
+                padding: 10px 15px;
+                background: #f9f9f9;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .scenario-type-list {
+                max-height: 300px;
+                overflow-y: auto;
+                padding: 10px;
+            }
+            .scenario-item {
+                display: flex;
+                align-items: center;
+                padding: 8px 10px;
+                margin: 4px 0;
+                background: #f9f9f9;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+            .scenario-item:hover {
+                background: #f0f0f0;
+            }
+            .scenario-item input[type="checkbox"] {
+                margin-right: 10px;
+            }
+            .scenario-item .title-container {
+                flex: 1;
+            }
+            .scenario-item .title {
+                font-size: 13px;
+                display: block;
+            }
+            .scenario-item .target-audience {
+                font-size: 11px;
+                color: #666;
+                display: block;
+                margin-top: 2px;
+            }
+            .scenario-item .difficulty-badge {
+                font-size: 10px;
+                padding: 2px 6px;
+                border-radius: 3px;
+                color: #fff;
+                margin-left: 8px;
+            }
+            .difficulty-easy { background: #4caf50; }
+            .difficulty-medium { background: #ff9800; }
+            .difficulty-hard { background: #f44336; }
+            .scenario-type-list.disabled {
+                opacity: 0.5;
+                pointer-events: none;
+            }
+            .no-scenarios {
+                padding: 20px;
+                text-align: center;
+                color: #666;
+                font-style: italic;
+            }
+            /* Audience Group Filter Styles */
+            .audience-group-filter {
+                background: #f0f7ff;
+                border: 1px solid #c3dafe;
+                border-radius: 8px;
+                padding: 15px 20px;
+                margin-bottom: 20px;
+            }
+            .audience-group-filter h4 {
+                margin: 0 0 12px 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1e40af;
+            }
+            .audience-group-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .audience-group-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 14px;
+                background: #fff;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 500;
+                color: #475569;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .audience-group-btn:hover {
+                background: #f1f5f9;
+                border-color: #94a3b8;
+            }
+            .audience-group-btn.active {
+                background: #3b82f6;
+                border-color: #3b82f6;
+                color: #fff;
+            }
+            .audience-group-btn .count {
+                background: rgba(0,0,0,0.1);
+                padding: 2px 6px;
+                border-radius: 10px;
+                font-size: 11px;
+            }
+            .audience-group-btn.active .count {
+                background: rgba(255,255,255,0.25);
+            }
+            .audience-group-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid #c3dafe;
+            }
+            .audience-action-btn {
+                padding: 6px 12px;
+                background: #fff;
+                border: 1px solid #cbd5e1;
+                border-radius: 4px;
+                font-size: 12px;
+                color: #64748b;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .audience-action-btn:hover {
+                background: #f1f5f9;
+                border-color: #94a3b8;
+            }
+            .audience-action-btn.danger {
+                color: #dc2626;
+                border-color: #fecaca;
+            }
+            .audience-action-btn.danger:hover {
+                background: #fef2f2;
+                border-color: #f87171;
+            }
+        </style>
+
+        <p class="description" style="margin-bottom: 15px;">
+            Wählen Sie die Szenarien aus, die dieser Partner sehen kann.<br>
+            <strong>Neue Szenarien sind standardmäßig nicht sichtbar</strong> – Sie müssen sie hier explizit aktivieren.
+        </p>
+
+        <?php if (!empty($all_audience_groups)): ?>
+        <div class="audience-group-filter">
+            <h4>🎯 Schnellauswahl nach Zielgruppe</h4>
+            <p class="description" style="margin: 0 0 10px 0; font-size: 12px;">
+                Klicken Sie auf eine Zielgruppe, um alle zugehörigen Szenarien in allen Bereichen zu aktivieren.
+            </p>
+            <div class="audience-group-buttons">
+                <?php
+                // Count scenarios per audience group
+                foreach ($all_audience_groups as $group):
+                    $group_count = 0;
+                    foreach ($all_scenarios as $type_scenarios) {
+                        foreach ($type_scenarios as $scenario) {
+                            if (!empty($scenario['target_audience'])) {
+                                $scenario_groups = array_map('trim', explode(';', $scenario['target_audience']));
+                                if (in_array($group, $scenario_groups)) {
+                                    $group_count++;
+                                }
+                            }
+                        }
+                    }
+                ?>
+                    <button type="button"
+                            class="audience-group-btn"
+                            data-group="<?php echo esc_attr($group); ?>">
+                        <?php echo esc_html($group); ?>
+                        <span class="count"><?php echo $group_count; ?></span>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+            <div class="audience-group-actions">
+                <button type="button" class="audience-action-btn" id="select-all-global">
+                    ✓ Alle Szenarien auswählen
+                </button>
+                <button type="button" class="audience-action-btn danger" id="deselect-all-global">
+                    ✗ Alle Szenarien abwählen
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <div class="scenario-visibility-container">
+            <?php foreach ($scenario_types as $type_key => $type_info): ?>
+                <?php
+                $scenarios = isset($all_scenarios[$type_key]) ? $all_scenarios[$type_key] : array();
+                $saved_for_type = isset($visible_scenarios[$type_key]) && is_array($visible_scenarios[$type_key])
+                    ? $visible_scenarios[$type_key]
+                    : array();
+                $all_selected = in_array('__all__', $saved_for_type);
+                ?>
+                <div class="scenario-type-box">
+                    <div class="scenario-type-header" style="background: <?php echo esc_attr($type_info['color']); ?>;">
+                        <h4><?php echo $type_info['icon']; ?> <?php echo esc_html($type_info['label']); ?></h4>
+                        <span class="count"><?php echo count($scenarios); ?> Szenarien</span>
+                    </div>
+
+                    <div class="scenario-type-controls">
+                        <label style="font-size: 13px; cursor: pointer;">
+                            <input type="checkbox"
+                                   class="select-all-scenarios"
+                                   data-type="<?php echo esc_attr($type_key); ?>"
+                                   <?php checked($all_selected); ?> />
+                            Alle auswählen
+                        </label>
+                        <span class="selected-count" data-type="<?php echo esc_attr($type_key); ?>" style="font-size: 12px; color: #666;">
+                            <?php
+                            if ($all_selected) {
+                                echo 'Alle ausgewählt';
+                            } else {
+                                $count = count(array_filter($saved_for_type, function($id) { return $id !== '__all__'; }));
+                                echo $count . ' ausgewählt';
+                            }
+                            ?>
+                        </span>
+                    </div>
+
+                    <div class="scenario-type-list <?php echo $all_selected ? 'disabled' : ''; ?>" data-type="<?php echo esc_attr($type_key); ?>">
+                        <?php if (empty($scenarios)): ?>
+                            <div class="no-scenarios">Keine Szenarien vorhanden</div>
+                        <?php else: ?>
+                            <?php foreach ($scenarios as $scenario): ?>
+                                <?php
+                                $is_checked = $all_selected || in_array($scenario['id'], $saved_for_type);
+                                $difficulty = $scenario['difficulty'];
+                                $difficulty_class = $difficulty ? 'difficulty-' . $difficulty : '';
+                                ?>
+                                <?php
+                                $target_audience = isset($scenario['target_audience']) ? $scenario['target_audience'] : '';
+                                // Parse audience groups for data attribute
+                                $audience_groups_array = array();
+                                if (!empty($target_audience)) {
+                                    $audience_groups_array = array_map('trim', explode(';', $target_audience));
+                                }
+                                $audience_groups_json = htmlspecialchars(json_encode($audience_groups_array), ENT_QUOTES, 'UTF-8');
+                                ?>
+                                <label class="scenario-item" data-audience-groups="<?php echo $audience_groups_json; ?>">
+                                    <input type="checkbox"
+                                           name="partner_visible_scenarios[<?php echo esc_attr($type_key); ?>][]"
+                                           value="<?php echo esc_attr($scenario['id']); ?>"
+                                           <?php checked($is_checked); ?> />
+                                    <span class="title-container">
+                                        <span class="title"><?php echo esc_html($scenario['title']); ?></span>
+                                        <?php if ($target_audience): ?>
+                                            <span class="target-audience"><?php echo esc_html($target_audience); ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                    <?php if ($difficulty): ?>
+                                        <span class="difficulty-badge <?php echo esc_attr($difficulty_class); ?>">
+                                            <?php echo esc_html(ucfirst($difficulty)); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </label>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Hidden input to track "all selected" state -->
+                    <input type="hidden"
+                           name="partner_visible_scenarios_all[<?php echo esc_attr($type_key); ?>]"
+                           value="<?php echo $all_selected ? '1' : '0'; ?>"
+                           class="all-selected-flag"
+                           data-type="<?php echo esc_attr($type_key); ?>" />
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Handle "Alle auswählen" checkbox
+            $('.select-all-scenarios').on('change', function() {
+                var type = $(this).data('type');
+                var $list = $('.scenario-type-list[data-type="' + type + '"]');
+                var $flag = $('.all-selected-flag[data-type="' + type + '"]');
+                var $count = $('.selected-count[data-type="' + type + '"]');
+
+                if ($(this).is(':checked')) {
+                    $list.addClass('disabled');
+                    $list.find('input[type="checkbox"]').prop('checked', true);
+                    $flag.val('1');
+                    $count.text('Alle ausgewählt');
+                } else {
+                    $list.removeClass('disabled');
+                    $flag.val('0');
+                    updateSelectedCount(type);
+                }
+            });
+
+            // Update count when individual checkboxes change
+            $('.scenario-type-list input[type="checkbox"]').on('change', function() {
+                var type = $(this).closest('.scenario-type-list').data('type');
+                updateSelectedCount(type);
+            });
+
+            function updateSelectedCount(type) {
+                var $list = $('.scenario-type-list[data-type="' + type + '"]');
+                var count = $list.find('input[type="checkbox"]:checked').length;
+                $('.selected-count[data-type="' + type + '"]').text(count + ' ausgewählt');
+            }
+
+            function updateAllSelectedCounts() {
+                $('.scenario-type-list').each(function() {
+                    var type = $(this).data('type');
+                    updateSelectedCount(type);
+                });
+            }
+
+            // Handle audience group filter buttons
+            $('.audience-group-btn').on('click', function() {
+                var group = $(this).data('group');
+                var $btn = $(this);
+                var isActive = $btn.hasClass('active');
+
+                if (isActive) {
+                    // Deactivate: uncheck all scenarios with this group
+                    $btn.removeClass('active');
+                    $('.scenario-item').each(function() {
+                        var $item = $(this);
+                        var groups = $item.data('audience-groups') || [];
+                        if (groups.indexOf(group) !== -1) {
+                            $item.find('input[type="checkbox"]').prop('checked', false);
+                        }
+                    });
+                } else {
+                    // Activate: check all scenarios with this group
+                    $btn.addClass('active');
+                    $('.scenario-item').each(function() {
+                        var $item = $(this);
+                        var groups = $item.data('audience-groups') || [];
+                        if (groups.indexOf(group) !== -1) {
+                            // Also uncheck "Alle auswählen" and enable the list
+                            var $list = $item.closest('.scenario-type-list');
+                            var type = $list.data('type');
+                            var $selectAll = $('.select-all-scenarios[data-type="' + type + '"]');
+                            var $flag = $('.all-selected-flag[data-type="' + type + '"]');
+
+                            if ($selectAll.is(':checked')) {
+                                $selectAll.prop('checked', false);
+                                $list.removeClass('disabled');
+                                $flag.val('0');
+                            }
+
+                            $item.find('input[type="checkbox"]').prop('checked', true);
+                        }
+                    });
+                }
+
+                updateAllSelectedCounts();
+            });
+
+            // Update audience group button states based on current selections
+            function updateAudienceGroupButtons() {
+                $('.audience-group-btn').each(function() {
+                    var $btn = $(this);
+                    var group = $btn.data('group');
+                    var allChecked = true;
+                    var anyFound = false;
+
+                    $('.scenario-item').each(function() {
+                        var $item = $(this);
+                        var groups = $item.data('audience-groups') || [];
+                        if (groups.indexOf(group) !== -1) {
+                            anyFound = true;
+                            if (!$item.find('input[type="checkbox"]').is(':checked')) {
+                                allChecked = false;
+                            }
+                        }
+                    });
+
+                    if (anyFound && allChecked) {
+                        $btn.addClass('active');
+                    } else {
+                        $btn.removeClass('active');
+                    }
+                });
+            }
+
+            // Update button states when individual checkboxes change
+            $('.scenario-item input[type="checkbox"]').on('change', function() {
+                updateAudienceGroupButtons();
+            });
+
+            // Global select all button
+            $('#select-all-global').on('click', function() {
+                // Uncheck all "Alle auswählen" checkboxes first
+                $('.select-all-scenarios').prop('checked', false);
+                $('.scenario-type-list').removeClass('disabled');
+                $('.all-selected-flag').val('0');
+
+                // Check all individual scenario checkboxes
+                $('.scenario-item input[type="checkbox"]').prop('checked', true);
+
+                updateAllSelectedCounts();
+                updateAudienceGroupButtons();
+            });
+
+            // Global deselect all button
+            $('#deselect-all-global').on('click', function() {
+                // Uncheck all "Alle auswählen" checkboxes
+                $('.select-all-scenarios').prop('checked', false);
+                $('.scenario-type-list').removeClass('disabled');
+                $('.all-selected-flag').val('0');
+
+                // Uncheck all individual scenario checkboxes
+                $('.scenario-item input[type="checkbox"]').prop('checked', false);
+
+                updateAllSelectedCounts();
+                updateAudienceGroupButtons();
+            });
+
+            // Initial update
+            updateAudienceGroupButtons();
         });
         </script>
         <?php
@@ -704,6 +1312,16 @@ class Bewerbungstrainer_Whitelabel_Partners {
         // Save description
         if (isset($_POST['partner_description'])) {
             update_post_meta($post_id, '_partner_description', sanitize_textarea_field($_POST['partner_description']));
+        }
+
+        // Save dashboard title
+        if (isset($_POST['partner_dashboard_title'])) {
+            update_post_meta($post_id, '_partner_dashboard_title', sanitize_text_field($_POST['partner_dashboard_title']));
+        }
+
+        // Save dashboard marketing hook
+        if (isset($_POST['partner_dashboard_hook'])) {
+            update_post_meta($post_id, '_partner_dashboard_hook', sanitize_textarea_field($_POST['partner_dashboard_hook']));
         }
 
         // Save branding
@@ -763,7 +1381,30 @@ class Bewerbungstrainer_Whitelabel_Partners {
             update_post_meta($post_id, '_partner_modules', $modules);
         }
 
-        // Save custom scenarios
+        // Save visible scenarios (new checkbox-based system)
+        $visible_scenarios = array();
+        $scenario_types = array('briefings', 'roleplay', 'simulator', 'video_training');
+
+        foreach ($scenario_types as $type) {
+            // Check if "all" was selected for this type
+            $all_selected = isset($_POST['partner_visible_scenarios_all'][$type]) &&
+                           $_POST['partner_visible_scenarios_all'][$type] === '1';
+
+            if ($all_selected) {
+                // Store special marker for "all scenarios"
+                $visible_scenarios[$type] = array('__all__');
+            } elseif (isset($_POST['partner_visible_scenarios'][$type]) && is_array($_POST['partner_visible_scenarios'][$type])) {
+                // Store selected scenario IDs
+                $visible_scenarios[$type] = array_map('absint', $_POST['partner_visible_scenarios'][$type]);
+            } else {
+                // No scenarios selected for this type
+                $visible_scenarios[$type] = array();
+            }
+        }
+
+        update_post_meta($post_id, '_partner_visible_scenarios', $visible_scenarios);
+
+        // Keep legacy custom scenarios for backwards compatibility (but deprecated)
         if (isset($_POST['partner_custom_scenarios'])) {
             update_post_meta($post_id, '_partner_custom_scenarios', sanitize_textarea_field($_POST['partner_custom_scenarios']));
         }
@@ -1294,12 +1935,13 @@ class Bewerbungstrainer_Whitelabel_Partners {
      */
     private function get_default_config() {
         return array(
-            'id'       => 'default',
-            'slug'     => 'default',
-            'name'     => 'Karriereheld',
-            'branding' => $this->default_branding,
-            'logo_url' => null,
-            'modules'  => array(), // Empty = all allowed
+            'id'                => 'default',
+            'slug'              => 'default',
+            'name'              => 'Karriereheld',
+            'branding'          => $this->default_branding,
+            'logo_url'          => null,
+            'modules'           => array(), // Empty = all allowed
+            'visible_scenarios' => array(), // Empty = all scenarios visible
         );
     }
 
@@ -1326,7 +1968,13 @@ class Bewerbungstrainer_Whitelabel_Partners {
             $modules = array();
         }
 
-        // Add custom scenarios to modules
+        // Get visible scenarios (new checkbox-based system)
+        $visible_scenarios = get_post_meta($post_id, '_partner_visible_scenarios', true);
+        if (!is_array($visible_scenarios)) {
+            $visible_scenarios = array();
+        }
+
+        // Legacy: Add custom scenarios to modules for backwards compatibility
         $custom_scenarios = get_post_meta($post_id, '_partner_custom_scenarios', true);
         if (!empty($custom_scenarios)) {
             $custom_array = array_map('trim', explode(',', $custom_scenarios));
@@ -1340,13 +1988,20 @@ class Bewerbungstrainer_Whitelabel_Partners {
             $slug = $post->post_name;
         }
 
+        // Get dashboard customization fields
+        $dashboard_title = get_post_meta($post_id, '_partner_dashboard_title', true);
+        $dashboard_hook = get_post_meta($post_id, '_partner_dashboard_hook', true);
+
         return array(
-            'id'       => $slug,
-            'slug'     => $slug,
-            'name'     => $post->post_title,
-            'branding' => $branding,
-            'logo_url' => $logo_url,
-            'modules'  => $modules,
+            'id'                => $slug,
+            'slug'              => $slug,
+            'name'              => $post->post_title,
+            'branding'          => $branding,
+            'logo_url'          => $logo_url,
+            'modules'           => $modules,
+            'visible_scenarios' => $visible_scenarios,
+            'dashboard_title'   => $dashboard_title ?: null,
+            'dashboard_hook'    => $dashboard_hook ?: null,
         );
     }
 
