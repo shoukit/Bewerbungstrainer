@@ -198,12 +198,19 @@ class Bewerbungstrainer_Video_Training_Admin {
      * Sanitize scenario data from form
      */
     private function sanitize_scenario_data($data) {
+        // Handle target_audience (checkboxes array to semicolon-separated string)
+        $target_audience = '';
+        if (isset($data['target_audience']) && is_array($data['target_audience'])) {
+            $target_audience = implode('; ', array_map('sanitize_text_field', $data['target_audience']));
+        }
+
         $sanitized = array(
             'title' => sanitize_text_field($data['title'] ?? ''),
             'description' => sanitize_textarea_field($data['description'] ?? ''),
             'icon' => sanitize_text_field($data['icon'] ?? 'video'),
             'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
             'category' => sanitize_text_field($data['category'] ?? ''),
+            'target_audience' => $target_audience,
             'scenario_type' => sanitize_text_field($data['scenario_type'] ?? 'interview'),
             'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
             'question_generation_prompt' => wp_kses_post($data['question_generation_prompt'] ?? ''),
@@ -726,6 +733,16 @@ class Bewerbungstrainer_Video_Training_Admin {
                         </td>
                     </tr>
 
+                    <tr>
+                        <th scope="row">
+                            <label><?php _e('Trainings-Setups', 'bewerbungstrainer'); ?></label>
+                        </th>
+                        <td>
+                            <?php $this->render_setups_checkboxes($values['target_audience'] ?? ''); ?>
+                            <p class="description">Wähle die Setups, in denen dieses Szenario angezeigt werden soll.</p>
+                        </td>
+                    </tr>
+
                     <!-- Time Settings -->
                     <tr>
                         <th scope="row">
@@ -869,5 +886,35 @@ class Bewerbungstrainer_Video_Training_Admin {
         );
 
         return isset($labels[$difficulty]) ? $labels[$difficulty] : $difficulty;
+    }
+
+    /**
+     * Render checkboxes for setup selection
+     */
+    private function render_setups_checkboxes($current_value = '') {
+        // Get all active setups from database
+        $setups_manager = Bewerbungstrainer_Scenario_Setups::get_instance();
+        $setups = $setups_manager->get_all_setups(true);
+
+        // Parse current value (semicolon-separated slugs)
+        $selected_slugs = array_filter(array_map('trim', explode(';', $current_value)));
+
+        if (empty($setups)) {
+            echo '<p class="description">Keine Setups verfügbar. <a href="' . admin_url('admin.php?page=bewerbungstrainer-setups') . '">Setups verwalten</a></p>';
+            return;
+        }
+
+        echo '<div class="setups-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px;">';
+        foreach ($setups as $setup) {
+            $checked = in_array($setup['slug'], $selected_slugs) ? 'checked' : '';
+            ?>
+            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: <?php echo esc_attr($setup['color']); ?>10; border: 2px solid <?php echo esc_attr($setup['color']); ?>30; border-radius: 8px; cursor: pointer;">
+                <input type="checkbox" name="target_audience[]" value="<?php echo esc_attr($setup['slug']); ?>" <?php echo $checked; ?> style="margin: 0;">
+                <span style="font-size: 16px;"><?php echo esc_html($setup['icon']); ?></span>
+                <span style="font-weight: 500; color: #333;"><?php echo esc_html($setup['name']); ?></span>
+            </label>
+            <?php
+        }
+        echo '</div>';
     }
 }

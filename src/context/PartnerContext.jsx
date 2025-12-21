@@ -11,7 +11,7 @@ import {
   getCurrentUser,
   DEFAULT_BRANDING,
 } from '@/config/partners';
-import { filterScenariosBySetup as filterBySetup, SCENARIO_SETUPS, SCENARIO_SETUPS_LIST } from '@/config/scenarioSetups';
+import { filterScenariosBySetup as filterBySetup, SCENARIO_SETUPS as FALLBACK_SETUPS, SCENARIO_SETUPS_LIST as FALLBACK_SETUPS_LIST } from '@/config/scenarioSetups';
 
 /**
  * Partner Context
@@ -26,6 +26,10 @@ const PartnerContext = createContext(null);
 export function PartnerProvider({ children }) {
   const [partner, setPartner] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Setups from database
+  const [setupsFromDb, setSetupsFromDb] = useState(null);
+  const [setupsLoading, setSetupsLoading] = useState(true);
 
   // Authentication state
   const [user, setUser] = useState(null);
@@ -53,9 +57,75 @@ export function PartnerProvider({ children }) {
   });
 
   /**
+   * Get SCENARIO_SETUPS object (from DB or fallback)
+   */
+  const getSetupsObject = useCallback(() => {
+    if (setupsFromDb) {
+      const obj = {};
+      setupsFromDb.forEach(s => {
+        obj[s.slug] = {
+          id: s.slug,
+          name: s.name,
+          description: s.description,
+          icon: s.icon,
+          color: s.color,
+          focus: s.focus,
+          targetGroup: s.target_group,
+        };
+      });
+      return obj;
+    }
+    return FALLBACK_SETUPS;
+  }, [setupsFromDb]);
+
+  /**
+   * Get setups list (from DB or fallback)
+   */
+  const getSetupsList = useCallback(() => {
+    if (setupsFromDb) {
+      return setupsFromDb.map(s => ({
+        id: s.slug,
+        name: s.name,
+        description: s.description,
+        icon: s.icon,
+        color: s.color,
+        focus: s.focus,
+        targetGroup: s.target_group,
+      }));
+    }
+    return FALLBACK_SETUPS_LIST;
+  }, [setupsFromDb]);
+
+  /**
+   * Load setups from database
+   */
+  const loadSetupsFromApi = async () => {
+    try {
+      const apiUrl = window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+      const response = await fetch(`${apiUrl}/setups`, {
+        method: 'GET',
+        credentials: 'same-origin',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.setups) {
+          setSetupsFromDb(data.data.setups);
+          return data.data.setups;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load setups from API:', error);
+    }
+    setSetupsLoading(false);
+    return null;
+  };
+
+  /**
    * Load setup preference from user profile
    */
   const loadUserSetupPreference = async () => {
+    const setupsObj = getSetupsObject();
     try {
       const apiUrl = window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
       const response = await fetch(`${apiUrl}/user/setup`, {
@@ -68,7 +138,7 @@ export function PartnerProvider({ children }) {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.data?.setup_id && SCENARIO_SETUPS[data.data.setup_id]) {
+        if (data.success && data.data?.setup_id && setupsObj[data.data.setup_id]) {
           setSelectedSetupState(data.data.setup_id);
           // Also update localStorage to stay in sync
           localStorage.setItem('bewerbungstrainer_selected_setup', data.data.setup_id);
@@ -80,6 +150,11 @@ export function PartnerProvider({ children }) {
     }
     return null;
   };
+
+  // Load setups from API on mount
+  useEffect(() => {
+    loadSetupsFromApi().then(() => setSetupsLoading(false));
+  }, []);
 
   // Initialize partner from URL on mount - now fetches from API
   useEffect(() => {
@@ -430,7 +505,8 @@ export function PartnerProvider({ children }) {
    * @param {string} setupId - The setup ID to select (e.g., 'karriere-placement')
    */
   const setSelectedSetup = useCallback(async (setupId) => {
-    const newSetup = setupId && SCENARIO_SETUPS[setupId] ? setupId : null;
+    const setupsObj = getSetupsObject();
+    const newSetup = setupId && setupsObj[setupId] ? setupId : null;
     setSelectedSetupState(newSetup);
 
     // Save to localStorage as fallback
@@ -459,7 +535,7 @@ export function PartnerProvider({ children }) {
         console.error('Failed to save setup to user profile:', error);
       }
     }
-  }, [isAuthenticated, isDemoUser]);
+  }, [isAuthenticated, isDemoUser, getSetupsObject]);
 
   /**
    * Clear selected setup
@@ -472,11 +548,12 @@ export function PartnerProvider({ children }) {
    * Get current setup object
    */
   const getCurrentSetup = useCallback(() => {
-    if (selectedSetup && SCENARIO_SETUPS[selectedSetup]) {
-      return SCENARIO_SETUPS[selectedSetup];
+    const setupsObj = getSetupsObject();
+    if (selectedSetup && setupsObj[selectedSetup]) {
+      return setupsObj[selectedSetup];
     }
     return null;
-  }, [selectedSetup]);
+  }, [selectedSetup, getSetupsObject]);
 
   /**
    * Filter scenarios by setup AND partner visibility
@@ -559,8 +636,9 @@ export function PartnerProvider({ children }) {
     setSelectedSetup,
     clearSelectedSetup,
     filterScenariosBySetupAndPartner,
-    availableSetups: SCENARIO_SETUPS_LIST,
-    SCENARIO_SETUPS,
+    availableSetups: getSetupsList(),
+    SCENARIO_SETUPS: getSetupsObject(),
+    setupsLoading,
   };
 
   return (

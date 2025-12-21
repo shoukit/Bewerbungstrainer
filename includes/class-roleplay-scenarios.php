@@ -260,14 +260,12 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
             <tr>
                 <th scope="row">
-                    <label for="roleplay_target_audience"><?php _e('Zielgruppe', 'bewerbungstrainer'); ?></label>
+                    <label><?php _e('Trainings-Setups', 'bewerbungstrainer'); ?></label>
                 </th>
                 <td>
-                    <input type="text" id="roleplay_target_audience" name="roleplay_target_audience"
-                           value="<?php echo esc_attr($target_audience); ?>"
-                           class="regular-text" placeholder="z.B. Berufseinsteiger, Führungskräfte, Vertriebsmitarbeiter" />
+                    <?php $this->render_setups_checkboxes($target_audience); ?>
                     <p class="description">
-                        <?php _e('Die Zielgruppe für dieses Szenario (wird in der Partnerkonfiguration angezeigt)', 'bewerbungstrainer'); ?>
+                        <?php _e('Wähle die Setups, in denen dieses Szenario angezeigt werden soll.', 'bewerbungstrainer'); ?>
                     </p>
                 </td>
             </tr>
@@ -509,9 +507,12 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             }
         }
 
-        // Save target audience
-        if (isset($_POST['roleplay_target_audience'])) {
-            update_post_meta($post_id, '_roleplay_target_audience', sanitize_text_field($_POST['roleplay_target_audience']));
+        // Save target audience (from checkboxes array to semicolon-separated string)
+        if (isset($_POST['roleplay_target_audience']) && is_array($_POST['roleplay_target_audience'])) {
+            $target_audience = implode('; ', array_map('sanitize_text_field', $_POST['roleplay_target_audience']));
+            update_post_meta($post_id, '_roleplay_target_audience', $target_audience);
+        } else {
+            update_post_meta($post_id, '_roleplay_target_audience', '');
         }
 
         // Save description
@@ -1228,5 +1229,35 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
         wp_redirect(admin_url($redirect_base . '&imported=' . $imported . '&csv_updated=' . $updated));
         exit;
+    }
+
+    /**
+     * Render checkboxes for setup selection
+     */
+    private function render_setups_checkboxes($current_value = '') {
+        // Get all active setups from database
+        $setups_manager = Bewerbungstrainer_Scenario_Setups::get_instance();
+        $setups = $setups_manager->get_all_setups(true);
+
+        // Parse current value (semicolon-separated slugs)
+        $selected_slugs = array_filter(array_map('trim', explode(';', $current_value)));
+
+        if (empty($setups)) {
+            echo '<p class="description">Keine Setups verfügbar. <a href="' . admin_url('admin.php?page=bewerbungstrainer-setups') . '">Setups verwalten</a></p>';
+            return;
+        }
+
+        echo '<div class="setups-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px;">';
+        foreach ($setups as $setup) {
+            $checked = in_array($setup['slug'], $selected_slugs) ? 'checked' : '';
+            ?>
+            <label style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: <?php echo esc_attr($setup['color']); ?>10; border: 2px solid <?php echo esc_attr($setup['color']); ?>30; border-radius: 8px; cursor: pointer;">
+                <input type="checkbox" name="roleplay_target_audience[]" value="<?php echo esc_attr($setup['slug']); ?>" <?php echo $checked; ?> style="margin: 0;">
+                <span style="font-size: 16px;"><?php echo esc_html($setup['icon']); ?></span>
+                <span style="font-weight: 500; color: #333;"><?php echo esc_html($setup['name']); ?></span>
+            </label>
+            <?php
+        }
+        echo '</div>';
     }
 }

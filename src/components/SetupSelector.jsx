@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings2, ChevronRight, Check, X, Sparkles } from 'lucide-react';
+import { Settings2, ChevronRight, Check, X, Sparkles, Loader2 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 
 /**
  * SetupSelector - Compact setup selector with popup modal
  *
- * Shows a brief description with a configure button that opens
- * a modal for selecting the training setup.
+ * Features:
+ * - Professional styling with partner branding support
+ * - Responsive design for mobile and desktop
+ * - Loading state while fetching setups
  */
 const SetupSelector = () => {
   const {
@@ -16,11 +18,14 @@ const SetupSelector = () => {
     clearSelectedSetup,
     availableSetups,
     branding,
+    setupsLoading,
   } = usePartner();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Get partner-branded colors
   const primaryAccent = branding?.['--primary-accent'] || '#3A7FA7';
+  const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
 
   const handleSelectSetup = (setupId) => {
     setSelectedSetup(setupId);
@@ -32,6 +37,20 @@ const SetupSelector = () => {
     setIsModalOpen(false);
   };
 
+  // Don't render anything while loading
+  if (setupsLoading) {
+    return (
+      <div className="w-full flex items-center justify-center py-4">
+        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  // Don't render if no setups available
+  if (!availableSetups || availableSetups.length === 0) {
+    return null;
+  }
+
   return (
     <>
       {/* Compact Setup Bar */}
@@ -41,54 +60,43 @@ const SetupSelector = () => {
         className="w-full"
       >
         <div
+          className="flex items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px',
-            padding: '16px 20px',
-            backgroundColor: '#f8fafc',
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0',
+            backgroundColor: currentSetup ? `${currentSetup.color}08` : '#f8fafc',
+            borderColor: currentSetup ? `${currentSetup.color}30` : '#e2e8f0',
           }}
         >
           {/* Left side - Info */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             <div
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
                 backgroundColor: currentSetup ? `${currentSetup.color}15` : `${primaryAccent}10`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
               }}
             >
               {currentSetup ? (
-                <span style={{ fontSize: '20px' }}>{currentSetup.icon}</span>
+                <span className="text-lg sm:text-xl">{currentSetup.icon}</span>
               ) : (
-                <Sparkles size={20} style={{ color: primaryAccent }} />
+                <Sparkles size={18} style={{ color: primaryAccent }} />
               )}
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div className="min-w-0 flex-1">
               {currentSetup ? (
                 <>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
+                  <div className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                     {currentSetup.name}
                   </div>
-                  <div style={{ fontSize: '13px', color: '#64748b' }}>
+                  <div className="text-xs sm:text-sm text-gray-500 truncate hidden sm:block">
                     {currentSetup.focus} • {currentSetup.targetGroup}
                   </div>
                 </>
               ) : (
                 <>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
-                    Trainings-Setup konfigurieren
+                  <div className="text-sm sm:text-base font-semibold text-gray-900">
+                    Trainings-Setup
                   </div>
-                  <div style={{ fontSize: '13px', color: '#64748b' }}>
-                    Wähle deinen Schwerpunkt – wir zeigen dir passende Szenarien
+                  <div className="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                    Wähle deinen Schwerpunkt für passende Szenarien
                   </div>
                 </>
               )}
@@ -98,27 +106,16 @@ const SetupSelector = () => {
           {/* Right side - Button */}
           <button
             onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] flex-shrink-0"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 16px',
-              borderRadius: '10px',
-              border: 'none',
-              backgroundColor: currentSetup ? currentSetup.color : primaryAccent,
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              whiteSpace: 'nowrap',
+              background: currentSetup ? currentSetup.color : headerGradient,
             }}
           >
-            <Settings2 size={18} />
-            <span className="hidden sm:inline">
-              {currentSetup ? 'Ändern' : 'Setup wählen'}
+            <Settings2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <span className="hidden xs:inline sm:inline">
+              {currentSetup ? 'Ändern' : 'Wählen'}
             </span>
-            <ChevronRight size={16} className="hidden sm:block" />
+            <ChevronRight size={14} className="hidden sm:block" />
           </button>
         </div>
       </motion.div>
@@ -131,118 +128,64 @@ const SetupSelector = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsModalOpen(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              padding: '16px',
-            }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-[1000] p-0 sm:p-4"
           >
             {/* Modal Content */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 100 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '20px',
-                width: '100%',
-                maxWidth: '800px',
-                maxHeight: '90vh',
-                overflow: 'hidden',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              }}
+              className="bg-white w-full sm:max-w-[800px] sm:rounded-2xl rounded-t-2xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
             >
               {/* Modal Header */}
               <div
-                style={{
-                  padding: '20px 24px',
-                  borderBottom: '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
+                className="p-4 sm:p-5 flex items-center justify-between flex-shrink-0"
+                style={{ background: headerGradient }}
               >
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
+                <div className="text-white">
+                  <h2 className="text-lg sm:text-xl font-bold">
                     Trainings-Setup wählen
                   </h2>
-                  <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>
-                    Wähle deinen Schwerpunkt für passende Trainingsszenarien
+                  <p className="text-sm opacity-90 mt-0.5 hidden sm:block">
+                    Wähle deinen Schwerpunkt für passende Szenarien
                   </p>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    backgroundColor: '#f1f5f9',
-                    color: '#64748b',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
 
+              {/* Mobile drag indicator */}
+              <div className="sm:hidden flex justify-center py-2 bg-gray-50">
+                <div className="w-10 h-1 rounded-full bg-gray-300" />
+              </div>
+
               {/* Modal Body - Scrollable */}
-              <div
-                style={{
-                  padding: '20px 24px',
-                  maxHeight: 'calc(90vh - 180px)',
-                  overflowY: 'auto',
-                }}
-              >
-                {/* Setup Grid */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-                    gap: '12px',
-                  }}
-                >
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+                {/* Setup Grid - responsive columns */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {availableSetups.map((setup) => {
                     const isSelected = currentSetup?.id === setup.id;
                     return (
                       <button
                         key={setup.id}
                         onClick={() => handleSelectSetup(setup.id)}
+                        className="p-4 rounded-xl text-left transition-all relative group hover:shadow-md active:scale-[0.98]"
                         style={{
-                          padding: '16px',
-                          borderRadius: '12px',
                           border: `2px solid ${isSelected ? setup.color : '#e2e8f0'}`,
                           backgroundColor: isSelected ? `${setup.color}08` : 'white',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.2s',
-                          position: 'relative',
                         }}
                       >
                         {/* Selected indicator */}
                         {isSelected && (
                           <div
-                            style={{
-                              position: 'absolute',
-                              top: '8px',
-                              right: '8px',
-                              width: '24px',
-                              height: '24px',
-                              borderRadius: '50%',
-                              backgroundColor: setup.color,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
+                            className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: setup.color }}
                           >
                             <Check size={14} color="white" />
                           </div>
@@ -250,68 +193,34 @@ const SetupSelector = () => {
 
                         {/* Icon */}
                         <div
-                          style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '10px',
-                            backgroundColor: `${setup.color}15`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginBottom: '12px',
-                          }}
+                          className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
+                          style={{ backgroundColor: `${setup.color}15` }}
                         >
-                          <span style={{ fontSize: '20px' }}>{setup.icon}</span>
+                          <span className="text-xl sm:text-2xl">{setup.icon}</span>
                         </div>
 
                         {/* Title */}
-                        <div
-                          style={{
-                            fontSize: '14px',
-                            fontWeight: 600,
-                            color: '#0f172a',
-                            marginBottom: '4px',
-                          }}
-                        >
+                        <div className="text-sm sm:text-base font-semibold text-gray-900 mb-1 pr-8">
                           {setup.name}
                         </div>
 
                         {/* Description */}
-                        <div
-                          style={{
-                            fontSize: '12px',
-                            color: '#64748b',
-                            lineHeight: 1.4,
-                            marginBottom: '8px',
-                          }}
-                        >
+                        <div className="text-xs sm:text-sm text-gray-500 line-clamp-2 mb-2">
                           {setup.description}
                         </div>
 
                         {/* Tags */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        <div className="flex flex-wrap gap-1.5">
                           <span
+                            className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-medium"
                             style={{
-                              fontSize: '10px',
-                              padding: '2px 8px',
-                              borderRadius: '10px',
                               backgroundColor: `${setup.color}15`,
                               color: setup.color,
-                              fontWeight: 500,
                             }}
                           >
                             {setup.focus}
                           </span>
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              padding: '2px 8px',
-                              borderRadius: '10px',
-                              backgroundColor: '#f1f5f9',
-                              color: '#64748b',
-                              fontWeight: 500,
-                            }}
-                          >
+                          <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
                             {setup.targetGroup}
                           </span>
                         </div>
@@ -322,42 +231,17 @@ const SetupSelector = () => {
               </div>
 
               {/* Modal Footer */}
-              <div
-                style={{
-                  padding: '16px 24px',
-                  borderTop: '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
+              <div className="p-4 sm:p-5 border-t border-gray-100 flex items-center justify-between gap-3 flex-shrink-0 bg-gray-50">
                 <button
                   onClick={handleClearSetup}
-                  style={{
-                    padding: '10px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid #e2e8f0',
-                    backgroundColor: 'white',
-                    color: '#64748b',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}
+                  className="px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
                 >
-                  Alle Szenarien anzeigen
+                  Alle Szenarien
                 </button>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    backgroundColor: primaryAccent,
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
+                  className="px-5 py-2.5 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90"
+                  style={{ background: headerGradient }}
                 >
                   Fertig
                 </button>

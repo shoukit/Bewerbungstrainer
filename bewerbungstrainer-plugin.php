@@ -280,6 +280,9 @@ class Bewerbungstrainer_Plugin {
         // Load White-Label Partners class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whitelabel-partners.php';
 
+        // Load Scenario Setups class
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-scenario-setups.php';
+
         // Load Demo Codes class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-demo-codes.php';
 
