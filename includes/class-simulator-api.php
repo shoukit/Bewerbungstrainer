@@ -176,6 +176,7 @@ class Bewerbungstrainer_Simulator_API {
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
                 'category' => $scenario->category,
+                'target_audience' => $scenario->target_audience ?? '',
                 'mode' => $scenario->mode ?? 'INTERVIEW',
                 'input_configuration' => $scenario->input_configuration,
                 'question_count_min' => (int) $scenario->question_count_min,

@@ -189,6 +189,7 @@ class Bewerbungstrainer_Video_Training_API {
                 'total_time_limit' => (int) $scenario->total_time_limit,
                 'enable_tips' => (bool) $scenario->enable_tips,
                 'enable_navigation' => (bool) $scenario->enable_navigation,
+                'target_audience' => $scenario->target_audience ?? '',
             );
         }, $scenarios);
 

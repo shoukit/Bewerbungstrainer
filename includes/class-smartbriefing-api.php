@@ -180,6 +180,7 @@ class Bewerbungstrainer_SmartBriefing_API {
                 'description' => $template->description,
                 'icon' => $template->icon,
                 'category' => $template->category,
+                'target_audience' => $template->target_audience ?? '',
                 'variables_schema' => $template->variables_schema,
                 'is_custom' => !empty($template->is_custom),
                 'system_prompt' => !empty($template->is_custom) ? $template->system_prompt : null, // Only expose for custom templates

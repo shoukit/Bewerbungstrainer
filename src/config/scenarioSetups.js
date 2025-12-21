@@ -101,10 +101,17 @@ export function scenarioBelongsToSetup(scenario, setupId) {
   }
 
   // Parse target_audience (semicolon separated)
-  const audiences = scenario.target_audience.split(';').map(a => a.trim());
+  const audiences = scenario.target_audience.split(';').map(a => a.trim().toLowerCase());
 
-  // Check if setup name is in the audiences
-  return audiences.includes(setup.name);
+  // Check if setup ID/slug OR name is in the audiences (case-insensitive)
+  const setupSlug = setup.id?.toLowerCase();
+  const setupName = setup.name?.toLowerCase();
+
+  return audiences.some(audience =>
+    audience === setupSlug ||
+    audience === setupName ||
+    audience === setupId.toLowerCase()
+  );
 }
 
 /**
@@ -135,9 +142,16 @@ export function getScenarioSetups(scenario) {
     return [];
   }
 
-  const audiences = scenario.target_audience.split(';').map(a => a.trim());
+  const audiences = scenario.target_audience.split(';').map(a => a.trim().toLowerCase());
 
-  return SCENARIO_SETUPS_LIST.filter(setup => audiences.includes(setup.name));
+  return SCENARIO_SETUPS_LIST.filter(setup => {
+    const setupSlug = setup.id?.toLowerCase();
+    const setupName = setup.name?.toLowerCase();
+    return audiences.some(audience =>
+      audience === setupSlug ||
+      audience === setupName
+    );
+  });
 }
 
 export default SCENARIO_SETUPS;
