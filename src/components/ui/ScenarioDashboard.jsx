@@ -228,25 +228,38 @@ const ScenarioDashboard = ({
     return [...new Set(allCategories)];
   }, [baseFilteredScenarios, categoryField, customCategoryConfig]);
 
-  // Get available categories for filter UI
+  // Get available categories for filter UI - only categories with at least one scenario
   const availableCategories = useMemo(() => {
     if (customCategoryConfig) {
-      // Use custom category config
-      return scenarioCategories.map(key => ({
-        key,
-        label: customCategoryConfig[key]?.label || key,
-        shortLabel: customCategoryConfig[key]?.label || key,
-        color: customCategoryConfig[key]?.color,
-        bgColor: customCategoryConfig[key]?.bgColor,
-        icon: customCategoryConfig[key]?.icon,
-        IconComponent: customCategoryConfig[key]?.icon,
-      }));
+      // Use custom category config - only include categories that have scenarios
+      return scenarioCategories
+        .filter(key => {
+          // Check if at least one scenario matches this category
+          return baseFilteredScenarios.some(scenario => scenario[categoryField] === key);
+        })
+        .map(key => ({
+          key,
+          label: customCategoryConfig[key]?.label || key,
+          shortLabel: customCategoryConfig[key]?.label || key,
+          color: customCategoryConfig[key]?.color,
+          bgColor: customCategoryConfig[key]?.bgColor,
+          icon: customCategoryConfig[key]?.icon,
+          IconComponent: customCategoryConfig[key]?.icon,
+        }));
     }
 
     // Use useCategories hook
     const cats = getCategoriesForFilter(scenarioCategories);
-    return cats.filter(cat => cat && cat.label && cat.label.trim());
-  }, [scenarioCategories, customCategoryConfig, getCategoriesForFilter]);
+
+    // Filter to only include categories that have at least one matching scenario
+    return cats.filter(cat => {
+      if (!cat || !cat.label || !cat.label.trim()) return false;
+      // Check if at least one scenario matches this category
+      return baseFilteredScenarios.some(scenario =>
+        matchesCategory(scenario[categoryField], cat.key)
+      );
+    });
+  }, [scenarioCategories, customCategoryConfig, getCategoriesForFilter, baseFilteredScenarios, categoryField, matchesCategory]);
 
   // Filter scenarios by category and search
   const filteredScenarios = useMemo(() => {
