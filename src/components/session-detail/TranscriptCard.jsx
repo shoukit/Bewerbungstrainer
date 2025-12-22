@@ -94,7 +94,7 @@ export function TranscriptCard({
                   animate={{ opacity: isActive ? 1 : 0.8 }}
                   onClick={() => onSeekToEntry?.(idx)}
                   className={cn(
-                    'flex gap-2 cursor-pointer transition-all',
+                    'flex gap-2 cursor-pointer transition-all w-full',
                     entry.role === 'user' ? 'flex-row-reverse' : 'flex-row',
                     isActive ? 'scale-[1.01]' : 'hover:scale-[1.005]'
                   )}
@@ -130,7 +130,7 @@ export function TranscriptCard({
                   {/* Message Bubble */}
                   <div
                     className={cn(
-                      'flex-1 px-3 py-2 rounded-xl shadow-sm transition-all',
+                      'max-w-[92%] px-3 py-2 rounded-xl shadow-sm transition-all',
                       isAgent
                         ? 'bg-slate-50 border'
                         : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white',

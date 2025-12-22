@@ -133,6 +133,10 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const apiKey = wordpressAPI.getElevenLabsApiKey();
   const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
 
+  // Default voice ID if not specified in scenario
+  const DEFAULT_VOICE_ID = 'kaGxVtjLwllv1bi2GFag';
+  const voiceId = scenario.voice_id || DEFAULT_VOICE_ID;
+
   // Build enhanced system prompt with interviewer profile
   const buildSystemPrompt = () => {
     let prompt = scenario.content || '';
@@ -198,16 +202,9 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     }
   };
 
-  // Use official @11labs/react SDK with overrides for system prompt and first message
+  // Use official @11labs/react SDK
+  // NOTE: Voice must be configured directly in ElevenLabs Agent settings (overrides not supported)
   const conversation = useConversation({
-    overrides: {
-      agent: {
-        prompt: {
-          prompt: buildSystemPrompt(), // Enhanced system prompt with profile
-        },
-        firstMessage: scenario.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
-      },
-    },
     onConnect: () => {
       const now = Date.now();
       setStartTime(now);
@@ -395,13 +392,33 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
         }
       }
 
-      // Use official SDK - pass variables as dynamicVariables (same as standard interview)
-      // Also pass the selected microphone deviceId if available
-      conversationIdRef.current = await conversation.startSession({
+      // Use official SDK - pass variables at session start
+      // Voice override requires enabling in ElevenLabs Agent Settings -> Security -> TTS Override
+      const sessionOptions = {
         agentId: agentId,
+        connectionType: 'websocket', // Use websocket for override support
         dynamicVariables: enhancedVariables,
         ...(localMicrophoneId && { inputDeviceId: localMicrophoneId }),
-      });
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: buildSystemPrompt(),
+            },
+            firstMessage: scenario.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
+          },
+          ...(scenario.voice_id && {
+            tts: {
+              voiceId: scenario.voice_id,
+            },
+          }),
+        },
+      };
+
+      if (scenario.voice_id) {
+        console.log('[RoleplaySession] Using voice override:', scenario.voice_id);
+      }
+
+      conversationIdRef.current = await conversation.startSession(sessionOptions);
 
       // Log the ElevenLabs system prompt to prompts.log
       const systemPrompt = buildSystemPrompt();
@@ -413,6 +430,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
           scenario_id: scenario.id,
           scenario_title: scenario.title,
           agent_id: agentId,
+          voice_id: voiceId,
           conversation_id: conversationIdRef.current,
           first_message: scenario.initial_message,
           variables: JSON.stringify(enhancedVariables),
