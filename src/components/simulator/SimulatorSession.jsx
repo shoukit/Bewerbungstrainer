@@ -885,6 +885,11 @@ const SimulatorSession = ({
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
+  // SIMULATION mode: Pre-load next question while showing feedback
+  const [isLoadingNextTurn, setIsLoadingNextTurn] = useState(false);
+  const [preloadedNextQuestion, setPreloadedNextQuestion] = useState(null);
+  const [isConversationFinished, setIsConversationFinished] = useState(false);
+
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const buttonGradient = branding?.['--button-gradient'] || headerGradient;
@@ -896,6 +901,18 @@ const SimulatorSession = ({
   const isFirstQuestion = currentIndex === 0;
 
   const handleRecordingComplete = async (audioBlob, audioDuration) => {
+    // Validate minimum audio duration (at least 2 seconds)
+    if (audioDuration < 2) {
+      setSubmitError('Die Aufnahme ist zu kurz. Bitte sprechen Sie mindestens 2 Sekunden.');
+      return;
+    }
+
+    // Validate audio blob size (at least 1KB to have meaningful content)
+    if (audioBlob.size < 1024) {
+      setSubmitError('Die Aufnahme enthält keine verwertbaren Audiodaten. Bitte versuchen Sie es erneut.');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -925,6 +942,35 @@ const SimulatorSession = ({
         prev.includes(currentIndex) ? prev : [...prev, currentIndex]
       );
 
+      // SIMULATION mode: Start generating next turn in background
+      if (isSimulation && !isConversationFinished) {
+        setIsLoadingNextTurn(true);
+        setPreloadedNextQuestion(null);
+
+        try {
+          const nextTurnResponse = await wordpressAPI.generateNextTurn(
+            session.id,
+            response.data.transcript || ''
+          );
+
+          if (nextTurnResponse.success) {
+            if (nextTurnResponse.data.is_finished) {
+              setIsConversationFinished(true);
+              setPreloadedNextQuestion(null);
+            } else {
+              setPreloadedNextQuestion(nextTurnResponse.data.next_question);
+              // Update questions array with the new question
+              setQuestions(prev => [...prev, nextTurnResponse.data.next_question]);
+            }
+          }
+        } catch (nextTurnErr) {
+          console.error('Error generating next turn:', nextTurnErr);
+          // Don't show error to user, just log it - they can still see feedback
+        } finally {
+          setIsLoadingNextTurn(false);
+        }
+      }
+
     } catch (err) {
       console.error('Error submitting answer:', err);
       setSubmitError(err.message || 'Ein Fehler ist aufgetreten');
@@ -943,8 +989,23 @@ const SimulatorSession = ({
     setFeedback(null);
     setShowFeedback(false);
     setSubmitError(null);
-    if (!isLastQuestion) {
-      setCurrentIndex(prev => prev + 1);
+
+    if (isSimulation) {
+      // SIMULATION mode: Move to the next dynamically generated question
+      if (preloadedNextQuestion) {
+        setCurrentIndex(prev => prev + 1);
+        setPreloadedNextQuestion(null);
+      }
+      // If conversation is finished, complete the session
+      if (isConversationFinished) {
+        handleCompleteSession();
+        return;
+      }
+    } else {
+      // INTERVIEW mode: Standard navigation
+      if (!isLastQuestion) {
+        setCurrentIndex(prev => prev + 1);
+      }
     }
   };
 
@@ -1358,8 +1419,8 @@ const SimulatorSession = ({
         </div>
       )}
 
-      {/* Navigation Buttons - only show during recording (not feedback) */}
-      {!showFeedback && (
+      {/* Navigation Buttons - only show during recording (not feedback) and NOT in SIMULATION mode */}
+      {!showFeedback && !isSimulation && (
         <div style={{
           display: 'flex',
           gap: isMobile ? '8px' : '12px',
@@ -1430,7 +1491,8 @@ const SimulatorSession = ({
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', justifyContent: 'flex-end' }}>
-            {scenario.allow_retry && (
+            {/* Retry button - hidden in SIMULATION mode */}
+            {scenario.allow_retry && !isSimulation && (
               <button
                 onClick={handleRetry}
                 style={{
@@ -1452,7 +1514,12 @@ const SimulatorSession = ({
               </button>
             )}
             <button
-              onClick={isLastQuestion ? handleCompleteSession : handleNext}
+              onClick={
+                isSimulation
+                  ? (isConversationFinished ? handleCompleteSession : handleNext)
+                  : (isLastQuestion ? handleCompleteSession : handleNext)
+              }
+              disabled={isSimulation && isLoadingNextTurn && !isConversationFinished}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1460,16 +1527,32 @@ const SimulatorSession = ({
                 padding: '12px 20px',
                 borderRadius: '10px',
                 border: 'none',
-                background: buttonGradient,
+                background: (isSimulation && isLoadingNextTurn && !isConversationFinished)
+                  ? COLORS.slate[400]
+                  : buttonGradient,
                 color: 'white',
                 fontSize: '14px',
                 fontWeight: 600,
-                cursor: 'pointer',
-                boxShadow: `0 4px 12px ${primaryAccent}4d`,
+                cursor: (isSimulation && isLoadingNextTurn && !isConversationFinished)
+                  ? 'wait'
+                  : 'pointer',
+                boxShadow: (isSimulation && isLoadingNextTurn && !isConversationFinished)
+                  ? 'none'
+                  : `0 4px 12px ${primaryAccent}4d`,
+                opacity: (isSimulation && isLoadingNextTurn && !isConversationFinished) ? 0.7 : 1,
               }}
             >
-              {isLastQuestion ? 'Training abschließen' : labels.nextButton}
-              {!isLastQuestion && <ChevronRight size={16} />}
+              {isSimulation && isLoadingNextTurn && !isConversationFinished ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+                  Gesprächspartner tippt...
+                </>
+              ) : (isSimulation ? (
+                isConversationFinished ? 'Training abschließen' : labels.nextButton
+              ) : (
+                isLastQuestion ? 'Training abschließen' : labels.nextButton
+              ))}
+              {!isLoadingNextTurn && !(isSimulation ? isConversationFinished : isLastQuestion) && <ChevronRight size={16} />}
             </button>
           </div>
 

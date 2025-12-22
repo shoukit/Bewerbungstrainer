@@ -136,6 +136,13 @@ class Bewerbungstrainer_Simulator_API {
             'callback' => array($this, 'complete_session'),
             'permission_callback' => array($this, 'allow_all_users'),
         ));
+
+        // Generate next turn for SIMULATION mode
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)/next-turn', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'generate_next_turn'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
     }
 
     /**
@@ -640,6 +647,270 @@ class Bewerbungstrainer_Simulator_API {
                 'audio_analysis' => $parsed['audio_metrics'],
             ),
         ), 200);
+    }
+
+    /**
+     * Generate next turn for SIMULATION mode
+     * This endpoint generates the next AI response based on conversation history
+     */
+    public function generate_next_turn($request) {
+        $session_id = intval($request['id']);
+        $session = $this->db->get_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'not_found',
+                __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get scenario
+        $scenario = $this->db->get_scenario($session->scenario_id);
+        if (!$scenario) {
+            return new WP_Error(
+                'scenario_not_found',
+                __('Szenario nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Only allow for SIMULATION mode
+        $mode = $scenario->mode ?? 'INTERVIEW';
+        if ($mode !== 'SIMULATION') {
+            return new WP_Error(
+                'invalid_mode',
+                __('Next-Turn Generierung ist nur für SIMULATION-Modus verfügbar.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get API key
+        $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
+        if (empty($api_key)) {
+            return new WP_Error(
+                'missing_api_key',
+                __('Gemini API Key ist nicht konfiguriert.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Get conversation history
+        $answers = $this->db->get_session_answers($session_id, true);
+        $questions = $session->questions_json ?: array();
+        $variables = $session->variables_json ?: array();
+
+        // Build conversation history string
+        $conversation_history = $this->build_conversation_history($questions, $answers);
+
+        // Check if we should finish the conversation
+        $answered_count = count($answers);
+        $min_turns = $scenario->question_count_min ?? 3;
+        $max_turns = $scenario->question_count_max ?? 8;
+
+        // Get user's last response for context
+        $params = $request->get_json_params();
+        $last_user_transcript = isset($params['last_transcript']) ? $params['last_transcript'] : '';
+
+        // Build prompt for next turn generation
+        $system_prompt = $this->interpolate_variables($scenario->system_prompt, $variables);
+        $question_prompt = $scenario->question_generation_prompt ?: $this->get_default_question_prompt();
+        $question_prompt = $this->interpolate_variables($question_prompt, $variables);
+
+        $next_turn_prompt = $this->build_next_turn_prompt(
+            $system_prompt,
+            $question_prompt,
+            $conversation_history,
+            $last_user_transcript,
+            $answered_count,
+            $min_turns,
+            $max_turns,
+            $variables
+        );
+
+        // Log prompt
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'SIMULATOR_NEXT_TURN',
+                'SIMULATION-Modus: Generierung der nächsten KI-Reaktion basierend auf Gesprächsverlauf.',
+                $next_turn_prompt,
+                array(
+                    'Szenario' => $scenario->title,
+                    'Bisherige Turns' => $answered_count,
+                    'Min Turns' => $min_turns,
+                    'Max Turns' => $max_turns,
+                    'Session-ID' => $session_id,
+                )
+            );
+        }
+
+        // Call Gemini API
+        $response = $this->call_gemini_api($next_turn_prompt, $api_key);
+
+        if (is_wp_error($response)) {
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SIMULATOR_NEXT_TURN', $response->get_error_message(), true);
+            }
+            return $response;
+        }
+
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('SIMULATOR_NEXT_TURN', $response);
+        }
+
+        // Parse response
+        $parsed = $this->parse_next_turn_response($response);
+
+        if (!$parsed) {
+            return new WP_Error(
+                'parse_failed',
+                __('Fehler beim Parsen der KI-Antwort.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Add the new question to the session's questions
+        $new_question = array(
+            'question' => $parsed['response'],
+            'category' => $parsed['category'] ?? 'follow_up',
+            'tips' => $parsed['tips'] ?? array(),
+        );
+
+        $updated_questions = $questions;
+        $updated_questions[] = $new_question;
+
+        // Update session with new question
+        $this->db->update_session($session_id, array(
+            'questions_json' => $updated_questions,
+            'total_questions' => count($updated_questions),
+        ));
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'next_question' => $new_question,
+                'question_index' => count($updated_questions) - 1,
+                'is_finished' => $parsed['is_finished'] ?? false,
+                'finish_reason' => $parsed['finish_reason'] ?? null,
+            ),
+        ), 200);
+    }
+
+    /**
+     * Build conversation history string from questions and answers
+     */
+    private function build_conversation_history($questions, $answers) {
+        $history = array();
+
+        foreach ($answers as $answer) {
+            $q_index = $answer->question_index;
+            $question_text = isset($questions[$q_index]['question'])
+                ? $questions[$q_index]['question']
+                : "Frage " . ($q_index + 1);
+
+            $history[] = array(
+                'role' => 'ai',
+                'content' => $question_text,
+            );
+            $history[] = array(
+                'role' => 'user',
+                'content' => $answer->transcript ?: '[Keine Transkription verfügbar]',
+            );
+        }
+
+        $formatted = "";
+        foreach ($history as $turn) {
+            $role_label = $turn['role'] === 'ai' ? 'GESPRÄCHSPARTNER' : 'USER';
+            $formatted .= "{$role_label}: {$turn['content']}\n\n";
+        }
+
+        return $formatted;
+    }
+
+    /**
+     * Build prompt for generating the next turn in SIMULATION mode
+     */
+    private function build_next_turn_prompt($system_prompt, $question_prompt, $conversation_history, $last_user_response, $turns_so_far, $min_turns, $max_turns, $variables) {
+        $prompt = "SYSTEM-KONTEXT:\n{$system_prompt}\n\n";
+        $prompt .= "SZENARIO-ANWEISUNGEN:\n{$question_prompt}\n\n";
+
+        $prompt .= "BISHERIGER GESPRÄCHSVERLAUF:\n";
+        $prompt .= $conversation_history;
+
+        if (!empty($last_user_response)) {
+            $prompt .= "USER (letzte Antwort): {$last_user_response}\n\n";
+        }
+
+        $prompt .= "---\n\n";
+        $prompt .= "AUFGABE: Generiere die nächste Reaktion des GESPRÄCHSPARTNERS (deine Rolle).\n\n";
+
+        $prompt .= "GESPRÄCHSFORTSCHRITT:\n";
+        $prompt .= "- Bisherige Turns: {$turns_so_far}\n";
+        $prompt .= "- Minimum Turns: {$min_turns}\n";
+        $prompt .= "- Maximum Turns: {$max_turns}\n\n";
+
+        $prompt .= "REGELN:\n";
+        $prompt .= "1. Reagiere natürlich auf die letzte Antwort des Users\n";
+        $prompt .= "2. Bleibe in deiner Rolle als Gesprächspartner\n";
+        $prompt .= "3. Generiere KEINE Aussagen für den User - nur deine eigene Reaktion\n";
+        $prompt .= "4. Wenn das Gespräch einen natürlichen Endpunkt erreicht hat ODER max_turns erreicht sind, setze is_finished auf true\n";
+        $prompt .= "5. Beende das Gespräch NICHT vor min_turns, es sei denn es gibt einen sehr guten Grund\n\n";
+
+        $prompt .= "ANTWORTE IM FOLGENDEN JSON-FORMAT:\n";
+        $prompt .= "```json\n";
+        $prompt .= "{\n";
+        $prompt .= "  \"response\": \"Deine nächste Aussage/Reaktion als Gesprächspartner\",\n";
+        $prompt .= "  \"category\": \"follow_up|challenge|empathy|closing\",\n";
+        $prompt .= "  \"tips\": [\"Tipp 1 für den User\", \"Tipp 2\"],\n";
+        $prompt .= "  \"is_finished\": false,\n";
+        $prompt .= "  \"finish_reason\": null\n";
+        $prompt .= "}\n";
+        $prompt .= "```\n\n";
+
+        $prompt .= "Wenn is_finished=true, gib einen passenden Abschluss-Satz als response und einen finish_reason (z.B. \"natural_conclusion\", \"max_turns_reached\", \"topic_exhausted\").";
+
+        return $prompt;
+    }
+
+    /**
+     * Parse the next turn response from Gemini
+     */
+    private function parse_next_turn_response($response) {
+        // Try to extract JSON from response
+        $json_match = array();
+        if (preg_match('/```json\s*([\s\S]*?)\s*```/', $response, $json_match)) {
+            $json_str = $json_match[1];
+        } elseif (preg_match('/\{[\s\S]*"response"[\s\S]*\}/', $response, $json_match)) {
+            $json_str = $json_match[0];
+        } else {
+            // Fallback: treat entire response as the next statement
+            return array(
+                'response' => trim($response),
+                'category' => 'follow_up',
+                'tips' => array(),
+                'is_finished' => false,
+                'finish_reason' => null,
+            );
+        }
+
+        $parsed = json_decode($json_str, true);
+        if (!$parsed || !isset($parsed['response'])) {
+            return array(
+                'response' => trim($response),
+                'category' => 'follow_up',
+                'tips' => array(),
+                'is_finished' => false,
+                'finish_reason' => null,
+            );
+        }
+
+        return array(
+            'response' => $parsed['response'],
+            'category' => $parsed['category'] ?? 'follow_up',
+            'tips' => $parsed['tips'] ?? array(),
+            'is_finished' => $parsed['is_finished'] ?? false,
+            'finish_reason' => $parsed['finish_reason'] ?? null,
+        );
     }
 
     /**
