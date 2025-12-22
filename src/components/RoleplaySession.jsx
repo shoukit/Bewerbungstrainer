@@ -202,20 +202,10 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     }
   };
 
-  // Use official @11labs/react SDK with overrides
+  // Use official @11labs/react SDK
   // NOTE: Voice override must be enabled in ElevenLabs Agent Settings -> Security tab
+  // Overrides are passed at startSession to ensure scenario data is available
   const conversation = useConversation({
-    overrides: {
-      agent: {
-        prompt: {
-          prompt: buildSystemPrompt(),
-        },
-        firstMessage: scenario.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
-      },
-      tts: {
-        voiceId: voiceId,
-      },
-    },
     onConnect: () => {
       const now = Date.now();
       setStartTime(now);
@@ -403,12 +393,22 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
         }
       }
 
-      // Use official SDK - pass variables as dynamicVariables
-      // Overrides (prompt, firstMessage, voiceId) are set in useConversation
+      // Use official SDK - pass variables and overrides at session start
       conversationIdRef.current = await conversation.startSession({
         agentId: agentId,
         dynamicVariables: enhancedVariables,
         ...(localMicrophoneId && { inputDeviceId: localMicrophoneId }),
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: buildSystemPrompt(),
+            },
+            firstMessage: scenario.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
+          },
+          tts: {
+            voiceId: voiceId,
+          },
+        },
       });
 
       // Log the ElevenLabs system prompt to prompts.log
