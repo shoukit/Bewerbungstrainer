@@ -874,12 +874,14 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
         gap: '24px',
         flexWrap: 'wrap',
       }}>
-        <div>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{questionsLabel}</span>
-          <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
-            {questions.length}
-          </span>
-        </div>
+        {questions.length > 0 && (
+          <div>
+            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{questionsLabel}</span>
+            <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
+              {questions.length}
+            </span>
+          </div>
+        )}
         <div>
           <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{timePerQuestionLabel}</span>
           <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
