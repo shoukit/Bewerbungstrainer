@@ -855,12 +855,21 @@ class Bewerbungstrainer_Simulator_API {
         $prompt .= "4. Wenn das Gespräch einen natürlichen Endpunkt erreicht hat ODER max_turns erreicht sind, setze is_finished auf true\n";
         $prompt .= "5. Beende das Gespräch NICHT vor min_turns, es sei denn es gibt einen sehr guten Grund\n\n";
 
+        $prompt .= "TIPS-REGELN (WICHTIG!):\n";
+        $prompt .= "- Die 'tips' sind Handlungsempfehlungen für den TRAINIERENDEN (User), NICHT für dich als KI!\n";
+        $prompt .= "- Formuliere als Anweisung: 'Zeigen Sie Verständnis...', 'Bleiben Sie ruhig...', 'Bieten Sie Alternativen an...'\n";
+        $prompt .= "- KEINE Beschreibungen deiner eigenen Reaktion!\n";
+        $prompt .= "- Die Tips sollen dem User helfen, auf DEINE Aussage professionell zu reagieren\n\n";
+
         $prompt .= "ANTWORTE IM FOLGENDEN JSON-FORMAT:\n";
         $prompt .= "```json\n";
         $prompt .= "{\n";
         $prompt .= "  \"response\": \"Deine nächste Aussage/Reaktion als Gesprächspartner\",\n";
-        $prompt .= "  \"category\": \"follow_up|challenge|empathy|closing\",\n";
-        $prompt .= "  \"tips\": [\"Tipp 1 für den User\", \"Tipp 2\"],\n";
+        $prompt .= "  \"category\": \"follow_up|challenge|negotiation|escalation|acceptance|closing\",\n";
+        $prompt .= "  \"tips\": [\n";
+        $prompt .= "    \"Konkreter Tipp für den User: Wie sollte er auf diese Aussage reagieren?\",\n";
+        $prompt .= "    \"Weiterer Tipp: Welche Kommunikationstechnik ist hier angemessen?\"\n";
+        $prompt .= "  ],\n";
         $prompt .= "  \"is_finished\": false,\n";
         $prompt .= "  \"finish_reason\": null\n";
         $prompt .= "}\n";
@@ -1210,6 +1219,10 @@ class Bewerbungstrainer_Simulator_API {
         if (!$variables) {
             $variables = array();
         }
+
+        // 0. Convert literal /n to actual newlines (common issue from CSV/form input)
+        $string = str_replace('/n', "\n", $string);
+        $string = str_replace('\n', "\n", $string);
 
         // 1. Handle JS-style ternary: ${key ? "text" : "other"}
         // Pattern: ${variable ? "true text" : "false text"} or ${variable ? 'true text' : 'false text'}
