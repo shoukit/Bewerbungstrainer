@@ -998,6 +998,44 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
     }
 
     /**
+     * Delete a template as admin (bypasses ownership check)
+     *
+     * This method allows administrators to delete any template,
+     * including system templates. Should only be called from admin pages.
+     *
+     * @param int $template_id Template ID
+     * @return bool True on success, false on failure
+     */
+    public function delete_template_admin($template_id) {
+        global $wpdb;
+
+        // Verify admin capabilities
+        if (!current_user_can('manage_options')) {
+            error_log('[SMARTBRIEFING] Admin delete attempted without proper capabilities');
+            return false;
+        }
+
+        $template = $this->get_template($template_id);
+        if (!$template) {
+            error_log('[SMARTBRIEFING] Template not found for admin delete: ' . $template_id);
+            return false;
+        }
+
+        $result = $wpdb->delete(
+            $this->table_templates,
+            array('id' => $template_id),
+            array('%d')
+        );
+
+        if ($result === false) {
+            error_log('[SMARTBRIEFING] Failed to admin delete template - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Check if user owns a template
      *
      * @param object $template Template object

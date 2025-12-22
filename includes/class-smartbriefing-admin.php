@@ -213,7 +213,7 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 wp_die('Security check failed');
             }
 
-            $this->db->delete_template(intval($_GET['id']));
+            $this->db->delete_template_admin(intval($_GET['id']));
             wp_redirect(admin_url('admin.php?page=smartbriefing-templates&deleted=1'));
             exit;
         }
@@ -301,7 +301,7 @@ class Bewerbungstrainer_SmartBriefing_Admin {
 
             case 'delete':
                 foreach ($template_ids as $id) {
-                    if ($this->db->delete_template($id)) {
+                    if ($this->db->delete_template_admin($id)) {
                         $updated++;
                     }
                 }
