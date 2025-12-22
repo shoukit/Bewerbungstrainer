@@ -760,6 +760,7 @@ Gib konkrete Formulierungsvorschläge.',
         $defaults = array(
             'title' => '',
             'description' => null,
+            'long_description' => null,
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
             'target_audience' => null,
@@ -768,6 +769,7 @@ Gib konkrete Formulierungsvorschläge.',
             'system_prompt' => '',
             'question_generation_prompt' => null,
             'feedback_prompt' => null,
+            'tips' => null,
             'input_configuration' => '[]',
             'question_count_min' => 8,
             'question_count_max' => 12,
@@ -789,6 +791,7 @@ Gib konkrete Formulierungsvorschläge.',
             array(
                 'title' => sanitize_text_field($data['title']),
                 'description' => sanitize_textarea_field($data['description']),
+                'long_description' => sanitize_textarea_field($data['long_description']),
                 'icon' => sanitize_text_field($data['icon']),
                 'difficulty' => $data['difficulty'],
                 'target_audience' => sanitize_text_field($data['target_audience']),
@@ -797,6 +800,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'system_prompt' => $data['system_prompt'],
                 'question_generation_prompt' => $data['question_generation_prompt'],
                 'feedback_prompt' => $data['feedback_prompt'],
+                'tips' => $data['tips'],
                 'input_configuration' => $data['input_configuration'],
                 'question_count_min' => intval($data['question_count_min']),
                 'question_count_max' => intval($data['question_count_max']),
@@ -805,7 +809,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
         );
 
         if ($result === false) {
@@ -830,8 +834,8 @@ Gib konkrete Formulierungsvorschläge.',
         $update_format = array();
 
         $allowed_fields = array(
-            'title', 'description', 'icon', 'difficulty', 'target_audience', 'category', 'mode',
-            'system_prompt', 'question_generation_prompt', 'feedback_prompt',
+            'title', 'description', 'long_description', 'icon', 'difficulty', 'target_audience', 'category', 'mode',
+            'system_prompt', 'question_generation_prompt', 'feedback_prompt', 'tips',
             'input_configuration', 'question_count_min', 'question_count_max',
             'time_limit_per_question', 'allow_retry', 'is_active', 'sort_order'
         );
@@ -848,7 +852,7 @@ Gib konkrete Formulierungsvorschläge.',
                 // Sanitize based on field type
                 if (in_array($field, array('title', 'icon', 'difficulty', 'category', 'mode'))) {
                     $value = sanitize_text_field($value);
-                } elseif ($field === 'description') {
+                } elseif (in_array($field, array('description', 'long_description'))) {
                     $value = sanitize_textarea_field($value);
                 }
 
