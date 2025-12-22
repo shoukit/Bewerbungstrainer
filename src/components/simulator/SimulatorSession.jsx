@@ -1242,29 +1242,34 @@ const SimulatorSession = ({
           alignItems: 'center',
           justifyContent: isMobile ? 'space-between' : 'flex-end',
         }}>
-          {/* Training beenden - immer sichtbar */}
-          <button
-            onClick={handleCompleteClick}
-            style={{
-              padding: isMobile ? '10px 14px' : '8px 16px',
-              borderRadius: '8px',
-              background: '#22c55e',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 600,
-              boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
-              flex: isMobile ? 1 : 'none',
-              justifyContent: 'center',
-            }}
-          >
-            <Check size={16} />
-            {isMobile ? 'Beenden' : 'Training beenden'}
-          </button>
+          {/* Training beenden - hide when training is truly complete (bottom shows "Training abschließen") */}
+          {!(showFeedback && (
+            (isSimulation && isConversationFinished && !preloadedNextQuestion) ||
+            (!isSimulation && isLastQuestion)
+          )) && (
+            <button
+              onClick={handleCompleteClick}
+              style={{
+                padding: isMobile ? '10px 14px' : '8px 16px',
+                borderRadius: '8px',
+                background: '#22c55e',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
+                flex: isMobile ? 1 : 'none',
+                justifyContent: 'center',
+              }}
+            >
+              <Check size={16} />
+              {isMobile ? 'Beenden' : 'Training beenden'}
+            </button>
+          )}
           <button
             onClick={handleCancelClick}
             style={{
