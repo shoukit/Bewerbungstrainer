@@ -508,6 +508,24 @@ const CategoryItemCard = ({ item, index }) => {
  * Feedback Accordion Component
  * Displays a collapsible section with feedback items (strengths, improvements, tips)
  */
+/**
+ * Color map for inline styles (to avoid Elementor CSS conflicts)
+ */
+const COLOR_MAP = {
+  'text-green-800': '#166534',
+  'text-green-700': '#15803d',
+  'text-green-600': '#16a34a',
+  'text-green-500': '#22c55e',
+  'text-amber-800': '#92400e',
+  'text-amber-700': '#b45309',
+  'text-amber-600': '#d97706',
+  'text-amber-500': '#f59e0b',
+  'text-blue-800': '#1e40af',
+  'text-blue-700': '#1d4ed8',
+  'text-blue-600': '#2563eb',
+  'text-blue-500': '#3b82f6',
+};
+
 const FeedbackAccordion = ({
   title,
   icon: Icon,
@@ -526,6 +544,12 @@ const FeedbackAccordion = ({
 
   if (!items || items.length === 0) return null;
 
+  // Get actual color values for inline styles
+  const titleColorValue = COLOR_MAP[titleColor] || titleColor;
+  const iconColorValue = COLOR_MAP[iconColor] || iconColor;
+  const textColorValue = COLOR_MAP[textColor] || textColor;
+  const bulletColorValue = COLOR_MAP[bulletColor] || bulletColor;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -536,15 +560,16 @@ const FeedbackAccordion = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full px-4 py-3 flex items-center justify-between gap-3 transition-colors hover:opacity-90",
+          "w-full px-4 py-3 flex items-center justify-between gap-3 transition-opacity hover:opacity-90",
           bgColor
         )}
+        style={{ border: 'none', background: 'transparent' }}
       >
         <div className="flex items-center gap-3">
           <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", headerBgColor)}>
-            <Icon className={cn("w-4 h-4", iconColor)} />
+            <Icon className="w-4 h-4" style={{ color: iconColorValue }} />
           </div>
-          <h4 className={cn("text-sm font-bold", titleColor)}>
+          <h4 className="text-sm font-bold" style={{ color: titleColorValue }}>
             {title}
           </h4>
         </div>
@@ -552,7 +577,7 @@ const FeedbackAccordion = ({
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
         >
-          <ChevronDown className={cn("w-5 h-5", iconColor)} />
+          <ChevronDown className="w-5 h-5" style={{ color: iconColorValue }} />
         </motion.div>
       </button>
 
@@ -569,11 +594,11 @@ const FeedbackAccordion = ({
             <div className="px-4 pb-4">
               <ul className="space-y-2">
                 {items.map((item, idx) => (
-                  <li key={idx} className={cn("flex items-start gap-2 text-sm", textColor)}>
+                  <li key={idx} className="flex items-start gap-2 text-sm" style={{ color: textColorValue }}>
                     {BulletIcon ? (
-                      <BulletIcon className={cn("w-4 h-4 mt-0.5 flex-shrink-0", bulletColor)} />
+                      <BulletIcon className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: bulletColorValue }} />
                     ) : (
-                      <span className={cn("mt-0.5 flex-shrink-0", bulletColor)}>•</span>
+                      <span className="mt-0.5 flex-shrink-0" style={{ color: bulletColorValue }}>•</span>
                     )}
                     <span className="leading-relaxed">{item}</span>
                   </li>
