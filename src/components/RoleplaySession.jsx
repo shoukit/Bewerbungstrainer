@@ -626,7 +626,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="relative h-full"
+              className="relative h-full min-h-0"
             >
               <CoachingPanel
                 hints={scenario.coaching_hints}
