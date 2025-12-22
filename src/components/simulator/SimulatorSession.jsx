@@ -947,6 +947,9 @@ const SimulatorSession = ({
         setIsLoadingNextTurn(true);
         setPreloadedNextQuestion(null);
 
+        // Check if this is a retry (user already answered this question before)
+        const isRetryAttempt = answeredQuestions.includes(currentIndex);
+
         try {
           const nextTurnResponse = await wordpressAPI.generateNextTurn(session.id);
 
@@ -956,12 +959,32 @@ const SimulatorSession = ({
             if (nextTurnResponse.data.is_finished) {
               // Conversation is ending - but we still have a final response to show
               setPreloadedNextQuestion(nextQuestion);
-              setQuestions(prev => [...prev, nextQuestion]);
+              if (isRetryAttempt) {
+                // Replace the next question instead of appending
+                setQuestions(prev => {
+                  const updated = [...prev];
+                  updated[currentIndex + 1] = nextQuestion;
+                  return updated.slice(0, currentIndex + 2); // Remove any questions after
+                });
+              } else {
+                setQuestions(prev => [...prev, nextQuestion]);
+              }
               setIsConversationFinished(true);
             } else {
               setPreloadedNextQuestion(nextQuestion);
-              // Update questions array with the new question
-              setQuestions(prev => [...prev, nextQuestion]);
+              if (isRetryAttempt) {
+                // Replace the next question instead of appending
+                setQuestions(prev => {
+                  const updated = [...prev];
+                  updated[currentIndex + 1] = nextQuestion;
+                  return updated.slice(0, currentIndex + 2); // Remove any questions after
+                });
+                // Also reset conversation finished state if it was set
+                setIsConversationFinished(false);
+              } else {
+                // First attempt - append new question
+                setQuestions(prev => [...prev, nextQuestion]);
+              }
             }
           }
         } catch (nextTurnErr) {
@@ -1496,8 +1519,8 @@ const SimulatorSession = ({
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', justifyContent: 'flex-end' }}>
-            {/* Retry button - hidden in SIMULATION mode */}
-            {scenario.allow_retry && !isSimulation && (
+            {/* Retry button */}
+            {scenario.allow_retry && (
               <button
                 onClick={handleRetry}
                 style={{
