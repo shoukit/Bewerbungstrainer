@@ -853,7 +853,8 @@ class Bewerbungstrainer_Simulator_API {
         $prompt .= "2. Bleibe in deiner Rolle als Gesprächspartner\n";
         $prompt .= "3. Generiere KEINE Aussagen für den User - nur deine eigene Reaktion\n";
         $prompt .= "4. Wenn das Gespräch einen natürlichen Endpunkt erreicht hat ODER max_turns erreicht sind, setze is_finished auf true\n";
-        $prompt .= "5. Beende das Gespräch NICHT vor min_turns, es sei denn es gibt einen sehr guten Grund\n\n";
+        $prompt .= "5. Beende das Gespräch NICHT vor min_turns, es sei denn es gibt einen sehr guten Grund\n";
+        $prompt .= "6. NAMEN-REGEL: Wenn der User dich mit einem Namen anspricht (z.B. 'Frau Meyer'), dann ist das DEIN Charakter-Name. Verwende diesen Namen NICHT, um den User anzusprechen! Der User hat keinen festgelegten Namen - sprich ihn neutral an oder gar nicht.\n\n";
 
         $prompt .= "TIPS-REGELN (WICHTIG!):\n";
         $prompt .= "- Die 'tips' sind Handlungsempfehlungen für den TRAINIERENDEN (User), NICHT für dich als KI!\n";
