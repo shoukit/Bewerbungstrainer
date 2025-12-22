@@ -396,6 +396,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       // Voice override requires enabling in ElevenLabs Agent Settings -> Security -> TTS Override
       const sessionOptions = {
         agentId: agentId,
+        connectionType: 'websocket', // Use websocket for override support
         dynamicVariables: enhancedVariables,
         ...(localMicrophoneId && { inputDeviceId: localMicrophoneId }),
       };
@@ -407,6 +408,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
             voiceId: scenario.voice_id,
           },
         };
+        console.log('[RoleplaySession] Using voice override:', scenario.voice_id);
       }
 
       conversationIdRef.current = await conversation.startSession(sessionOptions);
