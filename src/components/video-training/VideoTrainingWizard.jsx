@@ -756,7 +756,7 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
                 margin: 0,
                 whiteSpace: 'pre-wrap',
               }}>
-                {scenario.long_description}
+                {scenario.long_description?.replace(/\/n/g, '\n')}
               </p>
             </div>
           </div>

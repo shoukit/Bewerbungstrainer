@@ -647,7 +647,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
               color: COLORS.slate[600],
               margin: '4px 0 0 0',
             }}>
-              {scenario.title} • {questions.length} {questionsLabel}
+              {scenario.title}{questions.length > 0 ? ` • ${questions.length} ${questionsLabel}` : ''}
             </p>
           </div>
         </div>
@@ -695,7 +695,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
                 margin: 0,
                 whiteSpace: 'pre-wrap',
               }}>
-                {scenario.long_description}
+                {scenario.long_description?.replace(/\/n/g, '\n')}
               </p>
             </div>
           </div>
