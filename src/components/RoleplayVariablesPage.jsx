@@ -200,6 +200,17 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
+  // Helper function to replace {{variable}} placeholders with current form values
+  const replaceVariables = (text) => {
+    if (!text) return text;
+    let result = text;
+    Object.entries(formValues).forEach(([key, value]) => {
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      result = result.replace(regex, value || '');
+    });
+    return result;
+  };
+
   // Parse variables schema - filter to only user input fields
   const userInputVariables = React.useMemo(() => {
     if (!scenario?.variables_schema) return [];
@@ -418,7 +429,7 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
           {scenario.interviewer_profile.image_url ? (
             <img
               src={scenario.interviewer_profile.image_url}
-              alt={scenario.interviewer_profile.name}
+              alt={replaceVariables(scenario.interviewer_profile.name)}
               style={{
                 width: '48px',
                 height: '48px',
@@ -441,11 +452,11 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
           )}
           <div>
             <p style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
-              Dein Gesprächspartner: {scenario.interviewer_profile.name}
+              Dein Gesprächspartner: {replaceVariables(scenario.interviewer_profile.name)}
             </p>
             {scenario.interviewer_profile.role && (
               <p style={{ fontSize: '13px', color: COLORS.slate[600], margin: '2px 0 0 0' }}>
-                {scenario.interviewer_profile.role}
+                {replaceVariables(scenario.interviewer_profile.role)}
               </p>
             )}
           </div>
