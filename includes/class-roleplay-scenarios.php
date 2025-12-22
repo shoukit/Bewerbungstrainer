@@ -193,7 +193,9 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         $difficulty = get_post_meta($post->ID, '_roleplay_difficulty', true);
         $target_audience = get_post_meta($post->ID, '_roleplay_target_audience', true);
         $description = get_post_meta($post->ID, '_roleplay_description', true);
+        $long_description = get_post_meta($post->ID, '_roleplay_long_description', true);
         $feedback_prompt = get_post_meta($post->ID, '_roleplay_feedback_prompt', true);
+        $tips = get_post_meta($post->ID, '_roleplay_tips', true);
         $role_type = get_post_meta($post->ID, '_roleplay_role_type', true) ?: 'interview';
         $user_role_label = get_post_meta($post->ID, '_roleplay_user_role_label', true) ?: 'Bewerber';
         $category = get_post_meta($post->ID, '_roleplay_category', true);
@@ -299,13 +301,26 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
             <tr>
                 <th scope="row">
-                    <label for="roleplay_description"><?php _e('Beschreibung', 'bewerbungstrainer'); ?></label>
+                    <label for="roleplay_description"><?php _e('Kurzbeschreibung', 'bewerbungstrainer'); ?></label>
                 </th>
                 <td>
                     <textarea id="roleplay_description" name="roleplay_description"
                               rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea>
                     <p class="description">
-                        <?php _e('Kurze Beschreibung des Szenarios (wird dem User angezeigt)', 'bewerbungstrainer'); ?>
+                        <?php _e('Wird auf der Szenario-Kachel im Dashboard angezeigt (kurz halten).', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_long_description"><?php _e('Langbeschreibung', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <textarea id="roleplay_long_description" name="roleplay_long_description"
+                              rows="5" class="large-text"><?php echo esc_textarea($long_description); ?></textarea>
+                    <p class="description">
+                        <?php _e('Detaillierte Aufgabenbeschreibung für die Vorbereitungsseite. Erklärt dem Nutzer genau, was in diesem Training passiert und was von ihm erwartet wird.', 'bewerbungstrainer'); ?>
                     </p>
                 </td>
             </tr>
@@ -319,6 +334,27 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                               rows="10" class="large-text" style="font-family: monospace; font-size: 12px;"><?php echo esc_textarea($feedback_prompt); ?></textarea>
                     <p class="description">
                         <?php _e('Der Prompt für die KI-Bewertung nach dem Gespräch. Verwende ${transcript} als Platzhalter für das Transkript. Leer lassen für Standard-Prompt.', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_tips"><?php _e('Tipps für Nutzer (JSON)', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <textarea id="roleplay_tips" name="roleplay_tips"
+                              rows="8" class="large-text" style="font-family: monospace; font-size: 12px;"><?php
+                        if (is_array($tips)) {
+                            echo esc_textarea(json_encode($tips, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                        } else {
+                            echo esc_textarea($tips);
+                        }
+                    ?></textarea>
+                    <p class="description">
+                        <?php _e('Szenario-spezifische Tipps für die Vorbereitungsseite. Wenn leer, werden Standard-Tipps verwendet.', 'bewerbungstrainer'); ?><br>
+                        <?php _e('Format:', 'bewerbungstrainer'); ?> <code>[{"icon": "target", "title": "Tipp-Titel", "text": "Tipp-Beschreibung"}]</code><br>
+                        <?php _e('Icons:', 'bewerbungstrainer'); ?> <code>target, clock, mic, message-square, lightbulb, brain</code>
                     </p>
                 </td>
             </tr>
@@ -551,6 +587,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($_POST['roleplay_description']));
         }
 
+        // Save long description
+        if (isset($_POST['roleplay_long_description'])) {
+            update_post_meta($post_id, '_roleplay_long_description', sanitize_textarea_field($_POST['roleplay_long_description']));
+        }
+
         // Save role type
         if (isset($_POST['roleplay_role_type'])) {
             $role_type = sanitize_text_field($_POST['roleplay_role_type']);
@@ -567,6 +608,23 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         // Save feedback prompt
         if (isset($_POST['roleplay_feedback_prompt'])) {
             update_post_meta($post_id, '_roleplay_feedback_prompt', sanitize_textarea_field($_POST['roleplay_feedback_prompt']));
+        }
+
+        // Save tips (JSON)
+        if (isset($_POST['roleplay_tips'])) {
+            $tips = stripslashes($_POST['roleplay_tips']);
+            // Validate JSON if not empty
+            if (!empty($tips)) {
+                $tips_decoded = json_decode($tips, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    update_post_meta($post_id, '_roleplay_tips', wp_json_encode($tips_decoded));
+                } else {
+                    // Keep as-is if not valid JSON (for error visibility)
+                    update_post_meta($post_id, '_roleplay_tips', $tips);
+                }
+            } else {
+                update_post_meta($post_id, '_roleplay_tips', '');
+            }
         }
 
         // Save interviewer profile
@@ -682,10 +740,25 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         $category_json = get_post_meta($post->ID, '_roleplay_category', true);
         $category = Bewerbungstrainer_Categories_Admin::get_categories_array($category_json);
 
+        // Get tips (parse JSON if stored as string)
+        $tips_raw = get_post_meta($post->ID, '_roleplay_tips', true);
+        $tips = null;
+        if (!empty($tips_raw)) {
+            if (is_array($tips_raw)) {
+                $tips = $tips_raw;
+            } else {
+                $tips = json_decode($tips_raw, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $tips = null;
+                }
+            }
+        }
+
         return array(
             'id' => $post->ID,
             'title' => get_the_title($post),
             'description' => get_post_meta($post->ID, '_roleplay_description', true),
+            'long_description' => get_post_meta($post->ID, '_roleplay_long_description', true),
             'content' => apply_filters('the_content', $post->post_content),
             'agent_id' => get_post_meta($post->ID, '_roleplay_agent_id', true),
             'initial_message' => get_post_meta($post->ID, '_roleplay_initial_message', true),
@@ -696,6 +769,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'user_role_label' => $user_role_label,
             'variables_schema' => $variables,
             'tags' => $tags,
+            'tips' => $tips,
             'created_at' => $post->post_date,
             'updated_at' => $post->post_modified,
             'interviewer_profile' => array(

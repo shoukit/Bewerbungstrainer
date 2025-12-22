@@ -336,8 +336,57 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
         </div>
       </div>
 
-      {/* Description Card */}
-      {scenario.description && (
+      {/* Long Description - Detailed task description */}
+      {scenario.long_description && (
+        <div style={{
+          padding: '20px 24px',
+          borderRadius: '14px',
+          backgroundColor: 'white',
+          border: `1px solid ${COLORS.slate[200]}`,
+          marginBottom: '24px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '14px',
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: headerGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Info style={{ width: '20px', height: '20px', color: 'white' }} />
+            </div>
+            <div>
+              <h3 style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                color: COLORS.slate[900],
+                margin: '0 0 8px 0',
+              }}>
+                Deine Aufgabe
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                lineHeight: '1.6',
+                color: COLORS.slate[700],
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {scenario.long_description}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Short Description - Only show if no long_description */}
+      {!scenario.long_description && scenario.description && (
         <div style={{
           padding: '16px 20px',
           borderRadius: '12px',

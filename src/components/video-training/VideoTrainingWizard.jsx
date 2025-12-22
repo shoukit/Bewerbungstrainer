@@ -1,9 +1,53 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ArrowLeft, Video, Info, Loader2, AlertCircle, ChevronRight, Settings, Sparkles, Mic, Camera, ChevronDown, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Video, Info, Loader2, AlertCircle, ChevronRight, Settings, Sparkles, Mic, Camera, ChevronDown, RefreshCw, Target, Lightbulb, Brain, MessageSquare, CheckCircle, Clock } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { motion } from 'framer-motion';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import FullscreenLoader from '@/components/ui/fullscreen-loader';
+
+/**
+ * Icon mapping for dynamic tip icons from backend
+ */
+const iconMap = {
+  target: Target,
+  clock: Clock,
+  mic: Mic,
+  camera: Camera,
+  video: Video,
+  'message-square': MessageSquare,
+  lightbulb: Lightbulb,
+  brain: Brain,
+  info: Info,
+  settings: Settings,
+  check: CheckCircle,
+  sparkles: Sparkles,
+};
+
+/**
+ * Default tips for video training when no custom tips are configured
+ */
+const defaultVideoTips = [
+  {
+    icon: Camera,
+    title: 'Blick in die Kamera',
+    description: 'Schaue direkt in die Kamera, um Augenkontakt zu simulieren.',
+  },
+  {
+    icon: Lightbulb,
+    title: 'Gute Beleuchtung',
+    description: 'Achte auf ausreichend Licht von vorne, um professionell zu wirken.',
+  },
+  {
+    icon: Mic,
+    title: 'Klare Aussprache',
+    description: 'Sprich deutlich und in angemessenem Tempo.',
+  },
+  {
+    icon: Target,
+    title: 'Strukturierte Antworten',
+    description: 'Nutze die STAR-Methode: Situation, Task, Action, Result.',
+  },
+];
 
 /**
  * DeviceSelector - Reusable component for selecting audio/video devices
@@ -669,11 +713,129 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         </div>
       </motion.div>
 
+      {/* Long Description - Detailed task description */}
+      {scenario?.long_description && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          style={{
+            padding: '20px 24px',
+            borderRadius: '14px',
+            backgroundColor: 'white',
+            border: '1px solid #e2e8f0',
+            marginBottom: '24px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: themedGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Info style={{ width: '20px', height: '20px', color: 'white' }} />
+            </div>
+            <div>
+              <h3 style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                color: '#0f172a',
+                margin: '0 0 8px 0',
+              }}>
+                Deine Aufgabe
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                lineHeight: '1.6',
+                color: '#475569',
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {scenario.long_description}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Tips Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        style={{
+          background: '#fff',
+          borderRadius: '16px',
+          padding: '24px',
+          border: '1px solid #e2e8f0',
+          marginBottom: '24px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+          <Lightbulb size={20} color={primaryAccent} />
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>
+            Tipps für dein Video-Training
+          </h2>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          {(scenario?.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
+            ? scenario.tips.map(tip => ({
+                icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
+                title: tip.title,
+                description: tip.text || tip.description,
+              }))
+            : defaultVideoTips
+          ).map((tip, index) => {
+            const IconComponent = tip.icon;
+            return (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  backgroundColor: '#f8fafc',
+                }}
+              >
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: themedGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <IconComponent style={{ width: '18px', height: '18px', color: '#fff' }} />
+                </div>
+                <div>
+                  <h4 style={{ fontWeight: 600, color: '#0f172a', fontSize: '14px', marginBottom: '4px' }}>
+                    {tip.title}
+                  </h4>
+                  <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
+                    {tip.description}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </motion.div>
+
       {/* Form */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.15 }}
         style={{
           background: '#fff',
           borderRadius: '16px',

@@ -19,8 +19,30 @@ import {
   MessageSquare,
   ArrowLeft,
   Check,
-  Settings
+  Settings,
+  Brain,
+  Info
 } from 'lucide-react';
+
+// Icon mapping for dynamic tips from database
+const iconMap = {
+  target: Target,
+  clock: Clock,
+  mic: Mic,
+  'message-square': MessageSquare,
+  lightbulb: Lightbulb,
+  brain: Brain,
+  info: Info,
+  settings: Settings,
+  check: CheckCircle,
+  // Fallback aliases
+  Target: Target,
+  Clock: Clock,
+  Mic: Mic,
+  MessageSquare: MessageSquare,
+  Lightbulb: Lightbulb,
+  Brain: Brain,
+};
 import { motion, AnimatePresence } from 'framer-motion';
 import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
@@ -519,7 +541,8 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
   const questionsLabel = isSimulation ? 'Situationen' : 'Fragen';
   const timePerQuestionLabel = isSimulation ? 'Zeit pro Situation' : 'Zeit pro Frage';
 
-  const generalTips = [
+  // Default tips if no custom tips are configured
+  const defaultTips = [
     {
       icon: Target,
       title: 'Strukturiert antworten',
@@ -541,6 +564,15 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
       description: 'Belege deine Aussagen mit konkreten Beispielen und Zahlen wo möglich.',
     },
   ];
+
+  // Use custom tips from scenario if available, otherwise use defaults
+  const generalTips = scenario.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
+    ? scenario.tips.map(tip => ({
+        icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
+        title: tip.title,
+        description: tip.text || tip.description,
+      }))
+    : defaultTips;
 
   const contextInfo = variables ? Object.entries(variables)
     .filter(([key, value]) => value && value.trim && value.trim() !== '')
@@ -608,6 +640,55 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
           </div>
         </div>
       </div>
+
+      {/* Long Description - Scenario Task Description */}
+      {scenario.long_description && (
+        <div style={{
+          padding: '20px 24px',
+          borderRadius: '16px',
+          backgroundColor: 'white',
+          border: `1px solid ${COLORS.slate[200]}`,
+          marginBottom: '24px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '14px',
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: themedGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Info style={{ width: '20px', height: '20px', color: 'white' }} />
+            </div>
+            <div>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: 600,
+                color: COLORS.slate[900],
+                margin: '0 0 8px 0',
+              }}>
+                Deine Aufgabe
+              </h3>
+              <p style={{
+                fontSize: '15px',
+                lineHeight: '1.6',
+                color: COLORS.slate[700],
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {scenario.long_description}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Context Info */}
       {contextInfo.length > 0 && (

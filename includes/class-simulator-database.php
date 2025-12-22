@@ -73,6 +73,9 @@ class Bewerbungstrainer_Simulator_Database {
             $this->maybe_add_target_audience_column();
             // Expand category column to varchar(500) for multi-category support
             $this->maybe_expand_category_column();
+            // Add long_description and tips columns for enhanced scenario info
+            $this->maybe_add_long_description_column();
+            $this->maybe_add_tips_column();
             // Run category migration for existing installations
             self::migrate_category_values();
         }
@@ -141,6 +144,46 @@ class Bewerbungstrainer_Simulator_Database {
     }
 
     /**
+     * Add long_description column to scenarios table if it doesn't exist
+     */
+    private function maybe_add_long_description_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'long_description'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding long_description column to scenarios table...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `long_description` text DEFAULT NULL AFTER `description`");
+            error_log('[SIMULATOR] long_description column added successfully');
+        }
+    }
+
+    /**
+     * Add tips column to scenarios table if it doesn't exist
+     */
+    private function maybe_add_tips_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'tips'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding tips column to scenarios table...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `tips` longtext DEFAULT NULL AFTER `feedback_prompt`");
+            error_log('[SIMULATOR] tips column added successfully');
+        }
+    }
+
+    /**
      * Add demo_code column to sessions table if it doesn't exist
      */
     private function maybe_add_demo_code_column() {
@@ -175,6 +218,7 @@ class Bewerbungstrainer_Simulator_Database {
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `title` varchar(255) NOT NULL,
             `description` text DEFAULT NULL,
+            `long_description` text DEFAULT NULL,
             `icon` varchar(50) DEFAULT 'briefcase',
             `difficulty` varchar(20) DEFAULT 'intermediate',
             `target_audience` varchar(255) DEFAULT NULL,
@@ -183,6 +227,7 @@ class Bewerbungstrainer_Simulator_Database {
             `system_prompt` longtext NOT NULL,
             `question_generation_prompt` longtext DEFAULT NULL,
             `feedback_prompt` longtext DEFAULT NULL,
+            `tips` longtext DEFAULT NULL,
             `input_configuration` longtext NOT NULL,
             `question_count_min` tinyint UNSIGNED DEFAULT 8,
             `question_count_max` tinyint UNSIGNED DEFAULT 12,

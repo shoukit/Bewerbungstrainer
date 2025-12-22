@@ -320,9 +320,21 @@ class Bewerbungstrainer_Simulator_Admin {
             $target_audience = implode('; ', array_map('sanitize_text_field', $post['target_audience']));
         }
 
+        // Parse tips JSON
+        $tips = null;
+        if (!empty($post['tips'])) {
+            $tips_decoded = json_decode(stripslashes($post['tips']), true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $tips = json_encode($tips_decoded, JSON_UNESCAPED_UNICODE);
+            } else {
+                $tips = $post['tips']; // Keep as-is if not valid JSON
+            }
+        }
+
         return array(
             'title' => sanitize_text_field($post['title'] ?? ''),
             'description' => sanitize_textarea_field($post['description'] ?? ''),
+            'long_description' => sanitize_textarea_field($post['long_description'] ?? ''),
             'icon' => sanitize_text_field($post['icon'] ?? 'briefcase'),
             'difficulty' => sanitize_text_field($post['difficulty'] ?? 'intermediate'),
             'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($post['categories'] ?? array()),
@@ -331,6 +343,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'system_prompt' => wp_kses_post($post['system_prompt'] ?? ''),
             'question_generation_prompt' => wp_kses_post($post['question_generation_prompt'] ?? ''),
             'feedback_prompt' => wp_kses_post($post['feedback_prompt'] ?? ''),
+            'tips' => $tips,
             'input_configuration' => json_encode($input_configuration, JSON_UNESCAPED_UNICODE),
             'question_count_min' => intval($post['question_count_min'] ?? 8),
             'question_count_max' => intval($post['question_count_max'] ?? 12),
@@ -442,6 +455,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'id',
             'title',
             'description',
+            'long_description',
             'icon',
             'difficulty',
             'target_audience',
@@ -450,6 +464,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'system_prompt',
             'question_generation_prompt',
             'feedback_prompt',
+            'tips',
             'input_configuration',
             'question_count_min',
             'question_count_max',
@@ -486,10 +501,22 @@ class Bewerbungstrainer_Simulator_Admin {
                 }
             }
 
+            // Clean tips JSON
+            $tips = $scenario->tips ?? '';
+            if (is_array($tips)) {
+                $tips = json_encode($tips, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            } elseif (is_string($tips) && !empty($tips)) {
+                $decoded = json_decode($tips, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $tips = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+            }
+
             fputcsv($output, array(
                 $scenario->id,
                 $clean_text($scenario->title),
                 $clean_text($scenario->description),
+                $clean_text($scenario->long_description ?? ''),
                 $scenario->icon,
                 $scenario->difficulty,
                 $clean_text($scenario->target_audience ?? ''),
@@ -498,6 +525,7 @@ class Bewerbungstrainer_Simulator_Admin {
                 $clean_text($scenario->system_prompt),
                 $clean_text($scenario->question_generation_prompt),
                 $clean_text($scenario->feedback_prompt),
+                $tips,
                 $input_config,
                 $scenario->question_count_min,
                 $scenario->question_count_max,
@@ -564,10 +592,22 @@ class Bewerbungstrainer_Simulator_Admin {
                 }
             }
 
+            // Parse tips JSON if present
+            $tips = null;
+            if (!empty($data['tips'])) {
+                $tips_decoded = json_decode($data['tips'], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $tips = json_encode($tips_decoded, JSON_UNESCAPED_UNICODE);
+                } else {
+                    $tips = $data['tips'];
+                }
+            }
+
             // Prepare scenario data - restore newlines for text fields
             $scenario_data = array(
                 'title' => sanitize_text_field($data['title'] ?? ''),
                 'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
+                'long_description' => sanitize_textarea_field($restore_newlines($data['long_description'] ?? '')),
                 'icon' => sanitize_text_field($data['icon'] ?? 'briefcase'),
                 'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
                 'target_audience' => sanitize_text_field($restore_newlines($data['target_audience'] ?? '')),
@@ -576,6 +616,7 @@ class Bewerbungstrainer_Simulator_Admin {
                 'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
                 'question_generation_prompt' => wp_kses_post($restore_newlines($data['question_generation_prompt'] ?? '')),
                 'feedback_prompt' => wp_kses_post($restore_newlines($data['feedback_prompt'] ?? '')),
+                'tips' => $tips,
                 'input_configuration' => $data['input_configuration'] ?? '[]',
                 'question_count_min' => intval($data['question_count_min'] ?? 8),
                 'question_count_max' => intval($data['question_count_max'] ?? 12),
@@ -1016,10 +1057,17 @@ class Bewerbungstrainer_Simulator_Admin {
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><label for="description">Beschreibung</label></th>
+                                            <th><label for="description">Kurzbeschreibung</label></th>
                                             <td>
                                                 <textarea name="description" id="description" rows="3" class="large-text"><?php echo esc_textarea($data['description']); ?></textarea>
-                                                <p class="description">Wird den Nutzern bei der Szenario-Auswahl angezeigt.</p>
+                                                <p class="description">Wird auf der Szenario-Kachel im Dashboard angezeigt (kurz halten).</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><label for="long_description">Langbeschreibung</label></th>
+                                            <td>
+                                                <textarea name="long_description" id="long_description" rows="5" class="large-text"><?php echo esc_textarea($data['long_description'] ?? ''); ?></textarea>
+                                                <p class="description">Detaillierte Aufgabenbeschreibung für die Vorbereitungsseite. Erklärt dem Nutzer genau, was in diesem Training passiert und was von ihm erwartet wird.</p>
                                             </td>
                                         </tr>
                                         <tr>
@@ -1133,6 +1181,36 @@ class Bewerbungstrainer_Simulator_Admin {
                                                 <p class="description">
                                                     Optional: Zusätzliche Anweisungen für das Feedback.<br>
                                                     Wird an den Standard-Feedback-Prompt angehängt.
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Tips -->
+                            <div class="postbox">
+                                <h2 class="hndle">Tipps für Nutzer</h2>
+                                <div class="inside">
+                                    <p class="description" style="margin-bottom: 15px;">
+                                        Szenario-spezifische Tipps, die auf der Vorbereitungsseite angezeigt werden. Wenn leer, werden die Standard-Tipps verwendet.
+                                    </p>
+                                    <table class="form-table">
+                                        <tr>
+                                            <th><label for="tips">Tipps (JSON)</label></th>
+                                            <td>
+                                                <textarea name="tips" id="tips" rows="10" class="large-text code"><?php
+                                                    $tips_value = $data['tips'] ?? '';
+                                                    if (is_array($tips_value)) {
+                                                        echo esc_textarea(json_encode($tips_value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                                                    } else {
+                                                        echo esc_textarea($tips_value);
+                                                    }
+                                                ?></textarea>
+                                                <p class="description">
+                                                    JSON-Array mit Tipps. Format:<br>
+                                                    <code>[{"icon": "target", "title": "Tipp-Titel", "text": "Tipp-Beschreibung"}]</code><br><br>
+                                                    Verfügbare Icons: <code>target</code>, <code>clock</code>, <code>mic</code>, <code>message-square</code>, <code>lightbulb</code>, <code>brain</code>
                                                 </p>
                                             </td>
                                         </tr>

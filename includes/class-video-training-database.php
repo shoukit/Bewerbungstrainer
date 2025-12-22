@@ -110,6 +110,66 @@ class Bewerbungstrainer_Video_Training_Database {
             $this->expand_category_column();
             update_option('bewerbungstrainer_video_training_migration_version', '1.0.5');
         }
+
+        // Migration 6: Add long_description column for detailed scenario descriptions
+        if (version_compare($current_version, '1.0.6', '<')) {
+            $this->add_long_description_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.6');
+        }
+
+        // Migration 7: Add tips column for scenario-specific tips
+        if (version_compare($current_version, '1.0.7', '<')) {
+            $this->add_tips_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.7');
+        }
+    }
+
+    /**
+     * Add long_description column to scenarios table if it doesn't exist
+     */
+    private function add_long_description_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'long_description'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[VIDEO TRAINING] Adding long_description column to scenarios table...');
+            $result = $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `long_description` text DEFAULT NULL AFTER `description`");
+            if ($result === false) {
+                error_log('[VIDEO TRAINING] Error adding long_description column: ' . $wpdb->last_error);
+            } else {
+                error_log('[VIDEO TRAINING] long_description column added successfully');
+            }
+        }
+    }
+
+    /**
+     * Add tips column to scenarios table if it doesn't exist
+     */
+    private function add_tips_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'tips'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[VIDEO TRAINING] Adding tips column to scenarios table...');
+            $result = $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `tips` longtext DEFAULT NULL AFTER `feedback_prompt`");
+            if ($result === false) {
+                error_log('[VIDEO TRAINING] Error adding tips column: ' . $wpdb->last_error);
+            } else {
+                error_log('[VIDEO TRAINING] tips column added successfully');
+            }
+        }
     }
 
     /**
@@ -200,6 +260,7 @@ class Bewerbungstrainer_Video_Training_Database {
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `title` varchar(255) NOT NULL,
             `description` text DEFAULT NULL,
+            `long_description` text DEFAULT NULL,
             `icon` varchar(50) DEFAULT 'video',
             `difficulty` varchar(20) DEFAULT 'intermediate',
             `target_audience` varchar(255) DEFAULT NULL,
@@ -208,6 +269,7 @@ class Bewerbungstrainer_Video_Training_Database {
             `system_prompt` longtext NOT NULL,
             `question_generation_prompt` longtext DEFAULT NULL,
             `feedback_prompt` longtext DEFAULT NULL,
+            `tips` longtext DEFAULT NULL,
             `input_configuration` longtext NOT NULL,
             `question_count` tinyint UNSIGNED DEFAULT 5,
             `time_limit_per_question` int DEFAULT 120,
