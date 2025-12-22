@@ -1376,7 +1376,13 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
      * Get the simulation prompt template (new behavior for roleplay/counterpart scenarios)
      */
     private function get_simulation_prompt_template($count) {
-        return "Generiere genau {$count} aufeinanderfolgende Aussagen/Reaktionen DEINER Rolle.
+        return "HINWEIS ZUR SZENARIO-BESCHREIBUNG:
+Die Szenario-Beschreibung oben zeigt den GESAMTEN Gesprächsverlauf als Übersicht (z.B. '3 Versuche').
+Das ist der PLAN für das gesamte Gespräch - NICHT was du jetzt generieren sollst!
+
+DEINE AKTUELLE AUFGABE:
+Generiere NUR {$count} ERÖFFNUNGS-Aussage(n) für den Gesprächsbeginn.
+Die weiteren Gesprächs-Turns werden SPÄTER dynamisch basierend auf den Antworten des Users generiert.
 
 KRITISCH - ROLLENVERTEILUNG:
 - DU generierst NUR die Aussagen/Reaktionen DEINER Rolle (der Gegenspieler)
@@ -1389,14 +1395,14 @@ WICHTIG: Das ist KEIN Interview. Du stellst KEINE Fragen an den Nutzer. Du bist 
 Mapping der JSON-Felder:
 - Feld \"question\": DEINE wörtliche Rede oder Handlung (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\"). NUR deine Rolle, NICHT die des Users!
 - Feld \"tips\": 2-3 taktische Verhaltenstipps für den Nutzer, wie er auf DEINE Aussage reagieren sollte.
-- Feld \"category\": Die Phase des Gesprächs (z.B. \"Konfrontation\", \"Einwand\", \"Lösungssuche\", \"Eskalation\", \"Deeskalation\").
+- Feld \"category\": Die Phase des Gesprächs (z.B. \"Eröffnung\", \"Konfrontation\", \"Einwand\", \"Eskalation\").
 
 Antworte NUR mit einem JSON-Array im folgenden Format:
 [
   {
     \"index\": 0,
-    \"question\": \"Die Aussage oder Handlung des Gegenübers\",
-    \"category\": \"Phase\",
+    \"question\": \"Die Eröffnungs-Aussage oder Handlung des Gegenübers\",
+    \"category\": \"Eröffnung\",
     \"estimated_answer_time\": 60,
     \"tips\": [
       \"Taktischer Tipp 1: Konkreter Verhaltenshinweis für diese Situation\",
