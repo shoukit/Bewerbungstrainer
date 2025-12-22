@@ -586,10 +586,30 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
       })
     : defaultTips;
 
+  // Build label lookup from input_configuration
+  const inputConfigLabels = React.useMemo(() => {
+    if (!scenario?.input_configuration) return {};
+    try {
+      const config = typeof scenario.input_configuration === 'string'
+        ? JSON.parse(scenario.input_configuration)
+        : scenario.input_configuration;
+      if (!Array.isArray(config)) return {};
+      return config.reduce((acc, field) => {
+        if (field.key && field.label) {
+          acc[field.key] = field.label;
+        }
+        return acc;
+      }, {});
+    } catch (e) {
+      return {};
+    }
+  }, [scenario?.input_configuration]);
+
   const contextInfo = variables ? Object.entries(variables)
     .filter(([key, value]) => value && value.trim && value.trim() !== '')
     .map(([key, value]) => ({
-      label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      // Use German label from input_configuration, fallback to formatted key
+      label: inputConfigLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       value: value
     })) : [];
 
