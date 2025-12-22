@@ -1369,6 +1369,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'id',
             'title',
             'description',
+            'long_description',
             'content',
             'agent_id',
             'initial_message',
@@ -1387,6 +1388,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'interviewer_questions',
             'coaching_hints',
             'feedback_prompt',
+            'tips',
             'status'
         ), ';');
 
@@ -1418,10 +1420,16 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 ? json_encode($scenario['category'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
                 : '[]';
 
+            // Tips as JSON
+            $tips_json = is_array($scenario['tips'])
+                ? json_encode($scenario['tips'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                : '';
+
             fputcsv($output, array(
                 $scenario['id'],
                 $clean_text($scenario['title']),
                 $clean_text($scenario['description']),
+                $clean_text($scenario['long_description'] ?? ''),
                 $clean_text($post->post_content),
                 $scenario['agent_id'],
                 $clean_text($scenario['initial_message']),
@@ -1440,6 +1448,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 $clean_text($scenario['interviewer_profile']['important_questions']),
                 $clean_text($scenario['coaching_hints']),
                 $clean_text(get_post_meta($scenario['id'], '_roleplay_feedback_prompt', true)),
+                $tips_json,
                 $post->post_status
             ), ';');
         }
@@ -1553,6 +1562,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
             // Update meta fields (restore newlines in text fields)
             update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($restore_newlines($data['description'] ?? '')));
+            update_post_meta($post_id, '_roleplay_long_description', sanitize_textarea_field($restore_newlines($data['long_description'] ?? '')));
             update_post_meta($post_id, '_roleplay_agent_id', sanitize_text_field($data['agent_id'] ?? ''));
             update_post_meta($post_id, '_roleplay_initial_message', sanitize_textarea_field($restore_newlines($data['initial_message'] ?? '')));
             update_post_meta($post_id, '_roleplay_difficulty', sanitize_text_field($data['difficulty'] ?? 'medium'));
@@ -1594,6 +1604,14 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             if (!empty($data['tags'])) {
                 $tags = array_map('trim', explode(',', $data['tags']));
                 wp_set_post_terms($post_id, $tags, 'roleplay_scenario_tag');
+            }
+
+            // Tips (JSON array)
+            if (!empty($data['tips'])) {
+                $tips = json_decode($data['tips'], true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($tips)) {
+                    update_post_meta($post_id, '_roleplay_tips', wp_json_encode($tips));
+                }
             }
         }
 
