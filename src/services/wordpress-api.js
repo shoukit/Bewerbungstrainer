@@ -449,6 +449,17 @@ class WordPressAPI {
     }
 
     /**
+     * Generate next turn for SIMULATION mode
+     * Generates the next AI response based on conversation history (from database)
+     */
+    async generateNextTurn(sessionId) {
+        return this.request(`/simulator/sessions/${sessionId}/next-turn`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+    }
+
+    /**
      * Get simulator session answers
      */
     async getSimulatorSessionAnswers(sessionId) {

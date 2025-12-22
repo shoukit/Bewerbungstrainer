@@ -19,8 +19,30 @@ import {
   MessageSquare,
   ArrowLeft,
   Check,
-  Settings
+  Settings,
+  Brain,
+  Info
 } from 'lucide-react';
+
+// Icon mapping for dynamic tips from database
+const iconMap = {
+  target: Target,
+  clock: Clock,
+  mic: Mic,
+  'message-square': MessageSquare,
+  lightbulb: Lightbulb,
+  brain: Brain,
+  info: Info,
+  settings: Settings,
+  check: CheckCircle,
+  // Fallback aliases
+  Target: Target,
+  Clock: Clock,
+  Mic: Mic,
+  MessageSquare: MessageSquare,
+  Lightbulb: Lightbulb,
+  Brain: Brain,
+};
 import { motion, AnimatePresence } from 'framer-motion';
 import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
@@ -519,7 +541,8 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
   const questionsLabel = isSimulation ? 'Situationen' : 'Fragen';
   const timePerQuestionLabel = isSimulation ? 'Zeit pro Situation' : 'Zeit pro Frage';
 
-  const generalTips = [
+  // Default tips if no custom tips are configured
+  const defaultTips = [
     {
       icon: Target,
       title: 'Strukturiert antworten',
@@ -542,10 +565,51 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
     },
   ];
 
+  // Use custom tips from scenario if available, otherwise use defaults
+  // Supports both string arrays (legacy) and object arrays (new format)
+  const generalTips = scenario.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
+    ? scenario.tips.map((tip, index) => {
+        // Handle legacy string format: ["Tip text 1", "Tip text 2"]
+        if (typeof tip === 'string') {
+          return {
+            icon: Lightbulb,
+            title: `Tipp ${index + 1}`,
+            description: tip,
+          };
+        }
+        // Handle new object format: [{icon, title, text}]
+        return {
+          icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
+          title: tip.title || `Tipp ${index + 1}`,
+          description: tip.text || tip.description || '',
+        };
+      })
+    : defaultTips;
+
+  // Build label lookup from input_configuration
+  const inputConfigLabels = React.useMemo(() => {
+    if (!scenario?.input_configuration) return {};
+    try {
+      const config = typeof scenario.input_configuration === 'string'
+        ? JSON.parse(scenario.input_configuration)
+        : scenario.input_configuration;
+      if (!Array.isArray(config)) return {};
+      return config.reduce((acc, field) => {
+        if (field.key && field.label) {
+          acc[field.key] = field.label;
+        }
+        return acc;
+      }, {});
+    } catch (e) {
+      return {};
+    }
+  }, [scenario?.input_configuration]);
+
   const contextInfo = variables ? Object.entries(variables)
     .filter(([key, value]) => value && value.trim && value.trim() !== '')
     .map(([key, value]) => ({
-      label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      // Use German label from input_configuration, fallback to formatted key
+      label: inputConfigLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       value: value
     })) : [];
 
@@ -603,11 +667,60 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
               color: COLORS.slate[600],
               margin: '4px 0 0 0',
             }}>
-              {scenario.title} • {questions.length} {questionsLabel}
+              {scenario.title}{questions.length > 0 ? ` • ${questions.length} ${questionsLabel}` : ''}
             </p>
           </div>
         </div>
       </div>
+
+      {/* Long Description - Scenario Task Description */}
+      {scenario.long_description && (
+        <div style={{
+          padding: '20px 24px',
+          borderRadius: '16px',
+          backgroundColor: 'white',
+          border: `1px solid ${COLORS.slate[200]}`,
+          marginBottom: '24px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '14px',
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: themedGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Info style={{ width: '20px', height: '20px', color: 'white' }} />
+            </div>
+            <div>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: 600,
+                color: COLORS.slate[900],
+                margin: '0 0 8px 0',
+              }}>
+                Deine Aufgabe
+              </h3>
+              <p style={{
+                fontSize: '15px',
+                lineHeight: '1.6',
+                color: COLORS.slate[700],
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {scenario.long_description?.replace(/\/n/g, '\n')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Context Info */}
       {contextInfo.length > 0 && (
@@ -781,12 +894,14 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
         gap: '24px',
         flexWrap: 'wrap',
       }}>
-        <div>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{questionsLabel}</span>
-          <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
-            {questions.length}
-          </span>
-        </div>
+        {questions.length > 0 && (
+          <div>
+            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{questionsLabel}</span>
+            <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
+              {questions.length}
+            </span>
+          </div>
+        )}
         <div>
           <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{timePerQuestionLabel}</span>
           <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
@@ -877,13 +992,39 @@ const SimulatorSession = ({
   const [completedAnswers, setCompletedAnswers] = useState([]);
   const [answeredQuestions, setAnsweredQuestions] = useState(initialAnsweredQuestions);
 
-  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(initialMicrophoneId || null);
+  // Microphone selection - restore from localStorage if not provided (for session continuation)
+  const MICROPHONE_STORAGE_KEY = 'karriereheld_selected_microphone';
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(() => {
+    if (initialMicrophoneId) return initialMicrophoneId;
+    // Try to restore from localStorage for session continuation
+    try {
+      return localStorage.getItem(MICROPHONE_STORAGE_KEY) || null;
+    } catch {
+      return null;
+    }
+  });
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+
+  // Save microphone selection to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedMicrophoneId) {
+      try {
+        localStorage.setItem(MICROPHONE_STORAGE_KEY, selectedMicrophoneId);
+      } catch {
+        // localStorage might be unavailable
+      }
+    }
+  }, [selectedMicrophoneId]);
 
   // Confirmation dialog states
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  // SIMULATION mode: Pre-load next question while showing feedback
+  const [isLoadingNextTurn, setIsLoadingNextTurn] = useState(false);
+  const [preloadedNextQuestion, setPreloadedNextQuestion] = useState(null);
+  const [isConversationFinished, setIsConversationFinished] = useState(false);
 
   const { branding } = usePartner();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -896,6 +1037,18 @@ const SimulatorSession = ({
   const isFirstQuestion = currentIndex === 0;
 
   const handleRecordingComplete = async (audioBlob, audioDuration) => {
+    // Validate minimum audio duration (at least 2 seconds)
+    if (audioDuration < 2) {
+      setSubmitError('Die Aufnahme ist zu kurz. Bitte sprechen Sie mindestens 2 Sekunden.');
+      return;
+    }
+
+    // Validate audio blob size (at least 1KB to have meaningful content)
+    if (audioBlob.size < 1024) {
+      setSubmitError('Die Aufnahme enthält keine verwertbaren Audiodaten. Bitte versuchen Sie es erneut.');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -925,6 +1078,59 @@ const SimulatorSession = ({
         prev.includes(currentIndex) ? prev : [...prev, currentIndex]
       );
 
+      // SIMULATION mode: Start generating next turn in background
+      if (isSimulation && !isConversationFinished) {
+        setIsLoadingNextTurn(true);
+        setPreloadedNextQuestion(null);
+
+        // Check if this is a retry (user already answered this question before)
+        const isRetryAttempt = answeredQuestions.includes(currentIndex);
+
+        try {
+          const nextTurnResponse = await wordpressAPI.generateNextTurn(session.id);
+
+          if (nextTurnResponse.success) {
+            const nextQuestion = nextTurnResponse.data.next_question;
+
+            if (nextTurnResponse.data.is_finished) {
+              // Conversation is ending - but we still have a final response to show
+              setPreloadedNextQuestion(nextQuestion);
+              if (isRetryAttempt) {
+                // Replace the next question instead of appending
+                setQuestions(prev => {
+                  const updated = [...prev];
+                  updated[currentIndex + 1] = nextQuestion;
+                  return updated.slice(0, currentIndex + 2); // Remove any questions after
+                });
+              } else {
+                setQuestions(prev => [...prev, nextQuestion]);
+              }
+              setIsConversationFinished(true);
+            } else {
+              setPreloadedNextQuestion(nextQuestion);
+              if (isRetryAttempt) {
+                // Replace the next question instead of appending
+                setQuestions(prev => {
+                  const updated = [...prev];
+                  updated[currentIndex + 1] = nextQuestion;
+                  return updated.slice(0, currentIndex + 2); // Remove any questions after
+                });
+                // Also reset conversation finished state if it was set
+                setIsConversationFinished(false);
+              } else {
+                // First attempt - append new question
+                setQuestions(prev => [...prev, nextQuestion]);
+              }
+            }
+          }
+        } catch (nextTurnErr) {
+          console.error('Error generating next turn:', nextTurnErr);
+          // Don't show error to user, just log it - they can still see feedback
+        } finally {
+          setIsLoadingNextTurn(false);
+        }
+      }
+
     } catch (err) {
       console.error('Error submitting answer:', err);
       setSubmitError(err.message || 'Ein Fehler ist aufgetreten');
@@ -943,8 +1149,27 @@ const SimulatorSession = ({
     setFeedback(null);
     setShowFeedback(false);
     setSubmitError(null);
-    if (!isLastQuestion) {
-      setCurrentIndex(prev => prev + 1);
+
+    if (isSimulation) {
+      // SIMULATION mode: Move to the next dynamically generated question
+      if (preloadedNextQuestion) {
+        // There's a next question to show - move to it
+        setCurrentIndex(prev => prev + 1);
+        setPreloadedNextQuestion(null);
+        // Don't complete yet - let user respond to this question first
+        return;
+      }
+
+      // If conversation is finished AND no more questions to show, complete
+      if (isConversationFinished) {
+        handleCompleteSession();
+        return;
+      }
+    } else {
+      // INTERVIEW mode: Standard navigation
+      if (!isLastQuestion) {
+        setCurrentIndex(prev => prev + 1);
+      }
     }
   };
 
@@ -1132,29 +1357,34 @@ const SimulatorSession = ({
           alignItems: 'center',
           justifyContent: isMobile ? 'space-between' : 'flex-end',
         }}>
-          {/* Training beenden - immer sichtbar */}
-          <button
-            onClick={handleCompleteClick}
-            style={{
-              padding: isMobile ? '10px 14px' : '8px 16px',
-              borderRadius: '8px',
-              background: '#22c55e',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 600,
-              boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
-              flex: isMobile ? 1 : 'none',
-              justifyContent: 'center',
-            }}
-          >
-            <Check size={16} />
-            {isMobile ? 'Beenden' : 'Training beenden'}
-          </button>
+          {/* Training beenden - hide when training is truly complete (bottom shows "Training abschließen") */}
+          {!(showFeedback && (
+            (isSimulation && isConversationFinished && !preloadedNextQuestion) ||
+            (!isSimulation && isLastQuestion)
+          )) && (
+            <button
+              onClick={handleCompleteClick}
+              style={{
+                padding: isMobile ? '10px 14px' : '8px 16px',
+                borderRadius: '8px',
+                background: '#22c55e',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
+                flex: isMobile ? 1 : 'none',
+                justifyContent: 'center',
+              }}
+            >
+              <Check size={16} />
+              {isMobile ? 'Beenden' : 'Training beenden'}
+            </button>
+          )}
           <button
             onClick={handleCancelClick}
             style={{
@@ -1358,8 +1588,8 @@ const SimulatorSession = ({
         </div>
       )}
 
-      {/* Navigation Buttons - only show during recording (not feedback) */}
-      {!showFeedback && (
+      {/* Navigation Buttons - only show during recording (not feedback) and NOT in SIMULATION mode */}
+      {!showFeedback && !isSimulation && (
         <div style={{
           display: 'flex',
           gap: isMobile ? '8px' : '12px',
@@ -1430,6 +1660,7 @@ const SimulatorSession = ({
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', justifyContent: 'flex-end' }}>
+            {/* Retry button */}
             {scenario.allow_retry && (
               <button
                 onClick={handleRetry}
@@ -1452,7 +1683,12 @@ const SimulatorSession = ({
               </button>
             )}
             <button
-              onClick={isLastQuestion ? handleCompleteSession : handleNext}
+              onClick={
+                isSimulation
+                  ? ((isConversationFinished && !preloadedNextQuestion) ? handleCompleteSession : handleNext)
+                  : (isLastQuestion ? handleCompleteSession : handleNext)
+              }
+              disabled={isSimulation && isLoadingNextTurn && !isConversationFinished}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1460,16 +1696,33 @@ const SimulatorSession = ({
                 padding: '12px 20px',
                 borderRadius: '10px',
                 border: 'none',
-                background: buttonGradient,
+                background: (isSimulation && isLoadingNextTurn && !isConversationFinished)
+                  ? COLORS.slate[400]
+                  : buttonGradient,
                 color: 'white',
                 fontSize: '14px',
                 fontWeight: 600,
-                cursor: 'pointer',
-                boxShadow: `0 4px 12px ${primaryAccent}4d`,
+                cursor: (isSimulation && isLoadingNextTurn && !isConversationFinished)
+                  ? 'wait'
+                  : 'pointer',
+                boxShadow: (isSimulation && isLoadingNextTurn && !isConversationFinished)
+                  ? 'none'
+                  : `0 4px 12px ${primaryAccent}4d`,
+                opacity: (isSimulation && isLoadingNextTurn && !isConversationFinished) ? 0.7 : 1,
               }}
             >
-              {isLastQuestion ? 'Training abschließen' : labels.nextButton}
-              {!isLastQuestion && <ChevronRight size={16} />}
+              {isSimulation && isLoadingNextTurn && !isConversationFinished ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+                  Gesprächspartner tippt...
+                </>
+              ) : (isSimulation ? (
+                // Show "abschließen" only when finished AND no more questions to show
+                (isConversationFinished && !preloadedNextQuestion) ? 'Training abschließen' : labels.nextButton
+              ) : (
+                isLastQuestion ? 'Training abschließen' : labels.nextButton
+              ))}
+              {!isLoadingNextTurn && !(isSimulation ? (isConversationFinished && !preloadedNextQuestion) : isLastQuestion) && <ChevronRight size={16} />}
             </button>
           </div>
 

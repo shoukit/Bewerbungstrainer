@@ -136,6 +136,13 @@ class Bewerbungstrainer_Simulator_API {
             'callback' => array($this, 'complete_session'),
             'permission_callback' => array($this, 'allow_all_users'),
         ));
+
+        // Generate next turn for SIMULATION mode
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)/next-turn', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'generate_next_turn'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
     }
 
     /**
@@ -169,10 +176,24 @@ class Bewerbungstrainer_Simulator_API {
 
         // Format for frontend (include input_configuration for wizard)
         $formatted = array_map(function($scenario) {
+            // Parse tips JSON if it's a string
+            $tips = null;
+            if (!empty($scenario->tips)) {
+                if (is_string($scenario->tips)) {
+                    $tips = json_decode($scenario->tips, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        $tips = null;
+                    }
+                } else {
+                    $tips = $scenario->tips;
+                }
+            }
+
             return array(
                 'id' => (int) $scenario->id,
                 'title' => $scenario->title,
                 'description' => $scenario->description,
+                'long_description' => $scenario->long_description ?? null,
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
                 'category' => Bewerbungstrainer_Categories_Admin::get_categories_array($scenario->category),
@@ -183,6 +204,7 @@ class Bewerbungstrainer_Simulator_API {
                 'question_count_max' => (int) $scenario->question_count_max,
                 'time_limit_per_question' => (int) $scenario->time_limit_per_question,
                 'allow_retry' => (bool) $scenario->allow_retry,
+                'tips' => $tips,
             );
         }, $scenarios);
 
@@ -207,12 +229,26 @@ class Bewerbungstrainer_Simulator_API {
             );
         }
 
+        // Parse tips JSON if it's a string
+        $tips = null;
+        if (!empty($scenario->tips)) {
+            if (is_string($scenario->tips)) {
+                $tips = json_decode($scenario->tips, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $tips = null;
+                }
+            } else {
+                $tips = $scenario->tips;
+            }
+        }
+
         return new WP_REST_Response(array(
             'success' => true,
             'data' => array(
                 'id' => (int) $scenario->id,
                 'title' => $scenario->title,
                 'description' => $scenario->description,
+                'long_description' => $scenario->long_description ?? null,
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
                 'category' => Bewerbungstrainer_Categories_Admin::get_categories_array($scenario->category),
@@ -223,6 +259,7 @@ class Bewerbungstrainer_Simulator_API {
                 'question_count_max' => (int) $scenario->question_count_max,
                 'time_limit_per_question' => (int) $scenario->time_limit_per_question,
                 'allow_retry' => (bool) $scenario->allow_retry,
+                'tips' => $tips,
             ),
         ), 200);
     }
@@ -357,12 +394,18 @@ class Bewerbungstrainer_Simulator_API {
         $question_prompt = $scenario->question_generation_prompt ?: $this->get_default_question_prompt();
         $question_prompt = $this->interpolate_variables($question_prompt, $variables);
 
-        // Calculate question count
-        $question_count = rand($scenario->question_count_min, $scenario->question_count_max);
-        error_log("[SIMULATOR_QUESTIONS] Question count: $question_count (min: {$scenario->question_count_min}, max: {$scenario->question_count_max})");
-
         // Get scenario mode (INTERVIEW or SIMULATION)
         $mode = $scenario->mode ?? 'INTERVIEW';
+
+        // Calculate question count
+        // SIMULATION mode: Only generate 1 opening question, rest is dynamic via next-turn
+        if ($mode === 'SIMULATION') {
+            $question_count = 1;
+            error_log("[SIMULATOR_QUESTIONS] SIMULATION mode: generating only 1 opening question");
+        } else {
+            $question_count = rand($scenario->question_count_min, $scenario->question_count_max);
+            error_log("[SIMULATOR_QUESTIONS] INTERVIEW mode: Question count: $question_count (min: {$scenario->question_count_min}, max: {$scenario->question_count_max})");
+        }
 
         // Build full prompt
         $full_prompt = $this->build_question_generation_prompt(
@@ -640,6 +683,273 @@ class Bewerbungstrainer_Simulator_API {
                 'audio_analysis' => $parsed['audio_metrics'],
             ),
         ), 200);
+    }
+
+    /**
+     * Generate next turn for SIMULATION mode
+     * This endpoint generates the next AI response based on conversation history
+     */
+    public function generate_next_turn($request) {
+        $session_id = intval($request['id']);
+        $session = $this->db->get_session($session_id);
+
+        if (!$session) {
+            return new WP_Error(
+                'not_found',
+                __('Sitzung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get scenario
+        $scenario = $this->db->get_scenario($session->scenario_id);
+        if (!$scenario) {
+            return new WP_Error(
+                'scenario_not_found',
+                __('Szenario nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Only allow for SIMULATION mode
+        $mode = $scenario->mode ?? 'INTERVIEW';
+        if ($mode !== 'SIMULATION') {
+            return new WP_Error(
+                'invalid_mode',
+                __('Next-Turn Generierung ist nur für SIMULATION-Modus verfügbar.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get API key
+        $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
+        if (empty($api_key)) {
+            return new WP_Error(
+                'missing_api_key',
+                __('Gemini API Key ist nicht konfiguriert.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Get conversation history
+        $answers = $this->db->get_session_answers($session_id, true);
+        $questions = $session->questions_json ?: array();
+        $variables = $session->variables_json ?: array();
+
+        // Build conversation history string (includes all Q&A pairs from database)
+        $conversation_history = $this->build_conversation_history($questions, $answers);
+
+        // Check if we should finish the conversation
+        $answered_count = count($answers);
+        $min_turns = $scenario->question_count_min ?? 3;
+        $max_turns = $scenario->question_count_max ?? 8;
+
+        // Build prompt for next turn generation
+        $system_prompt = $this->interpolate_variables($scenario->system_prompt, $variables);
+        $question_prompt = $scenario->question_generation_prompt ?: $this->get_default_question_prompt();
+        $question_prompt = $this->interpolate_variables($question_prompt, $variables);
+
+        $next_turn_prompt = $this->build_next_turn_prompt(
+            $system_prompt,
+            $question_prompt,
+            $conversation_history,
+            $answered_count,
+            $min_turns,
+            $max_turns,
+            $variables
+        );
+
+        // Log prompt
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'SIMULATOR_NEXT_TURN',
+                'SIMULATION-Modus: Generierung der nächsten KI-Reaktion basierend auf Gesprächsverlauf.',
+                $next_turn_prompt,
+                array(
+                    'Szenario' => $scenario->title,
+                    'Bisherige Turns' => $answered_count,
+                    'Min Turns' => $min_turns,
+                    'Max Turns' => $max_turns,
+                    'Session-ID' => $session_id,
+                )
+            );
+        }
+
+        // Call Gemini API
+        $response = $this->call_gemini_api($next_turn_prompt, $api_key);
+
+        if (is_wp_error($response)) {
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SIMULATOR_NEXT_TURN', $response->get_error_message(), true);
+            }
+            return $response;
+        }
+
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('SIMULATOR_NEXT_TURN', $response);
+        }
+
+        // Parse response
+        $parsed = $this->parse_next_turn_response($response);
+
+        if (!$parsed) {
+            return new WP_Error(
+                'parse_failed',
+                __('Fehler beim Parsen der KI-Antwort.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Add the new question to the session's questions
+        $new_question = array(
+            'question' => $parsed['response'],
+            'category' => $parsed['category'] ?? 'follow_up',
+            'tips' => $parsed['tips'] ?? array(),
+        );
+
+        $updated_questions = $questions;
+        $updated_questions[] = $new_question;
+
+        // Update session with new question
+        $this->db->update_session($session_id, array(
+            'questions_json' => $updated_questions,
+            'total_questions' => count($updated_questions),
+        ));
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'next_question' => $new_question,
+                'question_index' => count($updated_questions) - 1,
+                'is_finished' => $parsed['is_finished'] ?? false,
+                'finish_reason' => $parsed['finish_reason'] ?? null,
+            ),
+        ), 200);
+    }
+
+    /**
+     * Build conversation history string from questions and answers
+     */
+    private function build_conversation_history($questions, $answers) {
+        $history = array();
+
+        foreach ($answers as $answer) {
+            $q_index = $answer->question_index;
+            $question_text = isset($questions[$q_index]['question'])
+                ? $questions[$q_index]['question']
+                : "Frage " . ($q_index + 1);
+
+            $history[] = array(
+                'role' => 'ai',
+                'content' => $question_text,
+            );
+            $history[] = array(
+                'role' => 'user',
+                'content' => $answer->transcript ?: '[Keine Transkription verfügbar]',
+            );
+        }
+
+        $formatted = "";
+        foreach ($history as $turn) {
+            $role_label = $turn['role'] === 'ai' ? 'GESPRÄCHSPARTNER' : 'USER';
+            $formatted .= "{$role_label}: {$turn['content']}\n\n";
+        }
+
+        return $formatted;
+    }
+
+    /**
+     * Build prompt for generating the next turn in SIMULATION mode
+     */
+    private function build_next_turn_prompt($system_prompt, $question_prompt, $conversation_history, $turns_so_far, $min_turns, $max_turns, $variables) {
+        $prompt = "SYSTEM-KONTEXT:\n{$system_prompt}\n\n";
+        $prompt .= "SZENARIO-ANWEISUNGEN:\n{$question_prompt}\n\n";
+
+        $prompt .= "BISHERIGER GESPRÄCHSVERLAUF:\n";
+        $prompt .= $conversation_history;
+        // Note: The last user response is already included in conversation_history
+        // (fetched from the database after submit_answer saves it)
+
+        $prompt .= "---\n\n";
+        $prompt .= "AUFGABE: Generiere die nächste Reaktion des GESPRÄCHSPARTNERS (deine Rolle).\n\n";
+
+        $prompt .= "GESPRÄCHSFORTSCHRITT:\n";
+        $prompt .= "- Bisherige Turns: {$turns_so_far}\n";
+        $prompt .= "- Minimum Turns: {$min_turns}\n";
+        $prompt .= "- Maximum Turns: {$max_turns}\n\n";
+
+        $prompt .= "REGELN:\n";
+        $prompt .= "1. Reagiere natürlich auf die letzte Antwort des Users\n";
+        $prompt .= "2. Bleibe in deiner Rolle als Gesprächspartner\n";
+        $prompt .= "3. Generiere KEINE Aussagen für den User - nur deine eigene Reaktion\n";
+        $prompt .= "4. Wenn das Gespräch einen natürlichen Endpunkt erreicht hat ODER max_turns erreicht sind, setze is_finished auf true\n";
+        $prompt .= "5. Beende das Gespräch NICHT vor min_turns, es sei denn es gibt einen sehr guten Grund\n";
+        $prompt .= "6. NAMEN-REGEL: Wenn der User dich mit einem Namen anspricht (z.B. 'Frau Meyer'), dann ist das DEIN Charakter-Name. Verwende diesen Namen NICHT, um den User anzusprechen! Der User hat keinen festgelegten Namen - sprich ihn neutral an oder gar nicht.\n\n";
+
+        $prompt .= "TIPS-REGELN (WICHTIG!):\n";
+        $prompt .= "- Die 'tips' sind Handlungsempfehlungen für den TRAINIERENDEN (User), NICHT für dich als KI!\n";
+        $prompt .= "- Formuliere als Anweisung: 'Zeigen Sie Verständnis...', 'Bleiben Sie ruhig...', 'Bieten Sie Alternativen an...'\n";
+        $prompt .= "- KEINE Beschreibungen deiner eigenen Reaktion!\n";
+        $prompt .= "- Die Tips sollen dem User helfen, auf DEINE Aussage professionell zu reagieren\n\n";
+
+        $prompt .= "ANTWORTE IM FOLGENDEN JSON-FORMAT:\n";
+        $prompt .= "```json\n";
+        $prompt .= "{\n";
+        $prompt .= "  \"response\": \"Deine nächste Aussage/Reaktion als Gesprächspartner\",\n";
+        $prompt .= "  \"category\": \"follow_up|challenge|negotiation|escalation|acceptance|closing\",\n";
+        $prompt .= "  \"tips\": [\n";
+        $prompt .= "    \"Konkreter Tipp für den User: Wie sollte er auf diese Aussage reagieren?\",\n";
+        $prompt .= "    \"Weiterer Tipp: Welche Kommunikationstechnik ist hier angemessen?\"\n";
+        $prompt .= "  ],\n";
+        $prompt .= "  \"is_finished\": false,\n";
+        $prompt .= "  \"finish_reason\": null\n";
+        $prompt .= "}\n";
+        $prompt .= "```\n\n";
+
+        $prompt .= "Wenn is_finished=true, gib einen passenden Abschluss-Satz als response und einen finish_reason (z.B. \"natural_conclusion\", \"max_turns_reached\", \"topic_exhausted\").";
+
+        return $prompt;
+    }
+
+    /**
+     * Parse the next turn response from Gemini
+     */
+    private function parse_next_turn_response($response) {
+        // Try to extract JSON from response
+        $json_match = array();
+        if (preg_match('/```json\s*([\s\S]*?)\s*```/', $response, $json_match)) {
+            $json_str = $json_match[1];
+        } elseif (preg_match('/\{[\s\S]*"response"[\s\S]*\}/', $response, $json_match)) {
+            $json_str = $json_match[0];
+        } else {
+            // Fallback: treat entire response as the next statement
+            return array(
+                'response' => trim($response),
+                'category' => 'follow_up',
+                'tips' => array(),
+                'is_finished' => false,
+                'finish_reason' => null,
+            );
+        }
+
+        $parsed = json_decode($json_str, true);
+        if (!$parsed || !isset($parsed['response'])) {
+            return array(
+                'response' => trim($response),
+                'category' => 'follow_up',
+                'tips' => array(),
+                'is_finished' => false,
+                'finish_reason' => null,
+            );
+        }
+
+        return array(
+            'response' => $parsed['response'],
+            'category' => $parsed['category'] ?? 'follow_up',
+            'tips' => $parsed['tips'] ?? array(),
+            'is_finished' => $parsed['is_finished'] ?? false,
+            'finish_reason' => $parsed['finish_reason'] ?? null,
+        );
     }
 
     /**
@@ -941,6 +1251,10 @@ class Bewerbungstrainer_Simulator_API {
             $variables = array();
         }
 
+        // 0. Convert literal /n to actual newlines (common issue from CSV/form input)
+        $string = str_replace('/n', "\n", $string);
+        $string = str_replace('\n', "\n", $string);
+
         // 1. Handle JS-style ternary: ${key ? "text" : "other"}
         // Pattern: ${variable ? "true text" : "false text"} or ${variable ? 'true text' : 'false text'}
         $string = preg_replace_callback(
@@ -1093,21 +1407,33 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
      * Get the simulation prompt template (new behavior for roleplay/counterpart scenarios)
      */
     private function get_simulation_prompt_template($count) {
-        return "Generiere einen realistischen Gesprächsverlauf mit genau {$count} aufeinanderfolgenden Phasen/Situationen.
+        return "HINWEIS ZUR SZENARIO-BESCHREIBUNG:
+Die Szenario-Beschreibung oben zeigt den GESAMTEN Gesprächsverlauf als Übersicht (z.B. '3 Versuche').
+Das ist der PLAN für das gesamte Gespräch - NICHT was du jetzt generieren sollst!
+
+DEINE AKTUELLE AUFGABE:
+Generiere NUR {$count} ERÖFFNUNGS-Aussage(n) für den Gesprächsbeginn.
+Die weiteren Gesprächs-Turns werden SPÄTER dynamisch basierend auf den Antworten des Users generiert.
+
+KRITISCH - ROLLENVERTEILUNG:
+- DU generierst NUR die Aussagen/Reaktionen DEINER Rolle (der Gegenspieler)
+- Der USER spielt die andere Rolle und antwortet zwischen deinen Aussagen
+- Generiere NIEMALS Aussagen des Users - nur DEINE eigenen Reaktionen!
+- Jede \"question\" ist EINE Aussage von DIR, auf die der User dann reagiert
 
 WICHTIG: Das ist KEIN Interview. Du stellst KEINE Fragen an den Nutzer. Du bist der Gegenspieler (z.B. Kunde, Klient, Mitarbeiter) und generierst Aussagen, Einwände oder emotionale Reaktionen, auf die der Nutzer reagieren muss.
 
 Mapping der JSON-Felder:
-- Feld \"question\": Hier trägst du die WÖRTLICHE REDE oder HANDLUNG deiner Rolle ein (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\").
-- Feld \"tips\": Hier generierst du 2-3 taktische Verhaltenstipps für den Nutzer (z.B. \"Nicht rechtfertigen, sondern Spiegeln\", \"Verständnis zeigen\").
-- Feld \"category\": Die Phase des Gesprächs (z.B. \"Konfrontation\", \"Einwand\", \"Lösungssuche\", \"Eskalation\", \"Deeskalation\").
+- Feld \"question\": DEINE wörtliche Rede oder Handlung (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\"). NUR deine Rolle, NICHT die des Users!
+- Feld \"tips\": 2-3 taktische Verhaltenstipps für den Nutzer, wie er auf DEINE Aussage reagieren sollte.
+- Feld \"category\": Die Phase des Gesprächs (z.B. \"Eröffnung\", \"Konfrontation\", \"Einwand\", \"Eskalation\").
 
 Antworte NUR mit einem JSON-Array im folgenden Format:
 [
   {
     \"index\": 0,
-    \"question\": \"Die Aussage oder Handlung des Gegenübers\",
-    \"category\": \"Phase\",
+    \"question\": \"Die Eröffnungs-Aussage oder Handlung des Gegenübers\",
+    \"category\": \"Eröffnung\",
     \"estimated_answer_time\": 60,
     \"tips\": [
       \"Taktischer Tipp 1: Konkreter Verhaltenshinweis für diese Situation\",

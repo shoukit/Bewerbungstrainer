@@ -110,6 +110,75 @@ class Bewerbungstrainer_Video_Training_Database {
             $this->expand_category_column();
             update_option('bewerbungstrainer_video_training_migration_version', '1.0.5');
         }
+
+        // Migration 6: Add long_description column for detailed scenario descriptions
+        if (version_compare($current_version, '1.0.6', '<')) {
+            $this->add_long_description_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.6');
+        }
+
+        // Migration 7: Add tips column for scenario-specific tips
+        if (version_compare($current_version, '1.0.7', '<')) {
+            $this->add_tips_column();
+            update_option('bewerbungstrainer_video_training_migration_version', '1.0.7');
+        }
+    }
+
+    /**
+     * Add long_description column to scenarios table if it doesn't exist
+     */
+    private function add_long_description_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'long_description'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[VIDEO TRAINING] Adding long_description column to scenarios table...');
+            $result = $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `long_description` text DEFAULT NULL AFTER `description`");
+            if ($result === false) {
+                error_log('[VIDEO TRAINING] Error adding long_description column: ' . $wpdb->last_error);
+            } else {
+                error_log('[VIDEO TRAINING] long_description column added successfully');
+            }
+        }
+    }
+
+    /**
+     * Add tips column to scenarios table if it doesn't exist
+     */
+    private function add_tips_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'tips'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[VIDEO TRAINING] Adding tips column to scenarios table...');
+            $result = $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `tips` longtext DEFAULT NULL AFTER `feedback_prompt`");
+            if ($result === false) {
+                error_log('[VIDEO TRAINING] Error adding tips column: ' . $wpdb->last_error);
+            } else {
+                error_log('[VIDEO TRAINING] tips column added successfully');
+            }
+        }
+    }
+
+    /**
+     * Public method to ensure all schema updates are applied
+     * Called before export to ensure columns exist
+     */
+    public function ensure_schema_updated() {
+        $this->add_long_description_column();
+        $this->add_tips_column();
     }
 
     /**
@@ -200,6 +269,7 @@ class Bewerbungstrainer_Video_Training_Database {
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `title` varchar(255) NOT NULL,
             `description` text DEFAULT NULL,
+            `long_description` text DEFAULT NULL,
             `icon` varchar(50) DEFAULT 'video',
             `difficulty` varchar(20) DEFAULT 'intermediate',
             `target_audience` varchar(255) DEFAULT NULL,
@@ -208,6 +278,7 @@ class Bewerbungstrainer_Video_Training_Database {
             `system_prompt` longtext NOT NULL,
             `question_generation_prompt` longtext DEFAULT NULL,
             `feedback_prompt` longtext DEFAULT NULL,
+            `tips` longtext DEFAULT NULL,
             `input_configuration` longtext NOT NULL,
             `question_count` tinyint UNSIGNED DEFAULT 5,
             `time_limit_per_question` int DEFAULT 120,
@@ -644,6 +715,7 @@ Gib konkretes, umsetzbares Feedback.',
         $defaults = array(
             'title' => '',
             'description' => null,
+            'long_description' => null,
             'icon' => 'video',
             'difficulty' => 'intermediate',
             'target_audience' => null,
@@ -652,6 +724,7 @@ Gib konkretes, umsetzbares Feedback.',
             'system_prompt' => '',
             'question_generation_prompt' => null,
             'feedback_prompt' => null,
+            'tips' => null,
             'input_configuration' => '[]',
             'question_count' => 5,
             'time_limit_per_question' => 120,
@@ -674,6 +747,7 @@ Gib konkretes, umsetzbares Feedback.',
             array(
                 'title' => sanitize_text_field($data['title']),
                 'description' => sanitize_textarea_field($data['description']),
+                'long_description' => sanitize_textarea_field($data['long_description']),
                 'icon' => sanitize_text_field($data['icon']),
                 'difficulty' => $data['difficulty'],
                 'target_audience' => sanitize_text_field($data['target_audience']),
@@ -682,6 +756,7 @@ Gib konkretes, umsetzbares Feedback.',
                 'system_prompt' => $data['system_prompt'],
                 'question_generation_prompt' => $data['question_generation_prompt'],
                 'feedback_prompt' => $data['feedback_prompt'],
+                'tips' => $data['tips'],
                 'input_configuration' => $data['input_configuration'],
                 'question_count' => intval($data['question_count']),
                 'time_limit_per_question' => intval($data['time_limit_per_question']),
@@ -691,7 +766,7 @@ Gib konkretes, umsetzbares Feedback.',
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
         );
 
         if ($result === false) {

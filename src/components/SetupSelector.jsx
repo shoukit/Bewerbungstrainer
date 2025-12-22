@@ -196,13 +196,14 @@ const SetupSelector = () => {
             />
 
             {/* Modal - properly centered */}
-            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 pointer-events-none">
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 overflow-y-auto">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden pointer-events-auto"
+                className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto"
+                style={{ maxHeight: 'calc(100vh - 2rem)' }}
               >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 flex-shrink-0">
@@ -223,7 +224,10 @@ const SetupSelector = () => {
                 </div>
 
                 {/* Body - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+                <div
+                  className="flex-1 overflow-y-auto p-4 sm:p-5 overscroll-contain"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {availableSetups.map((setup) => (
                       <SetupCard

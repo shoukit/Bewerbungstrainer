@@ -213,7 +213,7 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 wp_die('Security check failed');
             }
 
-            $this->db->delete_template(intval($_GET['id']));
+            $this->db->delete_template_admin(intval($_GET['id']));
             wp_redirect(admin_url('admin.php?page=smartbriefing-templates&deleted=1'));
             exit;
         }
@@ -301,7 +301,7 @@ class Bewerbungstrainer_SmartBriefing_Admin {
 
             case 'delete':
                 foreach ($template_ids as $id) {
-                    if ($this->db->delete_template($id)) {
+                    if ($this->db->delete_template_admin($id)) {
                         $updated++;
                     }
                 }
@@ -560,12 +560,25 @@ class Bewerbungstrainer_SmartBriefing_Admin {
             }
 
             // Prepare template data - restore newlines for text fields
-            // Handle category: can be array or string (legacy)
-            $category_value = $data['category'] ?? array();
+            // Handle category: can be JSON array string, array, or single string
+            $category_value = $data['category'] ?? '';
+
+            // If it's a JSON array string from CSV (e.g., '["karriere","fuehrung"]'), parse it first
+            if (is_string($category_value) && strpos($category_value, '[') === 0) {
+                $parsed = json_decode($category_value, true);
+                if (is_array($parsed) && json_last_error() === JSON_ERROR_NONE) {
+                    $category_value = $parsed;
+                }
+            }
+
+            // Now encode properly
             if (is_array($category_value)) {
-                $category_json = json_encode(array_map('sanitize_text_field', $category_value));
+                $category_json = json_encode(array_map('sanitize_text_field', $category_value), JSON_UNESCAPED_UNICODE);
+            } elseif (!empty($category_value)) {
+                // Single category string - wrap in array
+                $category_json = json_encode(array(sanitize_text_field($category_value)), JSON_UNESCAPED_UNICODE);
             } else {
-                $category_json = json_encode(array(sanitize_text_field($category_value)));
+                $category_json = '[]';
             }
             $template_data = array(
                 'title' => sanitize_text_field($data['title'] ?? ''),

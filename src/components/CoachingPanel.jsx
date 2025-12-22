@@ -50,7 +50,7 @@ const CoachingPanel = ({
   const showDynamicCoaching = isConnected && (hasDynamicCoaching || isGenerating);
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-full flex flex-col">
+    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-full flex flex-col min-h-0">
       {/* Header */}
       <div
         style={{ background: headerGradient }}

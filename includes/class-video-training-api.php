@@ -175,10 +175,24 @@ class Bewerbungstrainer_Video_Training_API {
 
         // Format for frontend
         $formatted = array_map(function($scenario) {
+            // Parse tips JSON if it's a string
+            $tips = null;
+            if (!empty($scenario->tips)) {
+                if (is_string($scenario->tips)) {
+                    $tips = json_decode($scenario->tips, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        $tips = null;
+                    }
+                } else {
+                    $tips = $scenario->tips;
+                }
+            }
+
             return array(
                 'id' => (int) $scenario->id,
                 'title' => $scenario->title,
                 'description' => $scenario->description,
+                'long_description' => $scenario->long_description ?? null,
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
                 'category' => Bewerbungstrainer_Categories_Admin::get_categories_array($scenario->category),
@@ -190,6 +204,7 @@ class Bewerbungstrainer_Video_Training_API {
                 'enable_tips' => (bool) $scenario->enable_tips,
                 'enable_navigation' => (bool) $scenario->enable_navigation,
                 'target_audience' => $scenario->target_audience ?? '',
+                'tips' => $tips,
             );
         }, $scenarios);
 
@@ -214,12 +229,26 @@ class Bewerbungstrainer_Video_Training_API {
             );
         }
 
+        // Parse tips JSON if it's a string
+        $tips = null;
+        if (!empty($scenario->tips)) {
+            if (is_string($scenario->tips)) {
+                $tips = json_decode($scenario->tips, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $tips = null;
+                }
+            } else {
+                $tips = $scenario->tips;
+            }
+        }
+
         return new WP_REST_Response(array(
             'success' => true,
             'data' => array(
                 'id' => (int) $scenario->id,
                 'title' => $scenario->title,
                 'description' => $scenario->description,
+                'long_description' => $scenario->long_description ?? null,
                 'icon' => $scenario->icon,
                 'difficulty' => $scenario->difficulty,
                 'category' => Bewerbungstrainer_Categories_Admin::get_categories_array($scenario->category),
@@ -231,6 +260,7 @@ class Bewerbungstrainer_Video_Training_API {
                 'total_time_limit' => (int) $scenario->total_time_limit,
                 'enable_tips' => (bool) $scenario->enable_tips,
                 'enable_navigation' => (bool) $scenario->enable_navigation,
+                'tips' => $tips,
             ),
         ), 200);
     }

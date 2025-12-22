@@ -200,6 +200,17 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
+  // Helper function to replace {{variable}} placeholders with current form values
+  const replaceVariables = (text) => {
+    if (!text) return text;
+    let result = text;
+    Object.entries(formValues).forEach(([key, value]) => {
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      result = result.replace(regex, value || '');
+    });
+    return result;
+  };
+
   // Parse variables schema - filter to only user input fields
   const userInputVariables = React.useMemo(() => {
     if (!scenario?.variables_schema) return [];
@@ -336,8 +347,57 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
         </div>
       </div>
 
-      {/* Description Card */}
-      {scenario.description && (
+      {/* Long Description - Detailed task description */}
+      {scenario.long_description && (
+        <div style={{
+          padding: '20px 24px',
+          borderRadius: '14px',
+          backgroundColor: 'white',
+          border: `1px solid ${COLORS.slate[200]}`,
+          marginBottom: '24px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '14px',
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: headerGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Info style={{ width: '20px', height: '20px', color: 'white' }} />
+            </div>
+            <div>
+              <h3 style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                color: COLORS.slate[900],
+                margin: '0 0 8px 0',
+              }}>
+                Deine Aufgabe
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                lineHeight: '1.6',
+                color: COLORS.slate[700],
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {scenario.long_description?.replace(/\/n/g, '\n')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Short Description - Only show if no long_description */}
+      {!scenario.long_description && scenario.description && (
         <div style={{
           padding: '16px 20px',
           borderRadius: '12px',
@@ -369,7 +429,7 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
           {scenario.interviewer_profile.image_url ? (
             <img
               src={scenario.interviewer_profile.image_url}
-              alt={scenario.interviewer_profile.name}
+              alt={replaceVariables(scenario.interviewer_profile.name)}
               style={{
                 width: '48px',
                 height: '48px',
@@ -392,11 +452,11 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
           )}
           <div>
             <p style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
-              Dein Gesprächspartner: {scenario.interviewer_profile.name}
+              Dein Gesprächspartner: {replaceVariables(scenario.interviewer_profile.name)}
             </p>
             {scenario.interviewer_profile.role && (
               <p style={{ fontSize: '13px', color: COLORS.slate[600], margin: '2px 0 0 0' }}>
-                {scenario.interviewer_profile.role}
+                {replaceVariables(scenario.interviewer_profile.role)}
               </p>
             )}
           </div>

@@ -46,6 +46,17 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   // Partner branding and demo code
   const { branding, demoCode } = usePartner();
 
+  // Helper function to replace {{variable}} placeholders with actual values
+  const replaceVariables = (text) => {
+    if (!text) return text;
+    let result = text;
+    Object.entries(variables).forEach(([key, value]) => {
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      result = result.replace(regex, value || '');
+    });
+    return result;
+  };
+
   // Memoized themed styles
   const themedStyles = useMemo(() => {
     const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -615,7 +626,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="relative h-full"
+              className="relative h-full min-h-0"
             >
               <CoachingPanel
                 hints={scenario.coaching_hints}
@@ -647,7 +658,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                         {scenario.interviewer_profile.image_url ? (
                           <img
                             src={scenario.interviewer_profile.image_url}
-                            alt={scenario.interviewer_profile.name}
+                            alt={replaceVariables(scenario.interviewer_profile.name)}
                             className="w-12 h-12 rounded-full border-2 border-white shadow-lg object-cover"
                           />
                         ) : (
@@ -657,11 +668,11 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                         )}
                         <div className="flex-1">
                           <h2 className="text-lg font-bold text-white">
-                            {scenario.interviewer_profile.name}
+                            {replaceVariables(scenario.interviewer_profile.name)}
                           </h2>
                           {scenario.interviewer_profile.role && (
                             <p className="text-blue-100 text-xs font-medium">
-                              {scenario.interviewer_profile.role}
+                              {replaceVariables(scenario.interviewer_profile.role)}
                             </p>
                           )}
                         </div>
@@ -675,7 +686,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                           {scenario.interviewer_profile.image_url ? (
                             <img
                               src={scenario.interviewer_profile.image_url}
-                              alt={scenario.interviewer_profile.name}
+                              alt={replaceVariables(scenario.interviewer_profile.name)}
                               className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
                             />
                           ) : (
@@ -685,11 +696,11 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                           )}
                         </div>
                         <h2 className="text-2xl font-bold text-white text-center mb-1">
-                          {scenario.interviewer_profile.name}
+                          {replaceVariables(scenario.interviewer_profile.name)}
                         </h2>
                         {scenario.interviewer_profile.role && (
                           <p className="text-blue-100 text-center text-sm font-medium mb-3">
-                            {scenario.interviewer_profile.role}
+                            {replaceVariables(scenario.interviewer_profile.role)}
                           </p>
                         )}
                       </div>
@@ -740,7 +751,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                       >
                         <Mic className="w-5 h-5 mr-2" />
                         {scenario.interviewer_profile?.name
-                          ? `${scenario.interviewer_profile.name} anrufen`
+                          ? `${replaceVariables(scenario.interviewer_profile.name)} anrufen`
                           : 'Anrufen'}
                       </Button>
                     ) : conversation.status === 'connected' ? (
@@ -796,7 +807,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                         transition={{ duration: 0.2 }}
                         className="lg:flex-1 lg:overflow-y-auto bg-white lg:rounded-b-2xl shadow-xl overflow-hidden"
                       >
-                        <InterviewerProfile profile={scenario.interviewer_profile} />
+                        <InterviewerProfile profile={scenario.interviewer_profile} replaceVariables={replaceVariables} />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -866,7 +877,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                               scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
                                 <img
                                   src={scenario.interviewer_profile.image_url}
-                                  alt={scenario.interviewer_profile.name || 'Interviewer'}
+                                  alt={replaceVariables(scenario.interviewer_profile.name) || 'Interviewer'}
                                   className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
                                 />
                               ) : (
@@ -1167,7 +1178,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                                 scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
                                   <img
                                     src={scenario.interviewer_profile.image_url}
-                                    alt={scenario.interviewer_profile.name || 'Interviewer'}
+                                    alt={replaceVariables(scenario.interviewer_profile.name) || 'Interviewer'}
                                     className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
                                   />
                                 ) : (

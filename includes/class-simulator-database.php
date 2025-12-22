@@ -73,6 +73,9 @@ class Bewerbungstrainer_Simulator_Database {
             $this->maybe_add_target_audience_column();
             // Expand category column to varchar(500) for multi-category support
             $this->maybe_expand_category_column();
+            // Add long_description and tips columns for enhanced scenario info
+            $this->maybe_add_long_description_column();
+            $this->maybe_add_tips_column();
             // Run category migration for existing installations
             self::migrate_category_values();
         }
@@ -141,6 +144,55 @@ class Bewerbungstrainer_Simulator_Database {
     }
 
     /**
+     * Add long_description column to scenarios table if it doesn't exist
+     */
+    private function maybe_add_long_description_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'long_description'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding long_description column to scenarios table...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `long_description` text DEFAULT NULL AFTER `description`");
+            error_log('[SIMULATOR] long_description column added successfully');
+        }
+    }
+
+    /**
+     * Add tips column to scenarios table if it doesn't exist
+     */
+    private function maybe_add_tips_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE %s",
+                'tips'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding tips column to scenarios table...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `tips` longtext DEFAULT NULL AFTER `feedback_prompt`");
+            error_log('[SIMULATOR] tips column added successfully');
+        }
+    }
+
+    /**
+     * Public method to ensure all schema updates are applied
+     * Called before export to ensure columns exist
+     */
+    public function ensure_schema_updated() {
+        $this->maybe_add_long_description_column();
+        $this->maybe_add_tips_column();
+    }
+
+    /**
      * Add demo_code column to sessions table if it doesn't exist
      */
     private function maybe_add_demo_code_column() {
@@ -175,6 +227,7 @@ class Bewerbungstrainer_Simulator_Database {
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `title` varchar(255) NOT NULL,
             `description` text DEFAULT NULL,
+            `long_description` text DEFAULT NULL,
             `icon` varchar(50) DEFAULT 'briefcase',
             `difficulty` varchar(20) DEFAULT 'intermediate',
             `target_audience` varchar(255) DEFAULT NULL,
@@ -183,6 +236,7 @@ class Bewerbungstrainer_Simulator_Database {
             `system_prompt` longtext NOT NULL,
             `question_generation_prompt` longtext DEFAULT NULL,
             `feedback_prompt` longtext DEFAULT NULL,
+            `tips` longtext DEFAULT NULL,
             `input_configuration` longtext NOT NULL,
             `question_count_min` tinyint UNSIGNED DEFAULT 8,
             `question_count_max` tinyint UNSIGNED DEFAULT 12,
@@ -706,6 +760,7 @@ Gib konkrete Formulierungsvorschläge.',
         $defaults = array(
             'title' => '',
             'description' => null,
+            'long_description' => null,
             'icon' => 'briefcase',
             'difficulty' => 'intermediate',
             'target_audience' => null,
@@ -714,6 +769,7 @@ Gib konkrete Formulierungsvorschläge.',
             'system_prompt' => '',
             'question_generation_prompt' => null,
             'feedback_prompt' => null,
+            'tips' => null,
             'input_configuration' => '[]',
             'question_count_min' => 8,
             'question_count_max' => 12,
@@ -735,6 +791,7 @@ Gib konkrete Formulierungsvorschläge.',
             array(
                 'title' => sanitize_text_field($data['title']),
                 'description' => sanitize_textarea_field($data['description']),
+                'long_description' => sanitize_textarea_field($data['long_description']),
                 'icon' => sanitize_text_field($data['icon']),
                 'difficulty' => $data['difficulty'],
                 'target_audience' => sanitize_text_field($data['target_audience']),
@@ -743,6 +800,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'system_prompt' => $data['system_prompt'],
                 'question_generation_prompt' => $data['question_generation_prompt'],
                 'feedback_prompt' => $data['feedback_prompt'],
+                'tips' => $data['tips'],
                 'input_configuration' => $data['input_configuration'],
                 'question_count_min' => intval($data['question_count_min']),
                 'question_count_max' => intval($data['question_count_max']),
@@ -751,7 +809,7 @@ Gib konkrete Formulierungsvorschläge.',
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
         );
 
         if ($result === false) {
@@ -776,8 +834,8 @@ Gib konkrete Formulierungsvorschläge.',
         $update_format = array();
 
         $allowed_fields = array(
-            'title', 'description', 'icon', 'difficulty', 'target_audience', 'category', 'mode',
-            'system_prompt', 'question_generation_prompt', 'feedback_prompt',
+            'title', 'description', 'long_description', 'icon', 'difficulty', 'target_audience', 'category', 'mode',
+            'system_prompt', 'question_generation_prompt', 'feedback_prompt', 'tips',
             'input_configuration', 'question_count_min', 'question_count_max',
             'time_limit_per_question', 'allow_retry', 'is_active', 'sort_order'
         );
@@ -794,7 +852,7 @@ Gib konkrete Formulierungsvorschläge.',
                 // Sanitize based on field type
                 if (in_array($field, array('title', 'icon', 'difficulty', 'category', 'mode'))) {
                     $value = sanitize_text_field($value);
-                } elseif ($field === 'description') {
+                } elseif (in_array($field, array('description', 'long_description'))) {
                     $value = sanitize_textarea_field($value);
                 }
 

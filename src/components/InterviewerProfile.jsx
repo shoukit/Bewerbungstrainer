@@ -9,7 +9,7 @@ import { COLORS } from '@/config/colors';
  * Displays ONLY the collapsible sections (properties, objections, questions)
  * Header is rendered in RoleplaySession.jsx
  */
-const InterviewerProfile = ({ profile }) => {
+const InterviewerProfile = ({ profile, replaceVariables = (text) => text }) => {
   const [expandedSections, setExpandedSections] = useState({
     properties: true,
     objections: false,
@@ -35,7 +35,9 @@ const InterviewerProfile = ({ profile }) => {
   // Parse properties (can be line-separated or comma-separated)
   const parseList = (text) => {
     if (!text) return [];
-    return text.split(/\n|,/).map(item => item.trim()).filter(Boolean);
+    // Apply variable replacement before parsing
+    const replaced = replaceVariables(text);
+    return replaced.split(/\n|,/).map(item => item.trim()).filter(Boolean);
   };
 
   const properties = parseList(profile.properties);

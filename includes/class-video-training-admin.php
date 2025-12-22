@@ -278,9 +278,21 @@ class Bewerbungstrainer_Video_Training_Admin {
             $target_audience = implode('; ', array_map('sanitize_text_field', $data['target_audience']));
         }
 
+        // Parse tips JSON
+        $tips = null;
+        if (!empty($data['tips'])) {
+            $tips_decoded = json_decode(stripslashes($data['tips']), true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $tips = json_encode($tips_decoded, JSON_UNESCAPED_UNICODE);
+            } else {
+                $tips = $data['tips'];
+            }
+        }
+
         $sanitized = array(
             'title' => sanitize_text_field($data['title'] ?? ''),
             'description' => sanitize_textarea_field($data['description'] ?? ''),
+            'long_description' => sanitize_textarea_field($data['long_description'] ?? ''),
             'icon' => sanitize_text_field($data['icon'] ?? 'video'),
             'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
             'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($data['categories'] ?? array()),
@@ -289,6 +301,7 @@ class Bewerbungstrainer_Video_Training_Admin {
             'system_prompt' => wp_kses_post($data['system_prompt'] ?? ''),
             'question_generation_prompt' => wp_kses_post($data['question_generation_prompt'] ?? ''),
             'feedback_prompt' => wp_kses_post($data['feedback_prompt'] ?? ''),
+            'tips' => $tips,
             'question_count' => intval($data['question_count'] ?? 5),
             'time_limit_per_question' => intval($data['time_limit_per_question'] ?? 120),
             'total_time_limit' => intval($data['total_time_limit'] ?? 900),
@@ -398,6 +411,9 @@ class Bewerbungstrainer_Video_Training_Admin {
      * Export scenarios to CSV
      */
     private function export_scenarios_csv() {
+        // Ensure database columns exist before export
+        $this->db->ensure_schema_updated();
+
         $scenarios = $this->db->get_scenarios(array('is_active' => null));
 
         $filename = 'video-training-scenarios-' . date('Y-m-d-His') . '.csv';
@@ -415,6 +431,7 @@ class Bewerbungstrainer_Video_Training_Admin {
             'id',
             'title',
             'description',
+            'long_description',
             'icon',
             'difficulty',
             'target_audience',
@@ -423,6 +440,7 @@ class Bewerbungstrainer_Video_Training_Admin {
             'system_prompt',
             'question_generation_prompt',
             'feedback_prompt',
+            'tips',
             'input_configuration',
             'question_count',
             'time_limit_per_question',
@@ -460,10 +478,22 @@ class Bewerbungstrainer_Video_Training_Admin {
                 }
             }
 
+            // Clean tips JSON
+            $tips = $scenario->tips ?? '';
+            if (is_array($tips)) {
+                $tips = json_encode($tips, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            } elseif (is_string($tips) && !empty($tips)) {
+                $decoded = json_decode($tips, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $tips = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+            }
+
             fputcsv($output, array(
                 $scenario->id,
                 $clean_text($scenario->title),
                 $clean_text($scenario->description),
+                $clean_text($scenario->long_description ?? ''),
                 $scenario->icon,
                 $scenario->difficulty,
                 $clean_text($scenario->target_audience ?? ''),
@@ -472,6 +502,7 @@ class Bewerbungstrainer_Video_Training_Admin {
                 $clean_text($scenario->system_prompt),
                 $clean_text($scenario->question_generation_prompt),
                 $clean_text($scenario->feedback_prompt),
+                $tips,
                 $input_config,
                 $scenario->question_count,
                 $scenario->time_limit_per_question,
@@ -540,10 +571,22 @@ class Bewerbungstrainer_Video_Training_Admin {
                 }
             }
 
+            // Parse tips JSON if present
+            $tips = null;
+            if (!empty($data['tips'])) {
+                $tips_decoded = json_decode($data['tips'], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $tips = json_encode($tips_decoded, JSON_UNESCAPED_UNICODE);
+                } else {
+                    $tips = $data['tips'];
+                }
+            }
+
             // Prepare scenario data (restore newlines in text fields)
             $scenario_data = array(
                 'title' => sanitize_text_field($restore_newlines($data['title'] ?? '')),
                 'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
+                'long_description' => sanitize_textarea_field($restore_newlines($data['long_description'] ?? '')),
                 'icon' => sanitize_text_field($data['icon'] ?? 'video'),
                 'difficulty' => sanitize_text_field($data['difficulty'] ?? 'intermediate'),
                 'target_audience' => sanitize_text_field($restore_newlines($data['target_audience'] ?? '')),
@@ -552,6 +595,7 @@ class Bewerbungstrainer_Video_Training_Admin {
                 'system_prompt' => wp_kses_post($restore_newlines($data['system_prompt'] ?? '')),
                 'question_generation_prompt' => wp_kses_post($restore_newlines($data['question_generation_prompt'] ?? '')),
                 'feedback_prompt' => wp_kses_post($restore_newlines($data['feedback_prompt'] ?? '')),
+                'tips' => $tips,
                 'input_configuration' => $input_config,
                 'question_count' => intval($data['question_count'] ?? 5),
                 'time_limit_per_question' => intval($data['time_limit_per_question'] ?? 120),
@@ -979,10 +1023,21 @@ class Bewerbungstrainer_Video_Training_Admin {
 
                     <tr>
                         <th scope="row">
-                            <label for="description"><?php _e('Beschreibung', 'bewerbungstrainer'); ?></label>
+                            <label for="description"><?php _e('Kurzbeschreibung', 'bewerbungstrainer'); ?></label>
                         </th>
                         <td>
                             <textarea name="description" id="description" class="large-text" rows="3"><?php echo esc_textarea($values['description']); ?></textarea>
+                            <p class="description"><?php _e('Wird auf der Szenario-Kachel im Dashboard angezeigt (kurz halten).', 'bewerbungstrainer'); ?></p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">
+                            <label for="long_description"><?php _e('Langbeschreibung', 'bewerbungstrainer'); ?></label>
+                        </th>
+                        <td>
+                            <textarea name="long_description" id="long_description" class="large-text" rows="5"><?php echo esc_textarea($values['long_description'] ?? ''); ?></textarea>
+                            <p class="description"><?php _e('Detaillierte Aufgabenbeschreibung für die Vorbereitungsseite. Erklärt dem Nutzer genau, was in diesem Training passiert und was von ihm erwartet wird.', 'bewerbungstrainer'); ?></p>
                         </td>
                     </tr>
 
@@ -1115,6 +1170,27 @@ class Bewerbungstrainer_Video_Training_Admin {
                         <td>
                             <textarea name="feedback_prompt" id="feedback_prompt" class="large-text code" rows="6"><?php echo esc_textarea($values['feedback_prompt']); ?></textarea>
                             <p class="description"><?php _e('Anweisungen für die Video-Analyse und Feedback-Generierung.', 'bewerbungstrainer'); ?></p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">
+                            <label for="tips"><?php _e('Tipps für Nutzer (JSON)', 'bewerbungstrainer'); ?></label>
+                        </th>
+                        <td>
+                            <textarea name="tips" id="tips" class="large-text code" rows="10"><?php
+                                $tips_value = $values['tips'] ?? '';
+                                if (is_array($tips_value)) {
+                                    echo esc_textarea(json_encode($tips_value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                                } else {
+                                    echo esc_textarea($tips_value);
+                                }
+                            ?></textarea>
+                            <p class="description">
+                                <?php _e('Szenario-spezifische Tipps für die Vorbereitungsseite. Wenn leer, werden Standard-Tipps verwendet.', 'bewerbungstrainer'); ?><br>
+                                <?php _e('Format:', 'bewerbungstrainer'); ?> <code>[{"icon": "target", "title": "Tipp-Titel", "text": "Tipp-Beschreibung"}]</code><br>
+                                <?php _e('Icons:', 'bewerbungstrainer'); ?> <code>target, clock, mic, message-square, lightbulb, brain</code>
+                            </p>
                         </td>
                     </tr>
 

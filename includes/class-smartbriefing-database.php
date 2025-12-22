@@ -713,6 +713,22 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
         foreach ($templates as &$template) {
             $template->variables_schema = json_decode($template->variables_schema, true);
             $template->is_custom = !empty($template->user_id) || !empty($template->demo_code);
+
+            // Parse category if it's a JSON array string (e.g., from CSV import)
+            // Handles double-encoded JSON like: ["[\"karriere\",\"fuehrung\"]"]
+            if (!empty($template->category) && is_string($template->category) && strpos($template->category, '[') === 0) {
+                $parsed_category = json_decode($template->category, true);
+                if (is_array($parsed_category)) {
+                    // Check for double-encoded JSON: array with single string element that looks like JSON
+                    if (count($parsed_category) === 1 && is_string($parsed_category[0]) && strpos($parsed_category[0], '[') === 0) {
+                        $double_parsed = json_decode($parsed_category[0], true);
+                        if (is_array($double_parsed)) {
+                            $parsed_category = $double_parsed;
+                        }
+                    }
+                    $template->category = $parsed_category;
+                }
+            }
         }
 
         return $templates;
@@ -781,6 +797,22 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
 
         if ($template) {
             $template->variables_schema = json_decode($template->variables_schema, true);
+
+            // Parse category if it's a JSON array string (e.g., from CSV import)
+            // Handles double-encoded JSON like: ["[\"karriere\",\"fuehrung\"]"]
+            if (!empty($template->category) && is_string($template->category) && strpos($template->category, '[') === 0) {
+                $parsed_category = json_decode($template->category, true);
+                if (is_array($parsed_category)) {
+                    // Check for double-encoded JSON: array with single string element that looks like JSON
+                    if (count($parsed_category) === 1 && is_string($parsed_category[0]) && strpos($parsed_category[0], '[') === 0) {
+                        $double_parsed = json_decode($parsed_category[0], true);
+                        if (is_array($double_parsed)) {
+                            $parsed_category = $double_parsed;
+                        }
+                    }
+                    $template->category = $parsed_category;
+                }
+            }
         }
 
         return $template;
@@ -959,6 +991,44 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
 
         if ($result === false) {
             error_log('[SMARTBRIEFING] Failed to delete template - ' . $wpdb->last_error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Delete a template as admin (bypasses ownership check)
+     *
+     * This method allows administrators to delete any template,
+     * including system templates. Should only be called from admin pages.
+     *
+     * @param int $template_id Template ID
+     * @return bool True on success, false on failure
+     */
+    public function delete_template_admin($template_id) {
+        global $wpdb;
+
+        // Verify admin capabilities
+        if (!current_user_can('manage_options')) {
+            error_log('[SMARTBRIEFING] Admin delete attempted without proper capabilities');
+            return false;
+        }
+
+        $template = $this->get_template($template_id);
+        if (!$template) {
+            error_log('[SMARTBRIEFING] Template not found for admin delete: ' . $template_id);
+            return false;
+        }
+
+        $result = $wpdb->delete(
+            $this->table_templates,
+            array('id' => $template_id),
+            array('%d')
+        );
+
+        if ($result === false) {
+            error_log('[SMARTBRIEFING] Failed to admin delete template - ' . $wpdb->last_error);
             return false;
         }
 
