@@ -1093,13 +1093,19 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
      * Get the simulation prompt template (new behavior for roleplay/counterpart scenarios)
      */
     private function get_simulation_prompt_template($count) {
-        return "Generiere einen realistischen Gesprächsverlauf mit genau {$count} aufeinanderfolgenden Phasen/Situationen.
+        return "Generiere genau {$count} aufeinanderfolgende Aussagen/Reaktionen DEINER Rolle.
+
+KRITISCH - ROLLENVERTEILUNG:
+- DU generierst NUR die Aussagen/Reaktionen DEINER Rolle (der Gegenspieler)
+- Der USER spielt die andere Rolle und antwortet zwischen deinen Aussagen
+- Generiere NIEMALS Aussagen des Users - nur DEINE eigenen Reaktionen!
+- Jede \"question\" ist EINE Aussage von DIR, auf die der User dann reagiert
 
 WICHTIG: Das ist KEIN Interview. Du stellst KEINE Fragen an den Nutzer. Du bist der Gegenspieler (z.B. Kunde, Klient, Mitarbeiter) und generierst Aussagen, Einwände oder emotionale Reaktionen, auf die der Nutzer reagieren muss.
 
 Mapping der JSON-Felder:
-- Feld \"question\": Hier trägst du die WÖRTLICHE REDE oder HANDLUNG deiner Rolle ein (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\").
-- Feld \"tips\": Hier generierst du 2-3 taktische Verhaltenstipps für den Nutzer (z.B. \"Nicht rechtfertigen, sondern Spiegeln\", \"Verständnis zeigen\").
+- Feld \"question\": DEINE wörtliche Rede oder Handlung (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\"). NUR deine Rolle, NICHT die des Users!
+- Feld \"tips\": 2-3 taktische Verhaltenstipps für den Nutzer, wie er auf DEINE Aussage reagieren sollte.
 - Feld \"category\": Die Phase des Gesprächs (z.B. \"Konfrontation\", \"Einwand\", \"Lösungssuche\", \"Eskalation\", \"Deeskalation\").
 
 Antworte NUR mit einem JSON-Array im folgenden Format:
