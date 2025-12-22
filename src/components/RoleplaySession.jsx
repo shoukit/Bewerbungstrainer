@@ -137,19 +137,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const DEFAULT_VOICE_ID = 'kaGxVtjLwllv1bi2GFag';
   const voiceId = scenario.voice_id || DEFAULT_VOICE_ID;
 
-  // Memoized overrides for ElevenLabs - only recalculate when scenario changes
-  const elevenLabsOverrides = useMemo(() => {
-    // Only include tts override if voice_id is explicitly set in scenario
-    if (scenario.voice_id) {
-      return {
-        tts: {
-          voiceId: scenario.voice_id,
-        },
-      };
-    }
-    return undefined;
-  }, [scenario.voice_id]);
-
   // Build enhanced system prompt with interviewer profile
   const buildSystemPrompt = () => {
     let prompt = scenario.content || '';
@@ -216,9 +203,8 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   };
 
   // Use official @11labs/react SDK
-  // NOTE: Voice override must be enabled in ElevenLabs Agent Settings -> Security tab
+  // NOTE: Voice must be configured directly in ElevenLabs Agent settings (overrides not supported)
   const conversation = useConversation({
-    ...(elevenLabsOverrides && { overrides: elevenLabsOverrides }),
     onConnect: () => {
       const now = Date.now();
       setStartTime(now);
