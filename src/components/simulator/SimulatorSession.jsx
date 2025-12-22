@@ -948,19 +948,20 @@ const SimulatorSession = ({
         setPreloadedNextQuestion(null);
 
         try {
-          const nextTurnResponse = await wordpressAPI.generateNextTurn(
-            session.id,
-            response.data.transcript || ''
-          );
+          const nextTurnResponse = await wordpressAPI.generateNextTurn(session.id);
 
           if (nextTurnResponse.success) {
+            const nextQuestion = nextTurnResponse.data.next_question;
+
             if (nextTurnResponse.data.is_finished) {
+              // Conversation is ending - but we still have a final response to show
+              setPreloadedNextQuestion(nextQuestion);
+              setQuestions(prev => [...prev, nextQuestion]);
               setIsConversationFinished(true);
-              setPreloadedNextQuestion(null);
             } else {
-              setPreloadedNextQuestion(nextTurnResponse.data.next_question);
+              setPreloadedNextQuestion(nextQuestion);
               // Update questions array with the new question
-              setQuestions(prev => [...prev, nextTurnResponse.data.next_question]);
+              setQuestions(prev => [...prev, nextQuestion]);
             }
           }
         } catch (nextTurnErr) {
@@ -993,10 +994,14 @@ const SimulatorSession = ({
     if (isSimulation) {
       // SIMULATION mode: Move to the next dynamically generated question
       if (preloadedNextQuestion) {
+        // There's a next question to show - move to it
         setCurrentIndex(prev => prev + 1);
         setPreloadedNextQuestion(null);
+        // Don't complete yet - let user respond to this question first
+        return;
       }
-      // If conversation is finished, complete the session
+
+      // If conversation is finished AND no more questions to show, complete
       if (isConversationFinished) {
         handleCompleteSession();
         return;
@@ -1516,7 +1521,7 @@ const SimulatorSession = ({
             <button
               onClick={
                 isSimulation
-                  ? (isConversationFinished ? handleCompleteSession : handleNext)
+                  ? ((isConversationFinished && !preloadedNextQuestion) ? handleCompleteSession : handleNext)
                   : (isLastQuestion ? handleCompleteSession : handleNext)
               }
               disabled={isSimulation && isLoadingNextTurn && !isConversationFinished}
@@ -1548,11 +1553,12 @@ const SimulatorSession = ({
                   Gesprächspartner tippt...
                 </>
               ) : (isSimulation ? (
-                isConversationFinished ? 'Training abschließen' : labels.nextButton
+                // Show "abschließen" only when finished AND no more questions to show
+                (isConversationFinished && !preloadedNextQuestion) ? 'Training abschließen' : labels.nextButton
               ) : (
                 isLastQuestion ? 'Training abschließen' : labels.nextButton
               ))}
-              {!isLoadingNextTurn && !(isSimulation ? isConversationFinished : isLastQuestion) && <ChevronRight size={16} />}
+              {!isLoadingNextTurn && !(isSimulation ? (isConversationFinished && !preloadedNextQuestion) : isLastQuestion) && <ChevronRight size={16} />}
             </button>
           </div>
 

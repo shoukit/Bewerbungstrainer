@@ -364,12 +364,18 @@ class Bewerbungstrainer_Simulator_API {
         $question_prompt = $scenario->question_generation_prompt ?: $this->get_default_question_prompt();
         $question_prompt = $this->interpolate_variables($question_prompt, $variables);
 
-        // Calculate question count
-        $question_count = rand($scenario->question_count_min, $scenario->question_count_max);
-        error_log("[SIMULATOR_QUESTIONS] Question count: $question_count (min: {$scenario->question_count_min}, max: {$scenario->question_count_max})");
-
         // Get scenario mode (INTERVIEW or SIMULATION)
         $mode = $scenario->mode ?? 'INTERVIEW';
+
+        // Calculate question count
+        // SIMULATION mode: Only generate 1 opening question, rest is dynamic via next-turn
+        if ($mode === 'SIMULATION') {
+            $question_count = 1;
+            error_log("[SIMULATOR_QUESTIONS] SIMULATION mode: generating only 1 opening question");
+        } else {
+            $question_count = rand($scenario->question_count_min, $scenario->question_count_max);
+            error_log("[SIMULATOR_QUESTIONS] INTERVIEW mode: Question count: $question_count (min: {$scenario->question_count_min}, max: {$scenario->question_count_max})");
+        }
 
         // Build full prompt
         $full_prompt = $this->build_question_generation_prompt(
@@ -700,17 +706,13 @@ class Bewerbungstrainer_Simulator_API {
         $questions = $session->questions_json ?: array();
         $variables = $session->variables_json ?: array();
 
-        // Build conversation history string
+        // Build conversation history string (includes all Q&A pairs from database)
         $conversation_history = $this->build_conversation_history($questions, $answers);
 
         // Check if we should finish the conversation
         $answered_count = count($answers);
         $min_turns = $scenario->question_count_min ?? 3;
         $max_turns = $scenario->question_count_max ?? 8;
-
-        // Get user's last response for context
-        $params = $request->get_json_params();
-        $last_user_transcript = isset($params['last_transcript']) ? $params['last_transcript'] : '';
 
         // Build prompt for next turn generation
         $system_prompt = $this->interpolate_variables($scenario->system_prompt, $variables);
@@ -721,7 +723,6 @@ class Bewerbungstrainer_Simulator_API {
             $system_prompt,
             $question_prompt,
             $conversation_history,
-            $last_user_transcript,
             $answered_count,
             $min_turns,
             $max_turns,
@@ -830,16 +831,14 @@ class Bewerbungstrainer_Simulator_API {
     /**
      * Build prompt for generating the next turn in SIMULATION mode
      */
-    private function build_next_turn_prompt($system_prompt, $question_prompt, $conversation_history, $last_user_response, $turns_so_far, $min_turns, $max_turns, $variables) {
+    private function build_next_turn_prompt($system_prompt, $question_prompt, $conversation_history, $turns_so_far, $min_turns, $max_turns, $variables) {
         $prompt = "SYSTEM-KONTEXT:\n{$system_prompt}\n\n";
         $prompt .= "SZENARIO-ANWEISUNGEN:\n{$question_prompt}\n\n";
 
         $prompt .= "BISHERIGER GESPRÄCHSVERLAUF:\n";
         $prompt .= $conversation_history;
-
-        if (!empty($last_user_response)) {
-            $prompt .= "USER (letzte Antwort): {$last_user_response}\n\n";
-        }
+        // Note: The last user response is already included in conversation_history
+        // (fetched from the database after submit_answer saves it)
 
         $prompt .= "---\n\n";
         $prompt .= "AUFGABE: Generiere die nächste Reaktion des GESPRÄCHSPARTNERS (deine Rolle).\n\n";
