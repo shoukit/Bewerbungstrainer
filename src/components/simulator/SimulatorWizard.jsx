@@ -7,7 +7,12 @@ import {
   Sparkles,
   CheckCircle,
   Info,
-  Mic
+  Mic,
+  Target,
+  Lightbulb,
+  Clock,
+  MessageSquare,
+  Brain
 } from 'lucide-react';
 import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
@@ -16,6 +21,42 @@ import FullscreenLoader from '@/components/ui/fullscreen-loader';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
+
+/**
+ * Icon mapping for dynamic tip icons from backend
+ */
+const iconMap = {
+  target: Target,
+  clock: Clock,
+  mic: Mic,
+  'message-square': MessageSquare,
+  lightbulb: Lightbulb,
+  brain: Brain,
+  info: Info,
+  check: CheckCircle,
+  sparkles: Sparkles,
+};
+
+/**
+ * Default tips when no custom tips are configured
+ */
+const defaultTips = [
+  {
+    icon: Target,
+    title: 'Strukturiert antworten',
+    description: 'Nutze die STAR-Methode (Situation, Task, Action, Result) für Beispiele.',
+  },
+  {
+    icon: Clock,
+    title: 'Zeit im Blick',
+    description: 'Antworte präzise, aber ausführlich genug.',
+  },
+  {
+    icon: Mic,
+    title: 'Klar sprechen',
+    description: 'Sprich in normalem Tempo. Pausen sind völlig in Ordnung.',
+  },
+];
 
 /**
  * Dynamic Form Field Component
@@ -444,6 +485,120 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
           {scenario.description}
         </p>
       </div>
+
+      {/* Long Description - Detailed task description */}
+      {scenario.long_description && (
+        <div style={{
+          padding: '20px 24px',
+          borderRadius: '14px',
+          backgroundColor: 'white',
+          border: `1px solid ${COLORS.slate[200]}`,
+          marginBottom: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: headerGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Info style={{ width: '20px', height: '20px', color: 'white' }} />
+            </div>
+            <div>
+              <h3 style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                color: COLORS.slate[900],
+                margin: '0 0 8px 0',
+              }}>
+                Deine Aufgabe
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                lineHeight: '1.6',
+                color: COLORS.slate[700],
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {scenario.long_description?.replace(/\/n/g, '\n')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tips Section */}
+      {(() => {
+        const tips = scenario.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
+          ? scenario.tips.map((tip, idx) => {
+              if (typeof tip === 'string') {
+                return { icon: Lightbulb, title: `Tipp ${idx + 1}`, description: tip };
+              }
+              return {
+                icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
+                title: tip.title || `Tipp ${idx + 1}`,
+                description: tip.text || tip.description || '',
+              };
+            })
+          : defaultTips;
+
+        return (
+          <div style={{
+            padding: '20px 24px',
+            borderRadius: '14px',
+            backgroundColor: 'white',
+            border: `1px solid ${COLORS.slate[200]}`,
+            marginBottom: '24px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <Lightbulb style={{ width: '20px', height: '20px', color: primaryAccent }} />
+              <h3 style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
+                Tipps für dein Training
+              </h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {tips.map((tip, index) => {
+                const IconComponent = tip.icon;
+                return (
+                  <div key={index} style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    backgroundColor: COLORS.slate[50],
+                  }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: headerGradient,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <IconComponent style={{ width: '16px', height: '16px', color: 'white' }} />
+                    </div>
+                    <div>
+                      <h4 style={{ fontWeight: 600, color: COLORS.slate[900], fontSize: '14px', margin: '0 0 2px 0' }}>
+                        {tip.title}
+                      </h4>
+                      <p style={{ fontSize: '13px', color: COLORS.slate[600], lineHeight: 1.5, margin: 0 }}>
+                        {tip.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Form */}
       <form onSubmit={handleSubmit}>
