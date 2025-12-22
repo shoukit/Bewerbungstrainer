@@ -133,6 +133,10 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const apiKey = wordpressAPI.getElevenLabsApiKey();
   const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
 
+  // Default voice ID if not specified in scenario
+  const DEFAULT_VOICE_ID = 'kaGxVtjLwllv1bi2GFag';
+  const voiceId = scenario.voice_id || DEFAULT_VOICE_ID;
+
   // Build enhanced system prompt with interviewer profile
   const buildSystemPrompt = () => {
     let prompt = scenario.content || '';
@@ -198,7 +202,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     }
   };
 
-  // Use official @11labs/react SDK with overrides for system prompt and first message
+  // Use official @11labs/react SDK with overrides for system prompt, first message, and voice
   const conversation = useConversation({
     overrides: {
       agent: {
@@ -206,6 +210,9 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
           prompt: buildSystemPrompt(), // Enhanced system prompt with profile
         },
         firstMessage: scenario.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
+      },
+      tts: {
+        voiceId: voiceId, // Voice ID from scenario or default
       },
     },
     onConnect: () => {
@@ -413,6 +420,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
           scenario_id: scenario.id,
           scenario_title: scenario.title,
           agent_id: agentId,
+          voice_id: voiceId,
           conversation_id: conversationIdRef.current,
           first_message: scenario.initial_message,
           variables: JSON.stringify(enhancedVariables),

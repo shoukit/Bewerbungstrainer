@@ -189,6 +189,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
         // Get current values
         $agent_id = get_post_meta($post->ID, '_roleplay_agent_id', true);
+        $voice_id = get_post_meta($post->ID, '_roleplay_voice_id', true);
         $initial_message = get_post_meta($post->ID, '_roleplay_initial_message', true);
         $difficulty = get_post_meta($post->ID, '_roleplay_difficulty', true);
         $target_audience = get_post_meta($post->ID, '_roleplay_target_audience', true);
@@ -241,6 +242,20 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                            class="regular-text" required />
                     <p class="description">
                         <?php _e('Die Agent ID aus deinem ElevenLabs Dashboard', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="roleplay_voice_id"><?php _e('ElevenLabs Voice ID', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <input type="text" id="roleplay_voice_id" name="roleplay_voice_id"
+                           value="<?php echo esc_attr($voice_id); ?>"
+                           class="regular-text" />
+                    <p class="description">
+                        <?php _e('Optional: Voice ID für dieses Szenario. Überschreibt die Standard-Stimme des Agents.', 'bewerbungstrainer'); ?>
                     </p>
                 </td>
             </tr>
@@ -557,6 +572,11 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_agent_id', sanitize_text_field($_POST['roleplay_agent_id']));
         }
 
+        // Save voice ID
+        if (isset($_POST['roleplay_voice_id'])) {
+            update_post_meta($post_id, '_roleplay_voice_id', sanitize_text_field($_POST['roleplay_voice_id']));
+        }
+
         // Save initial message
         if (isset($_POST['roleplay_initial_message'])) {
             update_post_meta($post_id, '_roleplay_initial_message', sanitize_textarea_field($_POST['roleplay_initial_message']));
@@ -761,6 +781,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'long_description' => get_post_meta($post->ID, '_roleplay_long_description', true),
             'content' => apply_filters('the_content', $post->post_content),
             'agent_id' => get_post_meta($post->ID, '_roleplay_agent_id', true),
+            'voice_id' => get_post_meta($post->ID, '_roleplay_voice_id', true),
             'initial_message' => get_post_meta($post->ID, '_roleplay_initial_message', true),
             'difficulty' => get_post_meta($post->ID, '_roleplay_difficulty', true),
             'target_audience' => get_post_meta($post->ID, '_roleplay_target_audience', true),
@@ -1372,6 +1393,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'long_description',
             'content',
             'agent_id',
+            'voice_id',
             'initial_message',
             'difficulty',
             'target_audience',
@@ -1432,6 +1454,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 $clean_text($scenario['long_description'] ?? ''),
                 $clean_text($post->post_content),
                 $scenario['agent_id'],
+                $scenario['voice_id'] ?? '',
                 $clean_text($scenario['initial_message']),
                 $scenario['difficulty'],
                 $clean_text($scenario['target_audience'] ?? ''),
@@ -1564,6 +1587,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             update_post_meta($post_id, '_roleplay_description', sanitize_textarea_field($restore_newlines($data['description'] ?? '')));
             update_post_meta($post_id, '_roleplay_long_description', sanitize_textarea_field($restore_newlines($data['long_description'] ?? '')));
             update_post_meta($post_id, '_roleplay_agent_id', sanitize_text_field($data['agent_id'] ?? ''));
+            update_post_meta($post_id, '_roleplay_voice_id', sanitize_text_field($data['voice_id'] ?? ''));
             update_post_meta($post_id, '_roleplay_initial_message', sanitize_textarea_field($restore_newlines($data['initial_message'] ?? '')));
             update_post_meta($post_id, '_roleplay_difficulty', sanitize_text_field($data['difficulty'] ?? 'medium'));
             update_post_meta($post_id, '_roleplay_target_audience', sanitize_text_field($restore_newlines($data['target_audience'] ?? '')));
