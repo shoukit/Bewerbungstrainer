@@ -184,6 +184,15 @@ class Bewerbungstrainer_Simulator_Database {
     }
 
     /**
+     * Public method to ensure all schema updates are applied
+     * Called before export to ensure columns exist
+     */
+    public function ensure_schema_updated() {
+        $this->maybe_add_long_description_column();
+        $this->maybe_add_tips_column();
+    }
+
+    /**
      * Add demo_code column to sessions table if it doesn't exist
      */
     private function maybe_add_demo_code_column() {

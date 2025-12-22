@@ -411,6 +411,9 @@ class Bewerbungstrainer_Video_Training_Admin {
      * Export scenarios to CSV
      */
     private function export_scenarios_csv() {
+        // Ensure database columns exist before export
+        $this->db->ensure_schema_updated();
+
         $scenarios = $this->db->get_scenarios(array('is_active' => null));
 
         $filename = 'video-training-scenarios-' . date('Y-m-d-His') . '.csv';

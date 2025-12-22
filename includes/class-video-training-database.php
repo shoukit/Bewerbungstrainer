@@ -173,6 +173,15 @@ class Bewerbungstrainer_Video_Training_Database {
     }
 
     /**
+     * Public method to ensure all schema updates are applied
+     * Called before export to ensure columns exist
+     */
+    public function ensure_schema_updated() {
+        $this->add_long_description_column();
+        $this->add_tips_column();
+    }
+
+    /**
      * Expand category column to varchar(500) for multi-category support
      */
     private function expand_category_column() {
