@@ -399,15 +399,22 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
         connectionType: 'websocket', // Use websocket for override support
         dynamicVariables: enhancedVariables,
         ...(localMicrophoneId && { inputDeviceId: localMicrophoneId }),
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: buildSystemPrompt(),
+            },
+            firstMessage: scenario.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
+          },
+          ...(scenario.voice_id && {
+            tts: {
+              voiceId: scenario.voice_id,
+            },
+          }),
+        },
       };
 
-      // Only add voice override if voice_id is set in scenario
       if (scenario.voice_id) {
-        sessionOptions.overrides = {
-          tts: {
-            voiceId: scenario.voice_id,
-          },
-        };
         console.log('[RoleplaySession] Using voice override:', scenario.voice_id);
       }
 
