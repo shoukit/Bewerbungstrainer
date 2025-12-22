@@ -877,9 +877,30 @@ const SimulatorSession = ({
   const [completedAnswers, setCompletedAnswers] = useState([]);
   const [answeredQuestions, setAnsweredQuestions] = useState(initialAnsweredQuestions);
 
-  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(initialMicrophoneId || null);
+  // Microphone selection - restore from localStorage if not provided (for session continuation)
+  const MICROPHONE_STORAGE_KEY = 'karriereheld_selected_microphone';
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(() => {
+    if (initialMicrophoneId) return initialMicrophoneId;
+    // Try to restore from localStorage for session continuation
+    try {
+      return localStorage.getItem(MICROPHONE_STORAGE_KEY) || null;
+    } catch {
+      return null;
+    }
+  });
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+
+  // Save microphone selection to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedMicrophoneId) {
+      try {
+        localStorage.setItem(MICROPHONE_STORAGE_KEY, selectedMicrophoneId);
+      } catch {
+        // localStorage might be unavailable
+      }
+    }
+  }, [selectedMicrophoneId]);
 
   // Confirmation dialog states
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
