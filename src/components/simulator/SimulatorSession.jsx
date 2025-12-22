@@ -566,12 +566,24 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
   ];
 
   // Use custom tips from scenario if available, otherwise use defaults
+  // Supports both string arrays (legacy) and object arrays (new format)
   const generalTips = scenario.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
-    ? scenario.tips.map(tip => ({
-        icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
-        title: tip.title,
-        description: tip.text || tip.description,
-      }))
+    ? scenario.tips.map((tip, index) => {
+        // Handle legacy string format: ["Tip text 1", "Tip text 2"]
+        if (typeof tip === 'string') {
+          return {
+            icon: Lightbulb,
+            title: `Tipp ${index + 1}`,
+            description: tip,
+          };
+        }
+        // Handle new object format: [{icon, title, text}]
+        return {
+          icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
+          title: tip.title || `Tipp ${index + 1}`,
+          description: tip.text || tip.description || '',
+        };
+      })
     : defaultTips;
 
   const contextInfo = variables ? Object.entries(variables)

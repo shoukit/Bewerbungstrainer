@@ -785,11 +785,22 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
           {(scenario?.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
-            ? scenario.tips.map(tip => ({
-                icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
-                title: tip.title,
-                description: tip.text || tip.description,
-              }))
+            ? scenario.tips.map((tip, idx) => {
+                // Handle legacy string format: ["Tip text 1", "Tip text 2"]
+                if (typeof tip === 'string') {
+                  return {
+                    icon: Lightbulb,
+                    title: `Tipp ${idx + 1}`,
+                    description: tip,
+                  };
+                }
+                // Handle new object format: [{icon, title, text}]
+                return {
+                  icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
+                  title: tip.title || `Tipp ${idx + 1}`,
+                  description: tip.text || tip.description || '',
+                };
+              })
             : defaultVideoTips
           ).map((tip, index) => {
             const IconComponent = tip.icon;
