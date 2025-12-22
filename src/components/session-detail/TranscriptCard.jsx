@@ -130,7 +130,7 @@ export function TranscriptCard({
                   {/* Message Bubble */}
                   <div
                     className={cn(
-                      'max-w-[85%] px-3 py-2 rounded-xl shadow-sm transition-all',
+                      'max-w-[92%] px-3 py-2 rounded-xl shadow-sm transition-all',
                       isAgent
                         ? 'bg-slate-50 border'
                         : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white',
