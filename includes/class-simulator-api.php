@@ -577,6 +577,20 @@ class Bewerbungstrainer_Simulator_API {
             $mime_type = $audio_file['type'];
         }
 
+        // Validate audio size to prevent hallucination on empty/silent audio
+        // 5KB minimum - anything smaller is likely silence or noise
+        $min_audio_size = 5000;
+        $audio_size = strlen($audio_data);
+
+        if ($audio_size < $min_audio_size) {
+            error_log("Simulator: Audio too small ({$audio_size} bytes), rejecting to prevent hallucination");
+            return new WP_Error(
+                'audio_too_small',
+                __('Die Aufnahme enthält keine verwertbare Sprache. Bitte sprechen Sie während der Aufnahme und versuchen Sie es erneut.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
         // Mark previous answers as not final (for retry)
         $this->db->mark_previous_answers_not_final($session_id, $question_index);
 

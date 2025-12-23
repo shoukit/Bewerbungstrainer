@@ -998,9 +998,11 @@ const SimulatorSession = ({
       return;
     }
 
-    // Validate audio blob size (at least 1KB to have meaningful content)
-    if (audioBlob.size < 1024) {
-      setSubmitError('Die Aufnahme enthält keine verwertbaren Audiodaten. Bitte versuchen Sie es erneut.');
+    // Validate audio blob size (at least 5KB to have meaningful speech content)
+    // Smaller files are typically silence/noise and would cause AI hallucination
+    if (audioBlob.size < 5000) {
+      console.warn('[SimulatorSession] Audio too small:', audioBlob.size, 'bytes');
+      setSubmitError('Die Aufnahme enthält keine verwertbaren Audiodaten. Bitte sprechen Sie während der Aufnahme und versuchen Sie es erneut.');
       return;
     }
 

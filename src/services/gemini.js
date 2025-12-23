@@ -12,8 +12,11 @@ import { getFeedbackPrompt, applyCustomPrompt } from '@/config/prompts/feedbackP
 import { getAudioAnalysisPrompt } from '@/config/prompts/audioAnalysisPrompt';
 import { getRhetoricGamePrompt } from '@/config/prompts/gamePrompts';
 import { maskApiKey } from '@/utils/security';
-import { audioFileToInlineData } from '@/utils/audio';
+import { audioFileToInlineData, validateAudioBlob } from '@/utils/audio';
 import wordpressAPI from './wordpress-api.js';
+
+// Minimum audio size to consider as valid speech (5KB)
+const MIN_AUDIO_SIZE_BYTES = 5000;
 
 // =============================================================================
 // DEBUG LOGGING
@@ -324,10 +327,41 @@ export async function generateAudioAnalysis(
   modelName = 'gemini-1.5-flash',
   roleOptions = {}
 ) {
-  // Validate audio file
+  // Validate audio file exists
   if (!audioFile) {
     console.error('❌ [GEMINI AUDIO] Audio file is missing');
     throw new Error(ERROR_MESSAGES.AUDIO_FILE_MISSING);
+  }
+
+  // Validate audio file has meaningful content (prevents hallucination on empty/silent audio)
+  const validation = validateAudioBlob(audioFile, { minSize: MIN_AUDIO_SIZE_BYTES });
+  if (!validation.valid) {
+    console.warn(`⚠️ [GEMINI AUDIO] Audio validation failed: ${validation.error}, Size: ${audioFile.size} bytes`);
+    // Return empty analysis result instead of sending to AI
+    return JSON.stringify({
+      audio_metrics: {
+        summary_text: 'Es wurde keine Sprache erkannt. Bitte stellen Sie sicher, dass Ihr Mikrofon funktioniert und Sie während der Aufnahme sprechen.',
+        confidence_score: 0,
+        speech_cleanliness: {
+          score: 0,
+          total_filler_count: 0,
+          filler_word_analysis: [],
+          feedback: 'Keine Sprache zur Analyse erkannt.',
+        },
+        pacing: {
+          rating: 'keine_sprache',
+          estimated_wpm: 0,
+          issues_detected: [],
+          feedback: 'Keine Sprache zur Analyse erkannt.',
+        },
+        tonality: {
+          rating: 'keine_sprache',
+          emotional_tone: 'neutral',
+          highlights: [],
+          feedback: 'Keine Sprache zur Analyse erkannt.',
+        },
+      },
+    });
   }
 
   const userRoleLabel = roleOptions.userRoleLabel || 'Bewerber';
@@ -419,10 +453,23 @@ export async function analyzeRhetoricGame(
   topic = 'Elevator Pitch',
   durationSeconds = 60
 ) {
-  // Validate audio file
+  // Validate audio file exists
   if (!audioFile) {
     console.error('❌ [GEMINI GAME] Audio file is missing');
     throw new Error(ERROR_MESSAGES.AUDIO_FILE_MISSING);
+  }
+
+  // Validate audio file has meaningful content (prevents hallucination on empty/silent audio)
+  const validation = validateAudioBlob(audioFile, { minSize: MIN_AUDIO_SIZE_BYTES });
+  if (!validation.valid) {
+    console.warn(`⚠️ [GEMINI GAME] Audio validation failed: ${validation.error}, Size: ${audioFile.size} bytes`);
+    // Return empty result instead of sending to AI
+    return {
+      transcript: '[Keine Sprache erkannt - bitte sprechen Sie während der Aufnahme]',
+      filler_words: [],
+      content_score: 0,
+      content_feedback: 'Es wurde keine Sprache erkannt. Bitte stellen Sie sicher, dass Ihr Mikrofon funktioniert und Sie während der Aufnahme sprechen.',
+    };
   }
 
   if (DEBUG_PROMPTS) {
