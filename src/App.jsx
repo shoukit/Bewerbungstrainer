@@ -233,6 +233,7 @@ function getWPHeaderHeight() {
  * Uses React Router for navigation
  */
 function AppContent() {
+  // ===== ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS =====
   // React Router hooks
   const navigate = useNavigate();
   const location = useLocation();
@@ -240,11 +241,6 @@ function AppContent() {
   // Auth context and loading state
   const { isAuthenticated, authLoading, isLoading, demoCode } = usePartner();
   const { isAdmin } = useAuth();
-
-  // Show loading spinner while branding is loading
-  if (isLoading) {
-    return <BrandingLoadingSpinner />;
-  }
 
   // Get current view from URL path (for sidebar active state)
   const currentView = getViewFromPath(location.pathname);
@@ -543,6 +539,12 @@ function AppContent() {
     }
     return children;
   }, [isAdmin, handleSidebarNavigate]);
+
+  // ===== CONDITIONAL RETURNS AFTER ALL HOOKS =====
+  // Show loading spinner while branding is loading
+  if (isLoading) {
+    return <BrandingLoadingSpinner />;
+  }
 
   // Helper to get state from location or fall back to component state
   const getScenario = () => location.state?.scenario || selectedScenario;
