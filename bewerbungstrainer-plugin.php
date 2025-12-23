@@ -258,6 +258,9 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
 
+        // Load shared API trait (must be loaded before API classes)
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/trait-api-utils.php';
+
         // Load Categories classes (centralized for all modules)
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-categories-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-categories-api.php';

@@ -12,6 +12,8 @@ if (!defined('ABSPATH')) {
 
 class Bewerbungstrainer_Simulator_API {
 
+    use Bewerbungstrainer_API_Utils;
+
     /**
      * Instance of this class
      */
@@ -145,16 +147,8 @@ class Bewerbungstrainer_Simulator_API {
         ));
     }
 
-    /**
-     * Permission callbacks
-     */
-    public function check_user_logged_in() {
-        return is_user_logged_in();
-    }
-
-    public function allow_all_users($request) {
-        return true;
-    }
+    // Note: Permission callbacks (check_user_logged_in, allow_all_users, etc.)
+    // are provided by Bewerbungstrainer_API_Utils trait
 
     // =========================================================================
     // SCENARIO ENDPOINTS
