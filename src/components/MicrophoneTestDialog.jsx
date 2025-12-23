@@ -4,6 +4,7 @@ import { Mic, Play, Square, Volume2, CheckCircle, AlertCircle, RefreshCw, X } fr
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
+import AudioVisualizer from './AudioVisualizer';
 
 /**
  * MicrophoneTestDialog Component
@@ -364,29 +365,13 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
 
             {/* Audio level bars during recording */}
             {status === 'recording' && (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '3px',
-                height: '40px',
-                marginBottom: '24px',
-              }}>
-                {[...Array(16)].map((_, i) => {
-                  const barHeight = Math.max(8, Math.min(40, audioLevel * 80 + Math.random() * 10));
-                  return (
-                    <motion.div
-                      key={i}
-                      style={{
-                        width: '4px',
-                        background: buttonGradient,
-                        borderRadius: '2px',
-                      }}
-                      animate={{ height: barHeight }}
-                      transition={{ duration: 0.1 }}
-                    />
-                  );
-                })}
+              <div style={{ marginBottom: '24px' }}>
+                <AudioVisualizer
+                  audioLevel={audioLevel}
+                  isActive={true}
+                  variant="bars"
+                  size="sm"
+                />
               </div>
             )}
 

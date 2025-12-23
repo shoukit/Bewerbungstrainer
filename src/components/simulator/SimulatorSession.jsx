@@ -24,6 +24,7 @@ import {
   Brain,
   Info
 } from 'lucide-react';
+import AudioVisualizer from '../AudioVisualizer';
 
 // Icon mapping for dynamic tips from database
 const iconMap = {
@@ -432,13 +433,14 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
       {/* Audio Level Visualization */}
       {recordingState === 'recording' && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px', height: '60px', marginBottom: '24px' }}>
-          {[...Array(20)].map((_, i) => {
-            const height = Math.max(8, Math.min(50, audioLevel * 100 * Math.random() * 2));
-            return (
-              <div key={i} style={{ width: '6px', height: `${height}px`, backgroundColor: primaryAccent, borderRadius: '3px', transition: 'height 0.1s ease' }} />
-            );
-          })}
+        <div style={{ marginBottom: '24px' }}>
+          <AudioVisualizer
+            audioLevel={audioLevel}
+            isActive={true}
+            variant="bars"
+            size="sm"
+            accentColor={primaryAccent}
+          />
         </div>
       )}
 

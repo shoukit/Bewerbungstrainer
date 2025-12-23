@@ -795,6 +795,18 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                     )}
                   </div>
 
+                  {/* Audio Visualizer - Show when connected */}
+                  {conversation.status === 'connected' && (
+                    <div className="bg-white px-4 py-3 border-t border-slate-100">
+                      <AudioVisualizer
+                        audioLevel={conversation.isSpeaking ? 0.6 + Math.random() * 0.3 : 0.1}
+                        isActive={conversation.isSpeaking}
+                        variant="bars"
+                        size="sm"
+                      />
+                    </div>
+                  )}
+
                   {/* Profile Toggle Button (Mobile only) */}
                   {isMobile && (
                   <div className="bg-white px-4 py-2">

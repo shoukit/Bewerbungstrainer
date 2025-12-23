@@ -8,6 +8,7 @@ import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
 import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
+import AudioVisualizer from '@/components/AudioVisualizer';
 
 /**
  * ProgressBar - Shows question progress
@@ -141,6 +142,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(initialMicId || null);
   const [selectedCameraId, setSelectedCameraId] = useState(initialCameraId || null);
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
 
   // Mobile detection - using shared hook
   const isMobile = useMobile();
@@ -148,6 +150,9 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const timerRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationFrameRef = useRef(null);
 
   // Partner theming - using shared hook
   const { primaryAccent, headerGradient: themedGradient } = useBranding();
@@ -160,8 +165,53 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     return () => {
       stopCamera();
       if (timerRef.current) clearInterval(timerRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (audioContextRef.current) audioContextRef.current.close();
     };
   }, []);
+
+  // Audio level analysis for visualizer
+  const startAudioAnalysis = (mediaStream) => {
+    try {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
+
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      analyserRef.current = analyser;
+
+      const source = audioContext.createMediaStreamSource(mediaStream);
+      source.connect(analyser);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const updateLevel = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const sum = dataArray.reduce((a, b) => a + b, 0);
+        const average = sum / dataArray.length;
+        setAudioLevel(average / 255); // Normalize to 0-1
+        animationFrameRef.current = requestAnimationFrame(updateLevel);
+      };
+
+      updateLevel();
+    } catch (err) {
+      console.error('[VIDEO TRAINING] Audio analysis error:', err);
+    }
+  };
+
+  const stopAudioAnalysis = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    setAudioLevel(0);
+  };
 
   // Initialize camera with selected devices
   const initializeCamera = async (micId = selectedMicrophoneId, camId = selectedCameraId) => {
@@ -246,6 +296,9 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       setIsRecording(true);
       setIsPaused(false);
 
+      // Start audio analysis for visualizer
+      startAudioAnalysis(stream);
+
       // Record start time for current question
       setTimeline((prev) => [
         ...prev,
@@ -268,6 +321,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      stopAudioAnalysis();
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -657,6 +711,19 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
               )}
             </div>
 
+            {/* Audio Visualizer - Mobile */}
+            {isRecording && (
+              <div style={{ marginTop: '16px' }}>
+                <AudioVisualizer
+                  audioLevel={audioLevel}
+                  isActive={true}
+                  variant="bars"
+                  size="sm"
+                  accentColor={primaryAccent}
+                />
+              </div>
+            )}
+
             {/* Controls - Mobile */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
               {/* Recording button with settings */}
@@ -919,6 +986,19 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
               </div>
             )}
           </div>
+
+          {/* Audio Visualizer - Desktop */}
+          {isRecording && (
+            <div style={{ marginTop: '20px' }}>
+              <AudioVisualizer
+                audioLevel={audioLevel}
+                isActive={true}
+                variant="bars"
+                size="sm"
+                accentColor={primaryAccent}
+              />
+            </div>
+          )}
 
           {/* Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>

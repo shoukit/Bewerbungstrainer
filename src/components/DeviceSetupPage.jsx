@@ -19,6 +19,7 @@ import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import AudioVisualizer from '@/components/AudioVisualizer';
 
 /**
  * DeviceSelector - Reusable component for selecting audio/video devices
@@ -511,22 +512,12 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
 
       {/* Audio Level Visualization (only show when recording) */}
       {isRecording && (
-        <div style={{
-          height: '8px',
-          backgroundColor: COLORS.slate[200],
-          borderRadius: '4px',
-          overflow: 'hidden',
-        }}>
-          <div
-            style={{
-              height: '100%',
-              width: `${audioLevel}%`,
-              backgroundColor: audioLevel > 70 ? COLORS.green[500] : audioLevel > 30 ? COLORS.amber[500] : COLORS.slate[400],
-              borderRadius: '4px',
-              transition: 'width 0.1s ease-out',
-            }}
-          />
-        </div>
+        <AudioVisualizer
+          audioLevel={audioLevel / 100}
+          isActive={true}
+          variant="bars"
+          size="sm"
+        />
       )}
 
       {/* Instructions */}
