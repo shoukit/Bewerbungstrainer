@@ -328,14 +328,6 @@ class ElevenLabsConvAIService {
   }
 
   /**
-   * Convert base64 to Blob
-   * @deprecated Use base64ToBlob from @/utils/audio instead
-   */
-  base64ToBlob(base64Data, mimeType) {
-    return base64ToBlob(base64Data, mimeType);
-  }
-
-  /**
    * Stop the conversation
    */
   stopConversation() {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   getPartnerIdFromUrl,
   getPartnerConfig,
@@ -595,11 +595,12 @@ export function PartnerProvider({ children }) {
     }
   }, []);
 
-  const contextValue = {
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
     // Partner data
     partner,
     isLoading,
-    isWhiteLabel: isWhiteLabel(),
+    isWhiteLabel: !!partner,
 
     // Helper functions
     filterScenarios,
@@ -639,7 +640,34 @@ export function PartnerProvider({ children }) {
     availableSetups: getSetupsList(),
     SCENARIO_SETUPS: getSetupsObject(),
     setupsLoading,
-  };
+  }), [
+    partner,
+    isLoading,
+    filterScenarios,
+    filterScenariosByType,
+    checkModuleAllowed,
+    getBranding,
+    getLogoUrl,
+    user,
+    isAuthenticated,
+    isAdmin,
+    authLoading,
+    handleLogin,
+    handleLogout,
+    refreshUser,
+    demoCode,
+    isDemoUser,
+    setDemoCode,
+    clearDemoCode,
+    selectedSetup,
+    getCurrentSetup,
+    setSelectedSetup,
+    clearSelectedSetup,
+    filterScenariosBySetupAndPartner,
+    getSetupsList,
+    getSetupsObject,
+    setupsLoading,
+  ]);
 
   return (
     <PartnerContext.Provider value={contextValue}>

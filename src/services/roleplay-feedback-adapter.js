@@ -7,39 +7,8 @@
 
 import { generateInterviewFeedback, generateAudioAnalysis } from './gemini.js';
 import wordpressAPI, { getWPNonce, getWPApiUrl } from './wordpress-api.js';
-import { decodeUnicodeEscapes } from '../utils/parseJSON.js';
+import { decodeObjectStrings } from '../utils/parseJSON.js';
 import { delay } from '../utils/timing.js';
-
-/**
- * Recursively decode Unicode escapes in all string properties of an object
- * Handles the case where backend returns strings like "Betriebszugehu00f6rigkeit"
- *
- * @param {any} data - Data to decode
- * @returns {any} - Decoded data
- */
-function decodeObjectStrings(data) {
-  if (data === null || data === undefined) {
-    return data;
-  }
-
-  if (typeof data === 'string') {
-    return decodeUnicodeEscapes(data);
-  }
-
-  if (Array.isArray(data)) {
-    return data.map(decodeObjectStrings);
-  }
-
-  if (typeof data === 'object') {
-    const decoded = {};
-    for (const key of Object.keys(data)) {
-      decoded[key] = decodeObjectStrings(data[key]);
-    }
-    return decoded;
-  }
-
-  return data;
-}
 
 /**
  * Analyze roleplay conversation transcript
