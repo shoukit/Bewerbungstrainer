@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Lightbulb,
   Clock,
+  Calendar,
   FileText,
   Award,
   User,
@@ -37,6 +38,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
+import { useMobile } from '@/hooks/useMobile';
 import { getScoreColor } from '@/config/colors';
 import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
@@ -69,6 +71,30 @@ const getGradeLabel = (score, maxScore) => {
   if (percentage >= 60) return 'Solide Leistung';
   if (percentage >= 50) return 'Ausbaufähig';
   return 'Weiter üben!';
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const getTypeLabel = (type) => {
+  if (type === 'video') return 'Wirkungs-Analyse';
+  if (type === 'roleplay') return 'Live-Simulation';
+  return 'Szenario-Training';
+};
+
+const getTypeIcon = (type) => {
+  if (type === 'video') return Video;
+  if (type === 'roleplay') return MessageSquare;
+  return Target;
 };
 
 // =============================================================================
@@ -810,6 +836,7 @@ const CategoryScoreCard = ({ category, primaryAccent, branding }) => {
 const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinueSession, onRepeatSession, onDeleteSession }) => {
   // Partner theming via useBranding hook
   const b = useBranding();
+  const isMobile = useMobile();
   const headerGradient = b.headerGradient;
   const primaryAccent = b.primaryAccent;
 
@@ -979,92 +1006,168 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
     );
   }
 
+  const TypeIcon = getTypeIcon(type);
+
   return (
-    <div style={{ padding: '24px' }}>
-      {/* Responsive styles */}
-      <style>{`
-        .detail-grid { display: grid; grid-template-columns: 1fr 400px; gap: 24px; padding: 0 24px; }
-        @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
-      `}</style>
+    <div style={{ minHeight: '100vh', background: b.pageBg }}>
+      {/* Header - Full width sticky */}
+      <div style={{
+        background: headerGradient,
+        padding: isMobile ? '20px 16px' : '24px 32px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          {/* Back Button */}
+          {onBack && (
+            <button
+              onClick={onBack}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                color: '#fff',
+                fontSize: '13px',
+                marginBottom: '16px',
+              }}
+            >
+              <ArrowLeft size={16} />
+              Zurück zur Übersicht
+            </button>
+          )}
 
-      {/* Navigation bar with back and delete buttons */}
-      <div style={{ margin: '0 0 24px', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button
-          onClick={onBack}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
-            borderRadius: '10px', background: b.cardBgHover, border: 'none',
-            cursor: 'pointer', fontSize: '14px', fontWeight: 500, color: b.textMain,
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = b.borderColor; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = b.cardBgHover; }}
-        >
-          <ArrowLeft size={18} />
-          Zurück zur Übersicht
-        </button>
+          {/* Header Content */}
+          <div style={{
+            display: 'flex',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            gap: isMobile ? '16px' : '24px',
+            flexDirection: isMobile ? 'column' : 'row',
+          }}>
+            {/* Score Gauge */}
+            <ScoreGauge score={overallScore} size={isMobile ? 80 : 100} primaryAccent={primaryAccent} isHeader branding={b} />
 
-        {/* Delete button - only for Simulator sessions */}
-        {isSimulator && onDeleteSession && (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
-              borderRadius: '10px', background: b.errorLight, border: 'none',
-              cursor: 'pointer', fontSize: '14px', fontWeight: 500, color: b.error,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = b.error; e.currentTarget.style.color = 'white'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = b.errorLight; e.currentTarget.style.color = b.error; }}
-          >
-            <Trash2 size={18} />
-            Session löschen
-          </button>
-        )}
-      </div>
-
-      {/* Two-column layout */}
-      <div className="detail-grid">
-        {/* LEFT COLUMN - Media */}
-        <div>
-          {/* Header Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              background: headerGradient,
-              borderRadius: '20px',
-              padding: '24px',
-              marginBottom: '20px',
-              color: '#fff',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <ScoreGauge score={overallScore} size={100} primaryAccent="#fff" isHeader={true} branding={b} />
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.9 }}>
-                  {isVideo ? <Video size={16} /> : isRoleplay ? <MessageSquare size={16} /> : <Target size={16} />}
-                  <span style={{ fontSize: '13px', fontWeight: 500 }}>
-                    {isVideo ? 'Wirkungs-Analyse' : isRoleplay ? 'Live-Simulation' : 'Szenario-Training'}
-                  </span>
-                </div>
-                <h1 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0' }}>
-                  {(isRoleplay ? roleplayScenario?.title : scenario?.title) || session?.scenario_title || session?.position || 'Training'}
-                </h1>
-                <p style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 8px 0', opacity: 0.9 }}>
+            {/* Title & Meta */}
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(255,255,255,0.2)',
+                  color: '#fff',
+                }}>
+                  {getTypeLabel(type)}
+                </span>
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(255,255,255,0.9)',
+                  color: getScoreColor(overallScore, primaryAccent),
+                }}>
                   {getGradeLabel(overallScore, 100)}
-                </p>
-                <div style={{ display: 'flex', gap: '12px', fontSize: '12px', opacity: 0.8 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Clock size={12} />
-                    {new Date(session.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <h1 style={{
+                fontSize: isMobile ? '20px' : '24px',
+                fontWeight: 700,
+                color: '#fff',
+                margin: 0,
+                marginBottom: '8px',
+              }}>
+                {(isRoleplay ? roleplayScenario?.title : scenario?.title) || session?.scenario_title || session?.position || 'Training'}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                  <Calendar size={14} />
+                  {formatDate(session?.created_at)}
+                </span>
+                {session?.duration && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                    <Clock size={14} />
+                    {formatDuration(session.duration)}
                   </span>
-                </div>
+                )}
               </div>
             </div>
-          </motion.div>
 
-          {/* Video Player */}
+            {/* Action Buttons - Desktop only */}
+            {!isMobile && (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {/* Repeat Button */}
+                {onRepeatSession && (
+                  <button
+                    onClick={() => onRepeatSession(session, scenario)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'rgba(255,255,255,0.2)',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      borderRadius: '10px',
+                      padding: '10px 20px',
+                      cursor: 'pointer',
+                      color: '#fff',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                    }}
+                  >
+                    <RotateCcw size={16} />
+                    Erneut üben
+                  </button>
+                )}
+                {/* Delete Button - for Simulator sessions */}
+                {isSimulator && onDeleteSession && (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'rgba(239,68,68,0.2)',
+                      border: '1px solid rgba(239,68,68,0.4)',
+                      borderRadius: '10px',
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      color: '#fff',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{
+        maxWidth: '1400px',
+        margin: '0 auto',
+        padding: isMobile ? '16px' : '24px 32px',
+      }}>
+        {/* Two-column layout */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 400px',
+          gap: '24px',
+        }}>
+          {/* LEFT COLUMN - Media */}
+          <div>
+            {/* Video Player */}
           {isVideo && session?.video_url && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -1438,6 +1541,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
               </p>
             </div>
           )}
+        </div>
         </div>
       </div>
 

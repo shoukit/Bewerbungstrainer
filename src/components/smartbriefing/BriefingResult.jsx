@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { usePartner } from '../../context/PartnerContext';
+import { useBranding } from '@/hooks/useBranding';
+import { useMobile } from '@/hooks/useMobile';
 import {
   ArrowLeft,
   Copy,
@@ -23,6 +24,7 @@ import {
   Rocket,
   Sparkles,
   Calendar,
+  Clock,
   Plus,
 } from 'lucide-react';
 
@@ -307,12 +309,14 @@ const BriefingResult = ({
   onCreateNew,
   onGenerateAnother,
 }) => {
-  const { config } = usePartner();
+  const b = useBranding();
+  const isMobile = useMobile();
   const [copied, setCopied] = useState(false);
   const contentRef = useRef(null);
 
-  // Get primary accent color from partner config
-  const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
+  // Get primary accent color from branding
+  const primaryAccent = b.primaryAccent;
+  const headerGradient = b.headerGradient;
   const IconComponent = ICON_MAP[template?.icon || briefing?.template_icon] || FileText;
 
   // Format date
@@ -321,7 +325,7 @@ const BriefingResult = ({
     const date = new Date(dateString);
     return date.toLocaleDateString('de-DE', {
       day: '2-digit',
-      month: '2-digit',
+      month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
@@ -358,156 +362,179 @@ const BriefingResult = ({
   }
 
   return (
-    <div
-      style={{
-        padding: '24px',
-        maxWidth: '800px',
-        margin: '0 auto',
-      }}
-    >
-      {/* Back Button */}
-      <button
-        onClick={onBack}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 0',
-          border: 'none',
-          background: 'none',
-          color: '#64748b',
-          fontSize: '14px',
-          fontWeight: 500,
-          cursor: 'pointer',
-          marginBottom: '24px',
-        }}
-      >
-        <ArrowLeft size={18} />
-        Zuruck zur Ubersicht
-      </button>
-
-      {/* Success Header */}
-      <div
-        style={{
-          backgroundColor: `${primaryAccent}10`,
-          borderRadius: '16px',
-          padding: '20px 24px',
-          marginBottom: '24px',
-          border: `1px solid ${primaryAccent}30`,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              backgroundColor: primaryAccent,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Sparkles size={22} style={{ color: 'white' }} />
-          </div>
-          <div>
-            <h2
-              style={{
-                fontSize: '18px',
-                fontWeight: 700,
-                color: '#0f172a',
-                margin: '0 0 4px 0',
-              }}
-            >
-              Dein Briefing ist fertig!
-            </h2>
-            <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
-              {template?.title || briefing?.template_title}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Briefing Content Card */}
-      <div
-        ref={contentRef}
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Card Header */}
-        <div
-          style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid #f1f5f9',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}25)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <IconComponent size={20} style={{ color: primaryAccent }} />
-            </div>
-            <div>
-              <h3
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  color: '#0f172a',
-                  margin: 0,
-                }}
-              >
-                {template?.title || briefing?.template_title}
-              </h3>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '12px',
-                  color: '#94a3b8',
-                  marginTop: '2px',
-                }}
-              >
-                <Calendar size={12} />
-                {formatDate(briefing.created_at)}
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+    <div style={{ minHeight: '100vh', background: b.pageBg }}>
+      {/* Header - Full width sticky */}
+      <div style={{
+        background: headerGradient,
+        padding: isMobile ? '20px 16px' : '24px 32px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          {/* Back Button */}
+          {onBack && (
             <button
-              onClick={handleCopy}
+              onClick={onBack}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '8px 14px',
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
                 borderRadius: '8px',
-                border: '1px solid #e2e8f0',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                color: '#fff',
+                fontSize: '13px',
+                marginBottom: '16px',
+              }}
+            >
+              <ArrowLeft size={16} />
+              Zurück zur Übersicht
+            </button>
+          )}
+
+          {/* Header Content */}
+          <div style={{
+            display: 'flex',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            gap: isMobile ? '16px' : '24px',
+            flexDirection: isMobile ? 'column' : 'row',
+          }}>
+            {/* Icon instead of Score Gauge */}
+            <div style={{
+              width: isMobile ? 70 : 90,
+              height: isMobile ? 70 : 90,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <IconComponent size={isMobile ? 32 : 40} color="#fff" />
+            </div>
+
+            {/* Title & Meta */}
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(255,255,255,0.2)',
+                  color: '#fff',
+                }}>
+                  Smart Briefing
+                </span>
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(255,255,255,0.9)',
+                  color: primaryAccent,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}>
+                  <Sparkles size={12} />
+                  Fertig!
+                </span>
+              </div>
+              <h1 style={{
+                fontSize: isMobile ? '20px' : '24px',
+                fontWeight: 700,
+                color: '#fff',
+                margin: 0,
+                marginBottom: '8px',
+              }}>
+                {template?.title || briefing?.template_title}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                  <Calendar size={14} />
+                  {formatDate(briefing.created_at)}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons - Desktop only */}
+            {!isMobile && (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={handleCopy}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: copied ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.2)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '10px',
+                    padding: '10px 20px',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                  }}
+                >
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                  {copied ? 'Kopiert!' : 'Kopieren'}
+                </button>
+                <button
+                  onClick={handleDownload}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '10px',
+                    padding: '10px 20px',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Download size={16} />
+                  Speichern
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{
+        maxWidth: '900px',
+        margin: '0 auto',
+        padding: isMobile ? '16px' : '24px 32px',
+      }}>
+        {/* Mobile Action Buttons */}
+        {isMobile && (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <button
+              onClick={handleCopy}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '12px',
+                borderRadius: '10px',
+                border: `1px solid ${b.borderColor}`,
                 backgroundColor: copied ? '#dcfce7' : 'white',
-                color: copied ? '#16a34a' : '#64748b',
+                color: copied ? '#16a34a' : b.textSecondary,
                 fontSize: '13px',
                 fontWeight: 500,
                 cursor: 'pointer',
-                transition: 'all 0.2s',
               }}
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
@@ -516,95 +543,104 @@ const BriefingResult = ({
             <button
               onClick={handleDownload}
               style={{
+                flex: 1,
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '6px',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                border: '1px solid #e2e8f0',
+                padding: '12px',
+                borderRadius: '10px',
+                border: `1px solid ${b.borderColor}`,
                 backgroundColor: 'white',
-                color: '#64748b',
+                color: b.textSecondary,
                 fontSize: '13px',
                 fontWeight: 500,
                 cursor: 'pointer',
-                transition: 'all 0.2s',
               }}
             >
               <Download size={16} />
               Speichern
             </button>
           </div>
+        )}
+
+        {/* Briefing Content Card */}
+        <div
+          ref={contentRef}
+          style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            overflow: 'hidden',
+            border: `1px solid ${b.borderColor}`,
+          }}
+        >
+          {/* Briefing Content */}
+          <div style={{ padding: isMobile ? '20px' : '32px' }}>
+            <MarkdownContent
+              content={briefing.content_markdown}
+              primaryAccent={primaryAccent}
+            />
+          </div>
         </div>
 
-        {/* Briefing Content */}
+        {/* Bottom Action Buttons */}
         <div
           style={{
-            padding: '24px',
+            display: 'flex',
+            gap: '12px',
+            marginTop: '24px',
+            flexWrap: 'wrap',
           }}
         >
-          <MarkdownContent
-            content={briefing.content_markdown}
-            primaryAccent={primaryAccent}
-          />
+          <button
+            onClick={onGenerateAnother}
+            style={{
+              flex: 1,
+              minWidth: '200px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '14px 24px',
+              borderRadius: '12px',
+              border: `2px solid ${primaryAccent}`,
+              backgroundColor: 'white',
+              color: primaryAccent,
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <RefreshCw size={18} />
+            Mit anderen Angaben neu generieren
+          </button>
+          <button
+            onClick={onCreateNew}
+            style={{
+              flex: 1,
+              minWidth: '200px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '14px 24px',
+              borderRadius: '12px',
+              border: 'none',
+              background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
+              color: 'white',
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: `0 4px 14px ${primaryAccent}40`,
+            }}
+          >
+            <Plus size={18} />
+            Neues Briefing erstellen
+          </button>
         </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '12px',
-          marginTop: '24px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <button
-          onClick={onGenerateAnother}
-          style={{
-            flex: 1,
-            minWidth: '200px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            padding: '14px 24px',
-            borderRadius: '12px',
-            border: `2px solid ${primaryAccent}`,
-            backgroundColor: 'white',
-            color: primaryAccent,
-            fontSize: '15px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <RefreshCw size={18} />
-          Mit anderen Angaben neu generieren
-        </button>
-        <button
-          onClick={onCreateNew}
-          style={{
-            flex: 1,
-            minWidth: '200px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            padding: '14px 24px',
-            borderRadius: '12px',
-            border: 'none',
-            background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
-            color: 'white',
-            fontSize: '15px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            boxShadow: `0 4px 14px ${primaryAccent}40`,
-          }}
-        >
-          <Plus size={18} />
-          Neues Briefing erstellen
-        </button>
       </div>
     </div>
   );

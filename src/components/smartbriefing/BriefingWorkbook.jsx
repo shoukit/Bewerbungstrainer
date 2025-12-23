@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePartner } from '../../context/PartnerContext';
 import { useBranding } from '../../hooks/useBranding';
+import { useMobile } from '../../hooks/useMobile';
 import wordpressAPI from '../../services/wordpress-api';
 import { formatDateTime } from '../../utils/formatting';
 import { TEMPLATE_ICON_MAP, getIcon } from '../../utils/iconMaps';
@@ -18,6 +19,7 @@ import {
   ChevronUp,
   RotateCcw,
   Lightbulb,
+  FileText,
 } from 'lucide-react';
 
 /**
@@ -776,15 +778,17 @@ const BriefingWorkbook = ({
 }) => {
   const { config } = usePartner();
   const b = useBranding();
+  const isMobile = useMobile();
   const [briefing, setBriefing] = useState(initialBriefing);
   const [loading, setLoading] = useState(!initialBriefing?.sections);
   const [error, setError] = useState(null);
   const [expandedSections, setExpandedSections] = useState({});
   const [isVariablesExpanded, setIsVariablesExpanded] = useState(false);
 
-  // Get primary accent color from partner config
-  const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
-  const IconComponent = getIcon(briefing?.template_icon);
+  // Get primary accent color from branding
+  const primaryAccent = b.primaryAccent;
+  const headerGradient = b.headerGradient;
+  const IconComponent = getIcon(briefing?.template_icon) || FileText;
 
   // Fetch full briefing with sections if needed
   useEffect(() => {
@@ -890,94 +894,121 @@ const BriefingWorkbook = ({
   }
 
   return (
-    <div
-      style={{
-        padding: '24px',
-        maxWidth: '900px',
-        margin: '0 auto',
-      }}
-    >
-      {/* Back Button */}
-      <button
-        onClick={onBack}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 0',
-          border: 'none',
-          background: 'none',
-          color: '#64748b',
-          fontSize: '14px',
-          fontWeight: 500,
-          cursor: 'pointer',
-          marginBottom: '24px',
-        }}
-      >
-        <ArrowLeft size={18} />
-        Zurück zur Übersicht
-      </button>
-
-      {/* Header */}
-      <div
-        style={{
-          backgroundColor: b.cardBgColor,
-          borderRadius: b.radius.xl,
-          padding: b.space[6],
-          marginBottom: b.space[6],
-          boxShadow: b.shadow.xs,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: b.space[4] }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[4], flex: 1 }}>
-            <div
+    <div style={{ minHeight: '100vh', background: b.pageBg }}>
+      {/* Header - Full width sticky */}
+      <div style={{
+        background: headerGradient,
+        padding: isMobile ? '20px 16px' : '24px 32px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          {/* Back Button */}
+          {onBack && (
+            <button
+              onClick={onBack}
               style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: b.radius.lg,
-                background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}25)`,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
+                gap: '6px',
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                color: '#fff',
+                fontSize: '13px',
+                marginBottom: '16px',
               }}
             >
-              <IconComponent size={28} style={{ color: primaryAccent }} />
+              <ArrowLeft size={16} />
+              Zurück zur Übersicht
+            </button>
+          )}
+
+          {/* Header Content */}
+          <div style={{
+            display: 'flex',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            gap: isMobile ? '16px' : '24px',
+            flexDirection: isMobile ? 'column' : 'row',
+          }}>
+            {/* Icon instead of Score Gauge */}
+            <div style={{
+              width: isMobile ? 70 : 90,
+              height: isMobile ? 70 : 90,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <IconComponent size={isMobile ? 32 : 40} color="#fff" />
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h1
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  color: '#0f172a',
-                  margin: '0 0 4px 0',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {briefing.title || 'Briefing'}
-              </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '14px', color: '#64748b' }}>
+
+            {/* Title & Meta */}
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(255,255,255,0.2)',
+                  color: '#fff',
+                }}>
+                  Smart Briefing
+                </span>
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(255,255,255,0.9)',
+                  color: primaryAccent,
+                }}>
                   {briefing.template_title}
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#94a3b8' }}>
-                  <Calendar size={12} />
+              </div>
+              <h1 style={{
+                fontSize: isMobile ? '20px' : '24px',
+                fontWeight: 700,
+                color: '#fff',
+                margin: 0,
+                marginBottom: '8px',
+              }}>
+                {briefing.title || 'Briefing'}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                  <Calendar size={14} />
                   {formatDateTime(briefing.created_at)}
                 </span>
               </div>
             </div>
           </div>
-
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div style={{
+        maxWidth: '900px',
+        margin: '0 auto',
+        padding: isMobile ? '16px' : '24px 32px',
+      }}>
         {/* Collapsible Variables display */}
         {briefing.variables && Object.keys(briefing.variables).length > 0 && (
           <div
             style={{
-              marginTop: '16px',
-              paddingTop: '16px',
-              borderTop: '1px solid #f1f5f9',
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              marginBottom: '20px',
+              border: `1px solid ${b.borderColor}`,
             }}
           >
             <button
@@ -993,10 +1024,10 @@ const BriefingWorkbook = ({
                 cursor: 'pointer',
               }}
             >
-              <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748b' }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: b.textMain }}>
                 Deine Angaben ({Object.keys(briefing.variables).length})
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: b.textMuted }}>
                 <span style={{ fontSize: '12px' }}>{isVariablesExpanded ? 'Einklappen' : 'Ausklappen'}</span>
                 {isVariablesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </div>
@@ -1006,6 +1037,8 @@ const BriefingWorkbook = ({
               <div
                 style={{
                   marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: `1px solid ${b.borderColor}`,
                   display: 'flex',
                   flexWrap: 'wrap',
                   gap: '8px',
@@ -1015,21 +1048,20 @@ const BriefingWorkbook = ({
                   <span
                     key={key}
                     style={{
-                      backgroundColor: '#f1f5f9',
+                      backgroundColor: b.cardBgHover,
                       padding: '6px 12px',
                       borderRadius: '20px',
                       fontSize: '12px',
-                      color: '#64748b',
+                      color: b.textSecondary,
                     }}
                   >
-                    <strong style={{ color: '#374151' }}>{getVariableDisplayName(key)}:</strong> {value}
+                    <strong style={{ color: b.textMain }}>{getVariableDisplayName(key)}:</strong> {value}
                   </span>
                 ))}
               </div>
             )}
           </div>
         )}
-      </div>
 
       {/* Loading State */}
       {loading && (
@@ -1112,26 +1144,27 @@ const BriefingWorkbook = ({
         </div>
       )}
 
-      {/* Info box */}
-      <div
-        style={{
-          marginTop: '24px',
-          padding: '16px 20px',
-          backgroundColor: `${primaryAccent}08`,
-          borderRadius: '12px',
-          border: `1px solid ${primaryAccent}20`,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-          <Lightbulb size={18} style={{ color: primaryAccent, flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <h4 style={{ margin: '0 0 4px 0', color: '#0f172a', fontSize: '14px', fontWeight: 600 }}>
-              Tipp: Personalisiere dein Briefing
-            </h4>
-            <p style={{ margin: 0, color: '#64748b', fontSize: '13px', lineHeight: 1.5 }}>
-              Klicke auf das Stift-Icon bei jedem Punkt, um deine eigenen Notizen hinzuzufügen.
-              Nicht relevante Punkte kannst du mit dem Papierkorb-Icon ausblenden.
-            </p>
+        {/* Info box */}
+        <div
+          style={{
+            marginTop: '24px',
+            padding: '16px 20px',
+            backgroundColor: `${primaryAccent}08`,
+            borderRadius: '12px',
+            border: `1px solid ${primaryAccent}20`,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <Lightbulb size={18} style={{ color: primaryAccent, flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <h4 style={{ margin: '0 0 4px 0', color: '#0f172a', fontSize: '14px', fontWeight: 600 }}>
+                Tipp: Personalisiere dein Briefing
+              </h4>
+              <p style={{ margin: 0, color: '#64748b', fontSize: '13px', lineHeight: 1.5 }}>
+                Klicke auf das Stift-Icon bei jedem Punkt, um deine eigenen Notizen hinzuzufügen.
+                Nicht relevante Punkte kannst du mit dem Papierkorb-Icon ausblenden.
+              </p>
+            </div>
           </div>
         </div>
       </div>
