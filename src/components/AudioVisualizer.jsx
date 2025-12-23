@@ -30,11 +30,11 @@ const AudioVisualizer = ({
   // Normalize audioLevel to 0-1 range
   const normalizedLevel = audioLevel > 1 ? audioLevel / 100 : audioLevel;
 
-  // Size configurations
+  // Size configurations - more bars for fuller, wider look
   const sizeConfig = useMemo(() => ({
-    sm: { height: 'h-16', barCount: 16, barWidth: 'w-1', gap: 'gap-0.5' },
-    md: { height: 'h-24', barCount: 24, barWidth: 'w-1.5', gap: 'gap-1' },
-    lg: { height: 'h-32', barCount: 32, barWidth: 'w-2', gap: 'gap-1' },
+    sm: { height: 'h-12', barCount: 32, barWidth: 'flex-1 min-w-[2px] max-w-[4px]', gap: 'gap-[2px]' },
+    md: { height: 'h-16', barCount: 48, barWidth: 'flex-1 min-w-[2px] max-w-[5px]', gap: 'gap-[2px]' },
+    lg: { height: 'h-20', barCount: 64, barWidth: 'flex-1 min-w-[3px] max-w-[6px]', gap: 'gap-[3px]' },
   }), []);
 
   const config = sizeConfig[size] || sizeConfig.md;
@@ -62,19 +62,21 @@ const BarsVisualizer = ({ level, isActive, config, className, accentColor }) => 
   // Generate bar heights with center-weighted distribution
   const generateBarHeights = () => {
     if (!isActive) {
-      // Idle state - subtle movement
-      return Array.from({ length: bars }, () => 15 + Math.random() * 10);
+      // Idle state - very subtle movement
+      return Array.from({ length: bars }, () => 8 + Math.random() * 8);
     }
 
     // Active state - dynamic heights based on audio level
     return Array.from({ length: bars }, (_, i) => {
       // Center-weighted: bars in the middle are taller
       const centerDistance = Math.abs(i - bars / 2) / (bars / 2);
-      const baseHeight = 20 + level * 60;
-      const variation = Math.random() * (level * 30);
-      const centerBoost = (1 - centerDistance * 0.7) * level * 25;
+      // More responsive to lower audio levels
+      const adjustedLevel = Math.pow(level, 0.7); // Make it more sensitive
+      const baseHeight = 15 + adjustedLevel * 70;
+      const variation = Math.random() * (adjustedLevel * 35);
+      const centerBoost = (1 - centerDistance * 0.6) * adjustedLevel * 30;
 
-      return Math.min(100, Math.max(10, baseHeight + variation + centerBoost));
+      return Math.min(100, Math.max(8, baseHeight + variation + centerBoost));
     });
   };
 
@@ -82,7 +84,7 @@ const BarsVisualizer = ({ level, isActive, config, className, accentColor }) => 
 
   return (
     <div className={cn(
-      "flex items-end justify-center px-4",
+      "flex items-end justify-center w-full",
       config.height,
       config.gap,
       className
@@ -102,19 +104,19 @@ const BarsVisualizer = ({ level, isActive, config, className, accentColor }) => 
             )}
             style={{
               background: accentColor
-                ? `linear-gradient(to top, ${accentColor}, ${adjustColor(accentColor, 40)})`
+                ? `linear-gradient(to top, ${accentColor}, ${adjustColor(accentColor, 60)})`
                 : 'linear-gradient(to top, rgb(37, 99, 235), rgb(20, 184, 166))',
-              boxShadow: isActive && level > 0.3
-                ? `0 0 ${8 + level * 12}px ${accentColor || 'rgba(20, 184, 166, 0.4)'}`
+              boxShadow: isActive && level > 0.15
+                ? `0 0 ${6 + level * 14}px ${accentColor ? `${accentColor}60` : 'rgba(20, 184, 166, 0.5)'}`
                 : 'none',
             }}
-            initial={{ height: '15%' }}
+            initial={{ height: '10%' }}
             animate={{
               height: `${heights[index]}%`,
-              opacity: isActive ? 0.7 + level * 0.3 : 0.4,
+              opacity: isActive ? 0.8 + level * 0.2 : 0.3,
             }}
             transition={{
-              duration: isActive ? 0.08 : 0.6,
+              duration: isActive ? 0.06 : 0.5,
               ease: 'easeOut',
               delay: delay,
             }}

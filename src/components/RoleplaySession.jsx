@@ -121,6 +121,9 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const [headerHeight, setHeaderHeight] = useState(80);
   const headerObserverRef = useRef(null);
 
+  // User audio level for visualizer
+  const [userAudioLevel, setUserAudioLevel] = useState(0);
+
   // Refs
   const durationIntervalRef = useRef(null);
   const conversationIdRef = useRef(null);
@@ -129,6 +132,12 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const startTimeRef = useRef(null); // Ref for stable startTime access in callbacks
   const lastMessageEndTimeRef = useRef(0); // Track when last message ended (for calculating start time)
   const transcriptRef = useRef([]); // Ref to access transcript in callbacks
+
+  // Audio analysis refs for user voice visualization
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const userStreamRef = useRef(null);
 
   // Get API credentials
   const apiKey = wordpressAPI.getElevenLabsApiKey();
@@ -168,6 +177,61 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     }
 
     return prompt;
+  };
+
+  // Start user audio level analysis for visualizer
+  const startUserAudioAnalysis = async () => {
+    try {
+      // Get user's microphone - separate from ElevenLabs stream
+      const constraints = localMicrophoneId
+        ? { audio: { deviceId: { exact: localMicrophoneId } } }
+        : { audio: true };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      userStreamRef.current = stream;
+
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
+
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      analyserRef.current = analyser;
+
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const updateLevel = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const sum = dataArray.reduce((a, b) => a + b, 0);
+        const average = sum / dataArray.length;
+        setUserAudioLevel(average / 255);
+        animationFrameRef.current = requestAnimationFrame(updateLevel);
+      };
+
+      updateLevel();
+    } catch (err) {
+      console.error('[ROLEPLAY] Audio analysis error:', err);
+    }
+  };
+
+  const stopUserAudioAnalysis = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    if (userStreamRef.current) {
+      userStreamRef.current.getTracks().forEach(track => track.stop());
+      userStreamRef.current = null;
+    }
+    setUserAudioLevel(0);
   };
 
   // Generate live coaching when agent speaks
@@ -300,6 +364,19 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       }
     };
   }, [conversation.status, startTime]);
+
+  // Start/stop user audio analysis based on connection status
+  useEffect(() => {
+    if (conversation.status === 'connected') {
+      startUserAudioAnalysis();
+    } else {
+      stopUserAudioAnalysis();
+    }
+
+    return () => {
+      stopUserAudioAnalysis();
+    };
+  }, [conversation.status]);
 
   // Start conversation on mount - REMOVED: Now manual start with button
   useEffect(() => {
@@ -799,10 +876,11 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                   {conversation.status === 'connected' && (
                     <div className="bg-white px-4 py-3 border-t border-slate-100">
                       <AudioVisualizer
-                        audioLevel={conversation.isSpeaking ? 0.6 + Math.random() * 0.3 : 0.1}
-                        isActive={conversation.isSpeaking}
+                        audioLevel={userAudioLevel}
+                        isActive={userAudioLevel > 0.05}
                         variant="bars"
-                        size="sm"
+                        size="md"
+                        accentColor={themedStyles.primaryAccent}
                       />
                     </div>
                   )}

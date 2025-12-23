@@ -265,6 +265,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   const animationFrameRef = useRef(null);
   const streamRef = useRef(null);
   const finalDurationRef = useRef(0);
+  const isRecordingRef = useRef(false); // Ref for animation frame closure
 
   useEffect(() => {
     return () => {
@@ -308,7 +309,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       analyserRef.current.fftSize = 256;
 
       const updateLevel = () => {
-        if (analyserRef.current && recordingState === 'recording') {
+        if (analyserRef.current && isRecordingRef.current) {
           const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
           analyserRef.current.getByteFrequencyData(dataArray);
           const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
@@ -316,6 +317,8 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
         }
         animationFrameRef.current = requestAnimationFrame(updateLevel);
       };
+      // Set ref before starting animation loop
+      isRecordingRef.current = true;
       updateLevel();
 
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
@@ -356,6 +359,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.pause();
       setRecordingState('paused');
+      isRecordingRef.current = false; // Stop audio level updates
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -368,6 +372,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
       mediaRecorderRef.current.resume();
       setRecordingState('recording');
+      isRecordingRef.current = true; // Resume audio level updates
       timerRef.current = setInterval(() => {
         setSeconds(prev => prev + 1);
       }, 1000);
@@ -377,6 +382,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   const finishRecording = () => {
     // Save the duration before resetting
     finalDurationRef.current = seconds;
+    isRecordingRef.current = false; // Stop audio level updates
 
     if (timerRef.current) {
       clearInterval(timerRef.current);
