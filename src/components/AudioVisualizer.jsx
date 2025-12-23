@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -7,14 +7,15 @@ import { cn } from '@/lib/utils';
  * Unified Audio Visualizer Component
  *
  * Variants:
- * - 'bars': Classic frequency bars (default)
- * - 'wave': Smooth wave-like visualization
+ * - 'spectrum': Professional equalizer-style bars (default)
+ * - 'waveform': Smooth flowing waveform like Siri
+ * - 'bars': Classic frequency bars
  * - 'pulse': Pulsing microphone icon
  * - 'minimal': Simple horizontal progress bar
  *
  * @param {number} audioLevel - Audio level from 0 to 1 (or 0 to 100)
  * @param {boolean} isActive - Whether recording/active
- * @param {'bars' | 'wave' | 'pulse' | 'minimal'} variant - Visual style
+ * @param {'spectrum' | 'waveform' | 'bars' | 'pulse' | 'minimal'} variant - Visual style
  * @param {'sm' | 'md' | 'lg'} size - Size preset
  * @param {string} className - Additional CSS classes
  * @param {string} accentColor - Custom accent color (CSS color value)
@@ -22,7 +23,7 @@ import { cn } from '@/lib/utils';
 const AudioVisualizer = ({
   audioLevel = 0,
   isActive = false,
-  variant = 'bars',
+  variant = 'spectrum',
   size = 'md',
   className,
   accentColor,
@@ -30,153 +31,282 @@ const AudioVisualizer = ({
   // Normalize audioLevel to 0-1 range
   const normalizedLevel = audioLevel > 1 ? audioLevel / 100 : audioLevel;
 
-  // Size configurations - more bars for fuller, wider look
+  // Size configurations
   const sizeConfig = useMemo(() => ({
-    sm: { height: 'h-12', barCount: 32, barWidth: 'flex-1 min-w-[2px] max-w-[4px]', gap: 'gap-[2px]' },
-    md: { height: 'h-16', barCount: 48, barWidth: 'flex-1 min-w-[2px] max-w-[5px]', gap: 'gap-[2px]' },
-    lg: { height: 'h-20', barCount: 64, barWidth: 'flex-1 min-w-[3px] max-w-[6px]', gap: 'gap-[3px]' },
+    sm: { height: 48, barCount: 40, barWidth: 3, gap: 2 },
+    md: { height: 64, barCount: 50, barWidth: 4, gap: 2 },
+    lg: { height: 80, barCount: 60, barWidth: 5, gap: 3 },
   }), []);
 
   const config = sizeConfig[size] || sizeConfig.md;
 
   // Render based on variant
   switch (variant) {
-    case 'wave':
-      return <WaveVisualizer level={normalizedLevel} isActive={isActive} config={config} className={className} accentColor={accentColor} />;
+    case 'waveform':
+      return <WaveformVisualizer level={normalizedLevel} isActive={isActive} config={config} className={className} accentColor={accentColor} />;
+    case 'bars':
+      return <BarsVisualizer level={normalizedLevel} isActive={isActive} config={config} className={className} accentColor={accentColor} />;
     case 'pulse':
       return <PulseVisualizer level={normalizedLevel} isActive={isActive} size={size} className={className} accentColor={accentColor} />;
     case 'minimal':
       return <MinimalVisualizer level={normalizedLevel} isActive={isActive} className={className} accentColor={accentColor} />;
-    case 'bars':
+    case 'spectrum':
     default:
-      return <BarsVisualizer level={normalizedLevel} isActive={isActive} config={config} className={className} accentColor={accentColor} />;
+      return <SpectrumVisualizer level={normalizedLevel} isActive={isActive} config={config} className={className} accentColor={accentColor} />;
   }
 };
 
 /**
- * Classic frequency bars - most visually appealing
+ * Professional Spectrum/Equalizer Visualizer
+ * All bars react dynamically with smooth animations
+ */
+const SpectrumVisualizer = ({ level, isActive, config, className, accentColor }) => {
+  const [bars, setBars] = useState([]);
+  const animationRef = useRef(null);
+  const lastUpdateRef = useRef(0);
+
+  const baseColor = accentColor || '#3b82f6';
+  const glowColor = accentColor ? `${accentColor}60` : 'rgba(59, 130, 246, 0.4)';
+
+  // Generate dynamic bar heights
+  useEffect(() => {
+    const barCount = config.barCount;
+
+    const updateBars = () => {
+      const now = Date.now();
+      // Update every ~50ms for smooth animation
+      if (now - lastUpdateRef.current < 50) {
+        animationRef.current = requestAnimationFrame(updateBars);
+        return;
+      }
+      lastUpdateRef.current = now;
+
+      const newBars = Array.from({ length: barCount }, (_, i) => {
+        if (!isActive) {
+          // Idle: subtle random movement
+          return 8 + Math.random() * 12;
+        }
+
+        // Active: dynamic response to audio level
+        const sensitivity = Math.pow(level, 0.5); // More sensitive to lower levels
+        const baseHeight = 15 + sensitivity * 60;
+
+        // Create natural frequency distribution - different "frequencies" respond differently
+        const frequencyResponse = Math.sin((i / barCount) * Math.PI * 2 + now * 0.003) * 0.3 + 0.7;
+        const randomVariation = (Math.random() - 0.5) * sensitivity * 40;
+
+        // Add some wave motion across the bars
+        const waveOffset = Math.sin((i / barCount) * Math.PI * 3 + now * 0.005) * sensitivity * 15;
+
+        const height = baseHeight * frequencyResponse + randomVariation + waveOffset;
+        return Math.min(95, Math.max(8, height));
+      });
+
+      setBars(newBars);
+      animationRef.current = requestAnimationFrame(updateBars);
+    };
+
+    updateBars();
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isActive, level, config.barCount]);
+
+  return (
+    <div
+      className={cn("relative w-full flex items-end justify-center", className)}
+      style={{ height: config.height }}
+    >
+      {/* Gradient background glow when active */}
+      {isActive && level > 0.1 && (
+        <div
+          className="absolute inset-0 rounded-lg opacity-30"
+          style={{
+            background: `radial-gradient(ellipse at center, ${glowColor} 0%, transparent 70%)`,
+          }}
+        />
+      )}
+
+      {/* Bars container */}
+      <div
+        className="flex items-end justify-center h-full"
+        style={{ gap: config.gap }}
+      >
+        {bars.map((height, index) => (
+          <div
+            key={index}
+            className="rounded-full transition-all"
+            style={{
+              width: config.barWidth,
+              height: `${height}%`,
+              background: isActive
+                ? `linear-gradient(to top, ${baseColor}, ${adjustColor(baseColor, 40)})`
+                : `linear-gradient(to top, ${adjustColor(baseColor, -30)}, ${adjustColor(baseColor, 10)})`,
+              opacity: isActive ? 0.85 + level * 0.15 : 0.4,
+              boxShadow: isActive && level > 0.2
+                ? `0 0 ${4 + level * 8}px ${glowColor}`
+                : 'none',
+              transition: 'height 0.08s ease-out, opacity 0.15s ease-out',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Smooth Waveform Visualizer (Siri-like)
+ */
+const WaveformVisualizer = ({ level, isActive, config, className, accentColor }) => {
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
+  const phaseRef = useRef(0);
+
+  const baseColor = accentColor || '#3b82f6';
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    const draw = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      const amplitude = isActive ? 0.3 + level * 0.5 : 0.15;
+      const frequency = isActive ? 2 + level : 1.5;
+      phaseRef.current += isActive ? 0.08 + level * 0.04 : 0.02;
+
+      // Create gradient
+      const gradient = ctx.createLinearGradient(0, 0, width, 0);
+      gradient.addColorStop(0, adjustColor(baseColor, -20) + '80');
+      gradient.addColorStop(0.5, baseColor);
+      gradient.addColorStop(1, adjustColor(baseColor, -20) + '80');
+
+      // Draw main wave
+      ctx.beginPath();
+      ctx.moveTo(0, height / 2);
+
+      for (let x = 0; x <= width; x++) {
+        const normalizedX = x / width;
+
+        // Multiple waves combined for organic look
+        const wave1 = Math.sin(normalizedX * Math.PI * frequency + phaseRef.current) * amplitude;
+        const wave2 = Math.sin(normalizedX * Math.PI * frequency * 1.5 + phaseRef.current * 1.3) * amplitude * 0.5;
+        const wave3 = Math.sin(normalizedX * Math.PI * frequency * 2.5 + phaseRef.current * 0.7) * amplitude * 0.25;
+
+        // Envelope to fade at edges
+        const envelope = Math.sin(normalizedX * Math.PI);
+
+        const y = height / 2 + (wave1 + wave2 + wave3) * height * envelope;
+        ctx.lineTo(x, y);
+      }
+
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Draw subtle reflection
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.moveTo(0, height / 2);
+
+      for (let x = 0; x <= width; x++) {
+        const normalizedX = x / width;
+        const wave1 = Math.sin(normalizedX * Math.PI * frequency + phaseRef.current + 0.5) * amplitude * 0.6;
+        const envelope = Math.sin(normalizedX * Math.PI);
+        const y = height / 2 + wave1 * height * envelope;
+        ctx.lineTo(x, y);
+      }
+
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      animationRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isActive, level, baseColor]);
+
+  return (
+    <div className={cn("relative w-full", className)} style={{ height: config.height }}>
+      <canvas
+        ref={canvasRef}
+        width={500}
+        height={config.height}
+        className="w-full h-full"
+        style={{ filter: isActive && level > 0.2 ? `drop-shadow(0 0 8px ${baseColor}60)` : 'none' }}
+      />
+    </div>
+  );
+};
+
+/**
+ * Classic frequency bars with improved distribution
  */
 const BarsVisualizer = ({ level, isActive, config, className, accentColor }) => {
   const bars = config.barCount;
+  const baseColor = accentColor || '#3b82f6';
 
-  // Generate bar heights with center-weighted distribution
+  // Generate bar heights - evenly distributed, all responsive
   const generateBarHeights = () => {
     if (!isActive) {
-      // Idle state - very subtle movement
-      return Array.from({ length: bars }, () => 8 + Math.random() * 8);
+      return Array.from({ length: bars }, () => 8 + Math.random() * 10);
     }
 
-    // Active state - dynamic heights based on audio level
+    const sensitivity = Math.pow(level, 0.6);
     return Array.from({ length: bars }, (_, i) => {
-      // Center-weighted: bars in the middle are taller
-      const centerDistance = Math.abs(i - bars / 2) / (bars / 2);
-      // More responsive to lower audio levels
-      const adjustedLevel = Math.pow(level, 0.7); // Make it more sensitive
-      const baseHeight = 15 + adjustedLevel * 70;
-      const variation = Math.random() * (adjustedLevel * 35);
-      const centerBoost = (1 - centerDistance * 0.6) * adjustedLevel * 30;
-
-      return Math.min(100, Math.max(8, baseHeight + variation + centerBoost));
+      const baseHeight = 20 + sensitivity * 55;
+      const variation = Math.random() * sensitivity * 30;
+      // Subtle wave pattern
+      const wave = Math.sin((i / bars) * Math.PI * 4 + Date.now() * 0.005) * sensitivity * 10;
+      return Math.min(95, Math.max(10, baseHeight + variation + wave));
     });
   };
 
   const heights = generateBarHeights();
 
   return (
-    <div className={cn(
-      "flex items-end justify-center w-full",
-      config.height,
-      config.gap,
-      className
-    )}>
-      {Array.from({ length: bars }).map((_, index) => {
-        // Create wave-like delay pattern from center
-        const centerIndex = bars / 2;
-        const distanceFromCenter = Math.abs(index - centerIndex);
-        const delay = distanceFromCenter * 0.015;
-
-        return (
-          <motion.div
-            key={index}
-            className={cn(
-              "rounded-full",
-              config.barWidth
-            )}
-            style={{
-              background: accentColor
-                ? `linear-gradient(to top, ${accentColor}, ${adjustColor(accentColor, 60)})`
-                : 'linear-gradient(to top, rgb(37, 99, 235), rgb(20, 184, 166))',
-              boxShadow: isActive && level > 0.15
-                ? `0 0 ${6 + level * 14}px ${accentColor ? `${accentColor}60` : 'rgba(20, 184, 166, 0.5)'}`
-                : 'none',
-            }}
-            initial={{ height: '10%' }}
-            animate={{
-              height: `${heights[index]}%`,
-              opacity: isActive ? 0.8 + level * 0.2 : 0.3,
-            }}
-            transition={{
-              duration: isActive ? 0.06 : 0.5,
-              ease: 'easeOut',
-              delay: delay,
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-};
-
-/**
- * Wave-like smooth visualization
- */
-const WaveVisualizer = ({ level, isActive, config, className, accentColor }) => {
-  const points = config.barCount;
-
-  // Generate smooth wave path
-  const generateWavePath = () => {
-    const width = 100;
-    const height = 100;
-    const amplitude = isActive ? 20 + level * 40 : 10;
-
-    let path = `M 0 ${height / 2}`;
-
-    for (let i = 0; i <= points; i++) {
-      const x = (i / points) * width;
-      const phase = (i / points) * Math.PI * 4 + Date.now() * 0.002;
-      const y = height / 2 + Math.sin(phase) * amplitude * (0.5 + Math.random() * 0.5);
-      path += ` L ${x} ${y}`;
-    }
-
-    return path;
-  };
-
-  return (
-    <div className={cn("relative", config.height, className)}>
-      <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        className="w-full h-full"
-      >
-        <defs>
-          <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={accentColor || "rgb(37, 99, 235)"} stopOpacity="0.8" />
-            <stop offset="50%" stopColor={accentColor ? adjustColor(accentColor, 30) : "rgb(20, 184, 166)"} stopOpacity="1" />
-            <stop offset="100%" stopColor={accentColor || "rgb(37, 99, 235)"} stopOpacity="0.8" />
-          </linearGradient>
-        </defs>
-        <motion.path
-          d={generateWavePath()}
-          fill="none"
-          stroke="url(#waveGradient)"
-          strokeWidth="3"
-          strokeLinecap="round"
-          animate={{
-            opacity: isActive ? 1 : 0.5,
+    <div
+      className={cn("flex items-end justify-center w-full", className)}
+      style={{ height: config.height, gap: config.gap }}
+    >
+      {heights.map((height, index) => (
+        <motion.div
+          key={index}
+          className="rounded-sm"
+          style={{
+            width: config.barWidth,
+            background: `linear-gradient(to top, ${baseColor}, ${adjustColor(baseColor, 50)})`,
+            boxShadow: isActive && level > 0.15
+              ? `0 0 ${4 + level * 10}px ${baseColor}50`
+              : 'none',
           }}
-          transition={{ duration: 0.1 }}
+          animate={{
+            height: `${height}%`,
+            opacity: isActive ? 0.8 + level * 0.2 : 0.35,
+          }}
+          transition={{
+            duration: 0.08,
+            ease: 'easeOut',
+          }}
         />
-      </svg>
+      ))}
     </div>
   );
 };
@@ -192,7 +322,7 @@ const PulseVisualizer = ({ level, isActive, size, className, accentColor }) => {
   };
 
   const config = sizeMap[size] || sizeMap.md;
-  const baseColor = accentColor || 'rgb(20, 184, 166)';
+  const baseColor = accentColor || '#3b82f6';
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
@@ -262,14 +392,13 @@ const PulseVisualizer = ({ level, isActive, size, className, accentColor }) => {
  * Minimal horizontal progress bar
  */
 const MinimalVisualizer = ({ level, isActive, className, accentColor }) => {
-  const baseColor = accentColor || 'rgb(20, 184, 166)';
+  const baseColor = accentColor || '#3b82f6';
 
-  // Color based on level
   const getColor = () => {
-    if (!isActive) return 'rgb(148, 163, 184)'; // slate-400
-    if (level > 0.7) return 'rgb(34, 197, 94)'; // green-500
+    if (!isActive) return 'rgb(148, 163, 184)';
+    if (level > 0.7) return 'rgb(34, 197, 94)';
     if (level > 0.3) return baseColor;
-    return 'rgb(148, 163, 184)'; // slate-400
+    return 'rgb(148, 163, 184)';
   };
 
   return (
@@ -302,7 +431,12 @@ function adjustColor(color, amount) {
   // Handle hex format
   if (color.startsWith('#')) {
     const hex = color.slice(1);
-    const num = parseInt(hex, 16);
+    let num;
+    if (hex.length === 3) {
+      num = parseInt(hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2], 16);
+    } else {
+      num = parseInt(hex, 16);
+    }
     const r = Math.min(255, Math.max(0, ((num >> 16) & 0xff) + amount));
     const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amount));
     const b = Math.min(255, Math.max(0, (num & 0xff) + amount));
@@ -315,4 +449,4 @@ function adjustColor(color, amount) {
 export default AudioVisualizer;
 
 // Named exports for specific variants
-export { BarsVisualizer, WaveVisualizer, PulseVisualizer, MinimalVisualizer };
+export { SpectrumVisualizer, WaveformVisualizer, BarsVisualizer, PulseVisualizer, MinimalVisualizer };
