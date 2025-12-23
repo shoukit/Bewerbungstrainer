@@ -19,7 +19,7 @@ import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 import FullscreenLoader from '@/components/ui/fullscreen-loader';
 import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 
 /**
@@ -62,19 +62,19 @@ const defaultTips = [
  * Dynamic Form Field Component
  * Renders appropriate input based on field type from input_configuration
  */
-const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
+const DynamicFormField = ({ field, value, onChange, error, focusColor, b }) => {
   const theFocusColor = focusColor || '#4a9ec9';
 
   const baseInputStyle = {
     width: '100%',
-    padding: '12px 16px',
-    borderRadius: '12px',
+    padding: `${b.space[3]} ${b.space[4]}`,
+    borderRadius: b.radius.lg,
     border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
-    fontSize: '16px', // Minimum 16px to prevent iOS zoom
+    fontSize: b.fontSize.lg, // Minimum 16px to prevent iOS zoom
     color: COLORS.slate[900],
     backgroundColor: 'white',
     outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
+    transition: b.transition.normal,
   };
 
   const focusStyle = {
@@ -197,11 +197,11 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
   };
 
   return (
-    <div style={{ marginBottom: '20px' }}>
+    <div style={{ marginBottom: b.space[5] }}>
       <label style={{
         display: 'block',
-        marginBottom: '8px',
-        fontSize: '14px',
+        marginBottom: b.space[2],
+        fontSize: b.fontSize.base,
         fontWeight: 600,
         color: COLORS.slate[700],
       }}>
@@ -214,7 +214,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
       {error && (
         <p style={{
           marginTop: '6px',
-          fontSize: '13px',
+          fontSize: b.fontSize.sm,
           color: COLORS.red[500],
           display: 'flex',
           alignItems: 'center',
@@ -227,7 +227,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
       {field.hint && !error && (
         <p style={{
           marginTop: '6px',
-          fontSize: '13px',
+          fontSize: b.fontSize.sm,
           color: COLORS.slate[500],
           display: 'flex',
           alignItems: 'center',
@@ -261,11 +261,8 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
   // Partner theming and demo code
-  const { branding, demoCode } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+  const b = useBranding();
+  const { demoCode } = usePartner();
 
   // Parse input configuration
   const inputConfig = React.useMemo(() => {
@@ -411,7 +408,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
   };
 
   return (
-    <div style={{ padding: '24px', paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
+    <div style={{ padding: b.space[6], paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <button
@@ -419,16 +416,16 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            marginBottom: '16px',
+            gap: b.space[2],
+            padding: `${b.space[2]} ${b.space[3]}`,
+            marginBottom: b.space[4],
             border: 'none',
             background: 'transparent',
             color: COLORS.slate[600],
-            fontSize: '14px',
+            fontSize: b.fontSize.base,
             cursor: 'pointer',
-            borderRadius: '8px',
-            transition: 'background 0.2s',
+            borderRadius: b.radius.sm,
+            transition: b.transition.normal,
           }}
           onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
           onMouseLeave={(e) => e.target.style.background = 'transparent'}
@@ -437,12 +434,12 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
           Zurück zur Übersicht
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[4] }}>
           <div style={{
             width: '56px',
             height: '56px',
-            borderRadius: '14px',
-            background: headerGradient,
+            borderRadius: b.radius.lg,
+            background: b.headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -451,7 +448,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
           </div>
           <div>
             <h1 style={{
-              fontSize: '24px',
+              fontSize: b.fontSize['4xl'],
               fontWeight: 700,
               color: COLORS.slate[900],
               margin: 0,
@@ -459,7 +456,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
               {scenario.title}
             </h1>
             <p style={{
-              fontSize: '14px',
+              fontSize: b.fontSize.base,
               color: COLORS.slate[600],
               margin: '4px 0 0 0',
             }}>
@@ -471,13 +468,13 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
 
       {/* Description Card */}
       <div style={{
-        padding: '16px 20px',
-        borderRadius: '12px',
+        padding: `${b.space[4]} ${b.space[5]}`,
+        borderRadius: b.radius.lg,
         backgroundColor: COLORS.slate[100],
-        marginBottom: '24px',
+        marginBottom: b.space[6],
       }}>
         <p style={{
-          fontSize: '14px',
+          fontSize: b.fontSize.base,
           color: COLORS.slate[700],
           margin: 0,
           lineHeight: 1.6,
@@ -489,18 +486,18 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
       {/* Long Description - Detailed task description */}
       {scenario.long_description && (
         <div style={{
-          padding: '20px 24px',
-          borderRadius: '14px',
+          padding: `${b.space[5]} ${b.space[6]}`,
+          borderRadius: b.radius.lg,
           backgroundColor: 'white',
           border: `1px solid ${COLORS.slate[200]}`,
-          marginBottom: '24px',
+          marginBottom: b.space[6],
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
             <div style={{
               width: '40px',
               height: '40px',
-              borderRadius: '10px',
-              background: headerGradient,
+              borderRadius: b.radius.md,
+              background: b.headerGradient,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -510,15 +507,15 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
             </div>
             <div>
               <h3 style={{
-                fontSize: '15px',
+                fontSize: b.fontSize.md,
                 fontWeight: 600,
                 color: COLORS.slate[900],
-                margin: '0 0 8px 0',
+                margin: `0 0 ${b.space[2]} 0`,
               }}>
                 Deine Aufgabe
               </h3>
               <p style={{
-                fontSize: '14px',
+                fontSize: b.fontSize.base,
                 lineHeight: '1.6',
                 color: COLORS.slate[700],
                 margin: 0,
@@ -548,35 +545,35 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
 
         return (
           <div style={{
-            padding: '20px 24px',
-            borderRadius: '14px',
+            padding: `${b.space[5]} ${b.space[6]}`,
+            borderRadius: b.radius.lg,
             backgroundColor: 'white',
             border: `1px solid ${COLORS.slate[200]}`,
-            marginBottom: '24px',
+            marginBottom: b.space[6],
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <Lightbulb style={{ width: '20px', height: '20px', color: primaryAccent }} />
-              <h3 style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2.5], marginBottom: b.space[4] }}>
+              <Lightbulb style={{ width: '20px', height: '20px', color: b.primaryAccent }} />
+              <h3 style={{ fontSize: b.fontSize.lg, fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
                 Tipps für dein Training
               </h3>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}>
               {tips.map((tip, index) => {
                 const IconComponent = tip.icon;
                 return (
                   <div key={index} style={{
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: '12px',
-                    padding: '12px 16px',
-                    borderRadius: '10px',
+                    gap: b.space[3],
+                    padding: `${b.space[3]} ${b.space[4]}`,
+                    borderRadius: b.radius.md,
                     backgroundColor: COLORS.slate[50],
                   }}>
                     <div style={{
                       width: '32px',
                       height: '32px',
-                      borderRadius: '8px',
-                      background: headerGradient,
+                      borderRadius: b.radius.sm,
+                      background: b.headerGradient,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -585,10 +582,10 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
                       <IconComponent style={{ width: '16px', height: '16px', color: 'white' }} />
                     </div>
                     <div>
-                      <h4 style={{ fontWeight: 600, color: COLORS.slate[900], fontSize: '14px', margin: '0 0 2px 0' }}>
+                      <h4 style={{ fontWeight: 600, color: COLORS.slate[900], fontSize: b.fontSize.base, margin: '0 0 2px 0' }}>
                         {tip.title}
                       </h4>
-                      <p style={{ fontSize: '13px', color: COLORS.slate[600], lineHeight: 1.5, margin: 0 }}>
+                      <p style={{ fontSize: b.fontSize.sm, color: COLORS.slate[600], lineHeight: 1.5, margin: 0 }}>
                         {tip.description}
                       </p>
                     </div>
@@ -610,46 +607,47 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
               value={formValues[field.key]}
               onChange={handleChange}
               error={errors[field.key]}
-              focusColor={primaryAccent}
+              focusColor={b.primaryAccent}
+              b={b}
             />
           ))
         ) : (
           <div style={{
-            padding: '24px',
+            padding: b.space[6],
             textAlign: 'center',
             color: COLORS.slate[500],
           }}>
-            <CheckCircle style={{ width: '32px', height: '32px', marginBottom: '12px', opacity: 0.5 }} />
+            <CheckCircle style={{ width: '32px', height: '32px', marginBottom: b.space[3], opacity: 0.5 }} />
             <p style={{ margin: 0 }}>Keine zusätzliche Konfiguration erforderlich.</p>
           </div>
         )}
 
         {/* Session Info */}
         <div style={{
-          padding: '16px 20px',
-          borderRadius: '12px',
-          backgroundColor: primaryAccentLight,
-          marginTop: '24px',
-          marginBottom: '24px',
+          padding: `${b.space[4]} ${b.space[5]}`,
+          borderRadius: b.radius.lg,
+          backgroundColor: b.primaryAccentLight,
+          marginTop: b.space[6],
+          marginBottom: b.space[6],
           display: 'flex',
-          gap: '20px',
+          gap: b.space[5],
           flexWrap: 'wrap',
         }}>
           <div>
-            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Fragen</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Fragen</span>
+            <span style={{ fontSize: b.fontSize.lg, fontWeight: 600, color: COLORS.slate[900] }}>
               {scenario.question_count_min}-{scenario.question_count_max}
             </span>
           </div>
           <div>
-            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Zeit pro Frage</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Zeit pro Frage</span>
+            <span style={{ fontSize: b.fontSize.lg, fontWeight: 600, color: COLORS.slate[900] }}>
               {Math.round(scenario.time_limit_per_question / 60)} Min
             </span>
           </div>
           <div>
-            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Wiederholen</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Wiederholen</span>
+            <span style={{ fontSize: b.fontSize.lg, fontWeight: 600, color: COLORS.slate[900] }}>
               {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
             </span>
           </div>
@@ -657,21 +655,21 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
 
         {/* Microphone Selection */}
         <div style={{
-          padding: '24px',
-          borderRadius: '16px',
+          padding: b.space[6],
+          borderRadius: b.radius.xl,
           backgroundColor: 'white',
           border: `1px solid ${COLORS.slate[200]}`,
-          marginBottom: '24px',
+          marginBottom: b.space[6],
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            marginBottom: '16px',
+            gap: b.space[2.5],
+            marginBottom: b.space[4],
           }}>
-            <Mic style={{ width: '22px', height: '22px', color: primaryAccent }} />
+            <Mic style={{ width: '22px', height: '22px', color: b.primaryAccent }} />
             <h3 style={{
-              fontSize: '16px',
+              fontSize: b.fontSize.lg,
               fontWeight: 600,
               color: COLORS.slate[900],
               margin: 0,
@@ -689,14 +687,14 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
         {/* Error Message */}
         {submitError && (
           <div style={{
-            padding: '12px 16px',
-            borderRadius: '12px',
+            padding: `${b.space[3]} ${b.space[4]}`,
+            borderRadius: b.radius.lg,
             backgroundColor: COLORS.red[100],
             color: COLORS.red[500],
-            marginBottom: '20px',
+            marginBottom: b.space[5],
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: b.space[2],
           }}>
             <AlertCircle style={{ width: '18px', height: '18px' }} />
             {submitError}
@@ -709,30 +707,30 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
           disabled={isSubmitting}
           style={{
             width: '100%',
-            padding: '16px 24px',
-            borderRadius: '14px',
+            padding: `${b.space[4]} ${b.space[6]}`,
+            borderRadius: b.radius.lg,
             border: 'none',
-            background: isSubmitting ? COLORS.slate[300] : buttonGradient,
+            background: isSubmitting ? COLORS.slate[300] : b.buttonGradient,
             color: 'white',
-            fontSize: '16px',
+            fontSize: b.fontSize.lg,
             fontWeight: 600,
             cursor: isSubmitting ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '10px',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            boxShadow: isSubmitting ? 'none' : `0 4px 12px ${primaryAccent}4d`,
+            gap: b.space[2.5],
+            transition: b.transition.normal,
+            boxShadow: isSubmitting ? 'none' : `0 4px 12px ${b.primaryAccent}4d`,
           }}
           onMouseEnter={(e) => {
             if (!isSubmitting) {
               e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
+              e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
             }
           }}
           onMouseLeave={(e) => {
             e.target.style.transform = 'none';
-            e.target.style.boxShadow = isSubmitting ? 'none' : `0 4px 12px ${primaryAccent}4d`;
+            e.target.style.boxShadow = isSubmitting ? 'none' : `0 4px 12px ${b.primaryAccent}4d`;
           }}
         >
           Training starten

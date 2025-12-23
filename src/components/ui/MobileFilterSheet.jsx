@@ -9,8 +9,7 @@
 import React, { useState } from 'react';
 import { Filter, X, Search, LayoutGrid, List, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 
 /**
@@ -41,9 +40,10 @@ const useIsMobile = () => {
 /**
  * Category chip for filter selection
  */
-const CategoryChip = ({ label, icon: Icon, isSelected, onClick, color, bgColor, primaryAccent }) => {
-  const chipColor = color || primaryAccent;
-  const chipBgColor = bgColor || `${primaryAccent}15`;
+const CategoryChip = ({ label, icon: Icon, isSelected, onClick, color, bgColor }) => {
+  const b = useBranding();
+  const chipColor = color || b.colors.primary;
+  const chipBgColor = bgColor || `${b.colors.primary}15`;
 
   return (
     <button
@@ -51,16 +51,16 @@ const CategoryChip = ({ label, icon: Icon, isSelected, onClick, color, bgColor, 
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '6px',
-        padding: '8px 14px',
-        borderRadius: '20px',
-        fontSize: '13px',
+        gap: b.space[2],
+        padding: `${b.space[2]} ${b.space[3]}`,
+        borderRadius: b.radius.full,
+        fontSize: b.fontSize.sm,
         fontWeight: 600,
         border: `2px solid ${isSelected ? chipColor : COLORS.slate[200]}`,
         backgroundColor: isSelected ? chipBgColor : 'white',
         color: isSelected ? chipColor : COLORS.slate[600],
         cursor: 'pointer',
-        transition: 'all 0.2s ease',
+        transition: b.transition.normal,
         whiteSpace: 'nowrap',
       }}
     >
@@ -74,6 +74,7 @@ const CategoryChip = ({ label, icon: Icon, isSelected, onClick, color, bgColor, 
  * Filter count badge
  */
 const FilterBadge = ({ count }) => {
+  const b = useBranding();
   if (count === 0) return null;
 
   return (
@@ -84,11 +85,11 @@ const FilterBadge = ({ count }) => {
         right: '-4px',
         minWidth: '18px',
         height: '18px',
-        padding: '0 5px',
-        borderRadius: '9px',
+        padding: `0 ${b.space[1]}`,
+        borderRadius: b.radius.md,
         backgroundColor: '#ef4444',
         color: 'white',
-        fontSize: '11px',
+        fontSize: b.fontSize.xs,
         fontWeight: 600,
         display: 'flex',
         alignItems: 'center',
@@ -137,8 +138,7 @@ const MobileFilterSheet = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { branding } = usePartner();
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const b = useBranding();
 
   // Count active filters
   const activeFilterCount = [
@@ -150,9 +150,9 @@ const MobileFilterSheet = ({
   // Desktop view - inline filters
   if (!isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[4] }}>
         {/* Search and controls row */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: b.space[3], alignItems: 'center' }}>
           {/* Search Input */}
           {showSearch && (
             <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
@@ -175,18 +175,18 @@ const MobileFilterSheet = ({
                 onChange={(e) => onSearchChange(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '12px 14px 12px 44px',
-                  borderRadius: '12px',
+                  padding: `${b.space[3]} 14px ${b.space[3]} 44px`,
+                  borderRadius: b.radius.lg,
                   border: `1px solid ${COLORS.slate[200]}`,
-                  fontSize: '14px',
+                  fontSize: b.fontSize.base,
                   color: COLORS.slate[900],
                   backgroundColor: '#fff',
                   outline: 'none',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                  transition: b.transition.normal,
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = primaryAccent;
-                  e.target.style.boxShadow = `0 0 0 3px ${primaryAccent}20`;
+                  e.target.style.borderColor = b.colors.primary;
+                  e.target.style.boxShadow = `0 0 0 3px ${b.colors.primary}20`;
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = COLORS.slate[200];
@@ -216,10 +216,10 @@ const MobileFilterSheet = ({
                 onChange={(e) => onDifficultyChange(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '12px 14px 12px 40px',
-                  borderRadius: '12px',
+                  padding: `${b.space[3]} 14px ${b.space[3]} 40px`,
+                  borderRadius: b.radius.lg,
                   border: `1px solid ${COLORS.slate[200]}`,
-                  fontSize: '14px',
+                  fontSize: b.fontSize.base,
                   color: COLORS.slate[900],
                   backgroundColor: '#fff',
                   cursor: 'pointer',
@@ -227,7 +227,7 @@ const MobileFilterSheet = ({
                   appearance: 'none',
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                   backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 12px center',
+                  backgroundPosition: `right ${b.space[3]} center`,
                   paddingRight: '40px',
                 }}
               >
@@ -250,45 +250,45 @@ const MobileFilterSheet = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                padding: '4px',
+                gap: b.space[1],
+                padding: b.space[1],
                 backgroundColor: COLORS.slate[100],
-                borderRadius: '8px',
+                borderRadius: b.radius.md,
               }}
             >
               <button
                 onClick={() => onViewModeChange('grid')}
                 style={{
-                  padding: '8px',
-                  borderRadius: '6px',
+                  padding: b.space[2],
+                  borderRadius: b.radius.sm,
                   border: 'none',
                   cursor: 'pointer',
                   backgroundColor: viewMode === 'grid' ? '#ffffff' : 'transparent',
-                  boxShadow: viewMode === 'grid' ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
+                  boxShadow: viewMode === 'grid' ? b.shadow.sm : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
                 title="Kachelansicht"
               >
-                <LayoutGrid style={{ width: '16px', height: '16px', color: viewMode === 'grid' ? primaryAccent : COLORS.slate[500] }} />
+                <LayoutGrid style={{ width: '16px', height: '16px', color: viewMode === 'grid' ? b.colors.primary : COLORS.slate[500] }} />
               </button>
               <button
                 onClick={() => onViewModeChange('list')}
                 style={{
-                  padding: '8px',
-                  borderRadius: '6px',
+                  padding: b.space[2],
+                  borderRadius: b.radius.sm,
                   border: 'none',
                   cursor: 'pointer',
                   backgroundColor: viewMode === 'list' ? '#ffffff' : 'transparent',
-                  boxShadow: viewMode === 'list' ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
+                  boxShadow: viewMode === 'list' ? b.shadow.sm : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
                 title="Listenansicht"
               >
-                <List style={{ width: '16px', height: '16px', color: viewMode === 'list' ? primaryAccent : COLORS.slate[500] }} />
+                <List style={{ width: '16px', height: '16px', color: viewMode === 'list' ? b.colors.primary : COLORS.slate[500] }} />
               </button>
             </div>
           )}
@@ -296,13 +296,12 @@ const MobileFilterSheet = ({
 
         {/* Category chips row */}
         {showCategories && categories.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: b.space[2] }}>
             <CategoryChip
               label="Alle"
               icon={LayoutGrid}
               isSelected={!selectedCategory}
               onClick={() => onCategoryChange(null)}
-              primaryAccent={primaryAccent}
             />
             {categories.map(cat => (
               <CategoryChip
@@ -313,7 +312,6 @@ const MobileFilterSheet = ({
                 onClick={() => onCategoryChange(cat.key)}
                 color={cat.color}
                 bgColor={cat.bgColor}
-                primaryAccent={primaryAccent}
               />
             ))}
           </div>
@@ -326,16 +324,16 @@ const MobileFilterSheet = ({
 
   // Mobile view - filter button + sheet
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}>
       {/* Mobile search + filter button row */}
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: b.space[2], alignItems: 'center' }}>
         {/* Search Input */}
         {showSearch && (
           <div style={{ position: 'relative', flex: '1' }}>
             <Search
               style={{
                 position: 'absolute',
-                left: '12px',
+                left: b.space[3],
                 top: '50%',
                 transform: 'translateY(-50%)',
                 width: '16px',
@@ -351,10 +349,10 @@ const MobileFilterSheet = ({
               onChange={(e) => onSearchChange(e.target.value)}
               style={{
                 width: '100%',
-                padding: '10px 12px 10px 38px',
-                borderRadius: '10px',
+                padding: `${b.space[2]} ${b.space[3]} ${b.space[2]} 38px`,
+                borderRadius: b.radius.md,
                 border: `1px solid ${COLORS.slate[200]}`,
-                fontSize: '14px',
+                fontSize: b.fontSize.base,
                 color: COLORS.slate[900],
                 backgroundColor: '#fff',
                 outline: 'none',
@@ -373,14 +371,14 @@ const MobileFilterSheet = ({
             justifyContent: 'center',
             width: '44px',
             height: '44px',
-            borderRadius: '10px',
-            border: `1px solid ${activeFilterCount > 0 ? primaryAccent : COLORS.slate[200]}`,
-            backgroundColor: activeFilterCount > 0 ? `${primaryAccent}10` : 'white',
+            borderRadius: b.radius.md,
+            border: `1px solid ${activeFilterCount > 0 ? b.colors.primary : COLORS.slate[200]}`,
+            backgroundColor: activeFilterCount > 0 ? `${b.colors.primary}10` : 'white',
             cursor: 'pointer',
             flexShrink: 0,
           }}
         >
-          <Filter style={{ width: '18px', height: '18px', color: activeFilterCount > 0 ? primaryAccent : COLORS.slate[500] }} />
+          <Filter style={{ width: '18px', height: '18px', color: activeFilterCount > 0 ? b.colors.primary : COLORS.slate[500] }} />
           <FilterBadge count={activeFilterCount} />
         </button>
 
@@ -393,15 +391,15 @@ const MobileFilterSheet = ({
               gap: '2px',
               padding: '3px',
               backgroundColor: COLORS.slate[100],
-              borderRadius: '8px',
+              borderRadius: b.radius.md,
               flexShrink: 0,
             }}
           >
             <button
               onClick={() => onViewModeChange('grid')}
               style={{
-                padding: '6px',
-                borderRadius: '5px',
+                padding: b.space[1],
+                borderRadius: b.radius.sm,
                 border: 'none',
                 cursor: 'pointer',
                 backgroundColor: viewMode === 'grid' ? '#ffffff' : 'transparent',
@@ -410,13 +408,13 @@ const MobileFilterSheet = ({
                 justifyContent: 'center',
               }}
             >
-              <LayoutGrid style={{ width: '14px', height: '14px', color: viewMode === 'grid' ? primaryAccent : COLORS.slate[500] }} />
+              <LayoutGrid style={{ width: '14px', height: '14px', color: viewMode === 'grid' ? b.colors.primary : COLORS.slate[500] }} />
             </button>
             <button
               onClick={() => onViewModeChange('list')}
               style={{
-                padding: '6px',
-                borderRadius: '5px',
+                padding: b.space[1],
+                borderRadius: b.radius.sm,
                 border: 'none',
                 cursor: 'pointer',
                 backgroundColor: viewMode === 'list' ? '#ffffff' : 'transparent',
@@ -425,7 +423,7 @@ const MobileFilterSheet = ({
                 justifyContent: 'center',
               }}
             >
-              <List style={{ width: '14px', height: '14px', color: viewMode === 'list' ? primaryAccent : COLORS.slate[500] }} />
+              <List style={{ width: '14px', height: '14px', color: viewMode === 'list' ? b.colors.primary : COLORS.slate[500] }} />
             </button>
           </div>
         )}
@@ -433,7 +431,7 @@ const MobileFilterSheet = ({
 
       {/* Custom actions on mobile (separate row) */}
       {customActions && (
-        <div style={{ marginTop: '8px' }}>
+        <div style={{ marginTop: b.space[2] }}>
           {customActions}
         </div>
       )}
@@ -450,15 +448,15 @@ const MobileFilterSheet = ({
             transform: 'none',
             maxWidth: '100%',
             width: '100%',
-            borderRadius: '20px 20px 0 0',
+            borderRadius: `${b.radius.xl} ${b.radius.xl} 0 0`,
             maxHeight: '80vh',
             overflow: 'auto',
           }}
         >
           <DialogHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <DialogTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Filter style={{ width: '20px', height: '20px', color: primaryAccent }} />
+              <DialogTitle style={{ display: 'flex', alignItems: 'center', gap: b.space[2] }}>
+                <Filter style={{ width: '20px', height: '20px', color: b.colors.primary }} />
                 Filter
               </DialogTitle>
               {activeFilterCount > 0 && (
@@ -469,12 +467,12 @@ const MobileFilterSheet = ({
                     onSearchChange?.('');
                   }}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
+                    padding: `${b.space[1]} ${b.space[3]}`,
+                    borderRadius: b.radius.sm,
                     border: 'none',
                     backgroundColor: COLORS.slate[100],
                     color: COLORS.slate[600],
-                    fontSize: '13px',
+                    fontSize: b.fontSize.sm,
                     fontWeight: 500,
                     cursor: 'pointer',
                   }}
@@ -485,11 +483,11 @@ const MobileFilterSheet = ({
             </div>
           </DialogHeader>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px 0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[5], padding: `${b.space[2]} 0` }}>
             {/* Difficulty Filter */}
             {showDifficulty && difficultyOptions.length > 0 && (
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: b.fontSize.sm, fontWeight: 600, color: COLORS.slate[700], marginBottom: b.space[2] }}>
                   Schwierigkeit
                 </label>
                 <select
@@ -497,10 +495,10 @@ const MobileFilterSheet = ({
                   onChange={(e) => onDifficultyChange(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '10px',
+                    padding: `${b.space[3]} 14px`,
+                    borderRadius: b.radius.md,
                     border: `1px solid ${COLORS.slate[200]}`,
-                    fontSize: '14px',
+                    fontSize: b.fontSize.base,
                     color: COLORS.slate[900],
                     backgroundColor: '#fff',
                     cursor: 'pointer',
@@ -508,7 +506,7 @@ const MobileFilterSheet = ({
                     appearance: 'none',
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                     backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 12px center',
+                    backgroundPosition: `right ${b.space[3]} center`,
                     paddingRight: '40px',
                   }}
                 >
@@ -522,16 +520,15 @@ const MobileFilterSheet = ({
             {/* Categories */}
             {showCategories && categories.length > 0 && (
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: COLORS.slate[700], marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: b.fontSize.sm, fontWeight: 600, color: COLORS.slate[700], marginBottom: b.space[2] }}>
                   Kategorie
                 </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: b.space[2] }}>
                   <CategoryChip
                     label="Alle"
                     icon={LayoutGrid}
                     isSelected={!selectedCategory}
                     onClick={() => onCategoryChange(null)}
-                    primaryAccent={primaryAccent}
                   />
                   {categories.map(cat => (
                     <CategoryChip
@@ -542,7 +539,6 @@ const MobileFilterSheet = ({
                       onClick={() => onCategoryChange(cat.key)}
                       color={cat.color}
                       bgColor={cat.bgColor}
-                      primaryAccent={primaryAccent}
                     />
                   ))}
                 </div>
@@ -562,13 +558,13 @@ const MobileFilterSheet = ({
             onClick={() => setIsOpen(false)}
             style={{
               width: '100%',
-              padding: '14px',
-              marginTop: '12px',
-              borderRadius: '12px',
+              padding: b.space[3],
+              marginTop: b.space[3],
+              borderRadius: b.radius.lg,
               border: 'none',
-              background: `linear-gradient(135deg, ${primaryAccent} 0%, ${primaryAccent}dd 100%)`,
+              background: `linear-gradient(135deg, ${b.colors.primary} 0%, ${b.colors.primary}dd 100%)`,
               color: 'white',
-              fontSize: '15px',
+              fontSize: b.fontSize.md,
               fontWeight: 600,
               cursor: 'pointer',
             }}

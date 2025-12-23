@@ -34,8 +34,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, LayoutGrid, List } from 'lucide-react';
 import { COLORS } from '@/config/colors';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 
 // =============================================================================
 // DIFFICULTY CONFIGURATION
@@ -161,18 +160,17 @@ const ActionButton = ({ label, icon: Icon, color }) => (
  * @param {function} props.onViewChange - Callback when view changes
  */
 export const ViewToggle = ({ viewMode, onViewChange }) => {
-  const { branding } = usePartner();
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const b = useBranding();
 
   // Use inline styles with higher specificity to override Elementor defaults
   const getButtonStyles = (isActive) => ({
-    padding: '8px',
-    borderRadius: '6px',
+    padding: b.space[2],
+    borderRadius: b.radius.md,
     border: 'none',
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: b.transition.normal,
     backgroundColor: isActive ? '#ffffff' : 'transparent',
-    boxShadow: isActive ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
+    boxShadow: isActive ? b.shadow.sm : 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -181,7 +179,7 @@ export const ViewToggle = ({ viewMode, onViewChange }) => {
   const getIconStyles = (isActive) => ({
     width: '16px',
     height: '16px',
-    color: isActive ? primaryAccent : COLORS.slate[500],
+    color: isActive ? b.primaryAccent : COLORS.slate[500],
   });
 
   return (
@@ -189,10 +187,10 @@ export const ViewToggle = ({ viewMode, onViewChange }) => {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '4px',
-        padding: '4px',
+        gap: b.space[1],
+        padding: b.space[1],
         backgroundColor: COLORS.slate[100],
-        borderRadius: '8px',
+        borderRadius: b.radius.lg,
       }}
     >
       <button
@@ -376,6 +374,7 @@ const ScenarioCardListView = ({
   // Check if we're on mobile
   // Note: Using useMobile hook would cause re-renders; for initial SSR-safe check, use static value
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const b = useBranding();
 
   return (
     <motion.div
@@ -390,18 +389,18 @@ const ScenarioCardListView = ({
         onClick={onClick}
         style={{
           backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          padding: '16px',
+          borderRadius: b.radius.xl,
+          boxShadow: b.shadow.md,
+          padding: b.space[4],
           cursor: 'pointer',
           border: '1px solid #f1f5f9',
-          transition: 'all 0.3s',
+          transition: b.transition.normal,
           ...style,
         }}
         className={className}
       >
         {/* Row 1: Icon + Title + Difficulty Badge + Custom Actions */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: b.space[3], marginBottom: b.space[2] }}>
           {/* Icon */}
           {icon && (
             <IconContainer
@@ -415,7 +414,7 @@ const ScenarioCardListView = ({
           {/* Title & Subtitle */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <h3 style={{
-              fontSize: '15px',
+              fontSize: b.fontSize.sm,
               fontWeight: 700,
               color: '#0f172a',
               margin: 0,
@@ -424,7 +423,7 @@ const ScenarioCardListView = ({
               {title}
             </h3>
             {subtitle && (
-              <span style={{ fontSize: '12px', fontWeight: 600, color: primaryAccent }}>
+              <span style={{ fontSize: b.fontSize.xs, fontWeight: 600, color: primaryAccent }}>
                 {subtitle}
               </span>
             )}
@@ -449,8 +448,9 @@ const ScenarioCardListView = ({
         {description && (
           <p style={{
             color: '#475569',
-            fontSize: '13px',
-            margin: '0 0 8px 0',
+            fontSize: b.fontSize.xs,
+            margin: 0,
+            marginBottom: b.space[2],
             lineHeight: 1.4,
             display: '-webkit-box',
             WebkitLineClamp: 2,
@@ -467,17 +467,17 @@ const ScenarioCardListView = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '8px',
+          gap: b.space[2],
         }}>
           {/* Meta information */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: '#64748b' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], fontSize: b.fontSize.xs, color: '#64748b' }}>
             {meta.slice(0, 2).map((item, idx) => (
               <MetaItem key={idx} icon={item.icon} text={item.text} />
             ))}
           </div>
 
           {/* Category + Action */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2] }}>
             {/* Category badge */}
             {categoryBadge}
 
@@ -486,8 +486,8 @@ const ScenarioCardListView = ({
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                fontSize: '14px',
+                gap: b.space[1],
+                fontSize: b.fontSize.sm,
                 fontWeight: 600,
                 color: primaryAccent,
               }}>
@@ -542,10 +542,10 @@ export const ScenarioCard = ({
   style = {},
 }) => {
   // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const b = useBranding();
+  const headerGradient = b.headerGradient;
+  const headerText = b.headerText;
+  const primaryAccent = b.primaryAccent;
 
   const difficultyConfig = getDifficultyConfig(difficulty);
 

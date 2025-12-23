@@ -4,8 +4,7 @@ import { MessageSquare, Loader2, CheckCircle2, Info, RefreshCw, Server, Globe, A
 import DeviceSetupPage from '@/components/DeviceSetupPage';
 import { testWebSocketConnectivity, testProxyConnectivity, detectBestConnectionMode } from '@/services/websocket-test';
 import wordpressAPI from '@/services/wordpress-api';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 
 /**
@@ -13,20 +12,20 @@ import { COLORS } from '@/config/colors';
  * Shows the current connection mode and allows switching
  * Only supports: websocket (direct) and proxy modes
  */
-const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, onSwitchMode, onRetry, directAvailable, proxyAvailable, primaryAccent }) => {
+const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, onSwitchMode, onRetry, directAvailable, proxyAvailable, b }) => {
   if (isChecking) {
     return (
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        padding: '14px 18px',
+        gap: b.space[2.5],
+        padding: `${b.space[3.5]} ${b.space[4]}`,
         backgroundColor: '#eff6ff',
         border: '1px solid #bfdbfe',
-        borderRadius: '14px',
+        borderRadius: b.radius.lg,
       }}>
         <Loader2 style={{ width: '20px', height: '20px', color: '#3b82f6' }} className="animate-spin" />
-        <span style={{ fontSize: '14px', fontWeight: 500, color: '#1d4ed8' }}>
+        <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: '#1d4ed8' }}>
           Prüfe Verbindung...
         </span>
       </div>
@@ -36,19 +35,19 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
   // Error state - neither mode works
   if (error && !directAvailable && !proxyAvailable) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          padding: '14px 18px',
+          gap: b.space[2.5],
+          padding: `${b.space[3.5]} ${b.space[4]}`,
           backgroundColor: '#fef2f2',
           border: '1px solid #fecaca',
-          borderRadius: '14px',
+          borderRadius: b.radius.lg,
         }}>
           <AlertTriangle style={{ width: '20px', height: '20px', color: '#dc2626' }} />
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: '14px', fontWeight: 500, color: '#991b1b' }}>
+            <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: '#991b1b' }}>
               Keine Verbindung möglich
             </span>
           </div>
@@ -57,15 +56,15 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
         <div style={{
           display: 'flex',
           alignItems: 'flex-start',
-          gap: '10px',
-          padding: '14px 18px',
+          gap: b.space[2.5],
+          padding: `${b.space[3.5]} ${b.space[4]}`,
           backgroundColor: COLORS.slate[50],
           border: `1px solid ${COLORS.slate[200]}`,
-          borderRadius: '14px',
+          borderRadius: b.radius.lg,
         }}>
           <Info style={{ width: '16px', height: '16px', color: COLORS.slate[500], flexShrink: 0, marginTop: '2px' }} />
-          <div style={{ fontSize: '12px', color: COLORS.slate[600] }}>
-            <p style={{ margin: 0, fontWeight: 500, marginBottom: '4px' }}>
+          <div style={{ fontSize: b.fontSize.xs, color: COLORS.slate[600] }}>
+            <p style={{ margin: 0, fontWeight: b.fontWeight.medium, marginBottom: b.space[1] }}>
               WebSocket-Verbindungen blockiert
             </p>
             <p style={{ margin: 0 }}>
@@ -79,8 +78,8 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            fontSize: '12px',
+            gap: b.space[1.5],
+            fontSize: b.fontSize.xs,
             color: COLORS.slate[500],
             background: 'none',
             border: 'none',
@@ -99,23 +98,23 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
   // Direct WebSocket mode
   if (mode === 'websocket') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[2] }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          padding: '14px 18px',
+          gap: b.space[2.5],
+          padding: `${b.space[3.5]} ${b.space[4]}`,
           backgroundColor: '#f0fdf4',
           border: '1px solid #bbf7d0',
-          borderRadius: '14px',
+          borderRadius: b.radius.lg,
         }}>
           <Globe style={{ width: '20px', height: '20px', color: '#22c55e' }} />
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: '14px', fontWeight: 500, color: '#15803d' }}>
+            <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: '#15803d' }}>
               Direkte Echtzeit-Verbindung
             </span>
             {latency && (
-              <span style={{ fontSize: '12px', color: '#16a34a', marginLeft: '8px' }}>
+              <span style={{ fontSize: b.fontSize.xs, color: '#16a34a', marginLeft: b.space[2] }}>
                 ({latency}ms)
               </span>
             )}
@@ -125,7 +124,7 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
         <button
           onClick={() => onSwitchMode('proxy')}
           style={{
-            fontSize: '12px',
+            fontSize: b.fontSize.xs,
             color: COLORS.slate[500],
             background: 'none',
             border: 'none',
@@ -143,23 +142,23 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
 
   // Proxy mode
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[2] }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        padding: '14px 18px',
+        gap: b.space[2.5],
+        padding: `${b.space[3.5]} ${b.space[4]}`,
         backgroundColor: '#eff6ff',
         border: '1px solid #bfdbfe',
-        borderRadius: '14px',
+        borderRadius: b.radius.lg,
       }}>
         <Server style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: '14px', fontWeight: 500, color: '#1d4ed8' }}>
+          <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: '#1d4ed8' }}>
             Proxy-Modus (Echtzeit via Server)
           </span>
           {proxyLatency && (
-            <span style={{ fontSize: '12px', color: '#3b82f6', marginLeft: '8px' }}>
+            <span style={{ fontSize: b.fontSize.xs, color: '#3b82f6', marginLeft: b.space[2] }}>
               ({proxyLatency}ms)
             </span>
           )}
@@ -171,14 +170,14 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
         <div style={{
           display: 'flex',
           alignItems: 'flex-start',
-          gap: '10px',
-          padding: '12px 16px',
+          gap: b.space[2.5],
+          padding: `${b.space[3]} ${b.space[4]}`,
           backgroundColor: COLORS.slate[50],
           border: `1px solid ${COLORS.slate[200]}`,
-          borderRadius: '12px',
+          borderRadius: b.radius.lg,
         }}>
           <Info style={{ width: '14px', height: '14px', color: COLORS.slate[500], flexShrink: 0, marginTop: '2px' }} />
-          <div style={{ fontSize: '12px', color: COLORS.slate[600] }}>
+          <div style={{ fontSize: b.fontSize.xs, color: COLORS.slate[600] }}>
             <p style={{ margin: 0 }}>
               Direkte Verbindung blockiert. Der Proxy-Server ermöglicht Echtzeit-Gespräche trotz Firewall.
             </p>
@@ -190,7 +189,7 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
         <button
           onClick={() => onSwitchMode('websocket')}
           style={{
-            fontSize: '12px',
+            fontSize: b.fontSize.xs,
             color: COLORS.slate[500],
             background: 'none',
             border: 'none',
@@ -219,8 +218,7 @@ const RoleplayDeviceSetup = ({
   onBack,
   onStart,
 }) => {
-  const { branding } = usePartner();
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const b = useBranding();
 
   // Connection mode state
   const [connectionMode, setConnectionMode] = useState('websocket');
@@ -322,30 +320,30 @@ const RoleplayDeviceSetup = ({
   // Get icon for current mode
   const getModeIcon = () => {
     if (connectionMode === 'proxy') {
-      return <Server style={{ width: '20px', height: '20px', color: primaryAccent }} />;
+      return <Server style={{ width: '20px', height: '20px', color: b.primaryAccent }} />;
     } else {
-      return <Globe style={{ width: '20px', height: '20px', color: primaryAccent }} />;
+      return <Globe style={{ width: '20px', height: '20px', color: b.primaryAccent }} />;
     }
   };
 
   // Extra content for connection mode display
   const connectionModeContent = (
     <div style={{
-      padding: '20px',
+      padding: b.space[5],
       backgroundColor: 'white',
-      borderRadius: '16px',
+      borderRadius: b.radius.xl,
       border: `1px solid ${COLORS.slate[200]}`,
     }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        marginBottom: '16px',
+        gap: b.space[2.5],
+        marginBottom: b.space[4],
       }}>
         {getModeIcon()}
         <h3 style={{
-          fontSize: '16px',
-          fontWeight: 600,
+          fontSize: b.fontSize.lg,
+          fontWeight: b.fontWeight.semibold,
           color: COLORS.slate[900],
           margin: 0,
         }}>
@@ -363,7 +361,7 @@ const RoleplayDeviceSetup = ({
         onRetry={handleRetry}
         directAvailable={directAvailable}
         proxyAvailable={proxyAvailable}
-        primaryAccent={primaryAccent}
+        b={b}
       />
     </div>
   );

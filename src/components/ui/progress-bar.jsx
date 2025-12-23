@@ -7,6 +7,7 @@
  * @param {number} total - Total number of questions
  * @param {number[]} answeredQuestions - Array of answered question indices (optional)
  * @param {string} primaryAccent - Primary accent color for the bar
+ * @param {object} b - Branding object with design tokens
  * @param {object} labels - Custom labels object { questionFallback, questionCounter(current, total) }
  * @param {boolean} showCompleted - Show "abgeschlossen" text (default: true)
  */
@@ -19,6 +20,7 @@ const ProgressBar = ({
   total,
   answeredQuestions = [],
   primaryAccent,
+  b,
   labels,
   showCompleted = true,
 }) => {
@@ -57,14 +59,14 @@ const ProgressBar = ({
   };
 
   return (
-    <div style={{ marginBottom: '24px' }}>
+    <div style={{ marginBottom: b.space[6] }}>
       {/* Header row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: b.space[2] }}>
+        <span style={{ fontSize: b.fontSize.sm, fontWeight: 600, color: COLORS.slate[700] }}>
           {getQuestionCounterText()}
         </span>
         <span style={{
-          fontSize: '14px',
+          fontSize: b.fontSize.sm,
           fontWeight: showCompleted ? 400 : 600,
           color: showCompleted ? COLORS.slate[500] : primaryAccent
         }}>
@@ -76,24 +78,24 @@ const ProgressBar = ({
       <div style={{
         height: '8px',
         backgroundColor: COLORS.slate[200],
-        borderRadius: '4px',
+        borderRadius: b.radius.sm,
         overflow: 'hidden',
-        marginBottom: '12px',
+        marginBottom: b.space[3],
       }}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: parseFloat(b.transition.normal.replace('s', '')) }}
           style={{
             height: '100%',
             background: primaryAccent,
-            borderRadius: '4px',
+            borderRadius: b.radius.sm,
           }}
         />
       </div>
 
       {/* Dots */}
-      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', gap: b.space[1.5], justifyContent: 'center' }}>
         {Array.from({ length: total }, (_, i) => (
           <div
             key={i}
@@ -102,7 +104,7 @@ const ProgressBar = ({
               height: '10px',
               borderRadius: '50%',
               backgroundColor: getDotStyle(i),
-              transition: 'all 0.2s',
+              transition: `all ${b.transition.normal}`,
             }}
             title={getDotTitle(i)}
           />

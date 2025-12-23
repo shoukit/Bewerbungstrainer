@@ -11,18 +11,19 @@ import { useState, useMemo } from 'react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
+import { SPACING, FONT_SIZE, FONT_WEIGHT, RADIUS, TRANSITIONS, SHADOWS } from '@/config/designTokens';
 
 // Base styles shared by all buttons
 const baseStyles = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '8px',
+  gap: SPACING[2], // 8px
   whiteSpace: 'nowrap',
-  borderRadius: '8px',
-  fontSize: '14px',
-  fontWeight: 500,
-  transition: 'all 0.2s',
+  borderRadius: RADIUS.sm, // 8px
+  fontSize: FONT_SIZE.base, // 14px
+  fontWeight: FONT_WEIGHT.medium, // 500
+  transition: `all ${TRANSITIONS.normal}`, // all 0.2s ease
   cursor: 'pointer',
   border: 'none',
   outline: 'none',
@@ -30,10 +31,10 @@ const baseStyles = {
 
 // Size configurations
 const sizeStyles = {
-  default: { height: '40px', padding: '8px 20px' },
-  sm: { height: '32px', padding: '4px 12px', fontSize: '12px', borderRadius: '6px' },
-  lg: { height: '48px', padding: '12px 32px', fontSize: '16px' },
-  icon: { height: '40px', width: '40px', padding: '0' },
+  default: { height: SPACING[10], padding: `${SPACING[2]} ${SPACING[5]}` }, // 40px, 8px 20px
+  sm: { height: SPACING[8], padding: `${SPACING[1]} ${SPACING[3]}`, fontSize: FONT_SIZE.xs, borderRadius: '6px' }, // 32px, 4px 12px, 12px, 6px
+  lg: { height: SPACING[12], padding: `${SPACING[3]} ${SPACING[8]}`, fontSize: FONT_SIZE.lg }, // 48px, 12px 32px, 16px
+  icon: { height: SPACING[10], width: SPACING[10], padding: '0' }, // 40px
 };
 
 /**
@@ -55,29 +56,29 @@ const getVariantStyles = (branding) => {
       normal: {
         background: buttonGradient,
         color: buttonText,
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', // Custom button shadow for depth
       },
       hover: {
         background: buttonGradientHover,
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', // Custom hover shadow
       },
     },
     solid: {
       normal: {
         backgroundColor: buttonSolid,
         color: buttonText,
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', // Custom button shadow for depth
       },
       hover: {
         backgroundColor: buttonSolidHover,
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', // Custom hover shadow
       },
     },
     destructive: {
       normal: {
         backgroundColor: COLORS.red[600],
         color: 'white',
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        boxShadow: SHADOWS.xs,
       },
       hover: { backgroundColor: COLORS.red[700] },
     },
@@ -86,7 +87,7 @@ const getVariantStyles = (branding) => {
         border: `2px solid ${primaryAccent}`,
         backgroundColor: 'white',
         color: primaryAccent,
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        boxShadow: SHADOWS.xs,
       },
       hover: {
         backgroundColor: primaryAccentLight,
@@ -98,7 +99,7 @@ const getVariantStyles = (branding) => {
       normal: {
         backgroundColor: primaryAccentLight,
         color: primaryAccent,
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        boxShadow: SHADOWS.xs,
       },
       hover: {
         backgroundColor: primaryAccent,
@@ -130,7 +131,7 @@ const getVariantStyles = (branding) => {
       normal: {
         backgroundColor: COLORS.green[600],
         color: 'white',
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        boxShadow: SHADOWS.xs,
       },
       hover: { backgroundColor: COLORS.green[700] },
     },

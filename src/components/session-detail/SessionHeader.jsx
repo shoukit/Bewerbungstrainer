@@ -7,8 +7,7 @@
 
 import React from 'react';
 import { Calendar, Clock, Star } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 import { formatDuration } from '@/utils/formatting';
 
@@ -29,15 +28,14 @@ function formatDate(dateString) {
 
 export function SessionHeader({ session, scenario, feedback }) {
   // Partner theming
-  const { branding } = usePartner();
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+  const b = useBranding();
 
   const overallRating = feedback?.rating?.overall;
 
   return (
     <div
       style={{
-        backgroundColor: primaryAccentLight,
+        backgroundColor: b.colors.primaryAccentLight,
         borderBottom: `1px solid ${COLORS.slate[200]}`,
         position: 'sticky',
         top: 0,
@@ -47,17 +45,17 @@ export function SessionHeader({ session, scenario, feedback }) {
       <div
         style={{
           width: '100%',
-          padding: '12px 32px',
+          padding: `${b.space[3]} ${b.space[8]}`,
           display: 'flex',
           alignItems: 'center',
-          gap: '24px',
+          gap: b.space[6],
           flexWrap: 'wrap',
         }}
       >
         {/* Title */}
         <h1
           style={{
-            fontSize: '18px',
+            fontSize: b.fontSize.lg,
             fontWeight: 700,
             color: COLORS.slate[900],
             margin: 0,
@@ -75,17 +73,17 @@ export function SessionHeader({ session, scenario, feedback }) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '16px',
-            fontSize: '14px',
+            gap: b.space[4],
+            fontSize: b.fontSize.sm,
             color: COLORS.slate[600],
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: b.space[1.5] }}>
             <Calendar style={{ width: '16px', height: '16px', color: COLORS.slate[400] }} />
             {formatDate(session?.created_at)}
           </span>
 
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: b.space[1.5] }}>
             <Clock style={{ width: '16px', height: '16px', color: COLORS.slate[400] }} />
             {formatDuration(session?.duration)}
           </span>
@@ -95,12 +93,12 @@ export function SessionHeader({ session, scenario, feedback }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: b.space[1],
                 backgroundColor: '#fef3c7',
                 color: '#92400e',
-                padding: '4px 10px',
-                borderRadius: '9999px',
-                fontSize: '13px',
+                padding: `${b.space[1]} ${b.space[2.5]}`,
+                borderRadius: b.radius.full,
+                fontSize: b.fontSize.xs,
                 fontWeight: 600,
               }}
             >
