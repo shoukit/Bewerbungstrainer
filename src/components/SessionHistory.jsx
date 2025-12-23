@@ -38,6 +38,7 @@ import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { useBranding } from '@/hooks/useBranding';
 import TrainingSessionDetailView from './TrainingSessionDetailView';
+import RoleplaySessionReport from './roleplay/RoleplaySessionReport';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
@@ -340,6 +341,19 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Show detail view for selected training session
   if (selectedTrainingSession) {
+    // Use RoleplaySessionReport for Live-Simulations
+    if (selectedSessionType === TABS.ROLEPLAY) {
+      return (
+        <RoleplaySessionReport
+          session={selectedTrainingSession}
+          scenario={getScenarioForSession(selectedTrainingSession, selectedSessionType)}
+          onBack={handleBackFromDetail}
+          onRepeat={() => onRepeatSession?.(selectedTrainingSession)}
+        />
+      );
+    }
+
+    // Use TrainingSessionDetailView for Simulator and Video
     return (
       <TrainingSessionDetailView
         session={selectedTrainingSession}
