@@ -234,15 +234,22 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       audioChunksRef.current = [];
       setSeconds(0);
 
-      // Use 'ideal' instead of 'exact' to avoid OverconstrainedError if device unavailable
-      // Fallback to any audio device if preferred device not found
+      // Use 'exact' to ensure the selected device is used (matching MicrophoneTestDialog behavior)
+      // If device unavailable, show error to user instead of silently using different device
       let stream;
+      const constraints = {
+        audio: deviceId ? { deviceId: { exact: deviceId } } : true
+      };
       try {
-        const preferredConstraints = deviceId ? { deviceId: { ideal: deviceId } } : true;
-        stream = await navigator.mediaDevices.getUserMedia({ audio: preferredConstraints });
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
       } catch (constraintErr) {
-        console.warn('[SIMULATOR] Preferred device unavailable, using default:', constraintErr);
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.error('[SIMULATOR] Selected device unavailable:', constraintErr);
+        // Show user-friendly error instead of silently falling back to different device
+        if (constraintErr.name === 'OverconstrainedError' || constraintErr.name === 'NotFoundError') {
+          setPermissionDenied(false);
+          throw new Error('Das ausgewählte Mikrofon ist nicht verfügbar. Bitte wähle ein anderes Mikrofon in den Einstellungen.');
+        }
+        throw constraintErr;
       }
       streamRef.current = stream;
 
