@@ -1,6 +1,19 @@
 import { useMemo } from 'react';
 import { usePartner } from '../context/PartnerContext';
 import { DEFAULT_BRANDING } from '../config/partners';
+import {
+  SHADOWS,
+  RADIUS,
+  BREAKPOINTS,
+  FONT_SIZE,
+  FONT_WEIGHT,
+  SPACING,
+  TRANSITIONS,
+  Z_INDEX,
+  ICON_SIZE,
+  COMPONENT,
+  coloredShadow,
+} from '../config/designTokens';
 
 /**
  * Custom hook for accessing partner branding with fallback to defaults
@@ -113,6 +126,32 @@ export const useBranding = () => {
       disabledBg: '#cbd5e1', // slate-300 equivalent for disabled states
 
       // ============================================
+      // Design Tokens - Standardized UI Values
+      // ============================================
+      /** Box shadows: xs, sm, md, lg, xl, none */
+      shadow: SHADOWS,
+      /** Border radius: sm, md, lg, xl, 2xl, full, none */
+      radius: RADIUS,
+      /** Breakpoints: sm, md, lg, xl, 2xl (in pixels) */
+      breakpoint: BREAKPOINTS,
+      /** Font sizes: 2xs, xs, sm, base, md, lg, xl, 2xl, 3xl, 4xl, 5xl */
+      fontSize: FONT_SIZE,
+      /** Font weights: normal, medium, semibold, bold */
+      fontWeight: FONT_WEIGHT,
+      /** Spacing (4px grid): 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 10, 12, 15, 16 */
+      space: SPACING,
+      /** Transitions: fast, normal, slow, slower */
+      transition: TRANSITIONS,
+      /** Z-index: base, raised, sticky, dropdown, modal, overlay, tooltip, toast */
+      zIndex: Z_INDEX,
+      /** Icon sizes: xs, sm, md, lg, xl, 2xl, 3xl, 4xl */
+      iconSize: ICON_SIZE,
+      /** Component presets: card, cardSm, dialog, button, buttonSm, input, badge */
+      component: COMPONENT,
+      /** Generate colored shadow: coloredShadow(color, 'sm'|'md'|'lg') */
+      coloredShadow,
+
+      // ============================================
       // Raw branding object for advanced use cases
       // ============================================
       raw: branding,
@@ -148,8 +187,8 @@ export const useBrandingStyles = () => {
       background: b.buttonGradient,
       color: b.buttonText,
       border: 'none',
-      borderRadius: '8px',
-      fontWeight: 600,
+      borderRadius: RADIUS.lg,
+      fontWeight: FONT_WEIGHT.semibold,
       cursor: 'pointer',
     },
 
@@ -163,8 +202,8 @@ export const useBrandingStyles = () => {
       background: 'transparent',
       color: b.primaryAccent,
       border: `1px solid ${b.primaryAccent}`,
-      borderRadius: '8px',
-      fontWeight: 500,
+      borderRadius: RADIUS.lg,
+      fontWeight: FONT_WEIGHT.medium,
       cursor: 'pointer',
     },
 
@@ -173,16 +212,16 @@ export const useBrandingStyles = () => {
       background: b.cardBgHover,
       color: b.textSecondary,
       border: 'none',
-      borderRadius: '8px',
+      borderRadius: RADIUS.lg,
       cursor: 'pointer',
     },
 
     // Card container
     card: {
       background: b.cardBgColor,
-      borderRadius: '16px',
+      borderRadius: RADIUS.xl,
       border: `1px solid ${b.borderColor}`,
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+      boxShadow: SHADOWS.xs,
     },
 
     // Header with gradient
@@ -195,8 +234,8 @@ export const useBrandingStyles = () => {
     accentBadge: {
       background: `${b.primaryAccent}15`,
       color: b.primaryAccent,
-      borderRadius: '9999px',
-      fontWeight: 500,
+      borderRadius: RADIUS.full,
+      fontWeight: FONT_WEIGHT.medium,
     },
 
     // Success state

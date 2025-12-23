@@ -398,37 +398,37 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         {/* Login required message */}
         <div style={{
           maxWidth: '500px',
-          margin: '60px auto',
+          margin: `${b.space[15]} auto`,
           textAlign: 'center',
-          padding: '40px',
+          padding: b.space[10],
           backgroundColor: b.cardBg,
-          borderRadius: '20px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          borderRadius: b.radius['2xl'],
+          boxShadow: b.shadow.md,
         }}>
           <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
+            width: b.space[16],
+            height: b.space[16],
+            borderRadius: b.radius.xl,
             background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 20px',
+            margin: `0 auto ${b.space[5]}`,
           }}>
-            <LogIn style={{ width: '32px', height: '32px', color: headerText }} />
+            <LogIn style={{ width: b.iconSize['3xl'], height: b.iconSize['3xl'], color: headerText }} />
           </div>
           <h2 style={{
-            fontSize: '22px',
-            fontWeight: 700,
+            fontSize: b.fontSize['3xl'],
+            fontWeight: b.fontWeight.bold,
             color: b.textMain,
-            marginBottom: '12px',
+            marginBottom: b.space[3],
           }}>
             Anmeldung erforderlich
           </h2>
           <p style={{
-            fontSize: '15px',
+            fontSize: b.fontSize.md,
             color: b.textMuted,
-            marginBottom: '24px',
+            marginBottom: b.space[6],
             lineHeight: 1.6,
           }}>
             Um deine gespeicherten Sessions zu sehen, musst du dich zuerst anmelden.
@@ -436,21 +436,21 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           <button
             onClick={onLoginClick}
             style={{
-              padding: '14px 32px',
-              borderRadius: '12px',
+              padding: `${b.space[3.5]} ${b.space[8]}`,
+              borderRadius: b.radius.lg,
               border: 'none',
               background: headerGradient,
               color: headerText,
-              fontSize: '16px',
-              fontWeight: 600,
+              fontSize: b.fontSize.lg,
+              fontWeight: b.fontWeight.semibold,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '10px',
-              boxShadow: `0 4px 12px ${primaryAccent}44`,
+              gap: b.space[2.5],
+              boxShadow: b.coloredShadow(primaryAccent, 'md'),
             }}
           >
-            <LogIn style={{ width: '20px', height: '20px' }} />
+            <LogIn style={{ width: b.iconSize.lg, height: b.iconSize.lg }} />
             Jetzt anmelden
           </button>
         </div>
@@ -752,25 +752,25 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         {activeSessions.length === 0 ? (
           <div style={{
             textAlign: 'center',
-            padding: '60px 24px',
+            padding: `${b.space[15]} ${b.space[6]}`,
             background: b.cardBg,
-            borderRadius: '20px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+            borderRadius: b.radius['2xl'],
+            boxShadow: b.shadow.sm,
           }}>
-            {activeTab === TABS.SIMULATOR && <Target style={{ width: '48px', height: '48px', color: b.textMuted, margin: '0 auto 16px' }} />}
-            {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: '48px', height: '48px', color: b.textMuted, margin: '0 auto 16px' }} />}
-            {activeTab === TABS.VIDEO && <Video style={{ width: '48px', height: '48px', color: b.textMuted, margin: '0 auto 16px' }} />}
-            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: '48px', height: '48px', color: b.textMuted, margin: '0 auto 16px' }} />}
-            <h3 style={{ fontSize: '20px', fontWeight: 600, color: b.textSecondary, marginBottom: '8px' }}>
+            {activeTab === TABS.SIMULATOR && <Target style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}` }} />}
+            {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}` }} />}
+            {activeTab === TABS.VIDEO && <Video style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}` }} />}
+            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}` }} />}
+            <h3 style={{ fontSize: b.fontSize['2xl'], fontWeight: b.fontWeight.semibold, color: b.textSecondary, marginBottom: b.space[2] }}>
               Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : 'Live-Simulationen'}
             </h3>
-            <p style={{ color: b.textMuted, marginBottom: '24px' }}>
+            <p style={{ color: b.textMuted, marginBottom: b.space[6] }}>
               {activeTab === TABS.BRIEFINGS
                 ? 'Erstelle dein erstes Briefing, um dich optimal vorzubereiten.'
                 : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
             </p>
             <Button onClick={onBack}>
-              <Play style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+              <Play style={{ width: b.iconSize.sm, height: b.iconSize.sm, marginRight: b.space[2] }} />
               {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : 'Training starten'}
             </Button>
           </div>
