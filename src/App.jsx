@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import OverviewDashboard from './components/OverviewDashboard';
 import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplayDeviceSetup from './components/RoleplayDeviceSetup';
@@ -18,6 +19,7 @@ import { LoginModal } from './components/LoginModal';
 import { DisclaimerModal, useDisclaimerModal } from './components/DisclaimerModal';
 import { ToastProvider } from './components/Toast';
 import { Loader2 } from 'lucide-react';
+import { ROUTES, VIEW_TO_ROUTE, getViewFromPath } from './routes';
 
 // Admin components
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -86,7 +88,7 @@ const BrandingLoadingSpinner = () => {
   );
 };
 
-// View constants
+// View constants - kept for backward compatibility with sidebar
 const VIEWS = {
   OVERVIEW: 'overview',
   DASHBOARD: 'dashboard',
@@ -109,6 +111,32 @@ const VIEWS = {
   ADMIN_SIMULATOR: 'admin_simulator',
   ADMIN_VIDEO: 'admin_video',
   ADMIN_PARTNERS: 'admin_partners',
+};
+
+/**
+ * Helper to scroll to top of page
+ */
+const scrollToTop = () => {
+  requestAnimationFrame(() => {
+    window.scrollTo(0, 0);
+
+    const appContainer = document.getElementById('bewerbungstrainer-app');
+    if (appContainer) {
+      appContainer.scrollTop = 0;
+    }
+
+    const mainContent = document.querySelector('[data-main-content]');
+    if (mainContent) {
+      mainContent.scrollTop = 0;
+    }
+
+    const scrollableParents = document.querySelectorAll('.overflow-y-auto, .overflow-auto, [style*="overflow"]');
+    scrollableParents.forEach(el => {
+      if (el.scrollTop > 0) {
+        el.scrollTop = 0;
+      }
+    });
+  });
 };
 
 /**
@@ -202,8 +230,12 @@ function getWPHeaderHeight() {
 
 /**
  * AppContent - Inner component with access to auth context
+ * Uses React Router for navigation
  */
 function AppContent() {
+  // React Router hooks
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Auth context and loading state
   const { isAuthenticated, authLoading, isLoading, demoCode } = usePartner();
@@ -214,8 +246,8 @@ function AppContent() {
     return <BrandingLoadingSpinner />;
   }
 
-  // Current view state - start with overview
-  const [currentView, setCurrentView] = useState(VIEWS.OVERVIEW);
+  // Get current view from URL path (for sidebar active state)
+  const currentView = getViewFromPath(location.pathname);
   const [headerOffset, setHeaderOffset] = useState(0);
 
   // Roleplay state
@@ -285,31 +317,31 @@ function AppContent() {
         // Store the scenario - RoleplayDashboard will open the variables dialog
         setPendingRoleplayScenario(action.scenario);
         // Stay on dashboard view (already there)
-        setCurrentView(VIEWS.DASHBOARD);
+        navigate(ROUTES.LIVE_TRAINING);
         break;
       case 'SELECT_SIMULATOR_SCENARIO':
         // Store the scenario - SimulatorDashboard will handle it
         setPendingSimulatorScenario(action.scenario);
-        setCurrentView(VIEWS.SIMULATOR);
+        navigate(ROUTES.SCENARIO_TRAINING);
         break;
       case 'START_GYM_GAME':
         setGameConfig(action.config);
-        setCurrentView(VIEWS.GYM_SESSION);
+        navigate(ROUTES.RHETORIK_GYM_SESSION, { state: { gameConfig: action.config } });
         break;
       case 'SELECT_GYM_MODE':
         // Store the mode - RhetorikGym will handle it
         setPendingGymMode(action.mode);
-        setCurrentView(VIEWS.GYM_KLASSIKER);
+        navigate(ROUTES.RHETORIK_GYM);
         break;
       case 'SELECT_VIDEO_TRAINING_SCENARIO':
         // Store the scenario - VideoTrainingApp will handle it
         setPendingVideoTrainingScenario(action.scenario);
-        setCurrentView(VIEWS.VIDEO_TRAINING);
+        navigate(ROUTES.VIDEO_TRAINING);
         break;
       default:
         console.warn('Unknown pending action type:', action.type);
     }
-  }, []);
+  }, [navigate]);
 
   /**
    * Require authentication - either execute action immediately or store it for after login
@@ -367,344 +399,176 @@ function AppContent() {
     };
   }, []);
 
-  // ===== SCROLL TO TOP HELPER =====
-  const scrollToTop = useCallback(() => {
-    // Use requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(() => {
-      // Scroll window to top immediately (not smooth - more reliable)
-      window.scrollTo(0, 0);
-
-      // Also scroll the app container
-      const appContainer = document.getElementById('bewerbungstrainer-app');
-      if (appContainer) {
-        appContainer.scrollTop = 0;
-      }
-
-      // Try to scroll the main content area if it exists
-      const mainContent = document.querySelector('[data-main-content]');
-      if (mainContent) {
-        mainContent.scrollTop = 0;
-      }
-
-      // Also scroll parent containers that might have overflow
-      const scrollableParents = document.querySelectorAll('.overflow-y-auto, .overflow-auto, [style*="overflow"]');
-      scrollableParents.forEach(el => {
-        if (el.scrollTop > 0) {
-          el.scrollTop = 0;
-        }
-      });
-    });
-  }, []);
-
-  // ===== SCROLL TO TOP ON EVERY VIEW CHANGE =====
+  // ===== SCROLL TO TOP ON EVERY ROUTE CHANGE =====
   useEffect(() => {
-    // Scroll to top whenever the view changes
+    // Scroll to top whenever the route changes
     scrollToTop();
-  }, [currentView, scrollToTop]);
+  }, [location.pathname]);
 
   // ===== NAVIGATION HANDLER =====
-  const handleSidebarNavigate = (viewId) => {
-
+  const handleSidebarNavigate = useCallback((viewId) => {
     // Scroll to top on every navigation
     scrollToTop();
 
-    switch (viewId) {
-      case 'overview':
-        setCurrentView(VIEWS.OVERVIEW);
-        break;
-      case 'dashboard':
-        setCurrentView(VIEWS.DASHBOARD);
-        break;
-      case 'simulator':
-        setCurrentView(VIEWS.SIMULATOR);
-        break;
-      case 'video_training':
-        // Reset the video training module to dashboard when clicking sidebar
-        setVideoTrainingResetKey(prev => prev + 1);
-        setCurrentView(VIEWS.VIDEO_TRAINING);
-        break;
-      case 'smart_briefing':
-        setCurrentView(VIEWS.SMART_BRIEFING);
-        break;
-      case 'history':
-        setCurrentView(VIEWS.HISTORY);
-        break;
-      case 'usage_limits':
-        setCurrentView(VIEWS.USAGE_LIMITS);
-        break;
-      case 'gym':
-      case 'gym_klassiker':
-        setCurrentView(VIEWS.GYM_KLASSIKER);
-        break;
-      // Admin views
-      case 'admin':
-        setCurrentView(VIEWS.ADMIN);
-        break;
-      case 'admin_roleplays':
-        setCurrentView(VIEWS.ADMIN_ROLEPLAYS);
-        break;
-      case 'admin_simulator':
-        setCurrentView(VIEWS.ADMIN_SIMULATOR);
-        break;
-      case 'admin_video':
-        setCurrentView(VIEWS.ADMIN_VIDEO);
-        break;
-      case 'admin_partners':
-        setCurrentView(VIEWS.ADMIN_PARTNERS);
-        break;
-      default:
-        setCurrentView(VIEWS.OVERVIEW);
+    // Reset video training when navigating via sidebar
+    if (viewId === 'video_training') {
+      setVideoTrainingResetKey(prev => prev + 1);
     }
-  };
+
+    // Use VIEW_TO_ROUTE mapping or fall back to overview
+    const route = VIEW_TO_ROUTE[viewId];
+    if (route) {
+      navigate(route);
+    } else {
+      navigate(ROUTES.OVERVIEW);
+    }
+  }, [navigate]);
 
   // ===== ROLEPLAY HANDLERS =====
-  const handleSelectScenario = (scenario) => {
+  const handleSelectScenario = useCallback((scenario) => {
     setSelectedScenario(scenario);
     setRoleplayVariables({});
     setRoleplayMicrophoneId(null); // Reset microphone selection
-    setCurrentView(VIEWS.ROLEPLAY_VARIABLES);
-  };
+    navigate(ROUTES.LIVE_TRAINING_SETUP, { state: { scenario } });
+  }, [navigate]);
 
-  const handleRoleplayVariablesNext = (variables) => {
+  const handleRoleplayVariablesNext = useCallback((variables) => {
     setRoleplayVariables(variables);
-    setCurrentView(VIEWS.ROLEPLAY_DEVICE_SETUP);
-  };
+    navigate(ROUTES.LIVE_TRAINING_DEVICES, { state: { scenario: selectedScenario, variables } });
+  }, [navigate, selectedScenario]);
 
-  const handleRoleplayVariablesBack = () => {
+  const handleRoleplayVariablesBack = useCallback(() => {
     setSelectedScenario(null);
     setRoleplayVariables({});
-    setCurrentView(VIEWS.DASHBOARD);
-  };
+    navigate(ROUTES.LIVE_TRAINING);
+  }, [navigate]);
 
-  const handleRoleplayDeviceSetupComplete = ({ selectedMicrophoneId, connectionMode = 'websocket' }) => {
+  const handleRoleplayDeviceSetupComplete = useCallback(({ selectedMicrophoneId, connectionMode = 'websocket' }) => {
     setRoleplayMicrophoneId(selectedMicrophoneId);
     setRoleplayConnectionMode(connectionMode);
 
     // Navigate to appropriate session based on connection mode
-    if (connectionMode === 'proxy') {
-      setCurrentView(VIEWS.ROLEPLAY_PROXY);
-    } else {
-      setCurrentView(VIEWS.ROLEPLAY);
-    }
-  };
+    const route = connectionMode === 'proxy' ? ROUTES.LIVE_TRAINING_PROXY : ROUTES.LIVE_TRAINING_SESSION;
+    navigate(route, {
+      state: {
+        scenario: selectedScenario,
+        variables: roleplayVariables,
+        microphoneId: selectedMicrophoneId
+      }
+    });
+  }, [navigate, selectedScenario, roleplayVariables]);
 
-  const handleRoleplayDeviceSetupBack = () => {
+  const handleRoleplayDeviceSetupBack = useCallback(() => {
     setRoleplayMicrophoneId(null);
-    setCurrentView(VIEWS.ROLEPLAY_VARIABLES);
-  };
+    navigate(ROUTES.LIVE_TRAINING_SETUP, { state: { scenario: selectedScenario } });
+  }, [navigate, selectedScenario]);
 
-  const handleEndRoleplay = () => {
+  const handleEndRoleplay = useCallback(() => {
     setSelectedScenario(null);
     setRoleplayVariables({});
-    setCurrentView(VIEWS.DASHBOARD);
-  };
+    navigate(ROUTES.LIVE_TRAINING);
+  }, [navigate]);
 
-  const handleNavigateToSession = (session) => {
+  const handleNavigateToSession = useCallback((session) => {
     setSelectedScenario(null);
     setRoleplayVariables({});
     setSelectedSession(session);
-    setCurrentView(VIEWS.SESSION_DETAIL);
-  };
+    navigate(`/verlauf/${session.type || 'roleplay'}/${session.id}`, { state: { session } });
+  }, [navigate]);
 
   // ===== HISTORY HANDLERS =====
-  const handleOpenHistory = (tab = null) => {
+  const handleOpenHistory = useCallback((tab = null) => {
     setHistoryInitialTab(tab);
-    setCurrentView(VIEWS.HISTORY);
-  };
+    navigate(ROUTES.HISTORY, { state: { initialTab: tab } });
+  }, [navigate]);
 
-  const handleCloseHistory = () => {
+  const handleCloseHistory = useCallback(() => {
     setHistoryInitialTab(null);
-    setCurrentView(VIEWS.DASHBOARD);
-  };
+    navigate(ROUTES.LIVE_TRAINING);
+  }, [navigate]);
 
   // Navigate to history with a specific tab
-  const handleNavigateToHistoryWithTab = (tabId) => {
+  const handleNavigateToHistoryWithTab = useCallback((tabId) => {
     const tabMap = {
       'briefings': SESSION_TABS.BRIEFINGS,
       'simulator': SESSION_TABS.SIMULATOR,
       'video': SESSION_TABS.VIDEO,
       'roleplay': SESSION_TABS.ROLEPLAY,
     };
-    setHistoryInitialTab(tabMap[tabId] || null);
-    setCurrentView(VIEWS.HISTORY);
-  };
+    const tab = tabMap[tabId] || null;
+    setHistoryInitialTab(tab);
+    navigate(ROUTES.HISTORY, { state: { initialTab: tab } });
+  }, [navigate]);
 
-  const handleSelectSession = (session) => {
+  const handleSelectSession = useCallback((session) => {
     setSelectedSession(session);
-    setCurrentView(VIEWS.SESSION_DETAIL);
-  };
+    navigate(`/verlauf/${session.type || 'roleplay'}/${session.id}`, { state: { session } });
+  }, [navigate]);
 
-  const handleCloseSessionDetail = () => {
+  const handleCloseSessionDetail = useCallback(() => {
     setSelectedSession(null);
-    setCurrentView(VIEWS.HISTORY);
-  };
+    navigate(ROUTES.HISTORY);
+  }, [navigate]);
 
   // ===== SIMULATOR SESSION HANDLERS =====
-  const handleContinueSession = (session, scenario) => {
+  const handleContinueSession = useCallback((session, scenario) => {
     setPendingContinueSession({ session, scenario });
-    setCurrentView(VIEWS.SIMULATOR);
-  };
+    navigate(ROUTES.SCENARIO_TRAINING);
+  }, [navigate]);
 
-  const handleRepeatSession = (session, scenario) => {
+  const handleRepeatSession = useCallback((session, scenario) => {
     setPendingRepeatSession({ session, scenario });
-    setCurrentView(VIEWS.SIMULATOR);
-  };
+    navigate(ROUTES.SCENARIO_TRAINING);
+  }, [navigate]);
 
   // ===== RHETORIK-GYM HANDLERS =====
-  const handleStartGame = (config) => {
+  const handleStartGame = useCallback((config) => {
     setGameConfig(config);
-    setCurrentView(VIEWS.GYM_SESSION);
-  };
+    navigate(ROUTES.RHETORIK_GYM_SESSION, { state: { gameConfig: config } });
+  }, [navigate]);
 
-  const handleGameBack = () => {
+  const handleGameBack = useCallback(() => {
     setGameConfig(null);
-    setCurrentView(VIEWS.GYM_KLASSIKER);
-  };
+    navigate(ROUTES.RHETORIK_GYM);
+  }, [navigate]);
 
-  const handleGameComplete = (result) => {
+  const handleGameComplete = useCallback((result) => {
     // Could navigate to a results view or stay in session
-  };
+  }, []);
 
-  // ===== CONTENT RENDERING =====
-  const renderContent = () => {
-    switch (currentView) {
-      case VIEWS.ROLEPLAY_VARIABLES:
-        return (
-          <RoleplayVariablesPage
-            scenario={selectedScenario}
-            onBack={handleRoleplayVariablesBack}
-            onNext={handleRoleplayVariablesNext}
-          />
-        );
+  // Admin route guard - redirects non-admins to overview
+  const AdminRoute = useCallback(({ children }) => {
+    if (!isAdmin) {
+      return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
+    }
+    return children;
+  }, [isAdmin, handleSidebarNavigate]);
 
-      case VIEWS.ROLEPLAY_DEVICE_SETUP:
-        return (
-          <RoleplayDeviceSetup
-            scenario={selectedScenario}
-            onBack={handleRoleplayDeviceSetupBack}
-            onStart={handleRoleplayDeviceSetupComplete}
-          />
-        );
+  // Helper to get state from location or fall back to component state
+  const getScenario = () => location.state?.scenario || selectedScenario;
+  const getVariables = () => location.state?.variables || roleplayVariables;
+  const getMicrophoneId = () => location.state?.microphoneId || roleplayMicrophoneId;
+  const getGameConfigFromState = () => location.state?.gameConfig || gameConfig;
+  const getSessionFromState = () => location.state?.session || selectedSession;
+  const getInitialTabFromState = () => location.state?.initialTab || historyInitialTab;
 
-      case VIEWS.ROLEPLAY:
-        return (
-          <RoleplaySession
-            scenario={selectedScenario}
-            variables={roleplayVariables}
-            selectedMicrophoneId={roleplayMicrophoneId}
-            onEnd={handleEndRoleplay}
-            onNavigateToSession={handleNavigateToSession}
-          />
-        );
+  // ===== CONTENT RENDERING WITH ROUTES =====
+  const renderContent = () => (
+    <Routes>
+      {/* Overview / Home */}
+      <Route
+        path="/"
+        element={<OverviewDashboard onNavigate={handleSidebarNavigate} />}
+      />
+      <Route
+        path={ROUTES.OVERVIEW}
+        element={<OverviewDashboard onNavigate={handleSidebarNavigate} />}
+      />
 
-      case VIEWS.ROLEPLAY_PROXY:
-        return (
-          <RoleplayProxySession
-            scenario={selectedScenario}
-            variables={roleplayVariables}
-            selectedMicrophoneId={roleplayMicrophoneId}
-            onEnd={handleEndRoleplay}
-            onNavigateToSession={handleNavigateToSession}
-          />
-        );
-
-      case VIEWS.SIMULATOR:
-        return (
-          <SimulatorApp
-            isAuthenticated={isAuthenticated}
-            requireAuth={requireAuth}
-            setPendingAction={setPendingAction}
-            pendingContinueSession={pendingContinueSession}
-            clearPendingContinueSession={() => setPendingContinueSession(null)}
-            pendingRepeatSession={pendingRepeatSession}
-            clearPendingRepeatSession={() => setPendingRepeatSession(null)}
-            onNavigateToHistory={() => handleNavigateToHistoryWithTab('simulator')}
-          />
-        );
-
-      case VIEWS.VIDEO_TRAINING:
-        return (
-          <VideoTrainingApp
-            key={videoTrainingResetKey}
-            isAuthenticated={isAuthenticated}
-            requireAuth={requireAuth}
-            setPendingAction={setPendingAction}
-            pendingScenario={pendingVideoTrainingScenario}
-            clearPendingScenario={() => setPendingVideoTrainingScenario(null)}
-            onNavigateToHistory={() => handleNavigateToHistoryWithTab('video')}
-          />
-        );
-
-      case VIEWS.SMART_BRIEFING:
-        return (
-          <SmartBriefingApp
-            isAuthenticated={isAuthenticated}
-            requireAuth={requireAuth}
-            setPendingAction={setPendingAction}
-            demoCode={demoCode}
-            onNavigateToSimulator={(variables) => {
-              // Navigate to simulator dashboard - variables can be used to pre-fill forms
-              // Store variables for potential use in simulator
-              // The simulator can access these via props or context if needed
-              setCurrentView(VIEWS.SIMULATOR);
-            }}
-            onNavigateToHistory={() => handleNavigateToHistoryWithTab('briefings')}
-          />
-        );
-
-      case VIEWS.GYM:
-      case VIEWS.GYM_KLASSIKER:
-        return (
-          <RhetorikGym
-            onStartGame={handleStartGame}
-            isAuthenticated={isAuthenticated}
-            requireAuth={requireAuth}
-            setPendingAction={setPendingAction}
-          />
-        );
-
-      case VIEWS.GYM_SESSION:
-        return (
-          <GameSession
-            gameConfig={gameConfig}
-            onBack={handleGameBack}
-            onComplete={handleGameComplete}
-          />
-        );
-
-      case VIEWS.HISTORY:
-        return (
-          <SessionHistory
-            onBack={handleCloseHistory}
-            onSelectSession={handleSelectSession}
-            isAuthenticated={isAuthenticated}
-            onLoginClick={openLoginModal}
-            onContinueSession={handleContinueSession}
-            onRepeatSession={handleRepeatSession}
-            initialTab={historyInitialTab}
-            onNavigateToModule={handleSidebarNavigate}
-          />
-        );
-
-      case VIEWS.USAGE_LIMITS:
-        return (
-          <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
-            <UsageLimitsDisplay
-              onNavigateToRoleplay={() => setCurrentView(VIEWS.DASHBOARD)}
-            />
-          </div>
-        );
-
-      case VIEWS.SESSION_DETAIL:
-        return (
-          <SessionDetailView
-            session={selectedSession}
-            onBack={handleCloseSessionDetail}
-          />
-        );
-
-      case VIEWS.DASHBOARD:
-        return (
+      {/* Live Training (Roleplay) Routes */}
+      <Route
+        path={ROUTES.LIVE_TRAINING}
+        element={
           <RoleplayDashboard
             onSelectScenario={handleSelectScenario}
             onOpenHistory={handleOpenHistory}
@@ -715,74 +579,223 @@ function AppContent() {
             clearPendingScenario={() => setPendingRoleplayScenario(null)}
             onNavigateToHistory={() => handleNavigateToHistoryWithTab('roleplay')}
           />
-        );
-
-      case VIEWS.OVERVIEW:
-        return (
-          <OverviewDashboard
-            onNavigate={handleSidebarNavigate}
+        }
+      />
+      <Route
+        path={ROUTES.LIVE_TRAINING_SETUP}
+        element={
+          <RoleplayVariablesPage
+            scenario={getScenario()}
+            onBack={handleRoleplayVariablesBack}
+            onNext={handleRoleplayVariablesNext}
           />
-        );
-
-      // Admin views - only accessible to admins
-      case VIEWS.ADMIN:
-        if (!isAdmin) {
-          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
         }
-        return (
-          <div style={{ padding: '24px' }}>
-            <AdminDashboard onNavigate={handleSidebarNavigate} />
-          </div>
-        );
-
-      case VIEWS.ADMIN_ROLEPLAYS:
-        if (!isAdmin) {
-          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
-        }
-        return (
-          <div style={{ padding: '24px' }}>
-            <ScenarioManager onBack={() => setCurrentView(VIEWS.ADMIN)} />
-          </div>
-        );
-
-      case VIEWS.ADMIN_SIMULATOR:
-        if (!isAdmin) {
-          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
-        }
-        return (
-          <div style={{ padding: '24px' }}>
-            <SimulatorScenarioManager onBack={() => setCurrentView(VIEWS.ADMIN)} />
-          </div>
-        );
-
-      case VIEWS.ADMIN_VIDEO:
-        if (!isAdmin) {
-          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
-        }
-        return (
-          <div style={{ padding: '24px' }}>
-            <VideoTrainingManager onBack={() => setCurrentView(VIEWS.ADMIN)} />
-          </div>
-        );
-
-      case VIEWS.ADMIN_PARTNERS:
-        if (!isAdmin) {
-          return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
-        }
-        return (
-          <div style={{ padding: '24px' }}>
-            <PartnerManager onBack={() => setCurrentView(VIEWS.ADMIN)} />
-          </div>
-        );
-
-      default:
-        return (
-          <OverviewDashboard
-            onNavigate={handleSidebarNavigate}
+      />
+      <Route
+        path={ROUTES.LIVE_TRAINING_DEVICES}
+        element={
+          <RoleplayDeviceSetup
+            scenario={getScenario()}
+            onBack={handleRoleplayDeviceSetupBack}
+            onStart={handleRoleplayDeviceSetupComplete}
           />
-        );
-    }
-  };
+        }
+      />
+      <Route
+        path={ROUTES.LIVE_TRAINING_SESSION}
+        element={
+          <RoleplaySession
+            scenario={getScenario()}
+            variables={getVariables()}
+            selectedMicrophoneId={getMicrophoneId()}
+            onEnd={handleEndRoleplay}
+            onNavigateToSession={handleNavigateToSession}
+          />
+        }
+      />
+      <Route
+        path={ROUTES.LIVE_TRAINING_PROXY}
+        element={
+          <RoleplayProxySession
+            scenario={getScenario()}
+            variables={getVariables()}
+            selectedMicrophoneId={getMicrophoneId()}
+            onEnd={handleEndRoleplay}
+            onNavigateToSession={handleNavigateToSession}
+          />
+        }
+      />
+
+      {/* Scenario Training (Simulator) */}
+      <Route
+        path={ROUTES.SCENARIO_TRAINING}
+        element={
+          <SimulatorApp
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+            pendingContinueSession={pendingContinueSession}
+            clearPendingContinueSession={() => setPendingContinueSession(null)}
+            pendingRepeatSession={pendingRepeatSession}
+            clearPendingRepeatSession={() => setPendingRepeatSession(null)}
+            onNavigateToHistory={() => handleNavigateToHistoryWithTab('simulator')}
+          />
+        }
+      />
+
+      {/* Video Training */}
+      <Route
+        path={ROUTES.VIDEO_TRAINING}
+        element={
+          <VideoTrainingApp
+            key={videoTrainingResetKey}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+            pendingScenario={pendingVideoTrainingScenario}
+            clearPendingScenario={() => setPendingVideoTrainingScenario(null)}
+            onNavigateToHistory={() => handleNavigateToHistoryWithTab('video')}
+          />
+        }
+      />
+
+      {/* Smart Briefing */}
+      <Route
+        path={ROUTES.SMART_BRIEFING}
+        element={
+          <SmartBriefingApp
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+            demoCode={demoCode}
+            onNavigateToSimulator={() => navigate(ROUTES.SCENARIO_TRAINING)}
+            onNavigateToHistory={() => handleNavigateToHistoryWithTab('briefings')}
+          />
+        }
+      />
+
+      {/* Rhetorik-Gym */}
+      <Route
+        path={ROUTES.RHETORIK_GYM}
+        element={
+          <RhetorikGym
+            onStartGame={handleStartGame}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+          />
+        }
+      />
+      <Route
+        path={ROUTES.RHETORIK_GYM_SESSION}
+        element={
+          <GameSession
+            gameConfig={getGameConfigFromState()}
+            onBack={handleGameBack}
+            onComplete={handleGameComplete}
+          />
+        }
+      />
+
+      {/* History */}
+      <Route
+        path={ROUTES.HISTORY}
+        element={
+          <SessionHistory
+            onBack={handleCloseHistory}
+            onSelectSession={handleSelectSession}
+            isAuthenticated={isAuthenticated}
+            onLoginClick={openLoginModal}
+            onContinueSession={handleContinueSession}
+            onRepeatSession={handleRepeatSession}
+            initialTab={getInitialTabFromState()}
+            onNavigateToModule={handleSidebarNavigate}
+          />
+        }
+      />
+
+      {/* Session Detail - Dynamic route */}
+      <Route
+        path="/verlauf/:sessionType/:sessionId"
+        element={
+          <SessionDetailView
+            session={getSessionFromState()}
+            onBack={handleCloseSessionDetail}
+          />
+        }
+      />
+
+      {/* Usage Limits */}
+      <Route
+        path={ROUTES.USAGE_LIMITS}
+        element={
+          <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
+            <UsageLimitsDisplay
+              onNavigateToRoleplay={() => navigate(ROUTES.LIVE_TRAINING)}
+            />
+          </div>
+        }
+      />
+
+      {/* Admin Routes */}
+      <Route
+        path={ROUTES.ADMIN}
+        element={
+          <AdminRoute>
+            <div style={{ padding: '24px' }}>
+              <AdminDashboard onNavigate={handleSidebarNavigate} />
+            </div>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_ROLEPLAYS}
+        element={
+          <AdminRoute>
+            <div style={{ padding: '24px' }}>
+              <ScenarioManager onBack={() => navigate(ROUTES.ADMIN)} />
+            </div>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_SIMULATOR}
+        element={
+          <AdminRoute>
+            <div style={{ padding: '24px' }}>
+              <SimulatorScenarioManager onBack={() => navigate(ROUTES.ADMIN)} />
+            </div>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_VIDEO}
+        element={
+          <AdminRoute>
+            <div style={{ padding: '24px' }}>
+              <VideoTrainingManager onBack={() => navigate(ROUTES.ADMIN)} />
+            </div>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_PARTNERS}
+        element={
+          <AdminRoute>
+            <div style={{ padding: '24px' }}>
+              <PartnerManager onBack={() => navigate(ROUTES.ADMIN)} />
+            </div>
+          </AdminRoute>
+        }
+      />
+
+      {/* Fallback - redirect to overview */}
+      <Route
+        path="*"
+        element={<OverviewDashboard onNavigate={handleSidebarNavigate} />}
+      />
+    </Routes>
+  );
 
   // All views now use the sidebar layout for consistent navigation
   return (
@@ -830,15 +843,18 @@ function AppContent() {
 }
 
 /**
- * App - Main wrapper with providers
+ * App - Main wrapper with providers and router
+ * Uses HashRouter for WordPress shortcode compatibility
  */
 function App() {
   return (
-    <PartnerProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
-    </PartnerProvider>
+    <HashRouter>
+      <PartnerProvider>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </PartnerProvider>
+    </HashRouter>
   );
 }
 
