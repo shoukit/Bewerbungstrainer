@@ -408,25 +408,10 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent, branding }) => {
 
   return (
     <div style={{
-      background: branding.cardBg,
+      background: branding.cardBgHover,
       borderRadius: '12px',
       padding: '16px',
-      border: `1px solid ${branding.borderColor}`,
     }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        marginBottom: '12px',
-        fontSize: '13px',
-        fontWeight: 600,
-        color: branding.textSecondary,
-      }}>
-        <Volume2 size={16} color={primaryAccent} />
-        Deine Aufnahme
-      </div>
-
       {/* Progress bar */}
       <div
         onClick={handleSeek}
@@ -620,14 +605,14 @@ const ImmediateFeedback = ({
         }}>
           "{transcript || 'Keine Transkription verfügbar.'}"
         </div>
-
-        {/* Audio Player - below transcript */}
-        {audioUrl && (
-          <div style={{ marginTop: '16px' }}>
-            <CompactAudioPlayer audioUrl={audioUrl} primaryAccent={primaryAccent} branding={b} />
-          </div>
-        )}
       </CollapsibleSection>
+
+      {/* Audio Player - own section between transcript and strengths */}
+      {audioUrl && (
+        <CollapsibleSection title="Deine Aufnahme" icon={Volume2} defaultOpen={true} primaryAccent={primaryAccent} branding={b}>
+          <CompactAudioPlayer audioUrl={audioUrl} primaryAccent={primaryAccent} branding={b} />
+        </CollapsibleSection>
+      )}
 
       {/* Strengths */}
       {parsedFeedback?.strengths?.length > 0 && (
