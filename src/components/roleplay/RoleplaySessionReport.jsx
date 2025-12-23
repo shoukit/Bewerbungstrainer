@@ -48,7 +48,8 @@ import { useMobile } from '@/hooks/useMobile';
 import { getScoreColor } from '@/config/colors';
 import { formatDuration } from '@/utils/formatting';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
-import { getRoleplaySessionAnalysis } from '@/services/roleplay-feedback-adapter';
+import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl } from '@/services/roleplay-feedback-adapter';
+import { getWPNonce } from '@/services/wordpress-api';
 
 // =============================================================================
 // CONSTANTS
@@ -193,6 +194,7 @@ const ScoreGauge = ({ score, size = 100, primaryAccent, isHeader = false }) => {
 const AudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, branding, onSeek }) => {
   const audioRef = useRef(null);
   const progressRef = useRef(null);
+  const objectUrlRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -203,31 +205,94 @@ const AudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, branding
   useEffect(() => {
     if (!audioUrl) return;
 
-    const audio = new Audio(audioUrl);
-    audioRef.current = audio;
+    let isMounted = true;
 
-    audio.addEventListener('loadedmetadata', () => {
-      setDuration(audio.duration);
-      setIsLoading(false);
-    });
+    // Check if this is a proxy URL (needs authentication) or direct file URL
+    const isProxyUrl = audioUrl.includes('/wp-json/') || audioUrl.includes('/api/');
 
-    audio.addEventListener('timeupdate', () => {
-      setCurrentTime(audio.currentTime);
-    });
+    const loadAudio = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-    audio.addEventListener('ended', () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-    });
+        let audioSrc = audioUrl;
 
-    audio.addEventListener('error', () => {
-      setError('Audio konnte nicht geladen werden');
-      setIsLoading(false);
-    });
+        // Only fetch with auth headers if it's a proxy endpoint
+        if (isProxyUrl) {
+          const response = await fetch(audioUrl, {
+            method: 'GET',
+            headers: {
+              'X-WP-Nonce': getWPNonce(),
+            },
+            credentials: 'same-origin',
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          if (!isMounted) return;
+
+          if (blob.size === 0) {
+            throw new Error('Audio nicht verfügbar');
+          }
+
+          // Create object URL from blob
+          const objectUrl = URL.createObjectURL(blob);
+          objectUrlRef.current = objectUrl;
+          audioSrc = objectUrl;
+        }
+
+        const audio = new Audio(audioSrc);
+        audioRef.current = audio;
+
+        audio.addEventListener('loadedmetadata', () => {
+          if (isMounted) {
+            setDuration(audio.duration);
+            setIsLoading(false);
+          }
+        });
+
+        audio.addEventListener('timeupdate', () => {
+          if (isMounted) {
+            setCurrentTime(audio.currentTime);
+          }
+        });
+
+        audio.addEventListener('ended', () => {
+          if (isMounted) {
+            setIsPlaying(false);
+            setCurrentTime(0);
+          }
+        });
+
+        audio.addEventListener('error', () => {
+          if (isMounted) {
+            setError('Audio konnte nicht geladen werden');
+            setIsLoading(false);
+          }
+        });
+      } catch (err) {
+        console.error('[AudioPlayer] Failed to load audio:', err);
+        if (isMounted) {
+          setError('Audio konnte nicht geladen werden');
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadAudio();
 
     return () => {
-      audio.pause();
-      audio.src = '';
+      isMounted = false;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+      }
     };
   }, [audioUrl]);
 
@@ -1432,6 +1497,19 @@ const RoleplaySessionReport = ({
     return [];
   }, [session?.transcript]);
 
+  // Get audio URL - prefer stored URL, fallback to proxy
+  const audioUrl = useMemo(() => {
+    // Prefer stored local URL if available
+    if (session?.audio_url) {
+      return session.audio_url;
+    }
+    // Fallback to proxy endpoint (fetches from ElevenLabs using conversation_id)
+    if (session?.id) {
+      return getRoleplaySessionAudioUrl(session.id);
+    }
+    return null;
+  }, [session?.id, session?.audio_url]);
+
   // Calculate overall score
   const overallScore = useMemo(() => {
     if (feedback?.rating?.overall !== undefined) {
@@ -1595,7 +1673,7 @@ const RoleplaySessionReport = ({
         {/* Audio Player (Full Width) */}
         <div style={{ marginBottom: '24px' }}>
           <AudioPlayer
-            audioUrl={session?.audio_url}
+            audioUrl={audioUrl}
             duration={session?.duration}
             primaryAccent={primaryAccent}
             branding={b}
