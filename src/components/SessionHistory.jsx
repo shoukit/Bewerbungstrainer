@@ -36,6 +36,7 @@ import {
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import TrainingSessionDetailView from './TrainingSessionDetailView';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import wordpressAPI from '@/services/wordpress-api';
@@ -69,6 +70,7 @@ export const SESSION_TABS = TABS;
 const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession, initialTab, onNavigateToModule }) => {
   // Partner branding
   const { branding, demoCode, isDemoUser } = usePartner();
+  const b = useBranding();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -377,7 +379,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             <h1 style={{
               fontSize: '28px',
               fontWeight: 700,
-              color: '#0f172a',
+              color: b.textMain,
               margin: 0,
             }}>
               Meine Sessions
@@ -385,7 +387,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           </div>
           <p style={{
             fontSize: '16px',
-            color: '#475569',
+            color: b.textSecondary,
             maxWidth: '600px',
             margin: '0 auto',
           }}>
@@ -399,7 +401,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           margin: '60px auto',
           textAlign: 'center',
           padding: '40px',
-          backgroundColor: 'white',
+          backgroundColor: b.cardBg,
           borderRadius: '20px',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
         }}>
@@ -418,14 +420,14 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           <h2 style={{
             fontSize: '22px',
             fontWeight: 700,
-            color: '#0f172a',
+            color: b.textMain,
             marginBottom: '12px',
           }}>
             Anmeldung erforderlich
           </h2>
           <p style={{
             fontSize: '15px',
-            color: '#64748b',
+            color: b.textMuted,
             marginBottom: '24px',
             lineHeight: 1.6,
           }}>
@@ -461,7 +463,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
         <div style={{ textAlign: 'center' }}>
           <Loader2 style={{ width: '48px', height: '48px', color: primaryAccent, animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-          <p style={{ color: '#64748b', marginTop: '16px' }}>Sessions werden geladen...</p>
+          <p style={{ color: b.textMuted, marginTop: '16px' }}>Sessions werden geladen...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -472,9 +474,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     return (
       <div style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', maxWidth: '400px', padding: '24px' }}>
-          <AlertCircle style={{ width: '48px', height: '48px', color: '#ef4444', margin: '0 auto 16px' }} />
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>Fehler beim Laden</h2>
-          <p style={{ color: '#64748b', marginBottom: '24px' }}>{error}</p>
+          <AlertCircle style={{ width: '48px', height: '48px', color: b.error, margin: '0 auto 16px' }} />
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: b.textMain, marginBottom: '8px' }}>Fehler beim Laden</h2>
+          <p style={{ color: b.textMuted, marginBottom: '24px' }}>{error}</p>
           <Button onClick={loadAllData}>Erneut versuchen</Button>
         </div>
       </div>
@@ -508,7 +510,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           <h1 style={{
             fontSize: '28px',
             fontWeight: 700,
-            color: '#0f172a',
+            color: b.textMain,
             margin: 0,
           }}>
             Meine Sessions
@@ -516,7 +518,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         </div>
         <p style={{
           fontSize: '16px',
-          color: '#475569',
+          color: b.textSecondary,
           maxWidth: '600px',
           margin: '0 auto',
         }}>
@@ -751,18 +753,18 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           <div style={{
             textAlign: 'center',
             padding: '60px 24px',
-            background: '#fff',
+            background: b.cardBg,
             borderRadius: '20px',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
           }}>
-            {activeTab === TABS.SIMULATOR && <Target style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
-            {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
-            {activeTab === TABS.VIDEO && <Video style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
-            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
-            <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
+            {activeTab === TABS.SIMULATOR && <Target style={{ width: '48px', height: '48px', color: b.textMuted, margin: '0 auto 16px' }} />}
+            {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: '48px', height: '48px', color: b.textMuted, margin: '0 auto 16px' }} />}
+            {activeTab === TABS.VIDEO && <Video style={{ width: '48px', height: '48px', color: b.textMuted, margin: '0 auto 16px' }} />}
+            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: '48px', height: '48px', color: b.textMuted, margin: '0 auto 16px' }} />}
+            <h3 style={{ fontSize: '20px', fontWeight: 600, color: b.textSecondary, marginBottom: '8px' }}>
               Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : 'Live-Simulationen'}
             </h3>
-            <p style={{ color: '#64748b', marginBottom: '24px' }}>
+            <p style={{ color: b.textMuted, marginBottom: '24px' }}>
               {activeTab === TABS.BRIEFINGS
                 ? 'Erstelle dein erstes Briefing, um dich optimal vorzubereiten.'
                 : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
