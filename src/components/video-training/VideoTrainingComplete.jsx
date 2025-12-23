@@ -33,7 +33,7 @@ const ScoreGauge = ({ score, size = 120, strokeWidth = 10, primaryAccent }) => {
   };
 
   return (
-    <div style={{ position: 'relative', width: size, height: size }}>
+    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         {/* Background circle */}
         <circle

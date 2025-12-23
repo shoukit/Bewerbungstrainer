@@ -234,8 +234,16 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       audioChunksRef.current = [];
       setSeconds(0);
 
-      const audioConstraints = deviceId ? { deviceId: { exact: deviceId } } : true;
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+      // Use 'ideal' instead of 'exact' to avoid OverconstrainedError if device unavailable
+      // Fallback to any audio device if preferred device not found
+      let stream;
+      try {
+        const preferredConstraints = deviceId ? { deviceId: { ideal: deviceId } } : true;
+        stream = await navigator.mediaDevices.getUserMedia({ audio: preferredConstraints });
+      } catch (constraintErr) {
+        console.warn('[SIMULATOR] Preferred device unavailable, using default:', constraintErr);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
       streamRef.current = stream;
 
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
