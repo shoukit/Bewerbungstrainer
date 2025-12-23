@@ -48,6 +48,7 @@ import { useMobile } from '@/hooks/useMobile';
 import { getScoreColor } from '@/config/colors';
 import { formatDuration } from '@/utils/formatting';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
+import { getRoleplaySessionAnalysis } from '@/services/roleplay-feedback-adapter';
 
 // =============================================================================
 // CONSTANTS
@@ -1187,18 +1188,47 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
 // =============================================================================
 
 const RoleplaySessionReport = ({
-  session,
+  session: sessionProp,
   scenario,
   feedback: feedbackProp,
   audioAnalysis: audioAnalysisProp,
   onBack,
   onRepeat,
-  isLoading = false,
+  isLoading: isLoadingProp = false,
 }) => {
   const b = useBranding();
   const isMobile = useMobile(768);
   const audioSeekRef = useRef(null);
   const [activeTab, setActiveTab] = useState(TABS.COACHING);
+
+  // State for full session data (fetched if needed)
+  const [fullSession, setFullSession] = useState(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
+
+  // Use full session if available, otherwise use prop
+  const session = fullSession || sessionProp;
+
+  // Fetch full session data if audio_analysis_json is missing
+  useEffect(() => {
+    const needsFullData = sessionProp?.id &&
+      !sessionProp?.audio_analysis_json &&
+      !audioAnalysisProp &&
+      !fullSession;
+
+    if (needsFullData) {
+      setIsLoadingSession(true);
+      getRoleplaySessionAnalysis(sessionProp.id)
+        .then(data => {
+          setFullSession(data);
+        })
+        .catch(err => {
+          console.error('Failed to fetch full session:', err);
+        })
+        .finally(() => {
+          setIsLoadingSession(false);
+        });
+    }
+  }, [sessionProp?.id, sessionProp?.audio_analysis_json, audioAnalysisProp, fullSession]);
 
   // Parse feedback and audio analysis
   const feedback = useMemo(() => {
@@ -1234,6 +1264,8 @@ const RoleplaySessionReport = ({
       audioSeekRef.current(time);
     }
   };
+
+  const isLoading = isLoadingProp || isLoadingSession;
 
   if (isLoading) {
     return (
