@@ -104,16 +104,34 @@ export function normalizeCategory(category) {
 // =============================================================================
 
 /**
- * Model fallback order - tries each model in sequence if previous fails
+ * Model configuration for different use cases
+ *
+ * VIDEO_ANALYSIS: Uses Gemini 2.5 Pro for best video/vision quality
+ * - Körpersprache-Analyse, Mimik, Gestik erkennung
+ * - Temporal reasoning für zeitliche Abläufe
+ *
+ * AUDIO_TEXT: Uses Gemini 3 Flash for speed + quality balance
+ * - Live-Training Feedback, Audio-Analyse, Rhetorik-Gym
+ * - Smart Briefing Generierung
  */
 export const GEMINI_MODELS = {
-  PRIMARY: 'gemini-2.0-flash-exp',
+  // Default for audio/text (Feedback, Audio-Analyse, Rhetorik-Gym, Briefings)
+  PRIMARY: 'gemini-2.5-flash',
   FALLBACK_ORDER: [
-    'gemini-2.0-flash-exp',
+    'gemini-2.5-flash',
     'gemini-2.0-flash',
     'gemini-1.5-flash-latest',
-    'gemini-1.5-pro-latest',
   ],
+
+  // Video analysis specific (Wirkungs-Analyse mit Körpersprache)
+  VIDEO_ANALYSIS: {
+    PRIMARY: 'gemini-2.5-pro-preview',
+    FALLBACK_ORDER: [
+      'gemini-2.5-pro-preview',
+      'gemini-2.5-pro',
+      'gemini-2.5-flash',
+    ],
+  },
 };
 
 /**

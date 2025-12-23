@@ -18,10 +18,17 @@ class Bewerbungstrainer_Gemini_Handler {
     private static $instance = null;
 
     /**
-     * Gemini API endpoint
-     * Using gemini-2.0-flash-exp to avoid thinking token issues
+     * Model configuration
+     * - DEFAULT: gemini-2.5-flash for audio/text (fast, good quality)
+     * - VIDEO: gemini-2.5-pro for video analysis (best vision quality)
      */
-    private $api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+    private const DEFAULT_MODEL = 'gemini-2.5-flash';
+    private const VIDEO_MODEL = 'gemini-2.5-pro';
+
+    /**
+     * Gemini API endpoint (default model for text/audio)
+     */
+    private $api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
     /**
      * Enable/disable detailed prompt logging
@@ -973,7 +980,8 @@ Gib deine Bewertung im folgenden JSON-Format zurück:
      * @return string|WP_Error Response or WP_Error
      */
     private function call_gemini_api_with_video($prompt, $video_uri, $api_key) {
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=' . $api_key;
+        // Use VIDEO_MODEL (gemini-2.5-pro) for best video/vision analysis
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . self::VIDEO_MODEL . ':generateContent?key=' . $api_key;
 
         $body = array(
             'contents' => array(
