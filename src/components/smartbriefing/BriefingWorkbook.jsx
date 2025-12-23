@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePartner } from '../../context/PartnerContext';
+import { useBranding } from '../../hooks/useBranding';
 import wordpressAPI from '../../services/wordpress-api';
 import { formatDateTime } from '../../utils/formatting';
 import { TEMPLATE_ICON_MAP, getIcon } from '../../utils/iconMaps';
@@ -242,7 +243,7 @@ const MarkdownContent = ({ content, primaryAccent }) => {
 /**
  * Item Card Component - Individual briefing item with note and delete
  */
-const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
+const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem, branding }) => {
   const [note, setNote] = useState(item.user_note || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -292,7 +293,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
       <div
         style={{
           padding: '12px 16px',
-          backgroundColor: '#f8fafc',
+          backgroundColor: branding.cardBgHover,
           borderRadius: '10px',
           marginBottom: '8px',
           display: 'flex',
@@ -301,7 +302,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
           opacity: 0.6,
         }}
       >
-        <span style={{ fontSize: '14px', color: '#94a3b8', fontStyle: 'italic' }}>
+        <span style={{ fontSize: '14px', color: branding.textMuted, fontStyle: 'italic' }}>
           <s>{item.label}</s> - gelöscht
         </span>
         <button
@@ -313,8 +314,8 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
             padding: '6px 10px',
             borderRadius: '6px',
             border: 'none',
-            backgroundColor: '#e2e8f0',
-            color: '#64748b',
+            backgroundColor: branding.borderColor,
+            color: branding.textMuted,
             fontSize: '12px',
             cursor: 'pointer',
           }}
@@ -329,9 +330,9 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
   return (
     <div
       style={{
-        backgroundColor: 'white',
+        backgroundColor: branding.cardBg,
         borderRadius: '12px',
-        border: '1px solid #e2e8f0',
+        border: `1px solid ${branding.borderColor}`,
         marginBottom: '10px',
         overflow: 'hidden',
       }}
@@ -361,7 +362,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               style={{
                 fontSize: '14px',
                 fontWeight: 600,
-                color: '#0f172a',
+                color: branding.textMain,
                 margin: 0,
               }}
             >
@@ -372,7 +373,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
             <p
               style={{
                 fontSize: '13px',
-                color: '#64748b',
+                color: branding.textMuted,
                 margin: '0 0 0 14px',
                 lineHeight: 1.5,
               }}
@@ -405,7 +406,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               borderRadius: '6px',
               border: 'none',
               backgroundColor: showNoteField ? `${primaryAccent}15` : 'transparent',
-              color: showNoteField ? primaryAccent : '#94a3b8',
+              color: showNoteField ? primaryAccent : branding.textMuted,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -422,7 +423,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               borderRadius: '6px',
               border: 'none',
               backgroundColor: 'transparent',
-              color: '#94a3b8',
+              color: branding.textMuted,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -439,8 +440,8 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
         <div
           style={{
             padding: '12px 16px',
-            backgroundColor: '#fafbfc',
-            borderTop: '1px solid #f1f5f9',
+            backgroundColor: branding.cardBgHover,
+            borderTop: `1px solid ${branding.borderColor}`,
           }}
         >
           <textarea
@@ -452,9 +453,9 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               minHeight: '60px',
               padding: '10px',
               borderRadius: '8px',
-              border: '1px solid #e2e8f0',
+              border: `1px solid ${branding.borderColor}`,
               fontSize: '13px',
-              color: '#374151',
+              color: branding.textSecondary,
               resize: 'vertical',
               outline: 'none',
               boxSizing: 'border-box',
@@ -464,7 +465,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               e.target.style.borderColor = primaryAccent;
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = '#e2e8f0';
+              e.target.style.borderColor = branding.borderColor;
             }}
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', gap: '8px' }}>
@@ -476,9 +477,9 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               style={{
                 padding: '6px 12px',
                 borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                backgroundColor: 'white',
-                color: '#64748b',
+                border: `1px solid ${branding.borderColor}`,
+                backgroundColor: branding.cardBg,
+                color: branding.textMuted,
                 fontSize: '12px',
                 cursor: 'pointer',
               }}
@@ -496,15 +497,15 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
                 borderRadius: '6px',
                 border: 'none',
                 backgroundColor: saveSuccess
-                  ? '#dcfce7'
+                  ? branding.successLight
                   : hasChanges
                     ? primaryAccent
-                    : '#f1f5f9',
+                    : branding.cardBgHover,
                 color: saveSuccess
-                  ? '#16a34a'
+                  ? branding.success
                   : hasChanges
                     ? 'white'
-                    : '#94a3b8',
+                    : branding.textMuted,
                 fontSize: '12px',
                 fontWeight: 500,
                 cursor: hasChanges && !isSaving ? 'pointer' : 'default',
@@ -533,7 +534,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
 /**
  * Section Card Component - Handles both item-based and legacy markdown content
  */
-const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isExpanded, onToggle }) => {
+const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isExpanded, onToggle, branding }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Handle generate more click
@@ -657,6 +658,7 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
                   sectionId={section.id}
                   primaryAccent={primaryAccent}
                   onUpdateItem={onUpdateItem}
+                  branding={branding}
                 />
               ))}
 
@@ -731,6 +733,7 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
                       sectionId={section.id}
                       primaryAccent={primaryAccent}
                       onUpdateItem={onUpdateItem}
+                      branding={branding}
                     />
                   ))}
                 </div>
@@ -772,6 +775,7 @@ const BriefingWorkbook = ({
   onBack,
 }) => {
   const { config } = usePartner();
+  const b = useBranding();
   const [briefing, setBriefing] = useState(initialBriefing);
   const [loading, setLoading] = useState(!initialBriefing?.sections);
   const [error, setError] = useState(null);
@@ -1088,6 +1092,7 @@ const BriefingWorkbook = ({
               onGenerateMore={handleGenerateMore}
               isExpanded={expandedSections[section.id]}
               onToggle={() => toggleSection(section.id)}
+              branding={b}
             />
           ))}
         </div>

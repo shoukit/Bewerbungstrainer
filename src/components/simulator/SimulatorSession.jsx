@@ -56,14 +56,14 @@ import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
 import FullscreenLoader from '@/components/ui/fullscreen-loader';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { useBranding } from '@/hooks/useBranding';
 
 // ProgressBar is imported from @/components/ui/progress-bar
 
 /**
  * Question Tips Accordion Component
  */
-const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
+const QuestionTips = ({ tips, primaryAccent, tipsLabel, branding }) => {
   const [isOpen, setIsOpen] = useState(true); // Default: aufgeklappt
 
   if (!tips || tips.length === 0) return null;
@@ -71,9 +71,9 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
   return (
     <div
       style={{
-        background: '#fff',
+        background: branding.cardBg,
         borderRadius: '16px',
-        border: '1px solid #e2e8f0',
+        border: `1px solid ${branding.borderColor}`,
         overflow: 'hidden',
       }}
     >
@@ -90,13 +90,13 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
           justifyContent: 'space-between',
         }}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
           <Lightbulb size={18} color={primaryAccent} />
           {tipsLabel || 'Tipps für diese Frage'}
         </span>
         <ChevronDown
           size={18}
-          color="#64748b"
+          color={branding.textMuted}
           style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
         />
       </button>
@@ -117,20 +117,20 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
                     gap: '12px',
                     padding: '12px 16px',
                     borderRadius: '10px',
-                    backgroundColor: COLORS.amber[100] + '60',
+                    backgroundColor: branding.warningLight,
                     marginBottom: index < tips.length - 1 ? '8px' : 0,
                   }}
                 >
                   <Lightbulb style={{
                     width: '16px',
                     height: '16px',
-                    color: COLORS.amber[500],
+                    color: branding.warning,
                     flexShrink: 0,
                     marginTop: '2px',
                   }} />
                   <p style={{
                     fontSize: '14px',
-                    color: COLORS.slate[700],
+                    color: branding.textSecondary,
                     margin: 0,
                     lineHeight: 1.5,
                   }}>
@@ -149,7 +149,7 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
 /**
  * Timer Component
  */
-const Timer = ({ seconds, maxSeconds, isRecording }) => {
+const Timer = ({ seconds, maxSeconds, isRecording, branding }) => {
 
   const progress = maxSeconds > 0 ? (seconds / maxSeconds) * 100 : 0;
   const isWarning = progress > 75;
@@ -162,22 +162,22 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
       gap: '12px',
       padding: '12px 16px',
       borderRadius: '12px',
-      backgroundColor: isDanger ? COLORS.red[100] : isWarning ? COLORS.amber[100] : COLORS.slate[100],
+      backgroundColor: isDanger ? branding.errorLight : isWarning ? branding.warningLight : branding.cardBgHover,
     }}>
       <Clock style={{
         width: '20px',
         height: '20px',
-        color: isDanger ? COLORS.red[500] : isWarning ? COLORS.amber[500] : COLORS.slate[600],
+        color: isDanger ? branding.error : isWarning ? branding.warning : branding.textSecondary,
       }} />
       <span style={{
         fontSize: '18px',
         fontWeight: 600,
         fontFamily: 'monospace',
-        color: isDanger ? COLORS.red[500] : isWarning ? COLORS.amber[500] : COLORS.slate[700],
+        color: isDanger ? branding.error : isWarning ? branding.warning : branding.textSecondary,
       }}>
         {formatDuration(seconds)}
       </span>
-      <span style={{ fontSize: '14px', color: COLORS.slate[500] }}>
+      <span style={{ fontSize: '14px', color: branding.textMuted }}>
         / {formatDuration(maxSeconds)}
       </span>
     </div>
@@ -187,7 +187,7 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
 /**
  * Audio Recorder Component - With Pause functionality
  */
-const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels, onOpenSettings }) => {
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels, onOpenSettings, branding }) => {
   const [recordingState, setRecordingState] = useState('idle'); // 'idle' | 'recording' | 'paused'
   const [seconds, setSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -371,10 +371,10 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
   if (permissionDenied) {
     return (
-      <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: COLORS.red[100], textAlign: 'center' }}>
-        <MicOff style={{ width: '48px', height: '48px', color: COLORS.red[500], marginBottom: '12px' }} />
-        <p style={{ color: COLORS.red[500], fontWeight: 600, margin: 0 }}>Mikrofonzugriff verweigert</p>
-        <p style={{ color: COLORS.slate[600], fontSize: '14px', marginTop: '8px' }}>
+      <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: branding.errorLight, textAlign: 'center' }}>
+        <MicOff style={{ width: '48px', height: '48px', color: branding.error, marginBottom: '12px' }} />
+        <p style={{ color: branding.error, fontWeight: 600, margin: 0 }}>Mikrofonzugriff verweigert</p>
+        <p style={{ color: branding.textSecondary, fontSize: '14px', marginTop: '8px' }}>
           Bitte erlaube den Zugriff auf dein Mikrofon in den Browser-Einstellungen.
         </p>
       </div>
@@ -382,10 +382,10 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   }
 
   return (
-    <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: 'white', border: `1px solid ${COLORS.slate[200]}` }}>
+    <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: branding.cardBg, border: `1px solid ${branding.borderColor}` }}>
       {/* Timer */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-        <Timer seconds={seconds} maxSeconds={timeLimit} isRecording={recordingState === 'recording'} />
+        <Timer seconds={seconds} maxSeconds={timeLimit} isRecording={recordingState === 'recording'} branding={branding} />
       </div>
 
       {/* Audio Level Visualization */}
@@ -403,7 +403,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
       {/* Paused State Indicator */}
       {recordingState === 'paused' && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', height: '60px', marginBottom: '24px', color: COLORS.amber[500] }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', height: '60px', marginBottom: '24px', color: branding.warning }}>
           <Mic size={24} />
           <span style={{ fontSize: '16px', fontWeight: 600 }}>Aufnahme pausiert</span>
         </div>
@@ -417,15 +417,15 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
           style={{
             padding: '14px',
             borderRadius: '12px',
-            background: '#f1f5f9',
-            border: '1px solid #e2e8f0',
+            background: branding.cardBgHover,
+            border: `1px solid ${branding.borderColor}`,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Settings size={20} color="#64748b" />
+          <Settings size={20} color={branding.textMuted} />
         </button>
 
         {/* Main Button - Start/Pause/Resume */}
@@ -436,10 +436,10 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
             padding: '14px 28px', borderRadius: '12px', border: 'none',
             background: recordingState === 'idle'
-              ? ((disabled || isSubmitting) ? COLORS.slate[300] : '#ef4444')
+              ? ((disabled || isSubmitting) ? branding.borderColor : branding.error)
               : recordingState === 'recording'
-                ? COLORS.amber[500]
-                : COLORS.green[500],
+                ? branding.warning
+                : branding.success,
             color: 'white', fontSize: '16px', fontWeight: 600,
             cursor: (disabled || isSubmitting) ? 'not-allowed' : 'pointer',
             boxShadow: (disabled || isSubmitting) ? 'none' : '0 4px 14px rgba(0, 0, 0, 0.2)',
@@ -457,11 +457,11 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               padding: '14px 24px', borderRadius: '12px', border: 'none',
-              backgroundColor: COLORS.slate[100], color: COLORS.slate[900],
+              backgroundColor: branding.cardBgHover, color: branding.textMain,
               fontSize: '16px', fontWeight: 600, cursor: 'pointer',
             }}
           >
-            <CheckCircle style={{ width: '18px', height: '18px', color: COLORS.green[500] }} />
+            <CheckCircle style={{ width: '18px', height: '18px', color: branding.success }} />
             {labels?.submitButton || 'Antwort abgeben'}
           </button>
         )}
@@ -469,7 +469,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
       {/* Recording Hint */}
       {recordingState === 'idle' && !isSubmitting && (
-        <p style={{ textAlign: 'center', marginTop: '16px', color: COLORS.slate[500], fontSize: '14px' }}>
+        <p style={{ textAlign: 'center', marginTop: '16px', color: branding.textMuted, fontSize: '14px' }}>
           {labels?.submitHint || 'Klicke auf den Button, um deine Antwort aufzunehmen'}
         </p>
       )}
@@ -478,7 +478,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
       {isSubmitting && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
           <Loader2 style={{ width: '32px', height: '32px', color: primaryAccent, animation: 'spin 1s linear infinite' }} />
-          <p style={{ marginTop: '12px', color: COLORS.slate[700], fontSize: '14px' }}>{labels?.analyzing || 'Antwort wird analysiert...'}</p>
+          <p style={{ marginTop: '12px', color: branding.textSecondary, fontSize: '14px' }}>{labels?.analyzing || 'Antwort wird analysiert...'}</p>
         </div>
       )}
 
@@ -495,7 +495,7 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
  * Shows preparation tips before starting the interview
  * Order: Microphone test, Start button, then Tips
  */
-const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selectedMicrophoneId, onMicrophoneChange, onMicrophoneTest, themedGradient, primaryAccent, primaryAccentLight, isLoading }) => {
+const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selectedMicrophoneId, onMicrophoneChange, onMicrophoneTest, themedGradient, primaryAccent, primaryAccentLight, isLoading, branding }) => {
   // Mode-based labels
   const isSimulation = scenario?.mode === 'SIMULATION';
   const questionsLabel = isSimulation ? 'Situationen' : 'Fragen';
@@ -587,7 +587,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
             marginBottom: '16px',
             border: 'none',
             background: 'transparent',
-            color: COLORS.slate[600],
+            color: branding.textSecondary,
             fontSize: '14px',
             cursor: 'pointer',
             borderRadius: '8px',
@@ -617,14 +617,14 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
             <h1 style={{
               fontSize: '28px',
               fontWeight: 700,
-              color: COLORS.slate[900],
+              color: branding.textMain,
               margin: 0,
             }}>
               Vorbereitung
             </h1>
             <p style={{
               fontSize: '16px',
-              color: COLORS.slate[600],
+              color: branding.textSecondary,
               margin: '4px 0 0 0',
             }}>
               {scenario.title}{questions.length > 0 ? ` • ${questions.length} ${questionsLabel}` : ''}
@@ -638,8 +638,8 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
         <div style={{
           padding: '20px 24px',
           borderRadius: '16px',
-          backgroundColor: 'white',
-          border: `1px solid ${COLORS.slate[200]}`,
+          backgroundColor: branding.cardBg,
+          border: `1px solid ${branding.borderColor}`,
           marginBottom: '24px',
         }}>
           <div style={{
@@ -663,7 +663,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
               <h3 style={{
                 fontSize: '16px',
                 fontWeight: 600,
-                color: COLORS.slate[900],
+                color: branding.textMain,
                 margin: '0 0 8px 0',
               }}>
                 Deine Aufgabe
@@ -671,7 +671,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
               <p style={{
                 fontSize: '15px',
                 lineHeight: '1.6',
-                color: COLORS.slate[700],
+                color: branding.textSecondary,
                 margin: 0,
                 whiteSpace: 'pre-wrap',
               }}>
@@ -703,10 +703,10 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
             {contextInfo.map((item, index) => (
               <div key={index}>
-                <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>
+                <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block' }}>
                   {item.label}
                 </span>
-                <span style={{ fontSize: '15px', fontWeight: 500, color: COLORS.slate[800] }}>
+                <span style={{ fontSize: '15px', fontWeight: 500, color: branding.textMain }}>
                   {item.value}
                 </span>
               </div>
@@ -719,8 +719,8 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
       <div style={{
         padding: '24px',
         borderRadius: '16px',
-        backgroundColor: 'white',
-        border: `1px solid ${COLORS.slate[200]}`,
+        backgroundColor: branding.cardBg,
+        border: `1px solid ${branding.borderColor}`,
         marginBottom: '24px',
       }}>
         <div style={{
@@ -733,7 +733,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
           <h2 style={{
             fontSize: '18px',
             fontWeight: 600,
-            color: COLORS.slate[900],
+            color: branding.textMain,
             margin: 0,
           }}>
             Mikrofon testen
@@ -755,7 +755,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
           padding: '18px 28px',
           borderRadius: '14px',
           border: 'none',
-          background: isLoading ? COLORS.slate[300] : themedGradient,
+          background: isLoading ? branding.borderColor : themedGradient,
           color: 'white',
           fontSize: '18px',
           fontWeight: 600,
@@ -777,8 +777,8 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
       <div style={{
         padding: '24px',
         borderRadius: '16px',
-        backgroundColor: 'white',
-        border: `1px solid ${COLORS.slate[200]}`,
+        backgroundColor: branding.cardBg,
+        border: `1px solid ${branding.borderColor}`,
         marginBottom: '24px',
       }}>
         <div style={{
@@ -787,11 +787,11 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
           gap: '10px',
           marginBottom: '20px',
         }}>
-          <Lightbulb style={{ width: '22px', height: '22px', color: COLORS.amber[500] }} />
+          <Lightbulb style={{ width: '22px', height: '22px', color: branding.warning }} />
           <h2 style={{
             fontSize: '18px',
             fontWeight: 600,
-            color: COLORS.slate[900],
+            color: branding.textMain,
             margin: 0,
           }}>
             Tipps für dein Gespräch
@@ -807,7 +807,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
                 gap: '16px',
                 padding: '16px',
                 borderRadius: '12px',
-                backgroundColor: COLORS.slate[50],
+                backgroundColor: branding.cardBgHover,
               }}
             >
               <div style={{
@@ -826,14 +826,14 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
                 <h4 style={{
                   fontSize: '15px',
                   fontWeight: 600,
-                  color: COLORS.slate[800],
+                  color: branding.textMain,
                   margin: '0 0 4px 0',
                 }}>
                   {tip.title}
                 </h4>
                 <p style={{
                   fontSize: '14px',
-                  color: COLORS.slate[600],
+                  color: branding.textSecondary,
                   margin: 0,
                   lineHeight: 1.5,
                 }}>
@@ -849,28 +849,28 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
       <div style={{
         padding: '16px 20px',
         borderRadius: '12px',
-        backgroundColor: COLORS.slate[100],
+        backgroundColor: branding.cardBgHover,
         display: 'flex',
         gap: '24px',
         flexWrap: 'wrap',
       }}>
         {questions.length > 0 && (
           <div>
-            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{questionsLabel}</span>
-            <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
+            <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block' }}>{questionsLabel}</span>
+            <span style={{ fontSize: '18px', fontWeight: 600, color: branding.textMain }}>
               {questions.length}
             </span>
           </div>
         )}
         <div>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>{timePerQuestionLabel}</span>
-          <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
+          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block' }}>{timePerQuestionLabel}</span>
+          <span style={{ fontSize: '18px', fontWeight: 600, color: branding.textMain }}>
             {Math.round((scenario.time_limit_per_question || 120) / 60)} Min
           </span>
         </div>
         <div>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Wiederholen</span>
-          <span style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>
+          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block' }}>Wiederholen</span>
+          <span style={{ fontSize: '18px', fontWeight: 600, color: branding.textMain }}>
             {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
           </span>
         </div>
@@ -981,6 +981,7 @@ const SimulatorSession = ({
   const [isConversationFinished, setIsConversationFinished] = useState(false);
 
   const { branding } = usePartner();
+  const b = useBranding();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const buttonGradient = branding?.['--button-gradient'] || headerGradient;
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -1248,6 +1249,7 @@ const SimulatorSession = ({
           primaryAccent={primaryAccent}
           primaryAccentLight={primaryAccentLight}
           isLoading={isCreatingSession}
+          branding={b}
         />
         <MicrophoneTestDialog
           isOpen={showMicrophoneTest}
@@ -1559,9 +1561,9 @@ const SimulatorSession = ({
               gap: '6px',
               padding: isMobile ? '10px 14px' : '12px 20px',
               borderRadius: '10px',
-              border: `2px solid ${COLORS.slate[300]}`,
-              backgroundColor: 'white',
-              color: isFirstQuestion ? COLORS.slate[400] : COLORS.slate[700],
+              border: `2px solid ${b.borderColor}`,
+              backgroundColor: b.cardBg,
+              color: isFirstQuestion ? b.textMuted : b.textSecondary,
               fontSize: isMobile ? '13px' : '14px',
               fontWeight: 600,
               cursor: isFirstQuestion ? 'not-allowed' : 'pointer',
@@ -1582,9 +1584,9 @@ const SimulatorSession = ({
               gap: '6px',
               padding: isMobile ? '10px 14px' : '12px 20px',
               borderRadius: '10px',
-              border: `2px solid ${COLORS.slate[300]}`,
-              backgroundColor: 'white',
-              color: isLastQuestion ? COLORS.slate[400] : COLORS.slate[700],
+              border: `2px solid ${b.borderColor}`,
+              backgroundColor: b.cardBg,
+              color: isLastQuestion ? b.textMuted : b.textSecondary,
               fontSize: isMobile ? '13px' : '14px',
               fontWeight: 600,
               cursor: isLastQuestion ? 'not-allowed' : 'pointer',
@@ -1624,9 +1626,9 @@ const SimulatorSession = ({
                   gap: '8px',
                   padding: '12px 20px',
                   borderRadius: '10px',
-                  border: `2px solid ${COLORS.slate[300]}`,
-                  backgroundColor: 'white',
-                  color: COLORS.slate[700],
+                  border: `2px solid ${b.borderColor}`,
+                  backgroundColor: b.cardBg,
+                  color: b.textSecondary,
                   fontSize: '14px',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -1651,7 +1653,7 @@ const SimulatorSession = ({
                 borderRadius: '10px',
                 border: 'none',
                 background: (isSimulation && isLoadingNextTurn && !isConversationFinished)
-                  ? COLORS.slate[400]
+                  ? b.textMuted
                   : buttonGradient,
                 color: 'white',
                 fontSize: '14px',
@@ -1795,6 +1797,7 @@ const SimulatorSession = ({
                 isSubmitting={isSubmitting}
                 labels={labels}
                 onOpenSettings={() => setShowDeviceSettings(true)}
+                branding={b}
               />
 
               {/* Error State - Mobile */}
@@ -1805,12 +1808,12 @@ const SimulatorSession = ({
                   alignItems: 'center',
                   padding: '16px',
                   borderRadius: '12px',
-                  backgroundColor: COLORS.red[100],
+                  backgroundColor: b.errorLight,
                 }}>
-                  <AlertCircle style={{ width: '24px', height: '24px', color: COLORS.red[500] }} />
+                  <AlertCircle style={{ width: '24px', height: '24px', color: b.error }} />
                   <p style={{
                     marginTop: '8px',
-                    color: COLORS.red[500],
+                    color: b.error,
                     fontWeight: 500,
                     fontSize: '14px',
                     textAlign: 'center',
@@ -1824,7 +1827,7 @@ const SimulatorSession = ({
                       padding: '8px 16px',
                       borderRadius: '8px',
                       border: 'none',
-                      backgroundColor: COLORS.red[500],
+                      backgroundColor: b.error,
                       color: 'white',
                       fontSize: '14px',
                       fontWeight: 500,
@@ -1851,6 +1854,7 @@ const SimulatorSession = ({
                   isSubmitting={isSubmitting}
                   labels={labels}
                   onOpenSettings={() => setShowDeviceSettings(true)}
+                  branding={b}
                 />
 
                 {/* Error State */}
@@ -1862,12 +1866,12 @@ const SimulatorSession = ({
                     padding: '20px',
                     marginTop: '16px',
                     borderRadius: '12px',
-                    backgroundColor: COLORS.red[100],
+                    backgroundColor: b.errorLight,
                   }}>
-                    <AlertCircle style={{ width: '24px', height: '24px', color: COLORS.red[500] }} />
+                    <AlertCircle style={{ width: '24px', height: '24px', color: b.error }} />
                     <p style={{
                       marginTop: '8px',
-                      color: COLORS.red[500],
+                      color: b.error,
                       fontWeight: 500,
                       fontSize: '14px',
                       textAlign: 'center',
@@ -1881,7 +1885,7 @@ const SimulatorSession = ({
                         padding: '8px 16px',
                         borderRadius: '8px',
                         border: 'none',
-                        backgroundColor: COLORS.red[500],
+                        backgroundColor: b.error,
                         color: 'white',
                         fontSize: '14px',
                         fontWeight: 500,
@@ -1949,7 +1953,7 @@ const SimulatorSession = ({
 
           {/* Full Width Tips Section */}
           {currentQuestion?.tips && currentQuestion.tips.length > 0 && (
-            <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} tipsLabel={labels.tipsLabel} />
+            <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} tipsLabel={labels.tipsLabel} branding={b} />
           )}
         </div>
       )}

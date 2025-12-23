@@ -23,21 +23,21 @@ import {
 import { formatDuration } from '@/utils/formatting';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Score Badge Component
  * Now displays scores on scale of 100 (converts from scale of 10)
  */
-const ScoreBadge = ({ score, label, size = 'normal', primaryAccent }) => {
+const ScoreBadge = ({ score, label, size = 'normal', primaryAccent, branding }) => {
   // Convert from scale of 10 to scale of 100
   const score100 = score != null ? score * 10 : null;
 
   const getScoreColor = (s) => {
-    if (s >= 80) return COLORS.green[500];
+    if (s >= 80) return branding.success;
     if (s >= 60) return primaryAccent;
-    if (s >= 40) return COLORS.amber[500];
-    return COLORS.red[500];
+    if (s >= 40) return branding.warning;
+    return branding.error;
   };
 
   const color = getScoreColor(score100);
@@ -70,7 +70,7 @@ const ScoreBadge = ({ score, label, size = 'normal', primaryAccent }) => {
       </div>
       <span style={{
         fontSize: isLarge ? '14px' : '12px',
-        color: COLORS.slate[600],
+        color: branding.textSecondary,
         fontWeight: 500,
       }}>
         {label}
@@ -82,14 +82,14 @@ const ScoreBadge = ({ score, label, size = 'normal', primaryAccent }) => {
 /**
  * Collapsible Section Component
  */
-const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true, primaryAccent }) => {
+const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true, primaryAccent, branding }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
     <div style={{
       borderRadius: '12px',
-      border: `1px solid ${COLORS.slate[200]}`,
-      backgroundColor: 'white',
+      border: `1px solid ${branding.borderColor}`,
+      backgroundColor: branding.cardBg,
       overflow: 'hidden',
       marginBottom: '16px',
     }}>
@@ -108,20 +108,20 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true, p
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
-          <span style={{ fontSize: '15px', fontWeight: 600, color: COLORS.slate[800] }}>
+          <span style={{ fontSize: '15px', fontWeight: 600, color: branding.textMain }}>
             {title}
           </span>
         </div>
         {isOpen ? (
-          <ChevronUp style={{ width: '20px', height: '20px', color: COLORS.slate[400] }} />
+          <ChevronUp style={{ width: '20px', height: '20px', color: branding.textMuted }} />
         ) : (
-          <ChevronDown style={{ width: '20px', height: '20px', color: COLORS.slate[400] }} />
+          <ChevronDown style={{ width: '20px', height: '20px', color: branding.textMuted }} />
         )}
       </button>
       {isOpen && (
         <div style={{
           padding: '0 20px 20px 20px',
-          borderTop: `1px solid ${COLORS.slate[100]}`,
+          borderTop: `1px solid ${branding.cardBgHover}`,
           paddingTop: '16px',
         }}>
           {children}
@@ -134,10 +134,10 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true, p
 /**
  * Feedback List Item
  */
-const FeedbackItem = ({ text, type, primaryAccent, primaryAccentLight }) => {
+const FeedbackItem = ({ text, type, primaryAccent, primaryAccentLight, branding }) => {
   const config = {
-    strength: { icon: ThumbsUp, color: COLORS.green[500], bg: COLORS.green[100] },
-    improvement: { icon: AlertTriangle, color: COLORS.amber[500], bg: COLORS.amber[100] },
+    strength: { icon: ThumbsUp, color: branding.success, bg: branding.successLight },
+    improvement: { icon: AlertTriangle, color: branding.warning, bg: branding.warningLight },
     tip: { icon: Lightbulb, color: primaryAccent, bg: primaryAccentLight },
   };
 
@@ -153,7 +153,7 @@ const FeedbackItem = ({ text, type, primaryAccent, primaryAccentLight }) => {
       marginBottom: '8px',
     }}>
       <Icon style={{ width: '18px', height: '18px', color, flexShrink: 0, marginTop: '2px' }} />
-      <span style={{ fontSize: '14px', color: COLORS.slate[700], lineHeight: 1.5 }}>
+      <span style={{ fontSize: '14px', color: branding.textSecondary, lineHeight: 1.5 }}>
         {text}
       </span>
     </div>
@@ -163,15 +163,15 @@ const FeedbackItem = ({ text, type, primaryAccent, primaryAccentLight }) => {
 /**
  * Audio Metrics Display
  */
-const AudioMetricsDisplay = ({ metrics }) => {
+const AudioMetricsDisplay = ({ metrics, branding }) => {
   if (!metrics) return null;
 
   const getSpeechRateLabel = (rate) => {
     switch (rate) {
-      case 'optimal': return { label: 'Optimal', color: COLORS.green[500] };
-      case 'zu_schnell': return { label: 'Zu schnell', color: COLORS.amber[500] };
-      case 'zu_langsam': return { label: 'Zu langsam', color: COLORS.amber[500] };
-      default: return { label: rate || 'N/A', color: COLORS.slate[500] };
+      case 'optimal': return { label: 'Optimal', color: branding.success };
+      case 'zu_schnell': return { label: 'Zu schnell', color: branding.warning };
+      case 'zu_langsam': return { label: 'Zu langsam', color: branding.warning };
+      default: return { label: rate || 'N/A', color: branding.textMuted };
     }
   };
 
@@ -179,10 +179,10 @@ const AudioMetricsDisplay = ({ metrics }) => {
 
   const getSeverityColor = (severity) => {
     switch (severity) {
-      case 'niedrig': return COLORS.green[500];
-      case 'mittel': return COLORS.amber[500];
-      case 'hoch': return COLORS.red[500];
-      default: return COLORS.slate[500];
+      case 'niedrig': return branding.success;
+      case 'mittel': return branding.warning;
+      case 'hoch': return branding.error;
+      default: return branding.textMuted;
     }
   };
 
@@ -192,9 +192,9 @@ const AudioMetricsDisplay = ({ metrics }) => {
       <div style={{
         padding: '16px',
         borderRadius: '10px',
-        backgroundColor: COLORS.slate[100],
+        backgroundColor: branding.cardBgHover,
       }}>
-        <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block', marginBottom: '4px' }}>
+        <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block', marginBottom: '4px' }}>
           Sprechtempo
         </span>
         <span style={{ fontSize: '16px', fontWeight: 600, color: speechRate.color }}>
@@ -207,9 +207,9 @@ const AudioMetricsDisplay = ({ metrics }) => {
         <div style={{
           padding: '16px',
           borderRadius: '10px',
-          backgroundColor: COLORS.slate[100],
+          backgroundColor: branding.cardBgHover,
         }}>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block', marginBottom: '4px' }}>
+          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block', marginBottom: '4px' }}>
             Füllwörter
           </span>
           <span style={{
@@ -232,27 +232,27 @@ const AudioMetricsDisplay = ({ metrics }) => {
         <div style={{
           padding: '16px',
           borderRadius: '10px',
-          backgroundColor: COLORS.slate[100],
+          backgroundColor: branding.cardBgHover,
         }}>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block', marginBottom: '4px' }}>
+          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block', marginBottom: '4px' }}>
             Selbstbewusstsein
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
               flex: 1,
               height: '8px',
-              backgroundColor: COLORS.slate[200],
+              backgroundColor: branding.borderColor,
               borderRadius: '4px',
               overflow: 'hidden',
             }}>
               <div style={{
                 width: `${metrics.confidence_score}%`,
                 height: '100%',
-                backgroundColor: metrics.confidence_score >= 70 ? COLORS.green[500] : COLORS.amber[500],
+                backgroundColor: metrics.confidence_score >= 70 ? branding.success : branding.warning,
                 borderRadius: '4px',
               }} />
             </div>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textSecondary }}>
               {metrics.confidence_score}%
             </span>
           </div>
@@ -264,27 +264,27 @@ const AudioMetricsDisplay = ({ metrics }) => {
         <div style={{
           padding: '16px',
           borderRadius: '10px',
-          backgroundColor: COLORS.slate[100],
+          backgroundColor: branding.cardBgHover,
         }}>
-          <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block', marginBottom: '4px' }}>
+          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block', marginBottom: '4px' }}>
             Klarheit
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
               flex: 1,
               height: '8px',
-              backgroundColor: COLORS.slate[200],
+              backgroundColor: branding.borderColor,
               borderRadius: '4px',
               overflow: 'hidden',
             }}>
               <div style={{
                 width: `${metrics.clarity_score}%`,
                 height: '100%',
-                backgroundColor: metrics.clarity_score >= 70 ? COLORS.green[500] : COLORS.amber[500],
+                backgroundColor: metrics.clarity_score >= 70 ? branding.success : branding.warning,
                 borderRadius: '4px',
               }} />
             </div>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textSecondary }}>
               {metrics.clarity_score}%
             </span>
           </div>
@@ -297,9 +297,9 @@ const AudioMetricsDisplay = ({ metrics }) => {
           gridColumn: '1 / -1',
           padding: '12px 16px',
           borderRadius: '10px',
-          backgroundColor: COLORS.purple[100],
+          backgroundColor: branding.primaryAccentLight,
           fontSize: '14px',
-          color: COLORS.slate[700],
+          color: branding.textSecondary,
           lineHeight: 1.5,
         }}>
           💡 {metrics.notes}
@@ -312,7 +312,7 @@ const AudioMetricsDisplay = ({ metrics }) => {
 /**
  * Compact Audio Player for feedback view
  */
-const CompactAudioPlayer = ({ audioUrl, primaryAccent }) => {
+const CompactAudioPlayer = ({ audioUrl, primaryAccent, branding }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -391,9 +391,9 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent }) => {
     return (
       <div style={{
         padding: '12px 16px',
-        background: COLORS.slate[100],
+        background: branding.cardBgHover,
         borderRadius: '10px',
-        color: COLORS.slate[500],
+        color: branding.textMuted,
         fontSize: '13px',
         display: 'flex',
         alignItems: 'center',
@@ -408,10 +408,10 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent }) => {
 
   return (
     <div style={{
-      background: 'white',
+      background: branding.cardBg,
       borderRadius: '12px',
       padding: '16px',
-      border: `1px solid ${COLORS.slate[200]}`,
+      border: `1px solid ${branding.borderColor}`,
     }}>
       {/* Header */}
       <div style={{
@@ -421,7 +421,7 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent }) => {
         marginBottom: '12px',
         fontSize: '13px',
         fontWeight: 600,
-        color: COLORS.slate[700],
+        color: branding.textSecondary,
       }}>
         <Volume2 size={16} color={primaryAccent} />
         Deine Aufnahme
@@ -432,7 +432,7 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent }) => {
         onClick={handleSeek}
         style={{
           height: '6px',
-          background: COLORS.slate[200],
+          background: branding.borderColor,
           borderRadius: '3px',
           cursor: 'pointer',
           marginBottom: '12px',
@@ -456,7 +456,7 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent }) => {
             border: 'none',
             cursor: 'pointer',
             padding: '6px',
-            color: COLORS.slate[500],
+            color: branding.textMuted,
             display: 'flex',
             alignItems: 'center',
           }}
@@ -497,7 +497,7 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent }) => {
             border: 'none',
             cursor: 'pointer',
             padding: '6px',
-            color: COLORS.slate[500],
+            color: branding.textMuted,
             display: 'flex',
             alignItems: 'center',
           }}
@@ -511,7 +511,7 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent }) => {
         textAlign: 'center',
         marginTop: '8px',
         fontSize: '12px',
-        color: COLORS.slate[500],
+        color: branding.textMuted,
       }}>
         {formatDuration(currentTime)} / {formatDuration(duration)}
       </div>
@@ -539,6 +539,7 @@ const ImmediateFeedback = ({
 }) => {
   // Partner theming
   const { branding } = usePartner();
+  const b = useBranding();
   const buttonGradient = branding?.['--button-gradient'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
@@ -548,7 +549,7 @@ const ImmediateFeedback = ({
 
   return (
     <div style={{
-      backgroundColor: COLORS.slate[100],
+      backgroundColor: b.cardBgHover,
       borderRadius: '16px',
       padding: '24px',
     }}>
@@ -559,7 +560,7 @@ const ImmediateFeedback = ({
         gap: '20px',
         marginBottom: '24px',
         padding: '20px',
-        backgroundColor: 'white',
+        backgroundColor: b.cardBg,
         borderRadius: '12px',
       }}>
         <ScoreBadge
@@ -567,19 +568,20 @@ const ImmediateFeedback = ({
           label="Gesamt"
           size="large"
           primaryAccent={primaryAccent}
+          branding={b}
         />
         <div style={{ flex: 1 }}>
           <h3 style={{
             fontSize: '16px',
             fontWeight: 600,
-            color: COLORS.slate[900],
+            color: b.textMain,
             margin: '0 0 8px 0',
           }}>
             Feedback zu deiner Antwort
           </h3>
           <p style={{
             fontSize: '14px',
-            color: COLORS.slate[600],
+            color: b.textSecondary,
             margin: 0,
             lineHeight: 1.5,
           }}>
@@ -596,23 +598,23 @@ const ImmediateFeedback = ({
           gap: '32px',
           padding: '16px',
           marginBottom: '16px',
-          backgroundColor: 'white',
+          backgroundColor: b.cardBg,
           borderRadius: '12px',
         }}>
-          <ScoreBadge score={parsedFeedback.scores.content} label="Inhalt" primaryAccent={primaryAccent} />
-          <ScoreBadge score={parsedFeedback.scores.structure} label="Struktur" primaryAccent={primaryAccent} />
-          <ScoreBadge score={parsedFeedback.scores.relevance} label="Relevanz" primaryAccent={primaryAccent} />
+          <ScoreBadge score={parsedFeedback.scores.content} label="Inhalt" primaryAccent={primaryAccent} branding={b} />
+          <ScoreBadge score={parsedFeedback.scores.structure} label="Struktur" primaryAccent={primaryAccent} branding={b} />
+          <ScoreBadge score={parsedFeedback.scores.relevance} label="Relevanz" primaryAccent={primaryAccent} branding={b} />
         </div>
       )}
 
       {/* Transcript */}
-      <CollapsibleSection title="Transkript" icon={MessageSquare} defaultOpen={true} primaryAccent={primaryAccent}>
+      <CollapsibleSection title="Transkript" icon={MessageSquare} defaultOpen={true} primaryAccent={primaryAccent} branding={b}>
         <div style={{
           padding: '16px',
           borderRadius: '10px',
-          backgroundColor: COLORS.slate[100],
+          backgroundColor: b.cardBgHover,
           fontStyle: 'italic',
-          color: COLORS.slate[700],
+          color: b.textSecondary,
           lineHeight: 1.6,
           fontSize: '14px',
         }}>
@@ -622,42 +624,42 @@ const ImmediateFeedback = ({
         {/* Audio Player - below transcript */}
         {audioUrl && (
           <div style={{ marginTop: '16px' }}>
-            <CompactAudioPlayer audioUrl={audioUrl} primaryAccent={primaryAccent} />
+            <CompactAudioPlayer audioUrl={audioUrl} primaryAccent={primaryAccent} branding={b} />
           </div>
         )}
       </CollapsibleSection>
 
       {/* Strengths */}
       {parsedFeedback?.strengths?.length > 0 && (
-        <CollapsibleSection title="Stärken" icon={ThumbsUp} defaultOpen={true} primaryAccent={primaryAccent}>
+        <CollapsibleSection title="Stärken" icon={ThumbsUp} defaultOpen={true} primaryAccent={primaryAccent} branding={b}>
           {parsedFeedback.strengths.map((strength, i) => (
-            <FeedbackItem key={i} text={strength} type="strength" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+            <FeedbackItem key={i} text={strength} type="strength" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} branding={b} />
           ))}
         </CollapsibleSection>
       )}
 
       {/* Improvements */}
       {parsedFeedback?.improvements?.length > 0 && (
-        <CollapsibleSection title="Verbesserungen" icon={AlertTriangle} defaultOpen={true} primaryAccent={primaryAccent}>
+        <CollapsibleSection title="Verbesserungen" icon={AlertTriangle} defaultOpen={true} primaryAccent={primaryAccent} branding={b}>
           {parsedFeedback.improvements.map((improvement, i) => (
-            <FeedbackItem key={i} text={improvement} type="improvement" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+            <FeedbackItem key={i} text={improvement} type="improvement" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} branding={b} />
           ))}
         </CollapsibleSection>
       )}
 
       {/* Tips */}
       {parsedFeedback?.tips?.length > 0 && (
-        <CollapsibleSection title="Tipps" icon={Lightbulb} defaultOpen={false} primaryAccent={primaryAccent}>
+        <CollapsibleSection title="Tipps" icon={Lightbulb} defaultOpen={false} primaryAccent={primaryAccent} branding={b}>
           {parsedFeedback.tips.map((tip, i) => (
-            <FeedbackItem key={i} text={tip} type="tip" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} />
+            <FeedbackItem key={i} text={tip} type="tip" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} branding={b} />
           ))}
         </CollapsibleSection>
       )}
 
       {/* Audio Metrics */}
       {audioMetrics && (
-        <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={false} primaryAccent={primaryAccent}>
-          <AudioMetricsDisplay metrics={audioMetrics} />
+        <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={false} primaryAccent={primaryAccent} branding={b}>
+          <AudioMetricsDisplay metrics={audioMetrics} branding={b} />
         </CollapsibleSection>
       )}
 
@@ -679,9 +681,9 @@ const ImmediateFeedback = ({
                 gap: '8px',
                 padding: '14px 24px',
                 borderRadius: '12px',
-                border: `2px solid ${COLORS.slate[300]}`,
-                backgroundColor: 'white',
-                color: COLORS.slate[700],
+                border: `2px solid ${b.borderColor}`,
+                backgroundColor: b.cardBg,
+                color: b.textSecondary,
                 fontSize: '15px',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -692,8 +694,8 @@ const ImmediateFeedback = ({
                 e.target.style.color = primaryAccent;
               }}
               onMouseLeave={(e) => {
-                e.target.style.borderColor = COLORS.slate[300];
-                e.target.style.color = COLORS.slate[700];
+                e.target.style.borderColor = b.borderColor;
+                e.target.style.color = b.textSecondary;
               }}
             >
               <RotateCcw style={{ width: '18px', height: '18px' }} />
