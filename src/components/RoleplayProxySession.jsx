@@ -657,6 +657,7 @@ const RoleplayProxySession = ({
           transcript: JSON.stringify(transcriptRef.current),
           feedback_json: analysis.feedbackContent,
           audio_analysis_json: analysis.audioAnalysisContent,
+          audio_url: audioUrl, // Include the saved audio URL
           duration: finalDuration,
           conversation_id: conversationIdRef.current,
           created_at: new Date().toISOString(),
