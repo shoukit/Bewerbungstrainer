@@ -9,53 +9,8 @@ import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
 import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
 import AudioVisualizer from '@/components/AudioVisualizer';
-
-/**
- * ProgressBar - Shows question progress
- */
-const ProgressBar = ({ current, total, primaryAccent }) => {
-  const percentage = ((current + 1) / total) * 100;
-
-  return (
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span style={{ fontSize: '14px', color: '#64748b' }}>
-          Frage {current + 1} von {total}
-        </span>
-        <span style={{ fontSize: '14px', fontWeight: 600, color: primaryAccent }}>
-          {Math.round(percentage)}%
-        </span>
-      </div>
-      <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.3 }}
-          style={{
-            height: '100%',
-            background: primaryAccent,
-            borderRadius: '4px',
-          }}
-        />
-      </div>
-      {/* Dots */}
-      <div style={{ display: 'flex', gap: '6px', marginTop: '12px', justifyContent: 'center' }}>
-        {Array.from({ length: total }).map((_, i) => (
-          <div
-            key={i}
-            style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: i < current ? '#22c55e' : i === current ? primaryAccent : '#e2e8f0',
-              transition: 'all 0.2s',
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
+import { formatDuration } from '@/utils/formatting';
+import ProgressBar from '@/components/ui/progress-bar';
 
 /**
  * QuestionTips - Collapsible tips for current question
@@ -431,12 +386,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     });
   };
 
-  // Format time
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Handle exit
   const handleExit = () => {
@@ -536,7 +485,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       </div>
 
       {/* Progress */}
-      <ProgressBar current={currentQuestionIndex} total={questions.length} primaryAccent={primaryAccent} />
+      <ProgressBar current={currentQuestionIndex} total={questions.length} primaryAccent={primaryAccent} showCompleted={false} />
 
       {/* Main Content - Mobile: stacked, Desktop: two columns */}
       {isMobile ? (
@@ -685,7 +634,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                     }}
                   />
                   <span style={{ color: '#fff', fontSize: '13px', fontWeight: 500 }}>
-                    {formatTime(recordingTime)}
+                    {formatDuration(recordingTime)}
                   </span>
                 </div>
               )}
@@ -706,7 +655,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                   }}
                 >
                   <Clock size={14} color="#fff" />
-                  <span style={{ color: '#fff', fontSize: '13px' }}>{formatTime(recordingTime)}</span>
+                  <span style={{ color: '#fff', fontSize: '13px' }}>{formatDuration(recordingTime)}</span>
                 </div>
               )}
             </div>
@@ -961,7 +910,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                   }}
                 />
                 <span style={{ color: '#fff', fontSize: '14px', fontWeight: 500 }}>
-                  {formatTime(recordingTime)}
+                  {formatDuration(recordingTime)}
                 </span>
               </div>
             )}
@@ -982,7 +931,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                 }}
               >
                 <Clock size={16} color="#fff" />
-                <span style={{ color: '#fff', fontSize: '14px' }}>{formatTime(recordingTime)}</span>
+                <span style={{ color: '#fff', fontSize: '14px' }}>{formatDuration(recordingTime)}</span>
               </div>
             )}
           </div>

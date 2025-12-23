@@ -8,7 +8,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, ChevronRight, CheckCircle2, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SCORE_THRESHOLDS, FILLER_WORD_THRESHOLDS, INTERACTIVE_STATES } from '@/config/constants';
+import { FILLER_WORD_THRESHOLDS, INTERACTIVE_STATES } from '@/config/constants';
+import { getScoreTextClass } from '@/config/colors';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FeedbackTip } from '@/components/ui/feedback-tip';
@@ -22,15 +23,7 @@ function getCountColor(count) {
   return 'text-red-500';
 }
 
-/**
- * Get color class for score
- */
-function getScoreColor(score) {
-  if (score >= SCORE_THRESHOLDS.EXCELLENT) return 'text-green-600';
-  if (score >= SCORE_THRESHOLDS.GOOD) return 'text-blue-600';
-  if (score >= SCORE_THRESHOLDS.FAIR) return 'text-amber-600';
-  return 'text-red-600';
-}
+// getScoreTextClass is imported from @/config/colors
 
 export function FillerWordCard({ fillerWordAnalysis, score, feedback, onJumpToTimestamp }) {
   const [expandedWord, setExpandedWord] = useState(null);
@@ -47,7 +40,7 @@ export function FillerWordCard({ fillerWordAnalysis, score, feedback, onJumpToTi
         <div className="flex items-center gap-2">
           <Badge variant="default">{totalCount}x gesamt</Badge>
           {score !== undefined && (
-            <span className={cn('text-sm font-bold', getScoreColor(score))}>{score}/100</span>
+            <span className={cn('text-sm font-bold', getScoreTextClass(score))}>{score}/100</span>
           )}
         </div>
       </CardHeader>

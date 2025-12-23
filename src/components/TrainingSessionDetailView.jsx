@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDuration } from '@/utils/formatting';
 import {
   ArrowLeft,
   Play,
@@ -37,7 +38,7 @@ import {
 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { COLORS, getScoreColor } from '@/config/colors';
 import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
@@ -59,13 +60,7 @@ const CATEGORY_ICONS = {
 // HELPER FUNCTIONS
 // =============================================================================
 
-const getScoreColor = (score, maxScore = 100, primaryAccent) => {
-  const percentage = maxScore === 10 ? score * 10 : score;
-  if (percentage >= 80) return COLORS.green[500];
-  if (percentage >= 60) return primaryAccent;
-  if (percentage >= 40) return COLORS.amber[500];
-  return COLORS.red[500];
-};
+// getScoreColor is imported from @/config/colors
 
 const getGradeLabel = (score, maxScore) => {
   const percentage = maxScore === 10 ? score * 10 : score;
@@ -93,7 +88,7 @@ const ScoreGauge = ({ score, size = 120, primaryAccent, isHeader = false }) => {
   const radius = (size - 12) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
-  const color = getScoreColor(score, 100, primaryAccent);
+  const color = getScoreColor(score, primaryAccent);
 
   return (
     <div style={{ position: 'relative', width: size, height: size }}>
@@ -213,15 +208,6 @@ const AudioPlayer = ({ audioUrl, primaryAccent, durationHint }) => {
     };
   }, [audioUrl, durationHint]);
 
-  const formatTime = (seconds) => {
-    // Handle invalid values
-    if (!seconds || !isFinite(seconds) || isNaN(seconds)) {
-      return '0:00';
-    }
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -296,7 +282,7 @@ const AudioPlayer = ({ audioUrl, primaryAccent, durationHint }) => {
       </div>
       {/* Time display */}
       <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '13px', color: COLORS.slate[500] }}>
-        {formatTime(currentTime)} / {formatTime(duration)}
+        {formatDuration(currentTime)} / {formatDuration(duration)}
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
@@ -353,11 +339,6 @@ const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
     };
   }, [sessionId, conversationId]);
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const togglePlay = () => { if (audioRef.current) isPlaying ? audioRef.current.pause() : audioRef.current.play(); };
   const toggleMute = () => { if (audioRef.current) { audioRef.current.muted = !isMuted; setIsMuted(!isMuted); } };
@@ -407,7 +388,7 @@ const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
         </button>
       </div>
       <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '13px', color: COLORS.slate[500] }}>
-        {formatTime(currentTime)} / {formatTime(duration)}
+        {formatDuration(currentTime)} / {formatDuration(duration)}
       </div>
     </div>
   );
@@ -468,7 +449,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
           </h4>
         </div>
         {answer.overall_score !== null && answer.overall_score !== undefined && (
-          <span style={{ fontSize: '16px', fontWeight: 700, color: isNoSpeech ? COLORS.slate[400] : getScoreColor(answer.overall_score * 10, 100, primaryAccent) }}>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: isNoSpeech ? COLORS.slate[400] : getScoreColor(answer.overall_score * 10, primaryAccent) }}>
             {isNoSpeech ? '–' : Math.round(answer.overall_score * 10)}
           </span>
         )}
@@ -538,7 +519,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                           <div style={{
                             fontSize: '16px',
                             fontWeight: 700,
-                            color: score != null ? getScoreColor(score, 100, primaryAccent) : COLORS.slate[400],
+                            color: score != null ? getScoreColor(score, primaryAccent) : COLORS.slate[400],
                           }}>
                             {score != null ? Math.round(score) : '-'}
                           </div>
@@ -631,7 +612,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                     {audioMetrics.confidence_score != null && (
                       <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
                         <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Selbstsicherheit</div>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.confidence_score, 100, primaryAccent) }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.confidence_score, primaryAccent) }}>
                           {audioMetrics.confidence_score}%
                         </div>
                       </div>
@@ -641,7 +622,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                     {audioMetrics.clarity_score != null && (
                       <div style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px' }}>
                         <div style={{ fontSize: '11px', color: COLORS.slate[500], marginBottom: '4px' }}>Klarheit</div>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.clarity_score, 100, primaryAccent) }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.clarity_score, primaryAccent) }}>
                           {audioMetrics.clarity_score}%
                         </div>
                       </div>
@@ -780,7 +761,7 @@ const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAc
 const CategoryScoreCard = ({ category, primaryAccent }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const IconComponent = CATEGORY_ICONS[category.category] || Star;
-  const color = getScoreColor(category.score, 100, primaryAccent);
+  const color = getScoreColor(category.score, primaryAccent);
 
   return (
     <div style={{ background: '#fff', borderRadius: '12px', border: `1px solid ${COLORS.slate[200]}`, overflow: 'hidden', marginBottom: '10px' }}>
@@ -1353,7 +1334,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                       const score100 = value != null ? value * 10 : null;
                       return (
                         <div key={key} style={{ padding: '12px', background: COLORS.slate[50], borderRadius: '10px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '20px', fontWeight: 700, color: getScoreColor(score100, 100, primaryAccent) }}>{score100 != null ? Math.round(score100) : '-'}</div>
+                          <div style={{ fontSize: '20px', fontWeight: 700, color: getScoreColor(score100, primaryAccent) }}>{score100 != null ? Math.round(score100) : '-'}</div>
                           <div style={{ fontSize: '11px', color: COLORS.slate[500], textTransform: 'capitalize' }}>{key}</div>
                         </div>
                       );
@@ -1397,9 +1378,9 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <div style={{ width: '80px', height: '6px', background: COLORS.slate[200], borderRadius: '3px' }}>
-                                <div style={{ width: `${score100}%`, height: '100%', background: getScoreColor(score100, 100, primaryAccent), borderRadius: '3px' }} />
+                                <div style={{ width: `${score100}%`, height: '100%', background: getScoreColor(score100, primaryAccent), borderRadius: '3px' }} />
                               </div>
-                              <span style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(score100, 100, primaryAccent), minWidth: '45px' }}>
+                              <span style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(score100, primaryAccent), minWidth: '45px' }}>
                                 {Math.round(score100)}
                               </span>
                             </div>

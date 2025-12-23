@@ -25,6 +25,7 @@ import {
   Info
 } from 'lucide-react';
 import AudioVisualizer from '../AudioVisualizer';
+import { formatDuration } from '@/utils/formatting';
 
 // Icon mapping for dynamic tips from database
 const iconMap = {
@@ -48,6 +49,7 @@ const iconMap = {
 import { motion, AnimatePresence } from 'framer-motion';
 import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
+import ProgressBar from '@/components/ui/progress-bar';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
@@ -56,68 +58,7 @@ import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
 
-/**
- * Progress Bar Component
- */
-const ProgressBar = ({ current, total, answeredQuestions, primaryAccent, labels }) => {
-  const percentage = ((current + 1) / total) * 100;
-  const questionLabel = labels?.questionFallback || 'Frage';
-
-  return (
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>
-          {labels?.questionCounter ? labels.questionCounter(current + 1, total) : `${questionLabel} ${current + 1} von ${total}`}
-        </span>
-        <span style={{ fontSize: '14px', color: COLORS.slate[500] }}>
-          {Math.round(percentage)}% abgeschlossen
-        </span>
-      </div>
-      <div style={{
-        height: '8px',
-        backgroundColor: COLORS.slate[200],
-        borderRadius: '4px',
-        overflow: 'hidden',
-        marginBottom: '12px',
-      }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.3 }}
-          style={{
-            height: '100%',
-            background: primaryAccent,
-            borderRadius: '4px',
-          }}
-        />
-      </div>
-      {/* Dots */}
-      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-        {Array.from({ length: total }, (_, i) => {
-          const isAnswered = answeredQuestions.includes(i);
-          const isCurrent = i === current;
-          return (
-            <div
-              key={i}
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                backgroundColor: isCurrent
-                  ? primaryAccent
-                  : isAnswered
-                    ? COLORS.green[500]
-                    : COLORS.slate[300],
-                transition: 'all 0.2s',
-              }}
-              title={`${questionLabel} ${i + 1}${isAnswered ? ' (beantwortet)' : ''}`}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+// ProgressBar is imported from @/components/ui/progress-bar
 
 /**
  * Question Tips Accordion Component
@@ -209,11 +150,6 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel }) => {
  * Timer Component
  */
 const Timer = ({ seconds, maxSeconds, isRecording }) => {
-  const formatTime = (s) => {
-    const mins = Math.floor(s / 60);
-    const secs = s % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const progress = maxSeconds > 0 ? (seconds / maxSeconds) * 100 : 0;
   const isWarning = progress > 75;
@@ -239,10 +175,10 @@ const Timer = ({ seconds, maxSeconds, isRecording }) => {
         fontFamily: 'monospace',
         color: isDanger ? COLORS.red[500] : isWarning ? COLORS.amber[500] : COLORS.slate[700],
       }}>
-        {formatTime(seconds)}
+        {formatDuration(seconds)}
       </span>
       <span style={{ fontSize: '14px', color: COLORS.slate[500] }}>
-        / {formatTime(maxSeconds)}
+        / {formatDuration(maxSeconds)}
       </span>
     </div>
   );

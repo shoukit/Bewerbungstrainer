@@ -11,6 +11,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useMobile } from '@/hooks/useMobile';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDuration } from '@/utils/formatting';
 import {
   Mic,
   MicOff,
@@ -137,11 +138,6 @@ const RoleplayProxySession = ({
     };
   }, []);
 
-  const formatDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   /**
    * Start the conversation

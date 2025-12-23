@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from './ui/button';
 import { CheckCircle, TrendingUp, Lightbulb, Star, Award, Home, RotateCcw } from 'lucide-react';
+import { getScoreTextClass } from '@/config/colors';
 
 /**
  * VideoFeedback Component
@@ -25,14 +26,7 @@ function VideoFeedback({ analysis, trainingData, onStartNew, onGoHome }) {
 
   const { overall_score, categories, staerken_und_positive_ueberraschungen, kurzfeedback_fuer_user } = analysis;
 
-  /**
-   * Get color based on score
-   */
-  const getScoreColor = (score) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
+  // Use centralized getScoreTextClass from @/config/colors
 
   /**
    * Get background color based on score
@@ -83,7 +77,7 @@ function VideoFeedback({ analysis, trainingData, onStartNew, onGoHome }) {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`font-bold ${isLarge ? 'text-4xl' : 'text-2xl'} ${getScoreColor(score)}`}>
+          <span className={`font-bold ${isLarge ? 'text-4xl' : 'text-2xl'} ${getScoreTextClass(score)}`}>
             {Math.round(score)}
           </span>
         </div>

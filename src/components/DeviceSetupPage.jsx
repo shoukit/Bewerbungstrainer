@@ -18,6 +18,7 @@ import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
+import { formatDuration } from '@/utils/formatting';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 import AudioVisualizer from '@/components/AudioVisualizer';
 
@@ -399,11 +400,6 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
     clearRecording();
   }, [deviceId]);
 
-  const formatDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   return (
     <div style={{

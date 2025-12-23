@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Video, Circle, ChevronLeft, ChevronRight, Check, Loader2, Upload } from 'lucide-react';
+import { formatDuration } from '@/utils/formatting';
 
 /**
  * VideoRecorder Component
@@ -266,14 +267,6 @@ function VideoRecorder({ questions, cameraStream, trainingData, onComplete, onCa
     }
   };
 
-  /**
-   * Format time as MM:SS
-   */
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   /**
    * Handle interview complete
@@ -303,7 +296,7 @@ function VideoRecorder({ questions, cameraStream, trainingData, onComplete, onCa
               <span className="text-red-600 font-semibold">REC</span>
             </div>
             <span className="text-2xl font-mono font-bold text-gray-800">
-              {formatTime(recordingTime)}
+              {formatDuration(recordingTime)}
             </span>
           </div>
         )}

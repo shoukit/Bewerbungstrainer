@@ -10,16 +10,7 @@ import { Calendar, Clock, Star } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
-
-/**
- * Format seconds to M:SS
- */
-function formatDuration(seconds) {
-  if (!seconds || !isFinite(seconds)) return '0:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
+import { formatDuration } from '@/utils/formatting';
 
 /**
  * Format date to German locale

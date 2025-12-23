@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { COLORS, getScoreColor } from '@/config/colors';
 
 /**
  * Score Badge for Summary
@@ -21,14 +21,8 @@ const SummaryScore = ({ score, label, primaryAccent }) => {
   // Convert from scale of 10 to scale of 100
   const score100 = score != null ? score * 10 : null;
 
-  const getScoreColor = (s) => {
-    if (s >= 80) return COLORS.green[500];
-    if (s >= 60) return primaryAccent;
-    if (s >= 40) return COLORS.amber[500];
-    return '#ef4444';
-  };
-
-  const color = getScoreColor(score100);
+  // Use centralized getScoreColor from @/config/colors
+  const color = getScoreColor(score100, primaryAccent);
 
   return (
     <div style={{
