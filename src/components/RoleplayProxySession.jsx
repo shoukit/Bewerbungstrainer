@@ -68,6 +68,34 @@ const RoleplayProxySession = ({
     return { headerGradient, headerText, primaryAccent };
   }, [branding]);
 
+  // Helper function to clean HTML from WordPress content for ElevenLabs prompts
+  const cleanHtmlForPrompt = (text) => {
+    if (!text) return text;
+
+    // First, convert block elements to newlines to preserve paragraph structure
+    let cleaned = text
+      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')  // </p><p> -> double newline
+      .replace(/<br\s*\/?>/gi, '\n')           // <br> -> single newline
+      .replace(/<\/?(p|div|h[1-6])[^>]*>/gi, '\n')  // Other block elements -> newline
+      .replace(/<li[^>]*>/gi, '\n- ')          // List items -> bullet points
+      .replace(/<\/li>/gi, '');                // Remove closing li tags
+
+    // Create a temporary DOM element to decode HTML entities and strip remaining tags
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = cleaned;
+    cleaned = tempDiv.textContent || tempDiv.innerText || '';
+
+    // Clean up whitespace
+    cleaned = cleaned
+      .replace(/[ \t]+/g, ' ')           // Multiple spaces/tabs -> single space
+      .replace(/\n /g, '\n')             // Remove leading spaces after newlines
+      .replace(/ \n/g, '\n')             // Remove trailing spaces before newlines
+      .replace(/\n{3,}/g, '\n\n')        // Max 2 consecutive newlines
+      .trim();
+
+    return cleaned;
+  };
+
   // Session state
   const [sessionId, setSessionId] = useState(null);
   const [status, setStatus] = useState('disconnected'); // disconnected, connecting, connected
@@ -264,7 +292,7 @@ const RoleplayProxySession = ({
             conversation_config_override: {
               agent: {
                 prompt: {
-                  prompt: scenario?.content || '',
+                  prompt: cleanHtmlForPrompt(scenario?.content || ''),
                 },
                 first_message: scenario?.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
               },
