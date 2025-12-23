@@ -859,9 +859,22 @@ const CoachingContent = ({ feedback, audioAnalysis, primaryAccent, branding }) =
 
 /**
  * Analysen Tab Content
+ *
+ * Handles both the new audio_metrics format and legacy format
  */
 const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimestamp }) => {
-  if (!audioAnalysis) {
+  // Extract audio_metrics from the data (new format has it nested)
+  const metrics = audioAnalysis?.audio_metrics || audioAnalysis;
+
+  // Check if we have any valid data
+  const hasData = metrics && (
+    metrics.confidence_score !== undefined ||
+    metrics.speech_cleanliness ||
+    metrics.pacing ||
+    metrics.tonality
+  );
+
+  if (!audioAnalysis || !hasData) {
     return (
       <div style={{
         background: '#fff',
@@ -876,10 +889,36 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
     );
   }
 
+  // Extract data from the correct structure
+  const confidenceScore = metrics.confidence_score;
+  const speechCleanliness = metrics.speech_cleanliness;
+  const pacing = metrics.pacing;
+  const tonality = metrics.tonality;
+
+  // Extract filler words from speech_cleanliness
+  const fillerCount = speechCleanliness?.total_filler_count || 0;
+  const fillerWordAnalysis = speechCleanliness?.filler_word_analysis || [];
+  const fillerExamples = fillerWordAnalysis.map(item => item.word);
+  const fillerFeedback = speechCleanliness?.feedback;
+
+  // Get tonality rating label
+  const getTonalityLabel = (rating) => {
+    if (rating === 'lebendig') return 'Lebendig';
+    if (rating === 'natürlich') return 'Natürlich';
+    return 'Monoton';
+  };
+
+  // Get tonality variance for waveform
+  const getTonalityVariance = (rating) => {
+    if (rating === 'lebendig') return { base: 20, variance: 30 };
+    if (rating === 'natürlich') return { base: 25, variance: 20 };
+    return { base: 35, variance: 8 };
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Confidence Gauge */}
-      {audioAnalysis.confidence?.rating !== undefined && (
+      {confidenceScore !== undefined && (
         <div style={{
           background: '#fff',
           borderRadius: '16px',
@@ -896,7 +935,7 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
           {/* Semicircle Gauge */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
             {(() => {
-              const score = audioAnalysis.confidence.rating * 10;
+              const score = confidenceScore; // Already 0-100
               const colorScheme = getConfidenceColorScheme(score);
               const size = 140;
               const radius = size / 2 - 12;
@@ -948,7 +987,7 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
                         transition={{ delay: 0.5 }}
                         style={{ fontSize: '32px', fontWeight: 700, color: colorScheme.color }}
                       >
-                        {score}
+                        {Math.round(score)}
                       </motion.span>
                       <span style={{ fontSize: '11px', color: branding.textMuted }}>/ 100</span>
                     </div>
@@ -964,16 +1003,16 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
             })()}
           </div>
 
-          {audioAnalysis.confidence.feedback && (
+          {metrics.summary_text && (
             <p style={{ fontSize: '13px', lineHeight: 1.6, color: branding.textSecondary, textAlign: 'center' }}>
-              {audioAnalysis.confidence.feedback}
+              {metrics.summary_text}
             </p>
           )}
         </div>
       )}
 
       {/* Filler Words */}
-      {audioAnalysis.fillerWords && (
+      {speechCleanliness && (
         <div style={{
           background: '#fff',
           borderRadius: '16px',
@@ -987,23 +1026,21 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
                 Füllwörter
               </span>
             </div>
-            {audioAnalysis.fillerWords.count !== undefined && (
-              <span style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                padding: '4px 10px',
-                borderRadius: '20px',
-                background: audioAnalysis.fillerWords.count <= 2 ? '#dcfce7' : audioAnalysis.fillerWords.count <= 5 ? '#fef3c7' : '#fee2e2',
-                color: audioAnalysis.fillerWords.count <= 2 ? '#166534' : audioAnalysis.fillerWords.count <= 5 ? '#92400e' : '#991b1b',
-              }}>
-                {audioAnalysis.fillerWords.count}x gesamt
-              </span>
-            )}
+            <span style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              padding: '4px 10px',
+              borderRadius: '20px',
+              background: fillerCount <= 2 ? '#dcfce7' : fillerCount <= 5 ? '#fef3c7' : '#fee2e2',
+              color: fillerCount <= 2 ? '#166534' : fillerCount <= 5 ? '#92400e' : '#991b1b',
+            }}>
+              {fillerCount}x gesamt
+            </span>
           </div>
 
-          {audioAnalysis.fillerWords.examples?.length > 0 ? (
+          {fillerWordAnalysis.length > 0 ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-              {audioAnalysis.fillerWords.examples.map((word, idx) => (
+              {fillerWordAnalysis.map((item, idx) => (
                 <span
                   key={idx}
                   style={{
@@ -1015,7 +1052,7 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
                     fontWeight: 500,
                   }}
                 >
-                  "{word}"
+                  "{item.word}" ({item.count}x)
                 </span>
               ))}
             </div>
@@ -1026,16 +1063,16 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
             </div>
           )}
 
-          {audioAnalysis.fillerWords.feedback && (
+          {fillerFeedback && (
             <p style={{ fontSize: '13px', lineHeight: 1.6, color: branding.textSecondary, marginTop: '12px' }}>
-              {audioAnalysis.fillerWords.feedback}
+              {fillerFeedback}
             </p>
           )}
         </div>
       )}
 
       {/* Pacing */}
-      {audioAnalysis.pace && (
+      {pacing && (
         <div style={{
           background: '#fff',
           borderRadius: '16px',
@@ -1049,7 +1086,7 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
                 Sprechtempo
               </span>
             </div>
-            {audioAnalysis.pace.wordsPerMinute && (
+            {pacing.estimated_wpm && (
               <span style={{
                 fontSize: '12px',
                 fontFamily: 'monospace',
@@ -1058,7 +1095,7 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
                 background: branding.cardBgHover,
                 color: branding.textSecondary,
               }}>
-                ~{audioAnalysis.pace.wordsPerMinute} WPM
+                ~{pacing.estimated_wpm} WPM
               </span>
             )}
           </div>
@@ -1088,7 +1125,7 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
             }} />
             <motion.div
               initial={{ left: '50%' }}
-              animate={{ left: `${getPacingPosition(audioAnalysis.pace.rating)}%` }}
+              animate={{ left: `${getPacingPosition(pacing.rating)}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
               style={{
                 position: 'absolute',
@@ -1096,7 +1133,7 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
                 width: '16px',
                 height: '16px',
                 borderRadius: '50%',
-                background: audioAnalysis.pace.rating === 'optimal' ? '#22c55e' : '#f59e0b',
+                background: pacing.rating === 'optimal' ? '#22c55e' : '#f59e0b',
                 border: '2px solid #fff',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                 transform: 'translate(-50%, -50%)',
@@ -1118,16 +1155,16 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
             </div>
           </div>
 
-          {audioAnalysis.pace.feedback && (
+          {pacing.feedback && (
             <p style={{ fontSize: '13px', lineHeight: 1.6, color: branding.textSecondary, marginTop: '16px' }}>
-              {audioAnalysis.pace.feedback}
+              {pacing.feedback}
             </p>
           )}
         </div>
       )}
 
       {/* Tonality */}
-      {audioAnalysis.tonalModulation && (
+      {tonality && (
         <div style={{
           background: '#fff',
           borderRadius: '16px',
@@ -1149,17 +1186,15 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
               background: '#f0fdfa',
               color: '#0d9488',
             }}>
-              {audioAnalysis.tonalModulation.rating >= 8 ? 'Natürlich' :
-               audioAnalysis.tonalModulation.rating >= 5 ? 'Ausbaufähig' : 'Monoton'}
+              {getTonalityLabel(tonality.rating)}
             </span>
           </div>
 
           {/* Simple Waveform */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', height: '48px', marginBottom: '12px' }}>
             {Array.from({ length: 30 }).map((_, i) => {
-              const baseHeight = audioAnalysis.tonalModulation.rating >= 7 ? 25 : 35;
-              const variance = audioAnalysis.tonalModulation.rating >= 7 ? 25 : 10;
-              const height = baseHeight + Math.sin(i * 0.5) * variance + (Math.sin(i * 12.9898) % 1) * (variance / 2);
+              const { base, variance } = getTonalityVariance(tonality.rating);
+              const height = base + Math.sin(i * 0.5) * variance + (Math.sin(i * 12.9898) % 1) * (variance / 2);
               return (
                 <motion.div
                   key={i}
@@ -1172,9 +1207,54 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
             })}
           </div>
 
-          {audioAnalysis.tonalModulation.feedback && (
+          {/* Highlights with timestamps */}
+          {tonality.highlights?.length > 0 && (
+            <div style={{ marginBottom: '12px' }}>
+              {tonality.highlights.map((highlight, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onJumpToTimestamp?.(highlight.timestamp)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    marginBottom: '6px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: highlight.type === 'positive' ? '#f0fdf4' : '#fef2f2',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <span style={{
+                    fontSize: '11px',
+                    fontFamily: 'monospace',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: highlight.type === 'positive' ? '#dcfce7' : '#fee2e2',
+                    color: highlight.type === 'positive' ? '#166534' : '#991b1b',
+                  }}>
+                    {highlight.timestamp}
+                  </span>
+                  {highlight.type === 'positive' ? (
+                    <CheckCircle2 size={14} color="#22c55e" />
+                  ) : (
+                    <AlertTriangle size={14} color="#ef4444" />
+                  )}
+                  <span style={{ fontSize: '12px', color: branding.textSecondary, flex: 1 }}>
+                    {highlight.note}
+                  </span>
+                  <Play size={12} color={branding.textMuted} />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {tonality.feedback && (
             <p style={{ fontSize: '13px', lineHeight: 1.6, color: branding.textSecondary }}>
-              {audioAnalysis.tonalModulation.feedback}
+              {tonality.feedback}
             </p>
           )}
         </div>
