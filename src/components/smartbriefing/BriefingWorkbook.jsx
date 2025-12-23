@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
+  Lightbulb,
 } from 'lucide-react';
 
 /**
