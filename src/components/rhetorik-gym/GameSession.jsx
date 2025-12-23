@@ -30,7 +30,6 @@ import { getScoreFeedback } from '@/config/prompts/gamePrompts';
 import wordpressAPI from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
 import { useBranding } from '@/hooks/useBranding';
 
 // Game states
@@ -284,8 +283,8 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
         {/* Filler Count */}
         <div style={{
           backgroundColor: branding.cardBg,
-          borderRadius: '12px',
-          padding: '14px',
+          borderRadius: branding.radius.lg,
+          padding: branding.space[3.5],
           border: `1px solid ${branding.borderColor}`,
         }}>
           <div style={{

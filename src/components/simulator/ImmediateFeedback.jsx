@@ -205,15 +205,15 @@ const AudioMetricsDisplay = ({ metrics, branding }) => {
       {/* Filler Words */}
       {metrics.filler_words && (
         <div style={{
-          padding: '16px',
-          borderRadius: '10px',
+          padding: branding.space[4],
+          borderRadius: branding.radius.md,
           backgroundColor: branding.cardBgHover,
         }}>
-          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block', marginBottom: '4px' }}>
+          <span style={{ fontSize: branding.fontSize.xs, color: branding.textMuted, display: 'block', marginBottom: branding.space[1] }}>
             Füllwörter
           </span>
           <span style={{
-            fontSize: '16px',
+            fontSize: branding.fontSize.lg,
             fontWeight: 600,
             color: getSeverityColor(metrics.filler_words.severity),
           }}>
@@ -550,8 +550,8 @@ const ImmediateFeedback = ({
   return (
     <div style={{
       backgroundColor: b.cardBgHover,
-      borderRadius: '16px',
-      padding: '24px',
+      borderRadius: b.radius.xl,
+      padding: b.space[6],
     }}>
       {/* Summary Header */}
       <div style={{
@@ -559,9 +559,9 @@ const ImmediateFeedback = ({
         alignItems: 'flex-start',
         gap: '20px',
         marginBottom: '24px',
-        padding: '20px',
+        padding: b.space[5],
         backgroundColor: b.cardBg,
-        borderRadius: '12px',
+        borderRadius: b.radius.lg,
       }}>
         <ScoreBadge
           score={parsedFeedback?.scores?.overall}

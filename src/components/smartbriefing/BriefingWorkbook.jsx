@@ -647,7 +647,7 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div style={{ padding: '16px 20px' }}>
+        <div style={{ padding: `${branding.space[4]} ${branding.space[5]}` }}>
           {type === 'items' ? (
             <>
               {/* Items list */}
@@ -928,13 +928,13 @@ const BriefingWorkbook = ({
           boxShadow: b.shadow.xs,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: b.space[4] }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[4], flex: 1 }}>
             <div
               style={{
                 width: '56px',
                 height: '56px',
-                borderRadius: '12px',
+                borderRadius: b.radius.lg,
                 background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}25)`,
                 display: 'flex',
                 alignItems: 'center',
