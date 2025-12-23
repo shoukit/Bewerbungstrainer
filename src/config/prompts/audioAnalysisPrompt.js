@@ -13,6 +13,7 @@
  */
 
 import { getFillerWordsWithContext } from './fillerWords';
+import { getAntiHallucinationRules } from './transcriptionCore';
 
 /**
  * Get the audio analysis prompt
@@ -70,11 +71,7 @@ Deine Aufgabe: Analysiere die paraverbale Kommunikation im Audio.
 
 Paraverbal = WIE etwas gesagt wird (nicht WAS gesagt wird).
 
-ABSOLUTE REGEL - KEINE HALLUZINATION:
-- Bei Stille, Rauschen, oder unverständlichem Audio: Gib 0 Punkte und "keine Sprache erkannt" zurück
-- ERFINDE NIEMALS Inhalte oder Analysen für Audio das keine klare Sprache enthält
-- Wenn du unsicher bist ob jemand spricht: Gib niedrige Scores und weise darauf hin
-- Analysiere NUR was du TATSÄCHLICH hören kannst
+${getAntiHallucinationRules()}
 ${voiceSeparationBlock}
 ${transcriptBlock}
 ═══════════════════════════════════════════════════════════

@@ -6,6 +6,7 @@
  */
 
 import { getFillerWordsWithContext } from './fillerWords';
+import { getAntiHallucinationRules, NO_SPEECH_DETECTED } from './transcriptionCore';
 
 /**
  * Random topics for "Zufalls-Thema" game mode
@@ -67,12 +68,7 @@ export function getRhetoricGamePrompt(topic = 'Elevator Pitch', durationSeconds 
 
 THEMA: "${topic}"
 
-ABSOLUTE REGEL - KEINE HALLUZINATION:
-Du DARFST NUR transkribieren, was TATSÄCHLICH in der Audio-Datei gesprochen wird.
-- Bei Stille, Rauschen, oder unverständlichem Audio: transcript = "[Keine Sprache erkannt]"
-- Bei nur 1-2 Sekunden Audio ohne klare Sprache: transcript = "[Keine Sprache erkannt]"
-- ERFINDE NIEMALS Wörter, Sätze oder Inhalte!
-- Wenn du unsicher bist, ob etwas gesagt wurde: NICHT transkribieren!
+${getAntiHallucinationRules()}
 
 DEINE AUFGABE (NUR bei klar erkennbarer Sprache):
 1. TRANSKRIBIEREN: Schreibe WÖRTLICH was gesprochen wird - nichts hinzufügen
@@ -88,7 +84,7 @@ INHALTSBEWERTUNG (content_score):
 
 OUTPUT - NUR valides JSON:
 {
-  "transcript": "[Keine Sprache erkannt]",
+  "transcript": "${NO_SPEECH_DETECTED}",
   "filler_words": [],
   "content_score": 0,
   "content_feedback": "Keine Sprache erkannt."

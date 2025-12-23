@@ -29,9 +29,10 @@ import { analyzeRhetoricGame } from '@/services/gemini';
 import { getScoreFeedback } from '@/config/prompts/gamePrompts';
 import wordpressAPI from '@/services/wordpress-api';
 import { validateAudioBlob } from '@/utils/audio';
-
-// Minimum audio size to consider as valid speech (5KB - anything smaller is likely silence/noise)
-const MIN_AUDIO_SIZE_BYTES = 5000;
+import {
+  MIN_AUDIO_SIZE_BYTES,
+  getEmptyTranscriptResult,
+} from '@/config/prompts/transcriptionCore';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { useBranding } from '@/hooks/useBranding';
@@ -710,15 +711,13 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
       const validation = validateAudioBlob(audioBlob, { minSize: MIN_AUDIO_SIZE_BYTES });
       if (!validation.valid) {
         console.warn('[GameSession] Audio validation failed:', validation.error, 'Size:', audioBlob.size);
-        // Return empty result instead of sending to AI (prevents hallucination)
+        // Return centralized empty result instead of sending to AI (prevents hallucination)
         const emptyResult = {
+          ...getEmptyTranscriptResult('game'),
           score: 0,
           word_count: 0,
           filler_count: 0,
           words_per_minute: 0,
-          transcript: '[Keine Sprache erkannt - bitte sprechen Sie während der Aufnahme]',
-          filler_words: [],
-          content_feedback: 'Es wurde keine Sprache erkannt. Bitte stellen Sie sicher, dass Ihr Mikrofon funktioniert und Sie während der Aufnahme sprechen.',
           duration_seconds: actualDurationSeconds,
         };
         setResult(emptyResult);
