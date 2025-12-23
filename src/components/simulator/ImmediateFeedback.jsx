@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronRight,
   RotateCcw,
@@ -11,8 +11,16 @@ import {
   ChevronDown,
   ChevronUp,
   Trophy,
-  Check
+  Check,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Loader2,
+  Volume2,
+  AlertCircle,
 } from 'lucide-react';
+import { formatDuration } from '@/utils/formatting';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
@@ -302,6 +310,218 @@ const AudioMetricsDisplay = ({ metrics }) => {
 };
 
 /**
+ * Compact Audio Player for feedback view
+ */
+const CompactAudioPlayer = ({ audioUrl, primaryAccent }) => {
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!audioUrl) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    const audio = new Audio();
+    audioRef.current = audio;
+
+    const handleLoadedMetadata = () => {
+      const dur = audio.duration;
+      if (dur && isFinite(dur) && dur > 0) {
+        setDuration(dur);
+      }
+      setIsLoading(false);
+    };
+
+    const handleCanPlayThrough = () => {
+      setIsLoading(false);
+      const dur = audio.duration;
+      if (dur && isFinite(dur) && dur > 0) {
+        setDuration(dur);
+      }
+    };
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
+    audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
+    audio.addEventListener('play', () => setIsPlaying(true));
+    audio.addEventListener('pause', () => setIsPlaying(false));
+    audio.addEventListener('ended', () => setIsPlaying(false));
+    audio.addEventListener('error', () => {
+      setError('Audio nicht verfügbar');
+      setIsLoading(false);
+    });
+
+    audio.src = audioUrl;
+    audio.load();
+
+    return () => {
+      audio.pause();
+      audio.src = '';
+    };
+  }, [audioUrl]);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      isPlaying ? audioRef.current.pause() : audioRef.current.play();
+    }
+  };
+
+  const handleSeek = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    if (audioRef.current && duration > 0) {
+      audioRef.current.currentTime = percent * duration;
+    }
+  };
+
+  const skip = (seconds) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.currentTime + seconds, duration));
+    }
+  };
+
+  if (!audioUrl) return null;
+
+  if (error) {
+    return (
+      <div style={{
+        padding: '12px 16px',
+        background: COLORS.slate[100],
+        borderRadius: '10px',
+        color: COLORS.slate[500],
+        fontSize: '13px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+      }}>
+        <AlertCircle size={16} /> {error}
+      </div>
+    );
+  }
+
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div style={{
+      background: 'white',
+      borderRadius: '12px',
+      padding: '16px',
+      border: `1px solid ${COLORS.slate[200]}`,
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '12px',
+        fontSize: '13px',
+        fontWeight: 600,
+        color: COLORS.slate[700],
+      }}>
+        <Volume2 size={16} color={primaryAccent} />
+        Deine Aufnahme
+      </div>
+
+      {/* Progress bar */}
+      <div
+        onClick={handleSeek}
+        style={{
+          height: '6px',
+          background: COLORS.slate[200],
+          borderRadius: '3px',
+          cursor: 'pointer',
+          marginBottom: '12px',
+        }}
+      >
+        <div style={{
+          width: `${progressPercent}%`,
+          height: '100%',
+          background: primaryAccent,
+          borderRadius: '3px',
+          transition: 'width 0.1s',
+        }} />
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+        <button
+          onClick={() => skip(-10)}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '6px',
+            color: COLORS.slate[500],
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <SkipBack size={18} />
+        </button>
+
+        <button
+          onClick={togglePlay}
+          disabled={isLoading}
+          style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            background: primaryAccent,
+            border: 'none',
+            cursor: isLoading ? 'wait' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            opacity: isLoading ? 0.7 : 1,
+          }}
+        >
+          {isLoading ? (
+            <Loader2 size={20} color="#ffffff" style={{ animation: 'spin 1s linear infinite' }} />
+          ) : isPlaying ? (
+            <Pause size={20} color="#ffffff" fill="#ffffff" />
+          ) : (
+            <Play size={20} color="#ffffff" fill="#ffffff" style={{ marginLeft: '2px' }} />
+          )}
+        </button>
+
+        <button
+          onClick={() => skip(10)}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '6px',
+            color: COLORS.slate[500],
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <SkipForward size={18} />
+        </button>
+      </div>
+
+      {/* Time display */}
+      <div style={{
+        textAlign: 'center',
+        marginTop: '8px',
+        fontSize: '12px',
+        color: COLORS.slate[500],
+      }}>
+        {formatDuration(currentTime)} / {formatDuration(duration)}
+      </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+};
+
+/**
  * Immediate Feedback Component
  *
  * Displays transcript, feedback, and audio metrics after each answer
@@ -310,6 +530,7 @@ const ImmediateFeedback = ({
   transcript,
   feedback,
   audioMetrics,
+  audioUrl,
   onRetry,
   onNext,
   onComplete,
@@ -397,6 +618,13 @@ const ImmediateFeedback = ({
         }}>
           "{transcript || 'Keine Transkription verfügbar.'}"
         </div>
+
+        {/* Audio Player - below transcript */}
+        {audioUrl && (
+          <div style={{ marginTop: '16px' }}>
+            <CompactAudioPlayer audioUrl={audioUrl} primaryAccent={primaryAccent} />
+          </div>
+        )}
       </CollapsibleSection>
 
       {/* Strengths */}

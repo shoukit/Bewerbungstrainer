@@ -1721,6 +1721,7 @@ const SimulatorSession = ({
             transcript={feedback.transcript}
             feedback={feedback.feedback}
             audioMetrics={feedback.audio_analysis}
+            audioUrl={feedback.audio_url}
             hideButtons={true}
           />
         </div>
