@@ -5,6 +5,8 @@
  * Designed for FAST processing and focused on filler word detection.
  */
 
+import { getFillerWordsWithContext } from './fillerWords';
+
 /**
  * Random topics for "Zufalls-Thema" game mode
  */
@@ -74,7 +76,7 @@ Du DARFST NUR transkribieren, was TATSÄCHLICH in der Audio-Datei gesprochen wir
 
 DEINE AUFGABE (NUR bei klar erkennbarer Sprache):
 1. TRANSKRIBIEREN: Schreibe WÖRTLICH was gesprochen wird - nichts hinzufügen
-2. FÜLLWÖRTER: Finde diese Wörter im Transkript: "Ähm", "Äh", "Öh", "Mh", "Halt", "Eigentlich", "Sozusagen", "Quasi", "Irgendwie", "Also" (am Satzanfang), "Genau", "Ja also"
+2. FÜLLWÖRTER: Finde diese Wörter im Transkript: ${getFillerWordsWithContext()}
 3. INHALT: Bewerte wie gut die Antwort zum Thema passt (0-40 Punkte)
 
 INHALTSBEWERTUNG (content_score):

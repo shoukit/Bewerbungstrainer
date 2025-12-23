@@ -12,6 +12,8 @@
  * - Simulation mode: User is e.g. "Kundenberater", AI is e.g. "Kunde"
  */
 
+import { getFillerWordsWithContext } from './fillerWords';
+
 /**
  * Get the audio analysis prompt
  * @param {object} options - Options for the prompt
@@ -47,7 +49,7 @@ Ignoriere alles, was der/die ${agentRoleLabel} sagt (Pausen, Tempo, Inhalt).
 ANALYSE-DIMENSIONEN (NUR ${userRoleLabel.toUpperCase()}):
 
 1. SPEECH CLEANLINESS (Füllwörter)
-- Zähle "Ähm", "Öh", "Halt", "Eigentlich", "Sozusagen" beim/bei der ${userRoleLabel}.
+- Zähle diese Füllwörter beim/bei der ${userRoleLabel}: ${getFillerWordsWithContext()}
 - Gib GENAUE Zeitstempel an (Format MM:SS).
 
 2. PACING (Tempo)
