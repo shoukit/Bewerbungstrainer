@@ -72,7 +72,7 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel, branding }) => {
     <div
       style={{
         background: branding.cardBg,
-        borderRadius: '16px',
+        borderRadius: branding.radius.xl,
         border: `1px solid ${branding.borderColor}`,
         overflow: 'hidden',
       }}
@@ -81,7 +81,7 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel, branding }) => {
         onClick={() => setIsOpen(!isOpen)}
         style={{
           width: '100%',
-          padding: '16px 24px',
+          padding: `${branding.space[4]} ${branding.space[6]}`,
           background: 'none',
           border: 'none',
           cursor: 'pointer',
@@ -90,14 +90,14 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel, branding }) => {
           justifyContent: 'space-between',
         }}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
-          <Lightbulb size={18} color={primaryAccent} />
+        <span style={{ display: 'flex', alignItems: 'center', gap: branding.space[2], fontSize: branding.fontSize.base, fontWeight: branding.fontWeight.semibold, color: branding.textMain }}>
+          <Lightbulb size={branding.iconSize.md} color={primaryAccent} />
           {tipsLabel || 'Tipps für diese Frage'}
         </span>
         <ChevronDown
-          size={18}
+          size={branding.iconSize.md}
           color={branding.textMuted}
-          style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+          style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: branding.transition.normal }}
         />
       </button>
       <AnimatePresence>
@@ -108,28 +108,28 @@ const QuestionTips = ({ tips, primaryAccent, tipsLabel, branding }) => {
             exit={{ height: 0, opacity: 0 }}
             style={{ overflow: 'hidden' }}
           >
-            <div style={{ padding: '0 24px 24px' }}>
+            <div style={{ padding: `0 ${branding.space[6]} ${branding.space[6]}` }}>
               {tips.map((tip, index) => (
                 <div
                   key={index}
                   style={{
                     display: 'flex',
-                    gap: '12px',
-                    padding: '12px 16px',
-                    borderRadius: '10px',
+                    gap: branding.space[3],
+                    padding: `${branding.space[3]} ${branding.space[4]}`,
+                    borderRadius: branding.radius.md,
                     backgroundColor: branding.warningLight,
-                    marginBottom: index < tips.length - 1 ? '8px' : 0,
+                    marginBottom: index < tips.length - 1 ? branding.space[2] : 0,
                   }}
                 >
                   <Lightbulb style={{
-                    width: '16px',
-                    height: '16px',
+                    width: branding.iconSize.sm,
+                    height: branding.iconSize.sm,
                     color: branding.warning,
                     flexShrink: 0,
                     marginTop: '2px',
                   }} />
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: branding.fontSize.base,
                     color: branding.textSecondary,
                     margin: 0,
                     lineHeight: 1.5,
@@ -159,25 +159,25 @@ const Timer = ({ seconds, maxSeconds, isRecording, branding }) => {
     <div style={{
       display: 'flex',
       alignItems: 'center',
-      gap: '12px',
-      padding: '12px 16px',
-      borderRadius: '12px',
+      gap: branding.space[3],
+      padding: `${branding.space[3]} ${branding.space[4]}`,
+      borderRadius: branding.radius.lg,
       backgroundColor: isDanger ? branding.errorLight : isWarning ? branding.warningLight : branding.cardBgHover,
     }}>
       <Clock style={{
-        width: '20px',
-        height: '20px',
+        width: branding.iconSize.lg,
+        height: branding.iconSize.lg,
         color: isDanger ? branding.error : isWarning ? branding.warning : branding.textSecondary,
       }} />
       <span style={{
-        fontSize: '18px',
-        fontWeight: 600,
+        fontSize: branding.fontSize.xl,
+        fontWeight: branding.fontWeight.semibold,
         fontFamily: 'monospace',
         color: isDanger ? branding.error : isWarning ? branding.warning : branding.textSecondary,
       }}>
         {formatDuration(seconds)}
       </span>
-      <span style={{ fontSize: '14px', color: branding.textMuted }}>
+      <span style={{ fontSize: branding.fontSize.base, color: branding.textMuted }}>
         / {formatDuration(maxSeconds)}
       </span>
     </div>

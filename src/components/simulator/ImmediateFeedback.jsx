@@ -48,12 +48,12 @@ const ScoreBadge = ({ score, label, size = 'normal', primaryAccent, branding }) 
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '4px',
+      gap: branding.space[1],
     }}>
       <div style={{
         width: isLarge ? '80px' : '56px',
         height: isLarge ? '80px' : '56px',
-        borderRadius: '50%',
+        borderRadius: branding.radius.full,
         backgroundColor: `${color}15`,
         border: `3px solid ${color}`,
         display: 'flex',
@@ -61,17 +61,17 @@ const ScoreBadge = ({ score, label, size = 'normal', primaryAccent, branding }) 
         justifyContent: 'center',
       }}>
         <span style={{
-          fontSize: isLarge ? '28px' : '20px',
-          fontWeight: 700,
+          fontSize: isLarge ? branding.fontSize['5xl'] : branding.fontSize['2xl'],
+          fontWeight: branding.fontWeight.bold,
           color: color,
         }}>
           {score100 != null ? Math.round(score100) : '-'}
         </span>
       </div>
       <span style={{
-        fontSize: isLarge ? '14px' : '12px',
+        fontSize: isLarge ? branding.fontSize.base : branding.fontSize.xs,
         color: branding.textSecondary,
-        fontWeight: 500,
+        fontWeight: branding.fontWeight.medium,
       }}>
         {label}
       </span>
@@ -87,17 +87,17 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true, p
 
   return (
     <div style={{
-      borderRadius: '12px',
+      borderRadius: branding.radius.lg,
       border: `1px solid ${branding.borderColor}`,
       backgroundColor: branding.cardBg,
       overflow: 'hidden',
-      marginBottom: '16px',
+      marginBottom: branding.space[4],
     }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{
           width: '100%',
-          padding: '16px 20px',
+          padding: `${branding.space[4]} ${branding.space[5]}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -106,23 +106,23 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true, p
           cursor: 'pointer',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
-          <span style={{ fontSize: '15px', fontWeight: 600, color: branding.textMain }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: branding.space[3] }}>
+          <Icon style={{ width: branding.iconSize.lg, height: branding.iconSize.lg, color: primaryAccent }} />
+          <span style={{ fontSize: branding.fontSize.md, fontWeight: branding.fontWeight.semibold, color: branding.textMain }}>
             {title}
           </span>
         </div>
         {isOpen ? (
-          <ChevronUp style={{ width: '20px', height: '20px', color: branding.textMuted }} />
+          <ChevronUp style={{ width: branding.iconSize.lg, height: branding.iconSize.lg, color: branding.textMuted }} />
         ) : (
-          <ChevronDown style={{ width: '20px', height: '20px', color: branding.textMuted }} />
+          <ChevronDown style={{ width: branding.iconSize.lg, height: branding.iconSize.lg, color: branding.textMuted }} />
         )}
       </button>
       {isOpen && (
         <div style={{
-          padding: '0 20px 20px 20px',
+          padding: `0 ${branding.space[5]} ${branding.space[5]} ${branding.space[5]}`,
           borderTop: `1px solid ${branding.cardBgHover}`,
-          paddingTop: '16px',
+          paddingTop: branding.space[4],
         }}>
           {children}
         </div>
@@ -146,14 +146,14 @@ const FeedbackItem = ({ text, type, primaryAccent, primaryAccentLight, branding 
   return (
     <div style={{
       display: 'flex',
-      gap: '12px',
-      padding: '12px',
-      borderRadius: '10px',
+      gap: branding.space[3],
+      padding: branding.space[3],
+      borderRadius: branding.radius.md,
       backgroundColor: bg,
-      marginBottom: '8px',
+      marginBottom: branding.space[2],
     }}>
-      <Icon style={{ width: '18px', height: '18px', color, flexShrink: 0, marginTop: '2px' }} />
-      <span style={{ fontSize: '14px', color: branding.textSecondary, lineHeight: 1.5 }}>
+      <Icon style={{ width: branding.iconSize.md, height: branding.iconSize.md, color, flexShrink: 0, marginTop: '2px' }} />
+      <span style={{ fontSize: branding.fontSize.base, color: branding.textSecondary, lineHeight: 1.5 }}>
         {text}
       </span>
     </div>
@@ -187,17 +187,17 @@ const AudioMetricsDisplay = ({ metrics, branding }) => {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: branding.space[4] }}>
       {/* Speech Rate */}
       <div style={{
-        padding: '16px',
-        borderRadius: '10px',
+        padding: branding.space[4],
+        borderRadius: branding.radius.md,
         backgroundColor: branding.cardBgHover,
       }}>
-        <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block', marginBottom: '4px' }}>
+        <span style={{ fontSize: branding.fontSize.xs, color: branding.textMuted, display: 'block', marginBottom: branding.space[1] }}>
           Sprechtempo
         </span>
-        <span style={{ fontSize: '16px', fontWeight: 600, color: speechRate.color }}>
+        <span style={{ fontSize: branding.fontSize.lg, fontWeight: branding.fontWeight.semibold, color: speechRate.color }}>
           {speechRate.label}
         </span>
       </div>

@@ -356,29 +356,29 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Show login required screen if not authenticated
   if (!isAuthenticated) {
     return (
-      <div style={{ padding: '24px' }}>
+      <div style={{ padding: b.space[6] }}>
         {/* Header */}
-        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+        <div style={{ marginBottom: b.space[8], textAlign: 'center' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '12px',
-            marginBottom: '12px',
+            gap: b.space[3],
+            marginBottom: b.space[3],
           }}>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '14px',
+              width: b.space[12],
+              height: b.space[12],
+              borderRadius: b.radius.lg,
               background: headerGradient,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              <History style={{ width: '24px', height: '24px', color: headerText }} />
+              <History style={{ width: b.iconSize['2xl'], height: b.iconSize['2xl'], color: headerText }} />
             </div>
             <h1 style={{
-              fontSize: '28px',
-              fontWeight: 700,
+              fontSize: b.fontSize['5xl'],
+              fontWeight: b.fontWeight.bold,
               color: b.textMain,
               margin: 0,
             }}>
@@ -386,7 +386,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             </h1>
           </div>
           <p style={{
-            fontSize: '16px',
+            fontSize: b.fontSize.lg,
             color: b.textSecondary,
             maxWidth: '600px',
             margin: '0 auto',
@@ -460,10 +460,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: b.space[10] }}>
         <div style={{ textAlign: 'center' }}>
-          <Loader2 style={{ width: '48px', height: '48px', color: primaryAccent, animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-          <p style={{ color: b.textMuted, marginTop: '16px' }}>Sessions werden geladen...</p>
+          <Loader2 style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: primaryAccent, animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+          <p style={{ color: b.textMuted, marginTop: b.space[4] }}>Sessions werden geladen...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -473,10 +473,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   if (error) {
     return (
       <div style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', maxWidth: '400px', padding: '24px' }}>
-          <AlertCircle style={{ width: '48px', height: '48px', color: b.error, margin: '0 auto 16px' }} />
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: b.textMain, marginBottom: '8px' }}>Fehler beim Laden</h2>
-          <p style={{ color: b.textMuted, marginBottom: '24px' }}>{error}</p>
+        <div style={{ textAlign: 'center', maxWidth: '400px', padding: b.space[6] }}>
+          <AlertCircle style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.error, margin: `0 auto ${b.space[4]}` }} />
+          <h2 style={{ fontSize: b.fontSize['2xl'], fontWeight: b.fontWeight.bold, color: b.textMain, marginBottom: b.space[2] }}>Fehler beim Laden</h2>
+          <p style={{ color: b.textMuted, marginBottom: b.space[6] }}>{error}</p>
           <Button onClick={loadAllData}>Erneut versuchen</Button>
         </div>
       </div>
@@ -487,29 +487,29 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const activeScenarioMap = getActiveScenarioMap();
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: b.space[6] }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px', textAlign: 'center', position: 'relative' }}>
+      <div style={{ marginBottom: b.space[8], textAlign: 'center', position: 'relative' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '12px',
-          marginBottom: '12px',
+          gap: b.space[3],
+          marginBottom: b.space[3],
         }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
+            width: b.space[12],
+            height: b.space[12],
+            borderRadius: b.radius.lg,
             background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <History style={{ width: '24px', height: '24px', color: headerText }} />
+            <History style={{ width: b.iconSize['2xl'], height: b.iconSize['2xl'], color: headerText }} />
           </div>
           <h1 style={{
-            fontSize: '28px',
-            fontWeight: 700,
+            fontSize: b.fontSize['5xl'],
+            fontWeight: b.fontWeight.bold,
             color: b.textMain,
             margin: 0,
           }}>
@@ -517,7 +517,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           </h1>
         </div>
         <p style={{
-          fontSize: '16px',
+          fontSize: b.fontSize.lg,
           color: b.textSecondary,
           maxWidth: '600px',
           margin: '0 auto',
@@ -618,19 +618,19 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         disabled={isLoading}
         className="mobile-refresh-btn"
         style={{
-          padding: '10px',
-          borderRadius: '10px',
-          border: '1px solid #e2e8f0',
-          background: '#fff',
-          color: '#64748b',
+          padding: b.space[2.5],
+          borderRadius: b.radius.md,
+          border: `1px solid ${b.borderColor}`,
+          background: b.cardBgColor,
+          color: b.textSecondary,
           cursor: isLoading ? 'not-allowed' : 'pointer',
           opacity: isLoading ? 0.5 : 1,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+          boxShadow: b.shadow.sm,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <RefreshCw style={{ width: '18px', height: '18px' }} className={isLoading ? 'animate-spin' : ''} />
+        <RefreshCw style={{ width: b.iconSize.md, height: b.iconSize.md }} className={isLoading ? 'animate-spin' : ''} />
       </button>
 
       {/* Desktop Tabs */}
@@ -757,14 +757,14 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             borderRadius: b.radius['2xl'],
             boxShadow: b.shadow.sm,
           }}>
-            {activeTab === TABS.SIMULATOR && <Target style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}` }} />}
-            {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}` }} />}
-            {activeTab === TABS.VIDEO && <Video style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}` }} />}
-            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}` }} />}
+            {activeTab === TABS.SIMULATOR && <Target style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
+            {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
+            {activeTab === TABS.VIDEO && <Video style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
+            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
             <h3 style={{ fontSize: b.fontSize['2xl'], fontWeight: b.fontWeight.semibold, color: b.textSecondary, marginBottom: b.space[2] }}>
               Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : 'Live-Simulationen'}
             </h3>
-            <p style={{ color: b.textMuted, marginBottom: b.space[6] }}>
+            <p style={{ color: b.textMuted, fontSize: b.fontSize.base, marginBottom: b.space[6] }}>
               {activeTab === TABS.BRIEFINGS
                 ? 'Erstelle dein erstes Briefing, um dich optimal vorzubereiten.'
                 : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
@@ -776,7 +776,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           </div>
         ) : (
           <motion.div
-            style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}
             initial="hidden"
             animate="visible"
             variants={{

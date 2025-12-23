@@ -126,20 +126,20 @@ const FillerWordBadge = ({ word, count, branding }) => (
   <span style={{
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '4px',
-    padding: '6px 12px',
+    gap: branding.space[1],
+    padding: `${branding.space[1.5]} ${branding.space[3]}`,
     backgroundColor: branding.errorLight,
     color: branding.error,
-    borderRadius: '20px',
-    fontSize: '14px',
-    fontWeight: 500,
+    borderRadius: branding.radius['2xl'],
+    fontSize: branding.fontSize.base,
+    fontWeight: branding.fontWeight.medium,
   }}>
     "{word}"
     <span style={{
       backgroundColor: `${branding.error}30`,
-      padding: '2px 6px',
-      borderRadius: '10px',
-      fontSize: '12px',
+      padding: `${branding.space[0.5] || '2px'} ${branding.space[1.5]}`,
+      borderRadius: branding.radius.md,
+      fontSize: branding.fontSize.xs,
     }}>{count}x</span>
   </span>
 );
@@ -232,9 +232,9 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
       {/* Score Card */}
       <div style={{
-        borderRadius: '20px',
-        padding: '32px',
-        marginBottom: '24px',
+        borderRadius: branding.radius['2xl'],
+        padding: branding.space[8],
+        marginBottom: branding.space[6],
         background: isNoSpeech
           ? `linear-gradient(135deg, ${branding.textSecondary} 0%, ${branding.textMuted} 100%)`
           : isGoodScore
@@ -243,12 +243,12 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
         color: 'white',
         textAlign: 'center',
       }}>
-        <div style={{ fontSize: '48px', marginBottom: '8px' }}>
+        <div style={{ fontSize: branding.iconSize['4xl'], marginBottom: branding.space[2] }}>
           {isNoSpeech ? '🎤' : feedback.emoji}
         </div>
-        <div style={{ fontSize: '72px', fontWeight: 700, marginBottom: '8px' }}>{result.score}</div>
-        <div style={{ fontSize: '18px', opacity: 0.9, marginBottom: '16px' }}>Punkte</div>
-        <p style={{ fontSize: '16px', margin: 0 }}>
+        <div style={{ fontSize: '72px', fontWeight: branding.fontWeight.bold, marginBottom: branding.space[2] }}>{result.score}</div>
+        <div style={{ fontSize: branding.fontSize.xl, opacity: 0.9, marginBottom: branding.space[4] }}>Punkte</div>
+        <p style={{ fontSize: branding.fontSize.lg, margin: 0 }}>
           {isNoSpeech ? 'Keine Sprache erkannt. Bitte sprich lauter ins Mikrofon.' : feedback.message}
         </p>
       </div>
@@ -257,28 +257,28 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '12px',
-        marginBottom: '24px',
+        gap: branding.space[3],
+        marginBottom: branding.space[6],
       }}>
         {/* Total Words */}
         <div style={{
           backgroundColor: branding.cardBg,
-          borderRadius: '12px',
-          padding: '14px',
+          borderRadius: branding.radius.lg,
+          padding: branding.space[3.5],
           border: `1px solid ${branding.borderColor}`,
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: branding.space[1.5],
             color: primaryAccent,
-            marginBottom: '6px',
+            marginBottom: branding.space[1.5],
           }}>
-            <MessageCircle style={{ width: '16px', height: '16px' }} />
-            <span style={{ fontWeight: 500, fontSize: '13px' }}>Wörter</span>
+            <MessageCircle style={{ width: branding.iconSize.sm, height: branding.iconSize.sm }} />
+            <span style={{ fontWeight: branding.fontWeight.medium, fontSize: branding.fontSize.sm }}>Wörter</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: branding.textMain }}>{result.total_words}</div>
-          <div style={{ fontSize: '11px', color: branding.textMuted }}>gesprochen</div>
+          <div style={{ fontSize: branding.fontSize['4xl'], fontWeight: branding.fontWeight.bold, color: branding.textMain }}>{result.total_words}</div>
+          <div style={{ fontSize: branding.fontSize['2xs'], color: branding.textMuted }}>gesprochen</div>
         </div>
 
         {/* Filler Count */}

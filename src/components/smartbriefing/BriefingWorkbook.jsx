@@ -573,11 +573,11 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
   return (
     <div
       style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        backgroundColor: branding.cardBgColor,
+        borderRadius: branding.radius.xl,
+        boxShadow: branding.shadow.xs,
         overflow: 'hidden',
-        marginBottom: '16px',
+        marginBottom: branding.space[4],
       }}
     >
       {/* Section Header */}
@@ -585,36 +585,36 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
         onClick={onToggle}
         style={{
           width: '100%',
-          padding: '16px 20px',
+          padding: `${branding.space[4]} ${branding.space[5]}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           border: 'none',
           background: 'none',
           cursor: 'pointer',
-          borderBottom: isExpanded ? '1px solid #f1f5f9' : 'none',
+          borderBottom: isExpanded ? `1px solid ${branding.borderColorLight}` : 'none',
         }}
       >
         <h3
           style={{
-            fontSize: '16px',
-            fontWeight: 600,
-            color: '#0f172a',
+            fontSize: branding.fontSize.lg,
+            fontWeight: branding.fontWeight.semibold,
+            color: branding.textMain,
             margin: 0,
             textAlign: 'left',
           }}
         >
           {section.section_title}
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: branding.space[2] }}>
           {type === 'items' && (
             <span
               style={{
-                fontSize: '12px',
-                color: '#94a3b8',
-                backgroundColor: '#f1f5f9',
-                padding: '4px 8px',
-                borderRadius: '12px',
+                fontSize: branding.fontSize.xs,
+                color: branding.textMuted,
+                backgroundColor: branding.borderColorLight,
+                padding: `${branding.space[1]} ${branding.space[2]}`,
+                borderRadius: branding.radius.lg,
               }}
             >
               {visibleItems.length} Punkte
@@ -625,22 +625,22 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                fontSize: '12px',
+                gap: branding.space[1],
+                fontSize: branding.fontSize.xs,
                 color: primaryAccent,
                 backgroundColor: `${primaryAccent}15`,
-                padding: '4px 8px',
-                borderRadius: '12px',
+                padding: `${branding.space[1]} ${branding.space[2]}`,
+                borderRadius: branding.radius.lg,
               }}
             >
-              <PenLine size={12} />
+              <PenLine size={branding.iconSize.xs} />
               Notizen
             </span>
           )}
           {isExpanded ? (
-            <ChevronUp size={20} style={{ color: '#94a3b8' }} />
+            <ChevronUp size={branding.iconSize.lg} style={{ color: branding.textMuted }} />
           ) : (
-            <ChevronDown size={20} style={{ color: '#94a3b8' }} />
+            <ChevronDown size={branding.iconSize.lg} style={{ color: branding.textMuted }} />
           )}
         </div>
       </button>
@@ -921,11 +921,11 @@ const BriefingWorkbook = ({
       {/* Header */}
       <div
         style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          padding: '24px',
-          marginBottom: '24px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          backgroundColor: b.cardBgColor,
+          borderRadius: b.radius.xl,
+          padding: b.space[6],
+          marginBottom: b.space[6],
+          boxShadow: b.shadow.xs,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
