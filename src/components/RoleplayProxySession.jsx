@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useMobile } from '@/hooks/useMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
@@ -86,7 +87,7 @@ const RoleplayProxySession = ({
   const [isMuted, setIsMuted] = useState(false);
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
   const [localMicrophoneId, setLocalMicrophoneId] = useState(selectedMicrophoneId);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const isMobile = useMobile(1024);
 
   // Refs
   const wsRef = useRef(null);
@@ -107,12 +108,6 @@ const RoleplayProxySession = ({
   const [dynamicCoaching, setDynamicCoaching] = useState(null);
   const [isCoachingGenerating, setIsCoachingGenerating] = useState(false);
 
-  // Responsive handling
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Duration timer
   useEffect(() => {

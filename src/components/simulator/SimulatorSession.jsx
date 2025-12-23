@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useMobile } from '@/hooks/useMobile';
 import {
   Mic,
   MicOff,
@@ -936,13 +937,7 @@ const SimulatorSession = ({
   initialMicrophoneId,
 }) => {
   // Mobile detection
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const isMobile = useMobile();
 
   // Internal state for session and questions (can be created during preparation)
   const [session, setSession] = useState(initialSession);

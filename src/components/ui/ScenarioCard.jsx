@@ -373,7 +373,8 @@ const ScenarioCardListView = ({
   primaryAccent,
   difficultyConfig,
 }) => {
-  // Check if we're on mobile (will be used for initial render, CSS handles the rest)
+  // Check if we're on mobile
+  // Note: Using useMobile hook would cause re-renders; for initial SSR-safe check, use static value
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
 
   return (

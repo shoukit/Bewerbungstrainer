@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useMobile } from '@/hooks/useMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Rocket,
@@ -438,13 +439,7 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
   });
 
   // Mobile detection
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const isMobile = useMobile();
 
   // Pending mode for after login
   const [pendingMode, setPendingMode] = useState(null);

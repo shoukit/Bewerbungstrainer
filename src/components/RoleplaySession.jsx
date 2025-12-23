@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useMobile } from '@/hooks/useMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useConversation } from '@elevenlabs/react';
 import {
@@ -106,7 +107,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(false);
   const [showTranscriptOnMobile, setShowTranscriptOnMobile] = useState(false);
   const [showProfileOnMobile, setShowProfileOnMobile] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const isMobile = useMobile(1024);
 
   // Device settings state
   const [localMicrophoneId, setLocalMicrophoneId] = useState(selectedMicrophoneId);
@@ -346,14 +347,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     window.scrollTo(0, 0);
   }, []);
 
-  // Track mobile/desktop state
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleStartCall = async () => {
     setIsStarted(true);
