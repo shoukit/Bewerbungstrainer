@@ -3,13 +3,9 @@
  * Handles interactions with the ElevenLabs Conversational AI API
  */
 
-const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
+import { delay } from '@/utils/timing';
 
-/**
- * Helper function to delay execution
- * @param {number} ms - Milliseconds to wait
- */
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
 
 /**
  * Downloads the audio recording of a complete conversation from ElevenLabs

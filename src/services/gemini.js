@@ -11,6 +11,8 @@ import { GEMINI_MODELS, ERROR_MESSAGES } from '@/config/constants';
 import { getFeedbackPrompt, applyCustomPrompt } from '@/config/prompts/feedbackPrompt';
 import { getAudioAnalysisPrompt } from '@/config/prompts/audioAnalysisPrompt';
 import { getRhetoricGamePrompt } from '@/config/prompts/gamePrompts';
+import { maskApiKey } from '@/utils/security';
+import { audioFileToInlineData } from '@/utils/audio';
 import wordpressAPI from './wordpress-api.js';
 
 // =============================================================================
@@ -85,16 +87,6 @@ function logPromptDebug(scenario, description, prompt, metadata = {}) {
 // =============================================================================
 
 /**
- * Masks an API key for safe logging
- * @param {string} apiKey - The API key to mask
- * @returns {string} - Masked key (e.g., "AIzaSy...abcd")
- */
-function maskApiKey(apiKey) {
-  if (!apiKey || apiKey.length < 12) return '***';
-  return `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`;
-}
-
-/**
  * Checks if an error is a model-not-found error (404)
  * @param {Error} error - The error to check
  * @returns {boolean} - True if it's a 404/not-found error
@@ -110,28 +102,6 @@ function isModelNotFoundError(error) {
  */
 function isApiKeyError(error) {
   return error.message?.includes('API key');
-}
-
-/**
- * Converts an audio file to base64 for Gemini API
- * @param {File|Blob} audioFile - The audio file to convert
- * @returns {Promise<Object>} - Object with inlineData containing base64 and mimeType
- */
-async function audioFileToBase64(audioFile) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result.split(',')[1];
-      resolve({
-        inlineData: {
-          data: base64,
-          mimeType: audioFile.type || 'audio/webm',
-        },
-      });
-    };
-    reader.onerror = () => reject(new Error('Failed to read audio file'));
-    reader.readAsDataURL(audioFile);
-  });
 }
 
 /**
@@ -369,7 +339,7 @@ export async function generateAudioAnalysis(
 
   // Convert audio to base64
   if (DEBUG_PROMPTS) console.log('🔄 [GEMINI AUDIO] Converting audio to base64...');
-  const audioPart = await audioFileToBase64(audioFile);
+  const audioPart = await audioFileToInlineData(audioFile);
   if (DEBUG_PROMPTS) console.log('✅ [GEMINI AUDIO] Audio converted');
 
   // Build content array with prompt and audio
@@ -448,7 +418,7 @@ export async function analyzeRhetoricGame(
   }
 
   // Convert audio to base64
-  const audioPart = await audioFileToBase64(audioFile);
+  const audioPart = await audioFileToInlineData(audioFile);
 
   // Build content array with optimized game prompt and audio
   const prompt = getRhetoricGamePrompt(topic, durationSeconds);

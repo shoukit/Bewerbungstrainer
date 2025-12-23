@@ -8,6 +8,7 @@
 import { generateInterviewFeedback, generateAudioAnalysis } from './gemini.js';
 import wordpressAPI, { getWPNonce, getWPApiUrl } from './wordpress-api.js';
 import { decodeUnicodeEscapes } from '../utils/parseJSON.js';
+import { delay } from '../utils/timing.js';
 
 /**
  * Recursively decode Unicode escapes in all string properties of an object
@@ -311,8 +312,6 @@ export function getRoleplaySessionAudioUrl(sessionId) {
 export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retryDelayMs = 3000) {
 
   const audioUrl = getRoleplaySessionAudioUrl(sessionId);
-
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {

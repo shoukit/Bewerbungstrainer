@@ -19,10 +19,6 @@ import {
   Video,
   CheckCircle,
   XCircle,
-  FileText,
-  Briefcase,
-  Banknote,
-  Users,
   Sparkles,
   Trash2,
   Plus,
@@ -43,6 +39,8 @@ import TrainingSessionDetailView from './TrainingSessionDetailView';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
+import { formatDateTime, formatDuration } from '@/utils/formatting';
+import { BRIEFING_ICON_MAP, getBriefingIcon } from '@/utils/iconMaps';
 
 
 /**
@@ -152,16 +150,6 @@ const ConfirmDeleteDialog = ({ isOpen, onClose, onConfirm, title, description, i
 };
 
 /**
- * Icon mapping for briefing template icons
- */
-const BRIEFING_ICON_MAP = {
-  'file-text': FileText,
-  'briefcase': Briefcase,
-  'banknote': Banknote,
-  'users': Users,
-};
-
-/**
  * BriefingCard - Card component for Smart Briefings
  */
 const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText, primaryAccent }) => {
@@ -176,19 +164,7 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const Icon = BRIEFING_ICON_MAP[briefing.template_icon] || FileText;
+  const Icon = getBriefingIcon(briefing.template_icon);
 
   const handleDeleteClick = (e) => {
     e.stopPropagation();
@@ -259,7 +235,7 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
                 {briefing.title || 'Briefing'}
               </h3>
               <div style={{ fontSize: '13px', color: '#64748b' }}>
-                {formatDate(briefing.created_at)}
+                {formatDateTime(briefing.created_at)}
               </div>
             </div>
             <button
@@ -407,7 +383,7 @@ const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText,
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Calendar size={14} />
-                {formatDate(briefing.created_at)}
+                {formatDateTime(briefing.created_at)}
               </span>
             </div>
           </div>
@@ -468,25 +444,6 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const formatDuration = (seconds) => {
-    if (!seconds) return '-';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const getScore = () => {
     let rawScore = null;
@@ -653,7 +610,7 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
                 {scenario?.title || session.scenario_title || `Session #${session.id}`}
               </h3>
               <div style={{ fontSize: '13px', color: '#64748b' }}>
-                {formatDate(session.created_at)}
+                {formatDateTime(session.created_at)}
               </div>
             </div>
             {onDeleteSession && (
@@ -860,7 +817,7 @@ const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDe
             }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Calendar size={14} />
-                {formatDate(session.created_at)}
+                {formatDateTime(session.created_at)}
               </span>
               {session.duration || session.video_duration_seconds ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

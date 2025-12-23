@@ -4,6 +4,8 @@
  * Handles WebSocket communication with ElevenLabs Conversational AI API
  */
 
+import { base64ToBlob } from '@/utils/audio';
+
 class ElevenLabsConvAIService {
   constructor() {
     this.ws = null;
@@ -254,7 +256,7 @@ class ElevenLabsConvAIService {
         case 'audio':
           // Audio chunk received
           if (message.audio_event?.audio_base_64) {
-            const audioData = this.base64ToBlob(message.audio_event.audio_base_64, 'audio/mp3');
+            const audioData = base64ToBlob(message.audio_event.audio_base_64, 'audio/mp3');
             if (this.onAudioData) {
               this.onAudioData(audioData);
             }
@@ -327,21 +329,10 @@ class ElevenLabsConvAIService {
 
   /**
    * Convert base64 to Blob
-   *
-   * @param {string} base64 - Base64 string
-   * @param {string} mimeType - MIME type
-   * @returns {Blob} Blob object
+   * @deprecated Use base64ToBlob from @/utils/audio instead
    */
-  base64ToBlob(base64, mimeType) {
-    const byteCharacters = atob(base64);
-    const byteNumbers = new Array(byteCharacters.length);
-
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-
-    const byteArray = new Uint8Array(byteNumbers);
-    return new Blob([byteArray], { type: mimeType });
+  base64ToBlob(base64Data, mimeType) {
+    return base64ToBlob(base64Data, mimeType);
   }
 
   /**

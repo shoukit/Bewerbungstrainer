@@ -3,51 +3,16 @@ import { usePartner } from '../../context/PartnerContext';
 import { DEFAULT_BRANDING } from '../../config/partners';
 import wordpressAPI from '../../services/wordpress-api';
 import FullscreenLoader from '@/components/ui/fullscreen-loader';
+import { getIcon } from '../../utils/iconMaps';
 import {
   ArrowLeft,
   Sparkles,
   AlertCircle,
-  FileText,
-  Briefcase,
-  Banknote,
-  Users,
-  User,
-  MessageCircle,
-  Target,
-  Award,
-  Book,
-  ClipboardList,
-  Star,
-  Lightbulb,
-  Shield,
-  Compass,
-  Rocket,
   Plus,
   Trash2,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
-
-/**
- * Icon mapping for template icons
- */
-const ICON_MAP = {
-  'file-text': FileText,
-  'briefcase': Briefcase,
-  'banknote': Banknote,
-  'users': Users,
-  'user': User,
-  'message-circle': MessageCircle,
-  'target': Target,
-  'award': Award,
-  'book': Book,
-  'clipboard': ClipboardList,
-  'star': Star,
-  'lightbulb': Lightbulb,
-  'shield': Shield,
-  'compass': Compass,
-  'rocket': Rocket,
-};
 
 /**
  * Dynamic Form Field Component
@@ -267,7 +232,7 @@ const SmartBriefingForm = ({
   // Get themed styles from partner branding
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const buttonGradient = branding?.['--button-gradient'] || DEFAULT_BRANDING['--button-gradient'];
-  const IconComponent = ICON_MAP[template?.icon] || FileText;
+  const IconComponent = getIcon(template?.icon);
 
   // Initialize form data from template defaults
   useEffect(() => {

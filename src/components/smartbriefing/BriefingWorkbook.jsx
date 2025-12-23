@@ -1,23 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePartner } from '../../context/PartnerContext';
 import wordpressAPI from '../../services/wordpress-api';
+import { formatDateTime } from '../../utils/formatting';
+import { TEMPLATE_ICON_MAP, getIcon } from '../../utils/iconMaps';
 import {
   ArrowLeft,
-  FileText,
-  Briefcase,
-  Banknote,
-  Users,
-  User,
-  MessageCircle,
-  Target,
-  Award,
-  Book,
-  ClipboardList,
-  Star,
-  Lightbulb,
-  Shield,
-  Compass,
-  Rocket,
   Calendar,
   Save,
   Check,
@@ -30,27 +17,6 @@ import {
   ChevronUp,
   RotateCcw,
 } from 'lucide-react';
-
-/**
- * Icon mapping for template icons
- */
-const ICON_MAP = {
-  'file-text': FileText,
-  'briefcase': Briefcase,
-  'banknote': Banknote,
-  'users': Users,
-  'user': User,
-  'message-circle': MessageCircle,
-  'target': Target,
-  'award': Award,
-  'book': Book,
-  'clipboard': ClipboardList,
-  'star': Star,
-  'lightbulb': Lightbulb,
-  'shield': Shield,
-  'compass': Compass,
-  'rocket': Rocket,
-};
 
 /**
  * Variable name mapping - technical keys to display names
@@ -88,21 +54,6 @@ const VARIABLE_DISPLAY_NAMES = {
  */
 const getVariableDisplayName = (key) => {
   return VARIABLE_DISPLAY_NAMES[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-};
-
-/**
- * Format date for display
- */
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 };
 
 /**
@@ -828,7 +779,7 @@ const BriefingWorkbook = ({
 
   // Get primary accent color from partner config
   const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
-  const IconComponent = ICON_MAP[briefing?.template_icon] || FileText;
+  const IconComponent = getIcon(briefing?.template_icon);
 
   // Fetch full briefing with sections if needed
   useEffect(() => {
@@ -1007,7 +958,7 @@ const BriefingWorkbook = ({
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#94a3b8' }}>
                   <Calendar size={12} />
-                  {formatDate(briefing.created_at)}
+                  {formatDateTime(briefing.created_at)}
                 </span>
               </div>
             </div>
