@@ -110,7 +110,8 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const animationFrameRef = useRef(null);
 
   // Partner theming - using shared hook
-  const { primaryAccent, headerGradient: themedGradient } = useBranding();
+  const b = useBranding();
+  const { primaryAccent, headerGradient: themedGradient } = b;
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -485,7 +486,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       </div>
 
       {/* Progress */}
-      <ProgressBar current={currentQuestionIndex} total={questions.length} primaryAccent={primaryAccent} showCompleted={false} />
+      <ProgressBar current={currentQuestionIndex} total={questions.length} primaryAccent={primaryAccent} b={b} showCompleted={false} />
 
       {/* Main Content - Mobile: stacked, Desktop: two columns */}
       {isMobile ? (

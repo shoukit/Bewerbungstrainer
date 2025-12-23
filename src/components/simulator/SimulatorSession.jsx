@@ -1607,6 +1607,7 @@ const SimulatorSession = ({
         total={questions.length}
         answeredQuestions={answeredQuestions}
         primaryAccent={primaryAccent}
+        b={b}
         labels={labels}
       />
 
