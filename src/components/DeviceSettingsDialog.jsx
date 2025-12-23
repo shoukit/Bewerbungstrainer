@@ -4,6 +4,7 @@ import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
 import { MicrophoneTest } from './DeviceSetupPage';
+import { useBranding } from '@/hooks/useBranding';
 
 /**
  * DeviceSettingsDialog Component
@@ -33,6 +34,9 @@ const DeviceSettingsDialog = ({
   const { branding } = usePartner();
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
+
+  // Get branding object for MicrophoneTest component
+  const b = useBranding();
 
   // Load devices when dialog opens
   useEffect(() => {
@@ -290,7 +294,7 @@ const DeviceSettingsDialog = ({
                 {/* Microphone Test */}
                 {pendingMicId && (
                   <div style={{ marginTop: '12px' }}>
-                    <MicrophoneTest deviceId={pendingMicId} primaryAccent={primaryAccent} />
+                    <MicrophoneTest deviceId={pendingMicId} branding={b} />
                   </div>
                 )}
               </div>
