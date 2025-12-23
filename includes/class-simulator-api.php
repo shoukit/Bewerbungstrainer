@@ -691,6 +691,7 @@ class Bewerbungstrainer_Simulator_API {
                 'transcript' => $parsed['transcript'],
                 'feedback' => $parsed['feedback'],
                 'audio_analysis' => $parsed['audio_metrics'],
+                'audio_url' => $audio_url,
             ),
         ), 200);
     }
