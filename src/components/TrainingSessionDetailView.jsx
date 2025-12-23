@@ -82,7 +82,7 @@ const getGradeLabel = (score, maxScore) => {
  * @param {string} primaryAccent - Primary accent color
  * @param {boolean} isHeader - If true, text will be white for header display
  */
-const ScoreGauge = ({ score, size = 120, primaryAccent, isHeader = false }) => {
+const ScoreGauge = ({ score, size = 120, primaryAccent, isHeader = false, branding }) => {
   const percentage = Math.min(100, Math.max(0, score || 0));
   const radius = (size - 12) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -97,7 +97,7 @@ const ScoreGauge = ({ score, size = 120, primaryAccent, isHeader = false }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={isHeader ? 'rgba(255,255,255,0.3)' : b.borderColor}
+          stroke={isHeader ? 'rgba(255,255,255,0.3)' : branding.borderColor}
           strokeWidth={10}
         />
         <motion.circle
@@ -127,7 +127,7 @@ const ScoreGauge = ({ score, size = 120, primaryAccent, isHeader = false }) => {
         <span style={{ fontSize: size / 3.5, fontWeight: 700, color }}>
           {Math.round(score)}
         </span>
-        <span style={{ fontSize: size / 10, color: isHeader ? '#ffffff' : b.textMuted }}>
+        <span style={{ fontSize: size / 10, color: isHeader ? '#ffffff' : branding.textMuted }}>
           von 100
         </span>
       </div>
@@ -138,7 +138,7 @@ const ScoreGauge = ({ score, size = 120, primaryAccent, isHeader = false }) => {
 /**
  * Audio player for individual answers
  */
-const AudioPlayer = ({ audioUrl, primaryAccent, durationHint }) => {
+const AudioPlayer = ({ audioUrl, primaryAccent, durationHint, branding }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -228,7 +228,7 @@ const AudioPlayer = ({ audioUrl, primaryAccent, durationHint }) => {
 
   if (error) {
     return (
-      <div style={{ padding: '12px', background: b.cardBgHover, borderRadius: '10px', color: b.textMuted, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ padding: '12px', background: branding.cardBgHover, borderRadius: '10px', color: branding.textMuted, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <AlertCircle size={16} /> {error}
       </div>
     );
@@ -240,14 +240,14 @@ const AudioPlayer = ({ audioUrl, primaryAccent, durationHint }) => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${b.borderColor}` }}>
+    <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${branding.borderColor}` }}>
       {/* Progress bar */}
-      <div onClick={handleSeek} style={{ height: '8px', background: b.borderColor, borderRadius: '4px', cursor: 'pointer', marginBottom: '16px' }}>
+      <div onClick={handleSeek} style={{ height: '8px', background: branding.borderColor, borderRadius: '4px', cursor: 'pointer', marginBottom: '16px' }}>
         <div style={{ width: `${progressPercent}%`, height: '100%', background: primaryAccent || '#0d9488', borderRadius: '4px', transition: 'width 0.1s' }} />
       </div>
       {/* Controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-        <button onClick={() => skip(-10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: b.textMuted }}>
+        <button onClick={() => skip(-10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: branding.textMuted }}>
           <SkipBack size={20} />
         </button>
         <button
@@ -275,12 +275,12 @@ const AudioPlayer = ({ audioUrl, primaryAccent, durationHint }) => {
             <Play size={22} color="#ffffff" fill="#ffffff" strokeWidth={2} style={{ marginLeft: '2px' }} />
           )}
         </button>
-        <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: b.textMuted }}>
+        <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: branding.textMuted }}>
           <SkipForward size={20} />
         </button>
       </div>
       {/* Time display */}
-      <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '13px', color: b.textMuted }}>
+      <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '13px', color: branding.textMuted }}>
         {formatDuration(currentTime)} / {formatDuration(duration)}
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -291,7 +291,7 @@ const AudioPlayer = ({ audioUrl, primaryAccent, durationHint }) => {
 /**
  * Roleplay Audio Player - Full session audio player
  */
-const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
+const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent, branding }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -346,47 +346,47 @@ const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
 
   if (isLoading) {
     return (
-      <div style={{ background: b.cardBgHover, borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+      <div style={{ background: branding.cardBgHover, borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
         <Loader2 size={24} color={primaryAccent} style={{ animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-        <p style={{ fontSize: '13px', color: b.textMuted, marginTop: '8px' }}>Audio wird geladen...</p>
+        <p style={{ fontSize: '13px', color: branding.textMuted, marginTop: '8px' }}>Audio wird geladen...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ background: b.cardBgHover, borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
-        <AlertCircle size={24} color={b.textMuted} style={{ margin: '0 auto' }} />
-        <p style={{ fontSize: '13px', color: b.textMuted, marginTop: '8px' }}>{error}</p>
+      <div style={{ background: branding.cardBgHover, borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+        <AlertCircle size={24} color={branding.textMuted} style={{ margin: '0 auto' }} />
+        <p style={{ fontSize: '13px', color: branding.textMuted, marginTop: '8px' }}>{error}</p>
       </div>
     );
   }
 
   return (
-    <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${b.borderColor}` }}>
-      <h3 style={{ fontSize: '15px', fontWeight: 600, color: b.textMain, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: `1px solid ${branding.borderColor}` }}>
+      <h3 style={{ fontSize: '15px', fontWeight: 600, color: branding.textMain, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <Mic size={18} color={primaryAccent} /> Gesprächsaufnahme
       </h3>
       {/* Progress bar */}
-      <div onClick={handleSeek} style={{ height: '8px', background: b.borderColor, borderRadius: '4px', cursor: 'pointer', marginBottom: '16px' }}>
+      <div onClick={handleSeek} style={{ height: '8px', background: branding.borderColor, borderRadius: '4px', cursor: 'pointer', marginBottom: '16px' }}>
         <div style={{ width: `${(currentTime / duration) * 100 || 0}%`, height: '100%', background: primaryAccent, borderRadius: '4px', transition: 'width 0.1s' }} />
       </div>
       {/* Controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-        <button onClick={() => skip(-10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: b.textMuted }}>
+        <button onClick={() => skip(-10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: branding.textMuted }}>
           <SkipBack size={20} />
         </button>
         <button onClick={togglePlay} style={{ width: '48px', height: '48px', borderRadius: '50%', background: primaryAccent, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
           {isPlaying ? <Pause size={22} color="#ffffff" fill="#ffffff" strokeWidth={2} /> : <Play size={22} color="#ffffff" fill="#ffffff" strokeWidth={2} style={{ marginLeft: '2px' }} />}
         </button>
-        <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: b.textMuted }}>
+        <button onClick={() => skip(10)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: branding.textMuted }}>
           <SkipForward size={20} />
         </button>
-        <button onClick={toggleMute} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: b.textMuted, marginLeft: 'auto' }}>
+        <button onClick={toggleMute} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: branding.textMuted, marginLeft: 'auto' }}>
           {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </button>
       </div>
-      <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '13px', color: b.textMuted }}>
+      <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '13px', color: branding.textMuted }}>
         {formatDuration(currentTime)} / {formatDuration(duration)}
       </div>
     </div>
@@ -396,22 +396,22 @@ const RoleplayAudioPlayer = ({ sessionId, conversationId, primaryAccent }) => {
 /**
  * Transcript Entry Component for roleplay conversations
  */
-const TranscriptEntry = ({ entry, index, primaryAccent }) => {
+const TranscriptEntry = ({ entry, index, primaryAccent, branding }) => {
   const isUser = entry.role === 'user';
   return (
     <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
       <div style={{
         width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-        background: isUser ? primaryAccent : b.disabledBg,
+        background: isUser ? primaryAccent : branding.disabledBg,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <User size={16} color={isUser ? '#fff' : b.textSecondary} />
+        <User size={16} color={isUser ? '#fff' : branding.textSecondary} />
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '12px', fontWeight: 600, color: isUser ? primaryAccent : b.textMuted, marginBottom: '4px' }}>
+        <div style={{ fontSize: '12px', fontWeight: 600, color: isUser ? primaryAccent : branding.textMuted, marginBottom: '4px' }}>
           {isUser ? 'Du' : 'Interviewer'}
         </div>
-        <p style={{ fontSize: '14px', color: b.textMain, lineHeight: 1.6, margin: 0 }}>{entry.text || entry.message}</p>
+        <p style={{ fontSize: '14px', color: branding.textMain, lineHeight: 1.6, margin: 0 }}>{entry.text || entry.message}</p>
       </div>
     </div>
   );
@@ -420,7 +420,7 @@ const TranscriptEntry = ({ entry, index, primaryAccent }) => {
 /**
  * Expandable answer card for simulator sessions
  */
-const AnswerCard = ({ answer, index, primaryAccent }) => {
+const AnswerCard = ({ answer, index, primaryAccent, branding }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const feedback = answer.feedback ? (typeof answer.feedback === 'string' ? JSON.parse(answer.feedback) : answer.feedback) : null;
   const audioMetrics = answer.audio_analysis ? (typeof answer.audio_analysis === 'string' ? JSON.parse(answer.audio_analysis) : answer.audio_analysis) : null;
@@ -433,7 +433,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      style={{ background: '#fff', borderRadius: '16px', border: `1px solid ${b.borderColor}`, overflow: 'hidden', marginBottom: '16px' }}
+      style={{ background: '#fff', borderRadius: '16px', border: `1px solid ${branding.borderColor}`, overflow: 'hidden', marginBottom: '16px' }}
     >
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -443,43 +443,43 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
           {index + 1}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: b.textMain, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {answer.question_text || `Frage ${index + 1}`}
           </h4>
         </div>
         {answer.overall_score !== null && answer.overall_score !== undefined && (
-          <span style={{ fontSize: '16px', fontWeight: 700, color: isNoSpeech ? b.textMuted : getScoreColor(answer.overall_score * 10, primaryAccent) }}>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: isNoSpeech ? branding.textMuted : getScoreColor(answer.overall_score * 10, primaryAccent) }}>
             {isNoSpeech ? '–' : Math.round(answer.overall_score * 10)}
           </span>
         )}
-        <ChevronDown size={18} color={b.textMuted} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+        <ChevronDown size={18} color={branding.textMuted} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
       </button>
 
       <AnimatePresence>
         {isExpanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
-            <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${b.borderColor}`, paddingTop: '16px' }}>
+            <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${branding.borderColor}`, paddingTop: '16px' }}>
               {/* Audio Player */}
               {answer.audio_url && (
                 <div style={{ marginBottom: '16px' }}>
-                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: b.textMain, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: branding.textMain, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Mic size={14} color={primaryAccent} /> Deine Aufnahme
                   </h5>
-                  <AudioPlayer audioUrl={answer.audio_url} primaryAccent={primaryAccent} durationHint={answer.audio_duration_seconds} />
+                  <AudioPlayer audioUrl={answer.audio_url} primaryAccent={primaryAccent} durationHint={answer.audio_duration_seconds} branding={branding} />
                 </div>
               )}
 
               {/* Transcript */}
               {answer.transcript && (
                 <div style={{ marginBottom: '16px' }}>
-                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: b.textMain, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: branding.textMain, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <FileText size={14} color={primaryAccent} /> Transkript
                   </h5>
                   <p style={{
                     fontSize: '13px',
-                    color: isNoSpeech ? b.textMuted : b.textSecondary,
+                    color: isNoSpeech ? branding.textMuted : branding.textSecondary,
                     lineHeight: 1.6,
-                    background: b.cardBgHover,
+                    background: branding.cardBgHover,
                     padding: '12px 16px',
                     borderRadius: '10px',
                     margin: 0,
@@ -493,7 +493,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
               {/* Scores Grid - nur anzeigen wenn Sprache erkannt wurde */}
               {feedback?.scores && !isNoSpeech && (
                 <div style={{ marginBottom: '16px' }}>
-                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: b.textMain, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: branding.textMain, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Star size={14} color={primaryAccent} /> Bewertung
                   </h5>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
@@ -510,7 +510,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                       return (
                         <div key={key} style={{
                           padding: '10px 8px',
-                          background: key === 'overall' ? `${primaryAccent}15` : b.cardBgHover,
+                          background: key === 'overall' ? `${primaryAccent}15` : branding.cardBgHover,
                           borderRadius: '8px',
                           textAlign: 'center',
                           border: key === 'overall' ? `1px solid ${primaryAccent}30` : 'none',
@@ -518,11 +518,11 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                           <div style={{
                             fontSize: '16px',
                             fontWeight: 700,
-                            color: score != null ? getScoreColor(score, primaryAccent) : b.textMuted,
+                            color: score != null ? getScoreColor(score, primaryAccent) : branding.textMuted,
                           }}>
                             {score != null ? Math.round(score) : '-'}
                           </div>
-                          <div style={{ fontSize: '10px', color: b.textMuted, marginTop: '2px' }}>
+                          <div style={{ fontSize: '10px', color: branding.textMuted, marginTop: '2px' }}>
                             {label}
                           </div>
                         </div>
@@ -533,15 +533,15 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
               )}
 
               {/* Summary */}
-              {feedback?.summary && <p style={{ fontSize: '13px', color: b.textSecondary, lineHeight: 1.5, marginBottom: '12px' }}>{feedback.summary}</p>}
+              {feedback?.summary && <p style={{ fontSize: '13px', color: branding.textSecondary, lineHeight: 1.5, marginBottom: '12px' }}>{feedback.summary}</p>}
 
               {/* Strengths */}
               {feedback?.strengths?.length > 0 && !isNoSpeech && (
                 <div style={{ marginBottom: '12px' }}>
-                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: b.success, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: branding.success, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <CheckCircle size={12} /> Stärken
                   </h6>
-                  <ul style={{ margin: 0, paddingLeft: '18px', color: b.textSecondary, fontSize: '12px' }}>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: branding.textSecondary, fontSize: '12px' }}>
                     {feedback.strengths.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
                   </ul>
                 </div>
@@ -550,10 +550,10 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
               {/* Improvements */}
               {feedback?.improvements?.length > 0 && (
                 <div style={{ marginBottom: '12px' }}>
-                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: b.warning, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: branding.warning, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <AlertCircle size={12} /> Verbesserungspotenzial
                   </h6>
-                  <ul style={{ margin: 0, paddingLeft: '18px', color: b.textSecondary, fontSize: '12px' }}>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: branding.textSecondary, fontSize: '12px' }}>
                     {feedback.improvements.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
                   </ul>
                 </div>
@@ -565,7 +565,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
                   <h6 style={{ fontSize: '12px', fontWeight: 600, color: primaryAccent, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Lightbulb size={12} /> Tipps
                   </h6>
-                  <ul style={{ margin: 0, paddingLeft: '18px', color: b.textSecondary, fontSize: '12px' }}>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: branding.textSecondary, fontSize: '12px' }}>
                     {feedback.tips.map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
                   </ul>
                 </div>
@@ -573,16 +573,16 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
 
               {/* Audio Metrics - nur anzeigen wenn Sprache erkannt wurde */}
               {audioMetrics && !isNoSpeech && (
-                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: `1px solid ${b.borderColor}` }}>
-                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: b.textMain, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: `1px solid ${branding.borderColor}` }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: branding.textMain, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Mic size={14} color={primaryAccent} /> Sprechanalyse
                   </h5>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {/* Speech Rate */}
                     {audioMetrics.speech_rate && (
-                      <div style={{ padding: '12px', background: b.cardBgHover, borderRadius: '10px' }}>
-                        <div style={{ fontSize: '11px', color: b.textMuted, marginBottom: '4px' }}>Sprechtempo</div>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: b.textMain, textTransform: 'capitalize' }}>
+                      <div style={{ padding: '12px', background: branding.cardBgHover, borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: branding.textMuted, marginBottom: '4px' }}>Sprechtempo</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain, textTransform: 'capitalize' }}>
                           {audioMetrics.speech_rate === 'optimal' ? '✓ Optimal' : audioMetrics.speech_rate === 'zu_schnell' ? '⚡ Zu schnell' : audioMetrics.speech_rate === 'zu_langsam' ? '🐢 Zu langsam' : audioMetrics.speech_rate}
                         </div>
                       </div>
@@ -590,17 +590,17 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
 
                     {/* Filler Words */}
                     {audioMetrics.filler_words && (
-                      <div style={{ padding: '12px', background: b.cardBgHover, borderRadius: '10px' }}>
-                        <div style={{ fontSize: '11px', color: b.textMuted, marginBottom: '4px' }}>Füllwörter</div>
+                      <div style={{ padding: '12px', background: branding.cardBgHover, borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: branding.textMuted, marginBottom: '4px' }}>Füllwörter</div>
                         <div style={{
                           fontSize: '14px',
                           fontWeight: 600,
-                          color: audioMetrics.filler_words.count <= 2 ? b.success : audioMetrics.filler_words.count <= 5 ? b.warning : b.error
+                          color: audioMetrics.filler_words.count <= 2 ? branding.success : audioMetrics.filler_words.count <= 5 ? branding.warning : branding.error
                         }}>
                           {audioMetrics.filler_words.count || 0} erkannt
                         </div>
                         {audioMetrics.filler_words.words?.length > 0 && (
-                          <div style={{ fontSize: '11px', color: b.textMuted, marginTop: '4px' }}>
+                          <div style={{ fontSize: '11px', color: branding.textMuted, marginTop: '4px' }}>
                             {audioMetrics.filler_words.words.slice(0, 5).join(', ')}
                           </div>
                         )}
@@ -609,8 +609,8 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
 
                     {/* Confidence Score */}
                     {audioMetrics.confidence_score != null && (
-                      <div style={{ padding: '12px', background: b.cardBgHover, borderRadius: '10px' }}>
-                        <div style={{ fontSize: '11px', color: b.textMuted, marginBottom: '4px' }}>Selbstsicherheit</div>
+                      <div style={{ padding: '12px', background: branding.cardBgHover, borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: branding.textMuted, marginBottom: '4px' }}>Selbstsicherheit</div>
                         <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.confidence_score, primaryAccent) }}>
                           {audioMetrics.confidence_score}%
                         </div>
@@ -619,8 +619,8 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
 
                     {/* Clarity Score */}
                     {audioMetrics.clarity_score != null && (
-                      <div style={{ padding: '12px', background: b.cardBgHover, borderRadius: '10px' }}>
-                        <div style={{ fontSize: '11px', color: b.textMuted, marginBottom: '4px' }}>Klarheit</div>
+                      <div style={{ padding: '12px', background: branding.cardBgHover, borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: branding.textMuted, marginBottom: '4px' }}>Klarheit</div>
                         <div style={{ fontSize: '14px', fontWeight: 600, color: getScoreColor(audioMetrics.clarity_score, primaryAccent) }}>
                           {audioMetrics.clarity_score}%
                         </div>
@@ -630,7 +630,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
 
                   {/* Notes */}
                   {audioMetrics.notes && (
-                    <p style={{ fontSize: '12px', color: b.textMuted, marginTop: '10px', fontStyle: 'italic' }}>
+                    <p style={{ fontSize: '12px', color: branding.textMuted, marginTop: '10px', fontStyle: 'italic' }}>
                       {audioMetrics.notes}
                     </p>
                   )}
@@ -647,7 +647,7 @@ const AnswerCard = ({ answer, index, primaryAccent }) => {
 /**
  * Delete confirmation dialog
  */
-const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAccent }) => {
+const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAccent, branding }) => {
   if (!isOpen) return null;
 
   return (
@@ -682,21 +682,21 @@ const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAc
             width: '48px',
             height: '48px',
             borderRadius: '12px',
-            backgroundColor: b.errorLight,
+            backgroundColor: branding.errorLight,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Trash2 size={24} color={b.error} />
+            <Trash2 size={24} color={branding.error} />
           </div>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, color: b.textMain, margin: 0 }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: branding.textMain, margin: 0 }}>
               Session löschen?
             </h3>
           </div>
         </div>
 
-        <p style={{ fontSize: '14px', color: b.textSecondary, lineHeight: 1.6, marginBottom: '24px' }}>
+        <p style={{ fontSize: '14px', color: branding.textSecondary, lineHeight: 1.6, marginBottom: '24px' }}>
           Möchtest du diese Session wirklich löschen? Alle Antworten und Feedback werden unwiderruflich entfernt.
         </p>
 
@@ -707,9 +707,9 @@ const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAc
             style={{
               padding: '10px 20px',
               borderRadius: '10px',
-              border: `1px solid ${b.disabledBg}`,
+              border: `1px solid ${branding.disabledBg}`,
               backgroundColor: 'white',
-              color: b.textMain,
+              color: branding.textMain,
               fontSize: '14px',
               fontWeight: 500,
               cursor: isDeleting ? 'not-allowed' : 'pointer',
@@ -725,7 +725,7 @@ const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAc
               padding: '10px 20px',
               borderRadius: '10px',
               border: 'none',
-              backgroundColor: b.error,
+              backgroundColor: branding.error,
               color: 'white',
               fontSize: '14px',
               fontWeight: 500,
@@ -757,13 +757,13 @@ const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAc
 /**
  * Category score card for video training
  */
-const CategoryScoreCard = ({ category, primaryAccent }) => {
+const CategoryScoreCard = ({ category, primaryAccent, branding }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const IconComponent = CATEGORY_ICONS[category.category] || Star;
   const color = getScoreColor(category.score, primaryAccent);
 
   return (
-    <div style={{ background: '#fff', borderRadius: '12px', border: `1px solid ${b.borderColor}`, overflow: 'hidden', marginBottom: '10px' }}>
+    <div style={{ background: '#fff', borderRadius: '12px', border: `1px solid ${branding.borderColor}`, overflow: 'hidden', marginBottom: '10px' }}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         style={{ width: '100%', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
@@ -772,27 +772,27 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
           <IconComponent size={18} color={color} />
         </div>
         <div style={{ flex: 1, textAlign: 'left' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: b.textMain, margin: 0 }}>{category.label}</h4>
+          <h4 style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain, margin: 0 }}>{category.label}</h4>
         </div>
         <span style={{ fontSize: '16px', fontWeight: 700, color }}>{Math.round(category.score)}%</span>
-        <ChevronDown size={18} color={b.textMuted} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+        <ChevronDown size={18} color={branding.textMuted} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
       </button>
 
       <AnimatePresence>
         {isExpanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
-            <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${b.borderColor}`, paddingTop: '12px' }}>
-              {category.feedback && <p style={{ fontSize: '13px', color: b.textSecondary, lineHeight: 1.5, marginBottom: '10px' }}>{category.feedback}</p>}
+            <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${branding.borderColor}`, paddingTop: '12px' }}>
+              {category.feedback && <p style={{ fontSize: '13px', color: branding.textSecondary, lineHeight: 1.5, marginBottom: '10px' }}>{category.feedback}</p>}
               {category.strengths?.length > 0 && (
                 <div style={{ marginBottom: '10px' }}>
-                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: b.success, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={12} /> Stärken</h6>
-                  <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: b.textSecondary }}>{category.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: branding.success, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={12} /> Stärken</h6>
+                  <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: branding.textSecondary }}>{category.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
                 </div>
               )}
               {category.improvements?.length > 0 && (
                 <div>
-                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: b.warning, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Lightbulb size={12} /> Tipps</h6>
-                  <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: b.textSecondary }}>{category.improvements.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                  <h6 style={{ fontSize: '12px', fontWeight: 600, color: branding.warning, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Lightbulb size={12} /> Tipps</h6>
+                  <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: branding.textSecondary }}>{category.improvements.map((s, i) => <li key={i}>{s}</li>)}</ul>
                 </div>
               )}
             </div>
@@ -1040,7 +1040,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <ScoreGauge score={overallScore} size={100} primaryAccent="#fff" isHeader={true} />
+              <ScoreGauge score={overallScore} size={100} primaryAccent="#fff" isHeader={true} branding={b} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.9 }}>
                   {isVideo ? <Video size={16} /> : isRoleplay ? <MessageSquare size={16} /> : <Target size={16} />}
@@ -1097,7 +1097,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                 <MessageSquare size={18} color={primaryAccent} /> Deine Antworten ({answers.length})
               </h3>
               {answers.map((answer, index) => (
-                <AnswerCard key={answer.id || index} answer={answer} index={index} primaryAccent={primaryAccent} />
+                <AnswerCard key={answer.id || index} answer={answer} index={index} primaryAccent={primaryAccent} branding={b} />
               ))}
 
               {/* Action Buttons for resumable sessions with answers */}
@@ -1229,7 +1229,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
           {/* Roleplay Audio Player */}
           {isRoleplay && roleplayData && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ marginBottom: '20px' }}>
-              <RoleplayAudioPlayer sessionId={session.id} conversationId={roleplayData.conversation_id} primaryAccent={primaryAccent} />
+              <RoleplayAudioPlayer sessionId={session.id} conversationId={roleplayData.conversation_id} primaryAccent={primaryAccent} branding={b} />
             </motion.div>
           )}
 
@@ -1246,7 +1246,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
               </h3>
               <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
                 {roleplayData.transcript.map((entry, index) => (
-                  <TranscriptEntry key={index} entry={entry} index={index} primaryAccent={primaryAccent} />
+                  <TranscriptEntry key={index} entry={entry} index={index} primaryAccent={primaryAccent} branding={b} />
                 ))}
               </div>
             </motion.div>
@@ -1262,7 +1262,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                 <Star size={16} color={primaryAccent} /> Detaillierte Bewertung
               </h3>
               {categoryScores.map((category, index) => (
-                <CategoryScoreCard key={category.category || index} category={category} primaryAccent={primaryAccent} />
+                <CategoryScoreCard key={category.category || index} category={category} primaryAccent={primaryAccent} branding={b} />
               ))}
             </motion.div>
           )}
@@ -1448,6 +1448,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
         onConfirm={handleDeleteSession}
         isDeleting={isDeleting}
         primaryAccent={primaryAccent}
+        branding={b}
       />
     </div>
   );
