@@ -23,9 +23,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import StructuredFeedbackDisplay from './StructuredFeedbackDisplay';
 import AudioAnalysisDisplay from './AudioAnalysisDisplay';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { useBranding } from '@/hooks/useBranding';
 
 const SessionSidebar = ({
   session,
@@ -42,11 +40,8 @@ const SessionSidebar = ({
   const [activeTab, setActiveTab] = useState('coaching');
   const [hoveredTab, setHoveredTab] = useState(null);
 
-  // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+  // Partner theming via useBranding hook
+  const b = useBranding();
 
   // Calculate score from feedback
   const score = useMemo(() => {
@@ -71,7 +66,7 @@ const SessionSidebar = ({
     #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:active {
       background-color: transparent !important;
       background-image: none !important;
-      color: ${COLORS.slate[500]} !important;
+      color: ${b.textMuted} !important;
       border: none !important;
       border-bottom: 2px solid transparent !important;
       border-color: transparent !important;
@@ -81,8 +76,8 @@ const SessionSidebar = ({
     }
     #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:hover,
     #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:focus {
-      background-color: ${COLORS.slate[50]} !important;
-      color: ${COLORS.slate[700]} !important;
+      background-color: ${b.cardBgHover} !important;
+      color: ${b.textSecondary} !important;
       border-bottom: 2px solid transparent !important;
     }
     #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"],
@@ -91,10 +86,10 @@ const SessionSidebar = ({
     #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:hover,
     #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:focus,
     #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:active {
-      background-color: ${primaryAccentLight} !important;
-      color: ${primaryAccent} !important;
+      background-color: ${b.primaryAccentLight} !important;
+      color: ${b.primaryAccent} !important;
       border: none !important;
-      border-bottom: 2px solid ${primaryAccent} !important;
+      border-bottom: 2px solid ${b.primaryAccent} !important;
     }
     /* Also override icon colors inside buttons */
     #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"] svg,
@@ -102,7 +97,7 @@ const SessionSidebar = ({
       color: inherit !important;
       fill: currentColor !important;
     }
-  `, [styleId, primaryAccent, primaryAccentLight]);
+  `, [styleId, b]);
 
   if (isCollapsed) {
     return (
@@ -110,8 +105,8 @@ const SessionSidebar = ({
         initial={{ width: 0, opacity: 0 }}
         animate={{ width: 48, opacity: 1 }}
         style={{
-          backgroundColor: 'white',
-          borderLeft: `1px solid ${COLORS.slate[200]}`,
+          backgroundColor: b.cardBgColor,
+          borderLeft: `1px solid ${b.borderColor}`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -124,7 +119,7 @@ const SessionSidebar = ({
         <div style={{
           writingMode: 'vertical-rl',
           fontSize: '12px',
-          color: COLORS.slate[500],
+          color: b.textMuted,
           fontWeight: 500,
         }}>
           Feedback Panel
@@ -142,8 +137,8 @@ const SessionSidebar = ({
         initial={{ width: 0, opacity: 0 }}
         animate={{ width: '100%', opacity: 1 }}
         style={{
-          backgroundColor: 'white',
-          borderLeft: `1px solid ${COLORS.slate[200]}`,
+          backgroundColor: b.cardBgColor,
+          borderLeft: `1px solid ${b.borderColor}`,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -153,7 +148,7 @@ const SessionSidebar = ({
       >
       {/* Header - Partner Theme Gradient with inline styles */}
       <div style={{
-        background: headerGradient,
+        background: b.headerGradient,
         padding: '16px',
         flexShrink: 0,
       }}>
@@ -164,15 +159,15 @@ const SessionSidebar = ({
           marginBottom: '8px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Trophy style={{ width: '20px', height: '20px', color: COLORS.amber[300] }} />
-            <span style={{ color: 'white', fontWeight: 600, fontSize: '14px' }}>Rollenspiel abgeschlossen</span>
+            <Trophy style={{ width: '20px', height: '20px', color: b.warning }} />
+            <span style={{ color: b.headerText, fontWeight: 600, fontSize: '14px' }}>Rollenspiel abgeschlossen</span>
           </div>
           <Button
             size="sm"
             onClick={onRetry}
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              color: 'white',
+              backgroundColor: b.overlayLight,
+              color: b.headerText,
               border: 'none',
               fontSize: '12px',
             }}
@@ -181,8 +176,8 @@ const SessionSidebar = ({
           </Button>
         </div>
         {score !== null && (
-          <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '12px', margin: 0 }}>
-            Ihre Punktzahl war <span style={{ color: 'white', fontWeight: 700 }}>{score}%</span>
+          <p style={{ color: `${b.headerText}CC`, fontSize: '12px', margin: 0 }}>
+            Ihre Punktzahl war <span style={{ color: b.headerText, fontWeight: 700 }}>{score}%</span>
           </p>
         )}
       </div>
@@ -190,7 +185,7 @@ const SessionSidebar = ({
       {/* Tab Navigation - Ocean Theme with inline styles */}
       <div style={{
         display: 'flex',
-        borderBottom: `1px solid ${COLORS.slate[200]}`,
+        borderBottom: `1px solid ${b.borderColor}`,
         flexShrink: 0,
       }}>
         {/* Collapse Button */}
@@ -198,20 +193,20 @@ const SessionSidebar = ({
           onClick={onCollapse}
           style={{
             padding: '12px',
-            borderRight: `1px solid ${COLORS.slate[200]}`,
-            color: COLORS.slate[400],
-            backgroundColor: 'transparent',
+            borderRight: `1px solid ${b.borderColor}`,
+            color: b.textMuted,
+            backgroundColor: b.transparent,
             border: 'none',
             cursor: 'pointer',
             transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = COLORS.slate[50];
-            e.currentTarget.style.color = COLORS.slate[600];
+            e.currentTarget.style.backgroundColor = b.cardBgHover;
+            e.currentTarget.style.color = b.textSecondary;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = COLORS.slate[400];
+            e.currentTarget.style.backgroundColor = b.transparent;
+            e.currentTarget.style.color = b.textMuted;
           }}
           title="Panel einklappen"
         >
@@ -237,9 +232,9 @@ const SessionSidebar = ({
             border: 'none',
             cursor: 'pointer',
             transition: 'all 0.2s',
-            backgroundColor: activeTab === 'coaching' ? primaryAccentLight : (hoveredTab === 'coaching' ? COLORS.slate[50] : 'transparent'),
-            color: activeTab === 'coaching' ? primaryAccent : (hoveredTab === 'coaching' ? COLORS.slate[700] : COLORS.slate[500]),
-            borderBottom: activeTab === 'coaching' ? `2px solid ${primaryAccent}` : '2px solid transparent',
+            backgroundColor: activeTab === 'coaching' ? b.primaryAccentLight : (hoveredTab === 'coaching' ? b.cardBgHover : b.transparent),
+            color: activeTab === 'coaching' ? b.primaryAccent : (hoveredTab === 'coaching' ? b.textMain : b.textMuted),
+            borderBottom: activeTab === 'coaching' ? `2px solid ${b.primaryAccent}` : '2px solid transparent',
           }}
         >
           <MessageSquare style={{ width: '16px', height: '16px' }} />
@@ -265,9 +260,9 @@ const SessionSidebar = ({
             border: 'none',
             cursor: 'pointer',
             transition: 'all 0.2s',
-            backgroundColor: activeTab === 'analysen' ? primaryAccentLight : (hoveredTab === 'analysen' ? COLORS.slate[50] : 'transparent'),
-            color: activeTab === 'analysen' ? primaryAccent : (hoveredTab === 'analysen' ? COLORS.slate[700] : COLORS.slate[500]),
-            borderBottom: activeTab === 'analysen' ? `2px solid ${primaryAccent}` : '2px solid transparent',
+            backgroundColor: activeTab === 'analysen' ? b.primaryAccentLight : (hoveredTab === 'analysen' ? b.cardBgHover : b.transparent),
+            color: activeTab === 'analysen' ? b.primaryAccent : (hoveredTab === 'analysen' ? b.textMain : b.textMuted),
+            borderBottom: activeTab === 'analysen' ? `2px solid ${b.primaryAccent}` : '2px solid transparent',
           }}
         >
           <BarChart3 style={{ width: '16px', height: '16px' }} />
