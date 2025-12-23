@@ -244,13 +244,13 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                 width: '40px',
                 height: '40px',
                 borderRadius: b.radius.lg,
-                background: b.colors.headerGradient,
+                background: b.headerGradient,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Sparkles style={{ width: '20px', height: '20px', color: b.colors.headerText }} />
+              <Sparkles style={{ width: '20px', height: '20px', color: b.headerText }} />
             </div>
             <span style={{ color: COLORS.slate[900] }}>{scenario.title}</span>
           </DialogTitle>
@@ -297,7 +297,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
                   hasError={!!errors[varDef.key]}
                   rows={3}
-                  focusColor={b.colors.primaryAccent}
+                  focusColor={b.primaryAccent}
                   b={b}
                 />
               ) : (
@@ -308,7 +308,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                   onChange={(e) => handleChange(varDef.key, e.target.value)}
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
                   hasError={!!errors[varDef.key]}
-                  focusColor={b.colors.primaryAccent}
+                  focusColor={b.primaryAccent}
                   b={b}
                 />
               )}
@@ -329,8 +329,8 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
           <StyledButton
             onClick={handleSubmit}
             variant="primary"
-            themedGradient={b.colors.headerGradient}
-            themedGradientHover={b.colors.headerGradientHover}
+            themedGradient={b.headerGradient}
+            themedGradientHover={b.buttonGradientHover}
             b={b}
           >
             <Sparkles style={{ width: '16px', height: '16px' }} />

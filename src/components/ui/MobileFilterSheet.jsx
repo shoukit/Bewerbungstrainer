@@ -42,8 +42,8 @@ const useIsMobile = () => {
  */
 const CategoryChip = ({ label, icon: Icon, isSelected, onClick, color, bgColor }) => {
   const b = useBranding();
-  const chipColor = color || b.colors.primary;
-  const chipBgColor = bgColor || `${b.colors.primary}15`;
+  const chipColor = color || b.primaryAccent;
+  const chipBgColor = bgColor || `${b.primaryAccent}15`;
 
   return (
     <button
@@ -185,8 +185,8 @@ const MobileFilterSheet = ({
                   transition: b.transition.normal,
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = b.colors.primary;
-                  e.target.style.boxShadow = `0 0 0 3px ${b.colors.primary}20`;
+                  e.target.style.borderColor = b.primaryAccent;
+                  e.target.style.boxShadow = `0 0 0 3px ${b.primaryAccent}20`;
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = COLORS.slate[200];
@@ -271,7 +271,7 @@ const MobileFilterSheet = ({
                 }}
                 title="Kachelansicht"
               >
-                <LayoutGrid style={{ width: '16px', height: '16px', color: viewMode === 'grid' ? b.colors.primary : COLORS.slate[500] }} />
+                <LayoutGrid style={{ width: '16px', height: '16px', color: viewMode === 'grid' ? b.primaryAccent : COLORS.slate[500] }} />
               </button>
               <button
                 onClick={() => onViewModeChange('list')}
@@ -288,7 +288,7 @@ const MobileFilterSheet = ({
                 }}
                 title="Listenansicht"
               >
-                <List style={{ width: '16px', height: '16px', color: viewMode === 'list' ? b.colors.primary : COLORS.slate[500] }} />
+                <List style={{ width: '16px', height: '16px', color: viewMode === 'list' ? b.primaryAccent : COLORS.slate[500] }} />
               </button>
             </div>
           )}
@@ -372,13 +372,13 @@ const MobileFilterSheet = ({
             width: '44px',
             height: '44px',
             borderRadius: b.radius.md,
-            border: `1px solid ${activeFilterCount > 0 ? b.colors.primary : COLORS.slate[200]}`,
-            backgroundColor: activeFilterCount > 0 ? `${b.colors.primary}10` : 'white',
+            border: `1px solid ${activeFilterCount > 0 ? b.primaryAccent : COLORS.slate[200]}`,
+            backgroundColor: activeFilterCount > 0 ? `${b.primaryAccent}10` : 'white',
             cursor: 'pointer',
             flexShrink: 0,
           }}
         >
-          <Filter style={{ width: '18px', height: '18px', color: activeFilterCount > 0 ? b.colors.primary : COLORS.slate[500] }} />
+          <Filter style={{ width: '18px', height: '18px', color: activeFilterCount > 0 ? b.primaryAccent : COLORS.slate[500] }} />
           <FilterBadge count={activeFilterCount} />
         </button>
 
@@ -408,7 +408,7 @@ const MobileFilterSheet = ({
                 justifyContent: 'center',
               }}
             >
-              <LayoutGrid style={{ width: '14px', height: '14px', color: viewMode === 'grid' ? b.colors.primary : COLORS.slate[500] }} />
+              <LayoutGrid style={{ width: '14px', height: '14px', color: viewMode === 'grid' ? b.primaryAccent : COLORS.slate[500] }} />
             </button>
             <button
               onClick={() => onViewModeChange('list')}
@@ -423,7 +423,7 @@ const MobileFilterSheet = ({
                 justifyContent: 'center',
               }}
             >
-              <List style={{ width: '14px', height: '14px', color: viewMode === 'list' ? b.colors.primary : COLORS.slate[500] }} />
+              <List style={{ width: '14px', height: '14px', color: viewMode === 'list' ? b.primaryAccent : COLORS.slate[500] }} />
             </button>
           </div>
         )}
@@ -456,7 +456,7 @@ const MobileFilterSheet = ({
           <DialogHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <DialogTitle style={{ display: 'flex', alignItems: 'center', gap: b.space[2] }}>
-                <Filter style={{ width: '20px', height: '20px', color: b.colors.primary }} />
+                <Filter style={{ width: '20px', height: '20px', color: b.primaryAccent }} />
                 Filter
               </DialogTitle>
               {activeFilterCount > 0 && (
@@ -562,7 +562,7 @@ const MobileFilterSheet = ({
               marginTop: b.space[3],
               borderRadius: b.radius.lg,
               border: 'none',
-              background: `linear-gradient(135deg, ${b.colors.primary} 0%, ${b.colors.primary}dd 100%)`,
+              background: `linear-gradient(135deg, ${b.primaryAccent} 0%, ${b.primaryAccent}dd 100%)`,
               color: 'white',
               fontSize: b.fontSize.md,
               fontWeight: 600,

@@ -35,7 +35,7 @@ export function SessionHeader({ session, scenario, feedback }) {
   return (
     <div
       style={{
-        backgroundColor: b.colors.primaryAccentLight,
+        backgroundColor: b.primaryAccentLight,
         borderBottom: `1px solid ${COLORS.slate[200]}`,
         position: 'sticky',
         top: 0,
