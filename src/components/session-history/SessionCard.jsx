@@ -45,7 +45,8 @@ const SessionCard = ({
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const isMobile = useMobile();
+  // Use 900px breakpoint for better tablet support - cards have many elements
+  const isMobile = useMobile(900);
 
   const getScore = () => {
     let rawScore = null;

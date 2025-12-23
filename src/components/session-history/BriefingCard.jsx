@@ -23,7 +23,8 @@ const BriefingCard = ({
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const isMobile = useMobile();
+  // Use 900px breakpoint for better tablet support (consistent with SessionCard)
+  const isMobile = useMobile(900);
 
   const Icon = getBriefingIcon(briefing.template_icon);
 

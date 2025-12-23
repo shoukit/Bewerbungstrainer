@@ -953,9 +953,9 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   // Loading state
   if (isLoading) {
     return (
-      <div style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '100%', minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
         <div style={{ textAlign: 'center' }}>
-          <Loader2 size={48} color={primaryAccent} style={{ animation: 'spin 1s linear infinite' }} />
+          <Loader2 size={48} color={primaryAccent} style={{ animation: 'spin 1s linear infinite', display: 'block', margin: '0 auto' }} />
           <p style={{ color: b.textMuted, marginTop: '16px' }}>Analyse wird geladen...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
