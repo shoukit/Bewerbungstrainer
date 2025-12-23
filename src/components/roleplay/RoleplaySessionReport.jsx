@@ -100,6 +100,28 @@ const getPacingPosition = (rating) => {
   }
 };
 
+/**
+ * Parse timestamp string "MM:SS" to seconds
+ */
+const parseTimestamp = (timestamp) => {
+  if (typeof timestamp === 'number') return timestamp;
+  if (!timestamp || typeof timestamp !== 'string') return 0;
+
+  const parts = timestamp.split(':');
+  if (parts.length === 2) {
+    const minutes = parseInt(parts[0], 10) || 0;
+    const seconds = parseInt(parts[1], 10) || 0;
+    return minutes * 60 + seconds;
+  }
+  if (parts.length === 3) {
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    const seconds = parseInt(parts[2], 10) || 0;
+    return hours * 3600 + minutes * 60 + seconds;
+  }
+  return parseFloat(timestamp) || 0;
+};
+
 // =============================================================================
 // SUB-COMPONENTS
 // =============================================================================
@@ -234,6 +256,11 @@ const AudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, branding
     if (!audioRef.current) return;
     audioRef.current.currentTime = time;
     setCurrentTime(time);
+    // Auto-play after seeking to timestamp
+    if (!isPlaying) {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
   };
 
   // Expose seek function to parent
@@ -250,7 +277,37 @@ const AudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, branding
     seekTo(percentage * duration);
   };
 
-  if (!audioUrl) return null;
+  // Show placeholder if no audio URL
+  if (!audioUrl) {
+    return (
+      <div style={{
+        background: '#fff',
+        borderRadius: '16px',
+        padding: '20px',
+        border: `1px solid ${branding.borderColor}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <Volume2 size={18} color={branding.textMuted} />
+          <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+            Gesprächsaufnahme
+          </span>
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '80px',
+          background: branding.cardBgHover,
+          borderRadius: '12px',
+          color: branding.textMuted,
+          fontSize: '13px',
+        }}>
+          <VolumeX size={20} style={{ marginRight: '8px' }} />
+          Keine Audioaufnahme verfügbar
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -1039,21 +1096,58 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
           </div>
 
           {fillerWordAnalysis.length > 0 ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
               {fillerWordAnalysis.map((item, idx) => (
-                <span
-                  key={idx}
-                  style={{
-                    fontSize: '13px',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    background: '#fef3c7',
-                    color: '#92400e',
-                    fontWeight: 500,
-                  }}
-                >
-                  "{item.word}" ({item.count}x)
-                </span>
+                <div key={idx} style={{ borderRadius: '8px', background: '#fef3c7', overflow: 'hidden' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                  }}>
+                    <span style={{ fontSize: '13px', color: '#92400e', fontWeight: 500 }}>
+                      "{item.word}"
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
+                      {item.count}x
+                    </span>
+                  </div>
+                  {item.examples?.length > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '6px',
+                      padding: '8px 12px',
+                      background: '#fef9e7',
+                      borderTop: '1px solid #fde68a',
+                    }}>
+                      {item.examples.map((example, exIdx) => (
+                        <button
+                          key={exIdx}
+                          onClick={() => onJumpToTimestamp?.(parseTimestamp(example.timestamp))}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            background: '#fef3c7',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            color: '#92400e',
+                            transition: 'all 0.15s',
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#fde68a'}
+                          onMouseOut={(e) => e.currentTarget.style.background = '#fef3c7'}
+                        >
+                          <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{example.timestamp}</span>
+                          <Play size={10} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           ) : (
@@ -1213,13 +1307,13 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
               {tonality.highlights.map((highlight, idx) => (
                 <button
                   key={idx}
-                  onClick={() => onJumpToTimestamp?.(highlight.timestamp)}
+                  onClick={() => onJumpToTimestamp?.(parseTimestamp(highlight.timestamp))}
                   style={{
                     width: '100%',
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     gap: '8px',
-                    padding: '8px 12px',
+                    padding: '10px 12px',
                     marginBottom: '6px',
                     borderRadius: '8px',
                     border: 'none',
@@ -1235,18 +1329,28 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
                     borderRadius: '4px',
                     background: highlight.type === 'positive' ? '#dcfce7' : '#fee2e2',
                     color: highlight.type === 'positive' ? '#166534' : '#991b1b',
+                    flexShrink: 0,
                   }}>
                     {highlight.timestamp}
                   </span>
-                  {highlight.type === 'positive' ? (
-                    <CheckCircle2 size={14} color="#22c55e" />
-                  ) : (
-                    <AlertTriangle size={14} color="#ef4444" />
-                  )}
-                  <span style={{ fontSize: '12px', color: branding.textSecondary, flex: 1 }}>
+                  <span style={{ flexShrink: 0, marginTop: '1px' }}>
+                    {highlight.type === 'positive' ? (
+                      <CheckCircle2 size={14} color="#22c55e" />
+                    ) : (
+                      <AlertTriangle size={14} color="#ef4444" />
+                    )}
+                  </span>
+                  <span style={{
+                    fontSize: '12px',
+                    color: branding.textSecondary,
+                    flex: 1,
+                    lineHeight: 1.4,
+                    wordBreak: 'break-word',
+                    overflow: 'hidden',
+                  }}>
                     {highlight.note}
                   </span>
-                  <Play size={12} color={branding.textMuted} />
+                  <Play size={12} color={branding.textMuted} style={{ flexShrink: 0, marginTop: '2px' }} />
                 </button>
               ))}
             </div>
