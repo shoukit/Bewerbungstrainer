@@ -1409,9 +1409,9 @@ const AnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimes
                     fontSize: '12px',
                     color: branding.textSecondary,
                     flex: 1,
-                    lineHeight: 1.4,
+                    lineHeight: 1.5,
                     wordBreak: 'break-word',
-                    overflow: 'hidden',
+                    whiteSpace: 'normal',
                   }}>
                     {highlight.note}
                   </span>
@@ -1670,25 +1670,14 @@ const RoleplaySessionReport = ({
         margin: '0 auto',
         padding: isMobile ? '16px' : '24px 32px',
       }}>
-        {/* Audio Player (Full Width) */}
-        <div style={{ marginBottom: '24px' }}>
-          <AudioPlayer
-            audioUrl={audioUrl}
-            duration={session?.duration}
-            primaryAccent={primaryAccent}
-            branding={b}
-            onSeek={audioSeekRef}
-          />
-        </div>
-
-        {/* Two Column Layout */}
+        {/* Two Column Layout - 30:70 split */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 420px',
+          gridTemplateColumns: isMobile ? '1fr' : '30fr 70fr',
           gap: '24px',
           alignItems: 'start',
         }}>
-          {/* Left Column: Transcript */}
+          {/* Left Column: Transcript + Audio Player */}
           <div style={{ order: isMobile ? 2 : 1 }}>
             <TranscriptView
               transcript={transcript}
@@ -1697,6 +1686,16 @@ const RoleplaySessionReport = ({
               branding={b}
               onSeekToTime={handleSeekToTime}
             />
+            {/* Audio Player under Transcript */}
+            <div style={{ marginTop: '16px' }}>
+              <AudioPlayer
+                audioUrl={audioUrl}
+                duration={session?.duration}
+                primaryAccent={primaryAccent}
+                branding={b}
+                onSeek={audioSeekRef}
+              />
+            </div>
           </div>
 
           {/* Right Column: Tabbed Feedback */}
