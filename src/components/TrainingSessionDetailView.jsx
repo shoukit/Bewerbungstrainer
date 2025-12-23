@@ -443,7 +443,7 @@ const AnswerCard = ({ answer, index, primaryAccent, branding }) => {
           {index + 1}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain, margin: 0, lineHeight: 1.4 }}>
             {answer.question_text || `Frage ${index + 1}`}
           </h4>
         </div>
