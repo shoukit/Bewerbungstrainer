@@ -1,25 +1,28 @@
 /**
  * Audio Analysis Prompt
  *
+ * Professional voice coaching analysis for paraverbal communication.
  * Used by generateAudioAnalysis() in gemini.js
- * Analyzes audio files for paraverbal communication (speech quality, filler words, pacing, tonality).
  *
- * IMPORTANT: This prompt instructs the AI to analyze ONLY the user's voice,
- * ignoring the AI partner who may open the conversation.
+ * Analyzes: Speech clarity, filler words, pacing, tonality, confidence.
  *
- * Supports dynamic role labels for different training scenarios:
- * - Interview mode: User is "Bewerber", AI is "Interviewer"
- * - Simulation mode: User is e.g. "Kundenberater", AI is e.g. "Kunde"
+ * Supports:
+ * - Single voice (Szenario-Training, Rhetorik-Gym)
+ * - Two voices with separation (Live-Gespräche with AI interviewer)
+ * - Optional transcript for improved accuracy
  */
 
 import { getFillerWordsWithContext } from './fillerWords';
 
 /**
  * Get the audio analysis prompt
- * @param {object} options - Options for the prompt
+ *
+ * @param {object} options - Configuration options
  * @param {string} options.userRoleLabel - Label for the user role (e.g., 'Bewerber', 'Kundenberater')
  * @param {string} options.agentRoleLabel - Label for the AI role (e.g., 'Interviewer', 'Kunde')
  * @param {string} options.roleType - 'interview' or 'simulation'
+ * @param {boolean} options.hasTwoVoices - Whether audio contains AI + user (default: true for backwards compat)
+ * @param {string} options.transcript - Optional transcript with speaker labels for improved accuracy
  * @returns {string} - Complete prompt for Gemini audio analysis
  */
 export function getAudioAnalysisPrompt(options = {}) {
@@ -27,93 +30,155 @@ export function getAudioAnalysisPrompt(options = {}) {
     userRoleLabel = 'Bewerber',
     agentRoleLabel = 'Gesprächspartner',
     roleType = 'interview',
+    hasTwoVoices = true,
+    transcript = null,
   } = options;
 
-  // Determine who opens the conversation based on role type
-  const whoOpens = roleType === 'simulation'
-    ? `Der/Die ${agentRoleLabel} ERÖFFNET das Gespräch (KI-Stimme).`
-    : `Der/Die ${agentRoleLabel} ERÖFFNET das Gespräch (KI-Stimme, stellt Fragen).`;
-
-  return `Du bist der Voice-Coach von "KarriereHeld".
-Analysiere die Audio-Datei dieses Rollenspiels.
-
-WICHTIG - QUELLEN-TRENNUNG:
+  // Build voice separation instructions for two-voice scenarios
+  const voiceSeparationBlock = hasTwoVoices
+    ? `
+WICHTIG - STIMMEN-TRENNUNG:
 Die Aufnahme enthält ZWEI Stimmen:
-1. ${agentRoleLabel.toUpperCase()} (KI-Stimme, akzentfrei). ${whoOpens}
-2. ${userRoleLabel.toUpperCase()} (Mensch, der trainiert wird).
+1. ${agentRoleLabel.toUpperCase()} (KI-Stimme, synthetisch, akzentfrei)
+2. ${userRoleLabel.toUpperCase()} (menschliche Stimme, natürliche Varianz)
 
-DEINE AUFGABE:
-Höre dir das gesamte Audio an, aber bewerte AUSSCHLIESSLICH die Stimme des/der ${userRoleLabel.toUpperCase()} (2).
-Ignoriere alles, was der/die ${agentRoleLabel} sagt (Pausen, Tempo, Inhalt).
+Der/Die ${agentRoleLabel} eröffnet typischerweise das Gespräch.
+Analysiere AUSSCHLIESSLICH die Stimme des/der ${userRoleLabel.toUpperCase()}.
+Ignoriere alle Äußerungen des/der ${agentRoleLabel} komplett.
+`
+    : `
+STIMM-ANALYSE:
+Die Aufnahme enthält nur EINE Stimme: ${userRoleLabel.toUpperCase()}.
+Analysiere diese Stimme vollständig.
+`;
 
-ANALYSE-DIMENSIONEN (NUR ${userRoleLabel.toUpperCase()}):
+  // Build transcript reference block if available
+  const transcriptBlock = transcript
+    ? `
+TRANSKRIPT-REFERENZ:
+Das folgende Transkript zeigt, wer was gesagt hat. Nutze es zur Orientierung:
 
-1. SPEECH CLEANLINESS (Füllwörter)
-- Zähle diese Füllwörter beim/bei der ${userRoleLabel}: ${getFillerWordsWithContext()}
-- Gib GENAUE Zeitstempel an (Format MM:SS).
+${transcript}
 
-2. PACING (Tempo)
-- Wie wirkt das Sprechtempo in den Sprech-Phasen? (Gehetzt vs. Souverän).
-- Notiere auffällige Stellen mit Zeitstempel.
+Hinweis: Das Transkript hilft bei der Zuordnung. Die paraverbale Analyse (WIE etwas gesagt wird)
+basiert aber auf dem AUDIO - nicht auf dem Text.
+`
+    : '';
 
-3. TONALITY (Betonung & Melodie)
-- Ist die Stimme monoton, natürlich oder lebendig?
-- Suche nach Highlights (souverän) oder Lowlights (unsicher/brüchig).
+  return `Du bist ein professioneller Voice-Coach und Kommunikationsexperte bei "KarriereHeld".
+Deine Aufgabe: Analysiere die paraverbale Kommunikation im Audio.
 
-4. CONFIDENCE (Wirkung)
-- Confidence Score (0-100): Wie sicher klingt der/die ${userRoleLabel} insgesamt?
+Paraverbal = WIE etwas gesagt wird (nicht WAS gesagt wird).
+${voiceSeparationBlock}
+${transcriptBlock}
+═══════════════════════════════════════════════════════════
+ANALYSE-DIMENSIONEN (nur ${userRoleLabel.toUpperCase()})
+═══════════════════════════════════════════════════════════
 
-OUTPUT FORMAT:
-Antworte NUR mit einem validen JSON-Objekt. Keine Markdown-Formatierung, kein Einleitungstext.
+1. FÜLLWÖRTER (Speech Cleanliness)
+   ────────────────────────────────
+   Erkenne diese Füllwörter: ${getFillerWordsWithContext()}
+
+   Für jedes Füllwort dokumentiere:
+   - Exakter Zeitstempel (MM:SS)
+   - Kontext (z.B. "Satzanfang", "beim Nachdenken", "Themenwechsel")
+
+   Bewertungsmaßstab:
+   - 0 Füllwörter: 100 Punkte (Exzellent)
+   - 1-2 Füllwörter: 85-95 Punkte (Sehr gut)
+   - 3-5 Füllwörter: 65-80 Punkte (Akzeptabel)
+   - 6-10 Füllwörter: 40-60 Punkte (Verbesserungsbedarf)
+   - 10+ Füllwörter: 0-35 Punkte (Deutlicher Übungsbedarf)
+
+2. SPRECHTEMPO (Pacing)
+   ─────────────────────
+   Optimales Tempo: 120-150 Wörter pro Minute (WPM)
+
+   Achte auf:
+   - Durchschnittliches Tempo
+   - Tempo-Variationen (monoton vs. dynamisch)
+   - Auffällige Stellen (zu schnell/langsam) mit Zeitstempel
+
+   Bewertung:
+   - "optimal": 120-150 WPM, natürliche Variation
+   - "zu_schnell": >160 WPM, gehetzt, atemlos
+   - "zu_langsam": <100 WPM, schleppend, unsicher
+   - "ungleichmaessig": Starke Schwankungen
+
+3. TONALITÄT (Melodie & Betonung)
+   ───────────────────────────────
+   Analysiere:
+   - Stimmmelodie (monoton / natürlich / lebendig)
+   - Betonungen (passend / fehlend / übertrieben)
+   - Emotionale Färbung (neutral / engagiert / nervös)
+
+   Dokumentiere Highlights und Lowlights:
+   - Positive Momente: Souveräne Passagen, gute Betonungen
+   - Negative Momente: Unsichere Stellen, Stimmbrüche, Monotonie
+
+4. SELBSTSICHERHEIT (Confidence)
+   ──────────────────────────────
+   Gesamteindruck: Wie sicher und kompetent wirkt die Stimme?
+
+   Indikatoren für hohe Confidence:
+   ✓ Klare, feste Stimme
+   ✓ Angemessenes Tempo
+   ✓ Gute Pausen (bewusst, nicht nervös)
+   ✓ Natürliche Betonungen
+
+   Indikatoren für niedrige Confidence:
+   ✗ Zittrige oder leise Stimme
+   ✗ Viele Füllwörter
+   ✗ Hastiges Sprechen
+   ✗ Aufsteigende Satzenden (Unsicherheit)
+
+═══════════════════════════════════════════════════════════
+OUTPUT FORMAT (nur valides JSON, kein Markdown)
+═══════════════════════════════════════════════════════════
 
 {
   "audio_metrics": {
-    "summary_text": "Kurzes Fazit zur Stimme des/der ${userRoleLabel} (max 2 Sätze).",
-    "confidence_score": (0-100),
+    "summary_text": "2-3 Sätze Gesamtfazit zur Stimmwirkung des/der ${userRoleLabel}. Was war gut? Was kann verbessert werden?",
+    "confidence_score": <0-100>,
 
     "speech_cleanliness": {
-      "score": (0-100, 100=Perfekt sauber),
+      "score": <0-100>,
+      "total_filler_count": <Anzahl>,
       "filler_word_analysis": [
         {
           "word": "Ähm",
-          "count": (Anzahl),
+          "count": <Anzahl>,
           "examples": [
             {"timestamp": "00:45", "context": "Satzanfang"},
-            {"timestamp": "01:20", "context": "Nachdenken"}
-          ]
-        },
-        {
-          "word": "Halt/Eigentlich",
-          "count": (Anzahl),
-          "examples": [
-            {"timestamp": "00:32"}
+            {"timestamp": "01:20", "context": "beim Nachdenken"}
           ]
         }
       ],
-      "feedback": "Tipp zur Vermeidung von Füllwörtern."
+      "feedback": "Konkreter Tipp zur Vermeidung"
     },
 
     "pacing": {
-      "rating": "zu_schnell" | "optimal" | "zu_langsam",
-      "perceived_wpm": "string (z.B. '~140 WPM')",
+      "rating": "optimal" | "zu_schnell" | "zu_langsam" | "ungleichmaessig",
+      "estimated_wpm": <Zahl>,
       "issues_detected": [
-        {"timestamp": "02:10", "issue": "Sehr schnell, wirkt gehetzt"}
+        {"timestamp": "02:10", "issue": "Beschreibung des Problems"}
       ],
-      "feedback": "Feedback zur Geschwindigkeit."
+      "feedback": "Konkreter Tipp zum Tempo"
     },
 
     "tonality": {
       "rating": "monoton" | "natürlich" | "lebendig",
+      "emotional_tone": "neutral" | "engagiert" | "nervös" | "enthusiastisch",
       "highlights": [
-        {"timestamp": "00:05", "type": "positive", "note": "Souveräner Einstieg"},
-        {"timestamp": "03:20", "type": "negative", "note": "Stimme wird unsicher"}
+        {"timestamp": "00:30", "type": "positive", "note": "Souveräner Einstieg"},
+        {"timestamp": "03:15", "type": "negative", "note": "Stimme wird unsicher"}
       ],
-      "feedback": "Feedback zur Melodie und Betonung."
+      "feedback": "Konkreter Tipp zur Stimmmelodie"
     }
   }
 }
 
-JSON Analyse:`;
+Beginne jetzt mit der Analyse:`;
 }
 
 export default {

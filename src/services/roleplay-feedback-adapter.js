@@ -70,11 +70,16 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
   // Generate audio analysis if audio file is provided
   if (audioFile) {
     try {
+      // Include transcript for improved speaker identification in audio analysis
       results.audioAnalysisContent = await generateAudioAnalysis(
         audioFile,
         geminiApiKey,
         'gemini-1.5-flash', // modelName
-        roleOptions // pass same role options for audio analysis
+        {
+          ...roleOptions,
+          hasTwoVoices: true, // Live-Gespräche have AI + user voices
+          transcript: formattedTranscript, // Help Gemini identify speakers
+        }
       );
     } catch (error) {
       console.error('❌ [Roleplay Feedback] Failed to generate audio analysis:', error);

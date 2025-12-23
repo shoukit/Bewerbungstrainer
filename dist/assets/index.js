@@ -103,86 +103,141 @@ Sei konstruktiv, ehrlich und motivierend. Fokussiere auf umsetzbare Verbesserung
 Transkript:
 ${t}
 
-JSON Feedback:`}function TT(t,e){return t.replace("${transcript}",e)}const ET=["Ähm","Äh","Öh","Mh","Halt","Eigentlich","Sozusagen","Quasi","Irgendwie","Also","Genau","Ja also"];function Zx(){return`${ET.slice(0,9).map(e=>`"${e}"`).join(", ")}, "Also" (am Satzanfang), "Genau" (als Füllwort), "Ja also"`}function RT(t={}){const{userRoleLabel:e="Bewerber",agentRoleLabel:n="Gesprächspartner",roleType:s="interview"}=t,r=s==="simulation"?`Der/Die ${n} ERÖFFNET das Gespräch (KI-Stimme).`:`Der/Die ${n} ERÖFFNET das Gespräch (KI-Stimme, stellt Fragen).`;return`Du bist der Voice-Coach von "KarriereHeld".
-Analysiere die Audio-Datei dieses Rollenspiels.
-
-WICHTIG - QUELLEN-TRENNUNG:
+JSON Feedback:`}function TT(t,e){return t.replace("${transcript}",e)}const ET=["Ähm","Äh","Öh","Mh","Halt","Eigentlich","Sozusagen","Quasi","Irgendwie","Also","Genau","Ja also"];function Zx(){return`${ET.slice(0,9).map(e=>`"${e}"`).join(", ")}, "Also" (am Satzanfang), "Genau" (als Füllwort), "Ja also"`}function RT(t={}){const{userRoleLabel:e="Bewerber",agentRoleLabel:n="Gesprächspartner",roleType:s="interview",hasTwoVoices:r=!0,transcript:o=null}=t,a=r?`
+WICHTIG - STIMMEN-TRENNUNG:
 Die Aufnahme enthält ZWEI Stimmen:
-1. ${n.toUpperCase()} (KI-Stimme, akzentfrei). ${r}
-2. ${e.toUpperCase()} (Mensch, der trainiert wird).
+1. ${n.toUpperCase()} (KI-Stimme, synthetisch, akzentfrei)
+2. ${e.toUpperCase()} (menschliche Stimme, natürliche Varianz)
 
-DEINE AUFGABE:
-Höre dir das gesamte Audio an, aber bewerte AUSSCHLIESSLICH die Stimme des/der ${e.toUpperCase()} (2).
-Ignoriere alles, was der/die ${n} sagt (Pausen, Tempo, Inhalt).
+Der/Die ${n} eröffnet typischerweise das Gespräch.
+Analysiere AUSSCHLIESSLICH die Stimme des/der ${e.toUpperCase()}.
+Ignoriere alle Äußerungen des/der ${n} komplett.
+`:`
+STIMM-ANALYSE:
+Die Aufnahme enthält nur EINE Stimme: ${e.toUpperCase()}.
+Analysiere diese Stimme vollständig.
+`,l=o?`
+TRANSKRIPT-REFERENZ:
+Das folgende Transkript zeigt, wer was gesagt hat. Nutze es zur Orientierung:
 
-ANALYSE-DIMENSIONEN (NUR ${e.toUpperCase()}):
+${o}
 
-1. SPEECH CLEANLINESS (Füllwörter)
-- Zähle diese Füllwörter beim/bei der ${e}: ${Zx()}
-- Gib GENAUE Zeitstempel an (Format MM:SS).
+Hinweis: Das Transkript hilft bei der Zuordnung. Die paraverbale Analyse (WIE etwas gesagt wird)
+basiert aber auf dem AUDIO - nicht auf dem Text.
+`:"";return`Du bist ein professioneller Voice-Coach und Kommunikationsexperte bei "KarriereHeld".
+Deine Aufgabe: Analysiere die paraverbale Kommunikation im Audio.
 
-2. PACING (Tempo)
-- Wie wirkt das Sprechtempo in den Sprech-Phasen? (Gehetzt vs. Souverän).
-- Notiere auffällige Stellen mit Zeitstempel.
+Paraverbal = WIE etwas gesagt wird (nicht WAS gesagt wird).
+${a}
+${l}
+═══════════════════════════════════════════════════════════
+ANALYSE-DIMENSIONEN (nur ${e.toUpperCase()})
+═══════════════════════════════════════════════════════════
 
-3. TONALITY (Betonung & Melodie)
-- Ist die Stimme monoton, natürlich oder lebendig?
-- Suche nach Highlights (souverän) oder Lowlights (unsicher/brüchig).
+1. FÜLLWÖRTER (Speech Cleanliness)
+   ────────────────────────────────
+   Erkenne diese Füllwörter: ${Zx()}
 
-4. CONFIDENCE (Wirkung)
-- Confidence Score (0-100): Wie sicher klingt der/die ${e} insgesamt?
+   Für jedes Füllwort dokumentiere:
+   - Exakter Zeitstempel (MM:SS)
+   - Kontext (z.B. "Satzanfang", "beim Nachdenken", "Themenwechsel")
 
-OUTPUT FORMAT:
-Antworte NUR mit einem validen JSON-Objekt. Keine Markdown-Formatierung, kein Einleitungstext.
+   Bewertungsmaßstab:
+   - 0 Füllwörter: 100 Punkte (Exzellent)
+   - 1-2 Füllwörter: 85-95 Punkte (Sehr gut)
+   - 3-5 Füllwörter: 65-80 Punkte (Akzeptabel)
+   - 6-10 Füllwörter: 40-60 Punkte (Verbesserungsbedarf)
+   - 10+ Füllwörter: 0-35 Punkte (Deutlicher Übungsbedarf)
+
+2. SPRECHTEMPO (Pacing)
+   ─────────────────────
+   Optimales Tempo: 120-150 Wörter pro Minute (WPM)
+
+   Achte auf:
+   - Durchschnittliches Tempo
+   - Tempo-Variationen (monoton vs. dynamisch)
+   - Auffällige Stellen (zu schnell/langsam) mit Zeitstempel
+
+   Bewertung:
+   - "optimal": 120-150 WPM, natürliche Variation
+   - "zu_schnell": >160 WPM, gehetzt, atemlos
+   - "zu_langsam": <100 WPM, schleppend, unsicher
+   - "ungleichmaessig": Starke Schwankungen
+
+3. TONALITÄT (Melodie & Betonung)
+   ───────────────────────────────
+   Analysiere:
+   - Stimmmelodie (monoton / natürlich / lebendig)
+   - Betonungen (passend / fehlend / übertrieben)
+   - Emotionale Färbung (neutral / engagiert / nervös)
+
+   Dokumentiere Highlights und Lowlights:
+   - Positive Momente: Souveräne Passagen, gute Betonungen
+   - Negative Momente: Unsichere Stellen, Stimmbrüche, Monotonie
+
+4. SELBSTSICHERHEIT (Confidence)
+   ──────────────────────────────
+   Gesamteindruck: Wie sicher und kompetent wirkt die Stimme?
+
+   Indikatoren für hohe Confidence:
+   ✓ Klare, feste Stimme
+   ✓ Angemessenes Tempo
+   ✓ Gute Pausen (bewusst, nicht nervös)
+   ✓ Natürliche Betonungen
+
+   Indikatoren für niedrige Confidence:
+   ✗ Zittrige oder leise Stimme
+   ✗ Viele Füllwörter
+   ✗ Hastiges Sprechen
+   ✗ Aufsteigende Satzenden (Unsicherheit)
+
+═══════════════════════════════════════════════════════════
+OUTPUT FORMAT (nur valides JSON, kein Markdown)
+═══════════════════════════════════════════════════════════
 
 {
   "audio_metrics": {
-    "summary_text": "Kurzes Fazit zur Stimme des/der ${e} (max 2 Sätze).",
-    "confidence_score": (0-100),
+    "summary_text": "2-3 Sätze Gesamtfazit zur Stimmwirkung des/der ${e}. Was war gut? Was kann verbessert werden?",
+    "confidence_score": <0-100>,
 
     "speech_cleanliness": {
-      "score": (0-100, 100=Perfekt sauber),
+      "score": <0-100>,
+      "total_filler_count": <Anzahl>,
       "filler_word_analysis": [
         {
           "word": "Ähm",
-          "count": (Anzahl),
+          "count": <Anzahl>,
           "examples": [
             {"timestamp": "00:45", "context": "Satzanfang"},
-            {"timestamp": "01:20", "context": "Nachdenken"}
-          ]
-        },
-        {
-          "word": "Halt/Eigentlich",
-          "count": (Anzahl),
-          "examples": [
-            {"timestamp": "00:32"}
+            {"timestamp": "01:20", "context": "beim Nachdenken"}
           ]
         }
       ],
-      "feedback": "Tipp zur Vermeidung von Füllwörtern."
+      "feedback": "Konkreter Tipp zur Vermeidung"
     },
 
     "pacing": {
-      "rating": "zu_schnell" | "optimal" | "zu_langsam",
-      "perceived_wpm": "string (z.B. '~140 WPM')",
+      "rating": "optimal" | "zu_schnell" | "zu_langsam" | "ungleichmaessig",
+      "estimated_wpm": <Zahl>,
       "issues_detected": [
-        {"timestamp": "02:10", "issue": "Sehr schnell, wirkt gehetzt"}
+        {"timestamp": "02:10", "issue": "Beschreibung des Problems"}
       ],
-      "feedback": "Feedback zur Geschwindigkeit."
+      "feedback": "Konkreter Tipp zum Tempo"
     },
 
     "tonality": {
       "rating": "monoton" | "natürlich" | "lebendig",
+      "emotional_tone": "neutral" | "engagiert" | "nervös" | "enthusiastisch",
       "highlights": [
-        {"timestamp": "00:05", "type": "positive", "note": "Souveräner Einstieg"},
-        {"timestamp": "03:20", "type": "negative", "note": "Stimme wird unsicher"}
+        {"timestamp": "00:30", "type": "positive", "note": "Souveräner Einstieg"},
+        {"timestamp": "03:15", "type": "negative", "note": "Stimme wird unsicher"}
       ],
-      "feedback": "Feedback zur Melodie und Betonung."
+      "feedback": "Konkreter Tipp zur Stimmmelodie"
     }
   }
 }
 
-JSON Analyse:`}const Jp=["Warum bin ich die beste Wahl für diese Position?","Meine größte berufliche Errungenschaft","Was motiviert mich jeden Tag aufzustehen?","Wie ich mit schwierigen Kollegen umgehe","Mein Führungsstil in 60 Sekunden","Die wichtigste Lektion meiner Karriere","Wie ich unter Druck arbeite","Warum Teamarbeit mir wichtig ist","Wenn ich ein Tier wäre, welches und warum?","Mein perfekter Tag sieht so aus...","Die beste Erfindung der Menschheit","Wenn ich die Welt verändern könnte...","Ein Buch, das mein Leben verändert hat","Mein Lieblingshobby und warum","Drei Dinge, die ich niemals machen würde","Warum Scheitern wichtig ist","Meine kontroverseste Meinung","Wie ich mit Kritik umgehe"],Yp=["Warum sollten wir ausgerechnet Sie einstellen und nicht einen der 50 anderen Bewerber?","Ihr Lebenslauf zeigt eine Lücke. Was haben Sie in dieser Zeit wirklich gemacht?","Nennen Sie mir drei echte Schwächen - und bitte keine getarnten Stärken.","Warum haben Sie Ihren letzten Job wirklich verlassen?","Wo sehen Sie sich in 5 Jahren? Und seien Sie ehrlich.","Was würde Ihr schlimmster Feind über Sie sagen?","Wenn ich Ihren letzten Chef anrufe - was wird er mir sagen?","Sie sind offensichtlich überqualifiziert. Werden Sie nicht schnell gelangweilt sein?","Warum haben Sie in Ihrer Karriere nicht mehr erreicht?","Überzeugen Sie mich in 30 Sekunden, dass Sie kein Risiko sind.","Was war Ihr größter beruflicher Misserfolg?","Haben Sie andere Angebote? Warum sind wir nicht Ihre erste Wahl?"];function IT(t="Elevator Pitch",e=60){return`AUDIO-TRANSKRIPTION UND ANALYSE
+Beginne jetzt mit der Analyse:`}const Jp=["Warum bin ich die beste Wahl für diese Position?","Meine größte berufliche Errungenschaft","Was motiviert mich jeden Tag aufzustehen?","Wie ich mit schwierigen Kollegen umgehe","Mein Führungsstil in 60 Sekunden","Die wichtigste Lektion meiner Karriere","Wie ich unter Druck arbeite","Warum Teamarbeit mir wichtig ist","Wenn ich ein Tier wäre, welches und warum?","Mein perfekter Tag sieht so aus...","Die beste Erfindung der Menschheit","Wenn ich die Welt verändern könnte...","Ein Buch, das mein Leben verändert hat","Mein Lieblingshobby und warum","Drei Dinge, die ich niemals machen würde","Warum Scheitern wichtig ist","Meine kontroverseste Meinung","Wie ich mit Kritik umgehe"],Yp=["Warum sollten wir ausgerechnet Sie einstellen und nicht einen der 50 anderen Bewerber?","Ihr Lebenslauf zeigt eine Lücke. Was haben Sie in dieser Zeit wirklich gemacht?","Nennen Sie mir drei echte Schwächen - und bitte keine getarnten Stärken.","Warum haben Sie Ihren letzten Job wirklich verlassen?","Wo sehen Sie sich in 5 Jahren? Und seien Sie ehrlich.","Was würde Ihr schlimmster Feind über Sie sagen?","Wenn ich Ihren letzten Chef anrufe - was wird er mir sagen?","Sie sind offensichtlich überqualifiziert. Werden Sie nicht schnell gelangweilt sein?","Warum haben Sie in Ihrer Karriere nicht mehr erreicht?","Überzeugen Sie mich in 30 Sekunden, dass Sie kein Risiko sind.","Was war Ihr größter beruflicher Misserfolg?","Haben Sie andere Angebote? Warum sind wir nicht Ihre erste Wahl?"];function IT(t="Elevator Pitch",e=60){return`AUDIO-TRANSKRIPTION UND ANALYSE
 
 THEMA: "${t}"
 
@@ -232,7 +287,7 @@ Fehler: ${t.message}`:LT(t)?`API Key Problem: ${t.message}
 
 Stelle sicher, dass:
 1. VITE_GEMINI_API_KEY korrekt in der .env Datei gesetzt ist
-2. Der API Key gültig ist (überprüfe auf https://ai.google.dev/)`:t.message||"Unbekannter Fehler"}async function xu({apiKey:t,content:e,context:n}){const s=`[GEMINI ${n}]`;if(!t)throw console.error(`❌ ${s} API key is missing`),new Error(no.API_KEY_MISSING);let r=null;for(const a of Xx.FALLBACK_ORDER)try{return(await(await new Yx(t).getGenerativeModel({model:a}).generateContent(e)).response).text()}catch(l){if(console.error(`❌ ${s} Error with ${a}:`,l.message),r=l,e0(l))continue;break}const o=BT(r);throw new Error(`Fehler bei der ${n}: ${o}`)}async function zT(t,e,n="gemini-1.5-flash",s=null,r={}){if(!t||t.trim().length===0)throw console.error("❌ [GEMINI FEEDBACK] Transcript is empty"),new Error(no.TRANSCRIPT_EMPTY);const o=s?TT(s,t):wT(t,r),a=r.roleType==="simulation"?"Simulation":"Interview",l=r.userRoleLabel||"Bewerber";`${a}${l}`,`${t.length}`,t.substring(0,300);const c=await xu({apiKey:e,content:o,context:"FEEDBACK"});return me.logPrompt("GEMINI_LIVE_FEEDBACK",`Live-Training Feedback-Generierung (${a})`,o,{transcript_length:t.length,custom_prompt:s?"Ja":"Nein",role_type:r.roleType||"interview",user_role_label:l},c),c}async function FT(t,e,n="gemini-1.5-flash",s={}){if(!t)throw console.error("❌ [GEMINI AUDIO] Audio file is missing"),new Error(no.AUDIO_FILE_MISSING);const r=s.userRoleLabel||"Bewerber",o=s.agentRoleLabel||"Gesprächspartner",a=s.roleType||"interview",l=await Qx(t),c=RT({userRoleLabel:r,agentRoleLabel:o,roleType:a}),d=[c,l];`${r}`,`${Math.round(t.size/1024)}`,t.type;const u=await xu({apiKey:e,content:d,context:"AUDIO"});return me.logPrompt("GEMINI_LIVE_AUDIO_ANALYSIS",`Live-Training Audio-Analyse (${r})`,c,{audio_size_kb:Math.round(t.size/1024),audio_type:t.type,role_type:a,user_role_label:r},u),u}async function UT(t,e,n="Elevator Pitch",s=60){if(!t)throw console.error("❌ [GEMINI GAME] Audio file is missing"),new Error(no.AUDIO_FILE_MISSING);const r=await Qx(t),a=[IT(n,s),r];`${Math.round(t.size/1024)}`;const l=await xu({apiKey:e,content:a,context:"GAME"});try{let c=l.trim();c.startsWith("```json")?c=c.replace(/```json\n?/,"").replace(/\n?```$/,""):c.startsWith("```")&&(c=c.replace(/```\n?/,"").replace(/\n?```$/,""));const d=JSON.parse(c);return{transcript:d.transcript||"[Keine Sprache erkannt]",filler_words:d.filler_words||[],content_score:Math.max(0,Math.min(40,d.content_score||0)),content_feedback:d.content_feedback||""}}catch(c){throw console.error("❌ [GEMINI GAME] Failed to parse response:",c),console.error("❌ [GEMINI GAME] Raw response:",l),new Error(`${no.JSON_PARSE_FAILED}: ${c.message}`)}}function t0(t){return!t||typeof t!="string"?t:t.replace(/\\u([0-9a-fA-F]{4})/g,(e,n)=>String.fromCharCode(parseInt(n,16))).replace(new RegExp("(?<!\\\\)u([0-9a-fA-F]{4})","g"),(e,n)=>{const s=parseInt(n,16);return s>=160&&s<=65535?String.fromCharCode(s):e})}function WT(t){if(!t||typeof t!="string")return t;let e=t.trim();return e.startsWith("```json")?e=e.replace(/^```json\s*/i,"").replace(/\s*```\s*$/,""):e.startsWith("```")&&(e=e.replace(/^```\s*/,"").replace(/\s*```\s*$/,"")),e.trim()}function Ya(t,e={}){const{silent:n=!1,context:s="JSON"}=e;if(t==null)return null;if(typeof t=="object")return t;if(typeof t!="string")return n||console.warn(`[parseJSON] Expected string or object, got ${typeof t}`),null;try{let r=WT(t);return r=t0(r),JSON.parse(r)}catch(r){return n||(console.error(`[parseJSON] Failed to parse ${s}:`,r.message),console.error(`[parseJSON] Input preview: ${t.substring(0,100)}...`)),null}}function n0(t){return Ya(t,{context:"feedback_json"})}function i0(t){return Ya(t,{context:"audio_analysis_json"})}function s0(t){if(!t)return[];const e=Ya(t,{context:"transcript"});return Array.isArray(e)?e:[]}function VT(t){if(!t)return!1;const e=t.audio_metrics;return e?e.confidence_score!==void 0||e.speech_cleanliness!==void 0:!1}function Ca(t){if(t==null)return t;if(typeof t=="string")return t0(t);if(Array.isArray(t))return t.map(Ca);if(typeof t=="object"){const e={};for(const n of Object.keys(t))e[n]=Ca(t[n]);return e}return t}const No=t=>new Promise(e=>setTimeout(e,t));async function r0(t,e={},n=null){if(!t||t.length===0)throw new Error("Transkript ist leer. Das Gespräch muss mindestens einen Austausch enthalten.");const s=$T(t,e),r=me.getGeminiApiKey();if(!r)throw new Error("Gemini API Key ist nicht konfiguriert. Bitte kontaktiere den Administrator.");const o={feedbackContent:null,audioAnalysisContent:null},a={roleType:e.role_type||"interview",userRoleLabel:e.user_role_label||"Bewerber",agentRoleLabel:e.interviewer_profile?.role||"Gesprächspartner"};try{const l=e.feedback_prompt||null;o.feedbackContent=await zT(s,r,"gemini-1.5-flash",l,a)}catch(l){throw console.error("❌ [Roleplay Feedback] Failed to generate feedback:",l),new Error(`Fehler bei der Feedback-Generierung: ${l.message}`)}if(n)try{o.audioAnalysisContent=await FT(n,r,"gemini-1.5-flash",a)}catch(l){console.error("❌ [Roleplay Feedback] Failed to generate audio analysis:",l),o.audioAnalysisContent=JSON.stringify({error:!0,summary:"Audio-Analyse konnte nicht durchgeführt werden.",errorMessage:l.message,troubleshooting:["Stelle sicher, dass dein Mikrofon richtig funktioniert","Versuche das Gespräch erneut zu starten","Überprüfe, ob keine andere Anwendung das Mikrofon blockiert"]})}return o}function $T(t,e={}){let n="";e.title&&(n+=`Rollenspiel-Szenario: ${e.title}
+2. Der API Key gültig ist (überprüfe auf https://ai.google.dev/)`:t.message||"Unbekannter Fehler"}async function xu({apiKey:t,content:e,context:n}){const s=`[GEMINI ${n}]`;if(!t)throw console.error(`❌ ${s} API key is missing`),new Error(no.API_KEY_MISSING);let r=null;for(const a of Xx.FALLBACK_ORDER)try{return(await(await new Yx(t).getGenerativeModel({model:a}).generateContent(e)).response).text()}catch(l){if(console.error(`❌ ${s} Error with ${a}:`,l.message),r=l,e0(l))continue;break}const o=BT(r);throw new Error(`Fehler bei der ${n}: ${o}`)}async function zT(t,e,n="gemini-1.5-flash",s=null,r={}){if(!t||t.trim().length===0)throw console.error("❌ [GEMINI FEEDBACK] Transcript is empty"),new Error(no.TRANSCRIPT_EMPTY);const o=s?TT(s,t):wT(t,r),a=r.roleType==="simulation"?"Simulation":"Interview",l=r.userRoleLabel||"Bewerber";`${a}${l}`,`${t.length}`,t.substring(0,300);const c=await xu({apiKey:e,content:o,context:"FEEDBACK"});return me.logPrompt("GEMINI_LIVE_FEEDBACK",`Live-Training Feedback-Generierung (${a})`,o,{transcript_length:t.length,custom_prompt:s?"Ja":"Nein",role_type:r.roleType||"interview",user_role_label:l},c),c}async function FT(t,e,n="gemini-1.5-flash",s={}){if(!t)throw console.error("❌ [GEMINI AUDIO] Audio file is missing"),new Error(no.AUDIO_FILE_MISSING);const r=s.userRoleLabel||"Bewerber",o=s.agentRoleLabel||"Gesprächspartner",a=s.roleType||"interview",l=s.hasTwoVoices!==!1,c=s.transcript||null,d=await Qx(t),u=RT({userRoleLabel:r,agentRoleLabel:o,roleType:a,hasTwoVoices:l,transcript:c}),h=[u,d];`${r}`,`${Math.round(t.size/1024)}`,t.type;const p=await xu({apiKey:e,content:h,context:"AUDIO"});return me.logPrompt("GEMINI_LIVE_AUDIO_ANALYSIS",`Live-Training Audio-Analyse (${r})`,u,{audio_size_kb:Math.round(t.size/1024),audio_type:t.type,role_type:a,user_role_label:r},p),p}async function UT(t,e,n="Elevator Pitch",s=60){if(!t)throw console.error("❌ [GEMINI GAME] Audio file is missing"),new Error(no.AUDIO_FILE_MISSING);const r=await Qx(t),a=[IT(n,s),r];`${Math.round(t.size/1024)}`;const l=await xu({apiKey:e,content:a,context:"GAME"});try{let c=l.trim();c.startsWith("```json")?c=c.replace(/```json\n?/,"").replace(/\n?```$/,""):c.startsWith("```")&&(c=c.replace(/```\n?/,"").replace(/\n?```$/,""));const d=JSON.parse(c);return{transcript:d.transcript||"[Keine Sprache erkannt]",filler_words:d.filler_words||[],content_score:Math.max(0,Math.min(40,d.content_score||0)),content_feedback:d.content_feedback||""}}catch(c){throw console.error("❌ [GEMINI GAME] Failed to parse response:",c),console.error("❌ [GEMINI GAME] Raw response:",l),new Error(`${no.JSON_PARSE_FAILED}: ${c.message}`)}}function t0(t){return!t||typeof t!="string"?t:t.replace(/\\u([0-9a-fA-F]{4})/g,(e,n)=>String.fromCharCode(parseInt(n,16))).replace(new RegExp("(?<!\\\\)u([0-9a-fA-F]{4})","g"),(e,n)=>{const s=parseInt(n,16);return s>=160&&s<=65535?String.fromCharCode(s):e})}function WT(t){if(!t||typeof t!="string")return t;let e=t.trim();return e.startsWith("```json")?e=e.replace(/^```json\s*/i,"").replace(/\s*```\s*$/,""):e.startsWith("```")&&(e=e.replace(/^```\s*/,"").replace(/\s*```\s*$/,"")),e.trim()}function Ya(t,e={}){const{silent:n=!1,context:s="JSON"}=e;if(t==null)return null;if(typeof t=="object")return t;if(typeof t!="string")return n||console.warn(`[parseJSON] Expected string or object, got ${typeof t}`),null;try{let r=WT(t);return r=t0(r),JSON.parse(r)}catch(r){return n||(console.error(`[parseJSON] Failed to parse ${s}:`,r.message),console.error(`[parseJSON] Input preview: ${t.substring(0,100)}...`)),null}}function n0(t){return Ya(t,{context:"feedback_json"})}function i0(t){return Ya(t,{context:"audio_analysis_json"})}function s0(t){if(!t)return[];const e=Ya(t,{context:"transcript"});return Array.isArray(e)?e:[]}function VT(t){if(!t)return!1;const e=t.audio_metrics;return e?e.confidence_score!==void 0||e.speech_cleanliness!==void 0:!1}function Ca(t){if(t==null)return t;if(typeof t=="string")return t0(t);if(Array.isArray(t))return t.map(Ca);if(typeof t=="object"){const e={};for(const n of Object.keys(t))e[n]=Ca(t[n]);return e}return t}const No=t=>new Promise(e=>setTimeout(e,t));async function r0(t,e={},n=null){if(!t||t.length===0)throw new Error("Transkript ist leer. Das Gespräch muss mindestens einen Austausch enthalten.");const s=$T(t,e),r=me.getGeminiApiKey();if(!r)throw new Error("Gemini API Key ist nicht konfiguriert. Bitte kontaktiere den Administrator.");const o={feedbackContent:null,audioAnalysisContent:null},a={roleType:e.role_type||"interview",userRoleLabel:e.user_role_label||"Bewerber",agentRoleLabel:e.interviewer_profile?.role||"Gesprächspartner"};try{const l=e.feedback_prompt||null;o.feedbackContent=await zT(s,r,"gemini-1.5-flash",l,a)}catch(l){throw console.error("❌ [Roleplay Feedback] Failed to generate feedback:",l),new Error(`Fehler bei der Feedback-Generierung: ${l.message}`)}if(n)try{o.audioAnalysisContent=await FT(n,r,"gemini-1.5-flash",{...a,hasTwoVoices:!0,transcript:s})}catch(l){console.error("❌ [Roleplay Feedback] Failed to generate audio analysis:",l),o.audioAnalysisContent=JSON.stringify({error:!0,summary:"Audio-Analyse konnte nicht durchgeführt werden.",errorMessage:l.message,troubleshooting:["Stelle sicher, dass dein Mikrofon richtig funktioniert","Versuche das Gespräch erneut zu starten","Überprüfe, ob keine andere Anwendung das Mikrofon blockiert"]})}return o}function $T(t,e={}){let n="";e.title&&(n+=`Rollenspiel-Szenario: ${e.title}
 `),e.description&&(n+=`Beschreibung: ${e.description}
 `),e.variables&&(n+=`
 Kontext-Variablen:

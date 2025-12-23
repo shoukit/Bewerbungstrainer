@@ -301,9 +301,11 @@ export async function generateInterviewFeedback(
 /**
  * Analyzes audio of an interview to evaluate paraverbal communication
  *
- * IMPORTANT: This function sends ONLY the audio file, NO transcript.
- * This ensures filler words like "Ähm" are detected that might be filtered
- * out by transcription services.
+ * Performs professional voice coaching analysis including:
+ * - Filler word detection with timestamps
+ * - Speaking pace (WPM)
+ * - Tonality and emotional tone
+ * - Overall confidence assessment
  *
  * @param {File|Blob} audioFile - The audio file to analyze
  * @param {string} apiKey - Google Gemini API key
@@ -312,6 +314,8 @@ export async function generateInterviewFeedback(
  * @param {string} roleOptions.roleType - 'interview' or 'simulation'
  * @param {string} roleOptions.userRoleLabel - Label for the user role (e.g., 'Bewerber', 'Kundenberater')
  * @param {string} roleOptions.agentRoleLabel - Label for the AI role (e.g., 'Interviewer', 'Kunde')
+ * @param {boolean} roleOptions.hasTwoVoices - Whether audio contains AI + user (default: true)
+ * @param {string} roleOptions.transcript - Optional transcript for improved speaker identification
  * @returns {Promise<string>} - The generated audio analysis JSON string
  */
 export async function generateAudioAnalysis(
@@ -329,12 +333,16 @@ export async function generateAudioAnalysis(
   const userRoleLabel = roleOptions.userRoleLabel || 'Bewerber';
   const agentRoleLabel = roleOptions.agentRoleLabel || 'Gesprächspartner';
   const roleType = roleOptions.roleType || 'interview';
+  const hasTwoVoices = roleOptions.hasTwoVoices !== false; // Default true for backwards compat
+  const transcript = roleOptions.transcript || null;
 
   if (DEBUG_PROMPTS) {
     console.log(`🎵 [GEMINI AUDIO] File size: ${audioFile.size} bytes`);
     console.log(`🎵 [GEMINI AUDIO] File type: ${audioFile.type}`);
     console.log(`🎵 [GEMINI AUDIO] Role type: ${roleType}`);
     console.log(`🎵 [GEMINI AUDIO] User role: ${userRoleLabel}`);
+    console.log(`🎵 [GEMINI AUDIO] Two voices: ${hasTwoVoices}`);
+    console.log(`🎵 [GEMINI AUDIO] Has transcript: ${!!transcript}`);
   }
 
   // Convert audio to base64
@@ -343,7 +351,13 @@ export async function generateAudioAnalysis(
   if (DEBUG_PROMPTS) console.log('✅ [GEMINI AUDIO] Audio converted');
 
   // Build content array with prompt and audio
-  const prompt = getAudioAnalysisPrompt({ userRoleLabel, agentRoleLabel, roleType });
+  const prompt = getAudioAnalysisPrompt({
+    userRoleLabel,
+    agentRoleLabel,
+    roleType,
+    hasTwoVoices,
+    transcript,
+  });
   const content = [prompt, audioPart];
 
   // Debug logging
