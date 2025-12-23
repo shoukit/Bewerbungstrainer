@@ -18,6 +18,7 @@ import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 import FullscreenLoader from '@/components/ui/fullscreen-loader';
+import DynamicFormField from '@/components/ui/DynamicFormField';
 import { usePartner } from '@/context/PartnerContext';
 import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
@@ -58,188 +59,7 @@ const defaultTips = [
   },
 ];
 
-/**
- * Dynamic Form Field Component
- * Renders appropriate input based on field type from input_configuration
- */
-const DynamicFormField = ({ field, value, onChange, error, focusColor, b }) => {
-  const theFocusColor = focusColor || '#4a9ec9';
-
-  const baseInputStyle = {
-    width: '100%',
-    padding: `${b.space[3]} ${b.space[4]}`,
-    borderRadius: b.radius.lg,
-    border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
-    fontSize: b.fontSize.lg, // Minimum 16px to prevent iOS zoom
-    color: COLORS.slate[900],
-    backgroundColor: 'white',
-    outline: 'none',
-    transition: b.transition.normal,
-  };
-
-  const focusStyle = {
-    borderColor: theFocusColor,
-    boxShadow: `0 0 0 3px ${theFocusColor}1a`,
-  };
-
-  const handleFocus = (e) => {
-    Object.assign(e.target.style, focusStyle);
-
-    // Scroll input into view on mobile when keyboard appears
-    // Use a delay to wait for the keyboard to fully open
-    setTimeout(() => {
-      const element = e.target;
-      if (element) {
-        // Get the parent container (the field wrapper)
-        const fieldWrapper = element.closest('div');
-        if (fieldWrapper) {
-          fieldWrapper.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
-        }
-      }
-    }, 300);
-  };
-
-  const handleBlur = (e) => {
-    e.target.style.borderColor = error ? COLORS.red[500] : COLORS.slate[200];
-    e.target.style.boxShadow = 'none';
-  };
-
-  const renderInput = () => {
-    switch (field.type) {
-      case 'text':
-        return (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(field.key, e.target.value)}
-            placeholder={field.placeholder || ''}
-            style={baseInputStyle}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          />
-        );
-
-      case 'textarea':
-        return (
-          <textarea
-            value={value || ''}
-            onChange={(e) => onChange(field.key, e.target.value)}
-            placeholder={field.placeholder || ''}
-            rows={4}
-            style={{
-              ...baseInputStyle,
-              resize: 'vertical',
-              minHeight: '100px',
-            }}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          />
-        );
-
-      case 'select':
-        return (
-          <select
-            value={value || field.default || ''}
-            onChange={(e) => onChange(field.key, e.target.value)}
-            style={{
-              ...baseInputStyle,
-              cursor: 'pointer',
-              appearance: 'none',
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: 'right 12px center',
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: '20px',
-              paddingRight: '44px',
-            }}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          >
-            <option value="">Bitte wählen...</option>
-            {field.options?.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        );
-
-      case 'number':
-        return (
-          <input
-            type="number"
-            value={value || ''}
-            onChange={(e) => onChange(field.key, e.target.value)}
-            placeholder={field.placeholder || ''}
-            min={field.validation?.min}
-            max={field.validation?.max}
-            style={baseInputStyle}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          />
-        );
-
-      default:
-        return (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(field.key, e.target.value)}
-            placeholder={field.placeholder || ''}
-            style={baseInputStyle}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          />
-        );
-    }
-  };
-
-  return (
-    <div style={{ marginBottom: b.space[5] }}>
-      <label style={{
-        display: 'block',
-        marginBottom: b.space[2],
-        fontSize: b.fontSize.base,
-        fontWeight: 600,
-        color: COLORS.slate[700],
-      }}>
-        {field.label}
-        {field.required && (
-          <span style={{ color: COLORS.red[500], marginLeft: '4px' }}>*</span>
-        )}
-      </label>
-      {renderInput()}
-      {error && (
-        <p style={{
-          marginTop: '6px',
-          fontSize: b.fontSize.sm,
-          color: COLORS.red[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}>
-          <AlertCircle style={{ width: '14px', height: '14px' }} />
-          {error}
-        </p>
-      )}
-      {field.hint && !error && (
-        <p style={{
-          marginTop: '6px',
-          fontSize: b.fontSize.sm,
-          color: COLORS.slate[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}>
-          <Info style={{ width: '14px', height: '14px' }} />
-          {field.hint}
-        </p>
-      )}
-    </div>
-  );
-};
+// DynamicFormField is now imported from @/components/ui/DynamicFormField
 
 /**
  * Simulator Wizard Component
@@ -608,7 +428,6 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
               onChange={handleChange}
               error={errors[field.key]}
               focusColor={b.primaryAccent}
-              b={b}
             />
           ))
         ) : (

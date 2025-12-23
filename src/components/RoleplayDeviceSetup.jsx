@@ -20,12 +20,12 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
         alignItems: 'center',
         gap: b.space[2.5],
         padding: `${b.space[3.5]} ${b.space[4]}`,
-        backgroundColor: '#eff6ff',
-        border: '1px solid #bfdbfe',
+        backgroundColor: COLORS.blue[50],
+        border: `1px solid ${COLORS.blue[200]}`,
         borderRadius: b.radius.lg,
       }}>
-        <Loader2 style={{ width: '20px', height: '20px', color: '#3b82f6' }} className="animate-spin" />
-        <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: '#1d4ed8' }}>
+        <Loader2 style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} className="animate-spin" />
+        <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: COLORS.blue[700] }}>
           Prüfe Verbindung...
         </span>
       </div>
@@ -41,13 +41,13 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
           alignItems: 'center',
           gap: b.space[2.5],
           padding: `${b.space[3.5]} ${b.space[4]}`,
-          backgroundColor: '#fef2f2',
-          border: '1px solid #fecaca',
+          backgroundColor: COLORS.red[50],
+          border: `1px solid ${COLORS.red[200]}`,
           borderRadius: b.radius.lg,
         }}>
-          <AlertTriangle style={{ width: '20px', height: '20px', color: '#dc2626' }} />
+          <AlertTriangle style={{ width: '20px', height: '20px', color: COLORS.red[600] }} />
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: '#991b1b' }}>
+            <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: COLORS.red[800] }}>
               Keine Verbindung möglich
             </span>
           </div>
@@ -104,22 +104,22 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
           alignItems: 'center',
           gap: b.space[2.5],
           padding: `${b.space[3.5]} ${b.space[4]}`,
-          backgroundColor: '#f0fdf4',
-          border: '1px solid #bbf7d0',
+          backgroundColor: COLORS.green[50],
+          border: `1px solid ${COLORS.green[200]}`,
           borderRadius: b.radius.lg,
         }}>
-          <Globe style={{ width: '20px', height: '20px', color: '#22c55e' }} />
+          <Globe style={{ width: '20px', height: '20px', color: COLORS.green[500] }} />
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: '#15803d' }}>
+            <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: COLORS.green[700] }}>
               Direkte Echtzeit-Verbindung
             </span>
             {latency && (
-              <span style={{ fontSize: b.fontSize.xs, color: '#16a34a', marginLeft: b.space[2] }}>
+              <span style={{ fontSize: b.fontSize.xs, color: COLORS.green[600], marginLeft: b.space[2] }}>
                 ({latency}ms)
               </span>
             )}
           </div>
-          <CheckCircle2 style={{ width: '20px', height: '20px', color: '#22c55e' }} />
+          <CheckCircle2 style={{ width: '20px', height: '20px', color: COLORS.green[500] }} />
         </div>
         <button
           onClick={() => onSwitchMode('proxy')}
@@ -148,22 +148,22 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
         alignItems: 'center',
         gap: b.space[2.5],
         padding: `${b.space[3.5]} ${b.space[4]}`,
-        backgroundColor: '#eff6ff',
-        border: '1px solid #bfdbfe',
+        backgroundColor: COLORS.blue[50],
+        border: `1px solid ${COLORS.blue[200]}`,
         borderRadius: b.radius.lg,
       }}>
-        <Server style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
+        <Server style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} />
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: '#1d4ed8' }}>
+          <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: COLORS.blue[700] }}>
             Proxy-Modus (Echtzeit via Server)
           </span>
           {proxyLatency && (
-            <span style={{ fontSize: b.fontSize.xs, color: '#3b82f6', marginLeft: b.space[2] }}>
+            <span style={{ fontSize: b.fontSize.xs, color: COLORS.blue[500], marginLeft: b.space[2] }}>
               ({proxyLatency}ms)
             </span>
           )}
         </div>
-        <CheckCircle2 style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
+        <CheckCircle2 style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} />
       </div>
 
       {!directAvailable && (
