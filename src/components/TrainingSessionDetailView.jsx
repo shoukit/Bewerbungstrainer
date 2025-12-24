@@ -864,6 +864,19 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   // Partner theming via useBranding hook
   const b = useBranding();
   const isMobile = useMobile();
+  // Tablet detection: between 768px and 1024px, or use single column for screens < 1024px
+  const [isTablet, setIsTablet] = useState(false);
+
+  useEffect(() => {
+    const checkTablet = () => {
+      const width = window.innerWidth;
+      setIsTablet(width >= 768 && width < 1200);
+    };
+    checkTablet();
+    window.addEventListener('resize', checkTablet);
+    return () => window.removeEventListener('resize', checkTablet);
+  }, []);
+
   const headerGradient = b.headerGradient;
   const primaryAccent = b.primaryAccent;
 
@@ -1190,10 +1203,10 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
         padding: isMobile ? '16px' : '24px 32px',
         overflow: 'hidden',
       }}>
-        {/* Two-column layout */}
+        {/* Two-column layout - single column on mobile and tablet */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 400px',
+          gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '1fr 400px',
           gap: '24px',
           overflow: 'hidden',
         }}>
