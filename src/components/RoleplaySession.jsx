@@ -143,11 +143,11 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
   // Get API credentials
   const apiKey = wordpressAPI.getElevenLabsApiKey();
-  const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
+  const agentId = scenario?.agent_id || wordpressAPI.getElevenLabsAgentId();
 
   // Default voice ID if not specified in scenario
   const DEFAULT_VOICE_ID = 'kaGxVtjLwllv1bi2GFag';
-  const voiceId = scenario.voice_id || DEFAULT_VOICE_ID;
+  const voiceId = scenario?.voice_id || DEFAULT_VOICE_ID;
 
   // Build enhanced system prompt with interviewer profile
   const buildSystemPrompt = () => {
