@@ -760,6 +760,15 @@ ${t.interviewer_profile.important_questions}`)),ee},Te=async()=>{try{const ee=$?
         @media (min-width: 641px) {
           .session-tabs-mobile { display: none; }
         }
+        @media (min-width: 641px) and (max-width: 1023px) {
+          .desktop-actions {
+            flex-direction: column;
+          }
+          .desktop-actions button {
+            width: 100%;
+            justify-content: center;
+          }
+        }
         @media (min-width: 1024px) {
           .desktop-actions {
             justify-content: flex-end;
