@@ -934,23 +934,24 @@ const BriefingWorkbook = ({
           {/* Header Content */}
           <div style={{
             display: 'flex',
-            alignItems: isMobile ? 'flex-start' : 'center',
-            gap: isMobile ? '16px' : '24px',
-            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            gap: '24px',
           }}>
-            {/* Icon instead of Score Gauge */}
-            <div style={{
-              width: isMobile ? 70 : 90,
-              height: isMobile ? 70 : 90,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <IconComponent size={isMobile ? 32 : 40} color="#fff" />
-            </div>
+            {/* Icon - Hidden on mobile */}
+            {!isMobile && (
+              <div style={{
+                width: 90,
+                height: 90,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <IconComponent size={40} color="#fff" />
+              </div>
+            )}
 
             {/* Title & Meta */}
             <div style={{ flex: 1 }}>

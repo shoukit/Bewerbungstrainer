@@ -1047,12 +1047,13 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
           {/* Header Content */}
           <div style={{
             display: 'flex',
-            alignItems: isMobile ? 'flex-start' : 'center',
-            gap: isMobile ? '16px' : '24px',
-            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            gap: '24px',
           }}>
-            {/* Score Gauge */}
-            <ScoreGauge score={overallScore} size={isMobile ? 80 : 100} primaryAccent={primaryAccent} isHeader branding={b} />
+            {/* Score Gauge - Hidden on mobile */}
+            {!isMobile && (
+              <ScoreGauge score={overallScore} size={100} primaryAccent={primaryAccent} isHeader branding={b} />
+            )}
 
             {/* Title & Meta */}
             <div style={{ flex: 1 }}>

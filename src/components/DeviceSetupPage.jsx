@@ -644,6 +644,14 @@ const DeviceSetupPage = ({
   extraContent = null, // Additional content to render before start button
   disabled = false, // External disabled state
 }) => {
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Device state
   const [audioDevices, setAudioDevices] = useState([]);
   const [videoDevices, setVideoDevices] = useState([]);
@@ -796,7 +804,7 @@ const DeviceSetupPage = ({
   const canStart = selectedMicrophoneId && !micError && (!includeVideo || (selectedCameraId && !cameraError)) && !disabled;
 
   return (
-    <div style={{ padding: '24px', paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
+    <div style={{ padding: '24px', paddingBottom: isMobile ? '120px' : '40px', maxWidth: '640px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <button
@@ -964,41 +972,54 @@ const DeviceSetupPage = ({
             </div>
           )}
 
-          {/* Start Button */}
-          <button
-            onClick={handleStart}
-            disabled={!canStart}
-            style={{
-              width: '100%',
-              padding: '16px 24px',
-              borderRadius: '14px',
-              border: 'none',
-              background: canStart ? b.buttonGradient : b.disabledBg,
-              color: b.white,
-              fontSize: '16px',
-              fontWeight: 600,
-              cursor: canStart ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              boxShadow: canStart ? `0 4px 12px ${b.primaryAccent}4d` : 'none',
-            }}
-            onMouseEnter={(e) => {
-              if (canStart) {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'none';
-              e.target.style.boxShadow = canStart ? `0 4px 12px ${b.primaryAccent}4d` : 'none';
-            }}
+          {/* Start Button - Fixed on mobile for visibility */}
+          <div
+            style={isMobile ? {
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: '16px',
+              background: `linear-gradient(to top, ${b.pageBg} 80%, transparent)`,
+              zIndex: 100,
+            } : {}}
           >
-            {startButtonLabel}
-            <ArrowRight style={{ width: '20px', height: '20px' }} />
-          </button>
+            <button
+              onClick={handleStart}
+              disabled={!canStart}
+              style={{
+                width: '100%',
+                maxWidth: isMobile ? '100%' : undefined,
+                padding: '16px 24px',
+                borderRadius: '14px',
+                border: 'none',
+                background: canStart ? b.buttonGradient : b.disabledBg,
+                color: b.white,
+                fontSize: '16px',
+                fontWeight: 600,
+                cursor: canStart ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                boxShadow: canStart ? `0 4px 12px ${b.primaryAccent}4d` : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (canStart) {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'none';
+                e.target.style.boxShadow = canStart ? `0 4px 12px ${b.primaryAccent}4d` : 'none';
+              }}
+            >
+              {startButtonLabel}
+              <ArrowRight style={{ width: '20px', height: '20px' }} />
+            </button>
+          </div>
         </motion.div>
       )}
 
