@@ -414,8 +414,8 @@ const ScenarioDashboard = ({
         padding: '60px 20px',
         gap: '16px'
       }}>
-        <AlertCircle style={{ width: '48px', height: '48px', color: '#ef4444' }} />
-        <p style={{ color: '#ef4444', fontSize: '16px', textAlign: 'center' }}>
+        <AlertCircle style={{ width: '48px', height: '48px', color: COLORS.red[500] }} />
+        <p style={{ color: COLORS.red[500], fontSize: '16px', textAlign: 'center' }}>
           {error}
         </p>
         <button
@@ -556,20 +556,20 @@ const ScenarioDashboard = ({
             padding: '48px 24px',
             backgroundColor: 'white',
             borderRadius: '16px',
-            border: '1px solid #e2e8f0',
+            border: `1px solid ${COLORS.slate[200]}`,
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
             {EmptyStateIcon ? (
-              <EmptyStateIcon style={{ width: '48px', height: '48px', color: '#cbd5e1' }} />
+              <EmptyStateIcon style={{ width: '48px', height: '48px', color: COLORS.slate[300] }} />
             ) : (
-              <Folder style={{ width: '48px', height: '48px', color: '#cbd5e1' }} />
+              <Folder style={{ width: '48px', height: '48px', color: COLORS.slate[300] }} />
             )}
           </div>
-          <h3 style={{ color: '#64748b', margin: '0 0 8px 0', fontWeight: 500 }}>
+          <h3 style={{ color: COLORS.slate[500], margin: '0 0 8px 0', fontWeight: 500 }}>
             {emptyStateTitle}
           </h3>
-          <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>
+          <p style={{ color: COLORS.slate[400], margin: 0, fontSize: '14px' }}>
             {selectedCategory
               ? 'In der ausgewählten Kategorie sind keine Szenarien verfügbar.'
               : emptyStateMessage}

@@ -1,23 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePartner } from '../../context/PartnerContext';
+import { useBranding } from '../../hooks/useBranding';
+import { useMobile } from '../../hooks/useMobile';
 import wordpressAPI from '../../services/wordpress-api';
+import { formatDateTime } from '../../utils/formatting';
+import { TEMPLATE_ICON_MAP, getIcon } from '../../utils/iconMaps';
 import {
   ArrowLeft,
-  FileText,
-  Briefcase,
-  Banknote,
-  Users,
-  User,
-  MessageCircle,
-  Target,
-  Award,
-  Book,
-  ClipboardList,
-  Star,
-  Lightbulb,
-  Shield,
-  Compass,
-  Rocket,
   Calendar,
   Save,
   Check,
@@ -29,28 +19,9 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
+  Lightbulb,
+  FileText,
 } from 'lucide-react';
-
-/**
- * Icon mapping for template icons
- */
-const ICON_MAP = {
-  'file-text': FileText,
-  'briefcase': Briefcase,
-  'banknote': Banknote,
-  'users': Users,
-  'user': User,
-  'message-circle': MessageCircle,
-  'target': Target,
-  'award': Award,
-  'book': Book,
-  'clipboard': ClipboardList,
-  'star': Star,
-  'lightbulb': Lightbulb,
-  'shield': Shield,
-  'compass': Compass,
-  'rocket': Rocket,
-};
 
 /**
  * Variable name mapping - technical keys to display names
@@ -88,21 +59,6 @@ const VARIABLE_DISPLAY_NAMES = {
  */
 const getVariableDisplayName = (key) => {
   return VARIABLE_DISPLAY_NAMES[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-};
-
-/**
- * Format date for display
- */
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 };
 
 /**
@@ -290,7 +246,7 @@ const MarkdownContent = ({ content, primaryAccent }) => {
 /**
  * Item Card Component - Individual briefing item with note and delete
  */
-const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
+const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem, branding }) => {
   const [note, setNote] = useState(item.user_note || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -340,7 +296,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
       <div
         style={{
           padding: '12px 16px',
-          backgroundColor: '#f8fafc',
+          backgroundColor: branding.cardBgHover,
           borderRadius: '10px',
           marginBottom: '8px',
           display: 'flex',
@@ -349,7 +305,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
           opacity: 0.6,
         }}
       >
-        <span style={{ fontSize: '14px', color: '#94a3b8', fontStyle: 'italic' }}>
+        <span style={{ fontSize: '14px', color: branding.textMuted, fontStyle: 'italic' }}>
           <s>{item.label}</s> - gelöscht
         </span>
         <button
@@ -361,8 +317,8 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
             padding: '6px 10px',
             borderRadius: '6px',
             border: 'none',
-            backgroundColor: '#e2e8f0',
-            color: '#64748b',
+            backgroundColor: branding.borderColor,
+            color: branding.textMuted,
             fontSize: '12px',
             cursor: 'pointer',
           }}
@@ -377,9 +333,9 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
   return (
     <div
       style={{
-        backgroundColor: 'white',
+        backgroundColor: branding.cardBg,
         borderRadius: '12px',
-        border: '1px solid #e2e8f0',
+        border: `1px solid ${branding.borderColor}`,
         marginBottom: '10px',
         overflow: 'hidden',
       }}
@@ -409,7 +365,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               style={{
                 fontSize: '14px',
                 fontWeight: 600,
-                color: '#0f172a',
+                color: branding.textMain,
                 margin: 0,
               }}
             >
@@ -420,7 +376,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
             <p
               style={{
                 fontSize: '13px',
-                color: '#64748b',
+                color: branding.textMuted,
                 margin: '0 0 0 14px',
                 lineHeight: 1.5,
               }}
@@ -453,7 +409,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               borderRadius: '6px',
               border: 'none',
               backgroundColor: showNoteField ? `${primaryAccent}15` : 'transparent',
-              color: showNoteField ? primaryAccent : '#94a3b8',
+              color: showNoteField ? primaryAccent : branding.textMuted,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -470,7 +426,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               borderRadius: '6px',
               border: 'none',
               backgroundColor: 'transparent',
-              color: '#94a3b8',
+              color: branding.textMuted,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -487,8 +443,8 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
         <div
           style={{
             padding: '12px 16px',
-            backgroundColor: '#fafbfc',
-            borderTop: '1px solid #f1f5f9',
+            backgroundColor: branding.cardBgHover,
+            borderTop: `1px solid ${branding.borderColor}`,
           }}
         >
           <textarea
@@ -500,9 +456,9 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               minHeight: '60px',
               padding: '10px',
               borderRadius: '8px',
-              border: '1px solid #e2e8f0',
+              border: `1px solid ${branding.borderColor}`,
               fontSize: '13px',
-              color: '#374151',
+              color: branding.textSecondary,
               resize: 'vertical',
               outline: 'none',
               boxSizing: 'border-box',
@@ -512,7 +468,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               e.target.style.borderColor = primaryAccent;
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = '#e2e8f0';
+              e.target.style.borderColor = branding.borderColor;
             }}
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', gap: '8px' }}>
@@ -524,9 +480,9 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
               style={{
                 padding: '6px 12px',
                 borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                backgroundColor: 'white',
-                color: '#64748b',
+                border: `1px solid ${branding.borderColor}`,
+                backgroundColor: branding.cardBg,
+                color: branding.textMuted,
                 fontSize: '12px',
                 cursor: 'pointer',
               }}
@@ -544,15 +500,15 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
                 borderRadius: '6px',
                 border: 'none',
                 backgroundColor: saveSuccess
-                  ? '#dcfce7'
+                  ? branding.successLight
                   : hasChanges
                     ? primaryAccent
-                    : '#f1f5f9',
+                    : branding.cardBgHover,
                 color: saveSuccess
-                  ? '#16a34a'
+                  ? branding.success
                   : hasChanges
                     ? 'white'
-                    : '#94a3b8',
+                    : branding.textMuted,
                 fontSize: '12px',
                 fontWeight: 500,
                 cursor: hasChanges && !isSaving ? 'pointer' : 'default',
@@ -581,7 +537,7 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem }) => {
 /**
  * Section Card Component - Handles both item-based and legacy markdown content
  */
-const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isExpanded, onToggle }) => {
+const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isExpanded, onToggle, branding }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Handle generate more click
@@ -620,11 +576,11 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
   return (
     <div
       style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        backgroundColor: branding.cardBgColor,
+        borderRadius: branding.radius.xl,
+        boxShadow: branding.shadow.xs,
         overflow: 'hidden',
-        marginBottom: '16px',
+        marginBottom: branding.space[4],
       }}
     >
       {/* Section Header */}
@@ -632,36 +588,36 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
         onClick={onToggle}
         style={{
           width: '100%',
-          padding: '16px 20px',
+          padding: `${branding.space[4]} ${branding.space[5]}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           border: 'none',
           background: 'none',
           cursor: 'pointer',
-          borderBottom: isExpanded ? '1px solid #f1f5f9' : 'none',
+          borderBottom: isExpanded ? `1px solid ${branding.borderColorLight}` : 'none',
         }}
       >
         <h3
           style={{
-            fontSize: '16px',
-            fontWeight: 600,
-            color: '#0f172a',
+            fontSize: branding.fontSize.lg,
+            fontWeight: branding.fontWeight.semibold,
+            color: branding.textMain,
             margin: 0,
             textAlign: 'left',
           }}
         >
           {section.section_title}
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: branding.space[2] }}>
           {type === 'items' && (
             <span
               style={{
-                fontSize: '12px',
-                color: '#94a3b8',
-                backgroundColor: '#f1f5f9',
-                padding: '4px 8px',
-                borderRadius: '12px',
+                fontSize: branding.fontSize.xs,
+                color: branding.textMuted,
+                backgroundColor: branding.borderColorLight,
+                padding: `${branding.space[1]} ${branding.space[2]}`,
+                borderRadius: branding.radius.lg,
               }}
             >
               {visibleItems.length} Punkte
@@ -672,29 +628,29 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                fontSize: '12px',
+                gap: branding.space[1],
+                fontSize: branding.fontSize.xs,
                 color: primaryAccent,
                 backgroundColor: `${primaryAccent}15`,
-                padding: '4px 8px',
-                borderRadius: '12px',
+                padding: `${branding.space[1]} ${branding.space[2]}`,
+                borderRadius: branding.radius.lg,
               }}
             >
-              <PenLine size={12} />
+              <PenLine size={branding.iconSize.xs} />
               Notizen
             </span>
           )}
           {isExpanded ? (
-            <ChevronUp size={20} style={{ color: '#94a3b8' }} />
+            <ChevronUp size={branding.iconSize.lg} style={{ color: branding.textMuted }} />
           ) : (
-            <ChevronDown size={20} style={{ color: '#94a3b8' }} />
+            <ChevronDown size={branding.iconSize.lg} style={{ color: branding.textMuted }} />
           )}
         </div>
       </button>
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div style={{ padding: '16px 20px' }}>
+        <div style={{ padding: `${branding.space[4]} ${branding.space[5]}` }}>
           {type === 'items' ? (
             <>
               {/* Items list */}
@@ -705,6 +661,7 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
                   sectionId={section.id}
                   primaryAccent={primaryAccent}
                   onUpdateItem={onUpdateItem}
+                  branding={branding}
                 />
               ))}
 
@@ -779,6 +736,7 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
                       sectionId={section.id}
                       primaryAccent={primaryAccent}
                       onUpdateItem={onUpdateItem}
+                      branding={branding}
                     />
                   ))}
                 </div>
@@ -818,17 +776,23 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
 const BriefingWorkbook = ({
   briefing: initialBriefing,
   onBack,
+  onDelete,
 }) => {
   const { config } = usePartner();
+  const b = useBranding();
+  const isMobile = useMobile();
   const [briefing, setBriefing] = useState(initialBriefing);
   const [loading, setLoading] = useState(!initialBriefing?.sections);
   const [error, setError] = useState(null);
   const [expandedSections, setExpandedSections] = useState({});
   const [isVariablesExpanded, setIsVariablesExpanded] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Get primary accent color from partner config
-  const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
-  const IconComponent = ICON_MAP[briefing?.template_icon] || FileText;
+  // Get primary accent color from branding
+  const primaryAccent = b.primaryAccent;
+  const headerGradient = b.headerGradient;
+  const IconComponent = getIcon(briefing?.template_icon) || FileText;
 
   // Fetch full briefing with sections if needed
   useEffect(() => {
@@ -934,94 +898,146 @@ const BriefingWorkbook = ({
   }
 
   return (
-    <div
-      style={{
-        padding: '24px',
-        maxWidth: '900px',
-        margin: '0 auto',
-      }}
-    >
-      {/* Back Button */}
-      <button
-        onClick={onBack}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 0',
-          border: 'none',
-          background: 'none',
-          color: '#64748b',
-          fontSize: '14px',
-          fontWeight: 500,
-          cursor: 'pointer',
-          marginBottom: '24px',
-        }}
-      >
-        <ArrowLeft size={18} />
-        Zurück zur Übersicht
-      </button>
-
-      {/* Header */}
-      <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          padding: '24px',
-          marginBottom: '24px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
-            <div
+    <div style={{ minHeight: '100vh', background: b.pageBg }}>
+      {/* Header - Full width sticky */}
+      <div style={{
+        background: headerGradient,
+        padding: isMobile ? '20px 16px' : '24px 32px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 40,
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          {/* Back Button */}
+          {onBack && (
+            <button
+              onClick={onBack}
               style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '12px',
-                background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}25)`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                color: '#fff',
+                fontSize: '13px',
+                marginBottom: '16px',
+              }}
+            >
+              <ArrowLeft size={16} />
+              Zurück zur Übersicht
+            </button>
+          )}
+
+          {/* Header Content */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '24px',
+          }}>
+            {/* Icon - Hidden on mobile */}
+            {!isMobile && (
+              <div style={{
+                width: 90,
+                height: 90,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-              }}
-            >
-              <IconComponent size={28} style={{ color: primaryAccent }} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h1
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  color: '#0f172a',
-                  margin: '0 0 4px 0',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {briefing.title || 'Briefing'}
-              </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '14px', color: '#64748b' }}>
+              }}>
+                <IconComponent size={40} color="#fff" />
+              </div>
+            )}
+
+            {/* Title & Meta */}
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(255,255,255,0.2)',
+                  color: '#fff',
+                }}>
+                  Smart Briefing
+                </span>
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(255,255,255,0.9)',
+                  color: primaryAccent,
+                }}>
                   {briefing.template_title}
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#94a3b8' }}>
-                  <Calendar size={12} />
-                  {formatDate(briefing.created_at)}
+              </div>
+              <h1 style={{
+                fontSize: isMobile ? '20px' : '24px',
+                fontWeight: 700,
+                color: '#fff',
+                margin: 0,
+                marginBottom: '8px',
+              }}>
+                {briefing.title || 'Briefing'}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                  <Calendar size={14} />
+                  {formatDateTime(briefing.created_at)}
                 </span>
               </div>
             </div>
+
+            {/* Delete Button - mobile and desktop */}
+            {onDelete && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'rgba(239,68,68,0.2)',
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  borderRadius: '10px',
+                  padding: isMobile ? '10px 12px' : '10px 16px',
+                  cursor: 'pointer',
+                  color: '#fff',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  outline: 'none',
+                  WebkitAppearance: 'none',
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
           </div>
-
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div style={{
+        maxWidth: '900px',
+        margin: '0 auto',
+        padding: isMobile ? '16px' : '24px 32px',
+      }}>
         {/* Collapsible Variables display */}
         {briefing.variables && Object.keys(briefing.variables).length > 0 && (
           <div
             style={{
-              marginTop: '16px',
-              paddingTop: '16px',
-              borderTop: '1px solid #f1f5f9',
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              marginBottom: '20px',
+              border: `1px solid ${b.borderColor}`,
             }}
           >
             <button
@@ -1037,10 +1053,10 @@ const BriefingWorkbook = ({
                 cursor: 'pointer',
               }}
             >
-              <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748b' }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: b.textMain }}>
                 Deine Angaben ({Object.keys(briefing.variables).length})
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: b.textMuted }}>
                 <span style={{ fontSize: '12px' }}>{isVariablesExpanded ? 'Einklappen' : 'Ausklappen'}</span>
                 {isVariablesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </div>
@@ -1050,6 +1066,8 @@ const BriefingWorkbook = ({
               <div
                 style={{
                   marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: `1px solid ${b.borderColor}`,
                   display: 'flex',
                   flexWrap: 'wrap',
                   gap: '8px',
@@ -1059,21 +1077,20 @@ const BriefingWorkbook = ({
                   <span
                     key={key}
                     style={{
-                      backgroundColor: '#f1f5f9',
+                      backgroundColor: b.cardBgHover,
                       padding: '6px 12px',
                       borderRadius: '20px',
                       fontSize: '12px',
-                      color: '#64748b',
+                      color: b.textSecondary,
                     }}
                   >
-                    <strong style={{ color: '#374151' }}>{getVariableDisplayName(key)}:</strong> {value}
+                    <strong style={{ color: b.textMain }}>{getVariableDisplayName(key)}:</strong> {value}
                   </span>
                 ))}
               </div>
             )}
           </div>
         )}
-      </div>
 
       {/* Loading State */}
       {loading && (
@@ -1136,6 +1153,7 @@ const BriefingWorkbook = ({
               onGenerateMore={handleGenerateMore}
               isExpanded={expandedSections[section.id]}
               onToggle={() => toggleSection(section.id)}
+              branding={b}
             />
           ))}
         </div>
@@ -1155,29 +1173,159 @@ const BriefingWorkbook = ({
         </div>
       )}
 
-      {/* Info box */}
-      <div
-        style={{
-          marginTop: '24px',
-          padding: '16px 20px',
-          backgroundColor: `${primaryAccent}08`,
-          borderRadius: '12px',
-          border: `1px solid ${primaryAccent}20`,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-          <Lightbulb size={18} style={{ color: primaryAccent, flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <h4 style={{ margin: '0 0 4px 0', color: '#0f172a', fontSize: '14px', fontWeight: 600 }}>
-              Tipp: Personalisiere dein Briefing
-            </h4>
-            <p style={{ margin: 0, color: '#64748b', fontSize: '13px', lineHeight: 1.5 }}>
-              Klicke auf das Stift-Icon bei jedem Punkt, um deine eigenen Notizen hinzuzufügen.
-              Nicht relevante Punkte kannst du mit dem Papierkorb-Icon ausblenden.
-            </p>
+        {/* Info box */}
+        <div
+          style={{
+            marginTop: '24px',
+            padding: '16px 20px',
+            backgroundColor: `${primaryAccent}08`,
+            borderRadius: '12px',
+            border: `1px solid ${primaryAccent}20`,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <Lightbulb size={18} style={{ color: primaryAccent, flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <h4 style={{ margin: '0 0 4px 0', color: '#0f172a', fontSize: '14px', fontWeight: 600 }}>
+                Tipp: Personalisiere dein Briefing
+              </h4>
+              <p style={{ margin: 0, color: '#64748b', fontSize: '13px', lineHeight: 1.5 }}>
+                Klicke auf das Stift-Icon bei jedem Punkt, um deine eigenen Notizen hinzuzufügen.
+                Nicht relevante Punkte kannst du mit dem Papierkorb-Icon ausblenden.
+              </p>
+            </div>
           </div>
         </div>
+
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteConfirm(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0,0,0,0.5)',
+                zIndex: 1000,
+              }}
+            />
+            {/* Dialog */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: '#fff',
+                borderRadius: '16px',
+                padding: '24px',
+                maxWidth: '400px',
+                width: '90%',
+                zIndex: 1001,
+                boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  background: 'rgba(239,68,68,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}>
+                  <Trash2 size={24} color="#ef4444" />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 600, color: b.textMain, marginBottom: '8px' }}>
+                  Briefing löschen?
+                </h3>
+                <p style={{ fontSize: '14px', color: b.textSecondary, marginBottom: '24px' }}>
+                  Diese Aktion kann nicht rückgängig gemacht werden. Dein Briefing und alle Notizen werden dauerhaft gelöscht.
+                </p>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '10px',
+                      border: `1px solid ${b.borderColor}`,
+                      background: '#fff',
+                      color: b.textMain,
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      cursor: isDeleting ? 'not-allowed' : 'pointer',
+                      opacity: isDeleting ? 0.5 : 1,
+                      outline: 'none',
+                      WebkitAppearance: 'none',
+                    }}
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!onDelete || !briefing?.id) return;
+                      setIsDeleting(true);
+                      try {
+                        await onDelete(briefing);
+                      } catch (err) {
+                        console.error('Failed to delete briefing:', err);
+                      } finally {
+                        setIsDeleting(false);
+                        setShowDeleteConfirm(false);
+                      }
+                    }}
+                    disabled={isDeleting}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: '#ef4444',
+                      color: '#fff',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      cursor: isDeleting ? 'not-allowed' : 'pointer',
+                      opacity: isDeleting ? 0.7 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      outline: 'none',
+                      WebkitAppearance: 'none',
+                    }}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        Löschen...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={16} />
+                        Löschen
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <style>
         {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}

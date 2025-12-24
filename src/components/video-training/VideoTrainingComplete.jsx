@@ -33,7 +33,7 @@ const ScoreGauge = ({ score, size = 120, strokeWidth = 10, primaryAccent }) => {
   };
 
   return (
-    <div style={{ position: 'relative', width: size, height: size }}>
+    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         {/* Background circle */}
         <circle
@@ -134,11 +134,18 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
         >
           <IconComponent size={20} color={getScoreColor(category.score)} />
         </div>
-        <div style={{ flex: 1, textAlign: 'left' }}>
+        <div style={{ flex: 1, textAlign: 'left', minWidth: 0, overflow: 'hidden' }}>
           <h4 style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', marginBottom: '2px' }}>
             {category.label}
           </h4>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+          <p style={{
+            fontSize: '13px',
+            color: '#64748b',
+            margin: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
             {category.feedback?.substring(0, 60)}...
           </p>
         </div>

@@ -19,6 +19,7 @@ import {
   Gauge,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getScoreTailwindClasses } from '@/config/colors';
 
 /**
  * StructuredFeedbackDisplay Component
@@ -44,14 +45,15 @@ const ScoreRing = ({ score, size = 'large', maxScore = 100 }) => {
   const percentage = (score / maxScore) * 100;
   const progress = (percentage / 100) * circumference;
 
-  const getScoreColor = (pct) => {
-    if (pct >= 80) return { stroke: '#10b981', text: 'text-green-600' };
-    if (pct >= 60) return { stroke: '#3b82f6', text: 'text-blue-600' };
-    if (pct >= 40) return { stroke: '#f59e0b', text: 'text-amber-500' };
-    return { stroke: '#ef4444', text: 'text-red-500' };
+  // Get colors using centralized function
+  const colorMap = {
+    'text-green-600': { stroke: '#10b981', text: 'text-green-600' },
+    'text-blue-600': { stroke: '#3b82f6', text: 'text-blue-600' },
+    'text-amber-600': { stroke: '#f59e0b', text: 'text-amber-600' },
+    'text-red-600': { stroke: '#ef4444', text: 'text-red-600' },
   };
-
-  const colors = getScoreColor(percentage);
+  const tailwindClasses = getScoreTailwindClasses(percentage);
+  const colors = colorMap[tailwindClasses.text] || colorMap['text-red-600'];
 
   return (
     <div className="relative inline-flex items-center justify-center">

@@ -10,7 +10,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Include centralized transcription constants
+require_once plugin_dir_path(__FILE__) . 'class-transcription-constants.php';
+
 class Bewerbungstrainer_Simulator_API {
+
+    use Bewerbungstrainer_API_Utils;
 
     /**
      * Instance of this class
@@ -145,16 +150,8 @@ class Bewerbungstrainer_Simulator_API {
         ));
     }
 
-    /**
-     * Permission callbacks
-     */
-    public function check_user_logged_in() {
-        return is_user_logged_in();
-    }
-
-    public function allow_all_users($request) {
-        return true;
-    }
+    // Note: Permission callbacks (check_user_logged_in, allow_all_users, etc.)
+    // are provided by Bewerbungstrainer_API_Utils trait
 
     // =========================================================================
     // SCENARIO ENDPOINTS
@@ -583,6 +580,19 @@ class Bewerbungstrainer_Simulator_API {
             $mime_type = $audio_file['type'];
         }
 
+        // Validate audio size to prevent hallucination on empty/silent audio
+        // Uses centralized constant from class-transcription-constants.php
+        $audio_size = strlen($audio_data);
+
+        if ($audio_size < Bewerbungstrainer_Transcription_Constants::MIN_AUDIO_SIZE_BYTES) {
+            error_log("Simulator: Audio too small ({$audio_size} bytes), rejecting to prevent hallucination");
+            return new WP_Error(
+                'audio_too_small',
+                __('Die Aufnahme enthält keine verwertbare Sprache. Bitte sprechen Sie während der Aufnahme und versuchen Sie es erneut.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
         // Mark previous answers as not final (for retry)
         $this->db->mark_previous_answers_not_final($session_id, $question_index);
 
@@ -681,6 +691,7 @@ class Bewerbungstrainer_Simulator_API {
                 'transcript' => $parsed['transcript'],
                 'feedback' => $parsed['feedback'],
                 'audio_analysis' => $parsed['audio_metrics'],
+                'audio_url' => $audio_url,
             ),
         ), 200);
     }
@@ -1480,19 +1491,15 @@ Die Situation ist nur der Kontext. Das Audio enthält die REAKTION des Nutzers d
 - STAR-Methode (Situation, Task, Action, Result)
 - Professionalität und Selbstbewusstsein";
 
+        // Use centralized anti-hallucination rules
+        $antiHallucinationRules = Bewerbungstrainer_Transcription_Constants::get_anti_hallucination_rules();
+        $noSpeechDetected = Bewerbungstrainer_Transcription_Constants::NO_SPEECH_DETECTED;
+
         return "Du bist ein professioneller Karriere-Coach und analysierst Audioantworten.
 
 {$analysisContext}
 
-ABSOLUTE REGEL - KEINE HALLUZINATION:
-Du DARFST NUR transkribieren, was TATSÄCHLICH in der Audio-Datei gesprochen wird.
-- Bei Stille, Rauschen, oder unverständlichem Audio: transcript = \"[Keine Sprache erkannt]\"
-- Bei nur 1-2 Sekunden Audio ohne klare Sprache: transcript = \"[Keine Sprache erkannt]\"
-- ERFINDE NIEMALS Wörter, Sätze oder Inhalte!
-- Wenn du unsicher bist, ob etwas gesagt wurde: NICHT transkribieren!
-- Wenn jemand nur \"Weiß ich nicht\" oder \"Keine Ahnung\" sagt, transkribiere GENAU DAS
-- Eine kurze Antwort wie \"Ich weiß es nicht\" ist eine valide Transkription
-- HALLUZINIERE KEINE ausführlichen Antworten wenn der Sprecher das nicht gesagt hat
+{$antiHallucinationRules}
 - WIEDERHOLE NIEMALS die Frage oder Situation als Transkript - transkribiere NUR die Audioaufnahme!
 
 AUFGABE (NUR bei klar erkennbarer Sprache):
@@ -1516,7 +1523,7 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
 
 Bei KEINER erkennbaren Sprache (Stille, Rauschen, unverständlich):
 {
-  \"transcript\": \"[Keine Sprache erkannt]\",
+  \"transcript\": \"{$noSpeechDetected}\",
   \"feedback\": {
     \"summary\": \"Es wurde keine Sprache erkannt. Bitte sprich deutlich ins Mikrofon.\",
     \"strengths\": [],

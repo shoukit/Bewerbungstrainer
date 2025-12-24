@@ -2293,6 +2293,8 @@ class Bewerbungstrainer_API {
             'feedback_json' => $this->safe_json_decode($session->feedback_json),
             'audio_analysis_json' => $this->safe_json_decode($session->audio_analysis_json),
             'conversation_id' => $session->conversation_id,
+            'audio_filename' => $session->audio_filename ?? null,
+            'audio_url' => $session->audio_url ?? null,
             'duration' => $session->duration ? (int) $session->duration : null,
             'created_at' => $session->created_at,
             'updated_at' => $session->updated_at,

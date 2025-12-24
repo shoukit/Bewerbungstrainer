@@ -7,38 +7,8 @@
 
 import { generateInterviewFeedback, generateAudioAnalysis } from './gemini.js';
 import wordpressAPI, { getWPNonce, getWPApiUrl } from './wordpress-api.js';
-import { decodeUnicodeEscapes } from '../utils/parseJSON.js';
-
-/**
- * Recursively decode Unicode escapes in all string properties of an object
- * Handles the case where backend returns strings like "Betriebszugehu00f6rigkeit"
- *
- * @param {any} data - Data to decode
- * @returns {any} - Decoded data
- */
-function decodeObjectStrings(data) {
-  if (data === null || data === undefined) {
-    return data;
-  }
-
-  if (typeof data === 'string') {
-    return decodeUnicodeEscapes(data);
-  }
-
-  if (Array.isArray(data)) {
-    return data.map(decodeObjectStrings);
-  }
-
-  if (typeof data === 'object') {
-    const decoded = {};
-    for (const key of Object.keys(data)) {
-      decoded[key] = decodeObjectStrings(data[key]);
-    }
-    return decoded;
-  }
-
-  return data;
-}
+import { decodeObjectStrings } from '../utils/parseJSON.js';
+import { delay } from '../utils/timing.js';
 
 /**
  * Analyze roleplay conversation transcript
@@ -100,11 +70,16 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
   // Generate audio analysis if audio file is provided
   if (audioFile) {
     try {
+      // Include transcript for improved speaker identification in audio analysis
       results.audioAnalysisContent = await generateAudioAnalysis(
         audioFile,
         geminiApiKey,
         'gemini-1.5-flash', // modelName
-        roleOptions // pass same role options for audio analysis
+        {
+          ...roleOptions,
+          hasTwoVoices: true, // Live-Gespräche have AI + user voices
+          transcript: formattedTranscript, // Help Gemini identify speakers
+        }
       );
     } catch (error) {
       console.error('❌ [Roleplay Feedback] Failed to generate audio analysis:', error);
@@ -311,8 +286,6 @@ export function getRoleplaySessionAudioUrl(sessionId) {
 export async function fetchRoleplaySessionAudio(sessionId, maxRetries = 10, retryDelayMs = 3000) {
 
   const audioUrl = getRoleplaySessionAudioUrl(sessionId);
-
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {

@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useMobile } from '@/hooks/useMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Rocket,
@@ -27,8 +28,7 @@ import { GAME_MODES, getRandomTopic, getRandomStressQuestion } from '@/config/pr
 import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS, GAME_MODE_COLORS } from '@/config/colors';
 import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
 
@@ -46,30 +46,30 @@ const ICON_MAP = {
 /**
  * Stats Card Component
  */
-const StatsCard = ({ icon: Icon, label, value, primaryAccent, primaryAccentLight, isMobile }) => {
+const StatsCard = ({ icon: Icon, label, value, primaryAccent, primaryAccentLight, isMobile, b }) => {
   // Use branding colors for all stats cards
 
   return (
     <div style={{
       backgroundColor: 'white',
-      borderRadius: isMobile ? '10px' : '12px',
-      padding: isMobile ? '12px' : '16px',
+      borderRadius: isMobile ? b.radius.md : b.radius.lg,
+      padding: isMobile ? b.space[3] : b.space[4],
       border: `1px solid ${COLORS.slate[200]}`,
     }}>
       <div style={{
         width: isMobile ? '32px' : '40px',
         height: isMobile ? '32px' : '40px',
-        borderRadius: isMobile ? '8px' : '10px',
+        borderRadius: isMobile ? b.radius.sm : b.radius.md,
         backgroundColor: primaryAccentLight,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: isMobile ? '8px' : '12px',
+        marginBottom: isMobile ? b.space[2] : b.space[3],
       }}>
         <Icon style={{ width: isMobile ? '16px' : '20px', height: isMobile ? '16px' : '20px', color: primaryAccent }} />
       </div>
-      <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: 700, color: COLORS.slate[900] }}>{value}</div>
-      <div style={{ fontSize: isMobile ? '11px' : '13px', color: COLORS.slate[500] }}>{label}</div>
+      <div style={{ fontSize: isMobile ? b.fontSize.xl : b.fontSize['2xl'], fontWeight: 700, color: COLORS.slate[900] }}>{value}</div>
+      <div style={{ fontSize: isMobile ? b.fontSize['2xs'] : b.fontSize.xs, color: COLORS.slate[500] }}>{label}</div>
     </div>
   );
 };
@@ -85,11 +85,8 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   const IconComponent = ICON_MAP[mode.icon] || Rocket;
   const colors = GAME_MODE_COLORS[mode.id] || GAME_MODE_COLORS.klassiker;
 
-  // Partner theming for primary CTA button
-  const { branding } = usePartner();
-  const buttonGradient = branding?.['--button-gradient'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  // Partner theming
+  const b = useBranding();
 
   // Initialize topic
   useEffect(() => {
@@ -133,7 +130,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
       minHeight: '100%',
       display: 'flex',
       flexDirection: 'column',
-      padding: '24px',
+      padding: b.space[6],
     }}>
       {/* Back Button */}
       <motion.button
@@ -143,16 +140,16 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          padding: '10px 16px',
+          gap: b.space[2],
+          padding: `${b.space[2.5]} ${b.space[4]}`,
           backgroundColor: 'white',
           border: `1px solid ${COLORS.slate[200]}`,
-          borderRadius: '10px',
+          borderRadius: b.radius.md,
           color: COLORS.slate[600],
-          fontSize: '14px',
+          fontSize: b.fontSize.sm,
           fontWeight: 500,
           cursor: 'pointer',
-          marginBottom: '32px',
+          marginBottom: b.space[8],
           width: 'fit-content',
         }}
       >
@@ -176,31 +173,31 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          style={{ textAlign: 'center', marginBottom: '32px' }}
+          style={{ textAlign: 'center', marginBottom: b.space[8] }}
         >
           <div style={{
             width: '80px',
             height: '80px',
-            borderRadius: '20px',
-            background: headerGradient,
+            borderRadius: b.radius['2xl'],
+            background: b.headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 20px',
-            boxShadow: `0 10px 30px ${primaryAccent}44`,
+            margin: `0 auto ${b.space[5]}`,
+            boxShadow: b.coloredShadow(b.primaryAccent, 'lg'),
           }}>
             <IconComponent style={{ width: '40px', height: '40px', color: 'white' }} />
           </div>
           <h1 style={{
-            fontSize: '28px',
+            fontSize: b.fontSize['3xl'],
             fontWeight: 700,
             color: COLORS.slate[900],
-            margin: '0 0 8px 0',
+            margin: `0 0 ${b.space[2]} 0`,
           }}>
             {mode.title}
           </h1>
           <p style={{
-            fontSize: '15px',
+            fontSize: b.fontSize.md,
             color: COLORS.slate[500],
             margin: 0,
           }}>
@@ -215,11 +212,11 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           transition={{ delay: 0.2 }}
           style={{
             width: '100%',
-            background: headerGradient,
-            borderRadius: '20px',
-            padding: '32px',
-            marginBottom: '24px',
-            boxShadow: `0 20px 40px ${primaryAccent}33`,
+            background: b.headerGradient,
+            borderRadius: b.radius['2xl'],
+            padding: b.space[8],
+            marginBottom: b.space[6],
+            boxShadow: b.coloredShadow(b.primaryAccent, 'xl'),
           }}
         >
           {/* Topic Label */}
@@ -227,16 +224,16 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '20px',
+            marginBottom: b.space[5],
           }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
+              gap: b.space[2.5],
               color: 'rgba(255,255,255,0.9)',
             }}>
               <MessageCircle style={{ width: '20px', height: '20px' }} />
-              <span style={{ fontWeight: 600, fontSize: '15px' }}>
+              <span style={{ fontWeight: 600, fontSize: b.fontSize.md }}>
                 {mode.id === 'klassiker' ? 'Deine Aufgabe' : mode.id === 'stress' ? 'Die Frage' : 'Dein Thema'}
               </span>
             </div>
@@ -251,14 +248,14 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 18px',
+                  gap: b.space[2],
+                  padding: `${b.space[2.5]} ${b.space[4.5]}`,
                   backgroundColor: 'rgba(255, 255, 255, 0.2)',
                   backdropFilter: 'blur(10px)',
                   border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '10px',
+                  borderRadius: b.radius.md,
                   color: 'white',
-                  fontSize: '14px',
+                  fontSize: b.fontSize.sm,
                   fontWeight: 600,
                   cursor: isSpinning ? 'not-allowed' : 'pointer',
                 }}
@@ -283,7 +280,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               style={{
-                fontSize: '22px',
+                fontSize: b.fontSize['2xl'],
                 fontWeight: 600,
                 color: 'white',
                 margin: 0,
@@ -304,21 +301,21 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           style={{
             width: '100%',
             backgroundColor: 'white',
-            borderRadius: '14px',
-            padding: '24px',
-            marginBottom: '24px',
+            borderRadius: b.radius.xl,
+            padding: b.space[6],
+            marginBottom: b.space[6],
             border: `1px solid ${COLORS.slate[200]}`,
           }}
         >
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            marginBottom: '16px',
+            gap: b.space[2.5],
+            marginBottom: b.space[4],
             color: COLORS.slate[700],
           }}>
-            <Mic style={{ width: '20px', height: '20px', color: primaryAccent }} />
-            <span style={{ fontWeight: 600, fontSize: '15px' }}>Mikrofon auswählen</span>
+            <Mic style={{ width: '20px', height: '20px', color: b.primaryAccent }} />
+            <span style={{ fontWeight: 600, fontSize: b.fontSize.md }}>Mikrofon auswählen</span>
           </div>
           <MicrophoneSelector
             selectedDeviceId={selectedMicrophoneId}
@@ -335,26 +332,26 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           style={{
             width: '100%',
             backgroundColor: COLORS.slate[50],
-            borderRadius: '14px',
-            padding: '20px',
-            marginBottom: '32px',
+            borderRadius: b.radius.xl,
+            padding: b.space[5],
+            marginBottom: b.space[8],
           }}
         >
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            marginBottom: '12px',
+            gap: b.space[2],
+            marginBottom: b.space[3],
             color: COLORS.slate[700],
           }}>
             <Sparkles style={{ width: '18px', height: '18px', color: COLORS.amber[500] }} />
-            <span style={{ fontWeight: 600, fontSize: '14px' }}>Tipps für deine Antwort</span>
+            <span style={{ fontWeight: 600, fontSize: b.fontSize.sm }}>Tipps für deine Antwort</span>
           </div>
           <ul style={{
             margin: 0,
-            paddingLeft: '20px',
+            paddingLeft: b.space[5],
             color: COLORS.slate[600],
-            fontSize: '14px',
+            fontSize: b.fontSize.sm,
             lineHeight: 1.7,
           }}>
             <li>Atme tief durch bevor du beginnst</li>
@@ -375,19 +372,19 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           style={{
             width: '100%',
             maxWidth: '400px',
-            padding: '18px 32px',
-            borderRadius: '14px',
+            padding: `${b.space[4.5]} ${b.space[8]}`,
+            borderRadius: b.radius.xl,
             border: 'none',
-            background: buttonGradient,
+            background: b.buttonGradient,
             color: 'white',
-            fontSize: '17px',
+            fontSize: b.fontSize.lg,
             fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '12px',
-            boxShadow: `0 8px 20px ${primaryAccent}44`,
+            gap: b.space[3],
+            boxShadow: b.coloredShadow(b.primaryAccent, 'md'),
           }}
         >
           <Play style={{ width: '22px', height: '22px' }} />
@@ -438,23 +435,13 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
   });
 
   // Mobile detection
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const isMobile = useMobile();
 
   // Pending mode for after login
   const [pendingMode, setPendingMode] = useState(null);
 
   // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+  const b = useBranding();
 
   // Load user stats - reload when returning to mode selection view
   useEffect(() => {
@@ -534,28 +521,28 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
 
   // Main Mode Selection View
   return (
-    <div style={{ padding: isMobile ? '16px' : '24px' }}>
+    <div style={{ padding: isMobile ? b.space[4] : b.space[6] }}>
       {/* Header - Compact on mobile */}
-      <div style={{ marginBottom: isMobile ? '20px' : '32px', textAlign: 'center' }}>
+      <div style={{ marginBottom: isMobile ? b.space[5] : b.space[8], textAlign: 'center' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: isMobile ? '10px' : '12px',
-          marginBottom: isMobile ? '8px' : '12px',
+          gap: isMobile ? b.space[2.5] : b.space[3],
+          marginBottom: isMobile ? b.space[2] : b.space[3],
         }}>
           <div style={{
             width: isMobile ? '40px' : '48px',
             height: isMobile ? '40px' : '48px',
-            borderRadius: isMobile ? '12px' : '14px',
-            background: headerGradient,
+            borderRadius: isMobile ? b.radius.lg : b.radius.xl,
+            background: b.headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Dumbbell style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px', color: headerText }} />
+            <Dumbbell style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px', color: b.headerText }} />
           </div>
           <h1 style={{
-            fontSize: isMobile ? '22px' : '28px',
+            fontSize: isMobile ? b.fontSize['2xl'] : b.fontSize['3xl'],
             fontWeight: 700,
             color: COLORS.slate[900],
             margin: 0,
@@ -564,7 +551,7 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
           </h1>
         </div>
         <p style={{
-          fontSize: isMobile ? '14px' : '16px',
+          fontSize: isMobile ? b.fontSize.sm : b.fontSize.base,
           color: COLORS.slate[600],
           maxWidth: '600px',
           margin: '0 auto',
@@ -573,18 +560,18 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
         </p>
       </div>
 
-      <div style={{ padding: isMobile ? '0 8px' : '0 24px' }}>
+      <div style={{ padding: isMobile ? `0 ${b.space[2]}` : `0 ${b.space[6]}` }}>
         {/* Stats Row - 2x2 grid on mobile */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: isMobile ? '10px' : '16px',
-          marginBottom: isMobile ? '24px' : '32px',
+          gap: isMobile ? b.space[2.5] : b.space[4],
+          marginBottom: isMobile ? b.space[6] : b.space[8],
         }}>
-          <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
-          <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
-          <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
-          <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} isMobile={isMobile} />
+          <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} primaryAccent={b.primaryAccent} primaryAccentLight={b.primaryAccentLight} isMobile={isMobile} b={b} />
+          <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} primaryAccent={b.primaryAccent} primaryAccentLight={b.primaryAccentLight} isMobile={isMobile} b={b} />
+          <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} primaryAccent={b.primaryAccent} primaryAccentLight={b.primaryAccentLight} isMobile={isMobile} b={b} />
+          <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} primaryAccent={b.primaryAccent} primaryAccentLight={b.primaryAccentLight} isMobile={isMobile} b={b} />
         </div>
 
         {/* Section Title with View Toggle */}
@@ -592,10 +579,10 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '16px',
+          marginBottom: b.space[4],
         }}>
           <h2 style={{
-            fontSize: '18px',
+            fontSize: b.fontSize.lg,
             fontWeight: 600,
             color: COLORS.slate[800],
             margin: 0,

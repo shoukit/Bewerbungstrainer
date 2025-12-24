@@ -49,11 +49,28 @@
 
     /* Card colors */
     --card-bg-color: #ffffff;
+    --card-bg-hover: #f8fafc;
 
     /* Primary accent - buttons, links, highlights */
     --primary-accent: #3A7FA7;
     --primary-accent-light: #E8F4F8;
     --primary-accent-hover: #2D6485;
+
+    /* Button colors */
+    --button-gradient: linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%);
+    --button-gradient-hover: linear-gradient(135deg, #2D6485 0%, #2E8A72 100%);
+    --button-solid: #3A7FA7;
+    --button-solid-hover: #2D6485;
+    --button-text: #ffffff;
+
+    /* Header gradient (for profile cards, feature headers) */
+    --header-gradient: linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%);
+    --header-text: #ffffff;
+
+    /* Icon colors */
+    --icon-primary: #3A7FA7;
+    --icon-secondary: #3DA389;
+    --icon-muted: #94a3b8;
 
     /* Text colors */
     --text-main: #0f172a;
@@ -63,6 +80,28 @@
     /* Border colors */
     --border-color: #e2e8f0;
     --border-color-light: #f1f5f9;
+
+    /* Focus ring */
+    --focus-ring: rgba(58, 127, 167, 0.3);
+
+    /* Semantic colors - consistent across app */
+    --color-success: #10b981;
+    --color-success-light: #d1fae5;
+    --color-success-dark: #059669;
+    --color-error: #ef4444;
+    --color-error-light: #fee2e2;
+    --color-error-dark: #dc2626;
+    --color-warning: #f59e0b;
+    --color-warning-light: #fef3c7;
+    --color-warning-dark: #d97706;
+    --color-info: #3b82f6;
+    --color-info-light: #dbeafe;
+    --color-info-dark: #2563eb;
+
+    /* Overlay/backdrop colors */
+    --overlay-light: rgba(255, 255, 255, 0.8);
+    --overlay-dark: rgba(0, 0, 0, 0.5);
+    --backdrop-blur: rgba(255, 255, 255, 0.9);
   }
 
   .dark {

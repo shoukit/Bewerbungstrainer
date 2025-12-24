@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Sparkles } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 
 /**
@@ -26,7 +25,7 @@ const scrollIntoViewOnFocus = (e) => {
 /**
  * Styled Input Component
  */
-const StyledInput = ({ id, type, value, onChange, placeholder, hasError, focusColor }) => {
+const StyledInput = ({ id, type, value, onChange, placeholder, hasError, focusColor, b }) => {
   const [isFocused, setIsFocused] = useState(false);
   const theFocusColor = focusColor || COLORS.blue[500];
 
@@ -45,15 +44,15 @@ const StyledInput = ({ id, type, value, onChange, placeholder, hasError, focusCo
       style={{
         width: '100%',
         height: '44px',
-        padding: '8px 16px',
-        borderRadius: '12px',
+        padding: `${b.space[2]} ${b.space[4]}`,
+        borderRadius: b.radius.lg,
         border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? theFocusColor : COLORS.slate[200]}`,
         backgroundColor: 'white',
         color: COLORS.slate[900],
-        fontSize: '16px', // Minimum 16px to prevent iOS zoom
-        boxShadow: isFocused ? `0 0 0 3px ${theFocusColor}26` : '0 1px 2px rgba(0, 0, 0, 0.05)',
+        fontSize: b.fontSize.lg, // Minimum 16px to prevent iOS zoom
+        boxShadow: isFocused ? `0 0 0 3px ${theFocusColor}26` : b.shadow.sm,
         outline: 'none',
-        transition: 'all 0.2s',
+        transition: b.transition.normal,
       }}
       onFocus={handleFocus}
       onBlur={() => setIsFocused(false)}
@@ -64,7 +63,7 @@ const StyledInput = ({ id, type, value, onChange, placeholder, hasError, focusCo
 /**
  * Styled Textarea Component
  */
-const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3, focusColor }) => {
+const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3, focusColor, b }) => {
   const [isFocused, setIsFocused] = useState(false);
   const theFocusColor = focusColor || COLORS.blue[500];
 
@@ -83,15 +82,15 @@ const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3, 
       style={{
         width: '100%',
         minHeight: '100px',
-        padding: '12px 16px',
-        borderRadius: '12px',
+        padding: `${b.space[3]} ${b.space[4]}`,
+        borderRadius: b.radius.lg,
         border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? theFocusColor : COLORS.slate[200]}`,
         backgroundColor: 'white',
         color: COLORS.slate[900],
-        fontSize: '16px', // Minimum 16px to prevent iOS zoom
-        boxShadow: isFocused ? `0 0 0 3px ${theFocusColor}26` : '0 1px 2px rgba(0, 0, 0, 0.05)',
+        fontSize: b.fontSize.lg, // Minimum 16px to prevent iOS zoom
+        boxShadow: isFocused ? `0 0 0 3px ${theFocusColor}26` : b.shadow.sm,
         outline: 'none',
-        transition: 'all 0.2s',
+        transition: b.transition.normal,
         resize: 'none',
       }}
       onFocus={handleFocus}
@@ -103,7 +102,7 @@ const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3, 
 /**
  * Styled Button Component
  */
-const StyledButton = ({ onClick, variant = 'primary', children, className, themedGradient, themedGradientHover }) => {
+const StyledButton = ({ onClick, variant = 'primary', children, className, themedGradient, themedGradientHover, b }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const baseStyle = {
@@ -111,13 +110,13 @@ const StyledButton = ({ onClick, variant = 'primary', children, className, theme
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    fontSize: '14px',
+    gap: b.space[2],
+    padding: `${b.space[3]} ${b.space[6]}`,
+    borderRadius: b.radius.lg,
+    fontSize: b.fontSize.base,
     fontWeight: 600,
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: b.transition.normal,
     border: 'none',
   };
 
@@ -125,13 +124,13 @@ const StyledButton = ({ onClick, variant = 'primary', children, className, theme
     primary: {
       background: isHovered ? (themedGradientHover || themedGradient) : themedGradient,
       color: 'white',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      boxShadow: b.shadow.md,
     },
     outline: {
       backgroundColor: isHovered ? '#f8fafc' : 'white',
       color: COLORS.slate[700],
       border: `2px solid ${COLORS.slate[200]}`,
-      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+      boxShadow: b.shadow.sm,
     },
   };
 
@@ -155,12 +154,8 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
 
-  // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerGradientHover = branding?.['--button-gradient-hover'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  // Design tokens
+  const b = useBranding();
 
   // Initialize values with defaults when scenario changes
   useEffect(() => {
@@ -243,33 +238,33 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle style={{ fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <DialogTitle style={{ fontSize: b.fontSize['2xl'], display: 'flex', alignItems: 'center', gap: b.space[3] }}>
             <div
               style={{
                 width: '40px',
                 height: '40px',
-                borderRadius: '12px',
-                background: headerGradient,
+                borderRadius: b.radius.lg,
+                background: b.headerGradient,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Sparkles style={{ width: '20px', height: '20px', color: headerText }} />
+              <Sparkles style={{ width: '20px', height: '20px', color: b.headerText }} />
             </div>
             <span style={{ color: COLORS.slate[900] }}>{scenario.title}</span>
           </DialogTitle>
-          <DialogDescription style={{ fontSize: '16px', paddingTop: '8px', color: COLORS.slate[600] }}>
+          <DialogDescription style={{ fontSize: b.fontSize.lg, paddingTop: b.space[2], color: COLORS.slate[600] }}>
             Bitte fülle die folgenden Informationen aus, um das Rollenspiel zu starten.
           </DialogDescription>
         </DialogHeader>
 
         <div
           style={{
-            padding: '24px 0',
+            padding: `${b.space[6]} 0`,
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '16px',
+            gap: b.space[4],
           }}
         >
           {userInputVariables.map((varDef) => (
@@ -278,14 +273,14 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '8px',
+                gap: b.space[2],
                 gridColumn: varDef.type === 'textarea' ? '1 / -1' : 'auto',
               }}
             >
               <label
                 htmlFor={varDef.key}
                 style={{
-                  fontSize: '14px',
+                  fontSize: b.fontSize.base,
                   fontWeight: 600,
                   color: COLORS.slate[700],
                 }}
@@ -302,7 +297,8 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
                   hasError={!!errors[varDef.key]}
                   rows={3}
-                  focusColor={primaryAccent}
+                  focusColor={b.primaryAccent}
+                  b={b}
                 />
               ) : (
                 <StyledInput
@@ -312,12 +308,13 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                   onChange={(e) => handleChange(varDef.key, e.target.value)}
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
                   hasError={!!errors[varDef.key]}
-                  focusColor={primaryAccent}
+                  focusColor={b.primaryAccent}
+                  b={b}
                 />
               )}
 
               {errors[varDef.key] && (
-                <p style={{ fontSize: '14px', color: COLORS.red[500], margin: 0 }}>
+                <p style={{ fontSize: b.fontSize.base, color: COLORS.red[500], margin: 0 }}>
                   {errors[varDef.key]}
                 </p>
               )}
@@ -325,15 +322,16 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
           ))}
         </div>
 
-        <DialogFooter style={{ display: 'flex', flexDirection: 'row', gap: '12px', paddingTop: '16px' }}>
-          <StyledButton onClick={onCancel} variant="outline">
+        <DialogFooter style={{ display: 'flex', flexDirection: 'row', gap: b.space[3], paddingTop: b.space[4] }}>
+          <StyledButton onClick={onCancel} variant="outline" b={b}>
             Abbrechen
           </StyledButton>
           <StyledButton
             onClick={handleSubmit}
             variant="primary"
-            themedGradient={headerGradient}
-            themedGradientHover={headerGradientHover}
+            themedGradient={b.headerGradient}
+            themedGradientHover={b.buttonGradientHover}
+            b={b}
           >
             <Sparkles style={{ width: '16px', height: '16px' }} />
             Rollenspiel starten

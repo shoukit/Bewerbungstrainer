@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Play, Square, Volume2, CheckCircle, AlertCircle, RefreshCw, X } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
+import AudioVisualizer from './AudioVisualizer';
 
 /**
  * MicrophoneTestDialog Component
@@ -19,9 +19,7 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
   const [error, setError] = useState(null);
 
   // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
+  const b = useBranding();
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -221,7 +219,7 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '20px',
+          padding: b.space[5],
         }}
       >
         {/* Dialog */}
@@ -232,27 +230,27 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
           onClick={(e) => e.stopPropagation()}
           style={{
             backgroundColor: COLORS.white,
-            borderRadius: '20px',
+            borderRadius: b.radius['2xl'],
             width: '100%',
             maxWidth: '400px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            boxShadow: b.shadow.xl,
             overflow: 'hidden',
           }}
         >
           {/* Header */}
           <div style={{
-            padding: '20px 24px',
+            padding: `${b.space[5]} ${b.space[6]}`,
             borderBottom: `1px solid ${COLORS.slate[200]}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3] }}>
               <div style={{
                 width: '40px',
                 height: '40px',
-                borderRadius: '10px',
-                background: headerGradient,
+                borderRadius: b.radius.md,
+                background: b.headerGradient,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -260,10 +258,10 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                 <Mic style={{ width: '20px', height: '20px', color: COLORS.white }} />
               </div>
               <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
+                <h2 style={{ fontSize: b.fontSize.xl, fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
                   Mikrofon testen
                 </h2>
-                <p style={{ fontSize: '13px', color: COLORS.slate[500], margin: 0 }}>
+                <p style={{ fontSize: b.fontSize.sm, color: COLORS.slate[500], margin: 0 }}>
                   Prüfe deine Audioqualität
                 </p>
               </div>
@@ -273,14 +271,14 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
               style={{
                 width: '44px',
                 height: '44px',
-                borderRadius: '12px',
+                borderRadius: b.radius.lg,
                 border: 'none',
                 backgroundColor: COLORS.slate[100],
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'background-color 0.2s',
+                transition: b.transition.normal,
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[200]}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[100]}
@@ -290,26 +288,26 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
           </div>
 
           {/* Content */}
-          <div style={{ padding: '32px 24px' }}>
+          <div style={{ padding: `${b.space[8]} ${b.space[6]}` }}>
             {/* Error */}
             {error && (
               <div style={{
-                marginBottom: '24px',
-                padding: '16px',
+                marginBottom: b.space[6],
+                padding: b.space[4],
                 backgroundColor: COLORS.red[50],
                 border: `1px solid ${COLORS.red[100]}`,
-                borderRadius: '12px',
+                borderRadius: b.radius.lg,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
+                gap: b.space[3],
               }}>
                 <AlertCircle style={{ width: '20px', height: '20px', color: COLORS.red[500] }} />
-                <p style={{ fontSize: '14px', color: COLORS.red[600], margin: 0 }}>{error}</p>
+                <p style={{ fontSize: b.fontSize.base, color: COLORS.red[600], margin: 0 }}>{error}</p>
               </div>
             )}
 
             {/* Visual indicator */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: b.space[6] }}>
               <div style={{ position: 'relative' }}>
                 <motion.div
                   style={{
@@ -348,11 +346,11 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                     bottom: '-8px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    padding: '4px 12px',
+                    padding: `${b.space[1]} ${b.space[3]}`,
                     backgroundColor: COLORS.red[500],
                     color: COLORS.white,
-                    borderRadius: '20px',
-                    fontSize: '13px',
+                    borderRadius: b.radius['2xl'],
+                    fontSize: b.fontSize.sm,
                     fontWeight: 600,
                     fontFamily: 'monospace',
                   }}>
@@ -364,38 +362,22 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
 
             {/* Audio level bars during recording */}
             {status === 'recording' && (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '3px',
-                height: '40px',
-                marginBottom: '24px',
-              }}>
-                {[...Array(16)].map((_, i) => {
-                  const barHeight = Math.max(8, Math.min(40, audioLevel * 80 + Math.random() * 10));
-                  return (
-                    <motion.div
-                      key={i}
-                      style={{
-                        width: '4px',
-                        background: buttonGradient,
-                        borderRadius: '2px',
-                      }}
-                      animate={{ height: barHeight }}
-                      transition={{ duration: 0.1 }}
-                    />
-                  );
-                })}
+              <div style={{ marginBottom: b.space[6] }}>
+                <AudioVisualizer
+                  audioLevel={audioLevel}
+                  isActive={true}
+                  variant="bars"
+                  size="sm"
+                />
               </div>
             )}
 
             {/* Status text */}
             <p style={{
               textAlign: 'center',
-              fontSize: '15px',
+              fontSize: b.fontSize.md,
               color: COLORS.slate[600],
-              marginBottom: '24px',
+              marginBottom: b.space[6],
             }}>
               {status === 'idle' && 'Klicke auf "Aufnahme starten" um dein Mikrofon zu testen.'}
               {status === 'recording' && 'Sprich jetzt in dein Mikrofon...'}
@@ -404,20 +386,20 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
             </p>
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: b.space[3] }}>
               {status === 'idle' && (
                 <button
                   onClick={startRecording}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    padding: '14px 28px',
-                    borderRadius: '12px',
+                    gap: b.space[2],
+                    padding: `${b.space['3.5']} ${b.space[7]}`,
+                    borderRadius: b.radius.lg,
                     border: 'none',
-                    background: buttonGradient,
+                    background: b.buttonGradient,
                     color: COLORS.white,
-                    fontSize: '15px',
+                    fontSize: b.fontSize.md,
                     fontWeight: 600,
                     cursor: 'pointer',
                   }}
@@ -433,13 +415,13 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    padding: '14px 28px',
-                    borderRadius: '12px',
+                    gap: b.space[2],
+                    padding: `${b.space['3.5']} ${b.space[7]}`,
+                    borderRadius: b.radius.lg,
                     border: 'none',
                     backgroundColor: COLORS.red[500],
                     color: COLORS.white,
-                    fontSize: '15px',
+                    fontSize: b.fontSize.md,
                     fontWeight: 600,
                     cursor: 'pointer',
                   }}
@@ -456,13 +438,13 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '14px 28px',
-                      borderRadius: '12px',
+                      gap: b.space[2],
+                      padding: `${b.space['3.5']} ${b.space[7]}`,
+                      borderRadius: b.radius.lg,
                       border: 'none',
-                      background: buttonGradient,
+                      background: b.buttonGradient,
                       color: COLORS.white,
-                      fontSize: '15px',
+                      fontSize: b.fontSize.md,
                       fontWeight: 600,
                       cursor: 'pointer',
                     }}
@@ -475,13 +457,13 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '14px 20px',
-                      borderRadius: '12px',
+                      gap: b.space[2],
+                      padding: `${b.space['3.5']} ${b.space[5]}`,
+                      borderRadius: b.radius.lg,
                       border: `2px solid ${COLORS.slate[200]}`,
                       backgroundColor: COLORS.white,
                       color: COLORS.slate[700],
-                      fontSize: '15px',
+                      fontSize: b.fontSize.md,
                       fontWeight: 600,
                       cursor: 'pointer',
                     }}
@@ -499,13 +481,13 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '14px 20px',
-                      borderRadius: '12px',
+                      gap: b.space[2],
+                      padding: `${b.space['3.5']} ${b.space[5]}`,
+                      borderRadius: b.radius.lg,
                       border: `2px solid ${COLORS.slate[200]}`,
                       backgroundColor: COLORS.white,
                       color: COLORS.slate[700],
-                      fontSize: '15px',
+                      fontSize: b.fontSize.md,
                       fontWeight: 600,
                       cursor: 'pointer',
                     }}
@@ -518,13 +500,13 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '14px 20px',
-                      borderRadius: '12px',
+                      gap: b.space[2],
+                      padding: `${b.space['3.5']} ${b.space[5]}`,
+                      borderRadius: b.radius.lg,
                       border: `2px solid ${COLORS.slate[200]}`,
                       backgroundColor: COLORS.white,
                       color: COLORS.slate[700],
-                      fontSize: '15px',
+                      fontSize: b.fontSize.md,
                       fontWeight: 600,
                       cursor: 'pointer',
                     }}

@@ -4,183 +4,13 @@ import {
   ArrowRight,
   AlertCircle,
   Sparkles,
-  Info,
   Clock,
   User,
+  Info,
 } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
-
-/**
- * Scroll element into view for mobile keyboard
- */
-const scrollIntoViewOnFocus = (e) => {
-  setTimeout(() => {
-    const element = e.target;
-    if (element) {
-      const fieldWrapper = element.closest('div');
-      if (fieldWrapper) {
-        fieldWrapper.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-      }
-    }
-  }, 300);
-};
-
-/**
- * Dynamic Form Field Component
- */
-const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
-  const theFocusColor = focusColor || '#4a9ec9';
-
-  const baseInputStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    borderRadius: '12px',
-    border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
-    fontSize: '16px', // Minimum 16px to prevent iOS zoom
-    color: COLORS.slate[900],
-    backgroundColor: 'white',
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-  };
-
-  const focusStyle = {
-    borderColor: theFocusColor,
-    boxShadow: `0 0 0 3px ${theFocusColor}1a`,
-  };
-
-  const handleFocus = (e) => {
-    Object.assign(e.target.style, focusStyle);
-    scrollIntoViewOnFocus(e);
-  };
-
-  const handleBlur = (e) => {
-    e.target.style.borderColor = error ? COLORS.red[500] : COLORS.slate[200];
-    e.target.style.boxShadow = 'none';
-  };
-
-  const renderInput = () => {
-    switch (field.type) {
-      case 'textarea':
-        return (
-          <textarea
-            value={value || ''}
-            onChange={(e) => onChange(field.key, e.target.value)}
-            placeholder={field.default || field.placeholder || `${field.label} eingeben...`}
-            rows={4}
-            style={{
-              ...baseInputStyle,
-              resize: 'vertical',
-              minHeight: '100px',
-            }}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          />
-        );
-
-      case 'select':
-        return (
-          <select
-            value={value || field.default || ''}
-            onChange={(e) => onChange(field.key, e.target.value)}
-            style={{
-              ...baseInputStyle,
-              cursor: 'pointer',
-              appearance: 'none',
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: 'right 12px center',
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: '20px',
-              paddingRight: '44px',
-            }}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          >
-            <option value="">Bitte wählen...</option>
-            {field.options?.map((option) => (
-              <option key={option.value || option} value={option.value || option}>
-                {option.label || option}
-              </option>
-            ))}
-          </select>
-        );
-
-      case 'number':
-        return (
-          <input
-            type="number"
-            value={value || ''}
-            onChange={(e) => onChange(field.key, e.target.value)}
-            placeholder={field.default || field.placeholder || `${field.label} eingeben...`}
-            style={baseInputStyle}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          />
-        );
-
-      default:
-        return (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(field.key, e.target.value)}
-            placeholder={field.default || field.placeholder || `${field.label} eingeben...`}
-            style={baseInputStyle}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          />
-        );
-    }
-  };
-
-  return (
-    <div style={{ marginBottom: '20px' }}>
-      <label style={{
-        display: 'block',
-        marginBottom: '8px',
-        fontSize: '14px',
-        fontWeight: 600,
-        color: COLORS.slate[700],
-      }}>
-        {field.label}
-        {field.required && (
-          <span style={{ color: COLORS.red[500], marginLeft: '4px' }}>*</span>
-        )}
-      </label>
-      {renderInput()}
-      {error && (
-        <p style={{
-          marginTop: '6px',
-          fontSize: '13px',
-          color: COLORS.red[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}>
-          <AlertCircle style={{ width: '14px', height: '14px' }} />
-          {error}
-        </p>
-      )}
-      {field.hint && !error && (
-        <p style={{
-          marginTop: '6px',
-          fontSize: '13px',
-          color: COLORS.slate[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}>
-          <Info style={{ width: '14px', height: '14px' }} />
-          {field.hint}
-        </p>
-      )}
-    </div>
-  );
-};
+import DynamicFormField from '@/components/ui/DynamicFormField';
 
 /**
  * RoleplayVariablesPage Component
@@ -193,12 +23,7 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
   const [errors, setErrors] = useState({});
 
   // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+  const b = useBranding();
 
   // Helper function to replace {{variable}} placeholders with current form values
   const replaceVariables = (text) => {
@@ -289,24 +114,24 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
   }
 
   return (
-    <div style={{ padding: '24px', paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
+    <div style={{ padding: b.space[6], paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: b.space[8] }}>
         <button
           onClick={onBack}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            marginBottom: '16px',
+            gap: b.space[2],
+            padding: `${b.space[2]} ${b.space[3]}`,
+            marginBottom: b.space[4],
             border: 'none',
             background: 'transparent',
             color: COLORS.slate[600],
-            fontSize: '14px',
+            fontSize: b.fontSize.sm,
             cursor: 'pointer',
-            borderRadius: '8px',
-            transition: 'background 0.2s',
+            borderRadius: b.radius.md,
+            transition: `background ${b.transition.normal}`,
           }}
           onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
           onMouseLeave={(e) => e.target.style.background = 'transparent'}
@@ -315,21 +140,21 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
           Zurück zur Übersicht
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[4] }}>
           <div style={{
             width: '56px',
             height: '56px',
-            borderRadius: '14px',
-            background: headerGradient,
+            borderRadius: b.radius.xl,
+            background: b.headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Sparkles style={{ width: '28px', height: '28px', color: headerText }} />
+            <Sparkles style={{ width: '28px', height: '28px', color: b.headerText }} />
           </div>
           <div>
             <h1 style={{
-              fontSize: '24px',
+              fontSize: b.fontSize.xl,
               fontWeight: 700,
               color: COLORS.slate[900],
               margin: 0,
@@ -337,9 +162,9 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
               {scenario.title}
             </h1>
             <p style={{
-              fontSize: '14px',
+              fontSize: b.fontSize.sm,
               color: COLORS.slate[600],
-              margin: '4px 0 0 0',
+              margin: `${b.space[1]} 0 0 0`,
             }}>
               Personalisiere dein Rollenspiel
             </p>
@@ -350,22 +175,22 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
       {/* Long Description - Detailed task description */}
       {scenario.long_description && (
         <div style={{
-          padding: '20px 24px',
-          borderRadius: '14px',
+          padding: `${b.space[5]} ${b.space[6]}`,
+          borderRadius: b.radius.xl,
           backgroundColor: 'white',
           border: `1px solid ${COLORS.slate[200]}`,
-          marginBottom: '24px',
+          marginBottom: b.space[6],
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'flex-start',
-            gap: '14px',
+            gap: b.space[3.5],
           }}>
             <div style={{
               width: '40px',
               height: '40px',
-              borderRadius: '10px',
-              background: headerGradient,
+              borderRadius: b.radius.lg,
+              background: b.headerGradient,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -375,15 +200,15 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
             </div>
             <div>
               <h3 style={{
-                fontSize: '15px',
+                fontSize: b.fontSize.base,
                 fontWeight: 600,
                 color: COLORS.slate[900],
-                margin: '0 0 8px 0',
+                margin: `0 0 ${b.space[2]} 0`,
               }}>
                 Deine Aufgabe
               </h3>
               <p style={{
-                fontSize: '14px',
+                fontSize: b.fontSize.sm,
                 lineHeight: '1.6',
                 color: COLORS.slate[700],
                 margin: 0,
@@ -399,13 +224,13 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
       {/* Short Description - Only show if no long_description */}
       {!scenario.long_description && scenario.description && (
         <div style={{
-          padding: '16px 20px',
-          borderRadius: '12px',
+          padding: `${b.space[4]} ${b.space[5]}`,
+          borderRadius: b.radius.lg,
           backgroundColor: COLORS.slate[100],
-          marginBottom: '24px',
+          marginBottom: b.space[6],
         }}>
           <p style={{
-            fontSize: '14px',
+            fontSize: b.fontSize.sm,
             color: COLORS.slate[700],
             margin: 0,
             lineHeight: 1.6,
@@ -418,13 +243,13 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
       {/* Interviewer Profile Preview */}
       {scenario.interviewer_profile && (
         <div style={{
-          padding: '16px 20px',
-          borderRadius: '12px',
+          padding: `${b.space[4]} ${b.space[5]}`,
+          borderRadius: b.radius.lg,
           border: `1px solid ${COLORS.slate[200]}`,
-          marginBottom: '24px',
+          marginBottom: b.space[6],
           display: 'flex',
           alignItems: 'center',
-          gap: '16px',
+          gap: b.space[4],
         }}>
           {scenario.interviewer_profile.image_url ? (
             <img
@@ -433,7 +258,7 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
               style={{
                 width: '48px',
                 height: '48px',
-                borderRadius: '50%',
+                borderRadius: b.radius.full,
                 objectFit: 'cover',
               }}
             />
@@ -441,21 +266,21 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
             <div style={{
               width: '48px',
               height: '48px',
-              borderRadius: '50%',
-              background: primaryAccentLight,
+              borderRadius: b.radius.full,
+              background: b.primaryAccentLight,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              <User style={{ width: '24px', height: '24px', color: primaryAccent }} />
+              <User style={{ width: '24px', height: '24px', color: b.primaryAccent }} />
             </div>
           )}
           <div>
-            <p style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
+            <p style={{ fontSize: b.fontSize.sm, fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
               Dein Gesprächspartner: {replaceVariables(scenario.interviewer_profile.name)}
             </p>
             {scenario.interviewer_profile.role && (
-              <p style={{ fontSize: '13px', color: COLORS.slate[600], margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: b.fontSize.sm, color: COLORS.slate[600], margin: `${b.space[0.5]} 0 0 0` }}>
                 {replaceVariables(scenario.interviewer_profile.role)}
               </p>
             )}
@@ -472,33 +297,33 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
             value={formValues[field.key]}
             onChange={handleChange}
             error={errors[field.key]}
-            focusColor={primaryAccent}
+            focusColor={b.primaryAccent}
           />
         ))}
 
         {/* Session Info */}
         <div style={{
-          padding: '16px 20px',
-          borderRadius: '12px',
-          backgroundColor: primaryAccentLight,
-          marginTop: '24px',
-          marginBottom: '24px',
+          padding: `${b.space[4]} ${b.space[5]}`,
+          borderRadius: b.radius.lg,
+          backgroundColor: b.primaryAccentLight,
+          marginTop: b.space[6],
+          marginBottom: b.space[6],
           display: 'flex',
-          gap: '20px',
+          gap: b.space[5],
           flexWrap: 'wrap',
         }}>
           <div>
-            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>
-              <Clock style={{ width: '12px', height: '12px', display: 'inline', marginRight: '4px' }} />
+            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>
+              <Clock style={{ width: '12px', height: '12px', display: 'inline', marginRight: b.space[1] }} />
               Dauer
             </span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
               ca. 10 Min
             </span>
           </div>
           <div>
-            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Typ</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Typ</span>
+            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
               Live-Gespräch
             </span>
           </div>
@@ -509,28 +334,28 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
           type="submit"
           style={{
             width: '100%',
-            padding: '16px 24px',
-            borderRadius: '14px',
+            padding: `${b.space[4]} ${b.space[6]}`,
+            borderRadius: b.radius.xl,
             border: 'none',
-            background: buttonGradient,
+            background: b.buttonGradient,
             color: 'white',
-            fontSize: '16px',
+            fontSize: b.fontSize.base,
             fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '10px',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            boxShadow: `0 4px 12px ${primaryAccent}4d`,
+            gap: b.space[2.5],
+            transition: `transform ${b.transition.normal}, box-shadow ${b.transition.normal}`,
+            boxShadow: `0 4px 12px ${b.primaryAccent}4d`,
           }}
           onMouseEnter={(e) => {
             e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
+            e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
           }}
           onMouseLeave={(e) => {
             e.target.style.transform = 'none';
-            e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
+            e.target.style.boxShadow = `0 4px 12px ${b.primaryAccent}4d`;
           }}
         >
           Weiter

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 
 /**
@@ -25,12 +24,8 @@ const MicrophoneSelector = ({
   const lastLoadTimeRef = useRef(0);
   const isLoadingRef = useRef(false);
 
-  // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+  // Design tokens & branding
+  const b = useBranding();
 
   /**
    * Request microphone permission and enumerate devices
@@ -150,7 +145,7 @@ const MicrophoneSelector = ({
   return (
     <div className="microphone-selector" style={{ position: 'relative' }}>
       {/* Main selector row - wraps on small screens */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: b.space[3] }}>
         {/* Dropdown button */}
         <button
           type="button"
@@ -162,37 +157,37 @@ const MicrophoneSelector = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '12px',
-            padding: '12px 16px',
-            borderRadius: '12px',
+            gap: b.space[3],
+            padding: `${b.space[3]} ${b.space[4]}`,
+            borderRadius: b.radius.lg,
             border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
             backgroundColor: error ? COLORS.red[50] : COLORS.white,
             cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
             opacity: disabled || isLoading ? 0.6 : 1,
-            transition: 'all 0.2s',
+            transition: b.transition.normal,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3] }}>
             <div style={{
               width: '40px',
               height: '40px',
-              borderRadius: '10px',
+              borderRadius: b.radius.md,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: error ? COLORS.red[100] : headerGradient,
+              background: error ? COLORS.red[100] : b.headerGradient,
             }}>
               {error ? (
                 <AlertCircle style={{ width: '22px', height: '22px', color: COLORS.red[500] }} />
               ) : (
-                <Mic style={{ width: '22px', height: '22px', color: headerText }} />
+                <Mic style={{ width: '22px', height: '22px', color: b.headerText }} />
               )}
             </div>
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '12px', color: COLORS.slate[500], fontWeight: 500, marginBottom: '2px' }}>
+              <div style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], fontWeight: 500, marginBottom: '2px' }}>
                 Mikrofon
               </div>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: error ? COLORS.red[600] : COLORS.slate[800] }}>
+              <div style={{ fontSize: b.fontSize.base, fontWeight: 600, color: error ? COLORS.red[600] : COLORS.slate[800] }}>
                 {isLoading ? 'Lade...' : error ? error : selectedDevice ? getDeviceLabel(selectedDevice) : 'Bitte wählen'}
               </div>
             </div>
@@ -202,7 +197,7 @@ const MicrophoneSelector = ({
             height: '20px',
             color: COLORS.slate[400],
             transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
-            transition: 'transform 0.2s',
+            transition: b.transition.normal,
           }} />
         </button>
 
@@ -216,19 +211,19 @@ const MicrophoneSelector = ({
               flex: '0 0 auto',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '12px 20px',
-              borderRadius: '12px',
+              gap: b.space[2],
+              padding: `${b.space[3]} ${b.space[5]}`,
+              borderRadius: b.radius.lg,
               border: `2px solid ${COLORS.slate[200]}`,
               backgroundColor: COLORS.white,
               cursor: disabled || isLoading || !selectedDeviceId ? 'not-allowed' : 'pointer',
               opacity: disabled || isLoading || !selectedDeviceId ? 0.5 : 1,
-              transition: 'all 0.2s',
+              transition: b.transition.normal,
               whiteSpace: 'nowrap',
             }}
           >
-            <Mic style={{ width: '18px', height: '18px', color: primaryAccent }} />
-            <span style={{ fontSize: '14px', fontWeight: 600, color: COLORS.slate[700] }}>Testen</span>
+            <Mic style={{ width: '18px', height: '18px', color: b.primaryAccent }} />
+            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[700] }}>Testen</span>
           </button>
         )}
 
@@ -242,13 +237,13 @@ const MicrophoneSelector = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '12px 16px',
-            borderRadius: '12px',
+            padding: `${b.space[3]} ${b.space[4]}`,
+            borderRadius: b.radius.lg,
             border: `2px solid ${COLORS.slate[200]}`,
             backgroundColor: COLORS.white,
             cursor: isLoading ? 'not-allowed' : 'pointer',
             opacity: isLoading ? 0.5 : 1,
-            transition: 'all 0.2s',
+            transition: b.transition.normal,
           }}
         >
           <RefreshCw style={{
@@ -280,10 +275,10 @@ const MicrophoneSelector = ({
             left: 0,
             right: 0,
             backgroundColor: COLORS.white,
-            borderRadius: '12px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+            borderRadius: b.radius.lg,
+            boxShadow: b.shadow.lg,
             border: `1px solid ${COLORS.slate[200]}`,
-            zIndex: 50,
+            zIndex: b.zIndex.overlay,
             overflow: 'hidden',
             maxHeight: '280px',
             overflowY: 'auto',
@@ -295,15 +290,15 @@ const MicrophoneSelector = ({
                 onClick={() => handleSelect(device.deviceId)}
                 style={{
                   width: '100%',
-                  padding: '14px 16px',
+                  padding: `${b.space[3.5]} ${b.space[4]}`,
                   textAlign: 'left',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
+                  gap: b.space[3],
                   border: 'none',
-                  backgroundColor: selectedDeviceId === device.deviceId ? primaryAccentLight : 'transparent',
+                  backgroundColor: selectedDeviceId === device.deviceId ? b.primaryAccentLight : 'transparent',
                   cursor: 'pointer',
-                  transition: 'background-color 0.15s',
+                  transition: b.transition.fast,
                 }}
                 onMouseEnter={(e) => {
                   if (selectedDeviceId !== device.deviceId) {
@@ -311,17 +306,17 @@ const MicrophoneSelector = ({
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = selectedDeviceId === device.deviceId ? primaryAccentLight : 'transparent';
+                  e.currentTarget.style.backgroundColor = selectedDeviceId === device.deviceId ? b.primaryAccentLight : 'transparent';
                 }}
               >
                 <div style={{
                   width: '36px',
                   height: '36px',
-                  borderRadius: '8px',
+                  borderRadius: b.radius.sm,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: selectedDeviceId === device.deviceId ? primaryAccent : COLORS.slate[100],
+                  backgroundColor: selectedDeviceId === device.deviceId ? b.primaryAccent : COLORS.slate[100],
                 }}>
                   <Mic style={{
                     width: '18px',
@@ -331,9 +326,9 @@ const MicrophoneSelector = ({
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: '14px',
+                    fontSize: b.fontSize.base,
                     fontWeight: 500,
-                    color: selectedDeviceId === device.deviceId ? primaryAccent : COLORS.slate[800],
+                    color: selectedDeviceId === device.deviceId ? b.primaryAccent : COLORS.slate[800],
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -341,15 +336,15 @@ const MicrophoneSelector = ({
                     {getDeviceLabel(device)}
                   </div>
                   {device.deviceId === 'default' && (
-                    <div style={{ fontSize: '12px', color: COLORS.slate[400] }}>Systemstandard</div>
+                    <div style={{ fontSize: b.fontSize.xs, color: COLORS.slate[400] }}>Systemstandard</div>
                   )}
                 </div>
                 {selectedDeviceId === device.deviceId && (
                   <div style={{
                     width: '8px',
                     height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: primaryAccent,
+                    borderRadius: b.radius.full,
+                    backgroundColor: b.primaryAccent,
                   }} />
                 )}
               </button>
@@ -361,8 +356,8 @@ const MicrophoneSelector = ({
       {/* Helper text when devices are loaded but user might have issues */}
       {!error && devices.length > 0 && devices.length < 3 && (
         <div style={{
-          marginTop: '10px',
-          fontSize: '12px',
+          marginTop: b.space[2.5],
+          fontSize: b.fontSize.xs,
           color: COLORS.slate[500],
           lineHeight: 1.4,
         }}>
@@ -373,16 +368,16 @@ const MicrophoneSelector = ({
       {/* Troubleshooting hint when no microphone found */}
       {error === 'Kein Mikrofon gefunden' && (
         <div style={{
-          marginTop: '12px',
-          padding: '12px 14px',
+          marginTop: b.space[3],
+          padding: `${b.space[3]} ${b.space[3.5]}`,
           backgroundColor: COLORS.amber[50],
           border: `1px solid ${COLORS.amber[200]}`,
-          borderRadius: '10px',
-          fontSize: '13px',
+          borderRadius: b.radius.md,
+          fontSize: b.fontSize.sm,
           color: COLORS.amber[800],
           lineHeight: 1.5,
         }}>
-          <div style={{ fontWeight: 600, marginBottom: '6px' }}>
+          <div style={{ fontWeight: 600, marginBottom: b.space[1.5] }}>
             💡 Tipps zur Fehlerbehebung:
           </div>
           <ul style={{ margin: 0, paddingLeft: '18px' }}>
@@ -397,16 +392,16 @@ const MicrophoneSelector = ({
       {/* Hint for permission denied */}
       {error === 'Mikrofonzugriff verweigert' && (
         <div style={{
-          marginTop: '12px',
-          padding: '12px 14px',
+          marginTop: b.space[3],
+          padding: `${b.space[3]} ${b.space[3.5]}`,
           backgroundColor: COLORS.amber[50],
           border: `1px solid ${COLORS.amber[200]}`,
-          borderRadius: '10px',
-          fontSize: '13px',
+          borderRadius: b.radius.md,
+          fontSize: b.fontSize.sm,
           color: COLORS.amber[800],
           lineHeight: 1.5,
         }}>
-          <div style={{ fontWeight: 600, marginBottom: '6px' }}>
+          <div style={{ fontWeight: 600, marginBottom: b.space[1.5] }}>
             💡 So erlaubst du den Mikrofonzugriff:
           </div>
           <ul style={{ margin: 0, paddingLeft: '18px' }}>

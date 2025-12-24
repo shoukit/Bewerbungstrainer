@@ -8,53 +8,9 @@ import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
 import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
-
-/**
- * ProgressBar - Shows question progress
- */
-const ProgressBar = ({ current, total, primaryAccent }) => {
-  const percentage = ((current + 1) / total) * 100;
-
-  return (
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span style={{ fontSize: '14px', color: '#64748b' }}>
-          Frage {current + 1} von {total}
-        </span>
-        <span style={{ fontSize: '14px', fontWeight: 600, color: primaryAccent }}>
-          {Math.round(percentage)}%
-        </span>
-      </div>
-      <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.3 }}
-          style={{
-            height: '100%',
-            background: primaryAccent,
-            borderRadius: '4px',
-          }}
-        />
-      </div>
-      {/* Dots */}
-      <div style={{ display: 'flex', gap: '6px', marginTop: '12px', justifyContent: 'center' }}>
-        {Array.from({ length: total }).map((_, i) => (
-          <div
-            key={i}
-            style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: i < current ? '#22c55e' : i === current ? primaryAccent : '#e2e8f0',
-              transition: 'all 0.2s',
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
+import AudioVisualizer from '@/components/AudioVisualizer';
+import { formatDuration } from '@/utils/formatting';
+import ProgressBar from '@/components/ui/progress-bar';
 
 /**
  * QuestionTips - Collapsible tips for current question
@@ -141,6 +97,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(initialMicId || null);
   const [selectedCameraId, setSelectedCameraId] = useState(initialCameraId || null);
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
 
   // Mobile detection - using shared hook
   const isMobile = useMobile();
@@ -148,9 +105,13 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const timerRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationFrameRef = useRef(null);
 
   // Partner theming - using shared hook
-  const { primaryAccent, headerGradient: themedGradient } = useBranding();
+  const b = useBranding();
+  const { primaryAccent, headerGradient: themedGradient } = b;
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -160,8 +121,53 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     return () => {
       stopCamera();
       if (timerRef.current) clearInterval(timerRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (audioContextRef.current) audioContextRef.current.close();
     };
   }, []);
+
+  // Audio level analysis for visualizer
+  const startAudioAnalysis = (mediaStream) => {
+    try {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
+
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      analyserRef.current = analyser;
+
+      const source = audioContext.createMediaStreamSource(mediaStream);
+      source.connect(analyser);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const updateLevel = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const sum = dataArray.reduce((a, b) => a + b, 0);
+        const average = sum / dataArray.length;
+        setAudioLevel(average / 255); // Normalize to 0-1
+        animationFrameRef.current = requestAnimationFrame(updateLevel);
+      };
+
+      updateLevel();
+    } catch (err) {
+      console.error('[VIDEO TRAINING] Audio analysis error:', err);
+    }
+  };
+
+  const stopAudioAnalysis = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    setAudioLevel(0);
+  };
 
   // Initialize camera with selected devices
   const initializeCamera = async (micId = selectedMicrophoneId, camId = selectedCameraId) => {
@@ -246,6 +252,9 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       setIsRecording(true);
       setIsPaused(false);
 
+      // Start audio analysis for visualizer
+      startAudioAnalysis(stream);
+
       // Record start time for current question
       setTimeline((prev) => [
         ...prev,
@@ -268,6 +277,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      stopAudioAnalysis();
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -377,12 +387,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     });
   };
 
-  // Format time
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Handle exit
   const handleExit = () => {
@@ -391,10 +395,24 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     onExit();
   };
 
-  // Upload/Analyzing state
+  // Upload/Analyzing state - Full screen blocking overlay to prevent navigation
   if (isUploading || isAnalyzing) {
     return (
-      <div style={{ padding: '32px', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999, // Above sidebar (z-50) and all other elements
+          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}
+      >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -403,6 +421,9 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
             borderRadius: '20px',
             padding: '48px',
             boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            maxWidth: '500px',
+            width: '100%',
+            textAlign: 'center',
           }}
         >
           <div
@@ -482,7 +503,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       </div>
 
       {/* Progress */}
-      <ProgressBar current={currentQuestionIndex} total={questions.length} primaryAccent={primaryAccent} />
+      <ProgressBar current={currentQuestionIndex} total={questions.length} primaryAccent={primaryAccent} b={b} showCompleted={false} />
 
       {/* Main Content - Mobile: stacked, Desktop: two columns */}
       {isMobile ? (
@@ -631,7 +652,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                     }}
                   />
                   <span style={{ color: '#fff', fontSize: '13px', fontWeight: 500 }}>
-                    {formatTime(recordingTime)}
+                    {formatDuration(recordingTime)}
                   </span>
                 </div>
               )}
@@ -652,10 +673,23 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                   }}
                 >
                   <Clock size={14} color="#fff" />
-                  <span style={{ color: '#fff', fontSize: '13px' }}>{formatTime(recordingTime)}</span>
+                  <span style={{ color: '#fff', fontSize: '13px' }}>{formatDuration(recordingTime)}</span>
                 </div>
               )}
             </div>
+
+            {/* Audio Visualizer - Mobile */}
+            {isRecording && (
+              <div style={{ marginTop: '16px' }}>
+                <AudioVisualizer
+                  audioLevel={audioLevel}
+                  isActive={true}
+                  variant="bars"
+                  size="sm"
+                  accentColor={primaryAccent}
+                />
+              </div>
+            )}
 
             {/* Controls - Mobile */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
@@ -894,7 +928,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                   }}
                 />
                 <span style={{ color: '#fff', fontSize: '14px', fontWeight: 500 }}>
-                  {formatTime(recordingTime)}
+                  {formatDuration(recordingTime)}
                 </span>
               </div>
             )}
@@ -915,10 +949,23 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                 }}
               >
                 <Clock size={16} color="#fff" />
-                <span style={{ color: '#fff', fontSize: '14px' }}>{formatTime(recordingTime)}</span>
+                <span style={{ color: '#fff', fontSize: '14px' }}>{formatDuration(recordingTime)}</span>
               </div>
             )}
           </div>
+
+          {/* Audio Visualizer - Desktop */}
+          {isRecording && (
+            <div style={{ marginTop: '20px' }}>
+              <AudioVisualizer
+                audioLevel={audioLevel}
+                isActive={true}
+                variant="bars"
+                size="sm"
+                accentColor={primaryAccent}
+              />
+            </div>
+          )}
 
           {/* Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>

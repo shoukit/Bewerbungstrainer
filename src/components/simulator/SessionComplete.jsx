@@ -9,36 +9,29 @@ import {
   Clock,
   Target
 } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { useBranding } from '@/hooks/useBranding';
+import { COLORS, getScoreColor } from '@/config/colors';
 
 /**
  * Score Badge for Summary
  * Displays scores on scale of 100 (converts from scale of 10)
  */
-const SummaryScore = ({ score, label, primaryAccent }) => {
+const SummaryScore = ({ score, label, primaryAccent, b }) => {
   // Convert from scale of 10 to scale of 100
   const score100 = score != null ? score * 10 : null;
 
-  const getScoreColor = (s) => {
-    if (s >= 80) return COLORS.green[500];
-    if (s >= 60) return primaryAccent;
-    if (s >= 40) return COLORS.amber[500];
-    return '#ef4444';
-  };
-
-  const color = getScoreColor(score100);
+  // Use centralized getScoreColor from @/config/colors
+  const color = getScoreColor(score100, primaryAccent);
 
   return (
     <div style={{
       textAlign: 'center',
-      padding: '16px',
+      padding: b.space[4],
       backgroundColor: COLORS.slate[100],
-      borderRadius: '12px',
+      borderRadius: b.radius.lg,
     }}>
       <div style={{
-        fontSize: '32px',
+        fontSize: b.fontSize['4xl'],
         fontWeight: 700,
         color: color,
         marginBottom: '4px',
@@ -46,7 +39,7 @@ const SummaryScore = ({ score, label, primaryAccent }) => {
         {score100 != null ? Math.round(score100) : '-'}
       </div>
       <div style={{
-        fontSize: '13px',
+        fontSize: b.fontSize.sm,
         color: COLORS.slate[600],
       }}>
         {label}
@@ -58,19 +51,19 @@ const SummaryScore = ({ score, label, primaryAccent }) => {
 /**
  * Stat Item
  */
-const StatItem = ({ icon: Icon, value, label, primaryAccent }) => (
+const StatItem = ({ icon: Icon, value, label, primaryAccent, b }) => (
   <div style={{
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    padding: '12px 16px',
+    gap: b.space[3],
+    padding: `${b.space[3]} ${b.space[4]}`,
     backgroundColor: COLORS.slate[100],
-    borderRadius: '10px',
+    borderRadius: b.radius.md,
   }}>
     <Icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
     <div>
-      <div style={{ fontSize: '18px', fontWeight: 600, color: COLORS.slate[900] }}>{value}</div>
-      <div style={{ fontSize: '12px', color: COLORS.slate[500] }}>{label}</div>
+      <div style={{ fontSize: b.fontSize.xl, fontWeight: 600, color: COLORS.slate[900] }}>{value}</div>
+      <div style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500] }}>{label}</div>
     </div>
   </div>
 );
@@ -82,11 +75,7 @@ const StatItem = ({ icon: Icon, value, label, primaryAccent }) => (
  */
 const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) => {
   // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+  const b = useBranding();
 
   // Parse summary feedback if it's a string
   // Backend returns summary_feedback, not summary_feedback_json
@@ -113,7 +102,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
   const grade = getGradeLabel(overallScore);
 
   return (
-    <div style={{ padding: '24px', maxWidth: '640px', margin: '0 auto' }}>
+    <div style={{ padding: b.space[6], maxWidth: '640px', margin: '0 auto' }}>
       {/* Success Header */}
       <div style={{
         textAlign: 'center',
@@ -123,17 +112,17 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
           width: '80px',
           height: '80px',
           borderRadius: '50%',
-          background: headerGradient,
+          background: b.headerGradient,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           margin: '0 auto 16px',
-          boxShadow: `0 8px 24px ${primaryAccent}4d`,
+          boxShadow: `0 8px 24px ${b.primaryAccent}4d`,
         }}>
           <Trophy style={{ width: '40px', height: '40px', color: 'white' }} />
         </div>
         <h1 style={{
-          fontSize: '28px',
+          fontSize: b.fontSize['5xl'],
           fontWeight: 700,
           color: COLORS.slate[900],
           margin: '0 0 8px 0',
@@ -141,7 +130,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
           Training abgeschlossen! {grade.emoji}
         </h1>
         <p style={{
-          fontSize: '16px',
+          fontSize: b.fontSize.lg,
           color: COLORS.slate[600],
           margin: 0,
         }}>
@@ -151,34 +140,34 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
 
       {/* Overall Score Card */}
       <div style={{
-        padding: '24px',
-        borderRadius: '16px',
+        padding: b.space[6],
+        borderRadius: b.radius.xl,
         backgroundColor: 'white',
         border: `1px solid ${COLORS.slate[200]}`,
         textAlign: 'center',
-        marginBottom: '24px',
+        marginBottom: b.space[6],
       }}>
         <div style={{
           width: '120px',
           height: '120px',
           borderRadius: '50%',
-          border: `6px solid ${primaryAccent}`,
+          border: `6px solid ${b.primaryAccent}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           margin: '0 auto 16px',
-          backgroundColor: primaryAccentLight,
+          backgroundColor: b.primaryAccentLight,
         }}>
           <span style={{
-            fontSize: '48px',
+            fontSize: b.fontSize['5xl'],
             fontWeight: 700,
-            color: primaryAccent,
+            color: b.primaryAccent,
           }}>
             {overallScore ? Math.round(overallScore) : '-'}
           </span>
         </div>
         <p style={{
-          fontSize: '14px',
+          fontSize: b.fontSize.base,
           color: COLORS.slate[500],
           margin: 0,
         }}>
@@ -190,26 +179,29 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '12px',
-        marginBottom: '24px',
+        gap: b.space[3],
+        marginBottom: b.space[6],
       }}>
         <StatItem
           icon={CheckCircle}
           value={`${session.completed_questions ?? 0}/${session.total_questions || '-'}`}
           label="Fragen"
-          primaryAccent={primaryAccent}
+          primaryAccent={b.primaryAccent}
+          b={b}
         />
         <StatItem
           icon={Target}
           value={summaryFeedback?.average_content_score ? Math.round(summaryFeedback.average_content_score * 10) : '-'}
           label="Ø Inhalt"
-          primaryAccent={primaryAccent}
+          primaryAccent={b.primaryAccent}
+          b={b}
         />
         <StatItem
           icon={Star}
           value={summaryFeedback?.average_delivery_score ? Math.round(summaryFeedback.average_delivery_score * 10) : '-'}
           label="Ø Präsentation"
-          primaryAccent={primaryAccent}
+          primaryAccent={b.primaryAccent}
+          b={b}
         />
       </div>
 
@@ -218,26 +210,26 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '12px',
-          marginBottom: '24px',
+          gap: b.space[3],
+          marginBottom: b.space[6],
         }}>
-          <SummaryScore score={summaryFeedback.scores.content} label="Inhalt" primaryAccent={primaryAccent} />
-          <SummaryScore score={summaryFeedback.scores.structure} label="Struktur" primaryAccent={primaryAccent} />
-          <SummaryScore score={summaryFeedback.scores.relevance} label="Relevanz" primaryAccent={primaryAccent} />
-          <SummaryScore score={summaryFeedback.scores.delivery} label="Präsentation" primaryAccent={primaryAccent} />
+          <SummaryScore score={summaryFeedback.scores.content} label="Inhalt" primaryAccent={b.primaryAccent} b={b} />
+          <SummaryScore score={summaryFeedback.scores.structure} label="Struktur" primaryAccent={b.primaryAccent} b={b} />
+          <SummaryScore score={summaryFeedback.scores.relevance} label="Relevanz" primaryAccent={b.primaryAccent} b={b} />
+          <SummaryScore score={summaryFeedback.scores.delivery} label="Präsentation" primaryAccent={b.primaryAccent} b={b} />
         </div>
       )}
 
       {/* Summary Feedback */}
       {summaryFeedback?.summary && (
         <div style={{
-          padding: '20px',
-          borderRadius: '12px',
+          padding: b.space[5],
+          borderRadius: b.radius.lg,
           backgroundColor: COLORS.slate[100],
-          marginBottom: '24px',
+          marginBottom: b.space[6],
         }}>
           <h3 style={{
-            fontSize: '14px',
+            fontSize: b.fontSize.base,
             fontWeight: 600,
             color: COLORS.slate[700],
             margin: '0 0 8px 0',
@@ -245,7 +237,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
             Zusammenfassung
           </h3>
           <p style={{
-            fontSize: '14px',
+            fontSize: b.fontSize.base,
             color: COLORS.slate[600],
             margin: 0,
             lineHeight: 1.6,
@@ -258,13 +250,13 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
       {/* Key Takeaways */}
       {summaryFeedback?.key_takeaways?.length > 0 && (
         <div style={{
-          padding: '20px',
-          borderRadius: '12px',
+          padding: b.space[5],
+          borderRadius: b.radius.lg,
           backgroundColor: COLORS.green[100],
-          marginBottom: '24px',
+          marginBottom: b.space[6],
         }}>
           <h3 style={{
-            fontSize: '14px',
+            fontSize: b.fontSize.base,
             fontWeight: 600,
             color: COLORS.green[500],
             margin: '0 0 12px 0',
@@ -273,9 +265,9 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
           </h3>
           <ul style={{
             margin: 0,
-            paddingLeft: '20px',
+            paddingLeft: b.space[5],
             color: COLORS.slate[700],
-            fontSize: '14px',
+            fontSize: b.fontSize.base,
             lineHeight: 1.6,
           }}>
             {summaryFeedback.key_takeaways.map((takeaway, i) => (
@@ -288,7 +280,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
       {/* Action Buttons */}
       <div style={{
         display: 'flex',
-        gap: '12px',
+        gap: b.space[3],
         marginTop: '32px',
       }}>
         <button
@@ -298,20 +290,20 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
-            padding: '14px 24px',
-            borderRadius: '12px',
+            gap: b.space[2],
+            padding: `${b.space[3.5]} ${b.space[6]}`,
+            borderRadius: b.radius.lg,
             border: `2px solid ${COLORS.slate[300]}`,
             backgroundColor: 'white',
             color: COLORS.slate[700],
-            fontSize: '15px',
+            fontSize: b.fontSize.base,
             fontWeight: 600,
             cursor: 'pointer',
             transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
-            e.target.style.borderColor = primaryAccent;
-            e.target.style.color = primaryAccent;
+            e.target.style.borderColor = b.primaryAccent;
+            e.target.style.color = b.primaryAccent;
           }}
           onMouseLeave={(e) => {
             e.target.style.borderColor = COLORS.slate[300];
@@ -328,25 +320,25 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
-            padding: '14px 24px',
-            borderRadius: '12px',
+            gap: b.space[2],
+            padding: `${b.space[3.5]} ${b.space[6]}`,
+            borderRadius: b.radius.lg,
             border: 'none',
-            background: buttonGradient,
+            background: b.buttonGradient,
             color: 'white',
-            fontSize: '15px',
+            fontSize: b.fontSize.base,
             fontWeight: 600,
             cursor: 'pointer',
-            boxShadow: `0 4px 12px ${primaryAccent}4d`,
+            boxShadow: `0 4px 12px ${b.primaryAccent}4d`,
             transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
             e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
+            e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
           }}
           onMouseLeave={(e) => {
             e.target.style.transform = 'none';
-            e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
+            e.target.style.boxShadow = `0 4px 12px ${b.primaryAccent}4d`;
           }}
         >
           <RotateCcw style={{ width: '18px', height: '18px' }} />

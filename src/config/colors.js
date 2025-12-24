@@ -180,6 +180,33 @@ export const SEMANTIC_COLORS = {
 // =============================================================================
 
 /**
+ * Get single color for score display (0-100)
+ * Simple helper that returns just the accent color.
+ *
+ * @param {number} score - Score value (0-100)
+ * @param {string} primaryAccent - Optional partner accent color for 60-79 range
+ * @returns {string} Color hex value
+ */
+export function getScoreColor(score, primaryAccent) {
+  if (score >= 80) return COLORS.green[500];
+  if (score >= 60) return primaryAccent || COLORS.blue[500];
+  if (score >= 40) return COLORS.amber[500];
+  return COLORS.red[500];
+}
+
+/**
+ * Get Tailwind text class for score display
+ * @param {number} score - Score value (0-100)
+ * @returns {string} Tailwind text color class
+ */
+export function getScoreTextClass(score) {
+  if (score >= 80) return 'text-green-600';
+  if (score >= 60) return 'text-blue-600';
+  if (score >= 40) return 'text-amber-600';
+  return 'text-red-600';
+}
+
+/**
  * Get color scheme based on score percentage (0-100)
  * Used for ratings, progress indicators, and score displays.
  *

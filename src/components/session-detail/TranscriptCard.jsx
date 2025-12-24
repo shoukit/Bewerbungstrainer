@@ -12,15 +12,14 @@ import { TRANSCRIPT_CONFIG, SPEAKER_STYLES } from '@/config/constants';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { formatDuration } from '@/utils/formatting';
 
 /**
- * Format elapsed time to MM:SS
+ * Format elapsed time to MM:SS (wrapper for undefined check)
  */
 function formatTimeLabel(elapsedTime) {
   if (elapsedTime === undefined) return null;
-  const mins = Math.floor(elapsedTime / 60);
-  const secs = Math.floor(elapsedTime % 60);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  return formatDuration(elapsedTime);
 }
 
 export function TranscriptCard({

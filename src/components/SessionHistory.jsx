@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useMobile } from '@/hooks/useMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   History,
@@ -19,10 +20,6 @@ import {
   Video,
   CheckCircle,
   XCircle,
-  FileText,
-  Briefcase,
-  Banknote,
-  Users,
   Sparkles,
   Trash2,
   Plus,
@@ -39,10 +36,16 @@ import {
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import TrainingSessionDetailView from './TrainingSessionDetailView';
+import RoleplaySessionReport from './roleplay/RoleplaySessionReport';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
+import { formatDateTime, formatDuration } from '@/utils/formatting';
+import { BRIEFING_ICON_MAP, getBriefingIcon } from '@/utils/iconMaps';
+import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import { BriefingCard, SessionCard } from '@/components/session-history';
 
 
 /**
@@ -62,956 +65,13 @@ const TAB_CONFIG = [
   { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
 ];
 
-/**
- * ConfirmDeleteDialog - Styled confirmation dialog for delete actions
- */
-const ConfirmDeleteDialog = ({ isOpen, onClose, onConfirm, title, description, isDeleting }) => {
-  const { branding } = usePartner();
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent style={{ maxWidth: '400px' }}>
-        <DialogHeader>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Trash2 style={{ width: '20px', height: '20px', color: '#fff' }} />
-            </div>
-            <DialogTitle>{title || 'Löschen bestätigen'}</DialogTitle>
-          </div>
-          <DialogDescription>
-            {description || 'Diese Aktion kann nicht rückgängig gemacht werden.'}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter style={{ marginTop: '16px' }}>
-          <button
-            onClick={onClose}
-            disabled={isDeleting}
-            style={{
-              minWidth: '100px',
-              height: '40px',
-              padding: '8px 20px',
-              borderRadius: '8px',
-              border: `2px solid ${primaryAccent}`,
-              backgroundColor: 'white',
-              color: primaryAccent,
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: isDeleting ? 'not-allowed' : 'pointer',
-              opacity: isDeleting ? 0.5 : 1,
-              transition: 'all 0.2s',
-            }}
-          >
-            Abbrechen
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isDeleting}
-            style={{
-              minWidth: '100px',
-              height: '40px',
-              padding: '8px 20px',
-              borderRadius: '8px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-              color: '#fff',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: isDeleting ? 'not-allowed' : 'pointer',
-              opacity: isDeleting ? 0.5 : 1,
-              transition: 'all 0.2s',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
-          >
-            {isDeleting ? (
-              <>
-                <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
-                Löschen...
-              </>
-            ) : (
-              'Löschen'
-            )}
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-/**
- * Icon mapping for briefing template icons
- */
-const BRIEFING_ICON_MAP = {
-  'file-text': FileText,
-  'briefcase': Briefcase,
-  'banknote': Banknote,
-  'users': Users,
-};
-
-/**
- * BriefingCard - Card component for Smart Briefings
- */
-const BriefingCard = ({ briefing, onClick, onDelete, headerGradient, headerText, primaryAccent }) => {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  // Listen for resize events
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const Icon = BRIEFING_ICON_MAP[briefing.template_icon] || FileText;
-
-  const handleDeleteClick = (e) => {
-    e.stopPropagation();
-    setShowDeleteDialog(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await onDelete(briefing.id);
-      setShowDeleteDialog(false);
-    } catch (err) {
-      console.error('Error deleting briefing:', err);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  // Mobile-optimized card layout
-  if (isMobile) {
-    return (
-      <motion.div
-        variants={{
-          hidden: { opacity: 0, y: 20 },
-          visible: { opacity: 1, y: 0 },
-        }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <div
-          onClick={onClick}
-          style={{
-            background: '#fff',
-            borderRadius: '16px',
-            padding: '16px',
-            cursor: 'pointer',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          }}
-        >
-          {/* Top row: Icon + Title + Delete */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}30)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Icon style={{ width: '22px', height: '22px', color: primaryAccent }} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h3 style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#0f172a',
-                marginBottom: '4px',
-                lineHeight: '1.3',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}>
-                {briefing.title || 'Briefing'}
-              </h3>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
-                {formatDate(briefing.created_at)}
-              </div>
-            </div>
-            <button
-              onClick={handleDeleteClick}
-              disabled={isDeleting}
-              style={{
-                padding: '8px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-              title="Löschen"
-            >
-              {isDeleting ? (
-                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-              ) : (
-                <Trash2 size={18} />
-              )}
-            </button>
-          </div>
-
-          {/* Bottom row: Template badge + Arrow */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '8px',
-            paddingTop: '12px',
-            borderTop: '1px solid #f1f5f9',
-          }}>
-            <span style={{
-              backgroundColor: `${primaryAccent}15`,
-              color: primaryAccent,
-              padding: '4px 10px',
-              borderRadius: '10px',
-              fontSize: '12px',
-              fontWeight: 500,
-              maxWidth: '70%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
-              {briefing.template_title}
-            </span>
-            <ChevronRight size={22} style={{ color: '#94a3b8', flexShrink: 0 }} />
-          </div>
-        </div>
-
-        {/* Delete Confirmation Dialog */}
-        <ConfirmDeleteDialog
-          isOpen={showDeleteDialog}
-          onClose={() => setShowDeleteDialog(false)}
-          onConfirm={handleConfirmDelete}
-          title="Briefing löschen"
-          description="Möchtest du dieses Briefing wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
-          isDeleting={isDeleting}
-        />
-      </motion.div>
-    );
-  }
-
-  // Desktop layout
-  return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 },
-      }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-    >
-      <div
-        onClick={onClick}
-        style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          cursor: 'pointer',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
-          e.currentTarget.style.borderColor = '#cbd5e1';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-          e.currentTarget.style.borderColor = '#e2e8f0';
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Icon */}
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}30)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Icon style={{ width: '24px', height: '24px', color: primaryAccent }} />
-          </div>
-
-          {/* Content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{
-              fontSize: '16px',
-              fontWeight: 600,
-              color: '#0f172a',
-              marginBottom: '4px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}>
-              {briefing.title || 'Briefing'}
-            </h3>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              flexWrap: 'wrap',
-              fontSize: '13px',
-              color: '#64748b',
-            }}>
-              <span style={{
-                backgroundColor: `${primaryAccent}15`,
-                color: primaryAccent,
-                padding: '2px 8px',
-                borderRadius: '10px',
-                fontSize: '12px',
-                fontWeight: 500,
-              }}>
-                {briefing.template_title}
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Calendar size={14} />
-                {formatDate(briefing.created_at)}
-              </span>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <button
-              onClick={handleDeleteClick}
-              disabled={isDeleting}
-              style={{
-                padding: '8px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              title="Löschen"
-            >
-              {isDeleting ? (
-                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-              ) : (
-                <Trash2 size={18} />
-              )}
-            </button>
-            <ChevronRight size={20} style={{ color: '#94a3b8' }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDeleteDialog
-        isOpen={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        onConfirm={handleConfirmDelete}
-        title="Briefing löschen"
-        description="Möchtest du dieses Briefing wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
-        isDeleting={isDeleting}
-      />
-    </motion.div>
-  );
-};
-
-/**
- * SessionCard - Unified card component for all session types
- */
-const SessionCard = ({ session, type, scenario, onClick, onContinueSession, onDeleteSession, headerGradient, headerText, primaryAccent }) => {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  // Listen for resize events
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const formatDuration = (seconds) => {
-    if (!seconds) return '-';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getScore = () => {
-    let rawScore = null;
-    if (type === TABS.SIMULATOR) {
-      rawScore = session.overall_score || session.average_score;
-    } else if (type === TABS.VIDEO) {
-      rawScore = session.overall_score;
-    } else {
-      // Roleplay - extract from feedback_json
-      if (session.feedback_json) {
-        try {
-          let parsed = session.feedback_json;
-          if (typeof parsed === 'string') {
-            let jsonString = parsed.trim();
-            if (jsonString.startsWith('```json')) {
-              jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
-            } else if (jsonString.startsWith('```')) {
-              jsonString = jsonString.replace(/```\s*/g, '').replace(/```\s*$/g, '');
-            }
-            parsed = JSON.parse(jsonString);
-          }
-          rawScore = parsed.rating?.overall || null;
-        } catch {
-          rawScore = null;
-        }
-      }
-    }
-    // Return null if score is invalid (null, undefined, NaN, 0)
-    if (rawScore === null || rawScore === undefined || isNaN(rawScore) || rawScore === 0) {
-      return null;
-    }
-    return rawScore;
-  };
-
-  const getStatus = () => {
-    if (type === TABS.SIMULATOR || type === TABS.VIDEO) {
-      return session.status;
-    }
-    return session.feedback_json ? 'completed' : 'pending';
-  };
-
-  const score = getScore();
-  const status = getStatus();
-  const isCompleted = status === 'completed';
-
-  // Check if session is resumable (Simulator only, has unanswered questions)
-  // Allow resuming even "completed" sessions if not all questions were answered
-  const hasUnansweredQuestions = session.total_questions > 0 &&
-    (session.completed_questions || 0) < session.total_questions;
-  const isResumable = type === TABS.SIMULATOR && hasUnansweredQuestions;
-
-  // Progress info for resumable sessions
-  const getProgressInfo = () => {
-    if (!isResumable) return null;
-    const completed = session.completed_questions || 0;
-    const total = session.total_questions || 0;
-    return `${completed}/${total} Fragen`;
-  };
-
-  // Handle continue click
-  const handleContinueClick = (e) => {
-    e.stopPropagation();
-    if (onContinueSession) {
-      onContinueSession(session, scenario);
-    }
-  };
-
-  // Handle delete click - opens confirmation dialog
-  const handleDeleteClick = (e) => {
-    e.stopPropagation();
-    setShowDeleteDialog(true);
-  };
-
-  // Handle confirmed delete
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await onDeleteSession(session, type);
-      setShowDeleteDialog(false);
-    } catch (err) {
-      console.error('Error deleting session:', err);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  // Convert score to percentage (0-100) for consistent display
-  const getScoreAsPercent = () => {
-    if (score === null || score === undefined || isNaN(score)) return null;
-    // Simulator and Roleplay scores are 0-10, convert to percentage
-    if (type === TABS.SIMULATOR || type === TABS.ROLEPLAY) {
-      const percent = score <= 10 ? score * 10 : score;
-      return isNaN(percent) ? null : percent;
-    }
-    // Video scores are already 0-100
-    return isNaN(score) ? null : score;
-  };
-
-  const scorePercent = getScoreAsPercent();
-
-  const getScoreBadgeStyle = (scoreVal) => {
-    if (!scoreVal && scoreVal !== 0) return { background: '#f1f5f9', color: '#64748b' };
-    const numScore = parseFloat(scoreVal);
-    if (numScore >= 80) return { background: '#dcfce7', color: '#166534' };
-    if (numScore >= 60) return { background: '#fef9c3', color: '#854d0e' };
-    return { background: '#fee2e2', color: '#991b1b' };
-  };
-
-  const getIcon = () => {
-    switch (type) {
-      case TABS.SIMULATOR: return Target;
-      case TABS.VIDEO: return Video;
-      default: return MessageSquare;
-    }
-  };
-
-  const Icon = getIcon();
-
-  // Mobile-optimized card layout
-  if (isMobile) {
-    return (
-      <motion.div
-        variants={{
-          hidden: { opacity: 0, y: 20 },
-          visible: { opacity: 1, y: 0 },
-        }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <div
-          onClick={onClick}
-          style={{
-            background: '#fff',
-            borderRadius: '16px',
-            padding: '16px',
-            cursor: 'pointer',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          }}
-        >
-          {/* Top row: Icon + Title + Delete */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: headerGradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Icon style={{ width: '22px', height: '22px', color: headerText }} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h3 style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#0f172a',
-                marginBottom: '4px',
-                lineHeight: '1.3',
-              }}>
-                {scenario?.title || session.scenario_title || `Session #${session.id}`}
-              </h3>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
-                {formatDate(session.created_at)}
-              </div>
-            </div>
-            {onDeleteSession && (
-              <button
-                onClick={handleDeleteClick}
-                disabled={isDeleting}
-                style={{
-                  padding: '8px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-                title="Löschen"
-              >
-                {isDeleting ? (
-                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                ) : (
-                  <Trash2 size={18} />
-                )}
-              </button>
-            )}
-          </div>
-
-          {/* Bottom row: Status badges + Action */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '8px',
-            paddingTop: '12px',
-            borderTop: '1px solid #f1f5f9',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              {/* Status indicator */}
-              {!isCompleted && !isResumable && (
-                <span style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: '#fef3c7',
-                  color: '#92400e',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                }}>
-                  <Clock size={12} />
-                  In Bearbeitung
-                </span>
-              )}
-
-              {/* Score badge */}
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '5px 10px',
-                borderRadius: '20px',
-                fontSize: '13px',
-                fontWeight: 600,
-                ...getScoreBadgeStyle(scorePercent),
-              }}>
-                <Star size={13} />
-                {scorePercent !== null ? `${Math.round(scorePercent)}%` : '-- %'}
-              </span>
-
-              {/* Duration */}
-              {(session.duration || session.video_duration_seconds) && (
-                <span style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '12px',
-                  color: '#64748b',
-                }}>
-                  <Clock size={12} />
-                  {formatDuration(session.duration || session.video_duration_seconds)}
-                </span>
-              )}
-
-              {/* Progress for resumable */}
-              {isResumable && (
-                <span style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: '#dbeafe',
-                  color: '#1e40af',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                }}>
-                  {getProgressInfo()}
-                </span>
-              )}
-            </div>
-
-            {/* Resume button or Arrow */}
-            {isResumable && onContinueSession ? (
-              <button
-                onClick={handleContinueClick}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '10px 16px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: primaryAccent || '#3B82F6',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: `0 2px 8px ${primaryAccent || '#3B82F6'}40`,
-                  flexShrink: 0,
-                }}
-              >
-                <Play size={14} />
-                Fortsetzen
-              </button>
-            ) : (
-              <ChevronRight size={22} style={{ color: '#94a3b8', flexShrink: 0 }} />
-            )}
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  // Desktop layout (unchanged)
-  return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 },
-      }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-    >
-      <div
-        onClick={onClick}
-        style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          cursor: 'pointer',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
-          e.currentTarget.style.borderColor = '#cbd5e1';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-          e.currentTarget.style.borderColor = '#e2e8f0';
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Icon */}
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: headerGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Icon style={{ width: '24px', height: '24px', color: headerText }} />
-          </div>
-
-          {/* Content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{
-              fontSize: '16px',
-              fontWeight: 600,
-              color: '#0f172a',
-              marginBottom: '4px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}>
-              {scenario?.title || session.scenario_title || `Session #${session.id}`}
-            </h3>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              flexWrap: 'wrap',
-              fontSize: '13px',
-              color: '#64748b',
-            }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Calendar size={14} />
-                {formatDate(session.created_at)}
-              </span>
-              {session.duration || session.video_duration_seconds ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Clock size={14} />
-                  {formatDuration(session.duration || session.video_duration_seconds)}
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Status & Score */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-            {/* Resume button for incomplete sessions */}
-            {isResumable && onContinueSession && (
-              <button
-                onClick={handleContinueClick}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: primaryAccent || '#3B82F6',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: `0 2px 8px ${primaryAccent || '#3B82F6'}40`,
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                  e.currentTarget.style.boxShadow = `0 4px 12px ${primaryAccent || '#3B82F6'}50`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = `0 2px 8px ${primaryAccent || '#3B82F6'}40`;
-                }}
-              >
-                <Play size={14} />
-                Fortsetzen
-              </button>
-            )}
-
-            {/* Progress indicator for resumable sessions */}
-            {isResumable && (
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                background: '#dbeafe',
-                color: '#1e40af',
-                fontSize: '12px',
-                fontWeight: 500,
-              }}>
-                {getProgressInfo()}
-              </span>
-            )}
-
-            {/* Status indicator (only for non-resumable incomplete sessions) */}
-            {!isCompleted && !isResumable && (
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                background: '#fef3c7',
-                color: '#92400e',
-                fontSize: '12px',
-                fontWeight: 500,
-              }}>
-                <Clock size={12} />
-                In Bearbeitung
-              </span>
-            )}
-
-            {/* Score badge - always show for consistency */}
-            <span style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              fontSize: '14px',
-              fontWeight: 600,
-              ...getScoreBadgeStyle(scorePercent),
-            }}>
-              <Star size={14} />
-              {scorePercent !== null ? `${Math.round(scorePercent)}%` : '-- %'}
-            </span>
-
-            {/* Delete button */}
-            {onDeleteSession && (
-              <button
-                onClick={handleDeleteClick}
-                disabled={isDeleting}
-                style={{
-                  padding: '8px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#ef4444';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#94a3b8';
-                }}
-                title="Löschen"
-              >
-                {isDeleting ? (
-                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                ) : (
-                  <Trash2 size={18} />
-                )}
-              </button>
-            )}
-
-            {/* Arrow */}
-            <ChevronRight size={20} style={{ color: '#94a3b8' }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDeleteDialog
-        isOpen={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        onConfirm={handleConfirmDelete}
-        title="Session löschen"
-        description="Möchtest du diese Session wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
-        isDeleting={isDeleting}
-      />
-    </motion.div>
-  );
-};
+// Export TABS for use in extracted components
+export const SESSION_TABS = TABS;
 
 const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession, initialTab, onNavigateToModule }) => {
-
   // Partner branding
   const { branding, demoCode, isDemoUser } = usePartner();
+  const b = useBranding();
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
@@ -1281,6 +341,28 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Show detail view for selected training session
   if (selectedTrainingSession) {
+    // Use RoleplaySessionReport for Live-Simulations
+    if (selectedSessionType === TABS.ROLEPLAY) {
+      const roleplayScenario = getScenarioForSession(selectedTrainingSession, selectedSessionType);
+      return (
+        <RoleplaySessionReport
+          session={selectedTrainingSession}
+          scenario={roleplayScenario}
+          onBack={handleBackFromDetail}
+          onRepeat={() => onRepeatSession?.(selectedTrainingSession, roleplayScenario, 'roleplay')}
+          onDelete={(session) => handleDeleteSession(session, TABS.ROLEPLAY)}
+        />
+      );
+    }
+
+    // Use TrainingSessionDetailView for Simulator and Video
+    // Map tab types to session type strings
+    const typeMap = {
+      [TABS.SIMULATOR]: 'simulator',
+      [TABS.VIDEO]: 'video',
+    };
+    const sessionTypeString = typeMap[selectedSessionType] || 'simulator';
+
     return (
       <TrainingSessionDetailView
         session={selectedTrainingSession}
@@ -1288,7 +370,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         scenario={getScenarioForSession(selectedTrainingSession, selectedSessionType)}
         onBack={handleBackFromDetail}
         onContinueSession={onContinueSession}
-        onRepeatSession={onRepeatSession}
+        onRepeatSession={(session, scenario) => onRepeatSession?.(session, scenario, sessionTypeString)}
         onDeleteSession={handleDeleteSession}
       />
     );
@@ -1297,38 +379,38 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Show login required screen if not authenticated
   if (!isAuthenticated) {
     return (
-      <div style={{ padding: '24px' }}>
+      <div style={{ padding: b.space[6] }}>
         {/* Header */}
-        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+        <div style={{ marginBottom: b.space[8], textAlign: 'center' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '12px',
-            marginBottom: '12px',
+            gap: b.space[3],
+            marginBottom: b.space[3],
           }}>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '14px',
+              width: b.space[12],
+              height: b.space[12],
+              borderRadius: b.radius.lg,
               background: headerGradient,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              <History style={{ width: '24px', height: '24px', color: headerText }} />
+              <History style={{ width: b.iconSize['2xl'], height: b.iconSize['2xl'], color: headerText }} />
             </div>
             <h1 style={{
-              fontSize: '28px',
-              fontWeight: 700,
-              color: '#0f172a',
+              fontSize: b.fontSize['5xl'],
+              fontWeight: b.fontWeight.bold,
+              color: b.textMain,
               margin: 0,
             }}>
               Meine Sessions
             </h1>
           </div>
           <p style={{
-            fontSize: '16px',
-            color: '#475569',
+            fontSize: b.fontSize.lg,
+            color: b.textSecondary,
             maxWidth: '600px',
             margin: '0 auto',
           }}>
@@ -1339,37 +421,37 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         {/* Login required message */}
         <div style={{
           maxWidth: '500px',
-          margin: '60px auto',
+          margin: `${b.space[15]} auto`,
           textAlign: 'center',
-          padding: '40px',
-          backgroundColor: 'white',
-          borderRadius: '20px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          padding: b.space[10],
+          backgroundColor: b.cardBg,
+          borderRadius: b.radius['2xl'],
+          boxShadow: b.shadow.md,
         }}>
           <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
+            width: b.space[16],
+            height: b.space[16],
+            borderRadius: b.radius.xl,
             background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 20px',
+            margin: `0 auto ${b.space[5]}`,
           }}>
-            <LogIn style={{ width: '32px', height: '32px', color: headerText }} />
+            <LogIn style={{ width: b.iconSize['3xl'], height: b.iconSize['3xl'], color: headerText }} />
           </div>
           <h2 style={{
-            fontSize: '22px',
-            fontWeight: 700,
-            color: '#0f172a',
-            marginBottom: '12px',
+            fontSize: b.fontSize['3xl'],
+            fontWeight: b.fontWeight.bold,
+            color: b.textMain,
+            marginBottom: b.space[3],
           }}>
             Anmeldung erforderlich
           </h2>
           <p style={{
-            fontSize: '15px',
-            color: '#64748b',
-            marginBottom: '24px',
+            fontSize: b.fontSize.md,
+            color: b.textMuted,
+            marginBottom: b.space[6],
             lineHeight: 1.6,
           }}>
             Um deine gespeicherten Sessions zu sehen, musst du dich zuerst anmelden.
@@ -1377,21 +459,21 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           <button
             onClick={onLoginClick}
             style={{
-              padding: '14px 32px',
-              borderRadius: '12px',
+              padding: `${b.space[3.5]} ${b.space[8]}`,
+              borderRadius: b.radius.lg,
               border: 'none',
               background: headerGradient,
               color: headerText,
-              fontSize: '16px',
-              fontWeight: 600,
+              fontSize: b.fontSize.lg,
+              fontWeight: b.fontWeight.semibold,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '10px',
-              boxShadow: `0 4px 12px ${primaryAccent}44`,
+              gap: b.space[2.5],
+              boxShadow: b.coloredShadow(primaryAccent, 'md'),
             }}
           >
-            <LogIn style={{ width: '20px', height: '20px' }} />
+            <LogIn style={{ width: b.iconSize.lg, height: b.iconSize.lg }} />
             Jetzt anmelden
           </button>
         </div>
@@ -1401,10 +483,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: b.space[10] }}>
         <div style={{ textAlign: 'center' }}>
-          <Loader2 style={{ width: '48px', height: '48px', color: primaryAccent, animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-          <p style={{ color: '#64748b', marginTop: '16px' }}>Sessions werden geladen...</p>
+          <Loader2 style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: primaryAccent, animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+          <p style={{ color: b.textMuted, marginTop: b.space[4] }}>Sessions werden geladen...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -1414,10 +496,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   if (error) {
     return (
       <div style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', maxWidth: '400px', padding: '24px' }}>
-          <AlertCircle style={{ width: '48px', height: '48px', color: '#ef4444', margin: '0 auto 16px' }} />
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>Fehler beim Laden</h2>
-          <p style={{ color: '#64748b', marginBottom: '24px' }}>{error}</p>
+        <div style={{ textAlign: 'center', maxWidth: '400px', padding: b.space[6] }}>
+          <AlertCircle style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.error, margin: `0 auto ${b.space[4]}` }} />
+          <h2 style={{ fontSize: b.fontSize['2xl'], fontWeight: b.fontWeight.bold, color: b.textMain, marginBottom: b.space[2] }}>Fehler beim Laden</h2>
+          <p style={{ color: b.textMuted, marginBottom: b.space[6] }}>{error}</p>
           <Button onClick={loadAllData}>Erneut versuchen</Button>
         </div>
       </div>
@@ -1428,38 +510,38 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const activeScenarioMap = getActiveScenarioMap();
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: b.space[6] }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px', textAlign: 'center', position: 'relative' }}>
+      <div style={{ marginBottom: b.space[8], textAlign: 'center', position: 'relative' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '12px',
-          marginBottom: '12px',
+          gap: b.space[3],
+          marginBottom: b.space[3],
         }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
+            width: b.space[12],
+            height: b.space[12],
+            borderRadius: b.radius.lg,
             background: headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <History style={{ width: '24px', height: '24px', color: headerText }} />
+            <History style={{ width: b.iconSize['2xl'], height: b.iconSize['2xl'], color: headerText }} />
           </div>
           <h1 style={{
-            fontSize: '28px',
-            fontWeight: 700,
-            color: '#0f172a',
+            fontSize: b.fontSize['5xl'],
+            fontWeight: b.fontWeight.bold,
+            color: b.textMain,
             margin: 0,
           }}>
             Meine Sessions
           </h1>
         </div>
         <p style={{
-          fontSize: '16px',
-          color: '#475569',
+          fontSize: b.fontSize.lg,
+          color: b.textSecondary,
           maxWidth: '600px',
           margin: '0 auto',
         }}>
@@ -1529,17 +611,34 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         .desktop-actions {
           margin: 0 24px 24px;
           display: flex;
-          justify-content: flex-end;
+          justify-content: center;
+          flex-wrap: wrap;
           gap: 12px;
         }
         .sessions-list-container {
           margin: 0 24px;
         }
-        @media (min-width: 641px) {
+        @media (min-width: 1025px) {
           .session-tabs-mobile { display: none; }
         }
-        @media (max-width: 640px) {
+        @media (min-width: 641px) and (max-width: 1023px) {
+          .desktop-actions {
+            flex-direction: column;
+          }
+          .desktop-actions button {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+        @media (min-width: 1024px) {
+          .desktop-actions {
+            justify-content: flex-end;
+          }
+        }
+        @media (max-width: 1024px) {
           .session-tabs-desktop { display: none; }
+        }
+        @media (max-width: 640px) {
           .desktop-actions { display: none; }
           .mobile-refresh-btn {
             display: flex !important;
@@ -1559,19 +658,19 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         disabled={isLoading}
         className="mobile-refresh-btn"
         style={{
-          padding: '10px',
-          borderRadius: '10px',
-          border: '1px solid #e2e8f0',
-          background: '#fff',
-          color: '#64748b',
+          padding: b.space[2.5],
+          borderRadius: b.radius.md,
+          border: `1px solid ${b.borderColor}`,
+          background: b.cardBgColor,
+          color: b.textSecondary,
           cursor: isLoading ? 'not-allowed' : 'pointer',
           opacity: isLoading ? 0.5 : 1,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+          boxShadow: b.shadow.sm,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <RefreshCw style={{ width: '18px', height: '18px' }} className={isLoading ? 'animate-spin' : ''} />
+        <RefreshCw style={{ width: b.iconSize.md, height: b.iconSize.md }} className={isLoading ? 'animate-spin' : ''} />
       </button>
 
       {/* Desktop Tabs */}
@@ -1693,31 +792,31 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         {activeSessions.length === 0 ? (
           <div style={{
             textAlign: 'center',
-            padding: '60px 24px',
-            background: '#fff',
-            borderRadius: '20px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+            padding: `${b.space[15]} ${b.space[6]}`,
+            background: b.cardBg,
+            borderRadius: b.radius['2xl'],
+            boxShadow: b.shadow.sm,
           }}>
-            {activeTab === TABS.SIMULATOR && <Target style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
-            {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
-            {activeTab === TABS.VIDEO && <Video style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
-            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }} />}
-            <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
+            {activeTab === TABS.SIMULATOR && <Target style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
+            {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
+            {activeTab === TABS.VIDEO && <Video style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
+            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
+            <h3 style={{ fontSize: b.fontSize['2xl'], fontWeight: b.fontWeight.semibold, color: b.textSecondary, marginBottom: b.space[2] }}>
               Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : 'Live-Simulationen'}
             </h3>
-            <p style={{ color: '#64748b', marginBottom: '24px' }}>
+            <p style={{ color: b.textMuted, fontSize: b.fontSize.base, marginBottom: b.space[6] }}>
               {activeTab === TABS.BRIEFINGS
                 ? 'Erstelle dein erstes Briefing, um dich optimal vorzubereiten.'
                 : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
             </p>
             <Button onClick={onBack}>
-              <Play style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+              <Play style={{ width: b.iconSize.sm, height: b.iconSize.sm, marginRight: b.space[2] }} />
               {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : 'Training starten'}
             </Button>
           </div>
         ) : (
           <motion.div
-            style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}
             initial="hidden"
             animate="visible"
             variants={{
@@ -1773,4 +872,3 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 };
 
 export default SessionHistory;
-export { TABS as SESSION_TABS };

@@ -5,6 +5,7 @@ import BriefingResult from './BriefingResult';
 import BriefingList from './BriefingList';
 import BriefingWorkbook from './BriefingWorkbook';
 import CreateTemplateDialog from './CreateTemplateDialog';
+import wordpressAPI from '../../services/wordpress-api';
 
 /**
  * View states for the smart briefing flow
@@ -145,6 +146,28 @@ const SmartBriefingApp = ({
   }, [onNavigateToSimulator]);
 
   /**
+   * Handle delete briefing from workbook
+   */
+  const handleDeleteBriefing = useCallback(async (briefing) => {
+    try {
+      const response = await wordpressAPI.request(`/smartbriefing/briefings/${briefing.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.success) {
+        // Navigate back to dashboard after successful deletion
+        setSelectedBriefing(null);
+        setCurrentView(VIEWS.DASHBOARD);
+      } else {
+        throw new Error('Fehler beim Löschen');
+      }
+    } catch (err) {
+      console.error('[SmartBriefing] Error deleting briefing:', err);
+      throw err; // Re-throw so the dialog can handle the error
+    }
+  }, []);
+
+  /**
    * Handle create new custom template
    */
   const handleCreateTemplate = useCallback(() => {
@@ -216,6 +239,7 @@ const SmartBriefingApp = ({
           <BriefingWorkbook
             briefing={selectedBriefing}
             onBack={handleBackToDashboard}
+            onDelete={handleDeleteBriefing}
             onStartSimulation={onNavigateToSimulator ? handleStartSimulation : null}
           />
         );

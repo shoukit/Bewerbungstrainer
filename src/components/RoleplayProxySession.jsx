@@ -9,7 +9,9 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useMobile } from '@/hooks/useMobile';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDuration } from '@/utils/formatting';
 import {
   Mic,
   MicOff,
@@ -86,7 +88,7 @@ const RoleplayProxySession = ({
   const [isMuted, setIsMuted] = useState(false);
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
   const [localMicrophoneId, setLocalMicrophoneId] = useState(selectedMicrophoneId);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const isMobile = useMobile(1024);
 
   // Refs
   const wsRef = useRef(null);
@@ -107,12 +109,6 @@ const RoleplayProxySession = ({
   const [dynamicCoaching, setDynamicCoaching] = useState(null);
   const [isCoachingGenerating, setIsCoachingGenerating] = useState(false);
 
-  // Responsive handling
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Duration timer
   useEffect(() => {
@@ -142,11 +138,6 @@ const RoleplayProxySession = ({
     };
   }, []);
 
-  const formatDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   /**
    * Start the conversation
@@ -666,6 +657,7 @@ const RoleplayProxySession = ({
           transcript: JSON.stringify(transcriptRef.current),
           feedback_json: analysis.feedbackContent,
           audio_analysis_json: analysis.audioAnalysisContent,
+          audio_url: audioUrl, // Include the saved audio URL
           duration: finalDuration,
           conversation_id: conversationIdRef.current,
           created_at: new Date().toISOString(),
@@ -737,10 +729,24 @@ const RoleplayProxySession = ({
     }
   };
 
-  // Analyzing state - matches RoleplaySession.jsx exactly
+  // Analyzing state - Full screen blocking overlay to prevent navigation
   if (isAnalyzing) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999, // Above sidebar (z-50) and all other elements
+          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -836,11 +842,30 @@ const RoleplayProxySession = ({
                   <img
                     src={scenario.interviewer_profile.image_url}
                     alt={scenario.interviewer_profile.name}
-                    className="w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      border: '4px solid white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      objectFit: 'cover',
+                    }}
                   />
                 ) : (
-                  <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
-                    <User className="w-8 h-8 lg:w-10 lg:h-10 text-slate-400" />
+                  <div
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      border: '4px solid white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      background: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <User className="w-10 h-10 text-slate-400" />
                   </div>
                 )}
               </div>

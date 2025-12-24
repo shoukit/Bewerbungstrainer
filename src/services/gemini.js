@@ -11,7 +11,14 @@ import { GEMINI_MODELS, ERROR_MESSAGES } from '@/config/constants';
 import { getFeedbackPrompt, applyCustomPrompt } from '@/config/prompts/feedbackPrompt';
 import { getAudioAnalysisPrompt } from '@/config/prompts/audioAnalysisPrompt';
 import { getRhetoricGamePrompt } from '@/config/prompts/gamePrompts';
+import { maskApiKey } from '@/utils/security';
+import { audioFileToInlineData, validateAudioBlob } from '@/utils/audio';
 import wordpressAPI from './wordpress-api.js';
+import {
+  MIN_AUDIO_SIZE_BYTES,
+  NO_SPEECH_DETECTED,
+  getEmptyTranscriptResult,
+} from '@/config/prompts/transcriptionCore';
 
 // =============================================================================
 // DEBUG LOGGING
@@ -85,16 +92,6 @@ function logPromptDebug(scenario, description, prompt, metadata = {}) {
 // =============================================================================
 
 /**
- * Masks an API key for safe logging
- * @param {string} apiKey - The API key to mask
- * @returns {string} - Masked key (e.g., "AIzaSy...abcd")
- */
-function maskApiKey(apiKey) {
-  if (!apiKey || apiKey.length < 12) return '***';
-  return `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`;
-}
-
-/**
  * Checks if an error is a model-not-found error (404)
  * @param {Error} error - The error to check
  * @returns {boolean} - True if it's a 404/not-found error
@@ -110,28 +107,6 @@ function isModelNotFoundError(error) {
  */
 function isApiKeyError(error) {
   return error.message?.includes('API key');
-}
-
-/**
- * Converts an audio file to base64 for Gemini API
- * @param {File|Blob} audioFile - The audio file to convert
- * @returns {Promise<Object>} - Object with inlineData containing base64 and mimeType
- */
-async function audioFileToBase64(audioFile) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result.split(',')[1];
-      resolve({
-        inlineData: {
-          data: base64,
-          mimeType: audioFile.type || 'audio/webm',
-        },
-      });
-    };
-    reader.onerror = () => reject(new Error('Failed to read audio file'));
-    reader.readAsDataURL(audioFile);
-  });
 }
 
 /**
@@ -331,9 +306,11 @@ export async function generateInterviewFeedback(
 /**
  * Analyzes audio of an interview to evaluate paraverbal communication
  *
- * IMPORTANT: This function sends ONLY the audio file, NO transcript.
- * This ensures filler words like "Ähm" are detected that might be filtered
- * out by transcription services.
+ * Performs professional voice coaching analysis including:
+ * - Filler word detection with timestamps
+ * - Speaking pace (WPM)
+ * - Tonality and emotional tone
+ * - Overall confidence assessment
  *
  * @param {File|Blob} audioFile - The audio file to analyze
  * @param {string} apiKey - Google Gemini API key
@@ -342,6 +319,8 @@ export async function generateInterviewFeedback(
  * @param {string} roleOptions.roleType - 'interview' or 'simulation'
  * @param {string} roleOptions.userRoleLabel - Label for the user role (e.g., 'Bewerber', 'Kundenberater')
  * @param {string} roleOptions.agentRoleLabel - Label for the AI role (e.g., 'Interviewer', 'Kunde')
+ * @param {boolean} roleOptions.hasTwoVoices - Whether audio contains AI + user (default: true)
+ * @param {string} roleOptions.transcript - Optional transcript for improved speaker identification
  * @returns {Promise<string>} - The generated audio analysis JSON string
  */
 export async function generateAudioAnalysis(
@@ -350,30 +329,48 @@ export async function generateAudioAnalysis(
   modelName = 'gemini-1.5-flash',
   roleOptions = {}
 ) {
-  // Validate audio file
+  // Validate audio file exists
   if (!audioFile) {
     console.error('❌ [GEMINI AUDIO] Audio file is missing');
     throw new Error(ERROR_MESSAGES.AUDIO_FILE_MISSING);
   }
 
+  // Validate audio file has meaningful content (prevents hallucination on empty/silent audio)
+  const validation = validateAudioBlob(audioFile, { minSize: MIN_AUDIO_SIZE_BYTES });
+  if (!validation.valid) {
+    console.warn(`⚠️ [GEMINI AUDIO] Audio validation failed: ${validation.error}, Size: ${audioFile.size} bytes`);
+    // Return centralized empty analysis result instead of sending to AI
+    return JSON.stringify(getEmptyTranscriptResult('analysis'));
+  }
+
   const userRoleLabel = roleOptions.userRoleLabel || 'Bewerber';
   const agentRoleLabel = roleOptions.agentRoleLabel || 'Gesprächspartner';
   const roleType = roleOptions.roleType || 'interview';
+  const hasTwoVoices = roleOptions.hasTwoVoices !== false; // Default true for backwards compat
+  const transcript = roleOptions.transcript || null;
 
   if (DEBUG_PROMPTS) {
     console.log(`🎵 [GEMINI AUDIO] File size: ${audioFile.size} bytes`);
     console.log(`🎵 [GEMINI AUDIO] File type: ${audioFile.type}`);
     console.log(`🎵 [GEMINI AUDIO] Role type: ${roleType}`);
     console.log(`🎵 [GEMINI AUDIO] User role: ${userRoleLabel}`);
+    console.log(`🎵 [GEMINI AUDIO] Two voices: ${hasTwoVoices}`);
+    console.log(`🎵 [GEMINI AUDIO] Has transcript: ${!!transcript}`);
   }
 
   // Convert audio to base64
   if (DEBUG_PROMPTS) console.log('🔄 [GEMINI AUDIO] Converting audio to base64...');
-  const audioPart = await audioFileToBase64(audioFile);
+  const audioPart = await audioFileToInlineData(audioFile);
   if (DEBUG_PROMPTS) console.log('✅ [GEMINI AUDIO] Audio converted');
 
   // Build content array with prompt and audio
-  const prompt = getAudioAnalysisPrompt({ userRoleLabel, agentRoleLabel, roleType });
+  const prompt = getAudioAnalysisPrompt({
+    userRoleLabel,
+    agentRoleLabel,
+    roleType,
+    hasTwoVoices,
+    transcript,
+  });
   const content = [prompt, audioPart];
 
   // Debug logging
@@ -435,10 +432,18 @@ export async function analyzeRhetoricGame(
   topic = 'Elevator Pitch',
   durationSeconds = 60
 ) {
-  // Validate audio file
+  // Validate audio file exists
   if (!audioFile) {
     console.error('❌ [GEMINI GAME] Audio file is missing');
     throw new Error(ERROR_MESSAGES.AUDIO_FILE_MISSING);
+  }
+
+  // Validate audio file has meaningful content (prevents hallucination on empty/silent audio)
+  const validation = validateAudioBlob(audioFile, { minSize: MIN_AUDIO_SIZE_BYTES });
+  if (!validation.valid) {
+    console.warn(`⚠️ [GEMINI GAME] Audio validation failed: ${validation.error}, Size: ${audioFile.size} bytes`);
+    // Return centralized empty result instead of sending to AI
+    return getEmptyTranscriptResult('game');
   }
 
   if (DEBUG_PROMPTS) {
@@ -448,7 +453,7 @@ export async function analyzeRhetoricGame(
   }
 
   // Convert audio to base64
-  const audioPart = await audioFileToBase64(audioFile);
+  const audioPart = await audioFileToInlineData(audioFile);
 
   // Build content array with optimized game prompt and audio
   const prompt = getRhetoricGamePrompt(topic, durationSeconds);
@@ -493,7 +498,7 @@ export async function analyzeRhetoricGame(
 
     // Return simplified format - scoring is done locally
     return {
-      transcript: result.transcript || '[Keine Sprache erkannt]',
+      transcript: result.transcript || NO_SPEECH_DETECTED,
       filler_words: result.filler_words || [],
       content_score: Math.max(0, Math.min(40, result.content_score || 0)),
       content_feedback: result.content_feedback || '',

@@ -14,11 +14,11 @@ import {
   Volume2,
   Loader2,
 } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { useBranding } from '@/hooks/useBranding';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
+import { formatDuration } from '@/utils/formatting';
 import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import AudioVisualizer from '@/components/AudioVisualizer';
 
 /**
  * DeviceSelector - Reusable component for selecting audio/video devices
@@ -31,8 +31,7 @@ const DeviceSelector = ({
   isLoading,
   error,
   onRefresh,
-  primaryAccent,
-  themedGradient,
+  branding, // useBranding() object
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -76,8 +75,8 @@ const DeviceSelector = ({
             gap: '12px',
             padding: '14px 18px',
             borderRadius: '14px',
-            border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
-            backgroundColor: error ? COLORS.red[50] : '#fff',
+            border: `2px solid ${error ? branding.error : branding.borderColor}`,
+            backgroundColor: error ? branding.errorLight : branding.cardBgColor,
             cursor: isLoading ? 'not-allowed' : 'pointer',
             opacity: isLoading ? 0.6 : 1,
             transition: 'all 0.2s',
@@ -91,19 +90,19 @@ const DeviceSelector = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: error ? COLORS.red[100] : themedGradient,
+              background: error ? branding.errorLight : branding.headerGradient,
             }}>
               {error ? (
-                <AlertCircle style={{ width: '24px', height: '24px', color: COLORS.red[500] }} />
+                <AlertCircle style={{ width: '24px', height: '24px', color: branding.error }} />
               ) : (
-                <Icon style={{ width: '24px', height: '24px', color: '#fff' }} />
+                <Icon style={{ width: '24px', height: '24px', color: branding.white }} />
               )}
             </div>
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '13px', color: COLORS.slate[500], fontWeight: 500, marginBottom: '2px' }}>
+              <div style={{ fontSize: '13px', color: branding.textMuted, fontWeight: 500, marginBottom: '2px' }}>
                 {label}
               </div>
-              <div style={{ fontSize: '15px', fontWeight: 600, color: error ? COLORS.red[600] : COLORS.slate[800] }}>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: error ? branding.errorDark : branding.textMain }}>
                 {isLoading ? 'Lade...' : error ? error : selectedDevice ? getDeviceLabel(selectedDevice) : 'Bitte wählen'}
               </div>
             </div>
@@ -120,17 +119,17 @@ const DeviceSelector = ({
                   padding: '8px',
                   borderRadius: '8px',
                   border: 'none',
-                  backgroundColor: COLORS.slate[100],
+                  backgroundColor: branding.cardBgHover,
                   cursor: 'pointer',
                 }}
               >
-                <RefreshCw style={{ width: '18px', height: '18px', color: COLORS.slate[600] }} />
+                <RefreshCw style={{ width: '18px', height: '18px', color: branding.textSecondary }} />
               </button>
             )}
             <ChevronDown style={{
               width: '22px',
               height: '22px',
-              color: COLORS.slate[400],
+              color: branding.textMuted,
               transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
               transition: 'transform 0.2s',
             }} />
@@ -157,10 +156,10 @@ const DeviceSelector = ({
             top: 'calc(100% + 8px)',
             left: 0,
             right: 0,
-            backgroundColor: '#fff',
+            backgroundColor: branding.cardBgColor,
             borderRadius: '14px',
             boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-            border: `1px solid ${COLORS.slate[200]}`,
+            border: `1px solid ${branding.borderColor}`,
             zIndex: 50,
             overflow: 'hidden',
             maxHeight: '300px',
@@ -179,17 +178,17 @@ const DeviceSelector = ({
                   alignItems: 'center',
                   gap: '12px',
                   border: 'none',
-                  backgroundColor: selectedDeviceId === device.deviceId ? `${primaryAccent}15` : 'transparent',
+                  backgroundColor: selectedDeviceId === device.deviceId ? branding.primaryAccentLight : branding.transparent,
                   cursor: 'pointer',
                   transition: 'background-color 0.15s',
                 }}
                 onMouseEnter={(e) => {
                   if (selectedDeviceId !== device.deviceId) {
-                    e.currentTarget.style.backgroundColor = COLORS.slate[50];
+                    e.currentTarget.style.backgroundColor = branding.cardBgHover;
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = selectedDeviceId === device.deviceId ? `${primaryAccent}15` : 'transparent';
+                  e.currentTarget.style.backgroundColor = selectedDeviceId === device.deviceId ? branding.primaryAccentLight : branding.transparent;
                 }}
               >
                 <div style={{
@@ -199,19 +198,19 @@ const DeviceSelector = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: selectedDeviceId === device.deviceId ? primaryAccent : COLORS.slate[100],
+                  backgroundColor: selectedDeviceId === device.deviceId ? branding.primaryAccent : branding.cardBgHover,
                 }}>
                   <Icon style={{
                     width: '20px',
                     height: '20px',
-                    color: selectedDeviceId === device.deviceId ? '#fff' : COLORS.slate[500],
+                    color: selectedDeviceId === device.deviceId ? branding.white : branding.textMuted,
                   }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: '14px',
                     fontWeight: 500,
-                    color: selectedDeviceId === device.deviceId ? primaryAccent : COLORS.slate[800],
+                    color: selectedDeviceId === device.deviceId ? branding.primaryAccent : branding.textMain,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -219,11 +218,11 @@ const DeviceSelector = ({
                     {getDeviceLabel(device)}
                   </div>
                   {device.deviceId === 'default' && (
-                    <div style={{ fontSize: '12px', color: COLORS.slate[400] }}>Systemstandard</div>
+                    <div style={{ fontSize: '12px', color: branding.textMuted }}>Systemstandard</div>
                   )}
                 </div>
                 {selectedDeviceId === device.deviceId && (
-                  <CheckCircle style={{ width: '20px', height: '20px', color: primaryAccent }} />
+                  <CheckCircle style={{ width: '20px', height: '20px', color: branding.primaryAccent }} />
                 )}
               </button>
             ))}
@@ -237,7 +236,7 @@ const DeviceSelector = ({
 /**
  * MicrophoneTest - Component to test microphone with audio visualization and recording playback
  */
-const MicrophoneTest = ({ deviceId, primaryAccent }) => {
+const MicrophoneTest = ({ deviceId, branding }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -398,16 +397,11 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
     clearRecording();
   }, [deviceId]);
 
-  const formatDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   return (
     <div style={{
       padding: '16px',
-      backgroundColor: COLORS.slate[50],
+      backgroundColor: branding.cardBgHover,
       borderRadius: '12px',
       marginTop: '8px',
     }}>
@@ -424,8 +418,8 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
             padding: '10px 16px',
             borderRadius: '10px',
             border: 'none',
-            backgroundColor: isRecording ? COLORS.red[500] : primaryAccent,
-            color: '#fff',
+            backgroundColor: isRecording ? branding.error : branding.primaryAccent,
+            color: branding.white,
             fontSize: '14px',
             fontWeight: 600,
             cursor: isPlaying ? 'not-allowed' : 'pointer',
@@ -457,9 +451,9 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
               gap: '8px',
               padding: '10px 16px',
               borderRadius: '10px',
-              border: `2px solid ${primaryAccent}`,
-              backgroundColor: isPlaying ? `${primaryAccent}15` : 'white',
-              color: primaryAccent,
+              border: `2px solid ${branding.primaryAccent}`,
+              backgroundColor: isPlaying ? branding.primaryAccentLight : branding.cardBgColor,
+              color: branding.primaryAccent,
               fontSize: '14px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -482,12 +476,12 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
 
         {/* Status text */}
         {isRecording && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.red[500], fontSize: '13px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: branding.error, fontSize: '13px' }}>
             <div style={{
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: COLORS.red[500],
+              backgroundColor: branding.error,
               animation: 'pulse 1s infinite',
             }} />
             Aufnahme läuft...
@@ -495,15 +489,15 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
         )}
 
         {isPlaying && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.green[600], fontSize: '13px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: branding.successDark, fontSize: '13px' }}>
             <Volume2 style={{ width: '16px', height: '16px' }} />
             Wiedergabe...
           </div>
         )}
 
         {recordedBlob && !isRecording && !isPlaying && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.slate[500], fontSize: '13px' }}>
-            <CheckCircle style={{ width: '16px', height: '16px', color: COLORS.green[500] }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: branding.textMuted, fontSize: '13px' }}>
+            <CheckCircle style={{ width: '16px', height: '16px', color: branding.success }} />
             Aufnahme bereit ({formatDuration(recordingDuration)})
           </div>
         )}
@@ -511,22 +505,12 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
 
       {/* Audio Level Visualization (only show when recording) */}
       {isRecording && (
-        <div style={{
-          height: '8px',
-          backgroundColor: COLORS.slate[200],
-          borderRadius: '4px',
-          overflow: 'hidden',
-        }}>
-          <div
-            style={{
-              height: '100%',
-              width: `${audioLevel}%`,
-              backgroundColor: audioLevel > 70 ? COLORS.green[500] : audioLevel > 30 ? COLORS.amber[500] : COLORS.slate[400],
-              borderRadius: '4px',
-              transition: 'width 0.1s ease-out',
-            }}
-          />
-        </div>
+        <AudioVisualizer
+          audioLevel={audioLevel / 100}
+          isActive={true}
+          variant="bars"
+          size="sm"
+        />
       )}
 
       {/* Instructions */}
@@ -534,7 +518,7 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
         <p style={{
           margin: 0,
           fontSize: '13px',
-          color: COLORS.slate[500],
+          color: branding.textMuted,
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
@@ -558,7 +542,7 @@ const MicrophoneTest = ({ deviceId, primaryAccent }) => {
 /**
  * CameraPreview - Component to preview camera feed
  */
-const CameraPreview = ({ deviceId }) => {
+const CameraPreview = ({ deviceId, branding }) => {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [error, setError] = useState(null);
@@ -601,12 +585,12 @@ const CameraPreview = ({ deviceId }) => {
     return (
       <div style={{
         aspectRatio: '16/9',
-        backgroundColor: COLORS.slate[100],
+        backgroundColor: branding.cardBgHover,
         borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: COLORS.slate[500],
+        color: branding.textMuted,
         fontSize: '14px',
       }}>
         {error}
@@ -617,7 +601,7 @@ const CameraPreview = ({ deviceId }) => {
   return (
     <div style={{
       aspectRatio: '16/9',
-      backgroundColor: COLORS.slate[900],
+      backgroundColor: branding.textMain,
       borderRadius: '12px',
       overflow: 'hidden',
     }}>
@@ -660,6 +644,14 @@ const DeviceSetupPage = ({
   extraContent = null, // Additional content to render before start button
   disabled = false, // External disabled state
 }) => {
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Device state
   const [audioDevices, setAudioDevices] = useState([]);
   const [videoDevices, setVideoDevices] = useState([]);
@@ -677,12 +669,8 @@ const DeviceSetupPage = ({
   const selectedMicRef = useRef(null);
   const selectedCamRef = useRef(null);
 
-  // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  // Partner theming via useBranding hook
+  const b = useBranding();
 
   const includeVideo = mode === 'audio-video';
 
@@ -816,7 +804,7 @@ const DeviceSetupPage = ({
   const canStart = selectedMicrophoneId && !micError && (!includeVideo || (selectedCameraId && !cameraError)) && !disabled;
 
   return (
-    <div style={{ padding: '24px', paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
+    <div style={{ padding: '24px', paddingBottom: isMobile ? '120px' : '40px', maxWidth: '640px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <button
@@ -828,15 +816,15 @@ const DeviceSetupPage = ({
             padding: '8px 12px',
             marginBottom: '16px',
             border: 'none',
-            background: 'transparent',
-            color: COLORS.slate[600],
+            background: b.transparent,
+            color: b.textSecondary,
             fontSize: '14px',
             cursor: 'pointer',
             borderRadius: '8px',
             transition: 'background 0.2s',
           }}
-          onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
-          onMouseLeave={(e) => e.target.style.background = 'transparent'}
+          onMouseEnter={(e) => e.target.style.background = b.cardBgHover}
+          onMouseLeave={(e) => e.target.style.background = b.transparent}
         >
           <ArrowLeft style={{ width: '18px', height: '18px' }} />
           Zurück
@@ -847,29 +835,29 @@ const DeviceSetupPage = ({
             width: '56px',
             height: '56px',
             borderRadius: '14px',
-            background: headerGradient,
+            background: b.headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
             {HeaderIcon ? (
-              <HeaderIcon style={{ width: '28px', height: '28px', color: headerText }} />
+              <HeaderIcon style={{ width: '28px', height: '28px', color: b.headerText }} />
             ) : (
-              <Mic style={{ width: '28px', height: '28px', color: headerText }} />
+              <Mic style={{ width: '28px', height: '28px', color: b.headerText }} />
             )}
           </div>
           <div>
             <h1 style={{
               fontSize: '24px',
               fontWeight: 700,
-              color: COLORS.slate[900],
+              color: b.textMain,
               margin: 0,
             }}>
               {title || scenario?.title || 'Geräte einrichten'}
             </h1>
             <p style={{
               fontSize: '14px',
-              color: COLORS.slate[600],
+              color: b.textSecondary,
               margin: '4px 0 0 0',
             }}>
               {includeVideo ? 'Kamera und Mikrofon auswählen' : 'Mikrofon auswählen und testen'}
@@ -886,11 +874,11 @@ const DeviceSetupPage = ({
           alignItems: 'center',
           justifyContent: 'center',
           padding: '48px 24px',
-          backgroundColor: COLORS.slate[50],
+          backgroundColor: b.cardBgHover,
           borderRadius: '16px',
         }}>
-          <Loader2 style={{ width: '32px', height: '32px', color: primaryAccent, marginBottom: '16px' }} className="animate-spin" />
-          <p style={{ color: COLORS.slate[600], margin: 0 }}>Geräte werden geladen...</p>
+          <Loader2 style={{ width: '32px', height: '32px', color: b.primaryAccent, marginBottom: '16px' }} className="animate-spin" />
+          <p style={{ color: b.textSecondary, margin: 0 }}>Geräte werden geladen...</p>
         </div>
       )}
 
@@ -905,9 +893,9 @@ const DeviceSetupPage = ({
           {includeVideo && (
             <div style={{
               padding: '24px',
-              backgroundColor: 'white',
+              backgroundColor: b.cardBgColor,
               borderRadius: '16px',
-              border: `1px solid ${COLORS.slate[200]}`,
+              border: `1px solid ${b.borderColor}`,
               marginBottom: '20px',
             }}>
               <div style={{
@@ -916,11 +904,11 @@ const DeviceSetupPage = ({
                 gap: '10px',
                 marginBottom: '16px',
               }}>
-                <Camera style={{ width: '22px', height: '22px', color: primaryAccent }} />
+                <Camera style={{ width: '22px', height: '22px', color: b.primaryAccent }} />
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: 600,
-                  color: COLORS.slate[900],
+                  color: b.textMain,
                   margin: 0,
                 }}>
                   Kamera auswählen
@@ -935,13 +923,12 @@ const DeviceSetupPage = ({
                 isLoading={devicesLoading}
                 error={cameraError}
                 onRefresh={loadDevices}
-                primaryAccent={primaryAccent}
-                themedGradient={headerGradient}
+                branding={b}
               />
 
               {/* Camera Preview */}
               {selectedCameraId && !cameraError && (
-                <CameraPreview deviceId={selectedCameraId} />
+                <CameraPreview deviceId={selectedCameraId} branding={b} />
               )}
             </div>
           )}
@@ -949,9 +936,9 @@ const DeviceSetupPage = ({
           {/* Microphone Section */}
           <div style={{
             padding: '24px',
-            backgroundColor: 'white',
+            backgroundColor: b.cardBgColor,
             borderRadius: '16px',
-            border: `1px solid ${COLORS.slate[200]}`,
+            border: `1px solid ${b.borderColor}`,
             marginBottom: '24px',
           }}>
             <div style={{
@@ -960,11 +947,11 @@ const DeviceSetupPage = ({
               gap: '10px',
               marginBottom: '16px',
             }}>
-              <Mic style={{ width: '22px', height: '22px', color: primaryAccent }} />
+              <Mic style={{ width: '22px', height: '22px', color: b.primaryAccent }} />
               <h3 style={{
                 fontSize: '16px',
                 fontWeight: 600,
-                color: COLORS.slate[900],
+                color: b.textMain,
                 margin: 0,
               }}>
                 Mikrofon testen
@@ -985,41 +972,54 @@ const DeviceSetupPage = ({
             </div>
           )}
 
-          {/* Start Button */}
-          <button
-            onClick={handleStart}
-            disabled={!canStart}
-            style={{
-              width: '100%',
-              padding: '16px 24px',
-              borderRadius: '14px',
-              border: 'none',
-              background: canStart ? buttonGradient : COLORS.slate[300],
-              color: 'white',
-              fontSize: '16px',
-              fontWeight: 600,
-              cursor: canStart ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              boxShadow: canStart ? `0 4px 12px ${primaryAccent}4d` : 'none',
-            }}
-            onMouseEnter={(e) => {
-              if (canStart) {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'none';
-              e.target.style.boxShadow = canStart ? `0 4px 12px ${primaryAccent}4d` : 'none';
-            }}
+          {/* Start Button - Fixed on mobile for visibility */}
+          <div
+            style={isMobile ? {
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: '16px',
+              background: `linear-gradient(to top, ${b.pageBg} 80%, transparent)`,
+              zIndex: 100,
+            } : {}}
           >
-            {startButtonLabel}
-            <ArrowRight style={{ width: '20px', height: '20px' }} />
-          </button>
+            <button
+              onClick={handleStart}
+              disabled={!canStart}
+              style={{
+                width: '100%',
+                maxWidth: isMobile ? '100%' : undefined,
+                padding: '16px 24px',
+                borderRadius: '14px',
+                border: 'none',
+                background: canStart ? b.buttonGradient : b.disabledBg,
+                color: b.white,
+                fontSize: '16px',
+                fontWeight: 600,
+                cursor: canStart ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                boxShadow: canStart ? `0 4px 12px ${b.primaryAccent}4d` : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (canStart) {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'none';
+                e.target.style.boxShadow = canStart ? `0 4px 12px ${b.primaryAccent}4d` : 'none';
+              }}
+            >
+              {startButtonLabel}
+              <ArrowRight style={{ width: '20px', height: '20px' }} />
+            </button>
+          </div>
         </motion.div>
       )}
 

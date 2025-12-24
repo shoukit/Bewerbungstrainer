@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check, X, Sparkles, Loader2 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
@@ -29,11 +30,13 @@ const SetupCard = ({ setup, isSelected, onSelect }) => {
       onClick={onSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative p-4 rounded-xl text-left transition-all border-2"
+      className="relative p-4 rounded-xl text-left transition-all"
       style={{
-        borderColor: getBorderColor(),
+        border: `2px solid ${getBorderColor()}`,
         backgroundColor: getBackgroundColor(),
         boxShadow: isHovered || isSelected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+        outline: 'none',
+        WebkitAppearance: 'none',
       }}
     >
       {/* Selected checkmark */}
@@ -97,6 +100,15 @@ const SetupSelector = () => {
   } = usePartner();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile on mount and resize
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Get partner-branded colors
   const primaryAccent = branding?.['--primary-accent'] || '#3A7FA7';
@@ -143,7 +155,15 @@ const SetupSelector = () => {
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="w-full flex items-center justify-between gap-3 p-3 sm:p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all cursor-pointer group"
+          className="w-full flex items-center justify-between gap-3 transition-all cursor-pointer group"
+          style={{
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '1px solid #e5e7eb',
+            backgroundColor: 'white',
+            outline: 'none',
+            WebkitAppearance: 'none',
+          }}
         >
           {/* Left side - Current setup info */}
           <div className="flex items-center gap-3 min-w-0">
@@ -182,85 +202,132 @@ const SetupSelector = () => {
         </button>
       </motion.div>
 
-      {/* Modal Overlay */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999]"
-            />
-
-            {/* Modal - properly centered */}
-            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 overflow-y-auto">
+      {/* Modal Overlay - Rendered via Portal to escape transformed parent */}
+      {createPortal(
+        <AnimatePresence>
+          {isModalOpen && (
+            <>
+              {/* Backdrop */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto"
-                style={{ maxHeight: 'calc(100vh - 2rem)' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsModalOpen(false)}
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+                style={{ zIndex: 9999 }}
+              />
+
+              {/* Modal - Full screen on mobile, centered on desktop */}
+              <div
+                className="fixed inset-0 flex items-end sm:items-center justify-center sm:p-4"
+                style={{ zIndex: 10000 }}
               >
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 flex-shrink-0">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                      Trainings-Setup wählen
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                      Wähle deinen Schwerpunkt für passende Trainingsszenarien
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors flex-shrink-0"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                {/* Body - Scrollable */}
-                <div
-                  className="flex-1 overflow-y-auto p-4 sm:p-5 overscroll-contain"
-                  style={{ WebkitOverflowScrolling: 'touch' }}
+                <motion.div
+                  initial={{ opacity: 0, y: isMobile ? 100 : 20, scale: isMobile ? 1 : 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: isMobile ? 100 : 20, scale: isMobile ? 1 : 0.95 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+                  className="w-full sm:max-w-2xl bg-white shadow-2xl flex flex-col"
+                  style={{
+                    maxHeight: isMobile ? 'calc(100vh - 60px)' : 'calc(100vh - 2rem)',
+                    borderRadius: isMobile ? '20px 20px 0 0' : '16px',
+                  }}
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {availableSetups.map((setup) => (
-                      <SetupCard
-                        key={setup.id}
-                        setup={setup}
-                        isSelected={currentSetup?.id === setup.id}
-                        onSelect={() => handleSelectSetup(setup.id)}
-                      />
-                    ))}
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 flex-shrink-0">
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                        Trainings-Setup wählen
+                      </h2>
+                      <p className="text-sm text-gray-500 mt-0.5 hidden sm:block">
+                        Wähle deinen Schwerpunkt für passende Trainingsszenarien
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setIsModalOpen(false)}
+                      className="flex items-center justify-center transition-colors flex-shrink-0"
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        backgroundColor: '#f3f4f6',
+                        border: 'none',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        color: '#6b7280',
+                        WebkitAppearance: 'none',
+                      }}
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
-                </div>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between p-4 sm:p-5 border-t border-gray-100 bg-gray-50/80 flex-shrink-0">
-                  <button
-                    onClick={handleShowAll}
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                  {/* Body - Scrollable */}
+                  <div
+                    className="flex-1 overflow-y-auto p-4 sm:p-5 overscroll-contain"
+                    style={{ WebkitOverflowScrolling: 'touch' }}
                   >
-                    Alle Szenarien anzeigen
-                  </button>
-                  <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
-                    style={{ background: primaryAccent }}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {availableSetups.map((setup) => (
+                        <SetupCard
+                          key={setup.id}
+                          setup={setup}
+                          isSelected={currentSetup?.id === setup.id}
+                          onSelect={() => handleSelectSetup(setup.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Footer - Fixed at bottom */}
+                  <div
+                    className="flex items-center justify-between p-4 sm:p-5 border-t border-gray-100 bg-gray-50/80 flex-shrink-0"
+                    style={{ paddingBottom: isMobile ? 'max(16px, env(safe-area-inset-bottom))' : undefined }}
                   >
-                    Fertig
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+                    <button
+                      onClick={handleShowAll}
+                      className="transition-colors"
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #e5e7eb',
+                        backgroundColor: 'white',
+                        color: '#4b5563',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        WebkitAppearance: 'none',
+                      }}
+                    >
+                      Alle anzeigen
+                    </button>
+                    <button
+                      onClick={() => setIsModalOpen(false)}
+                      className="transition-all"
+                      style={{
+                        padding: '8px 20px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: primaryAccent,
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        WebkitAppearance: 'none',
+                      }}
+                    >
+                      Fertig
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 };

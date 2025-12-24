@@ -7,27 +7,26 @@ import {
   CheckCircle,
   Info,
 } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 
 /**
  * Dynamic Form Field Component
  * Renders appropriate input based on field type from input_configuration
  */
-const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
+const DynamicFormField = ({ field, value, onChange, error, focusColor, branding }) => {
   const theFocusColor = focusColor || '#4a9ec9';
 
   const baseInputStyle = {
     width: '100%',
-    padding: '12px 16px',
-    borderRadius: '12px',
+    padding: `${branding.space[3]} ${branding.space[4]}`,
+    borderRadius: branding.radius.lg,
     border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
-    fontSize: '16px', // Minimum 16px to prevent iOS zoom
+    fontSize: branding.fontSize.base, // Minimum 16px to prevent iOS zoom
     color: COLORS.slate[900],
     backgroundColor: 'white',
     outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
+    transition: branding.transition.normal,
   };
 
   const focusStyle = {
@@ -148,28 +147,28 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
   };
 
   return (
-    <div style={{ marginBottom: '20px' }}>
+    <div style={{ marginBottom: branding.space[5] }}>
       <label style={{
         display: 'block',
-        marginBottom: '8px',
-        fontSize: '14px',
+        marginBottom: branding.space[2],
+        fontSize: branding.fontSize.sm,
         fontWeight: 600,
         color: COLORS.slate[700],
       }}>
         {field.label}
         {field.required && (
-          <span style={{ color: COLORS.red[500], marginLeft: '4px' }}>*</span>
+          <span style={{ color: COLORS.red[500], marginLeft: branding.space[1] }}>*</span>
         )}
       </label>
       {renderInput()}
       {error && (
         <p style={{
-          marginTop: '6px',
-          fontSize: '13px',
+          marginTop: branding.space[1.5],
+          fontSize: branding.fontSize.xs,
           color: COLORS.red[500],
           display: 'flex',
           alignItems: 'center',
-          gap: '4px',
+          gap: branding.space[1],
         }}>
           <AlertCircle style={{ width: '14px', height: '14px' }} />
           {error}
@@ -177,12 +176,12 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
       )}
       {field.hint && !error && (
         <p style={{
-          marginTop: '6px',
-          fontSize: '13px',
+          marginTop: branding.space[1.5],
+          fontSize: branding.fontSize.xs,
           color: COLORS.slate[500],
           display: 'flex',
           alignItems: 'center',
-          gap: '4px',
+          gap: branding.space[1],
         }}>
           <Info style={{ width: '14px', height: '14px' }} />
           {field.hint}
@@ -203,11 +202,7 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
   const [errors, setErrors] = useState({});
 
   // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+  const b = useBranding();
 
   // Parse input configuration
   const inputConfig = React.useMemo(() => {
@@ -316,24 +311,24 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
   }
 
   return (
-    <div style={{ padding: '24px', paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
+    <div style={{ padding: b.space[6], paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: b.space[8] }}>
         <button
           onClick={onBack}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            marginBottom: '16px',
+            gap: b.space[2],
+            padding: `${b.space[2]} ${b.space[3]}`,
+            marginBottom: b.space[4],
             border: 'none',
             background: 'transparent',
             color: COLORS.slate[600],
-            fontSize: '14px',
+            fontSize: b.fontSize.sm,
             cursor: 'pointer',
-            borderRadius: '8px',
-            transition: 'background 0.2s',
+            borderRadius: b.radius.md,
+            transition: b.transition.normal,
           }}
           onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
           onMouseLeave={(e) => e.target.style.background = 'transparent'}
@@ -342,12 +337,12 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
           Zurück zur Übersicht
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[4] }}>
           <div style={{
             width: '56px',
             height: '56px',
-            borderRadius: '14px',
-            background: headerGradient,
+            borderRadius: b.radius.xl,
+            background: b.headerGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -356,7 +351,7 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
           </div>
           <div>
             <h1 style={{
-              fontSize: '24px',
+              fontSize: b.fontSize['2xl'],
               fontWeight: 700,
               color: COLORS.slate[900],
               margin: 0,
@@ -364,9 +359,9 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
               {scenario.title}
             </h1>
             <p style={{
-              fontSize: '14px',
+              fontSize: b.fontSize.sm,
               color: COLORS.slate[600],
-              margin: '4px 0 0 0',
+              margin: `${b.space[1]} 0 0 0`,
             }}>
               Personalisiere dein Training
             </p>
@@ -376,13 +371,13 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
 
       {/* Description Card */}
       <div style={{
-        padding: '16px 20px',
-        borderRadius: '12px',
+        padding: `${b.space[4]} ${b.space[5]}`,
+        borderRadius: b.radius.lg,
         backgroundColor: COLORS.slate[100],
-        marginBottom: '24px',
+        marginBottom: b.space[6],
       }}>
         <p style={{
-          fontSize: '14px',
+          fontSize: b.fontSize.sm,
           color: COLORS.slate[700],
           margin: 0,
           lineHeight: 1.6,
@@ -400,36 +395,37 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
             value={formValues[field.key]}
             onChange={handleChange}
             error={errors[field.key]}
-            focusColor={primaryAccent}
+            focusColor={b.primaryAccent}
+            branding={b}
           />
         ))}
 
         {/* Session Info */}
         <div style={{
-          padding: '16px 20px',
-          borderRadius: '12px',
-          backgroundColor: primaryAccentLight,
-          marginTop: '24px',
-          marginBottom: '24px',
+          padding: `${b.space[4]} ${b.space[5]}`,
+          borderRadius: b.radius.lg,
+          backgroundColor: b.primaryAccentLight,
+          marginTop: b.space[6],
+          marginBottom: b.space[6],
           display: 'flex',
-          gap: '20px',
+          gap: b.space[5],
           flexWrap: 'wrap',
         }}>
           <div>
-            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Fragen</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Fragen</span>
+            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
               {scenario.question_count_min}-{scenario.question_count_max}
             </span>
           </div>
           <div>
-            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Zeit pro Frage</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Zeit pro Frage</span>
+            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
               {Math.round(scenario.time_limit_per_question / 60)} Min
             </span>
           </div>
           <div>
-            <span style={{ fontSize: '12px', color: COLORS.slate[500], display: 'block' }}>Wiederholen</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: COLORS.slate[900] }}>
+            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Wiederholen</span>
+            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
               {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
             </span>
           </div>
@@ -440,28 +436,28 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
           type="submit"
           style={{
             width: '100%',
-            padding: '16px 24px',
-            borderRadius: '14px',
+            padding: `${b.space[4]} ${b.space[6]}`,
+            borderRadius: b.radius.xl,
             border: 'none',
-            background: buttonGradient,
+            background: b.buttonGradient,
             color: 'white',
-            fontSize: '16px',
+            fontSize: b.fontSize.base,
             fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '10px',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            boxShadow: `0 4px 12px ${primaryAccent}4d`,
+            gap: b.space[2.5],
+            transition: b.transition.normal,
+            boxShadow: `0 4px 12px ${b.primaryAccent}4d`,
           }}
           onMouseEnter={(e) => {
             e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
+            e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
           }}
           onMouseLeave={(e) => {
             e.target.style.transform = 'none';
-            e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
+            e.target.style.boxShadow = `0 4px 12px ${b.primaryAccent}4d`;
           }}
         >
           Weiter

@@ -28,9 +28,14 @@ import {
 import { analyzeRhetoricGame } from '@/services/gemini';
 import { getScoreFeedback } from '@/config/prompts/gamePrompts';
 import wordpressAPI from '@/services/wordpress-api';
+import { validateAudioBlob } from '@/utils/audio';
+import {
+  MIN_AUDIO_SIZE_BYTES,
+  getEmptyTranscriptResult,
+} from '@/config/prompts/transcriptionCore';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { useBranding } from '@/hooks/useBranding';
 
 // Game states
 const GAME_STATES = {
@@ -45,7 +50,7 @@ const GAME_STATES = {
 /**
  * Countdown overlay component
  */
-const CountdownOverlay = ({ count }) => (
+const CountdownOverlay = ({ count, branding }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -68,7 +73,7 @@ const CountdownOverlay = ({ count }) => (
       style={{ color: 'white', textAlign: 'center' }}
     >
       <div style={{ fontSize: '120px', fontWeight: 700, marginBottom: '16px' }}>{count}</div>
-      <div style={{ fontSize: '24px', color: COLORS.slate[400] }}>
+      <div style={{ fontSize: '24px', color: branding.textMuted }}>
         {count === 3 ? 'Mach dich bereit...' : count === 2 ? 'Durchatmen...' : "Los geht's!"}
       </div>
     </motion.div>
@@ -78,7 +83,7 @@ const CountdownOverlay = ({ count }) => (
 /**
  * Timer display component
  */
-const TimerDisplay = ({ seconds, total, isWarning, primaryAccent }) => {
+const TimerDisplay = ({ seconds, total, isWarning, primaryAccent, branding }) => {
   const progress = (seconds / total) * 100;
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -90,7 +95,7 @@ const TimerDisplay = ({ seconds, total, isWarning, primaryAccent }) => {
         fontWeight: 700,
         fontFamily: 'monospace',
         textAlign: 'center',
-        color: isWarning ? COLORS.red[500] : COLORS.slate[900],
+        color: isWarning ? branding.error : branding.textMain,
       }}>
         {minutes}:{secs.toString().padStart(2, '0')}
       </div>
@@ -99,14 +104,14 @@ const TimerDisplay = ({ seconds, total, isWarning, primaryAccent }) => {
       <div style={{
         marginTop: '16px',
         height: '8px',
-        backgroundColor: COLORS.slate[200],
+        backgroundColor: branding.borderColor,
         borderRadius: '4px',
         overflow: 'hidden',
       }}>
         <motion.div
           style={{
             height: '100%',
-            backgroundColor: isWarning ? COLORS.red[500] : primaryAccent,
+            backgroundColor: isWarning ? branding.error : primaryAccent,
             borderRadius: '4px',
           }}
           initial={{ width: '100%' }}
@@ -121,24 +126,24 @@ const TimerDisplay = ({ seconds, total, isWarning, primaryAccent }) => {
 /**
  * Filler word badge component
  */
-const FillerWordBadge = ({ word, count }) => (
+const FillerWordBadge = ({ word, count, branding }) => (
   <span style={{
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '4px',
-    padding: '6px 12px',
-    backgroundColor: COLORS.red[100],
-    color: COLORS.red[600],
-    borderRadius: '20px',
-    fontSize: '14px',
-    fontWeight: 500,
+    gap: branding.space[1],
+    padding: `${branding.space[1.5]} ${branding.space[3]}`,
+    backgroundColor: branding.errorLight,
+    color: branding.error,
+    borderRadius: branding.radius['2xl'],
+    fontSize: branding.fontSize.base,
+    fontWeight: branding.fontWeight.medium,
   }}>
     "{word}"
     <span style={{
-      backgroundColor: COLORS.red[200],
-      padding: '2px 6px',
-      borderRadius: '10px',
-      fontSize: '12px',
+      backgroundColor: `${branding.error}30`,
+      padding: `${branding.space[0.5] || '2px'} ${branding.space[1.5]}`,
+      borderRadius: branding.radius.md,
+      fontSize: branding.fontSize.xs,
     }}>{count}x</span>
   </span>
 );
@@ -222,7 +227,7 @@ const calculateScores = (transcript, fillerWords, contentScore, actualDurationSe
 /**
  * Results display component
  */
-const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAccent, primaryAccentLight }) => {
+const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAccent, primaryAccentLight, branding }) => {
   const feedback = getScoreFeedback(result.score);
   const isGoodScore = result.score >= 70;
   const isNoSpeech = result.pace_feedback === 'keine_sprache' || result.transcript === '[Keine Sprache erkannt]';
@@ -231,23 +236,23 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
       {/* Score Card */}
       <div style={{
-        borderRadius: '20px',
-        padding: '32px',
-        marginBottom: '24px',
+        borderRadius: branding.radius['2xl'],
+        padding: branding.space[8],
+        marginBottom: branding.space[6],
         background: isNoSpeech
-          ? `linear-gradient(135deg, ${COLORS.slate[600]} 0%, ${COLORS.slate[700]} 100%)`
+          ? `linear-gradient(135deg, ${branding.textSecondary} 0%, ${branding.textMuted} 100%)`
           : isGoodScore
-            ? `linear-gradient(135deg, ${COLORS.green[500]} 0%, ${COLORS.teal[500]} 100%)`
-            : `linear-gradient(135deg, ${COLORS.amber[500]} 0%, ${COLORS.amber[600]} 100%)`,
+            ? `linear-gradient(135deg, ${branding.success} 0%, ${primaryAccent} 100%)`
+            : `linear-gradient(135deg, ${branding.warning} 0%, ${branding.warningDark || branding.warning} 100%)`,
         color: 'white',
         textAlign: 'center',
       }}>
-        <div style={{ fontSize: '48px', marginBottom: '8px' }}>
+        <div style={{ fontSize: branding.iconSize['4xl'], marginBottom: branding.space[2] }}>
           {isNoSpeech ? '🎤' : feedback.emoji}
         </div>
-        <div style={{ fontSize: '72px', fontWeight: 700, marginBottom: '8px' }}>{result.score}</div>
-        <div style={{ fontSize: '18px', opacity: 0.9, marginBottom: '16px' }}>Punkte</div>
-        <p style={{ fontSize: '16px', margin: 0 }}>
+        <div style={{ fontSize: '72px', fontWeight: branding.fontWeight.bold, marginBottom: branding.space[2] }}>{result.score}</div>
+        <div style={{ fontSize: branding.fontSize.xl, opacity: 0.9, marginBottom: branding.space[4] }}>Punkte</div>
+        <p style={{ fontSize: branding.fontSize.lg, margin: 0 }}>
           {isNoSpeech ? 'Keine Sprache erkannt. Bitte sprich lauter ins Mikrofon.' : feedback.message}
         </p>
       </div>
@@ -256,59 +261,59 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '12px',
-        marginBottom: '24px',
+        gap: branding.space[3],
+        marginBottom: branding.space[6],
       }}>
         {/* Total Words */}
         <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '14px',
-          border: `1px solid ${COLORS.slate[200]}`,
+          backgroundColor: branding.cardBg,
+          borderRadius: branding.radius.lg,
+          padding: branding.space[3.5],
+          border: `1px solid ${branding.borderColor}`,
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            color: COLORS.teal[600],
-            marginBottom: '6px',
+            gap: branding.space[1.5],
+            color: primaryAccent,
+            marginBottom: branding.space[1.5],
           }}>
-            <MessageCircle style={{ width: '16px', height: '16px' }} />
-            <span style={{ fontWeight: 500, fontSize: '13px' }}>Wörter</span>
+            <MessageCircle style={{ width: branding.iconSize.sm, height: branding.iconSize.sm }} />
+            <span style={{ fontWeight: branding.fontWeight.medium, fontSize: branding.fontSize.sm }}>Wörter</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.total_words}</div>
-          <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>gesprochen</div>
+          <div style={{ fontSize: branding.fontSize['4xl'], fontWeight: branding.fontWeight.bold, color: branding.textMain }}>{result.total_words}</div>
+          <div style={{ fontSize: branding.fontSize['2xs'], color: branding.textMuted }}>gesprochen</div>
         </div>
 
         {/* Filler Count */}
         <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '14px',
-          border: `1px solid ${COLORS.slate[200]}`,
+          backgroundColor: branding.cardBg,
+          borderRadius: branding.radius.lg,
+          padding: branding.space[3.5],
+          border: `1px solid ${branding.borderColor}`,
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            color: COLORS.red[600],
+            color: branding.error,
             marginBottom: '6px',
           }}>
             <AlertTriangle style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Füllwörter</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.filler_count}</div>
-          <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: branding.textMain }}>{result.filler_count}</div>
+          <div style={{ fontSize: '11px', color: branding.textMuted }}>
             {result.filler_percentage?.toFixed(1) || '0'}%
           </div>
         </div>
 
         {/* Words Per Minute */}
         <div style={{
-          backgroundColor: 'white',
+          backgroundColor: branding.cardBg,
           borderRadius: '12px',
           padding: '14px',
-          border: `1px solid ${COLORS.slate[200]}`,
+          border: `1px solid ${branding.borderColor}`,
         }}>
           <div style={{
             display: 'flex',
@@ -320,47 +325,47 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
             <Volume2 style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Tempo</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.words_per_minute}</div>
-          <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>WPM</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: branding.textMain }}>{result.words_per_minute}</div>
+          <div style={{ fontSize: '11px', color: branding.textMuted }}>WPM</div>
         </div>
 
         {/* Speaking Time */}
         <div style={{
-          backgroundColor: 'white',
+          backgroundColor: branding.cardBg,
           borderRadius: '12px',
           padding: '14px',
-          border: `1px solid ${COLORS.slate[200]}`,
+          border: `1px solid ${branding.borderColor}`,
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            color: COLORS.slate[600],
+            color: branding.textSecondary,
             marginBottom: '6px',
           }}>
             <Clock style={{ width: '16px', height: '16px' }} />
             <span style={{ fontWeight: 500, fontSize: '13px' }}>Sprechzeit</span>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900] }}>{result.duration_seconds || 0}</div>
-          <div style={{ fontSize: '11px', color: COLORS.slate[500] }}>Sekunden</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: branding.textMain }}>{result.duration_seconds || 0}</div>
+          <div style={{ fontSize: '11px', color: branding.textMuted }}>Sekunden</div>
         </div>
       </div>
 
       {/* Filler Words Detail */}
       {result.filler_words && result.filler_words.length > 0 && (
         <div style={{
-          backgroundColor: 'white',
+          backgroundColor: branding.cardBg,
           borderRadius: '12px',
           padding: '16px',
-          border: `1px solid ${COLORS.slate[200]}`,
+          border: `1px solid ${branding.borderColor}`,
           marginBottom: '24px',
         }}>
-          <h4 style={{ fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px', fontSize: '15px' }}>
+          <h4 style={{ fontWeight: 600, color: branding.textMain, marginBottom: '12px', fontSize: '15px' }}>
             Erkannte Füllwörter
           </h4>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {result.filler_words.map((fw, index) => (
-              <FillerWordBadge key={index} word={fw.word} count={fw.count} />
+              <FillerWordBadge key={index} word={fw.word} count={fw.count} branding={branding} />
             ))}
           </div>
         </div>
@@ -387,16 +392,16 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
               gap: '8px',
               marginBottom: result.content_feedback ? '12px' : 0,
             }}>
-              <div style={{ fontSize: '13px', color: COLORS.slate[600] }}>
+              <div style={{ fontSize: '13px', color: branding.textSecondary }}>
                 📝 Wortanzahl: <strong>{result.score_breakdown.words_score || 0}/25</strong>
               </div>
-              <div style={{ fontSize: '13px', color: COLORS.slate[600] }}>
+              <div style={{ fontSize: '13px', color: branding.textSecondary }}>
                 🚫 Füllwörter: <strong>{result.score_breakdown.filler_score || 0}/25</strong>
               </div>
-              <div style={{ fontSize: '13px', color: COLORS.slate[600] }}>
+              <div style={{ fontSize: '13px', color: branding.textSecondary }}>
                 ⏱️ Tempo: <strong>{result.score_breakdown.tempo_score || 0}/10</strong>
               </div>
-              <div style={{ fontSize: '13px', color: COLORS.slate[600] }}>
+              <div style={{ fontSize: '13px', color: branding.textSecondary }}>
                 💡 Inhalt: <strong>{result.score_breakdown.content_score || 0}/40</strong>
               </div>
             </div>
@@ -408,7 +413,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
               paddingTop: '12px',
               borderTop: `1px solid ${primaryAccent}26`,
             }}>
-              <p style={{ fontSize: '14px', color: COLORS.slate[700], margin: 0, lineHeight: 1.5 }}>
+              <p style={{ fontSize: '14px', color: branding.textSecondary, margin: 0, lineHeight: 1.5 }}>
                 <strong>Inhaltliches Feedback:</strong> {result.content_feedback}
               </p>
             </div>
@@ -419,16 +424,16 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
       {/* Pace Feedback */}
       {result.pace_feedback && result.pace_feedback !== 'optimal' && result.pace_feedback !== 'keine_sprache' && (
         <div style={{
-          backgroundColor: COLORS.amber[50],
-          border: `1px solid ${COLORS.amber[100]}`,
+          backgroundColor: branding.warningLight,
+          border: `1px solid ${branding.warning}40`,
           borderRadius: '12px',
           padding: '16px',
           marginBottom: '24px',
         }}>
-          <h4 style={{ fontWeight: 600, color: COLORS.amber[600], marginBottom: '8px', fontSize: '15px' }}>
+          <h4 style={{ fontWeight: 600, color: branding.warning, marginBottom: '8px', fontSize: '15px' }}>
             Tempo-Hinweis
           </h4>
-          <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
+          <p style={{ fontSize: '14px', color: branding.textSecondary, margin: 0 }}>
             {result.pace_feedback === 'zu_schnell'
               ? 'Du sprichst etwas zu schnell. Versuche, bewusst langsamer und deutlicher zu sprechen.'
               : 'Du sprichst etwas zu langsam. Versuche, etwas mehr Energie in deine Präsentation zu legen.'}
@@ -439,16 +444,16 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
       {/* Transcript */}
       {result.transcript && result.transcript !== '[Keine Sprache erkannt]' && (
         <div style={{
-          backgroundColor: COLORS.slate[50],
+          backgroundColor: branding.cardBgHover,
           borderRadius: '12px',
-          border: `1px solid ${COLORS.slate[200]}`,
+          border: `1px solid ${branding.borderColor}`,
           padding: '16px',
           marginBottom: '32px',
         }}>
-          <h4 style={{ fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px', fontSize: '15px' }}>
+          <h4 style={{ fontWeight: 600, color: branding.textMain, marginBottom: '12px', fontSize: '15px' }}>
             Transkript
           </h4>
-          <p style={{ fontSize: '14px', color: COLORS.slate[600], lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontSize: '14px', color: branding.textSecondary, lineHeight: 1.6, margin: 0 }}>
             {result.transcript}
           </p>
         </div>
@@ -483,9 +488,9 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
             flex: 1,
             padding: '14px 24px',
             borderRadius: '12px',
-            border: `1px solid ${COLORS.slate[200]}`,
-            backgroundColor: 'white',
-            color: COLORS.slate[700],
+            border: `1px solid ${branding.borderColor}`,
+            backgroundColor: branding.cardBg,
+            color: branding.textSecondary,
             fontSize: '15px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -522,6 +527,9 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
   const buttonGradient = branding?.['--button-gradient'] || headerGradient;
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
   const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
+
+  // Get full branding object for sub-components
+  const b = useBranding();
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -699,6 +707,24 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
 
       mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
 
+      // Validate audio blob before sending for analysis
+      const validation = validateAudioBlob(audioBlob, { minSize: MIN_AUDIO_SIZE_BYTES });
+      if (!validation.valid) {
+        console.warn('[GameSession] Audio validation failed:', validation.error, 'Size:', audioBlob.size);
+        // Return centralized empty result instead of sending to AI (prevents hallucination)
+        const emptyResult = {
+          ...getEmptyTranscriptResult('game'),
+          score: 0,
+          word_count: 0,
+          filler_count: 0,
+          words_per_minute: 0,
+          duration_seconds: actualDurationSeconds,
+        };
+        setResult(emptyResult);
+        setGameState(GAME_STATES.RESULTS);
+        return;
+      }
+
       try {
         // AI only returns: transcript, filler_words, content_score, content_feedback
         const aiResult = await analyzeRhetoricGame(
@@ -773,10 +799,10 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ maxWidth: '500px', margin: '0 auto' }}>
               <div style={{ fontSize: '64px', marginBottom: '24px' }}>🎤</div>
-              <h2 style={{ fontSize: '24px', fontWeight: 700, color: COLORS.slate[900], marginBottom: '12px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 700, color: b.textMain, marginBottom: '12px' }}>
                 Bereit?
               </h2>
-              <p style={{ fontSize: '16px', color: COLORS.slate[600], marginBottom: '24px', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '16px', color: b.textSecondary, marginBottom: '24px', lineHeight: 1.6 }}>
                 {gameConfig.topic}
               </p>
               <div style={{
@@ -784,9 +810,9 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '8px 16px',
-                backgroundColor: COLORS.slate[100],
+                backgroundColor: b.cardBgHover,
                 borderRadius: '20px',
-                color: COLORS.slate[600],
+                color: b.textSecondary,
                 fontSize: '14px',
                 marginBottom: '32px',
               }}>
@@ -824,7 +850,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                   padding: '10px 20px',
                   border: 'none',
                   backgroundColor: 'transparent',
-                  color: COLORS.slate[500],
+                  color: b.textMuted,
                   fontSize: '14px',
                   cursor: 'pointer',
                   display: 'inline-flex',
@@ -848,6 +874,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                 total={gameConfig.duration}
                 isWarning={timeLeft <= 10}
                 primaryAccent={primaryAccent}
+                branding={b}
               />
 
               {/* Topic reminder */}
@@ -855,11 +882,11 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                 marginTop: '32px',
                 marginBottom: '32px',
                 padding: '16px',
-                backgroundColor: COLORS.slate[50],
+                backgroundColor: b.cardBgHover,
                 borderRadius: '12px',
               }}>
-                <p style={{ fontSize: '13px', color: COLORS.slate[500], marginBottom: '4px' }}>Dein Thema:</p>
-                <p style={{ fontSize: '15px', fontWeight: 500, color: COLORS.slate[900], margin: 0 }}>
+                <p style={{ fontSize: '13px', color: b.textMuted, marginBottom: '4px' }}>Dein Thema:</p>
+                <p style={{ fontSize: '15px', fontWeight: 500, color: b.textMain, margin: 0 }}>
                   {gameConfig.topic}
                 </p>
               </div>
@@ -909,10 +936,10 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                     width: '12px',
                     height: '12px',
                     borderRadius: '50%',
-                    backgroundColor: COLORS.red[500],
+                    backgroundColor: b.error,
                   }}
                 />
-                <span style={{ fontWeight: 500, color: COLORS.red[600], fontSize: '14px' }}>
+                <span style={{ fontWeight: 500, color: b.error, fontSize: '14px' }}>
                   Aufnahme läuft...
                 </span>
               </div>
@@ -923,7 +950,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                   padding: '12px 24px',
                   borderRadius: '12px',
                   border: 'none',
-                  backgroundColor: COLORS.red[500],
+                  backgroundColor: b.error,
                   color: 'white',
                   fontSize: '14px',
                   fontWeight: 600,
@@ -955,10 +982,10 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                 margin: '0 auto 24px',
               }}
             />
-            <h2 style={{ fontSize: '20px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '8px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: b.textMain, marginBottom: '8px' }}>
               Analysiere deine Aufnahme...
             </h2>
-            <p style={{ color: COLORS.slate[500] }}>Der Füllwort-Killer zählt nach</p>
+            <p style={{ color: b.textMuted }}>Der Füllwort-Killer zählt nach</p>
           </div>
         );
 
@@ -971,6 +998,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
             buttonGradient={buttonGradient}
             primaryAccent={primaryAccent}
             primaryAccentLight={primaryAccentLight}
+            branding={b}
           />
         );
 
@@ -982,18 +1010,18 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                 width: '64px',
                 height: '64px',
                 borderRadius: '50%',
-                backgroundColor: COLORS.red[50],
+                backgroundColor: b.errorLight,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 24px',
               }}>
-                <XCircle style={{ width: '32px', height: '32px', color: COLORS.red[500] }} />
+                <XCircle style={{ width: '32px', height: '32px', color: b.error }} />
               </div>
-              <h2 style={{ fontSize: '20px', fontWeight: 600, color: COLORS.slate[900], marginBottom: '12px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: b.textMain, marginBottom: '12px' }}>
                 Fehler
               </h2>
-              <p style={{ color: COLORS.slate[600], marginBottom: '24px' }}>{error}</p>
+              <p style={{ color: b.textSecondary, marginBottom: '24px' }}>{error}</p>
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                 <button
                   onClick={handlePlayAgain}
@@ -1019,9 +1047,9 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                   style={{
                     padding: '12px 24px',
                     borderRadius: '12px',
-                    border: `1px solid ${COLORS.slate[200]}`,
-                    backgroundColor: 'white',
-                    color: COLORS.slate[700],
+                    border: `1px solid ${b.borderColor}`,
+                    backgroundColor: b.cardBg,
+                    color: b.textSecondary,
                     fontSize: '14px',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -1048,7 +1076,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
       {/* Countdown overlay */}
       <AnimatePresence>
         {gameState === GAME_STATES.COUNTDOWN && (
-          <CountdownOverlay count={countdown} />
+          <CountdownOverlay count={countdown} branding={b} />
         )}
       </AnimatePresence>
 
@@ -1056,8 +1084,8 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
       {gameState !== GAME_STATES.COUNTDOWN && gameState !== GAME_STATES.RECORDING && (
         <div style={{
           padding: '16px 24px',
-          borderBottom: `1px solid ${COLORS.slate[200]}`,
-          backgroundColor: 'white',
+          borderBottom: `1px solid ${b.borderColor}`,
+          backgroundColor: b.cardBg,
           position: 'sticky',
           top: 0,
           zIndex: 10,
@@ -1071,7 +1099,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
                 gap: '6px',
                 border: 'none',
                 backgroundColor: 'transparent',
-                color: COLORS.slate[600],
+                color: b.textSecondary,
                 fontSize: '14px',
                 cursor: 'pointer',
               }}
@@ -1079,7 +1107,7 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
               <ArrowLeft style={{ width: '18px', height: '18px' }} />
               Zurück
             </button>
-            <h1 style={{ fontWeight: 600, color: COLORS.slate[900], fontSize: '16px', margin: 0 }}>
+            <h1 style={{ fontWeight: 600, color: b.textMain, fontSize: '16px', margin: 0 }}>
               {gameConfig.mode.title}
             </h1>
             <div style={{ width: '60px' }} />

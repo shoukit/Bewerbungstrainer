@@ -12,6 +12,8 @@ if (!defined('ABSPATH')) {
 
 class Bewerbungstrainer_Game_API {
 
+    use Bewerbungstrainer_API_Utils;
+
     /**
      * Instance of this class
      */
@@ -52,21 +54,21 @@ class Bewerbungstrainer_Game_API {
         register_rest_route($namespace, '/game/templates', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_scenario_templates'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
         // GET /game/templates/(?P<id>\d+) - Get specific template
         register_rest_route($namespace, '/game/templates/(?P<id>\d+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_scenario_template'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
         // GET /game/templates/categories - Get available categories
         register_rest_route($namespace, '/game/templates/categories', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_scenario_categories'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
         // ===== Game Sessions =====
@@ -89,21 +91,21 @@ class Bewerbungstrainer_Game_API {
         register_rest_route($namespace, '/game/sessions/(?P<id>\d+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_game_session'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
         // PUT /game/sessions/(?P<id>\d+) - Update game session
         register_rest_route($namespace, '/game/sessions/(?P<id>\d+)', array(
             'methods' => 'PUT',
             'callback' => array($this, 'update_game_session'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
         // DELETE /game/sessions/(?P<id>\d+) - Delete game session
         register_rest_route($namespace, '/game/sessions/(?P<id>\d+)', array(
             'methods' => 'DELETE',
             'callback' => array($this, 'delete_game_session'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
         // ===== Stats & Leaderboard =====
@@ -119,44 +121,19 @@ class Bewerbungstrainer_Game_API {
         register_rest_route($namespace, '/game/leaderboard', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_leaderboard'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
         // GET /game/highscore - Get user's highscore
         register_rest_route($namespace, '/game/highscore', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_user_highscore'),
-            'permission_callback' => array($this, 'check_user_permission'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
         ));
     }
 
-    /**
-     * Check if user has permission
-     */
-    public function check_user_permission() {
-        return is_user_logged_in();
-    }
-
-    /**
-     * Permission callback - allow all users (logged in or not)
-     * For game sessions, we do internal user checks in the endpoint methods
-     */
-    public function allow_all_users($request) {
-        // If user is logged in, verify nonce for security
-        if (is_user_logged_in()) {
-            $nonce = $request->get_header('X-WP-Nonce');
-            if (!$nonce) {
-                $nonce = $request->get_param('_wpnonce');
-            }
-            if ($nonce && wp_verify_nonce($nonce, 'wp_rest')) {
-                return true;
-            }
-            // For logged-in users without valid nonce, still allow (demo users may not have proper cookies)
-            return true;
-        }
-        // For non-logged-in users, allow access (demo code users)
-        return true;
-    }
+    // Note: Permission callbacks (check_user_logged_in, allow_all_users, etc.)
+    // are provided by Bewerbungstrainer_API_Utils trait
 
     // ===== Scenario Template Endpoints =====
 

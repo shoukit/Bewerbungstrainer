@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useMobile } from '@/hooks/useMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useConversation } from '@elevenlabs/react';
+import { formatDuration } from '@/utils/formatting';
 import {
   Mic,
   MicOff,
@@ -102,11 +104,16 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const [audioAnalysisContent, setAudioAnalysisContent] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Mobile panel state
-  const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(false);
+  // Mobile panel state - coaching open by default on mobile/tablet
+  const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
   const [showTranscriptOnMobile, setShowTranscriptOnMobile] = useState(false);
   const [showProfileOnMobile, setShowProfileOnMobile] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const isMobile = useMobile(1024);
 
   // Device settings state
   const [localMicrophoneId, setLocalMicrophoneId] = useState(selectedMicrophoneId);
@@ -120,6 +127,9 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const [headerHeight, setHeaderHeight] = useState(80);
   const headerObserverRef = useRef(null);
 
+  // User audio level for visualizer
+  const [userAudioLevel, setUserAudioLevel] = useState(0);
+
   // Refs
   const durationIntervalRef = useRef(null);
   const conversationIdRef = useRef(null);
@@ -127,15 +137,22 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const transcriptEndRef = useRef(null);
   const startTimeRef = useRef(null); // Ref for stable startTime access in callbacks
   const lastMessageEndTimeRef = useRef(0); // Track when last message ended (for calculating start time)
+  const lastAiEndTimeRef = useRef(0); // Track when AI last finished speaking (for user timestamp calculation)
   const transcriptRef = useRef([]); // Ref to access transcript in callbacks
+
+  // Audio analysis refs for user voice visualization
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const userStreamRef = useRef(null);
 
   // Get API credentials
   const apiKey = wordpressAPI.getElevenLabsApiKey();
-  const agentId = scenario.agent_id || wordpressAPI.getElevenLabsAgentId();
+  const agentId = scenario?.agent_id || wordpressAPI.getElevenLabsAgentId();
 
   // Default voice ID if not specified in scenario
   const DEFAULT_VOICE_ID = 'kaGxVtjLwllv1bi2GFag';
-  const voiceId = scenario.voice_id || DEFAULT_VOICE_ID;
+  const voiceId = scenario?.voice_id || DEFAULT_VOICE_ID;
 
   // Build enhanced system prompt with interviewer profile
   const buildSystemPrompt = () => {
@@ -167,6 +184,61 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     }
 
     return prompt;
+  };
+
+  // Start user audio level analysis for visualizer
+  const startUserAudioAnalysis = async () => {
+    try {
+      // Get user's microphone - separate from ElevenLabs stream
+      const constraints = localMicrophoneId
+        ? { audio: { deviceId: { exact: localMicrophoneId } } }
+        : { audio: true };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      userStreamRef.current = stream;
+
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
+
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      analyserRef.current = analyser;
+
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const updateLevel = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const sum = dataArray.reduce((a, b) => a + b, 0);
+        const average = sum / dataArray.length;
+        setUserAudioLevel(average / 255);
+        animationFrameRef.current = requestAnimationFrame(updateLevel);
+      };
+
+      updateLevel();
+    } catch (err) {
+      console.error('[ROLEPLAY] Audio analysis error:', err);
+    }
+  };
+
+  const stopUserAudioAnalysis = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    if (userStreamRef.current) {
+      userStreamRef.current.getTracks().forEach(track => track.stop());
+      userStreamRef.current = null;
+    }
+    setUserAudioLevel(0);
   };
 
   // Generate live coaching when agent speaks
@@ -217,16 +289,27 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       if (message.source === 'ai' || message.source === 'user') {
         const currentStartTime = startTimeRef.current;
         const now = Date.now();
+        const currentTimeSeconds = currentStartTime ? Math.floor((now - currentStartTime) / 1000) : 0;
 
-        // Use the START time of this message (when the previous message ended)
-        // For the first message, this is 0
-        const messageStartSeconds = lastMessageEndTimeRef.current;
+        let messageStartSeconds;
 
-        // Calculate when this message ends (current time)
-        const messageEndSeconds = currentStartTime ? Math.floor((now - currentStartTime) / 1000) : 0;
+        if (message.source === 'ai') {
+          // For AI messages: Use when the previous message ended
+          messageStartSeconds = lastMessageEndTimeRef.current;
 
-        // Update the last message end time for the next message
-        lastMessageEndTimeRef.current = messageEndSeconds;
+          // Update both refs - AI message arrival time
+          lastMessageEndTimeRef.current = currentTimeSeconds;
+          lastAiEndTimeRef.current = currentTimeSeconds;
+        } else {
+          // For USER messages: Use when AI last finished speaking
+          // This is more accurate because user transcripts arrive delayed (after STT processing)
+          // The user likely started speaking right after the AI stopped
+          messageStartSeconds = lastAiEndTimeRef.current;
+
+          // Update lastMessageEndTimeRef for next AI message timing
+          // but DON'T update lastAiEndTimeRef (user transcripts shouldn't affect AI timing)
+          lastMessageEndTimeRef.current = currentTimeSeconds;
+        }
 
         // Format the START time for display
         const minutes = Math.floor(messageStartSeconds / 60);
@@ -300,6 +383,19 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     };
   }, [conversation.status, startTime]);
 
+  // Start/stop user audio analysis based on connection status
+  useEffect(() => {
+    if (conversation.status === 'connected') {
+      startUserAudioAnalysis();
+    } else {
+      stopUserAudioAnalysis();
+    }
+
+    return () => {
+      stopUserAudioAnalysis();
+    };
+  }, [conversation.status]);
+
   // Start conversation on mount - REMOVED: Now manual start with button
   useEffect(() => {
     return () => {
@@ -346,14 +442,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     window.scrollTo(0, 0);
   }, []);
 
-  // Track mobile/desktop state
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleStartCall = async () => {
     setIsStarted(true);
@@ -535,11 +623,6 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     }
   };
 
-  const formatDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
@@ -573,6 +656,26 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     return text.split(/\n/).map(item => item.trim()).filter(Boolean);
   };
 
+  // Missing scenario - user likely navigated directly to this URL
+  if (!scenario) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center"
+        >
+          <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Kein Szenario ausgewählt</h2>
+          <p className="text-slate-600 mb-6">Bitte wähle zuerst ein Szenario aus, um eine Live-Simulation zu starten.</p>
+          <Button onClick={onEnd} className="w-full">
+            Zur Szenario-Auswahl
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
   // Error state
   if (error) {
     return (
@@ -593,10 +696,24 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     );
   }
 
-  // Analyzing state
+  // Analyzing state - Full screen blocking overlay to prevent navigation
   if (isAnalyzing) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999, // Above sidebar (z-50) and all other elements
+          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -677,11 +794,30 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                           <img
                             src={scenario.interviewer_profile.image_url}
                             alt={replaceVariables(scenario.interviewer_profile.name)}
-                            className="w-12 h-12 rounded-full border-2 border-white shadow-lg object-cover"
+                            style={{
+                              width: '64px',
+                              height: '64px',
+                              borderRadius: '50%',
+                              border: '3px solid white',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              objectFit: 'cover',
+                            }}
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full border-2 border-white shadow-lg bg-white flex items-center justify-center">
-                            <User className="w-6 h-6 text-slate-400" />
+                          <div
+                            style={{
+                              width: '64px',
+                              height: '64px',
+                              borderRadius: '50%',
+                              border: '3px solid white',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              background: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <User className="w-8 h-8 text-slate-400" />
                           </div>
                         )}
                         <div className="flex-1">
@@ -705,10 +841,29 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                             <img
                               src={scenario.interviewer_profile.image_url}
                               alt={replaceVariables(scenario.interviewer_profile.name)}
-                              className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                              style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '50%',
+                                border: '4px solid white',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                objectFit: 'cover',
+                              }}
                             />
                           ) : (
-                            <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                            <div
+                              style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '50%',
+                                border: '4px solid white',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                background: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
                               <User className="w-10 h-10 text-slate-400" />
                             </div>
                           )}
@@ -802,15 +957,50 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                     )}
                   </div>
 
+                  {/* Audio Visualizer - Show when connected */}
+                  {conversation.status === 'connected' && (
+                    <div className="bg-white px-4 py-3 border-t border-slate-100">
+                      <AudioVisualizer
+                        audioLevel={userAudioLevel}
+                        isActive={userAudioLevel > 0.05}
+                        variant="bars"
+                        size="md"
+                        accentColor={themedStyles.primaryAccent}
+                      />
+                    </div>
+                  )}
+
                   {/* Profile Toggle Button (Mobile only) */}
                   {isMobile && (
-                  <div className="bg-white px-4 py-2">
+                  <div style={{ backgroundColor: 'white', padding: '8px 16px' }}>
                     <button
                       onClick={() => setShowProfileOnMobile(!showProfileOnMobile)}
-                      className="w-full flex items-center justify-between text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: themedStyles.primaryAccent,
+                        backgroundColor: `${themedStyles.primaryAccent}10`,
+                        border: `1px solid ${themedStyles.primaryAccent}30`,
+                        borderRadius: '10px',
+                        padding: '12px 16px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        WebkitAppearance: 'none',
+                        transition: 'all 0.2s',
+                      }}
                     >
                       <span>Profil-Details</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showProfileOnMobile ? 'rotate-180' : ''}`} />
+                      <ChevronDown
+                        size={16}
+                        style={{
+                          transform: showProfileOnMobile ? 'rotate(180deg)' : 'none',
+                          transition: 'transform 0.2s',
+                        }}
+                      />
                     </button>
                   </div>
                   )}

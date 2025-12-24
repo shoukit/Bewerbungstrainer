@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { AUDIO_CONFIG, INTERACTIVE_STATES } from '@/config/constants';
+import { formatDuration } from '@/utils/formatting';
 
 /**
  * Marker color mapping for timeline
@@ -38,15 +39,7 @@ function getMarkerColor(type) {
   return MARKER_COLORS[type] || MARKER_COLORS.default;
 }
 
-/**
- * Format seconds to MM:SS
- */
-function formatTime(seconds) {
-  if (!seconds || !isFinite(seconds)) return '0:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
+// Use formatDuration from utils for time formatting
 
 export function AudioPlayerCard({
   isLoading,
@@ -150,7 +143,7 @@ export function AudioPlayerCard({
                 onClick={() => onSkip?.(-AUDIO_CONFIG.SKIP_SECONDS)}
                 disabled={isLoading}
               >
-                <SkipBack className="icon-sm" />
+                <SkipBack size={20} />
               </Button>
               <Button
                 onClick={onTogglePlay}
@@ -158,9 +151,9 @@ export function AudioPlayerCard({
                 className="w-12 h-12 rounded-full"
               >
                 {isPlaying ? (
-                  <Pause className="icon-md" />
+                  <Pause size={22} />
                 ) : (
-                  <Play className="icon-md ml-0.5" />
+                  <Play size={22} style={{ marginLeft: '2px' }} />
                 )}
               </Button>
               <Button
@@ -169,16 +162,16 @@ export function AudioPlayerCard({
                 onClick={() => onSkip?.(AUDIO_CONFIG.SKIP_SECONDS)}
                 disabled={isLoading}
               >
-                <SkipForward className="icon-sm" />
+                <SkipForward size={20} />
               </Button>
             </div>
 
             <div className="flex-1 text-center text-sm text-slate-600">
-              {formatTime(currentTime)} / {formatTime(duration)}
+              {formatDuration(currentTime)} / {formatDuration(duration)}
             </div>
 
             <Button variant="ghost" size="icon" onClick={onToggleMute} disabled={isLoading}>
-              {isMuted ? <VolumeX className="icon-sm" /> : <Volume2 className="icon-sm" />}
+              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </Button>
           </div>
         )}
@@ -197,7 +190,7 @@ export function AudioPlayerCard({
                     getMarkerColor(marker.type)
                   )}
                 >
-                  {formatTime(marker.timestamp)} - {marker.text?.substring(0, 30)}
+                  {formatDuration(marker.timestamp)} - {marker.text?.substring(0, 30)}
                   {marker.text?.length > 30 ? '...' : ''}
                 </button>
               ))}

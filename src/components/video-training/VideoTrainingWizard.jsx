@@ -420,6 +420,10 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   // Track when we last loaded devices to prevent loops on iPad Chrome
   const lastLoadTimeRef = useRef(0);
   const isLoadingRef = useRef(false);
+  // Flag to completely ignore devicechange events after initial load (for iPad)
+  const ignoreDeviceChangeRef = useRef(true);
+  // Count devicechange events to detect loops
+  const deviceChangeCountRef = useRef(0);
   // Use refs to track selected devices without causing useCallback recreation
   const selectedMicRef = useRef(null);
   const selectedCamRef = useRef(null);
@@ -437,14 +441,32 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   // Load available devices on mount - use refs to avoid recreating callback
   const loadDevices = useCallback(async (fromDeviceChange = false) => {
     // Prevent re-entrancy and ignore devicechange events triggered by our own getUserMedia
-    if (isLoadingRef.current) return;
+    if (isLoadingRef.current) {
+      console.log('[VideoTraining] Skipping loadDevices - already loading');
+      return;
+    }
 
-    // If this is from a devicechange event, check if it's too soon after last load
-    // iPad Chrome triggers devicechange when getUserMedia is called
+    // If this is from a devicechange event, apply strict filtering
+    // iPad triggers devicechange when getUserMedia is called, creating loops
     if (fromDeviceChange) {
+      // If we're ignoring devicechange events (during/after initial load), skip
+      if (ignoreDeviceChangeRef.current) {
+        console.log('[VideoTraining] Skipping devicechange - ignore flag set');
+        return;
+      }
+
+      // Check time since last load - use 5 seconds for iPad
       const timeSinceLastLoad = Date.now() - lastLoadTimeRef.current;
-      if (timeSinceLastLoad < 2000) {
-        return; // Ignore devicechange events within 2 seconds of last load
+      if (timeSinceLastLoad < 5000) {
+        console.log('[VideoTraining] Skipping devicechange - too soon:', timeSinceLastLoad, 'ms');
+        return;
+      }
+
+      // Count and limit devicechange events to prevent loops
+      deviceChangeCountRef.current += 1;
+      if (deviceChangeCountRef.current > 3) {
+        console.log('[VideoTraining] Skipping devicechange - too many events:', deviceChangeCountRef.current);
+        return;
       }
     }
 
@@ -507,6 +529,15 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       setDevicesLoading(false);
       isLoadingRef.current = false;
       lastLoadTimeRef.current = Date.now(); // Update again after completion
+
+      // After initial load completes, wait 5 seconds before allowing devicechange events
+      // This prevents iPad's getUserMedia-triggered devicechange loops
+      if (!fromDeviceChange) {
+        setTimeout(() => {
+          ignoreDeviceChangeRef.current = false;
+          console.log('[VideoTraining] Now accepting devicechange events');
+        }, 5000);
+      }
     }
   }, []); // No dependencies - uses refs instead
 
@@ -514,15 +545,20 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
     loadDevices(false);
 
     // Handle device changes (e.g., plugging in a new microphone)
-    // Use debounce + time check to prevent loops on iPad Chrome
+    // Use debounce + strict filtering to prevent loops on iPad
     let debounceTimer = null;
     const handleDeviceChange = () => {
+      // Quick early exit if we're ignoring devicechange events
+      if (ignoreDeviceChangeRef.current || isLoadingRef.current) {
+        return;
+      }
+
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }
       debounceTimer = setTimeout(() => {
         loadDevices(true); // Mark as from devicechange event
-      }, 500);
+      }, 1000); // Increased debounce to 1 second
     };
     navigator.mediaDevices?.addEventListener('devicechange', handleDeviceChange);
 
