@@ -104,8 +104,13 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const [audioAnalysisContent, setAudioAnalysisContent] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Mobile panel state
-  const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(false);
+  // Mobile panel state - coaching open by default on mobile/tablet
+  const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
   const [showTranscriptOnMobile, setShowTranscriptOnMobile] = useState(false);
   const [showProfileOnMobile, setShowProfileOnMobile] = useState(true);
   const isMobile = useMobile(1024);
