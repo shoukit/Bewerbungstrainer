@@ -132,6 +132,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const transcriptEndRef = useRef(null);
   const startTimeRef = useRef(null); // Ref for stable startTime access in callbacks
   const lastMessageEndTimeRef = useRef(0); // Track when last message ended (for calculating start time)
+  const lastAiEndTimeRef = useRef(0); // Track when AI last finished speaking (for user timestamp calculation)
   const transcriptRef = useRef([]); // Ref to access transcript in callbacks
 
   // Audio analysis refs for user voice visualization
@@ -283,16 +284,27 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       if (message.source === 'ai' || message.source === 'user') {
         const currentStartTime = startTimeRef.current;
         const now = Date.now();
+        const currentTimeSeconds = currentStartTime ? Math.floor((now - currentStartTime) / 1000) : 0;
 
-        // Use the START time of this message (when the previous message ended)
-        // For the first message, this is 0
-        const messageStartSeconds = lastMessageEndTimeRef.current;
+        let messageStartSeconds;
 
-        // Calculate when this message ends (current time)
-        const messageEndSeconds = currentStartTime ? Math.floor((now - currentStartTime) / 1000) : 0;
+        if (message.source === 'ai') {
+          // For AI messages: Use when the previous message ended
+          messageStartSeconds = lastMessageEndTimeRef.current;
 
-        // Update the last message end time for the next message
-        lastMessageEndTimeRef.current = messageEndSeconds;
+          // Update both refs - AI message arrival time
+          lastMessageEndTimeRef.current = currentTimeSeconds;
+          lastAiEndTimeRef.current = currentTimeSeconds;
+        } else {
+          // For USER messages: Use when AI last finished speaking
+          // This is more accurate because user transcripts arrive delayed (after STT processing)
+          // The user likely started speaking right after the AI stopped
+          messageStartSeconds = lastAiEndTimeRef.current;
+
+          // Update lastMessageEndTimeRef for next AI message timing
+          // but DON'T update lastAiEndTimeRef (user transcripts shouldn't affect AI timing)
+          lastMessageEndTimeRef.current = currentTimeSeconds;
+        }
 
         // Format the START time for display
         const minutes = Math.floor(messageStartSeconds / 60);
