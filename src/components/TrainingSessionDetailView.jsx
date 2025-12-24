@@ -1011,7 +1011,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   const TypeIcon = getTypeIcon(type);
 
   return (
-    <div style={{ minHeight: '100vh', background: b.pageBg }}>
+    <div style={{ minHeight: '100vh', background: b.pageBg, overflow: 'hidden', maxWidth: '100vw' }}>
       {/* Header - Full width sticky */}
       <div style={{
         background: headerGradient,
@@ -1160,15 +1160,17 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
         maxWidth: '1400px',
         margin: '0 auto',
         padding: isMobile ? '16px' : '24px 32px',
+        overflow: 'hidden',
       }}>
         {/* Two-column layout */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '1fr 400px',
           gap: '24px',
+          overflow: 'hidden',
         }}>
           {/* LEFT COLUMN - Media */}
-          <div>
+          <div style={{ minWidth: 0, overflow: 'hidden' }}>
             {/* Video Player */}
           {isVideo && session?.video_url && (
             <motion.div
@@ -1359,7 +1361,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
         </div>
 
         {/* RIGHT COLUMN - Analysis */}
-        <div>
+        <div style={{ minWidth: 0, overflow: 'hidden' }}>
           {/* Category Scores (Video) */}
           {isVideo && categoryScores.length > 0 && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} style={{ marginBottom: '20px' }}>
