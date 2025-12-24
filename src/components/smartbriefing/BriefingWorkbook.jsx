@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePartner } from '../../context/PartnerContext';
 import { useBranding } from '../../hooks/useBranding';
 import { useMobile } from '../../hooks/useMobile';
@@ -775,6 +776,7 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
 const BriefingWorkbook = ({
   briefing: initialBriefing,
   onBack,
+  onDelete,
 }) => {
   const { config } = usePartner();
   const b = useBranding();
@@ -784,6 +786,8 @@ const BriefingWorkbook = ({
   const [error, setError] = useState(null);
   const [expandedSections, setExpandedSections] = useState({});
   const [isVariablesExpanded, setIsVariablesExpanded] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Get primary accent color from branding
   const primaryAccent = b.primaryAccent;
@@ -990,6 +994,28 @@ const BriefingWorkbook = ({
                 </span>
               </div>
             </div>
+
+            {/* Delete Button */}
+            {onDelete && !isMobile && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'rgba(239,68,68,0.2)',
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  borderRadius: '10px',
+                  padding: '10px 16px',
+                  cursor: 'pointer',
+                  color: '#fff',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1167,7 +1193,157 @@ const BriefingWorkbook = ({
             </div>
           </div>
         </div>
+
+        {/* Mobile Delete Button */}
+        {onDelete && isMobile && (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{
+              width: '100%',
+              marginTop: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              background: 'transparent',
+              border: '1px solid #ef4444',
+              borderRadius: '12px',
+              padding: '14px 24px',
+              cursor: 'pointer',
+              color: '#ef4444',
+              fontSize: '15px',
+              fontWeight: 600,
+            }}
+          >
+            <Trash2 size={18} />
+            Briefing löschen
+          </button>
+        )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteConfirm(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0,0,0,0.5)',
+                zIndex: 1000,
+              }}
+            />
+            {/* Dialog */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: '#fff',
+                borderRadius: '16px',
+                padding: '24px',
+                maxWidth: '400px',
+                width: '90%',
+                zIndex: 1001,
+                boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  background: 'rgba(239,68,68,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}>
+                  <Trash2 size={24} color="#ef4444" />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 600, color: b.textMain, marginBottom: '8px' }}>
+                  Briefing löschen?
+                </h3>
+                <p style={{ fontSize: '14px', color: b.textSecondary, marginBottom: '24px' }}>
+                  Diese Aktion kann nicht rückgängig gemacht werden. Dein Briefing und alle Notizen werden dauerhaft gelöscht.
+                </p>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '10px',
+                      border: `1px solid ${b.borderColor}`,
+                      background: '#fff',
+                      color: b.textMain,
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      cursor: isDeleting ? 'not-allowed' : 'pointer',
+                      opacity: isDeleting ? 0.5 : 1,
+                    }}
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!onDelete || !briefing?.id) return;
+                      setIsDeleting(true);
+                      try {
+                        await onDelete(briefing);
+                      } catch (err) {
+                        console.error('Failed to delete briefing:', err);
+                      } finally {
+                        setIsDeleting(false);
+                        setShowDeleteConfirm(false);
+                      }
+                    }}
+                    disabled={isDeleting}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: '#ef4444',
+                      color: '#fff',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      cursor: isDeleting ? 'not-allowed' : 'pointer',
+                      opacity: isDeleting ? 0.7 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        Löschen...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={16} />
+                        Löschen
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <style>
         {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
