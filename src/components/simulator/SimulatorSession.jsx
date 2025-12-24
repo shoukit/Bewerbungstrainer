@@ -1549,7 +1549,7 @@ const SimulatorSession = ({
                   cursor: 'pointer',
                 }}
               >
-                Zurück zum Training
+                Zurück
               </button>
               <button
                 onClick={handleCancelSession}
@@ -1565,7 +1565,7 @@ const SimulatorSession = ({
                   boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
                 }}
               >
-                Training abbrechen
+                Abbrechen
               </button>
             </div>
           </div>
