@@ -187,7 +187,7 @@ const Timer = ({ seconds, maxSeconds, isRecording, branding }) => {
 /**
  * Audio Recorder Component - With Pause functionality
  */
-const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels, onOpenSettings, branding }) => {
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels, onOpenSettings, branding, isMobile }) => {
   const [recordingState, setRecordingState] = useState('idle'); // 'idle' | 'recording' | 'paused'
   const [seconds, setSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -382,7 +382,29 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
   }
 
   return (
-    <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: branding.cardBg, border: `1px solid ${branding.borderColor}` }}>
+    <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: branding.cardBg, border: `1px solid ${branding.borderColor}`, position: 'relative' }}>
+      {/* Settings Button - Mobile: Top right corner */}
+      {isMobile && (
+        <button
+          onClick={onOpenSettings}
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            padding: '10px',
+            borderRadius: '10px',
+            background: branding.cardBgHover,
+            border: `1px solid ${branding.borderColor}`,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Settings size={18} color={branding.textMuted} />
+        </button>
+      )}
+
       {/* Timer */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
         <Timer seconds={seconds} maxSeconds={timeLimit} isRecording={recordingState === 'recording'} branding={branding} />
@@ -411,22 +433,24 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
 
       {/* Recording Buttons */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-        {/* Settings Button */}
-        <button
-          onClick={onOpenSettings}
-          style={{
-            padding: '14px',
-            borderRadius: '12px',
-            background: branding.cardBgHover,
-            border: `1px solid ${branding.borderColor}`,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Settings size={20} color={branding.textMuted} />
-        </button>
+        {/* Settings Button - Desktop only (mobile has it in corner) */}
+        {!isMobile && (
+          <button
+            onClick={onOpenSettings}
+            style={{
+              padding: '14px',
+              borderRadius: '12px',
+              background: branding.cardBgHover,
+              border: `1px solid ${branding.borderColor}`,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Settings size={20} color={branding.textMuted} />
+          </button>
+        )}
 
         {/* Main Button - Start/Pause/Resume */}
         <button
@@ -434,13 +458,14 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
           disabled={disabled || isSubmitting}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-            padding: '14px 28px', borderRadius: '12px', border: 'none',
+            padding: isMobile ? '14px 20px' : '14px 28px', borderRadius: '12px', border: 'none',
+            flex: isMobile ? 1 : 'none',
             background: recordingState === 'idle'
               ? ((disabled || isSubmitting) ? branding.borderColor : branding.error)
               : recordingState === 'recording'
                 ? branding.warning
                 : branding.success,
-            color: 'white', fontSize: '16px', fontWeight: 600,
+            color: 'white', fontSize: isMobile ? '15px' : '16px', fontWeight: 600,
             cursor: (disabled || isSubmitting) ? 'not-allowed' : 'pointer',
             boxShadow: (disabled || isSubmitting) ? 'none' : '0 4px 14px rgba(0, 0, 0, 0.2)',
           }}
@@ -456,9 +481,10 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
             onClick={finishRecording}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              padding: '14px 24px', borderRadius: '12px', border: 'none',
+              padding: isMobile ? '14px 16px' : '14px 24px', borderRadius: '12px', border: 'none',
+              flex: isMobile ? 1 : 'none',
               backgroundColor: branding.cardBgHover, color: branding.textMain,
-              fontSize: '16px', fontWeight: 600, cursor: 'pointer',
+              fontSize: isMobile ? '15px' : '16px', fontWeight: 600, cursor: 'pointer',
             }}
           >
             <CheckCircle style={{ width: '18px', height: '18px', color: branding.success }} />
@@ -1801,6 +1827,7 @@ const SimulatorSession = ({
                 labels={labels}
                 onOpenSettings={() => setShowDeviceSettings(true)}
                 branding={b}
+                isMobile={true}
               />
 
               {/* Error State - Mobile */}
@@ -1858,6 +1885,7 @@ const SimulatorSession = ({
                   labels={labels}
                   onOpenSettings={() => setShowDeviceSettings(true)}
                   branding={b}
+                  isMobile={false}
                 />
 
                 {/* Error State */}
