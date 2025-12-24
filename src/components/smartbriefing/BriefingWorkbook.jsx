@@ -996,8 +996,8 @@ const BriefingWorkbook = ({
               </div>
             </div>
 
-            {/* Delete Button */}
-            {onDelete && !isMobile && (
+            {/* Delete Button - mobile and desktop */}
+            {onDelete && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 style={{
@@ -1007,11 +1007,13 @@ const BriefingWorkbook = ({
                   background: 'rgba(239,68,68,0.2)',
                   border: '1px solid rgba(239,68,68,0.4)',
                   borderRadius: '10px',
-                  padding: '10px 16px',
+                  padding: isMobile ? '10px 12px' : '10px 16px',
                   cursor: 'pointer',
                   color: '#fff',
                   fontSize: '14px',
                   fontWeight: 500,
+                  outline: 'none',
+                  WebkitAppearance: 'none',
                 }}
               >
                 <Trash2 size={16} />
@@ -1195,31 +1197,6 @@ const BriefingWorkbook = ({
           </div>
         </div>
 
-        {/* Mobile Delete Button */}
-        {onDelete && isMobile && (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            style={{
-              width: '100%',
-              marginTop: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              background: 'transparent',
-              border: '1px solid #ef4444',
-              borderRadius: '12px',
-              padding: '14px 24px',
-              cursor: 'pointer',
-              color: '#ef4444',
-              fontSize: '15px',
-              fontWeight: 600,
-            }}
-          >
-            <Trash2 size={18} />
-            Briefing löschen
-          </button>
-        )}
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -1292,6 +1269,8 @@ const BriefingWorkbook = ({
                       fontWeight: 500,
                       cursor: isDeleting ? 'not-allowed' : 'pointer',
                       opacity: isDeleting ? 0.5 : 1,
+                      outline: 'none',
+                      WebkitAppearance: 'none',
                     }}
                   >
                     Abbrechen
@@ -1325,6 +1304,8 @@ const BriefingWorkbook = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
+                      outline: 'none',
+                      WebkitAppearance: 'none',
                     }}
                   >
                     {isDeleting ? (

@@ -475,7 +475,7 @@ const AnswerCard = ({ answer, index, primaryAccent, branding }) => {
         </div>
         {answer.overall_score !== null && answer.overall_score !== undefined && (
           <span style={{ fontSize: '16px', fontWeight: 700, color: isNoSpeech ? branding.textMuted : getScoreColor(answer.overall_score * 10, primaryAccent) }}>
-            {isNoSpeech ? '–' : Math.round(answer.overall_score * 10)}
+            {isNoSpeech ? '–' : `${Math.round(answer.overall_score * 10)}%`}
           </span>
         )}
         <ChevronDown size={18} color={branding.textMuted} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
@@ -485,6 +485,27 @@ const AnswerCard = ({ answer, index, primaryAccent, branding }) => {
         {isExpanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
             <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${branding.borderColor}`, paddingTop: '16px' }}>
+              {/* Full Question/Situation Text */}
+              {answer.question_text && (
+                <div style={{ marginBottom: '16px' }}>
+                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: branding.textMain, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <MessageSquare size={14} color={primaryAccent} /> Frage / Situation
+                  </h5>
+                  <p style={{
+                    fontSize: '14px',
+                    color: branding.textMain,
+                    lineHeight: 1.6,
+                    background: `${primaryAccent}08`,
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    margin: 0,
+                    border: `1px solid ${primaryAccent}20`,
+                  }}>
+                    {answer.question_text}
+                  </p>
+                </div>
+              )}
+
               {/* Audio Player */}
               {answer.audio_url && (
                 <div style={{ marginBottom: '16px' }}>
@@ -742,6 +763,8 @@ const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAc
               fontWeight: 500,
               cursor: isDeleting ? 'not-allowed' : 'pointer',
               opacity: isDeleting ? 0.5 : 1,
+              outline: 'none',
+              WebkitAppearance: 'none',
             }}
           >
             Abbrechen
@@ -762,6 +785,8 @@ const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting, primaryAc
               alignItems: 'center',
               gap: '8px',
               opacity: isDeleting ? 0.7 : 1,
+              outline: 'none',
+              WebkitAppearance: 'none',
             }}
           >
             {isDeleting ? (
@@ -1104,54 +1129,56 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
               </div>
             </div>
 
-            {/* Action Buttons - Desktop only */}
-            {!isMobile && (
-              <div style={{ display: 'flex', gap: '12px' }}>
-                {/* Repeat Button */}
-                {onRepeatSession && (
-                  <button
-                    onClick={() => onRepeatSession(session, scenario)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: 'rgba(255,255,255,0.2)',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      borderRadius: '10px',
-                      padding: '10px 20px',
-                      cursor: 'pointer',
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                    }}
-                  >
-                    <RotateCcw size={16} />
-                    Erneut üben
-                  </button>
-                )}
-                {/* Delete Button - for all session types */}
-                {onDeleteSession && (
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: 'rgba(239,68,68,0.2)',
-                      border: '1px solid rgba(239,68,68,0.4)',
-                      borderRadius: '10px',
-                      padding: '10px 16px',
-                      cursor: 'pointer',
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {/* Repeat Button - Desktop only */}
+              {!isMobile && onRepeatSession && (
+                <button
+                  onClick={() => onRepeatSession(session, scenario)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '10px',
+                    padding: '10px 20px',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    outline: 'none',
+                    WebkitAppearance: 'none',
+                  }}
+                >
+                  <RotateCcw size={16} />
+                  Erneut üben
+                </button>
+              )}
+              {/* Delete Button - for all session types, mobile and desktop */}
+              {onDeleteSession && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'rgba(239,68,68,0.2)',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    borderRadius: '10px',
+                    padding: isMobile ? '10px 12px' : '10px 16px',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    outline: 'none',
+                    WebkitAppearance: 'none',
+                  }}
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
