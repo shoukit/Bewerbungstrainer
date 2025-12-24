@@ -611,7 +611,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         .desktop-actions {
           margin: 0 24px 24px;
           display: flex;
-          justify-content: flex-end;
+          justify-content: center;
+          flex-wrap: wrap;
           gap: 12px;
         }
         .sessions-list-container {
@@ -619,6 +620,11 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         }
         @media (min-width: 641px) {
           .session-tabs-mobile { display: none; }
+        }
+        @media (min-width: 1024px) {
+          .desktop-actions {
+            justify-content: flex-end;
+          }
         }
         @media (max-width: 640px) {
           .session-tabs-desktop { display: none; }

@@ -750,7 +750,8 @@ ${t.interviewer_profile.important_questions}`)),ee},Te=async()=>{try{const ee=$?
         .desktop-actions {
           margin: 0 24px 24px;
           display: flex;
-          justify-content: flex-end;
+          justify-content: center;
+          flex-wrap: wrap;
           gap: 12px;
         }
         .sessions-list-container {
@@ -758,6 +759,11 @@ ${t.interviewer_profile.important_questions}`)),ee},Te=async()=>{try{const ee=$?
         }
         @media (min-width: 641px) {
           .session-tabs-mobile { display: none; }
+        }
+        @media (min-width: 1024px) {
+          .desktop-actions {
+            justify-content: flex-end;
+          }
         }
         @media (max-width: 640px) {
           .session-tabs-desktop { display: none; }
