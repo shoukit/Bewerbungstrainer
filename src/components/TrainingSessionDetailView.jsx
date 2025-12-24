@@ -463,13 +463,13 @@ const AnswerCard = ({ answer, index, primaryAccent, branding }) => {
     >
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        style={{ width: '100%', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left' }}
+        style={{ width: '100%', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', overflow: 'hidden' }}
       >
         <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: `${primaryAccent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: primaryAccent, fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
           {index + 1}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain, margin: 0, lineHeight: 1.4 }}>
+        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain, margin: 0, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {answer.question_text || `Frage ${index + 1}`}
           </h4>
         </div>
@@ -509,7 +509,9 @@ const AnswerCard = ({ answer, index, primaryAccent, branding }) => {
                     padding: '12px 16px',
                     borderRadius: '10px',
                     margin: 0,
-                    fontStyle: 'italic'
+                    fontStyle: 'italic',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}>
                     "{answer.transcript}"
                   </p>
