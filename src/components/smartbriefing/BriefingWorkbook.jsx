@@ -905,7 +905,7 @@ const BriefingWorkbook = ({
         padding: isMobile ? '20px 16px' : '24px 32px',
         position: 'sticky',
         top: 0,
-        zIndex: 100,
+        zIndex: 40,
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
           {/* Back Button */}
