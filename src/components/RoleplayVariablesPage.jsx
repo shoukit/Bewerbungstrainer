@@ -6,6 +6,7 @@ import {
   Sparkles,
   Clock,
   User,
+  Info,
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
