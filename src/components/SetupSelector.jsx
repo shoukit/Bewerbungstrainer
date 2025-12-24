@@ -98,6 +98,15 @@ const SetupSelector = () => {
   } = usePartner();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile on mount and resize
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Get partner-branded colors
   const primaryAccent = branding?.['--primary-accent'] || '#3A7FA7';
@@ -198,18 +207,21 @@ const SetupSelector = () => {
                 style={{ zIndex: 9999 }}
               />
 
-              {/* Modal - properly centered */}
+              {/* Modal - Full screen on mobile, centered on desktop */}
               <div
-                className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto"
+                className="fixed inset-0 flex items-end sm:items-center justify-center sm:p-4"
                 style={{ zIndex: 10000 }}
               >
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  initial={{ opacity: 0, y: isMobile ? 100 : 20, scale: isMobile ? 1 : 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: isMobile ? 100 : 20, scale: isMobile ? 1 : 0.95 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                  className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto"
-                  style={{ maxHeight: 'calc(100vh - 2rem)' }}
+                  className="w-full sm:max-w-2xl bg-white shadow-2xl flex flex-col"
+                  style={{
+                    maxHeight: isMobile ? 'calc(100vh - 60px)' : 'calc(100vh - 2rem)',
+                    borderRadius: isMobile ? '20px 20px 0 0' : '16px',
+                  }}
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 flex-shrink-0">
@@ -217,7 +229,7 @@ const SetupSelector = () => {
                       <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                         Trainings-Setup wählen
                       </h2>
-                      <p className="text-sm text-gray-500 mt-0.5">
+                      <p className="text-sm text-gray-500 mt-0.5 hidden sm:block">
                         Wähle deinen Schwerpunkt für passende Trainingsszenarien
                       </p>
                     </div>
@@ -246,13 +258,16 @@ const SetupSelector = () => {
                     </div>
                   </div>
 
-                  {/* Footer */}
-                  <div className="flex items-center justify-between p-4 sm:p-5 border-t border-gray-100 bg-gray-50/80 flex-shrink-0">
+                  {/* Footer - Fixed at bottom */}
+                  <div
+                    className="flex items-center justify-between p-4 sm:p-5 border-t border-gray-100 bg-gray-50/80 flex-shrink-0"
+                    style={{ paddingBottom: isMobile ? 'max(16px, env(safe-area-inset-bottom))' : undefined }}
+                  >
                     <button
                       onClick={handleShowAll}
-                      className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                      className="px-3 sm:px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                     >
-                      Alle Szenarien anzeigen
+                      Alle anzeigen
                     </button>
                     <button
                       onClick={() => setIsModalOpen(false)}
