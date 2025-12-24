@@ -59,6 +59,34 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     return result;
   };
 
+  // Helper function to clean HTML from WordPress content for ElevenLabs prompts
+  const cleanHtmlForPrompt = (text) => {
+    if (!text) return text;
+
+    // First, convert block elements to newlines to preserve paragraph structure
+    let cleaned = text
+      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')  // </p><p> -> double newline
+      .replace(/<br\s*\/?>/gi, '\n')           // <br> -> single newline
+      .replace(/<\/?(p|div|h[1-6])[^>]*>/gi, '\n')  // Other block elements -> newline
+      .replace(/<li[^>]*>/gi, '\n- ')          // List items -> bullet points
+      .replace(/<\/li>/gi, '');                // Remove closing li tags
+
+    // Create a temporary DOM element to decode HTML entities and strip remaining tags
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = cleaned;
+    cleaned = tempDiv.textContent || tempDiv.innerText || '';
+
+    // Clean up whitespace
+    cleaned = cleaned
+      .replace(/[ \t]+/g, ' ')           // Multiple spaces/tabs -> single space
+      .replace(/\n /g, '\n')             // Remove leading spaces after newlines
+      .replace(/ \n/g, '\n')             // Remove trailing spaces before newlines
+      .replace(/\n{3,}/g, '\n\n')        // Max 2 consecutive newlines
+      .trim();
+
+    return cleaned;
+  };
+
   // Memoized themed styles
   const themedStyles = useMemo(() => {
     const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
@@ -104,13 +132,8 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const [audioAnalysisContent, setAudioAnalysisContent] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Mobile panel state - coaching open by default on mobile/tablet
-  const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 1024;
-    }
-    return false;
-  });
+  // Mobile panel state
+  const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(false);
   const [showTranscriptOnMobile, setShowTranscriptOnMobile] = useState(false);
   const [showProfileOnMobile, setShowProfileOnMobile] = useState(true);
   const isMobile = useMobile(1024);
@@ -156,7 +179,8 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
   // Build enhanced system prompt with interviewer profile
   const buildSystemPrompt = () => {
-    let prompt = scenario.content || '';
+    // Clean HTML entities and tags from WordPress content
+    let prompt = cleanHtmlForPrompt(scenario.content || '');
 
     // Add interviewer profile information to system prompt
     if (scenario.interviewer_profile) {
@@ -171,15 +195,15 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       }
 
       if (scenario.interviewer_profile.properties) {
-        prompt += `\n\n### Deine Eigenschaften:\n${scenario.interviewer_profile.properties}`;
+        prompt += `\n\n### Deine Eigenschaften:\n${cleanHtmlForPrompt(scenario.interviewer_profile.properties)}`;
       }
 
       if (scenario.interviewer_profile.typical_objections) {
-        prompt += `\n\n### Typische Einwände, die du vorbringen solltest:\n${scenario.interviewer_profile.typical_objections}`;
+        prompt += `\n\n### Typische Einwände, die du vorbringen solltest:\n${cleanHtmlForPrompt(scenario.interviewer_profile.typical_objections)}`;
       }
 
       if (scenario.interviewer_profile.important_questions) {
-        prompt += `\n\n### Wichtige Fragen, die du stellen solltest:\n${scenario.interviewer_profile.important_questions}`;
+        prompt += `\n\n### Wichtige Fragen, die du stellen solltest:\n${cleanHtmlForPrompt(scenario.interviewer_profile.important_questions)}`;
       }
     }
 
@@ -445,6 +469,10 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
   const handleStartCall = async () => {
     setIsStarted(true);
+    // Open coaching panel on mobile/tablet when call starts
+    if (window.innerWidth < 1024) {
+      setShowCoachingOnMobile(true);
+    }
     // Set start time immediately when call begins
     const now = Date.now();
     setStartTime(now);
