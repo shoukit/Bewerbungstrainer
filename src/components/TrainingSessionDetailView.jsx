@@ -1128,8 +1128,8 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                     Erneut üben
                   </button>
                 )}
-                {/* Delete Button - for Simulator sessions */}
-                {isSimulator && onDeleteSession && (
+                {/* Delete Button - for all session types */}
+                {onDeleteSession && (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
                     style={{

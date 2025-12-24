@@ -349,6 +349,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           scenario={getScenarioForSession(selectedTrainingSession, selectedSessionType)}
           onBack={handleBackFromDetail}
           onRepeat={() => onRepeatSession?.(selectedTrainingSession)}
+          onDelete={(session) => handleDeleteSession(session, TABS.ROLEPLAY)}
         />
       );
     }
