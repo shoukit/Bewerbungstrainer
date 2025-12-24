@@ -651,6 +651,26 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     return text.split(/\n/).map(item => item.trim()).filter(Boolean);
   };
 
+  // Missing scenario - user likely navigated directly to this URL
+  if (!scenario) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center"
+        >
+          <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Kein Szenario ausgewählt</h2>
+          <p className="text-slate-600 mb-6">Bitte wähle zuerst ein Szenario aus, um eine Live-Simulation zu starten.</p>
+          <Button onClick={onEnd} className="w-full">
+            Zur Szenario-Auswahl
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
   // Error state
   if (error) {
     return (
