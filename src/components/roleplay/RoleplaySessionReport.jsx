@@ -457,7 +457,7 @@ const AudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, branding
                 opacity: isLoading ? 0.5 : 1,
               }}
             >
-              <SkipBack size={16} color={branding.textSecondary} />
+              <SkipBack size={20} color={branding.textSecondary} />
             </button>
             <button
               onClick={togglePlay}
@@ -497,7 +497,7 @@ const AudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, branding
                 opacity: isLoading ? 0.5 : 1,
               }}
             >
-              <SkipForward size={16} color={branding.textSecondary} />
+              <SkipForward size={20} color={branding.textSecondary} />
             </button>
           </div>
 
@@ -521,9 +521,9 @@ const AudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, branding
             }}
           >
             {isMuted ? (
-              <VolumeX size={16} color={branding.textSecondary} />
+              <VolumeX size={20} color={branding.textSecondary} />
             ) : (
-              <Volume2 size={16} color={branding.textSecondary} />
+              <Volume2 size={20} color={branding.textSecondary} />
             )}
           </button>
         </div>

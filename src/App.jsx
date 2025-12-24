@@ -545,9 +545,27 @@ function AppContent() {
     navigate(ROUTES.SCENARIO_TRAINING);
   }, [navigate]);
 
-  const handleRepeatSession = useCallback((session, scenario) => {
-    setPendingRepeatSession({ session, scenario });
-    navigate(ROUTES.SCENARIO_TRAINING);
+  const handleRepeatSession = useCallback((session, scenario, type) => {
+    // Determine session type from parameter or session object
+    const sessionType = type || session?.type;
+
+    if (sessionType === 'roleplay') {
+      // For roleplay, set the scenario and navigate to Live Training
+      if (scenario) {
+        setPendingRoleplayScenario(scenario);
+      }
+      navigate(ROUTES.LIVE_TRAINING);
+    } else if (sessionType === 'video') {
+      // For video training, set the scenario and navigate to Video Training
+      if (scenario) {
+        setPendingVideoTrainingScenario(scenario);
+      }
+      navigate(ROUTES.VIDEO_TRAINING);
+    } else {
+      // Default: Simulator (Szenario-Training)
+      setPendingRepeatSession({ session, scenario });
+      navigate(ROUTES.SCENARIO_TRAINING);
+    }
   }, [navigate]);
 
   // ===== RHETORIK-GYM HANDLERS =====

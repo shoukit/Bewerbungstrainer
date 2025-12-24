@@ -446,7 +446,7 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent, branding }) => {
             alignItems: 'center',
           }}
         >
-          <SkipBack size={18} />
+          <SkipBack size={20} />
         </button>
 
         <button
@@ -487,7 +487,7 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent, branding }) => {
             alignItems: 'center',
           }}
         >
-          <SkipForward size={18} />
+          <SkipForward size={20} />
         </button>
       </div>
 

@@ -143,7 +143,7 @@ export function AudioPlayerCard({
                 onClick={() => onSkip?.(-AUDIO_CONFIG.SKIP_SECONDS)}
                 disabled={isLoading}
               >
-                <SkipBack className="icon-sm" />
+                <SkipBack size={20} />
               </Button>
               <Button
                 onClick={onTogglePlay}
@@ -151,9 +151,9 @@ export function AudioPlayerCard({
                 className="w-12 h-12 rounded-full"
               >
                 {isPlaying ? (
-                  <Pause className="icon-md" />
+                  <Pause size={22} />
                 ) : (
-                  <Play className="icon-md ml-0.5" />
+                  <Play size={22} style={{ marginLeft: '2px' }} />
                 )}
               </Button>
               <Button
@@ -162,7 +162,7 @@ export function AudioPlayerCard({
                 onClick={() => onSkip?.(AUDIO_CONFIG.SKIP_SECONDS)}
                 disabled={isLoading}
               >
-                <SkipForward className="icon-sm" />
+                <SkipForward size={20} />
               </Button>
             </div>
 
@@ -171,7 +171,7 @@ export function AudioPlayerCard({
             </div>
 
             <Button variant="ghost" size="icon" onClick={onToggleMute} disabled={isLoading}>
-              {isMuted ? <VolumeX className="icon-sm" /> : <Volume2 className="icon-sm" />}
+              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </Button>
           </div>
         )}

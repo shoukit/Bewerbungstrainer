@@ -343,18 +343,26 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   if (selectedTrainingSession) {
     // Use RoleplaySessionReport for Live-Simulations
     if (selectedSessionType === TABS.ROLEPLAY) {
+      const roleplayScenario = getScenarioForSession(selectedTrainingSession, selectedSessionType);
       return (
         <RoleplaySessionReport
           session={selectedTrainingSession}
-          scenario={getScenarioForSession(selectedTrainingSession, selectedSessionType)}
+          scenario={roleplayScenario}
           onBack={handleBackFromDetail}
-          onRepeat={() => onRepeatSession?.(selectedTrainingSession)}
+          onRepeat={() => onRepeatSession?.(selectedTrainingSession, roleplayScenario, 'roleplay')}
           onDelete={(session) => handleDeleteSession(session, TABS.ROLEPLAY)}
         />
       );
     }
 
     // Use TrainingSessionDetailView for Simulator and Video
+    // Map tab types to session type strings
+    const typeMap = {
+      [TABS.SIMULATOR]: 'simulator',
+      [TABS.VIDEO]: 'video',
+    };
+    const sessionTypeString = typeMap[selectedSessionType] || 'simulator';
+
     return (
       <TrainingSessionDetailView
         session={selectedTrainingSession}
@@ -362,7 +370,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         scenario={getScenarioForSession(selectedTrainingSession, selectedSessionType)}
         onBack={handleBackFromDetail}
         onContinueSession={onContinueSession}
-        onRepeatSession={onRepeatSession}
+        onRepeatSession={(session, scenario) => onRepeatSession?.(session, scenario, sessionTypeString)}
         onDeleteSession={handleDeleteSession}
       />
     );
