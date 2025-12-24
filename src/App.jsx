@@ -140,11 +140,24 @@ const scrollToTop = () => {
 };
 
 /**
- * Get the WP admin bar height (if visible)
+ * Get the WP admin bar height (if visible and in viewport)
+ * The admin bar is position: fixed on desktop but can be scrollable on some mobile themes
  */
 function getAdminBarHeight() {
   const adminBar = document.getElementById('wpadminbar');
-  return adminBar ? adminBar.offsetHeight : 0;
+  if (!adminBar) return 0;
+
+  // Check if admin bar is actually visible in viewport
+  const rect = adminBar.getBoundingClientRect();
+  // If admin bar is scrolled out of view (top is negative and bottom is <= 0), return 0
+  if (rect.bottom <= 0) return 0;
+
+  // If admin bar is partially visible, return how much is still visible
+  if (rect.top < 0) {
+    return Math.max(0, rect.bottom);
+  }
+
+  return adminBar.offsetHeight;
 }
 
 /**

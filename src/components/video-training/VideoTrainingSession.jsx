@@ -395,10 +395,24 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     onExit();
   };
 
-  // Upload/Analyzing state
+  // Upload/Analyzing state - Full screen blocking overlay to prevent navigation
   if (isUploading || isAnalyzing) {
     return (
-      <div style={{ padding: '32px', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999, // Above sidebar (z-50) and all other elements
+          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}
+      >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -407,6 +421,9 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
             borderRadius: '20px',
             padding: '48px',
             boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            maxWidth: '500px',
+            width: '100%',
+            textAlign: 'center',
           }}
         >
           <div
