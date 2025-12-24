@@ -757,7 +757,7 @@ ${t.interviewer_profile.important_questions}`)),ee},Te=async()=>{try{const ee=$?
         .sessions-list-container {
           margin: 0 24px;
         }
-        @media (min-width: 641px) {
+        @media (min-width: 1025px) {
           .session-tabs-mobile { display: none; }
         }
         @media (min-width: 641px) and (max-width: 1023px) {
@@ -774,8 +774,10 @@ ${t.interviewer_profile.important_questions}`)),ee},Te=async()=>{try{const ee=$?
             justify-content: flex-end;
           }
         }
-        @media (max-width: 640px) {
+        @media (max-width: 1024px) {
           .session-tabs-desktop { display: none; }
+        }
+        @media (max-width: 640px) {
           .desktop-actions { display: none; }
           .mobile-refresh-btn {
             display: flex !important;
