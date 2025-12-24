@@ -30,11 +30,13 @@ const SetupCard = ({ setup, isSelected, onSelect }) => {
       onClick={onSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative p-4 rounded-xl text-left transition-all border-2"
+      className="relative p-4 rounded-xl text-left transition-all"
       style={{
-        borderColor: getBorderColor(),
+        border: `2px solid ${getBorderColor()}`,
         backgroundColor: getBackgroundColor(),
         boxShadow: isHovered || isSelected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+        outline: 'none',
+        WebkitAppearance: 'none',
       }}
     >
       {/* Selected checkmark */}
@@ -153,7 +155,15 @@ const SetupSelector = () => {
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="w-full flex items-center justify-between gap-3 p-3 sm:p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all cursor-pointer group"
+          className="w-full flex items-center justify-between gap-3 transition-all cursor-pointer group"
+          style={{
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '1px solid #e5e7eb',
+            backgroundColor: 'white',
+            outline: 'none',
+            WebkitAppearance: 'none',
+          }}
         >
           {/* Left side - Current setup info */}
           <div className="flex items-center gap-3 min-w-0">
@@ -235,7 +245,18 @@ const SetupSelector = () => {
                     </div>
                     <button
                       onClick={() => setIsModalOpen(false)}
-                      className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors flex-shrink-0"
+                      className="flex items-center justify-center transition-colors flex-shrink-0"
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        backgroundColor: '#f3f4f6',
+                        border: 'none',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        color: '#6b7280',
+                        WebkitAppearance: 'none',
+                      }}
                     >
                       <X size={18} />
                     </button>
@@ -265,14 +286,37 @@ const SetupSelector = () => {
                   >
                     <button
                       onClick={handleShowAll}
-                      className="px-3 sm:px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                      className="transition-colors"
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #e5e7eb',
+                        backgroundColor: 'white',
+                        color: '#4b5563',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        WebkitAppearance: 'none',
+                      }}
                     >
                       Alle anzeigen
                     </button>
                     <button
                       onClick={() => setIsModalOpen(false)}
-                      className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
-                      style={{ background: primaryAccent }}
+                      className="transition-all"
+                      style={{
+                        padding: '8px 20px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: primaryAccent,
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        WebkitAppearance: 'none',
+                      }}
                     >
                       Fertig
                     </button>
