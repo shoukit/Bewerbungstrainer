@@ -842,11 +842,30 @@ const RoleplayProxySession = ({
                   <img
                     src={scenario.interviewer_profile.image_url}
                     alt={scenario.interviewer_profile.name}
-                    className="w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      border: '4px solid white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      objectFit: 'cover',
+                    }}
                   />
                 ) : (
-                  <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
-                    <User className="w-8 h-8 lg:w-10 lg:h-10 text-slate-400" />
+                  <div
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      border: '4px solid white',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      background: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <User className="w-10 h-10 text-slate-400" />
                   </div>
                 )}
               </div>

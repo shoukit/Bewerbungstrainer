@@ -789,11 +789,30 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                           <img
                             src={scenario.interviewer_profile.image_url}
                             alt={replaceVariables(scenario.interviewer_profile.name)}
-                            className="w-12 h-12 rounded-full border-2 border-white shadow-lg object-cover"
+                            style={{
+                              width: '64px',
+                              height: '64px',
+                              borderRadius: '50%',
+                              border: '3px solid white',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              objectFit: 'cover',
+                            }}
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full border-2 border-white shadow-lg bg-white flex items-center justify-center">
-                            <User className="w-6 h-6 text-slate-400" />
+                          <div
+                            style={{
+                              width: '64px',
+                              height: '64px',
+                              borderRadius: '50%',
+                              border: '3px solid white',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              background: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <User className="w-8 h-8 text-slate-400" />
                           </div>
                         )}
                         <div className="flex-1">
@@ -817,10 +836,29 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                             <img
                               src={scenario.interviewer_profile.image_url}
                               alt={replaceVariables(scenario.interviewer_profile.name)}
-                              className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                              style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '50%',
+                                border: '4px solid white',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                objectFit: 'cover',
+                              }}
                             />
                           ) : (
-                            <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                            <div
+                              style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '50%',
+                                border: '4px solid white',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                background: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
                               <User className="w-10 h-10 text-slate-400" />
                             </div>
                           )}
