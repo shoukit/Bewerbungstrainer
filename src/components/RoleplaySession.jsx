@@ -132,13 +132,8 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const [audioAnalysisContent, setAudioAnalysisContent] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Mobile panel state - coaching open by default on mobile/tablet
-  const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 1024;
-    }
-    return false;
-  });
+  // Mobile panel state
+  const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(false);
   const [showTranscriptOnMobile, setShowTranscriptOnMobile] = useState(false);
   const [showProfileOnMobile, setShowProfileOnMobile] = useState(true);
   const isMobile = useMobile(1024);
@@ -474,6 +469,10 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
   const handleStartCall = async () => {
     setIsStarted(true);
+    // Open coaching panel on mobile/tablet when call starts
+    if (window.innerWidth < 1024) {
+      setShowCoachingOnMobile(true);
+    }
     // Set start time immediately when call begins
     const now = Date.now();
     setStartTime(now);
