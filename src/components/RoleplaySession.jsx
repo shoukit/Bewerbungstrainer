@@ -967,13 +967,35 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
                   {/* Profile Toggle Button (Mobile only) */}
                   {isMobile && (
-                  <div className="bg-white px-4 py-2">
+                  <div style={{ backgroundColor: 'white', padding: '8px 16px' }}>
                     <button
                       onClick={() => setShowProfileOnMobile(!showProfileOnMobile)}
-                      className="w-full flex items-center justify-between text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: themedStyles.primaryAccent,
+                        backgroundColor: `${themedStyles.primaryAccent}10`,
+                        border: `1px solid ${themedStyles.primaryAccent}30`,
+                        borderRadius: '10px',
+                        padding: '12px 16px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        WebkitAppearance: 'none',
+                        transition: 'all 0.2s',
+                      }}
                     >
                       <span>Profil-Details</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showProfileOnMobile ? 'rotate-180' : ''}`} />
+                      <ChevronDown
+                        size={16}
+                        style={{
+                          transform: showProfileOnMobile ? 'rotate(180deg)' : 'none',
+                          transition: 'transform 0.2s',
+                        }}
+                      />
                     </button>
                   </div>
                   )}
