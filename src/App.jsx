@@ -142,22 +142,42 @@ const scrollToTop = () => {
 /**
  * Get the WP admin bar height (if visible and in viewport)
  * The admin bar is position: fixed on desktop but can be scrollable on some mobile themes
+ * Mobile admin bar is typically 46px, desktop is 32px
  */
 function getAdminBarHeight() {
+  // Check if WordPress admin-bar class is present on body/html
+  const hasAdminBarClass = document.body.classList.contains('admin-bar') ||
+                           document.documentElement.classList.contains('admin-bar');
+
   const adminBar = document.getElementById('wpadminbar');
-  if (!adminBar) return 0;
 
-  // Check if admin bar is actually visible in viewport
-  const rect = adminBar.getBoundingClientRect();
-  // If admin bar is scrolled out of view (top is negative and bottom is <= 0), return 0
-  if (rect.bottom <= 0) return 0;
+  // If admin bar element exists, use its actual dimensions
+  if (adminBar) {
+    const rect = adminBar.getBoundingClientRect();
+    const style = window.getComputedStyle(adminBar);
+    const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
 
-  // If admin bar is partially visible, return how much is still visible
-  if (rect.top < 0) {
-    return Math.max(0, rect.bottom);
+    if (!isVisible) return 0;
+
+    // If admin bar is scrolled out of view (bottom is <= 0), return 0
+    if (rect.bottom <= 0) return 0;
+
+    // If admin bar is partially visible, return how much is still visible
+    if (rect.top < 0) {
+      return Math.max(0, rect.bottom);
+    }
+
+    return adminBar.offsetHeight;
   }
 
-  return adminBar.offsetHeight;
+  // Fallback: If admin-bar class is present but element not found yet, use CSS defaults
+  // WordPress mobile admin bar is 46px, desktop is 32px
+  if (hasAdminBarClass) {
+    const isMobile = window.innerWidth <= 782; // WordPress mobile breakpoint
+    return isMobile ? 46 : 32;
+  }
+
+  return 0;
 }
 
 /**
