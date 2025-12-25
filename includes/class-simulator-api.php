@@ -148,6 +148,13 @@ class Bewerbungstrainer_Simulator_API {
             'callback' => array($this, 'generate_next_turn'),
             'permission_callback' => array($this, 'allow_all_users'),
         ));
+
+        // Export session as PDF
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)/export-pdf', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'export_session_pdf'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
     }
 
     // Note: Permission callbacks (check_user_logged_in, allow_all_users, etc.)
@@ -1912,5 +1919,27 @@ AUDIO ZUR ANALYSE:";
 
         error_log('Simulator: Failed to parse audio analysis from response: ' . substr($response, 0, 500));
         return $default;
+    }
+
+    // =========================================================================
+    // PDF EXPORT
+    // =========================================================================
+
+    /**
+     * Export session as PDF
+     */
+    public function export_session_pdf($request) {
+        $session_id = intval($request['id']);
+        $user_id = get_current_user_id();
+
+        // Get PDF exporter instance
+        $pdf_exporter = Bewerbungstrainer_PDF_Exporter::get_instance();
+
+        // Stream PDF directly to browser
+        $pdf_exporter->stream_simulator_session_pdf($session_id, $user_id);
+
+        // Note: stream_simulator_session_pdf exits, so this won't be reached
+        // But we include it for completeness
+        return new WP_REST_Response(null, 200);
     }
 }

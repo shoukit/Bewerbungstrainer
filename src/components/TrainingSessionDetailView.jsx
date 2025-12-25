@@ -36,6 +36,7 @@ import {
   Volume2,
   VolumeX,
   Trash2,
+  Download,
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
@@ -888,6 +889,9 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // PDF download state
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
   // Roleplay-specific state
   const [roleplayData, setRoleplayData] = useState(null);
   const [roleplayScenario, setRoleplayScenario] = useState(scenario);
@@ -931,6 +935,61 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
       console.error('Failed to delete session:', err);
       setIsDeleting(false);
       setShowDeleteConfirm(false);
+    }
+  };
+
+  // Handle PDF download
+  const handleDownloadPdf = async () => {
+    if (isDownloadingPdf || !session?.id) return;
+
+    setIsDownloadingPdf(true);
+    try {
+      // Determine endpoint based on session type
+      let endpoint;
+      if (isSimulator) {
+        endpoint = `${getWPApiUrl()}/simulator/sessions/${session.id}/export-pdf`;
+      } else if (isVideo) {
+        endpoint = `${getWPApiUrl()}/video-training/sessions/${session.id}/export-pdf`;
+      } else if (isRoleplay) {
+        endpoint = `${getWPApiUrl()}/sessions/${session.id}/export-pdf`;
+      } else {
+        throw new Error('Unsupported session type for PDF export');
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'X-WP-Nonce': getWPNonce(),
+        },
+        credentials: 'same-origin',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Get the PDF blob and trigger download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Generate filename
+      const scenarioTitle = (isRoleplay ? roleplayScenario?.title : scenario?.title) || session?.position || 'Training';
+      const date = new Date(session.created_at);
+      const dateStr = date.toISOString().split('T')[0];
+      const prefix = isSimulator ? 'Szenario-Training' : isVideo ? 'Wirkungs-Analyse' : 'Live-Simulation';
+      link.download = `${prefix}-${scenarioTitle}-${dateStr}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download PDF:', err);
+      // Could show a toast notification here
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
@@ -1144,6 +1203,34 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '12px' }}>
+              {/* PDF Download Button */}
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf}
+                title="Als PDF herunterladen"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  cursor: isDownloadingPdf ? 'wait' : 'pointer',
+                  color: '#fff',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  outline: 'none',
+                  WebkitAppearance: 'none',
+                  opacity: isDownloadingPdf ? 0.7 : 1,
+                }}
+              >
+                {isDownloadingPdf ? (
+                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <Download size={16} />
+                )}
+              </button>
               {/* Repeat Button - Desktop only */}
               {!isMobile && onRepeatSession && (
                 <button
