@@ -262,10 +262,18 @@ export const useRoleplaySession = ({
       return;
     }
 
+    // Helper to ensure minimum step visibility
+    const showStep = async (step, minDuration = 500) => {
+      const startTime = Date.now();
+      setAnalysisStep(step);
+      // Ensure step is visible for at least minDuration ms
+      await new Promise(resolve => setTimeout(resolve, Math.max(0, minDuration - (Date.now() - startTime))));
+    };
+
     // Start analysis
     try {
       setIsAnalyzing(true);
-      setAnalysisStep('audio');
+      await showStep('audio', 800);
 
       const scenarioContext = {
         title: scenario?.title || 'Live-Simulation',
@@ -313,7 +321,7 @@ export const useRoleplaySession = ({
       }
 
       // Run analysis
-      setAnalysisStep('transcript');
+      await showStep('transcript', 500);
       const analysis = await analyzeRoleplayTranscript(
         transcriptRef.current,
         scenarioContext,
@@ -322,7 +330,7 @@ export const useRoleplaySession = ({
       );
 
       // Save analysis
-      setAnalysisStep('saving');
+      await showStep('saving', 500);
       if (sessionId && conversationId) {
         await saveRoleplaySessionAnalysis(
           sessionId,
