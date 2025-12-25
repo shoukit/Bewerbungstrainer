@@ -4,8 +4,8 @@ import OverviewDashboard from './components/OverviewDashboard';
 import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplayDeviceSetup from './components/RoleplayDeviceSetup';
 import RoleplayVariablesPage from './components/RoleplayVariablesPage';
-import RoleplaySession from './components/RoleplaySession';
-import RoleplayProxySession from './components/RoleplayProxySession';
+import RoleplaySessionUnified from './components/RoleplaySessionUnified';
+import { CONNECTION_MODES } from './services/conversation-adapters';
 import SessionHistory, { SESSION_TABS } from './components/SessionHistory';
 import SessionDetailView from './components/SessionDetailView';
 import { SimulatorApp } from './components/simulator';
@@ -657,10 +657,11 @@ function AppContent() {
       <Route
         path={ROUTES.LIVE_TRAINING_SESSION}
         element={
-          <RoleplaySession
+          <RoleplaySessionUnified
             scenario={getScenario()}
             variables={getVariables()}
             selectedMicrophoneId={getMicrophoneId()}
+            connectionMode={CONNECTION_MODES.DIRECT}
             onEnd={handleEndRoleplay}
             onNavigateToSession={handleNavigateToSession}
           />
@@ -669,10 +670,11 @@ function AppContent() {
       <Route
         path={ROUTES.LIVE_TRAINING_PROXY}
         element={
-          <RoleplayProxySession
+          <RoleplaySessionUnified
             scenario={getScenario()}
             variables={getVariables()}
             selectedMicrophoneId={getMicrophoneId()}
+            connectionMode={CONNECTION_MODES.PROXY}
             onEnd={handleEndRoleplay}
             onNavigateToSession={handleNavigateToSession}
           />
