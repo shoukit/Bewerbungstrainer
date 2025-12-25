@@ -222,8 +222,15 @@ export const useProxyAdapter = ({
             },
           };
 
+          // Debug: Log scenario and voice_id
+          console.log('[ProxyAdapter] Scenario:', scenario);
+          console.log('[ProxyAdapter] voice_id:', scenario?.voice_id);
+          console.log('[ProxyAdapter] initMessage:', JSON.stringify(initMessage, null, 2));
+
           if (scenario?.voice_id) {
             console.log('[ProxyAdapter] Using voice override:', scenario.voice_id);
+          } else {
+            console.log('[ProxyAdapter] No voice_id in scenario');
           }
 
           if (wsRef.current?.readyState === WebSocket.OPEN) {
