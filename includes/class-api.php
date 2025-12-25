@@ -162,7 +162,7 @@ class Bewerbungstrainer_API {
 
         // Export session as PDF
         register_rest_route($this->namespace, '/sessions/(?P<id>\d+)/export-pdf', array(
-            'methods' => 'GET',
+            'methods' => 'POST',
             'callback' => array($this, 'export_session_pdf'),
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
@@ -989,11 +989,28 @@ class Bewerbungstrainer_API {
      * Export session as PDF
      *
      * @param WP_REST_Request $request Request object
-     * @return void Streams PDF to browser
+     * @return WP_REST_Response Response with base64 PDF data
      */
     public function export_session_pdf($request) {
         $session_id = intval($request['id']);
-        $this->pdf_exporter->stream_session_pdf($session_id, get_current_user_id());
+        $user_id = get_current_user_id();
+
+        // Get PDF as base64 for REST API response
+        $result = $this->pdf_exporter->get_session_pdf_base64($session_id, $user_id);
+
+        if (is_wp_error($result)) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error' => $result->get_error_message(),
+            ), 400);
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'pdf_base64' => $result['pdf_base64'],
+            'filename' => $result['filename'],
+            'content_type' => $result['content_type'],
+        ), 200);
     }
 
     /**

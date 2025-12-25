@@ -708,6 +708,39 @@ class Bewerbungstrainer_PDF_Exporter {
         exit;
     }
 
+    /**
+     * Get roleplay session PDF as base64 for REST API response
+     *
+     * @param int $session_id Session ID
+     * @param int $user_id User ID (for security check)
+     * @return array|WP_Error PDF data or WP_Error on failure
+     */
+    public function get_session_pdf_base64($session_id, $user_id = null) {
+        $pdf_path = $this->export_session_pdf($session_id, $user_id);
+
+        if (is_wp_error($pdf_path)) {
+            return $pdf_path;
+        }
+
+        // Read PDF content and encode as base64
+        $pdf_content = file_get_contents($pdf_path);
+        $base64_content = base64_encode($pdf_content);
+
+        // Get session for filename
+        $session = $this->db->get_session($session_id);
+        $date = new DateTime($session->created_at);
+        $download_filename = 'Live-Simulation-' . sanitize_file_name($session->position) . '-' . $date->format('Y-m-d') . '.pdf';
+
+        // Clean up temporary file
+        wp_delete_file($pdf_path);
+
+        return array(
+            'pdf_base64' => $base64_content,
+            'filename' => $download_filename,
+            'content_type' => 'application/pdf',
+        );
+    }
+
     // =========================================================================
     // SIMULATOR SESSION PDF EXPORT
     // =========================================================================
@@ -720,40 +753,45 @@ class Bewerbungstrainer_PDF_Exporter {
      * @return string|WP_Error PDF file path or WP_Error on failure
      */
     public function export_simulator_session_pdf($session_id, $user_id = null) {
-        if ($user_id === null) {
-            $user_id = get_current_user_id();
+        try {
+            if ($user_id === null) {
+                $user_id = get_current_user_id();
+            }
+
+            if (!$this->simulator_db) {
+                return new WP_Error('not_available', __('Simulator-Modul nicht verfügbar.', 'bewerbungstrainer'));
+            }
+
+            // Get session with answers
+            $session = $this->simulator_db->get_session($session_id);
+
+            if (!$session) {
+                return new WP_Error('not_found', __('Sitzung nicht gefunden.', 'bewerbungstrainer'));
+            }
+
+            // Check ownership
+            if ((int) $session->user_id !== (int) $user_id) {
+                return new WP_Error('forbidden', __('Keine Berechtigung.', 'bewerbungstrainer'));
+            }
+
+            // Get answers
+            $answers = $this->simulator_db->get_session_answers($session_id);
+
+            // Get scenario (stored in custom table, not as WordPress post)
+            $scenario = $this->simulator_db->get_scenario($session->scenario_id);
+            $scenario_title = $scenario ? $scenario->title : 'Szenario-Training';
+
+            // Generate HTML content
+            $html = $this->generate_simulator_pdf_html($session, $answers, $scenario_title);
+
+            // Create PDF
+            $pdf_path = $this->html_to_pdf($html, 'simulator-' . $session_id);
+
+            return $pdf_path;
+        } catch (Exception $e) {
+            error_log('[PDF EXPORT] Simulator PDF error: ' . $e->getMessage());
+            return new WP_Error('pdf_error', $e->getMessage());
         }
-
-        if (!$this->simulator_db) {
-            return new WP_Error('not_available', __('Simulator-Modul nicht verfügbar.', 'bewerbungstrainer'));
-        }
-
-        // Get session with answers
-        $session = $this->simulator_db->get_session($session_id);
-
-        if (!$session) {
-            return new WP_Error('not_found', __('Sitzung nicht gefunden.', 'bewerbungstrainer'));
-        }
-
-        // Check ownership
-        if ((int) $session->user_id !== (int) $user_id) {
-            return new WP_Error('forbidden', __('Keine Berechtigung.', 'bewerbungstrainer'));
-        }
-
-        // Get answers
-        $answers = $this->simulator_db->get_session_answers($session_id);
-
-        // Get scenario (stored in custom table, not as WordPress post)
-        $scenario = $this->simulator_db->get_scenario($session->scenario_id);
-        $scenario_title = $scenario ? $scenario->title : 'Szenario-Training';
-
-        // Generate HTML content
-        $html = $this->generate_simulator_pdf_html($session, $answers, $scenario_title);
-
-        // Create PDF
-        $pdf_path = $this->html_to_pdf($html, 'simulator-' . $session_id);
-
-        return $pdf_path;
     }
 
     /**
@@ -991,12 +1029,14 @@ class Bewerbungstrainer_PDF_Exporter {
 
     /**
      * Stream simulator session PDF to browser
+     *
+     * @return bool|WP_Error True on success, WP_Error on failure
      */
     public function stream_simulator_session_pdf($session_id, $user_id = null) {
         $pdf_path = $this->export_simulator_session_pdf($session_id, $user_id);
 
         if (is_wp_error($pdf_path)) {
-            wp_die($pdf_path->get_error_message());
+            return $pdf_path;
         }
 
         // Get session for filename
@@ -1007,6 +1047,42 @@ class Bewerbungstrainer_PDF_Exporter {
         $download_filename = 'Szenario-Training-' . sanitize_file_name($scenario_title) . '-' . $date->format('Y-m-d') . '.pdf';
 
         $this->stream_pdf_file($pdf_path, $download_filename);
+        return true;
+    }
+
+    /**
+     * Get simulator session PDF as base64 for REST API response
+     *
+     * @param int $session_id Session ID
+     * @param int $user_id User ID (for security check)
+     * @return array|WP_Error PDF data or WP_Error on failure
+     */
+    public function get_simulator_session_pdf_base64($session_id, $user_id = null) {
+        $pdf_path = $this->export_simulator_session_pdf($session_id, $user_id);
+
+        if (is_wp_error($pdf_path)) {
+            return $pdf_path;
+        }
+
+        // Read PDF content and encode as base64
+        $pdf_content = file_get_contents($pdf_path);
+        $base64_content = base64_encode($pdf_content);
+
+        // Get session for filename
+        $session = $this->simulator_db->get_session($session_id);
+        $scenario = $this->simulator_db->get_scenario($session->scenario_id);
+        $scenario_title = $scenario ? $scenario->title : 'Training';
+        $date = new DateTime($session->created_at);
+        $download_filename = 'Szenario-Training-' . sanitize_file_name($scenario_title) . '-' . $date->format('Y-m-d') . '.pdf';
+
+        // Clean up temporary file
+        wp_delete_file($pdf_path);
+
+        return array(
+            'pdf_base64' => $base64_content,
+            'filename' => $download_filename,
+            'content_type' => 'application/pdf',
+        );
     }
 
     // =========================================================================
@@ -1186,6 +1262,41 @@ class Bewerbungstrainer_PDF_Exporter {
         $download_filename = 'Wirkungs-Analyse-' . sanitize_file_name($scenario_title) . '-' . $date->format('Y-m-d') . '.pdf';
 
         $this->stream_pdf_file($pdf_path, $download_filename);
+    }
+
+    /**
+     * Get video training session PDF as base64 for REST API response
+     *
+     * @param int $session_id Session ID
+     * @param int $user_id User ID (for security check)
+     * @return array|WP_Error PDF data or WP_Error on failure
+     */
+    public function get_video_session_pdf_base64($session_id, $user_id = null) {
+        $pdf_path = $this->export_video_session_pdf($session_id, $user_id);
+
+        if (is_wp_error($pdf_path)) {
+            return $pdf_path;
+        }
+
+        // Read PDF content and encode as base64
+        $pdf_content = file_get_contents($pdf_path);
+        $base64_content = base64_encode($pdf_content);
+
+        // Get session for filename
+        $session = $this->video_db->get_session($session_id);
+        $scenario = $this->video_db->get_scenario($session->scenario_id);
+        $scenario_title = $scenario ? $scenario->title : 'Video-Training';
+        $date = new DateTime($session->created_at);
+        $download_filename = 'Wirkungs-Analyse-' . sanitize_file_name($scenario_title) . '-' . $date->format('Y-m-d') . '.pdf';
+
+        // Clean up temporary file
+        wp_delete_file($pdf_path);
+
+        return array(
+            'pdf_base64' => $base64_content,
+            'filename' => $download_filename,
+            'content_type' => 'application/pdf',
+        );
     }
 
     // =========================================================================

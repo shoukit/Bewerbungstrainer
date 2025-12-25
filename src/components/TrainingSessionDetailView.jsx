@@ -960,6 +960,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
         method: 'POST',
         headers: {
           'X-WP-Nonce': getWPNonce(),
+          'Content-Type': 'application/json',
         },
         credentials: 'same-origin',
       });
@@ -968,18 +969,27 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
         throw new Error(`HTTP ${response.status}`);
       }
 
-      // Get the PDF blob and trigger download
-      const blob = await response.blob();
+      // Parse JSON response with base64 PDF data
+      const data = await response.json();
+
+      if (!data.success || !data.pdf_base64) {
+        throw new Error(data.error || 'PDF generation failed');
+      }
+
+      // Convert base64 to blob
+      const byteCharacters = atob(data.pdf_base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: data.content_type || 'application/pdf' });
+
+      // Trigger download
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-
-      // Generate filename
-      const scenarioTitle = (isRoleplay ? roleplayScenario?.title : scenario?.title) || session?.position || 'Training';
-      const date = new Date(session.created_at);
-      const dateStr = date.toISOString().split('T')[0];
-      const prefix = isSimulator ? 'Szenario-Training' : isVideo ? 'Wirkungs-Analyse' : 'Live-Simulation';
-      link.download = `${prefix}-${scenarioTitle}-${dateStr}.pdf`;
+      link.download = data.filename || 'Training.pdf';
 
       document.body.appendChild(link);
       link.click();

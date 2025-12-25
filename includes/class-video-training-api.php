@@ -1468,11 +1468,21 @@ VIDEO ZUR ANALYSE:";
         // Get PDF exporter instance
         $pdf_exporter = Bewerbungstrainer_PDF_Exporter::get_instance();
 
-        // Stream PDF directly to browser
-        $pdf_exporter->stream_video_session_pdf($session_id, $user_id);
+        // Get PDF as base64 for REST API response
+        $result = $pdf_exporter->get_video_session_pdf_base64($session_id, $user_id);
 
-        // Note: stream_video_session_pdf exits, so this won't be reached
-        // But we include it for completeness
-        return new WP_REST_Response(null, 200);
+        if (is_wp_error($result)) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error' => $result->get_error_message(),
+            ), 400);
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'pdf_base64' => $result['pdf_base64'],
+            'filename' => $result['filename'],
+            'content_type' => $result['content_type'],
+        ), 200);
     }
 }
