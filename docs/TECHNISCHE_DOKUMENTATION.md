@@ -1,7 +1,8 @@
 # Karriereheld - Technische Dokumentation
 
-**Version:** 1.0.0
-**Stand:** Dezember 2025
+**Version:** 2.0.0
+**Stand:** 25. Dezember 2025
+**Status:** Aktuell
 
 ---
 

@@ -1,216 +1,151 @@
-# BMW Bewerbungstrainer - KI-Bewerbungssimulator
+# Karriereheld - KI-gestütztes Karriere- und Gesprächstraining
 
-Eine interaktive React-Webanwendung, die ein realistisches, sprachgesteuertes Bewerbungsgespräch für eine Ausbildung zum Mechatroniker bei der BMW Group simuliert.
+**Karriereheld** ist ein umfassendes WordPress-Plugin für KI-gestützte Karriere- und Gesprächsvorbereitung. Die Anwendung kombiniert sprachbasierte KI-Interaktion, intelligente Feedback-Generierung und strukturierte Wissensvermittlung zu einem ganzheitlichen Trainingssystem.
 
-## 🎯 Projektziel
+## Vision
 
-Diese Anwendung nutzt modernste KI-Technologien, um Bewerbern ein authentisches Übungsgespräch zu ermöglichen:
+Menschen dabei unterstützen, selbstbewusst und optimal vorbereitet in wichtige berufliche Gespräche zu gehen – sei es ein Vorstellungsgespräch, eine Gehaltsverhandlung oder ein wichtiges Kundengespräch.
 
-- **Realistische Sprachinteraktion**: Powered by ElevenLabs mit hyper-realistischer deutscher Stimme
-- **KI-Gesprächspartner**: "Herr Müller", ein professioneller Personalverantwortlicher von BMW
-- **Intelligentes Feedback**: Detaillierte Auswertung durch Google Gemini
+## Hauptfunktionen
 
-## 🛠️ Technologie-Stack
+| Modul | Beschreibung |
+|-------|--------------|
+| **Smart Briefings** | KI-generierte Wissenspakete zur optimalen Vorbereitung auf spezifische Gespräche |
+| **Live-Simulation** | Realistische Echtzeit-Gespräche mit KI-Interviewer (ElevenLabs Conversational AI) |
+| **Szenario-Training** | Strukturiertes Q&A mit sofortigem Feedback nach jeder Antwort |
+| **Wirkungs-Analyse** | Video-Training mit Körpersprache- und Präsenz-Analyse |
+| **Rhetorik-Gym** | Gamifiziertes Sprechtraining zur Reduzierung von Füllwörtern |
 
-- **Frontend**: React 18 mit Vite
-- **Styling**: Tailwind CSS + shadcn/ui
-- **Sprach-KI**: ElevenLabs Conversational AI (React SDK)
-- **LLM**: Google Gemini Pro (für Feedback-Generierung)
-- **UI-Komponenten**: Radix UI + Lucide Icons
+## Technologie-Stack
 
-## 📋 Voraussetzungen
+### Frontend
+- **React 18** mit JSX
+- **Vite** als Build-Tool
+- **Tailwind CSS** für Styling
+- **Radix UI** für barrierefreie Komponenten
+- **Framer Motion** für Animationen
 
-Bevor du startest, benötigst du:
+### KI-Integration
+- **ElevenLabs Conversational AI** für bidirektionale Sprachinteraktion
+- **Google Gemini API** für Feedback-Generierung und Audio-/Video-Analyse
 
-1. **Node.js** (Version 18 oder höher)
-2. **ElevenLabs Account** mit Conversational AI Access
-3. **Google Gemini API Key**
+### Backend
+- **WordPress 6.0+** mit REST API
+- **PHP 7.4+**
+- **MySQL** (via WordPress)
+- **DomPDF** für PDF-Export
 
-## 🚀 Installation & Setup
+## Schnellstart
 
-### 1. Repository klonen & Dependencies installieren
+### Voraussetzungen
+- Node.js 18+
+- PHP 7.4+
+- WordPress 6.0+
+- Composer (für PHP-Dependencies)
+
+### Installation
 
 ```bash
-git clone <repository-url>
+# Repository klonen
+git clone https://github.com/shoukit/Bewerbungstrainer.git
 cd Bewerbungstrainer
+
+# Frontend-Dependencies installieren
 npm install
-```
 
-### 2. ElevenLabs Agent erstellen
+# PHP-Dependencies installieren
+composer install
 
-1. Gehe zu [ElevenLabs Conversational AI](https://elevenlabs.io/app/conversational-ai)
-2. Erstelle einen neuen Agenten mit folgenden Einstellungen:
-
-   **System Prompt:**
-   ```
-   Du bist Herr Müller, ein professioneller und freundlicher Personalverantwortlicher der BMW Group.
-   Du führst ein Bewerbungsgespräch für eine Ausbildung zum Mechatroniker.
-
-   Deine Aufgaben:
-   - Stelle typische Fragen für ein Bewerbungsgespräch (Motivation, technisches Verständnis, Teamfähigkeit)
-   - Sei professionell, aber ermutigend
-   - Gib dem Bewerber Zeit zum Antworten
-   - Stelle 5-7 Fragen im Verlauf des Gesprächs
-   - Am Ende bedanke dich für das Gespräch
-
-   Beginne mit einer freundlichen Begrüßung und der Frage nach einer kurzen Selbstvorstellung.
-   ```
-
-   **Stimme:** Wähle eine professionelle deutsche Männerstimme aus der ElevenLabs-Bibliothek
-
-   **LLM-Verbindung:** Verbinde den Agenten mit Google Gemini (oder einem anderen LLM deiner Wahl)
-
-3. Kopiere die **Agent ID** (wird benötigt für `.env`)
-
-### 3. Google Gemini API Key erhalten
-
-1. Besuche [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Erstelle einen neuen API Key
-3. Kopiere den Key (wird benötigt für `.env`)
-
-### 4. Umgebungsvariablen konfigurieren
-
-```bash
+# Umgebungsvariablen konfigurieren
 cp .env.example .env
+# .env bearbeiten und API-Keys eintragen
 ```
 
-Bearbeite `.env` und füge deine Keys ein:
-
-```env
-VITE_ELEVENLABS_AGENT_ID=deine_agent_id_hier
-VITE_GEMINI_API_KEY=dein_gemini_api_key_hier
-```
-
-### 5. Entwicklungsserver starten
+### Entwicklung
 
 ```bash
+# Entwicklungsserver starten
 npm run dev
+
+# Production Build erstellen
+npm run build
 ```
 
-Die Anwendung läuft nun auf `http://localhost:5173`
+### WordPress-Integration
 
-## 📖 Verwendung
+1. Plugin-Verzeichnis nach WordPress kopieren:
+   ```bash
+   cp -r . /wp-content/plugins/bewerbungstrainer/
+   ```
 
-### Erster Start - Profil-Wizard
+2. Plugin in WordPress Admin aktivieren
 
-Beim ersten Öffnen der Anwendung wirst du durch einen 3-stufigen Wizard geleitet:
+3. API-Keys in WordPress-Optionen konfigurieren:
+   - `bewerbungstrainer_elevenlabs_agent_id`
+   - `bewerbungstrainer_elevenlabs_api_key`
+   - `bewerbungstrainer_gemini_api_key`
 
-1. **Schritt 1: Name** - Gib deinen Namen ein
-2. **Schritt 2: Position** - Gib die Position ein, für die du dich bewirbst (z.B. "Ausbildung zum Mechatroniker")
-3. **Schritt 3: Unternehmen** - Gib das Unternehmen ein, bei dem du dich bewirbst (z.B. "BMW AG")
+4. Shortcodes verwenden:
+   - `[bewerbungstrainer_interview]` - Haupt-App
 
-Diese Informationen werden:
-- Im Browser gespeichert (localStorage)
-- An den ElevenLabs-Agenten übergeben, um ein personalisiertes Bewerbungsgespräch zu führen
-- In der ersten Nachricht von Herr Müller verwendet
+## Dokumentation
 
-**Hinweis**: Du kannst dein Profil jederzeit über den "Bearbeiten"-Button ändern.
+Ausführliche Dokumentation befindet sich im `docs/` Ordner:
 
-### Bewerbungsgespräch
+| Dokument | Beschreibung |
+|----------|--------------|
+| [CLAUDE.md](./CLAUDE.md) | Entwickler-Leitfaden mit vollständiger technischer Dokumentation |
+| [docs/PRODUKTBESCHREIBUNG.md](./docs/PRODUKTBESCHREIBUNG.md) | Fachliche Produktdokumentation |
+| [docs/FUNKTIONALES_DESIGN.md](./docs/FUNKTIONALES_DESIGN.md) | Funktionales Design und Benutzerflows |
+| [docs/TECHNISCHE_DOKUMENTATION.md](./docs/TECHNISCHE_DOKUMENTATION.md) | Technische Architektur und API-Referenz |
+| [docs/MARKETING.md](./docs/MARKETING.md) | Marketingkonzept und Go-to-Market-Strategie |
+| [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | Fehlerbehebung und häufige Probleme |
 
-1. **Gespräch starten**: Klicke auf "Gespräch starten", um die Verbindung zum KI-Agenten herzustellen
-2. **Sprechen**: Nutze dein Mikrofon, um auf die Fragen von Herr Müller zu antworten
-3. **Feedback erhalten**: Klicke auf "Gespräch beenden & Feedback erhalten", um eine detaillierte Auswertung zu bekommen
+### Content-Guides für Szenario-Erstellung
 
-## 🏗️ Projektstruktur
+| Guide | Beschreibung |
+|-------|--------------|
+| [docs/SCENARIO_TRAINING_CONTENT_GUIDE.md](./docs/SCENARIO_TRAINING_CONTENT_GUIDE.md) | Anleitung zur Erstellung von Szenario-Training-Inhalten |
+| [docs/VIDEO_TRAINING_CONTENT_GUIDE.md](./docs/VIDEO_TRAINING_CONTENT_GUIDE.md) | Anleitung zur Erstellung von Video-Training-Inhalten |
+| [docs/SMART_BRIEFING_CONTENT_GUIDE.md](./docs/SMART_BRIEFING_CONTENT_GUIDE.md) | Anleitung zur Erstellung von Smart Briefing-Templates |
 
+## Verfügbare Scripts
+
+```bash
+npm run dev          # Vite Dev-Server starten
+npm run build        # Production Build erstellen
+npm run preview      # Production Build lokal testen
+npm run lint         # ESLint ausführen
+npm run clean        # Build-Artefakte und node_modules löschen
+npm run fresh        # Komplett neu installieren
+npm run rebuild      # Cache löschen und neu bauen
 ```
-src/
-├── components/
-│   ├── ui/                 # shadcn/ui Komponenten
-│   │   ├── button.jsx
-│   │   └── dialog.jsx
-│   ├── Header.jsx          # BMW-Header mit Logo
-│   ├── FeedbackModal.jsx   # Feedback-Anzeige Modal
-│   └── UserWizard.jsx      # 3-stufiger Profil-Wizard
-├── services/
-│   └── gemini.js          # Gemini API Integration
-├── lib/
-│   └── utils.js           # Utility-Funktionen
-├── App.jsx                # Hauptkomponente
-├── main.jsx              # React Entry Point
-└── index.css             # Tailwind Styles
-```
 
-## 🔧 Verfügbare Scripts
+## Kernvorteile
 
-- `npm run dev` - Startet den Entwicklungsserver
-- `npm run build` - Erstellt einen Production Build
-- `npm run preview` - Vorschau des Production Builds
-- `npm run lint` - Führt ESLint aus
+- **Kein menschlicher Trainer nötig** – Üben jederzeit und überall möglich
+- **Sofortiges, objektives Feedback** – KI analysiert ohne Vorurteile
+- **Personalisierte Vorbereitung** – Briefings und Training auf spezifische Situation zugeschnitten
+- **Ganzheitlicher Ansatz** – Wissen + verbale + nonverbale Kommunikation
+- **White-Label-fähig** – Integration in Partner-Plattformen mit eigenem Branding
 
-## ⚙️ Architektur-Details
+## Sicherheit
 
-### ElevenLabs Integration
+- API-Keys werden über WordPress-Optionen oder Umgebungsvariablen verwaltet
+- Alle REST API Endpoints nutzen WordPress Nonces
+- Input-Sanitization für alle Benutzereingaben
+- Prepared Statements für Datenbankabfragen
 
-Die App nutzt das `@elevenlabs/react` SDK für die Sprachinteraktion:
+## Lizenz
 
-- **Conversation Component**: Übernimmt automatisch STT (Speech-to-Text), Audio-Streaming und TTS (Text-to-Speech)
-- **Agent-basiert**: Der gesamte Gesprächsablauf wird vom ElevenLabs-Agenten gesteuert
-- **Kein direkter Gemini-Call im Chat**: Das LLM wird über den ElevenLabs-Agenten angesprochen
+Proprietär - Alle Rechte vorbehalten
 
-### Feedback-Generierung
+## Support
 
-Für das Feedback wird ein **separater** Gemini API Call durchgeführt:
-
-1. Nach dem Gespräch wird das Transkript extrahiert
-2. Ein spezialisierter Karriere-Coach-Prompt analysiert das Gespräch
-3. Strukturiertes Feedback wird in einem Modal angezeigt
-
-**Hinweis**: In der aktuellen Version wird ein Mock-Transkript verwendet. Für die Produktion muss die Integration mit der ElevenLabs Conversation History API implementiert werden.
-
-## 🔐 Sicherheit & Best Practices
-
-- ✅ API Keys werden über Umgebungsvariablen verwaltet
-- ✅ `.env` ist in `.gitignore` ausgeschlossen
-- ✅ Client-seitige Validierung vor API-Calls
-- ⚠️ **Wichtig**: Für Production sollten API-Calls über einen Backend-Proxy laufen, um Keys zu schützen
-
-## 🐛 Troubleshooting
-
-### "ElevenLabs Agent ID fehlt"
-- Stelle sicher, dass `VITE_ELEVENLABS_AGENT_ID` in `.env` gesetzt ist
-- Überprüfe, ob die Agent ID korrekt von der ElevenLabs-Plattform kopiert wurde
-
-### "Gemini API Key fehlt" / Feedback funktioniert nicht
-- Stelle sicher, dass `VITE_GEMINI_API_KEY` in `.env` gesetzt ist
-- Überprüfe die API-Key-Berechtigungen in Google AI Studio
-
-### Mikrofon funktioniert nicht
-- Stelle sicher, dass dein Browser Mikrofonzugriff hat
-- Teste in Chrome/Edge (beste Kompatibilität mit Web Audio API)
-
-## ✨ Features
-
-- ✅ **Personalisierter Wizard**: 3-stufiger Onboarding-Prozess zur Erfassung von Name, Position und Unternehmen
-- ✅ **Profil-Verwaltung**: Benutzer können ihre Profildaten jederzeit bearbeiten
-- ✅ **Persistenz**: Profildaten werden im Browser gespeichert (localStorage)
-- ✅ **Personalisierte Gespräche**: Der ElevenLabs-Agent nutzt die Profildaten für ein individuelles Bewerbungsgespräch
-- ✅ **Responsive Design**: Optimiert für Desktop und Mobile
-- ✅ **Deutsche Sprache**: Vollständig auf Deutsch lokalisiert
-
-## 🚧 Bekannte Einschränkungen & TODOs
-
-- [ ] **Transkript-Integration**: Aktuell wird ein Mock-Transkript verwendet. Integration mit ElevenLabs Conversation History API erforderlich
-- [ ] **Multi-User**: Keine Benutzer-Authentifizierung implementiert (aktuell single-user mit localStorage)
-- [ ] **Fortschritts-Tracking**: Kein langfristiges Tracking über mehrere Interviews
-- [ ] **Backend-Proxy**: API Keys sollten nicht client-seitig exponiert werden
-
-## 📚 Weiterführende Ressourcen
-
-- [ElevenLabs Conversational AI Docs](https://elevenlabs.io/docs/conversational-ai)
-- [Google Gemini API Docs](https://ai.google.dev/docs)
-- [shadcn/ui Documentation](https://ui.shadcn.com)
-- [Tailwind CSS](https://tailwindcss.com)
-
-## 📄 Lizenz
-
-[Lizenz einfügen]
-
-## 🤝 Contributing
-
-Beiträge sind willkommen! Bitte beachte die `CLAUDE.md` für Coding-Konventionen und Best Practices.
+Bei Fragen oder Problemen:
+- [Troubleshooting Guide](./TROUBLESHOOTING.md) konsultieren
+- Issue im GitHub Repository erstellen
 
 ---
 
-**Entwickelt mit ❤️ für bessere Bewerbungsgespräche**
+**Entwickelt für bessere Karrierechancen durch optimale Gesprächsvorbereitung**

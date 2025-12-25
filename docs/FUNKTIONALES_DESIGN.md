@@ -1,7 +1,8 @@
 # Karriereheld - Funktionales Design
 
-**Version:** 3.0.0
-**Stand:** Dezember 2025
+**Version:** 3.1.0
+**Stand:** 25. Dezember 2025
+**Status:** Aktuell
 
 ---
 
