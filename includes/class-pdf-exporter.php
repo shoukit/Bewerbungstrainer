@@ -385,9 +385,19 @@ class Bewerbungstrainer_PDF_Exporter {
             return new WP_Error('forbidden', __('Keine Berechtigung.', 'bewerbungstrainer'));
         }
 
-        // Parse feedback
-        $feedback = $session->feedback_json ? json_decode($session->feedback_json, true) : null;
-        $audio_analysis = $session->audio_analysis_json ? json_decode($session->audio_analysis_json, true) : null;
+        // Parse feedback (handle both string and already-decoded array)
+        $feedback = null;
+        if (!empty($session->feedback_json)) {
+            $feedback = is_array($session->feedback_json)
+                ? $session->feedback_json
+                : json_decode($session->feedback_json, true);
+        }
+        $audio_analysis = null;
+        if (!empty($session->audio_analysis_json)) {
+            $audio_analysis = is_array($session->audio_analysis_json)
+                ? $session->audio_analysis_json
+                : json_decode($session->audio_analysis_json, true);
+        }
 
         // Generate HTML content
         $html = $this->generate_pdf_html($session, $feedback, $audio_analysis);
@@ -805,10 +815,12 @@ class Bewerbungstrainer_PDF_Exporter {
         $score_class = $this->get_score_class($overall_score);
         $grade_label = $this->get_grade_label($overall_score);
 
-        // Parse summary feedback
+        // Parse summary feedback (may already be decoded by database class)
         $summary_feedback = null;
         if (!empty($session->summary_feedback_json)) {
-            $summary_feedback = json_decode($session->summary_feedback_json, true);
+            $summary_feedback = is_array($session->summary_feedback_json)
+                ? $session->summary_feedback_json
+                : json_decode($session->summary_feedback_json, true);
         }
 
         ob_start();
@@ -1141,9 +1153,19 @@ class Bewerbungstrainer_PDF_Exporter {
         $score_class = $this->get_score_class($overall_score);
         $grade_label = $this->get_grade_label($overall_score);
 
-        // Parse category scores and analysis
-        $category_scores = !empty($session->category_scores) ? json_decode($session->category_scores, true) : [];
-        $analysis = !empty($session->analysis) ? json_decode($session->analysis, true) : [];
+        // Parse category scores and analysis (may already be decoded by database class)
+        $category_scores = [];
+        if (!empty($session->category_scores_json)) {
+            $category_scores = is_array($session->category_scores_json)
+                ? $session->category_scores_json
+                : json_decode($session->category_scores_json, true);
+        }
+        $analysis = [];
+        if (!empty($session->analysis_json)) {
+            $analysis = is_array($session->analysis_json)
+                ? $session->analysis_json
+                : json_decode($session->analysis_json, true);
+        }
 
         // Format duration
         $duration_seconds = isset($session->video_duration_seconds) ? intval($session->video_duration_seconds) : 0;
