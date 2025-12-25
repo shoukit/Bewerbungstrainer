@@ -296,8 +296,18 @@ const RoleplayProxySession = ({
                 },
                 first_message: scenario?.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
               },
+              // Voice override - requires "TTS Override" enabled in ElevenLabs Agent Settings
+              ...(scenario?.voice_id && {
+                tts: {
+                  voice_id: scenario.voice_id,
+                },
+              }),
             },
           };
+
+          if (scenario?.voice_id) {
+            console.log('[RoleplayProxySession] Using voice override:', scenario.voice_id);
+          }
 
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify(initMessage));
