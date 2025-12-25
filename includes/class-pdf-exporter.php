@@ -743,9 +743,9 @@ class Bewerbungstrainer_PDF_Exporter {
         // Get answers
         $answers = $this->simulator_db->get_session_answers($session_id);
 
-        // Get scenario
-        $scenario = get_post($session->scenario_id);
-        $scenario_title = $scenario ? $scenario->post_title : 'Szenario-Training';
+        // Get scenario (stored in custom table, not as WordPress post)
+        $scenario = $this->simulator_db->get_scenario($session->scenario_id);
+        $scenario_title = $scenario ? $scenario->title : 'Szenario-Training';
 
         // Generate HTML content
         $html = $this->generate_simulator_pdf_html($session, $answers, $scenario_title);
@@ -1001,8 +1001,8 @@ class Bewerbungstrainer_PDF_Exporter {
 
         // Get session for filename
         $session = $this->simulator_db->get_session($session_id);
-        $scenario = get_post($session->scenario_id);
-        $scenario_title = $scenario ? $scenario->post_title : 'Training';
+        $scenario = $this->simulator_db->get_scenario($session->scenario_id);
+        $scenario_title = $scenario ? $scenario->title : 'Training';
         $date = new DateTime($session->created_at);
         $download_filename = 'Szenario-Training-' . sanitize_file_name($scenario_title) . '-' . $date->format('Y-m-d') . '.pdf';
 
@@ -1041,9 +1041,9 @@ class Bewerbungstrainer_PDF_Exporter {
             return new WP_Error('forbidden', __('Keine Berechtigung.', 'bewerbungstrainer'));
         }
 
-        // Get scenario
-        $scenario = get_post($session->scenario_id);
-        $scenario_title = $scenario ? $scenario->post_title : 'Wirkungs-Analyse';
+        // Get scenario (stored in custom table, not as WordPress post)
+        $scenario = $this->video_db->get_scenario($session->scenario_id);
+        $scenario_title = $scenario ? $scenario->title : 'Wirkungs-Analyse';
 
         // Generate HTML content
         $html = $this->generate_video_pdf_html($session, $scenario_title);
@@ -1180,8 +1180,8 @@ class Bewerbungstrainer_PDF_Exporter {
 
         // Get session for filename
         $session = $this->video_db->get_session($session_id);
-        $scenario = get_post($session->scenario_id);
-        $scenario_title = $scenario ? $scenario->post_title : 'Video-Training';
+        $scenario = $this->video_db->get_scenario($session->scenario_id);
+        $scenario_title = $scenario ? $scenario->title : 'Video-Training';
         $date = new DateTime($session->created_at);
         $download_filename = 'Wirkungs-Analyse-' . sanitize_file_name($scenario_title) . '-' . $date->format('Y-m-d') . '.pdf';
 
