@@ -1014,33 +1014,31 @@ class Bewerbungstrainer_PDF_Exporter {
         <body>
             <!-- Hero Header with Score -->
             <div class="hero-header">
-                <div class="hero-content">
-                    <div class="hero-left">
-                        <div class="hero-badge">Szenario-Training</div>
-                        <h1 class="hero-title"><?php echo esc_html($scenario_title); ?></h1>
-                        <div class="hero-meta">
-                            <span class="hero-meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
-                            <span class="hero-meta-item">📝 <?php echo count($answers); ?> Fragen</span>
-                        </div>
-                    </div>
-                    <div class="hero-right">
-                        <table style="display: inline-block; border-collapse: collapse;">
-                            <tr>
-                                <td style="text-align: center; background: white; border-radius: 50%; width: 120px; height: 120px; vertical-align: middle;">
-                                    <div style="color: <?php echo $score_color; ?>;">
-                                        <span style="font-size: 38pt; font-weight: 800; line-height: 1;"><?php echo round($overall_score); ?></span><span style="font-size: 16pt; font-weight: 600;">%</span>
-                                    </div>
-                                    <div style="font-size: 9pt; color: #64748b; margin-top: 2px;">GESAMT</div>
-                                </td>
-                            </tr>
-                        </table>
-                        <div style="margin-top: 8px; text-align: center;">
-                            <span style="background: rgba(255,255,255,0.9); color: <?php echo $score_color; ?>; padding: 6px 16px; border-radius: 20px; font-size: 11pt; font-weight: 600;">
-                                <?php echo esc_html($grade_label); ?>
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="vertical-align: middle; width: 60%;">
+                            <div class="hero-badge">Szenario-Training</div>
+                            <h1 class="hero-title"><?php echo esc_html($scenario_title); ?></h1>
+                            <div class="hero-meta">
+                                <span class="hero-meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
+                                <span class="hero-meta-item">📝 <?php echo count($answers); ?> Fragen</span>
+                            </div>
+                        </td>
+                        <td style="vertical-align: middle; text-align: right; width: 40%;">
+                            <div style="display: inline-block; text-align: center; background: white; border-radius: 12px; padding: 20px 30px;">
+                                <div style="color: <?php echo $score_color; ?>;">
+                                    <span style="font-size: 42pt; font-weight: 800; line-height: 1;"><?php echo round($overall_score); ?></span><span style="font-size: 18pt; font-weight: 600;">%</span>
+                                </div>
+                                <div style="font-size: 9pt; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Gesamtbewertung</div>
+                                <div style="margin-top: 8px;">
+                                    <span style="background: <?php echo $score_color; ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 10pt; font-weight: 600;">
+                                        <?php echo esc_html($grade_label); ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </div>
 
             <div class="content">
@@ -1411,35 +1409,33 @@ class Bewerbungstrainer_PDF_Exporter {
         <body>
             <!-- Hero Header with Score -->
             <div class="hero-header">
-                <div class="hero-content">
-                    <div class="hero-left">
-                        <div class="hero-badge">Wirkungs-Analyse</div>
-                        <h1 class="hero-title"><?php echo esc_html($scenario_title); ?></h1>
-                        <div class="hero-meta">
-                            <span class="hero-meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
-                            <?php if ($duration_seconds > 0) : ?>
-                            <span class="hero-meta-item">⏱️ <?php echo esc_html($duration_formatted); ?> Min.</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div class="hero-right">
-                        <table style="display: inline-block; border-collapse: collapse;">
-                            <tr>
-                                <td style="text-align: center; background: white; border-radius: 50%; width: 120px; height: 120px; vertical-align: middle;">
-                                    <div style="color: <?php echo $score_color; ?>;">
-                                        <span style="font-size: 38pt; font-weight: 800; line-height: 1;"><?php echo round($overall_score); ?></span><span style="font-size: 16pt; font-weight: 600;">%</span>
-                                    </div>
-                                    <div style="font-size: 9pt; color: #64748b; margin-top: 2px;">GESAMT</div>
-                                </td>
-                            </tr>
-                        </table>
-                        <div style="margin-top: 8px; text-align: center;">
-                            <span style="background: rgba(255,255,255,0.9); color: <?php echo $score_color; ?>; padding: 6px 16px; border-radius: 20px; font-size: 11pt; font-weight: 600;">
-                                <?php echo esc_html($grade_label); ?>
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="vertical-align: middle; width: 60%;">
+                            <div class="hero-badge">Wirkungs-Analyse</div>
+                            <h1 class="hero-title"><?php echo esc_html($scenario_title); ?></h1>
+                            <div class="hero-meta">
+                                <span class="hero-meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
+                                <?php if ($duration_seconds > 0) : ?>
+                                <span class="hero-meta-item">⏱️ <?php echo esc_html($duration_formatted); ?> Min.</span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td style="vertical-align: middle; text-align: right; width: 40%;">
+                            <div style="display: inline-block; text-align: center; background: white; border-radius: 12px; padding: 20px 30px;">
+                                <div style="color: <?php echo $score_color; ?>;">
+                                    <span style="font-size: 42pt; font-weight: 800; line-height: 1;"><?php echo round($overall_score); ?></span><span style="font-size: 18pt; font-weight: 600;">%</span>
+                                </div>
+                                <div style="font-size: 9pt; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Gesamtbewertung</div>
+                                <div style="margin-top: 8px;">
+                                    <span style="background: <?php echo $score_color; ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 10pt; font-weight: 600;">
+                                        <?php echo esc_html($grade_label); ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </div>
 
             <div class="content">
