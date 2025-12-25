@@ -64,255 +64,398 @@ class Bewerbungstrainer_PDF_Exporter {
 
     /**
      * Get shared CSS styles for all PDF types
+     * Modern, clean design optimized for DomPDF
      */
     private function get_shared_styles() {
         return '
             @page {
-                margin: 20mm 15mm;
+                margin: 15mm 12mm 20mm 12mm;
             }
             * {
                 box-sizing: border-box;
             }
             body {
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-                font-size: 11pt;
-                line-height: 1.5;
-                color: #1e293b;
+                font-size: 10pt;
+                line-height: 1.6;
+                color: #1a1a2e;
                 margin: 0;
                 padding: 0;
+                background: #ffffff;
             }
-            .header {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+            /* ===== HERO HEADER WITH SCORE ===== */
+            .hero-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+                margin: -15mm -12mm 0 -12mm;
+                padding: 30px 40px;
                 color: white;
-                padding: 24px;
-                margin: -20mm -15mm 20px -15mm;
-                text-align: center;
+                position: relative;
             }
-            .header h1 {
-                font-size: 22pt;
-                font-weight: 700;
-                margin: 0 0 8px 0;
-                letter-spacing: -0.5px;
+            .hero-content {
+                display: table;
+                width: 100%;
             }
-            .header .subtitle {
-                font-size: 12pt;
-                opacity: 0.9;
-                margin: 0;
+            .hero-left {
+                display: table-cell;
+                vertical-align: middle;
+                width: 65%;
             }
-            .header .meta {
+            .hero-right {
+                display: table-cell;
+                vertical-align: middle;
+                text-align: right;
+                width: 35%;
+            }
+            .hero-badge {
                 display: inline-block;
-                margin-top: 12px;
-                font-size: 10pt;
-                opacity: 0.85;
+                background: rgba(255,255,255,0.2);
+                padding: 6px 14px;
+                border-radius: 20px;
+                font-size: 9pt;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+                margin-bottom: 12px;
             }
-            .header .meta-item {
-                display: inline-block;
-                margin: 0 12px;
-            }
-            .score-box {
-                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-                border: 2px solid #667eea;
-                border-radius: 12px;
-                padding: 20px;
-                text-align: center;
-                margin: 20px 0;
-            }
-            .score-value {
-                font-size: 42pt;
+            .hero-title {
+                font-size: 26pt;
                 font-weight: 800;
-                color: #667eea;
+                margin: 0 0 8px 0;
+                letter-spacing: -1px;
+                line-height: 1.1;
+            }
+            .hero-subtitle {
+                font-size: 13pt;
+                opacity: 0.9;
+                margin: 0 0 16px 0;
+                font-weight: 400;
+            }
+            .hero-meta {
+                font-size: 10pt;
+                opacity: 0.8;
+            }
+            .hero-meta-item {
+                display: inline-block;
+                margin-right: 20px;
+            }
+
+            /* ===== SCORE CIRCLE ===== */
+            .score-circle {
+                display: inline-block;
+                width: 130px;
+                height: 130px;
+                border-radius: 50%;
+                background: rgba(255,255,255,0.15);
+                border: 6px solid rgba(255,255,255,0.4);
+                text-align: center;
+                position: relative;
+            }
+            .score-circle-inner {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                background: white;
+            }
+            .score-number {
+                font-size: 36pt;
+                font-weight: 800;
                 line-height: 1;
+                margin-top: 22px;
+            }
+            .score-percent {
+                font-size: 14pt;
+                font-weight: 600;
             }
             .score-label {
-                font-size: 11pt;
+                font-size: 9pt;
                 color: #64748b;
                 margin-top: 4px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
             .score-grade {
-                font-size: 14pt;
-                font-weight: 600;
-                color: #7c3aed;
-                margin-top: 8px;
-            }
-            h2 {
-                font-size: 14pt;
-                font-weight: 700;
-                color: #1e293b;
-                margin: 24px 0 12px 0;
-                padding-bottom: 6px;
-                border-bottom: 2px solid #e2e8f0;
-            }
-            h3 {
-                font-size: 12pt;
-                font-weight: 600;
-                color: #475569;
-                margin: 16px 0 8px 0;
-            }
-            .section {
-                margin: 16px 0;
-                padding: 16px;
-                border-radius: 10px;
-                page-break-inside: avoid;
-            }
-            .section.strengths {
-                background: #f0fdf4;
-                border-left: 4px solid #10b981;
-            }
-            .section.improvements {
-                background: #fffbeb;
-                border-left: 4px solid #f59e0b;
-            }
-            .section.tips {
-                background: #eff6ff;
-                border-left: 4px solid #3b82f6;
-            }
-            .section.summary {
-                background: #faf5ff;
-                border-left: 4px solid #7c3aed;
-            }
-            .section.transcript {
-                background: #f8fafc;
-                border-left: 4px solid #94a3b8;
-            }
-            .section h4 {
+                display: block;
                 font-size: 11pt;
                 font-weight: 600;
-                margin: 0 0 10px 0;
+                margin-top: 6px;
+                padding: 4px 12px;
+                border-radius: 12px;
+                background: rgba(102,126,234,0.1);
             }
-            .section.strengths h4 { color: #059669; }
-            .section.improvements h4 { color: #d97706; }
-            .section.tips h4 { color: #2563eb; }
-            .section.summary h4 { color: #7c3aed; }
-            .section.transcript h4 { color: #475569; }
-            ul {
-                margin: 8px 0;
-                padding-left: 20px;
+
+            /* ===== CONTENT AREA ===== */
+            .content {
+                padding: 24px 0;
             }
-            li {
-                margin: 6px 0;
-                line-height: 1.5;
-            }
-            .ratings-grid {
+
+            /* ===== SECTION HEADERS ===== */
+            .section-header {
+                display: table;
                 width: 100%;
-                border-collapse: collapse;
-                margin: 12px 0;
+                margin: 28px 0 16px 0;
             }
-            .ratings-grid td {
-                padding: 10px 12px;
-                border-bottom: 1px solid #e2e8f0;
+            .section-icon {
+                display: table-cell;
+                width: 36px;
+                vertical-align: middle;
             }
-            .ratings-grid .label {
-                font-weight: 500;
-                color: #334155;
+            .section-icon-circle {
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                text-align: center;
+                line-height: 32px;
+                font-size: 14pt;
             }
-            .ratings-grid .score {
-                text-align: right;
+            .section-title {
+                display: table-cell;
+                vertical-align: middle;
+                padding-left: 12px;
+                font-size: 14pt;
                 font-weight: 700;
-                color: #667eea;
+                color: #1a1a2e;
             }
-            .ratings-grid .bar-cell {
-                width: 120px;
+
+            /* ===== CATEGORY CARDS ===== */
+            .category-card {
+                background: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 18px 20px;
+                margin-bottom: 12px;
+                page-break-inside: avoid;
             }
-            .progress-bar {
-                height: 8px;
-                background: #e2e8f0;
-                border-radius: 4px;
+            .category-header {
+                display: table;
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            .category-name {
+                display: table-cell;
+                vertical-align: middle;
+                font-size: 12pt;
+                font-weight: 600;
+                color: #1a1a2e;
+            }
+            .category-score {
+                display: table-cell;
+                text-align: right;
+                vertical-align: middle;
+                font-size: 18pt;
+                font-weight: 800;
+            }
+            .progress-bar-container {
+                background: #f1f5f9;
+                border-radius: 6px;
+                height: 10px;
                 overflow: hidden;
+                margin-bottom: 10px;
             }
             .progress-bar-fill {
                 height: 100%;
-                border-radius: 4px;
+                border-radius: 6px;
+                background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             }
+            .progress-bar-fill.excellent {
+                background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            }
+            .progress-bar-fill.good {
+                background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+            }
+            .progress-bar-fill.fair {
+                background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+            }
+            .category-feedback {
+                font-size: 10pt;
+                color: #64748b;
+                line-height: 1.5;
+                font-style: italic;
+            }
+
+            /* ===== INSIGHT CARDS ===== */
+            .insight-card {
+                border-radius: 12px;
+                padding: 20px;
+                margin: 16px 0;
+                page-break-inside: avoid;
+            }
+            .insight-card.strengths {
+                background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+                border-left: 4px solid #10b981;
+            }
+            .insight-card.tips {
+                background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                border-left: 4px solid #f59e0b;
+            }
+            .insight-card.summary {
+                background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+                border-left: 4px solid #8b5cf6;
+            }
+            .insight-card.transcript {
+                background: #f8fafc;
+                border-left: 4px solid #94a3b8;
+            }
+            .insight-header {
+                display: table;
+                width: 100%;
+                margin-bottom: 12px;
+            }
+            .insight-icon {
+                display: table-cell;
+                width: 28px;
+                vertical-align: middle;
+                font-size: 16pt;
+            }
+            .insight-title {
+                display: table-cell;
+                vertical-align: middle;
+                font-size: 12pt;
+                font-weight: 700;
+            }
+            .insight-card.strengths .insight-title { color: #059669; }
+            .insight-card.tips .insight-title { color: #b45309; }
+            .insight-card.summary .insight-title { color: #7c3aed; }
+            .insight-card.transcript .insight-title { color: #475569; }
+            .insight-list {
+                margin: 0;
+                padding-left: 20px;
+            }
+            .insight-list li {
+                margin: 8px 0;
+                color: #374151;
+                line-height: 1.6;
+            }
+            .insight-text {
+                color: #374151;
+                line-height: 1.7;
+            }
+
+            /* ===== QUESTION CARDS ===== */
             .question-card {
-                background: #fff;
-                border: 1px solid #e2e8f0;
-                border-radius: 10px;
-                padding: 16px;
+                background: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 20px;
                 margin: 16px 0;
                 page-break-inside: avoid;
             }
             .question-header {
                 display: table;
                 width: 100%;
-                margin-bottom: 12px;
+                margin-bottom: 14px;
             }
             .question-number {
                 display: table-cell;
-                width: 36px;
-                height: 36px;
+                width: 40px;
+                height: 40px;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
                 font-weight: 700;
                 font-size: 14pt;
                 text-align: center;
                 vertical-align: middle;
-                border-radius: 8px;
+                border-radius: 10px;
             }
             .question-text {
                 display: table-cell;
                 vertical-align: middle;
-                padding-left: 12px;
+                padding-left: 14px;
                 font-weight: 600;
-                color: #1e293b;
+                font-size: 11pt;
+                color: #1a1a2e;
+                line-height: 1.4;
             }
             .question-score {
                 display: table-cell;
-                width: 60px;
+                width: 70px;
                 text-align: right;
                 vertical-align: middle;
-                font-weight: 700;
-                font-size: 16pt;
+                font-weight: 800;
+                font-size: 18pt;
+            }
+            .answer-box {
+                background: #f8fafc;
+                border-radius: 10px;
+                padding: 14px 16px;
+                margin: 14px 0;
+            }
+            .answer-label {
+                font-size: 9pt;
+                font-weight: 600;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 6px;
             }
             .answer-text {
-                font-style: italic;
-                color: #64748b;
-                background: #f8fafc;
-                padding: 12px;
-                border-radius: 8px;
-                margin: 12px 0;
                 font-size: 10pt;
-                line-height: 1.6;
+                color: #475569;
+                line-height: 1.7;
+                font-style: italic;
             }
-            .metrics-grid {
+
+            /* ===== SCORE GRID ===== */
+            .scores-grid {
                 display: table;
                 width: 100%;
-                margin: 12px 0;
+                margin: 14px 0;
+                border-collapse: separate;
+                border-spacing: 8px;
             }
-            .metric-box {
+            .score-item {
                 display: table-cell;
-                width: 25%;
-                padding: 8px;
-                text-align: center;
                 background: #f8fafc;
-                border-radius: 8px;
+                border-radius: 10px;
+                padding: 12px;
+                text-align: center;
+                width: 20%;
             }
-            .metric-value {
-                font-size: 16pt;
-                font-weight: 700;
-                color: #667eea;
+            .score-item-value {
+                font-size: 18pt;
+                font-weight: 800;
             }
-            .metric-label {
-                font-size: 9pt;
+            .score-item-label {
+                font-size: 8pt;
                 color: #64748b;
-                margin-top: 2px;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+                margin-top: 4px;
             }
+
+            /* ===== FOOTER ===== */
             .footer {
                 margin-top: 30px;
-                padding-top: 16px;
-                border-top: 1px solid #e2e8f0;
+                padding-top: 20px;
+                border-top: 2px solid #e5e7eb;
                 text-align: center;
+            }
+            .footer-logo {
+                font-size: 11pt;
+                font-weight: 700;
+                color: #667eea;
+                margin-bottom: 4px;
+            }
+            .footer-meta {
                 font-size: 9pt;
                 color: #94a3b8;
             }
+
+            /* ===== COLORS ===== */
+            .text-excellent { color: #10b981; }
+            .text-good { color: #f59e0b; }
+            .text-fair { color: #ef4444; }
+            .text-primary { color: #667eea; }
+
             .page-break {
                 page-break-before: always;
             }
-            .score-excellent { color: #10b981; }
-            .score-good { color: #f59e0b; }
-            .score-fair { color: #ef4444; }
-            .bg-excellent { background: #10b981; }
-            .bg-good { background: #f59e0b; }
-            .bg-fair { background: #ef4444; }
         ';
     }
 
@@ -323,6 +466,15 @@ class Bewerbungstrainer_PDF_Exporter {
         if ($score >= 80) return 'excellent';
         if ($score >= 60) return 'good';
         return 'fair';
+    }
+
+    /**
+     * Get score color hex code based on percentage
+     */
+    private function get_score_color($score) {
+        if ($score >= 80) return '#10b981'; // green
+        if ($score >= 60) return '#f59e0b'; // amber
+        return '#ef4444'; // red
     }
 
     /**
@@ -841,6 +993,7 @@ class Bewerbungstrainer_PDF_Exporter {
         $overall_score = isset($session->overall_score) ? floatval($session->overall_score) * 10 : 0;
         $score_class = $this->get_score_class($overall_score);
         $grade_label = $this->get_grade_label($overall_score);
+        $score_color = $this->get_score_color($overall_score);
 
         // Parse summary feedback (may already be decoded by database class)
         $summary_feedback = null;
@@ -859,146 +1012,95 @@ class Bewerbungstrainer_PDF_Exporter {
             <style><?php echo $this->get_shared_styles(); ?></style>
         </head>
         <body>
-            <!-- Header -->
-            <div class="header">
-                <h1>Szenario-Training</h1>
-                <p class="subtitle"><?php echo esc_html($scenario_title); ?></p>
-                <div class="meta">
-                    <span class="meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
-                    <span class="meta-item">📝 <?php echo count($answers); ?> Fragen beantwortet</span>
+            <!-- Hero Header with Score -->
+            <div class="hero-header">
+                <div class="hero-content">
+                    <div class="hero-left">
+                        <div class="hero-badge">Szenario-Training</div>
+                        <h1 class="hero-title"><?php echo esc_html($scenario_title); ?></h1>
+                        <div class="hero-meta">
+                            <span class="hero-meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
+                            <span class="hero-meta-item">📝 <?php echo count($answers); ?> Fragen</span>
+                        </div>
+                    </div>
+                    <div class="hero-right">
+                        <table style="display: inline-block; border-collapse: collapse;">
+                            <tr>
+                                <td style="text-align: center; background: white; border-radius: 50%; width: 120px; height: 120px; vertical-align: middle;">
+                                    <div style="color: <?php echo $score_color; ?>;">
+                                        <span style="font-size: 38pt; font-weight: 800; line-height: 1;"><?php echo round($overall_score); ?></span><span style="font-size: 16pt; font-weight: 600;">%</span>
+                                    </div>
+                                    <div style="font-size: 9pt; color: #64748b; margin-top: 2px;">GESAMT</div>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="margin-top: 8px; text-align: center;">
+                            <span style="background: rgba(255,255,255,0.9); color: <?php echo $score_color; ?>; padding: 6px 16px; border-radius: 20px; font-size: 11pt; font-weight: 600;">
+                                <?php echo esc_html($grade_label); ?>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Score Box -->
-            <div class="score-box">
-                <div class="score-value score-<?php echo $score_class; ?>"><?php echo round($overall_score); ?>%</div>
-                <div class="score-label">Gesamtbewertung</div>
-                <div class="score-grade"><?php echo esc_html($grade_label); ?></div>
-            </div>
+            <div class="content">
+                <?php if ($summary_feedback) : ?>
+                    <!-- Summary as Insight Card -->
+                    <?php if (!empty($summary_feedback['summary'])) : ?>
+                    <div class="insight-card summary">
+                        <div class="insight-header">
+                            <div class="insight-icon">📋</div>
+                            <div class="insight-title">Zusammenfassung</div>
+                        </div>
+                        <div class="insight-text"><?php echo esc_html($summary_feedback['summary']); ?></div>
+                    </div>
+                    <?php endif; ?>
 
-            <?php if ($summary_feedback) : ?>
-                <!-- Summary -->
-                <?php if (!empty($summary_feedback['summary'])) : ?>
-                <div class="section summary">
-                    <h4>📋 Zusammenfassung</h4>
-                    <p><?php echo esc_html($summary_feedback['summary']); ?></p>
-                </div>
-                <?php endif; ?>
+                    <!-- Overall Scores as Category Cards -->
+                    <?php if (!empty($summary_feedback['scores'])) : ?>
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <div class="section-icon-circle">★</div>
+                        </div>
+                        <div class="section-title">Bewertungsübersicht</div>
+                    </div>
 
-                <!-- Overall Scores -->
-                <?php if (!empty($summary_feedback['scores'])) : ?>
-                <h2>Bewertungsübersicht</h2>
-                <table class="ratings-grid">
-                    <?php foreach ($summary_feedback['scores'] as $category => $score) :
+                    <?php
+                    $category_labels = [
+                        'inhalt' => 'Inhalt',
+                        'struktur' => 'Struktur',
+                        'relevanz' => 'Relevanz',
+                        'praesentation' => 'Präsentation',
+                        'kommunikation' => 'Kommunikation',
+                        'ueberzeugungskraft' => 'Überzeugungskraft'
+                    ];
+                    foreach ($summary_feedback['scores'] as $category => $score) :
                         $score_100 = floatval($score) * 10;
                         $cat_class = $this->get_score_class($score_100);
+                        $cat_color = $this->get_score_color($score_100);
+                        $cat_label = isset($category_labels[strtolower($category)]) ? $category_labels[strtolower($category)] : ucfirst(str_replace('_', ' ', $category));
                     ?>
-                    <tr>
-                        <td class="label"><?php echo esc_html(ucfirst(str_replace('_', ' ', $category))); ?></td>
-                        <td class="bar-cell">
-                            <div class="progress-bar">
-                                <div class="progress-bar-fill bg-<?php echo $cat_class; ?>" style="width: <?php echo $score_100; ?>%;"></div>
-                            </div>
-                        </td>
-                        <td class="score score-<?php echo $cat_class; ?>"><?php echo round($score_100); ?>%</td>
-                    </tr>
+                    <div class="category-card">
+                        <div class="category-header">
+                            <div class="category-name"><?php echo esc_html($cat_label); ?></div>
+                            <div class="category-score" style="color: <?php echo $cat_color; ?>;"><?php echo round($score_100); ?>%</div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill <?php echo $cat_class; ?>" style="width: <?php echo $score_100; ?>%;"></div>
+                        </div>
+                    </div>
                     <?php endforeach; ?>
-                </table>
-                <?php endif; ?>
-
-                <!-- Key Takeaways -->
-                <?php if (!empty($summary_feedback['key_takeaways'])) : ?>
-                <?php echo $this->render_section('tips', '💡 Wichtigste Erkenntnisse', $summary_feedback['key_takeaways']); ?>
-                <?php endif; ?>
-            <?php endif; ?>
-
-            <!-- Individual Answers -->
-            <?php if (!empty($answers)) : ?>
-            <h2>Deine Antworten im Detail</h2>
-            <?php foreach ($answers as $index => $answer) :
-                // feedback_json and audio_analysis_json are already decoded by get_session_answers()
-                $feedback = !empty($answer->feedback_json) ? $answer->feedback_json : null;
-                $audio_analysis = !empty($answer->audio_analysis_json) ? $answer->audio_analysis_json : null;
-                $answer_score = isset($answer->overall_score) ? floatval($answer->overall_score) * 10 : null;
-                $answer_class = $answer_score !== null ? $this->get_score_class($answer_score) : '';
-                $is_no_speech = $answer->transcript === '[Keine Sprache erkannt]';
-            ?>
-            <div class="question-card">
-                <div class="question-header">
-                    <div class="question-number"><?php echo ($index + 1); ?></div>
-                    <div class="question-text"><?php echo esc_html($answer->question_text ?: 'Frage ' . ($index + 1)); ?></div>
-                    <?php if ($answer_score !== null && !$is_no_speech) : ?>
-                    <div class="question-score score-<?php echo $answer_class; ?>"><?php echo round($answer_score); ?>%</div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Transcript -->
-                <?php if (!empty($answer->transcript)) : ?>
-                <div class="answer-text">
-                    "<?php echo esc_html($answer->transcript); ?>"
-                </div>
-                <?php endif; ?>
-
-                <?php if ($feedback && !$is_no_speech) : ?>
-                    <!-- Scores Grid -->
-                    <?php if (!empty($feedback['scores'])) : ?>
-                    <table class="ratings-grid" style="margin-bottom: 12px;">
-                        <?php
-                        $score_labels = [
-                            'content' => 'Inhalt',
-                            'structure' => 'Struktur',
-                            'relevance' => 'Relevanz',
-                            'delivery' => 'Präsentation',
-                            'overall' => 'Gesamt'
-                        ];
-                        foreach ($feedback['scores'] as $key => $value) :
-                            if (!isset($score_labels[$key])) continue;
-                            $val_100 = floatval($value) * 10;
-                            $val_class = $this->get_score_class($val_100);
-                        ?>
-                        <tr>
-                            <td class="label"><?php echo esc_html($score_labels[$key]); ?></td>
-                            <td class="bar-cell">
-                                <div class="progress-bar">
-                                    <div class="progress-bar-fill bg-<?php echo $val_class; ?>" style="width: <?php echo $val_100; ?>%;"></div>
-                                </div>
-                            </td>
-                            <td class="score score-<?php echo $val_class; ?>"><?php echo round($val_100); ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </table>
                     <?php endif; ?>
 
-                    <!-- Strengths -->
-                    <?php if (!empty($feedback['strengths'])) : ?>
-                    <div class="section strengths" style="margin: 8px 0; padding: 10px;">
-                        <h4 style="font-size: 10pt;">✓ Stärken</h4>
-                        <ul style="font-size: 10pt;">
-                            <?php foreach ($feedback['strengths'] as $item) : ?>
-                            <li><?php echo esc_html($item); ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                    <?php endif; ?>
-
-                    <!-- Improvements -->
-                    <?php if (!empty($feedback['improvements'])) : ?>
-                    <div class="section improvements" style="margin: 8px 0; padding: 10px;">
-                        <h4 style="font-size: 10pt;">⚡ Verbesserungspotenzial</h4>
-                        <ul style="font-size: 10pt;">
-                            <?php foreach ($feedback['improvements'] as $item) : ?>
-                            <li><?php echo esc_html($item); ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                    <?php endif; ?>
-
-                    <!-- Tips -->
-                    <?php if (!empty($feedback['tips'])) : ?>
-                    <div class="section tips" style="margin: 8px 0; padding: 10px;">
-                        <h4 style="font-size: 10pt;">💡 Tipps</h4>
-                        <ul style="font-size: 10pt;">
-                            <?php foreach ($feedback['tips'] as $item) : ?>
+                    <!-- Key Takeaways -->
+                    <?php if (!empty($summary_feedback['key_takeaways'])) : ?>
+                    <div class="insight-card tips">
+                        <div class="insight-header">
+                            <div class="insight-icon">💡</div>
+                            <div class="insight-title">Wichtigste Erkenntnisse</div>
+                        </div>
+                        <ul class="insight-list">
+                            <?php foreach ($summary_feedback['key_takeaways'] as $item) : ?>
                             <li><?php echo esc_html($item); ?></li>
                             <?php endforeach; ?>
                         </ul>
@@ -1006,59 +1108,158 @@ class Bewerbungstrainer_PDF_Exporter {
                     <?php endif; ?>
                 <?php endif; ?>
 
-                <!-- Audio Metrics -->
-                <?php if ($audio_analysis && !$is_no_speech) : ?>
-                <div style="margin-top: 12px; padding: 10px; background: #f8fafc; border-radius: 8px;">
-                    <h4 style="font-size: 10pt; margin: 0 0 8px 0; color: #667eea;">🎤 Sprechanalyse</h4>
-                    <table style="width: 100%; font-size: 9pt;">
-                        <tr>
-                            <?php if (!empty($audio_analysis['speech_rate'])) : ?>
-                            <td style="text-align: center; padding: 4px;">
-                                <div style="font-weight: 700; color: #667eea;">
-                                    <?php
-                                    $rate = $audio_analysis['speech_rate'];
-                                    echo $rate === 'optimal' ? '✓ Optimal' : ($rate === 'zu_schnell' ? '⚡ Zu schnell' : '🐢 Zu langsam');
-                                    ?>
-                                </div>
-                                <div style="color: #64748b;">Tempo</div>
-                            </td>
-                            <?php endif; ?>
-                            <?php if (isset($audio_analysis['filler_words']['count'])) : ?>
-                            <td style="text-align: center; padding: 4px;">
-                                <div style="font-weight: 700; color: <?php echo $audio_analysis['filler_words']['count'] <= 2 ? '#10b981' : ($audio_analysis['filler_words']['count'] <= 5 ? '#f59e0b' : '#ef4444'); ?>;">
-                                    <?php echo $audio_analysis['filler_words']['count']; ?>
-                                </div>
-                                <div style="color: #64748b;">Füllwörter</div>
-                            </td>
-                            <?php endif; ?>
-                            <?php if (isset($audio_analysis['confidence_score'])) : ?>
-                            <td style="text-align: center; padding: 4px;">
-                                <div style="font-weight: 700;" class="score-<?php echo $this->get_score_class($audio_analysis['confidence_score']); ?>">
-                                    <?php echo $audio_analysis['confidence_score']; ?>%
-                                </div>
-                                <div style="color: #64748b;">Selbstsicherheit</div>
-                            </td>
-                            <?php endif; ?>
-                            <?php if (isset($audio_analysis['clarity_score'])) : ?>
-                            <td style="text-align: center; padding: 4px;">
-                                <div style="font-weight: 700;" class="score-<?php echo $this->get_score_class($audio_analysis['clarity_score']); ?>">
-                                    <?php echo $audio_analysis['clarity_score']; ?>%
-                                </div>
-                                <div style="color: #64748b;">Klarheit</div>
-                            </td>
-                            <?php endif; ?>
-                        </tr>
-                    </table>
+                <!-- Individual Answers -->
+                <?php if (!empty($answers)) : ?>
+                <div class="section-header">
+                    <div class="section-icon">
+                        <div class="section-icon-circle">?</div>
+                    </div>
+                    <div class="section-title">Deine Antworten im Detail</div>
                 </div>
-                <?php endif; ?>
-            </div>
-            <?php endforeach; ?>
-            <?php endif; ?>
 
-            <!-- Footer -->
-            <div class="footer">
-                <p>Erstellt mit Karriereheld</p>
-                <p><?php echo esc_html(get_bloginfo('name')); ?> • <?php echo esc_html(date('d.m.Y H:i')); ?></p>
+                <?php foreach ($answers as $index => $answer) :
+                    // feedback_json and audio_analysis_json are already decoded by get_session_answers()
+                    $feedback = !empty($answer->feedback_json) ? $answer->feedback_json : null;
+                    $audio_analysis = !empty($answer->audio_analysis_json) ? $answer->audio_analysis_json : null;
+                    $answer_score = isset($answer->overall_score) ? floatval($answer->overall_score) * 10 : null;
+                    $answer_class = $answer_score !== null ? $this->get_score_class($answer_score) : '';
+                    $answer_color = $answer_score !== null ? $this->get_score_color($answer_score) : '#667eea';
+                    $is_no_speech = $answer->transcript === '[Keine Sprache erkannt]';
+                ?>
+                <div class="question-card">
+                    <div class="question-header">
+                        <div class="question-number"><?php echo ($index + 1); ?></div>
+                        <div class="question-text"><?php echo esc_html($answer->question_text ?: 'Frage ' . ($index + 1)); ?></div>
+                        <?php if ($answer_score !== null && !$is_no_speech) : ?>
+                        <div class="question-score" style="color: <?php echo $answer_color; ?>;"><?php echo round($answer_score); ?>%</div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Transcript -->
+                    <?php if (!empty($answer->transcript)) : ?>
+                    <div class="answer-box">
+                        <div class="answer-label">Deine Antwort</div>
+                        <div class="answer-text"><?php echo esc_html($answer->transcript); ?></div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($feedback && !$is_no_speech) : ?>
+                        <!-- Mini Scores -->
+                        <?php if (!empty($feedback['scores'])) : ?>
+                        <table style="width: 100%; margin: 12px 0; border-collapse: separate; border-spacing: 6px;">
+                            <tr>
+                            <?php
+                            $score_labels = [
+                                'content' => 'Inhalt',
+                                'structure' => 'Struktur',
+                                'relevance' => 'Relevanz',
+                                'delivery' => 'Präsentation'
+                            ];
+                            foreach ($feedback['scores'] as $key => $value) :
+                                if (!isset($score_labels[$key])) continue;
+                                $val_100 = floatval($value) * 10;
+                                $val_color = $this->get_score_color($val_100);
+                            ?>
+                                <td style="background: #f8fafc; border-radius: 8px; padding: 10px; text-align: center; width: 25%;">
+                                    <div style="font-size: 16pt; font-weight: 800; color: <?php echo $val_color; ?>;"><?php echo round($val_100); ?></div>
+                                    <div style="font-size: 8pt; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px;"><?php echo esc_html($score_labels[$key]); ?></div>
+                                </td>
+                            <?php endforeach; ?>
+                            </tr>
+                        </table>
+                        <?php endif; ?>
+
+                        <!-- Strengths -->
+                        <?php if (!empty($feedback['strengths'])) : ?>
+                        <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 3px solid #10b981; border-radius: 8px; padding: 12px; margin: 8px 0;">
+                            <div style="font-size: 10pt; font-weight: 700; color: #059669; margin-bottom: 6px;">✓ Stärken</div>
+                            <ul style="margin: 0; padding-left: 18px; font-size: 9pt; color: #374151;">
+                                <?php foreach ($feedback['strengths'] as $item) : ?>
+                                <li style="margin: 4px 0;"><?php echo esc_html($item); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Improvements -->
+                        <?php if (!empty($feedback['improvements'])) : ?>
+                        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 3px solid #f59e0b; border-radius: 8px; padding: 12px; margin: 8px 0;">
+                            <div style="font-size: 10pt; font-weight: 700; color: #b45309; margin-bottom: 6px;">⚡ Verbesserungspotenzial</div>
+                            <ul style="margin: 0; padding-left: 18px; font-size: 9pt; color: #374151;">
+                                <?php foreach ($feedback['improvements'] as $item) : ?>
+                                <li style="margin: 4px 0;"><?php echo esc_html($item); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Tips -->
+                        <?php if (!empty($feedback['tips'])) : ?>
+                        <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 3px solid #3b82f6; border-radius: 8px; padding: 12px; margin: 8px 0;">
+                            <div style="font-size: 10pt; font-weight: 700; color: #1d4ed8; margin-bottom: 6px;">💡 Tipps</div>
+                            <ul style="margin: 0; padding-left: 18px; font-size: 9pt; color: #374151;">
+                                <?php foreach ($feedback['tips'] as $item) : ?>
+                                <li style="margin: 4px 0;"><?php echo esc_html($item); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
+                    <!-- Audio Metrics -->
+                    <?php if ($audio_analysis && !$is_no_speech) : ?>
+                    <div style="margin-top: 12px; padding: 12px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 10pt; font-weight: 700; color: #667eea; margin-bottom: 10px;">🎤 Sprechanalyse</div>
+                        <table style="width: 100%; border-collapse: separate; border-spacing: 8px;">
+                            <tr>
+                                <?php if (!empty($audio_analysis['speech_rate'])) : ?>
+                                <td style="text-align: center; padding: 8px; background: white; border-radius: 8px;">
+                                    <div style="font-weight: 700; font-size: 11pt; color: #667eea;">
+                                        <?php
+                                        $rate = $audio_analysis['speech_rate'];
+                                        echo $rate === 'optimal' ? '✓ Optimal' : ($rate === 'zu_schnell' ? '⚡ Schnell' : '🐢 Langsam');
+                                        ?>
+                                    </div>
+                                    <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Tempo</div>
+                                </td>
+                                <?php endif; ?>
+                                <?php if (isset($audio_analysis['filler_words']['count'])) : ?>
+                                <td style="text-align: center; padding: 8px; background: white; border-radius: 8px;">
+                                    <div style="font-weight: 700; font-size: 14pt; color: <?php echo $audio_analysis['filler_words']['count'] <= 2 ? '#10b981' : ($audio_analysis['filler_words']['count'] <= 5 ? '#f59e0b' : '#ef4444'); ?>;">
+                                        <?php echo $audio_analysis['filler_words']['count']; ?>
+                                    </div>
+                                    <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Füllwörter</div>
+                                </td>
+                                <?php endif; ?>
+                                <?php if (isset($audio_analysis['confidence_score'])) : ?>
+                                <td style="text-align: center; padding: 8px; background: white; border-radius: 8px;">
+                                    <div style="font-weight: 700; font-size: 14pt; color: <?php echo $this->get_score_color($audio_analysis['confidence_score']); ?>;">
+                                        <?php echo $audio_analysis['confidence_score']; ?>%
+                                    </div>
+                                    <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Sicherheit</div>
+                                </td>
+                                <?php endif; ?>
+                                <?php if (isset($audio_analysis['clarity_score'])) : ?>
+                                <td style="text-align: center; padding: 8px; background: white; border-radius: 8px;">
+                                    <div style="font-weight: 700; font-size: 14pt; color: <?php echo $this->get_score_color($audio_analysis['clarity_score']); ?>;">
+                                        <?php echo $audio_analysis['clarity_score']; ?>%
+                                    </div>
+                                    <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Klarheit</div>
+                                </td>
+                                <?php endif; ?>
+                            </tr>
+                        </table>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+                <?php endif; ?>
+
+                <!-- Footer -->
+                <div class="footer">
+                    <div class="footer-logo">Erstellt mit Karriereheld</div>
+                    <div class="footer-meta"><?php echo esc_html(get_bloginfo('name')); ?> • <?php echo esc_html(date('d.m.Y H:i')); ?></div>
+                </div>
             </div>
         </body>
         </html>
@@ -1179,6 +1380,7 @@ class Bewerbungstrainer_PDF_Exporter {
         $overall_score = isset($session->overall_score) ? floatval($session->overall_score) : 0;
         $score_class = $this->get_score_class($overall_score);
         $grade_label = $this->get_grade_label($overall_score);
+        $score_color = $this->get_score_color($overall_score);
 
         // Parse category scores and analysis (may already be decoded by database class)
         $category_scores = [];
@@ -1207,29 +1409,49 @@ class Bewerbungstrainer_PDF_Exporter {
             <style><?php echo $this->get_shared_styles(); ?></style>
         </head>
         <body>
-            <!-- Header -->
-            <div class="header">
-                <h1>Wirkungs-Analyse</h1>
-                <p class="subtitle"><?php echo esc_html($scenario_title); ?></p>
-                <div class="meta">
-                    <span class="meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
-                    <?php if ($duration_seconds > 0) : ?>
-                    <span class="meta-item">⏱️ <?php echo esc_html($duration_formatted); ?> min</span>
-                    <?php endif; ?>
+            <!-- Hero Header with Score -->
+            <div class="hero-header">
+                <div class="hero-content">
+                    <div class="hero-left">
+                        <div class="hero-badge">Wirkungs-Analyse</div>
+                        <h1 class="hero-title"><?php echo esc_html($scenario_title); ?></h1>
+                        <div class="hero-meta">
+                            <span class="hero-meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
+                            <?php if ($duration_seconds > 0) : ?>
+                            <span class="hero-meta-item">⏱️ <?php echo esc_html($duration_formatted); ?> Min.</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="hero-right">
+                        <table style="display: inline-block; border-collapse: collapse;">
+                            <tr>
+                                <td style="text-align: center; background: white; border-radius: 50%; width: 120px; height: 120px; vertical-align: middle;">
+                                    <div style="color: <?php echo $score_color; ?>;">
+                                        <span style="font-size: 38pt; font-weight: 800; line-height: 1;"><?php echo round($overall_score); ?></span><span style="font-size: 16pt; font-weight: 600;">%</span>
+                                    </div>
+                                    <div style="font-size: 9pt; color: #64748b; margin-top: 2px;">GESAMT</div>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="margin-top: 8px; text-align: center;">
+                            <span style="background: rgba(255,255,255,0.9); color: <?php echo $score_color; ?>; padding: 6px 16px; border-radius: 20px; font-size: 11pt; font-weight: 600;">
+                                <?php echo esc_html($grade_label); ?>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Score Box -->
-            <div class="score-box">
-                <div class="score-value score-<?php echo $score_class; ?>"><?php echo round($overall_score); ?>%</div>
-                <div class="score-label">Gesamtbewertung</div>
-                <div class="score-grade"><?php echo esc_html($grade_label); ?></div>
-            </div>
+            <div class="content">
+                <!-- Category Scores as Cards -->
+                <?php if (!empty($category_scores)) : ?>
+                <div class="section-header">
+                    <div class="section-icon">
+                        <div class="section-icon-circle">★</div>
+                    </div>
+                    <div class="section-title">Detaillierte Bewertung</div>
+                </div>
 
-            <!-- Category Scores -->
-            <?php if (!empty($category_scores)) : ?>
-            <h2>Kategorie-Bewertungen</h2>
-            <table class="ratings-grid">
                 <?php
                 $category_labels = [
                     'auftreten' => 'Auftreten',
@@ -1242,50 +1464,70 @@ class Bewerbungstrainer_PDF_Exporter {
                 foreach ($category_scores as $category) :
                     $cat_score = isset($category['score']) ? floatval($category['score']) : 0;
                     $cat_class = $this->get_score_class($cat_score);
+                    $cat_color = $this->get_score_color($cat_score);
                     $cat_label = isset($category['label']) ? $category['label'] : (isset($category_labels[$category['category']]) ? $category_labels[$category['category']] : ucfirst($category['category']));
                 ?>
-                <tr>
-                    <td class="label"><?php echo esc_html($cat_label); ?></td>
-                    <td class="bar-cell">
-                        <div class="progress-bar">
-                            <div class="progress-bar-fill bg-<?php echo $cat_class; ?>" style="width: <?php echo $cat_score; ?>%;"></div>
-                        </div>
-                    </td>
-                    <td class="score score-<?php echo $cat_class; ?>"><?php echo round($cat_score); ?>%</td>
-                </tr>
-                <?php if (!empty($category['feedback'])) : ?>
-                <tr>
-                    <td colspan="3" style="padding: 8px 12px; font-size: 10pt; color: #64748b; font-style: italic;">
-                        <?php echo esc_html($category['feedback']); ?>
-                    </td>
-                </tr>
-                <?php endif; ?>
+                <div class="category-card">
+                    <div class="category-header">
+                        <div class="category-name"><?php echo esc_html($cat_label); ?></div>
+                        <div class="category-score" style="color: <?php echo $cat_color; ?>;"><?php echo round($cat_score); ?>%</div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill <?php echo $cat_class; ?>" style="width: <?php echo $cat_score; ?>%;"></div>
+                    </div>
+                    <?php if (!empty($category['feedback'])) : ?>
+                    <div class="category-feedback"><?php echo esc_html($category['feedback']); ?></div>
+                    <?php endif; ?>
+                </div>
                 <?php endforeach; ?>
-            </table>
-            <?php endif; ?>
+                <?php endif; ?>
 
-            <!-- Key Strengths -->
-            <?php if (!empty($analysis['key_strengths'])) : ?>
-            <?php echo $this->render_section('strengths', '✓ Deine Stärken', $analysis['key_strengths']); ?>
-            <?php endif; ?>
+                <!-- Key Strengths -->
+                <?php if (!empty($analysis['key_strengths'])) : ?>
+                <div class="insight-card strengths">
+                    <div class="insight-header">
+                        <div class="insight-icon">✓</div>
+                        <div class="insight-title">Deine Stärken</div>
+                    </div>
+                    <ul class="insight-list">
+                        <?php foreach ($analysis['key_strengths'] as $item) : ?>
+                        <li><?php echo esc_html($item); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
 
-            <!-- Actionable Tips -->
-            <?php if (!empty($analysis['actionable_tips'])) : ?>
-            <?php echo $this->render_section('tips', '💡 Tipps zur Verbesserung', $analysis['actionable_tips']); ?>
-            <?php endif; ?>
+                <!-- Actionable Tips -->
+                <?php if (!empty($analysis['actionable_tips'])) : ?>
+                <div class="insight-card tips">
+                    <div class="insight-header">
+                        <div class="insight-icon">💡</div>
+                        <div class="insight-title">Tipps zur Verbesserung</div>
+                    </div>
+                    <ul class="insight-list">
+                        <?php foreach ($analysis['actionable_tips'] as $item) : ?>
+                        <li><?php echo esc_html($item); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
 
-            <!-- Summary Feedback -->
-            <?php if (!empty($session->summary_feedback)) : ?>
-            <div class="section summary">
-                <h4>📋 Zusammenfassung</h4>
-                <p><?php echo esc_html($session->summary_feedback); ?></p>
-            </div>
-            <?php endif; ?>
+                <!-- Summary Feedback -->
+                <?php if (!empty($session->summary_feedback)) : ?>
+                <div class="insight-card summary">
+                    <div class="insight-header">
+                        <div class="insight-icon">📋</div>
+                        <div class="insight-title">Zusammenfassung</div>
+                    </div>
+                    <div class="insight-text"><?php echo esc_html($session->summary_feedback); ?></div>
+                </div>
+                <?php endif; ?>
 
-            <!-- Footer -->
-            <div class="footer">
-                <p>Erstellt mit Karriereheld</p>
-                <p><?php echo esc_html(get_bloginfo('name')); ?> • <?php echo esc_html(date('d.m.Y H:i')); ?></p>
+                <!-- Footer -->
+                <div class="footer">
+                    <div class="footer-logo">Erstellt mit Karriereheld</div>
+                    <div class="footer-meta"><?php echo esc_html(get_bloginfo('name')); ?> • <?php echo esc_html(date('d.m.Y H:i')); ?></div>
+                </div>
             </div>
         </body>
         </html>
