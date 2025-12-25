@@ -647,9 +647,24 @@ class Bewerbungstrainer_PDF_Exporter {
 
         // Load Composer autoloader
         $autoload_path = BEWERBUNGSTRAINER_PLUGIN_DIR . 'vendor/autoload.php';
+        error_log('[PDF EXPORT] Looking for autoload at: ' . $autoload_path);
+        error_log('[PDF EXPORT] Plugin dir is: ' . BEWERBUNGSTRAINER_PLUGIN_DIR);
+
         if (!file_exists($autoload_path)) {
+            // Check if vendor directory exists at all
+            $vendor_dir = BEWERBUNGSTRAINER_PLUGIN_DIR . 'vendor';
+            $vendor_exists = is_dir($vendor_dir);
+            error_log('[PDF EXPORT] Vendor directory exists: ' . ($vendor_exists ? 'yes' : 'no'));
             error_log('[PDF EXPORT] DomPDF autoload not found at: ' . $autoload_path);
-            return new WP_Error('missing_library', __('DomPDF-Bibliothek nicht gefunden. Bitte installieren Sie Composer-Abhängigkeiten.', 'bewerbungstrainer'));
+
+            // Try to run composer install if possible
+            return new WP_Error(
+                'missing_library',
+                sprintf(
+                    __('DomPDF-Bibliothek nicht gefunden (Pfad: %s). Bitte führen Sie "composer install" im Plugin-Verzeichnis aus.', 'bewerbungstrainer'),
+                    $autoload_path
+                )
+            );
         }
 
         require_once($autoload_path);
