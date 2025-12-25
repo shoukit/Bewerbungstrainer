@@ -62,6 +62,7 @@ export const useRoleplaySession = ({
   const [error, setError] = useState(null);
   const [isStarted, setIsStarted] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState(null);
 
   // Timer state
   const [startTime, setStartTime] = useState(null);
@@ -264,6 +265,7 @@ export const useRoleplaySession = ({
     // Start analysis
     try {
       setIsAnalyzing(true);
+      setAnalysisStep('audio');
 
       const scenarioContext = {
         title: scenario?.title || 'Live-Simulation',
@@ -311,13 +313,16 @@ export const useRoleplaySession = ({
       }
 
       // Run analysis
+      setAnalysisStep('transcript');
       const analysis = await analyzeRoleplayTranscript(
         transcriptRef.current,
         scenarioContext,
-        audioBlob
+        audioBlob,
+        setAnalysisStep // Pass callback for step updates during analysis
       );
 
       // Save analysis
+      setAnalysisStep('saving');
       if (sessionId && conversationId) {
         await saveRoleplaySessionAnalysis(
           sessionId,
@@ -331,6 +336,7 @@ export const useRoleplaySession = ({
 
       // Navigate to results
       setIsAnalyzing(false);
+      setAnalysisStep(null);
 
       if (onNavigateToSession && sessionId) {
         const sessionForNavigation = {
@@ -349,6 +355,7 @@ export const useRoleplaySession = ({
       console.error('[useRoleplaySession] Analysis failed:', err);
       setError(err.message || 'Fehler bei der Analyse.');
       setIsAnalyzing(false);
+      setAnalysisStep(null);
     }
   }, [
     adapter,
@@ -375,6 +382,7 @@ export const useRoleplaySession = ({
     error,
     isStarted,
     isAnalyzing,
+    analysisStep,
     startTime,
     duration,
     dynamicCoaching,
