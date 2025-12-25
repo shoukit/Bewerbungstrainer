@@ -965,14 +965,16 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
         credentials: 'same-origin',
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      // Parse JSON response with base64 PDF data
+      // Always try to parse JSON response to get error message
       const data = await response.json();
 
+      if (!response.ok) {
+        console.error('[PDF] Server error response:', data);
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
       if (!data.success || !data.pdf_base64) {
+        console.error('[PDF] Invalid response data:', data);
         throw new Error(data.error || 'PDF generation failed');
       }
 

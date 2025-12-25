@@ -643,9 +643,12 @@ class Bewerbungstrainer_PDF_Exporter {
      * @return string|WP_Error PDF file path or WP_Error on failure
      */
     private function html_to_pdf($html, $session_id) {
+        error_log('[PDF EXPORT] Starting html_to_pdf for session ' . $session_id);
+
         // Load Composer autoloader
         $autoload_path = BEWERBUNGSTRAINER_PLUGIN_DIR . 'vendor/autoload.php';
         if (!file_exists($autoload_path)) {
+            error_log('[PDF EXPORT] DomPDF autoload not found at: ' . $autoload_path);
             return new WP_Error('missing_library', __('DomPDF-Bibliothek nicht gefunden. Bitte installieren Sie Composer-Abhängigkeiten.', 'bewerbungstrainer'));
         }
 
@@ -676,10 +679,12 @@ class Bewerbungstrainer_PDF_Exporter {
             // Save PDF
             file_put_contents($file_path, $dompdf->output());
 
+            error_log('[PDF EXPORT] PDF saved successfully to: ' . $file_path);
+
             return $file_path;
 
         } catch (Exception $e) {
-            error_log('Bewerbungstrainer PDF Export Error: ' . $e->getMessage());
+            error_log('[PDF EXPORT] DomPDF error: ' . $e->getMessage());
             return new WP_Error('pdf_generation_failed', __('PDF-Generierung fehlgeschlagen: ', 'bewerbungstrainer') . $e->getMessage());
         }
     }
@@ -768,7 +773,10 @@ class Bewerbungstrainer_PDF_Exporter {
                 $user_id = get_current_user_id();
             }
 
+            error_log('[PDF EXPORT] Starting export for session ' . $session_id . ', user ' . $user_id);
+
             if (!$this->simulator_db) {
+                error_log('[PDF EXPORT] simulator_db is not available');
                 return new WP_Error('not_available', __('Simulator-Modul nicht verfügbar.', 'bewerbungstrainer'));
             }
 
@@ -776,11 +784,15 @@ class Bewerbungstrainer_PDF_Exporter {
             $session = $this->simulator_db->get_session($session_id);
 
             if (!$session) {
+                error_log('[PDF EXPORT] Session not found: ' . $session_id);
                 return new WP_Error('not_found', __('Sitzung nicht gefunden.', 'bewerbungstrainer'));
             }
 
+            error_log('[PDF EXPORT] Found session with user_id: ' . $session->user_id . ', comparing to: ' . $user_id);
+
             // Check ownership
             if ((int) $session->user_id !== (int) $user_id) {
+                error_log('[PDF EXPORT] Permission denied - session user: ' . $session->user_id . ', request user: ' . $user_id);
                 return new WP_Error('forbidden', __('Keine Berechtigung.', 'bewerbungstrainer'));
             }
 

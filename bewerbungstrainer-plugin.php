@@ -254,7 +254,6 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-audio-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-video-handler.php';
-        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-pdf-exporter.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
 
@@ -284,6 +283,9 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-smartbriefing-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-smartbriefing-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-smartbriefing-admin.php';
+
+        // Load PDF exporter AFTER database classes (depends on Simulator and Video Training databases)
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-pdf-exporter.php';
 
         // Load White-Label Partners class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whitelabel-partners.php';

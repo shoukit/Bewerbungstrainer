@@ -1932,6 +1932,8 @@ AUDIO ZUR ANALYSE:";
         $session_id = intval($request['id']);
         $user_id = get_current_user_id();
 
+        error_log('[PDF EXPORT] Simulator export requested for session ' . $session_id . ' by user ' . $user_id);
+
         // Get PDF exporter instance
         $pdf_exporter = Bewerbungstrainer_PDF_Exporter::get_instance();
 
@@ -1939,6 +1941,7 @@ AUDIO ZUR ANALYSE:";
         $result = $pdf_exporter->get_simulator_session_pdf_base64($session_id, $user_id);
 
         if (is_wp_error($result)) {
+            error_log('[PDF EXPORT] Error: ' . $result->get_error_code() . ' - ' . $result->get_error_message());
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => $result->get_error_message(),
