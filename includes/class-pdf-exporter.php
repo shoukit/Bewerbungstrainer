@@ -690,9 +690,9 @@ class Bewerbungstrainer_PDF_Exporter {
             <h1>Bewerbungstrainer - Bewertungsbericht</h1>
 
             <div class="header-info">
-                <p><strong>📅 Datum:</strong> <?php echo esc_html($formatted_date); ?></p>
-                <p><strong>💼 Position:</strong> <?php echo esc_html($session->position); ?></p>
-                <p><strong>🏢 Unternehmen:</strong> <?php echo esc_html($session->company); ?></p>
+                <p><strong>Datum:</strong> <?php echo esc_html($formatted_date); ?></p>
+                <p><strong>Position:</strong> <?php echo esc_html($session->position); ?></p>
+                <p><strong>Unternehmen:</strong> <?php echo esc_html($session->company); ?></p>
             </div>
 
             <?php if ($overall_rating !== null) : ?>
@@ -722,7 +722,7 @@ class Bewerbungstrainer_PDF_Exporter {
 
                 <?php if (isset($feedback['strengths']) && !empty($feedback['strengths'])) : ?>
                 <div class="section strengths">
-                    <h3>✓ Stärken</h3>
+                    <h3>Starken</h3>
                     <ul>
                         <?php foreach ($feedback['strengths'] as $strength) : ?>
                         <li><?php echo esc_html($strength); ?></li>
@@ -733,7 +733,7 @@ class Bewerbungstrainer_PDF_Exporter {
 
                 <?php if (isset($feedback['improvements']) && !empty($feedback['improvements'])) : ?>
                 <div class="section improvements">
-                    <h3>⚡ Verbesserungspotenzial</h3>
+                    <h3>Verbesserungspotenzial</h3>
                     <ul>
                         <?php foreach ($feedback['improvements'] as $improvement) : ?>
                         <li><?php echo esc_html($improvement); ?></li>
@@ -744,7 +744,7 @@ class Bewerbungstrainer_PDF_Exporter {
 
                 <?php if (isset($feedback['tips']) && !empty($feedback['tips'])) : ?>
                 <div class="section tips">
-                    <h3>💡 Tipps für die Zukunft</h3>
+                    <h3>Tipps fur die Zukunft</h3>
                     <ul>
                         <?php foreach ($feedback['tips'] as $tip) : ?>
                         <li><?php echo esc_html($tip); ?></li>
@@ -1017,11 +1017,11 @@ class Bewerbungstrainer_PDF_Exporter {
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                         <td style="vertical-align: middle; width: 60%;">
-                            <div class="hero-badge">Szenario-Training</div>
+                            <div class="hero-badge">SZENARIO-TRAINING</div>
                             <h1 class="hero-title"><?php echo esc_html($scenario_title); ?></h1>
                             <div class="hero-meta">
-                                <span class="hero-meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
-                                <span class="hero-meta-item">📝 <?php echo count($answers); ?> Fragen</span>
+                                <span class="hero-meta-item"><?php echo esc_html($formatted_date); ?></span>
+                                <span class="hero-meta-item"><?php echo count($answers); ?> Fragen beantwortet</span>
                             </div>
                         </td>
                         <td style="vertical-align: middle; text-align: right; width: 40%;">
@@ -1047,7 +1047,9 @@ class Bewerbungstrainer_PDF_Exporter {
                     <?php if (!empty($summary_feedback['summary'])) : ?>
                     <div class="insight-card summary">
                         <div class="insight-header">
-                            <div class="insight-icon">📋</div>
+                            <div class="insight-icon">
+                                <span style="display: inline-block; width: 22px; height: 22px; background: #8b5cf6; color: white; border-radius: 50%; text-align: center; line-height: 22px; font-size: 12pt; font-weight: bold;">Z</span>
+                            </div>
                             <div class="insight-title">Zusammenfassung</div>
                         </div>
                         <div class="insight-text"><?php echo esc_html($summary_feedback['summary']); ?></div>
@@ -1058,9 +1060,9 @@ class Bewerbungstrainer_PDF_Exporter {
                     <?php if (!empty($summary_feedback['scores'])) : ?>
                     <div class="section-header">
                         <div class="section-icon">
-                            <div class="section-icon-circle">★</div>
+                            <div class="section-icon-circle">B</div>
                         </div>
-                        <div class="section-title">Bewertungsübersicht</div>
+                        <div class="section-title">Bewertungsubersicht</div>
                     </div>
 
                     <?php
@@ -1094,7 +1096,9 @@ class Bewerbungstrainer_PDF_Exporter {
                     <?php if (!empty($summary_feedback['key_takeaways'])) : ?>
                     <div class="insight-card tips">
                         <div class="insight-header">
-                            <div class="insight-icon">💡</div>
+                            <div class="insight-icon">
+                                <span style="display: inline-block; width: 22px; height: 22px; background: #f59e0b; color: white; border-radius: 50%; text-align: center; line-height: 22px; font-size: 14pt; font-weight: bold;">!</span>
+                            </div>
                             <div class="insight-title">Wichtigste Erkenntnisse</div>
                         </div>
                         <ul class="insight-list">
@@ -1110,7 +1114,7 @@ class Bewerbungstrainer_PDF_Exporter {
                 <?php if (!empty($answers)) : ?>
                 <div class="section-header">
                     <div class="section-icon">
-                        <div class="section-icon-circle">?</div>
+                        <div class="section-icon-circle">A</div>
                     </div>
                     <div class="section-title">Deine Antworten im Detail</div>
                 </div>
@@ -1169,11 +1173,14 @@ class Bewerbungstrainer_PDF_Exporter {
 
                         <!-- Strengths -->
                         <?php if (!empty($feedback['strengths'])) : ?>
-                        <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 3px solid #10b981; border-radius: 8px; padding: 12px; margin: 8px 0;">
-                            <div style="font-size: 10pt; font-weight: 700; color: #059669; margin-bottom: 6px;">✓ Stärken</div>
-                            <ul style="margin: 0; padding-left: 18px; font-size: 9pt; color: #374151;">
+                        <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 4px solid #10b981; border-radius: 8px; padding: 14px; margin: 10px 0;">
+                            <div style="font-size: 11pt; font-weight: 700; color: #059669; margin-bottom: 8px;">
+                                <span style="display: inline-block; width: 18px; height: 18px; background: #10b981; color: white; border-radius: 50%; text-align: center; line-height: 18px; font-size: 12pt; margin-right: 8px;">+</span>
+                                Starken
+                            </div>
+                            <ul style="margin: 0; padding-left: 28px; font-size: 10pt; color: #374151; line-height: 1.6;">
                                 <?php foreach ($feedback['strengths'] as $item) : ?>
-                                <li style="margin: 4px 0;"><?php echo esc_html($item); ?></li>
+                                <li style="margin: 5px 0;"><?php echo esc_html($item); ?></li>
                                 <?php endforeach; ?>
                             </ul>
                         </div>
@@ -1181,11 +1188,14 @@ class Bewerbungstrainer_PDF_Exporter {
 
                         <!-- Improvements -->
                         <?php if (!empty($feedback['improvements'])) : ?>
-                        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 3px solid #f59e0b; border-radius: 8px; padding: 12px; margin: 8px 0;">
-                            <div style="font-size: 10pt; font-weight: 700; color: #b45309; margin-bottom: 6px;">⚡ Verbesserungspotenzial</div>
-                            <ul style="margin: 0; padding-left: 18px; font-size: 9pt; color: #374151;">
+                        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px; margin: 10px 0;">
+                            <div style="font-size: 11pt; font-weight: 700; color: #b45309; margin-bottom: 8px;">
+                                <span style="display: inline-block; width: 18px; height: 18px; background: #f59e0b; color: white; border-radius: 50%; text-align: center; line-height: 18px; font-size: 12pt; margin-right: 8px;">!</span>
+                                Verbesserungspotenzial
+                            </div>
+                            <ul style="margin: 0; padding-left: 28px; font-size: 10pt; color: #374151; line-height: 1.6;">
                                 <?php foreach ($feedback['improvements'] as $item) : ?>
-                                <li style="margin: 4px 0;"><?php echo esc_html($item); ?></li>
+                                <li style="margin: 5px 0;"><?php echo esc_html($item); ?></li>
                                 <?php endforeach; ?>
                             </ul>
                         </div>
@@ -1193,11 +1203,14 @@ class Bewerbungstrainer_PDF_Exporter {
 
                         <!-- Tips -->
                         <?php if (!empty($feedback['tips'])) : ?>
-                        <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 3px solid #3b82f6; border-radius: 8px; padding: 12px; margin: 8px 0;">
-                            <div style="font-size: 10pt; font-weight: 700; color: #1d4ed8; margin-bottom: 6px;">💡 Tipps</div>
-                            <ul style="margin: 0; padding-left: 18px; font-size: 9pt; color: #374151;">
+                        <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; border-radius: 8px; padding: 14px; margin: 10px 0;">
+                            <div style="font-size: 11pt; font-weight: 700; color: #1d4ed8; margin-bottom: 8px;">
+                                <span style="display: inline-block; width: 18px; height: 18px; background: #3b82f6; color: white; border-radius: 50%; text-align: center; line-height: 18px; font-size: 10pt; margin-right: 8px;">i</span>
+                                Tipps
+                            </div>
+                            <ul style="margin: 0; padding-left: 28px; font-size: 10pt; color: #374151; line-height: 1.6;">
                                 <?php foreach ($feedback['tips'] as $item) : ?>
-                                <li style="margin: 4px 0;"><?php echo esc_html($item); ?></li>
+                                <li style="margin: 5px 0;"><?php echo esc_html($item); ?></li>
                                 <?php endforeach; ?>
                             </ul>
                         </div>
@@ -1206,43 +1219,46 @@ class Bewerbungstrainer_PDF_Exporter {
 
                     <!-- Audio Metrics -->
                     <?php if ($audio_analysis && !$is_no_speech) : ?>
-                    <div style="margin-top: 12px; padding: 12px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 10px; border: 1px solid #e2e8f0;">
-                        <div style="font-size: 10pt; font-weight: 700; color: #667eea; margin-bottom: 10px;">🎤 Sprechanalyse</div>
+                    <div style="margin-top: 14px; padding: 14px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 11pt; font-weight: 700; color: #667eea; margin-bottom: 12px;">
+                            <span style="display: inline-block; width: 20px; height: 20px; background: #667eea; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 10pt; margin-right: 8px;">S</span>
+                            Sprechanalyse
+                        </div>
                         <table style="width: 100%; border-collapse: separate; border-spacing: 8px;">
                             <tr>
                                 <?php if (!empty($audio_analysis['speech_rate'])) : ?>
-                                <td style="text-align: center; padding: 8px; background: white; border-radius: 8px;">
-                                    <div style="font-weight: 700; font-size: 11pt; color: #667eea;">
-                                        <?php
-                                        $rate = $audio_analysis['speech_rate'];
-                                        echo $rate === 'optimal' ? '✓ Optimal' : ($rate === 'zu_schnell' ? '⚡ Schnell' : '🐢 Langsam');
-                                        ?>
-                                    </div>
-                                    <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Tempo</div>
+                                <td style="text-align: center; padding: 10px; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                    <?php
+                                    $rate = $audio_analysis['speech_rate'];
+                                    $rate_text = $rate === 'optimal' ? 'Optimal' : ($rate === 'zu_schnell' ? 'Schnell' : 'Langsam');
+                                    $rate_color = $rate === 'optimal' ? '#10b981' : ($rate === 'zu_schnell' ? '#f59e0b' : '#3b82f6');
+                                    ?>
+                                    <div style="font-weight: 700; font-size: 12pt; color: <?php echo $rate_color; ?>;"><?php echo $rate_text; ?></div>
+                                    <div style="font-size: 8pt; color: #64748b; margin-top: 3px; text-transform: uppercase;">Tempo</div>
                                 </td>
                                 <?php endif; ?>
                                 <?php if (isset($audio_analysis['filler_words']['count'])) : ?>
-                                <td style="text-align: center; padding: 8px; background: white; border-radius: 8px;">
-                                    <div style="font-weight: 700; font-size: 14pt; color: <?php echo $audio_analysis['filler_words']['count'] <= 2 ? '#10b981' : ($audio_analysis['filler_words']['count'] <= 5 ? '#f59e0b' : '#ef4444'); ?>;">
+                                <td style="text-align: center; padding: 10px; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                    <div style="font-weight: 700; font-size: 16pt; color: <?php echo $audio_analysis['filler_words']['count'] <= 2 ? '#10b981' : ($audio_analysis['filler_words']['count'] <= 5 ? '#f59e0b' : '#ef4444'); ?>;">
                                         <?php echo $audio_analysis['filler_words']['count']; ?>
                                     </div>
-                                    <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Füllwörter</div>
+                                    <div style="font-size: 8pt; color: #64748b; margin-top: 3px; text-transform: uppercase;">Fullworter</div>
                                 </td>
                                 <?php endif; ?>
                                 <?php if (isset($audio_analysis['confidence_score'])) : ?>
-                                <td style="text-align: center; padding: 8px; background: white; border-radius: 8px;">
-                                    <div style="font-weight: 700; font-size: 14pt; color: <?php echo $this->get_score_color($audio_analysis['confidence_score']); ?>;">
+                                <td style="text-align: center; padding: 10px; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                    <div style="font-weight: 700; font-size: 16pt; color: <?php echo $this->get_score_color($audio_analysis['confidence_score']); ?>;">
                                         <?php echo $audio_analysis['confidence_score']; ?>%
                                     </div>
-                                    <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Sicherheit</div>
+                                    <div style="font-size: 8pt; color: #64748b; margin-top: 3px; text-transform: uppercase;">Sicherheit</div>
                                 </td>
                                 <?php endif; ?>
                                 <?php if (isset($audio_analysis['clarity_score'])) : ?>
-                                <td style="text-align: center; padding: 8px; background: white; border-radius: 8px;">
-                                    <div style="font-weight: 700; font-size: 14pt; color: <?php echo $this->get_score_color($audio_analysis['clarity_score']); ?>;">
+                                <td style="text-align: center; padding: 10px; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                    <div style="font-weight: 700; font-size: 16pt; color: <?php echo $this->get_score_color($audio_analysis['clarity_score']); ?>;">
                                         <?php echo $audio_analysis['clarity_score']; ?>%
                                     </div>
-                                    <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Klarheit</div>
+                                    <div style="font-size: 8pt; color: #64748b; margin-top: 3px; text-transform: uppercase;">Klarheit</div>
                                 </td>
                                 <?php endif; ?>
                             </tr>
@@ -1415,9 +1431,9 @@ class Bewerbungstrainer_PDF_Exporter {
                             <div class="hero-badge">Wirkungs-Analyse</div>
                             <h1 class="hero-title"><?php echo esc_html($scenario_title); ?></h1>
                             <div class="hero-meta">
-                                <span class="hero-meta-item">📅 <?php echo esc_html($formatted_date); ?></span>
+                                <span class="hero-meta-item"><?php echo esc_html($formatted_date); ?></span>
                                 <?php if ($duration_seconds > 0) : ?>
-                                <span class="hero-meta-item">⏱️ <?php echo esc_html($duration_formatted); ?> Min.</span>
+                                <span class="hero-meta-item"><?php echo esc_html($duration_formatted); ?> Min.</span>
                                 <?php endif; ?>
                             </div>
                         </td>
@@ -1443,7 +1459,7 @@ class Bewerbungstrainer_PDF_Exporter {
                 <?php if (!empty($category_scores)) : ?>
                 <div class="section-header">
                     <div class="section-icon">
-                        <div class="section-icon-circle">★</div>
+                        <div class="section-icon-circle">B</div>
                     </div>
                     <div class="section-title">Detaillierte Bewertung</div>
                 </div>
@@ -1482,8 +1498,10 @@ class Bewerbungstrainer_PDF_Exporter {
                 <?php if (!empty($analysis['key_strengths'])) : ?>
                 <div class="insight-card strengths">
                     <div class="insight-header">
-                        <div class="insight-icon">✓</div>
-                        <div class="insight-title">Deine Stärken</div>
+                        <div class="insight-icon">
+                            <span style="display: inline-block; width: 22px; height: 22px; background: #10b981; color: white; border-radius: 50%; text-align: center; line-height: 22px; font-size: 14pt; font-weight: bold;">+</span>
+                        </div>
+                        <div class="insight-title">Deine Starken</div>
                     </div>
                     <ul class="insight-list">
                         <?php foreach ($analysis['key_strengths'] as $item) : ?>
@@ -1497,7 +1515,9 @@ class Bewerbungstrainer_PDF_Exporter {
                 <?php if (!empty($analysis['actionable_tips'])) : ?>
                 <div class="insight-card tips">
                     <div class="insight-header">
-                        <div class="insight-icon">💡</div>
+                        <div class="insight-icon">
+                            <span style="display: inline-block; width: 22px; height: 22px; background: #f59e0b; color: white; border-radius: 50%; text-align: center; line-height: 22px; font-size: 14pt; font-weight: bold;">!</span>
+                        </div>
                         <div class="insight-title">Tipps zur Verbesserung</div>
                     </div>
                     <ul class="insight-list">
@@ -1512,7 +1532,9 @@ class Bewerbungstrainer_PDF_Exporter {
                 <?php if (!empty($session->summary_feedback)) : ?>
                 <div class="insight-card summary">
                     <div class="insight-header">
-                        <div class="insight-icon">📋</div>
+                        <div class="insight-icon">
+                            <span style="display: inline-block; width: 22px; height: 22px; background: #8b5cf6; color: white; border-radius: 50%; text-align: center; line-height: 22px; font-size: 12pt; font-weight: bold;">Z</span>
+                        </div>
                         <div class="insight-title">Zusammenfassung</div>
                     </div>
                     <div class="insight-text"><?php echo esc_html($session->summary_feedback); ?></div>
