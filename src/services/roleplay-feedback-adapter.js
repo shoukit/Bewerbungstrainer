@@ -16,9 +16,10 @@ import { delay } from '../utils/timing.js';
  * @param {array} transcript - Array of transcript messages [{role, text, timestamp}]
  * @param {object} scenarioContext - Context about the roleplay scenario
  * @param {object} audioFile - Optional audio file for audio analysis
+ * @param {function} onStepChange - Optional callback to report progress steps
  * @returns {Promise<object>} Analysis results with feedback and audio analysis
  */
-export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}, audioFile = null) {
+export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}, audioFile = null, onStepChange = null) {
 
   if (!transcript || transcript.length === 0) {
     throw new Error('Transkript ist leer. Das Gespräch muss mindestens einen Austausch enthalten.');
@@ -69,6 +70,10 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
 
   // Generate audio analysis if audio file is provided
   if (audioFile) {
+    // Report step change before starting audio analysis
+    if (onStepChange) {
+      onStepChange('audio_analysis');
+    }
     try {
       // Include transcript for improved speaker identification in audio analysis
       results.audioAnalysisContent = await generateAudioAnalysis(

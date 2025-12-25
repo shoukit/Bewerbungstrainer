@@ -131,6 +131,15 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const [feedbackContent, setFeedbackContent] = useState(null);
   const [audioAnalysisContent, setAudioAnalysisContent] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState(null);
+
+  // Analysis step definitions for progress display
+  const analysisSteps = {
+    audio: { label: 'Audio wird abgerufen...', progress: 20 },
+    transcript: { label: 'Transkript wird ausgewertet...', progress: 50 },
+    audio_analysis: { label: 'Sprechweise wird analysiert...', progress: 75 },
+    saving: { label: 'Ergebnisse werden gespeichert...', progress: 90 },
+  };
 
   // Mobile panel state
   const [showCoachingOnMobile, setShowCoachingOnMobile] = useState(false);
@@ -574,6 +583,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     // Analyze transcript
     try {
       setIsAnalyzing(true);
+      setAnalysisStep('audio');
 
       const scenarioContext = {
         title: scenario.title,
@@ -602,9 +612,11 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       }
 
       // Step 3: Run analysis (with or without audio)
-      const analysis = await analyzeRoleplayTranscript(transcript, scenarioContext, audioBlob);
+      setAnalysisStep('transcript');
+      const analysis = await analyzeRoleplayTranscript(transcript, scenarioContext, audioBlob, setAnalysisStep);
 
       // Save analysis to database
+      setAnalysisStep('saving');
       if (sessionId && conversationIdRef.current) {
         await saveRoleplaySessionAnalysis(
           sessionId,
@@ -618,6 +630,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
       // Navigate to session detail view
       setIsAnalyzing(false);
+      setAnalysisStep(null);
       if (onNavigateToSession && sessionId) {
         // Create session object for navigation
         const sessionForNavigation = {
@@ -641,6 +654,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       console.error('❌ [RoleplaySession] Analysis failed:', err);
       setError(err.message || 'Fehler bei der Analyse.');
       setIsAnalyzing(false);
+      setAnalysisStep(null);
     }
   };
 
@@ -726,6 +740,10 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
   // Analyzing state - Full screen blocking overlay to prevent navigation
   if (isAnalyzing) {
+    const currentStep = analysisStep ? analysisSteps[analysisStep] : { label: 'Wird vorbereitet...', progress: 5 };
+    const stepOrder = ['audio', 'transcript', 'audio_analysis', 'saving'];
+    const currentStepIndex = stepOrder.indexOf(analysisStep);
+
     return (
       <div
         style={{
@@ -749,17 +767,39 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
         >
           <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" style={{ color: themedStyles.iconPrimary }} />
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Feedback wird generiert...</h2>
-          <p className="text-slate-600">Das kann einen Moment dauern</p>
+          <motion.p
+            key={analysisStep}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-slate-600 min-h-[24px]"
+          >
+            {currentStep.label}
+          </motion.p>
           <div className="mt-6">
             <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
               <motion.div
                 className="h-full"
                 style={{ background: themedStyles.headerGradient }}
                 initial={{ width: '0%' }}
-                animate={{ width: '100%' }}
-                transition={{ duration: 3, repeat: Infinity }}
+                animate={{ width: `${currentStep.progress}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
               />
             </div>
+          </div>
+          {/* Step indicators */}
+          <div className="mt-6 flex justify-center gap-2">
+            {stepOrder.map((step, index) => (
+              <div
+                key={step}
+                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                  index < currentStepIndex
+                    ? 'bg-green-500'
+                    : index === currentStepIndex
+                    ? 'bg-blue-500'
+                    : 'bg-slate-200'
+                }`}
+              />
+            ))}
           </div>
         </motion.div>
       </div>
