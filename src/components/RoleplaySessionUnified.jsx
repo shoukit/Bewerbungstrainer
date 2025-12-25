@@ -63,6 +63,7 @@ const RoleplaySessionUnified = ({
     error,
     isStarted,
     isAnalyzing,
+    analysisStep,
     duration,
     dynamicCoaching,
     isCoachingGenerating,
@@ -271,8 +272,20 @@ const RoleplaySessionUnified = ({
     );
   }
 
-  // Analyzing state
+  // Analysis step definitions for progress display
+  const analysisSteps = {
+    audio: { label: 'Audio wird abgerufen...', progress: 20 },
+    transcript: { label: 'Transkript wird ausgewertet...', progress: 50 },
+    audio_analysis: { label: 'Sprechweise wird analysiert...', progress: 75 },
+    saving: { label: 'Ergebnisse werden gespeichert...', progress: 90 },
+  };
+
+  // Analyzing state - Full screen blocking overlay to prevent navigation
   if (isAnalyzing) {
+    const currentStep = analysisStep ? analysisSteps[analysisStep] : { label: 'Wird vorbereitet...', progress: 5 };
+    const stepOrder = ['audio', 'transcript', 'audio_analysis', 'saving'];
+    const currentStepIndex = stepOrder.indexOf(analysisStep);
+
     return (
       <div
         style={{
@@ -296,17 +309,39 @@ const RoleplaySessionUnified = ({
         >
           <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" style={{ color: themedStyles.primaryAccent }} />
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Feedback wird generiert...</h2>
-          <p className="text-slate-600">Das kann einen Moment dauern</p>
+          <motion.p
+            key={analysisStep}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-slate-600 min-h-[24px]"
+          >
+            {currentStep.label}
+          </motion.p>
           <div className="mt-6">
             <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
               <motion.div
                 className="h-full"
                 style={{ background: themedStyles.headerGradient }}
                 initial={{ width: '0%' }}
-                animate={{ width: '100%' }}
-                transition={{ duration: 3, repeat: Infinity }}
+                animate={{ width: `${currentStep.progress}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
               />
             </div>
+          </div>
+          {/* Step indicators */}
+          <div className="mt-6 flex justify-center gap-2">
+            {stepOrder.map((step, index) => (
+              <div
+                key={step}
+                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                  index < currentStepIndex
+                    ? 'bg-green-500'
+                    : index === currentStepIndex
+                    ? 'bg-blue-500'
+                    : 'bg-slate-200'
+                }`}
+              />
+            ))}
           </div>
         </motion.div>
       </div>
