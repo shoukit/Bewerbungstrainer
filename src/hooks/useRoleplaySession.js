@@ -242,7 +242,10 @@ export const useRoleplaySession = ({
    * End the conversation and analyze
    */
   const endSession = useCallback(async () => {
-    // Disconnect first
+    // Get conversation ID BEFORE disconnecting (cleanup clears it)
+    const conversationId = adapter.getConversationId();
+
+    // Disconnect
     adapter.disconnect();
 
     // Calculate final duration
@@ -284,9 +287,6 @@ export const useRoleplaySession = ({
         interviewer_profile: scenario?.interviewer_profile,
         feedback_prompt: scenario?.feedback_prompt,
       };
-
-      // Get conversation ID
-      const conversationId = adapter.getConversationId();
 
       // Fetch audio for analysis
       let audioBlob = null;
