@@ -21,7 +21,7 @@ import RoleplaySessionReport from './roleplay/RoleplaySessionReport';
 // MAIN COMPONENT
 // =============================================================================
 
-function SessionDetailView({ session, onBack }) {
+function SessionDetailView({ session, onBack, onRepeatSession }) {
   const [sessionData, setSessionData] = useState(session);
   const [scenario, setScenario] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -115,7 +115,7 @@ function SessionDetailView({ session, onBack }) {
       feedback={parsedFeedback}
       audioAnalysis={parsedAudioAnalysis}
       onBack={onBack}
-      onRepeat={scenario ? () => { window.location.href = `?scenario=${scenario.id}`; } : undefined}
+      onRepeat={scenario && onRepeatSession ? () => onRepeatSession(sessionData, scenario, 'roleplay') : undefined}
     />
   );
 }

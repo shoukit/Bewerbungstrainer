@@ -774,6 +774,7 @@ function AppContent() {
           <SessionDetailView
             session={getSessionFromState()}
             onBack={handleCloseSessionDetail}
+            onRepeatSession={handleRepeatSession}
           />
         }
       />
