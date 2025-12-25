@@ -839,8 +839,9 @@ class Bewerbungstrainer_PDF_Exporter {
             <?php if (!empty($answers)) : ?>
             <h2>Deine Antworten im Detail</h2>
             <?php foreach ($answers as $index => $answer) :
-                $feedback = !empty($answer->feedback_json) ? json_decode($answer->feedback_json, true) : null;
-                $audio_analysis = !empty($answer->audio_analysis) ? json_decode($answer->audio_analysis, true) : null;
+                // feedback_json and audio_analysis_json are already decoded by get_session_answers()
+                $feedback = !empty($answer->feedback_json) ? $answer->feedback_json : null;
+                $audio_analysis = !empty($answer->audio_analysis_json) ? $answer->audio_analysis_json : null;
                 $answer_score = isset($answer->overall_score) ? floatval($answer->overall_score) * 10 : null;
                 $answer_class = $answer_score !== null ? $this->get_score_class($answer_score) : '';
                 $is_no_speech = $answer->transcript === '[Keine Sprache erkannt]';
