@@ -619,23 +619,74 @@ class Bewerbungstrainer_PDF_Exporter {
         $formatted_date = $date->format('d.m.Y H:i');
         $primary_color = '#0d6a7c';
 
-        // Extract position and company (may be in variables_json for roleplay sessions)
-        $position = '';
-        $company = '';
-        if (isset($session->position)) {
-            $position = $session->position;
-        }
-        if (isset($session->company)) {
-            $company = $session->company;
-        }
-        // For roleplay sessions, extract from variables_json
-        if (empty($position) && !empty($session->variables_json)) {
+        // Extract variables from JSON
+        $variables = array();
+        if (!empty($session->variables_json)) {
             $variables = is_array($session->variables_json)
                 ? $session->variables_json
                 : json_decode($session->variables_json, true);
-            if (is_array($variables)) {
-                $position = isset($variables['position']) ? $variables['position'] : '';
-                $company = isset($variables['company']) ? $variables['company'] : '';
+            if (!is_array($variables)) {
+                $variables = array();
+            }
+        }
+
+        // Extract position - try multiple common key variations
+        $position = '';
+        if (isset($session->position) && !empty($session->position)) {
+            $position = $session->position;
+        } else {
+            $position_keys = array('position', 'stelle', 'job_position', 'bewerber_position', 'rolle', 'job', 'ausbildung');
+            foreach ($position_keys as $key) {
+                if (isset($variables[$key]) && !empty($variables[$key])) {
+                    $position = $variables[$key];
+                    break;
+                }
+            }
+        }
+
+        // Extract company - try multiple common key variations
+        $company = '';
+        if (isset($session->company) && !empty($session->company)) {
+            $company = $session->company;
+        } else {
+            $company_keys = array('company', 'unternehmen', 'firma', 'arbeitgeber', 'betrieb', 'organisation');
+            foreach ($company_keys as $key) {
+                if (isset($variables[$key]) && !empty($variables[$key])) {
+                    $company = $variables[$key];
+                    break;
+                }
+            }
+        }
+
+        // Get scenario title if available
+        $scenario_title = '';
+        if (isset($session->scenario_id) && $session->scenario_id) {
+            $scenario_post = get_post($session->scenario_id);
+            if ($scenario_post) {
+                $scenario_title = $scenario_post->post_title;
+            }
+        }
+
+        // Build display info - show relevant variables
+        $display_info = array();
+        if (!empty($scenario_title)) {
+            $display_info['Szenario'] = $scenario_title;
+        }
+        if (!empty($position)) {
+            $display_info['Position'] = $position;
+        }
+        if (!empty($company)) {
+            $display_info['Unternehmen'] = $company;
+        }
+        // Add any other interesting variables (user_name excluded)
+        $exclude_keys = array('position', 'stelle', 'job_position', 'bewerber_position', 'rolle', 'job', 'ausbildung',
+                              'company', 'unternehmen', 'firma', 'arbeitgeber', 'betrieb', 'organisation',
+                              'user_name', 'name', 'interviewer_name', 'interviewer_role');
+        foreach ($variables as $key => $value) {
+            if (!empty($value) && !in_array($key, $exclude_keys) && count($display_info) < 5) {
+                // Convert key to readable label
+                $label = ucfirst(str_replace('_', ' ', $key));
+                $display_info[$label] = $value;
             }
         }
 
@@ -682,43 +733,81 @@ class Bewerbungstrainer_PDF_Exporter {
                     text-align: center;
                     margin: 0 0 20px 0;
                 }
-                .info-box-header {
-                    background-color: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    padding: 15px 20px;
-                    margin: 20px auto;
-                    max-width: 400px;
-                    text-align: center;
+                .header-grid {
+                    display: table;
+                    width: 100%;
+                    margin: 20px 0;
+                    border-spacing: 15px 0;
                 }
-                .info-row {
-                    margin: 5px 0;
+                .header-cell {
+                    display: table-cell;
+                    vertical-align: top;
+                }
+                .header-cell.info {
+                    width: 60%;
+                }
+                .header-cell.score {
+                    width: 40%;
+                }
+                .info-card {
+                    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                    border: 1px solid #e2e8f0;
+                    border-radius: 12px;
+                    padding: 20px;
+                    height: 100%;
+                }
+                .info-card-title {
+                    font-size: 9pt;
+                    font-weight: 600;
+                    color: #94a3b8;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 12px;
+                }
+                .info-item {
+                    margin: 8px 0;
+                    padding: 8px 12px;
+                    background: white;
+                    border-radius: 8px;
+                    border-left: 3px solid <?php echo $primary_color; ?>;
                 }
                 .info-label {
+                    font-size: 8pt;
                     font-weight: 600;
                     color: #64748b;
+                    display: block;
+                    margin-bottom: 2px;
                 }
                 .info-value {
+                    font-size: 10pt;
                     color: #1e293b;
+                    font-weight: 500;
                 }
-                .score-box {
+                .score-card {
+                    background: linear-gradient(135deg, <?php echo $primary_color; ?>15 0%, <?php echo $primary_color; ?>08 100%);
+                    border: 2px solid <?php echo $primary_color; ?>40;
+                    border-radius: 12px;
+                    padding: 25px 20px;
                     text-align: center;
-                    margin: 20px auto;
-                    padding: 20px;
-                    background-color: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    max-width: 300px;
+                    height: 100%;
                 }
                 .score-value {
-                    font-size: 36pt;
+                    font-size: 48pt;
                     font-weight: 800;
+                    line-height: 1;
+                    margin-bottom: 8px;
                 }
                 .score-label {
-                    font-size: 10pt;
-                    color: #64748b;
+                    font-size: 11pt;
+                    font-weight: 600;
+                    color: <?php echo $primary_color; ?>;
                     text-transform: uppercase;
-                    margin-top: 5px;
+                    letter-spacing: 0.5px;
+                }
+                .score-sublabel {
+                    font-size: 9pt;
+                    color: #64748b;
+                    margin-top: 4px;
                 }
                 .divider {
                     border: none;
@@ -809,27 +898,32 @@ class Bewerbungstrainer_PDF_Exporter {
 
             <h1 class="main-title">Live-Simulation Auswertung</h1>
 
-            <div class="info-box-header">
-                <div class="info-row">
-                    <span class="info-label">Position:</span>
-                    <span class="info-value"><?php echo esc_html($position); ?></span>
+            <div class="header-grid">
+                <div class="header-cell info">
+                    <div class="info-card">
+                        <div class="info-card-title">Training Details</div>
+                        <?php foreach ($display_info as $label => $value) : ?>
+                        <div class="info-item">
+                            <span class="info-label"><?php echo esc_html($label); ?></span>
+                            <span class="info-value"><?php echo esc_html($value); ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                        <div class="info-item">
+                            <span class="info-label">Datum</span>
+                            <span class="info-value"><?php echo esc_html($formatted_date); ?></span>
+                        </div>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Unternehmen:</span>
-                    <span class="info-value"><?php echo esc_html($company); ?></span>
+                <?php if ($overall_rating !== null) : ?>
+                <div class="header-cell score">
+                    <div class="score-card">
+                        <div class="score-value" style="color: <?php echo $score_color; ?>;"><?php echo $overall_rating; ?>/10</div>
+                        <div class="score-label"><?php echo esc_html($grade_label); ?></div>
+                        <div class="score-sublabel">Gesamtbewertung</div>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Datum:</span>
-                    <span class="info-value"><?php echo esc_html($formatted_date); ?></span>
-                </div>
+                <?php endif; ?>
             </div>
-
-            <?php if ($overall_rating !== null) : ?>
-            <div class="score-box">
-                <div class="score-value" style="color: <?php echo $score_color; ?>;"><?php echo $overall_rating; ?>/10</div>
-                <div class="score-label">Gesamtbewertung - <?php echo esc_html($grade_label); ?></div>
-            </div>
-            <?php endif; ?>
 
             <hr class="divider">
 
