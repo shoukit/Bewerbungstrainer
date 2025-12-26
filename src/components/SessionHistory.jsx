@@ -335,6 +335,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       <BriefingWorkbook
         briefing={selectedBriefing}
         onBack={handleBackFromBriefing}
+        onDelete={handleDeleteBriefing}
       />
     );
   }

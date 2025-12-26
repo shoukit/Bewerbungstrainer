@@ -1719,12 +1719,17 @@ class Bewerbungstrainer_PDF_Exporter {
                     background: #ffffff;
                 }
 
-                /* Hero Header */
-                .hero-header {
+                /* Hero Header - Using table for DomPDF compatibility */
+                .hero-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                .hero-table td {
                     background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #4f46e5 100%);
-                    margin: -15mm -12mm 0 -12mm;
-                    padding: 25px 35px;
+                    padding: 30px 35px;
                     color: white;
+                    border-radius: 12px;
                 }
                 .hero-badge {
                     display: inline-block;
@@ -1743,6 +1748,12 @@ class Bewerbungstrainer_PDF_Exporter {
                     margin: 0 0 8px 0;
                     letter-spacing: -0.5px;
                     line-height: 1.2;
+                }
+                .hero-subtitle {
+                    font-size: 11pt;
+                    opacity: 0.9;
+                    margin: 0 0 12px 0;
+                    font-weight: 400;
                 }
                 .hero-meta {
                     font-size: 10pt;
@@ -1912,17 +1923,24 @@ class Bewerbungstrainer_PDF_Exporter {
             </style>
         </head>
         <body>
-            <!-- Hero Header -->
-            <div class="hero-header">
-                <div class="hero-badge">SMART BRIEFING</div>
-                <h1 class="hero-title"><?php echo esc_html($briefing_title); ?></h1>
-                <div class="hero-meta">
-                    <span class="hero-meta-item"><?php echo esc_html($formatted_date); ?></span>
-                    <span class="hero-meta-item"><?php echo count($sections); ?> Abschnitte</span>
-                </div>
-            </div>
+            <!-- Hero Header - Table-based for DomPDF compatibility -->
+            <table class="hero-table">
+                <tr>
+                    <td>
+                        <div class="hero-badge">SMART BRIEFING</div>
+                        <h1 class="hero-title"><?php echo esc_html($briefing_title); ?></h1>
+                        <?php if ($template && !empty($template->description)) : ?>
+                        <p class="hero-subtitle"><?php echo esc_html($template->description); ?></p>
+                        <?php endif; ?>
+                        <div class="hero-meta">
+                            <span class="hero-meta-item"><?php echo esc_html($formatted_date); ?></span>
+                            <span class="hero-meta-item"><?php echo count($sections); ?> Abschnitte</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
 
-            <div style="padding: 20px 0;">
+            <div style="padding: 10px 0;">
                 <!-- Variables Box -->
                 <?php if (!empty($variables)) : ?>
                 <div class="variables-box">
