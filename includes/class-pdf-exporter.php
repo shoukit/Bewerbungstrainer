@@ -556,19 +556,23 @@ class Bewerbungstrainer_PDF_Exporter {
      * @return string|WP_Error PDF file path or WP_Error on failure
      */
     public function export_session_pdf($session_id, $user_id = null) {
-        if ($user_id === null) {
-            $user_id = get_current_user_id();
-        }
+        try {
+            if ($user_id === null) {
+                $user_id = get_current_user_id();
+            }
 
-        // Try roleplay sessions first (new table), then fall back to old sessions table
-        $session = $this->db->get_roleplay_session($session_id);
-        if (!$session) {
-            $session = $this->db->get_session($session_id);
-        }
+            // Try roleplay sessions first (new table), then fall back to old sessions table
+            $session = null;
+            if (method_exists($this->db, 'get_roleplay_session')) {
+                $session = $this->db->get_roleplay_session($session_id);
+            }
+            if (!$session) {
+                $session = $this->db->get_session($session_id);
+            }
 
-        if (!$session) {
-            return new WP_Error('not_found', __('Sitzung nicht gefunden.', 'bewerbungstrainer'));
-        }
+            if (!$session) {
+                return new WP_Error('not_found', __('Sitzung nicht gefunden.', 'bewerbungstrainer'));
+            }
 
         // Check ownership
         if ((int) $session->user_id !== (int) $user_id) {
@@ -596,6 +600,10 @@ class Bewerbungstrainer_PDF_Exporter {
         $pdf_path = $this->html_to_pdf($html, $session_id);
 
         return $pdf_path;
+        } catch (Exception $e) {
+            error_log('[PDF EXPORT] Exception: ' . $e->getMessage());
+            return new WP_Error('pdf_error', $e->getMessage());
+        }
     }
 
     /**
@@ -1168,7 +1176,10 @@ class Bewerbungstrainer_PDF_Exporter {
         $base64_content = base64_encode($pdf_content);
 
         // Get session for filename (try both tables)
-        $session = $this->db->get_roleplay_session($session_id);
+        $session = null;
+        if (method_exists($this->db, 'get_roleplay_session')) {
+            $session = $this->db->get_roleplay_session($session_id);
+        }
         if (!$session) {
             $session = $this->db->get_session($session_id);
         }
