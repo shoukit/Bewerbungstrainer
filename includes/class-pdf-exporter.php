@@ -861,21 +861,162 @@ class Bewerbungstrainer_PDF_Exporter {
             </div>
             <?php endif; ?>
 
-            <?php if ($audio_analysis && !isset($audio_analysis['error'])) : ?>
+            <?php
+            // Transcript Section
+            $transcript_data = null;
+            if (!empty($session->transcript)) {
+                $transcript_data = is_array($session->transcript)
+                    ? $session->transcript
+                    : json_decode($session->transcript, true);
+            }
+            if ($transcript_data && is_array($transcript_data) && !empty($transcript_data)) :
+            ?>
+            <hr class="divider">
+            <div class="section-title">Gesprächsverlauf</div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 15px; font-size: 9pt;">
+                <?php foreach ($transcript_data as $entry) :
+                    $role = isset($entry['role']) ? $entry['role'] : '';
+                    $message = isset($entry['message']) ? $entry['message'] : '';
+                    $is_agent = ($role === 'agent' || $role === 'ai');
+                    $speaker_label = $is_agent ? 'Interviewer' : 'Sie';
+                    $speaker_color = $is_agent ? '#6366f1' : '#0d9488';
+                ?>
+                <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="font-weight: 600; color: <?php echo $speaker_color; ?>; margin-bottom: 4px;">
+                        <?php echo $speaker_label; ?>
+                    </div>
+                    <div style="color: #374151; line-height: 1.5;">
+                        <?php echo esc_html($message); ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php
+            // Get audio_metrics from the analysis (may be nested or at top level)
+            $metrics = isset($audio_analysis['audio_metrics']) ? $audio_analysis['audio_metrics'] : $audio_analysis;
+            $has_audio_data = $metrics && !isset($metrics['error']) && (
+                isset($metrics['confidence_score']) ||
+                isset($metrics['speech_cleanliness']) ||
+                isset($metrics['pacing']) ||
+                isset($metrics['tonality'])
+            );
+            ?>
+            <?php if ($has_audio_data) : ?>
+            <hr class="divider">
+            <div class="section-title">Paraverbale Analyse</div>
+
+            <?php
+            // Confidence Score
+            if (isset($metrics['confidence_score'])) :
+                $conf_score = $metrics['confidence_score'];
+                $conf_color = $conf_score >= 80 ? '#22c55e' : ($conf_score >= 60 ? '#3b82f6' : ($conf_score >= 40 ? '#f59e0b' : '#ef4444'));
+                $conf_label = $conf_score >= 80 ? 'Sehr selbstsicher' : ($conf_score >= 60 ? 'Selbstsicher' : ($conf_score >= 40 ? 'Ausbaufähig' : 'Unsicher'));
+            ?>
+            <div class="category-row">
+                <span class="category-name">Selbstsicherheit</span>
+                <span class="category-score" style="color: <?php echo $conf_color; ?>;"><?php echo $conf_score; ?>% - <?php echo $conf_label; ?></span>
+            </div>
+            <?php endif; ?>
+
+            <?php
+            // Speech Cleanliness (Filler Words)
+            if (isset($metrics['speech_cleanliness'])) :
+                $speech = $metrics['speech_cleanliness'];
+                $filler_count = isset($speech['total_filler_count']) ? $speech['total_filler_count'] : 0;
+                $filler_color = $filler_count <= 2 ? '#22c55e' : ($filler_count <= 5 ? '#f59e0b' : '#ef4444');
+            ?>
+            <div class="info-box" style="background-color: <?php echo $filler_count <= 2 ? '#f0fdf4' : ($filler_count <= 5 ? '#fffbeb' : '#fef2f2'); ?>; border-left: 3px solid <?php echo $filler_color; ?>;">
+                <div class="info-box-title" style="color: <?php echo $filler_color; ?>;">Füllwörter: <?php echo $filler_count; ?> erkannt</div>
+                <?php if (isset($speech['filler_word_analysis']) && !empty($speech['filler_word_analysis'])) : ?>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    <?php foreach ($speech['filler_word_analysis'] as $item) : ?>
+                    <li style="margin: 4px 0; color: #374151;">
+                        <strong>"<?php echo esc_html($item['word']); ?>"</strong> (<?php echo esc_html($item['count']); ?>x)
+                        <?php if (isset($item['examples']) && !empty($item['examples'])) : ?>
+                        - bei <?php
+                            $timestamps = array_map(function($ex) { return $ex['timestamp']; }, array_slice($item['examples'], 0, 3));
+                            echo esc_html(implode(', ', $timestamps));
+                        ?>
+                        <?php endif; ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+                <?php if (isset($speech['feedback'])) : ?>
+                <p style="font-size: 9pt; margin: 10px 0 0 0; color: #64748b;"><?php echo esc_html($speech['feedback']); ?></p>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php
+            // Pacing
+            if (isset($metrics['pacing'])) :
+                $pacing = $metrics['pacing'];
+                $rating = isset($pacing['rating']) ? $pacing['rating'] : '';
+                $wpm = isset($pacing['estimated_wpm']) ? $pacing['estimated_wpm'] : null;
+                $pacing_label = $rating === 'optimal' ? 'Optimal' : ($rating === 'zu_langsam' ? 'Zu langsam' : 'Zu schnell');
+                $pacing_color = $rating === 'optimal' ? '#22c55e' : '#f59e0b';
+            ?>
+            <div class="category-row" style="border-left: 3px solid <?php echo $pacing_color; ?>;">
+                <span class="category-name">Sprechtempo</span>
+                <span class="category-score" style="color: <?php echo $pacing_color; ?>;">
+                    <?php echo $pacing_label; ?>
+                    <?php if ($wpm) : ?>(~<?php echo $wpm; ?> WPM)<?php endif; ?>
+                </span>
+            </div>
+            <?php if (isset($pacing['feedback'])) : ?>
+            <p class="text-content" style="margin-top: 8px; font-size: 9pt;"><?php echo esc_html($pacing['feedback']); ?></p>
+            <?php endif; ?>
+            <?php endif; ?>
+
+            <?php
+            // Tonality
+            if (isset($metrics['tonality'])) :
+                $tonality = $metrics['tonality'];
+                $ton_rating = isset($tonality['rating']) ? $tonality['rating'] : '';
+                $ton_label = $ton_rating === 'lebendig' ? 'Lebendig' : ($ton_rating === 'natürlich' ? 'Natürlich' : 'Monoton');
+                $ton_color = $ton_rating === 'monoton' ? '#f59e0b' : '#0d9488';
+            ?>
+            <div class="category-row" style="border-left: 3px solid <?php echo $ton_color; ?>;">
+                <span class="category-name">Tonalität</span>
+                <span class="category-score" style="color: <?php echo $ton_color; ?>;"><?php echo $ton_label; ?></span>
+            </div>
+            <?php if (isset($tonality['highlights']) && !empty($tonality['highlights'])) : ?>
+            <div style="margin: 8px 0; padding: 10px; background: #f0fdfa; border-radius: 6px;">
+                <div style="font-size: 9pt; font-weight: 600; color: #0d9488; margin-bottom: 6px;">Bemerkenswerte Momente:</div>
+                <?php foreach ($tonality['highlights'] as $highlight) : ?>
+                <div style="font-size: 9pt; color: #374151; margin: 4px 0;">
+                    <span style="font-family: monospace; color: #0d9488;"><?php echo esc_html($highlight['timestamp']); ?></span>
+                    - <?php echo esc_html($highlight['note']); ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+            <?php if (isset($tonality['feedback'])) : ?>
+            <p class="text-content" style="margin-top: 8px; font-size: 9pt;"><?php echo esc_html($tonality['feedback']); ?></p>
+            <?php endif; ?>
+            <?php endif; ?>
+
+            <?php endif; // has_audio_data ?>
+
+            <?php
+            // Legacy audio analysis format fallback
+            if ($audio_analysis && !$has_audio_data && !isset($audio_analysis['error'])) : ?>
             <hr class="divider">
             <div class="section-title">Audio-Analyse</div>
             <?php if (isset($audio_analysis['summary'])) : ?>
             <p class="text-content"><?php echo esc_html($audio_analysis['summary']); ?></p>
             <?php endif; ?>
-
             <?php
-            $metrics = array(
+            $legacy_metrics = array(
                 'clarity' => 'Klarheit',
                 'pace' => 'Tempo',
                 'confidence' => 'Selbstsicherheit',
                 'tonalModulation' => 'Tonale Modulation'
             );
-            foreach ($metrics as $metric => $label) :
+            foreach ($legacy_metrics as $metric => $label) :
                 if (isset($audio_analysis[$metric])) :
             ?>
             <div class="category-row">
@@ -885,8 +1026,7 @@ class Bewerbungstrainer_PDF_Exporter {
             <?php
                 endif;
             endforeach;
-            ?>
-            <?php endif; ?>
+            endif; ?>
 
             <div class="footer">
                 <div class="footer-logo">Erstellt mit Karriereheld</div>
