@@ -893,39 +893,6 @@ class Bewerbungstrainer_PDF_Exporter {
             <?php endif; ?>
 
             <?php
-            // Transcript Section
-            $transcript_data = null;
-            if (!empty($session->transcript)) {
-                $transcript_data = is_array($session->transcript)
-                    ? $session->transcript
-                    : json_decode($session->transcript, true);
-            }
-            if ($transcript_data && is_array($transcript_data) && !empty($transcript_data)) :
-            ?>
-            <hr class="divider">
-            <div class="section-title">Gesprächsverlauf</div>
-            <div style="background: #f8fafc; border-radius: 8px; padding: 15px; font-size: 9pt;">
-                <?php foreach ($transcript_data as $entry) :
-                    if (!is_array($entry)) continue;
-                    $role = isset($entry['role']) ? $entry['role'] : '';
-                    $message = isset($entry['message']) ? $entry['message'] : '';
-                    $is_agent = ($role === 'agent' || $role === 'ai');
-                    $speaker_label = $is_agent ? 'Interviewer' : 'Sie';
-                    $speaker_color = $is_agent ? '#6366f1' : '#0d9488';
-                ?>
-                <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
-                    <div style="font-weight: 600; color: <?php echo $speaker_color; ?>; margin-bottom: 4px;">
-                        <?php echo $speaker_label; ?>
-                    </div>
-                    <div style="color: #374151; line-height: 1.5;">
-                        <?php echo esc_html($message); ?>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-
-            <?php
             // Get audio_metrics from the analysis (may be nested or at top level)
             $metrics = isset($audio_analysis['audio_metrics']) ? $audio_analysis['audio_metrics'] : $audio_analysis;
             $has_audio_data = $metrics && !isset($metrics['error']) && (
@@ -1064,6 +1031,39 @@ class Bewerbungstrainer_PDF_Exporter {
                 endif;
             endforeach;
             endif; ?>
+
+            <?php
+            // Transcript Section (at the end)
+            $transcript_data = null;
+            if (!empty($session->transcript)) {
+                $transcript_data = is_array($session->transcript)
+                    ? $session->transcript
+                    : json_decode($session->transcript, true);
+            }
+            if ($transcript_data && is_array($transcript_data) && !empty($transcript_data)) :
+            ?>
+            <hr class="divider">
+            <div class="section-title">Gesprächsverlauf</div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 15px; font-size: 9pt;">
+                <?php foreach ($transcript_data as $entry) :
+                    if (!is_array($entry)) continue;
+                    $role = isset($entry['role']) ? $entry['role'] : '';
+                    $text = isset($entry['text']) ? $entry['text'] : (isset($entry['message']) ? $entry['message'] : '');
+                    $is_agent = ($role === 'agent' || $role === 'ai');
+                    $speaker_label = $is_agent ? 'Interviewer' : 'Sie';
+                    $speaker_color = $is_agent ? '#6366f1' : '#0d9488';
+                ?>
+                <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="font-weight: 600; color: <?php echo $speaker_color; ?>; margin-bottom: 4px;">
+                        <?php echo $speaker_label; ?>
+                    </div>
+                    <div style="color: #374151; line-height: 1.5;">
+                        <?php echo esc_html($text); ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
 
             <div class="footer">
                 <div class="footer-logo">Erstellt mit Karriereheld</div>
