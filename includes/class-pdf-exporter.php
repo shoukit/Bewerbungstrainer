@@ -936,8 +936,13 @@ class Bewerbungstrainer_PDF_Exporter {
                         <strong>"<?php echo esc_html($item['word']); ?>"</strong> (<?php echo esc_html($item['count']); ?>x)
                         <?php if (isset($item['examples']) && !empty($item['examples'])) : ?>
                         - bei <?php
-                            $timestamps = array_map(function($ex) { return $ex['timestamp']; }, array_slice($item['examples'], 0, 3));
-                            echo esc_html(implode(', ', $timestamps));
+                            $timestamps = array_map(function($ex) {
+                                return isset($ex['timestamp']) ? $ex['timestamp'] : '';
+                            }, array_slice($item['examples'], 0, 3));
+                            $timestamps = array_filter($timestamps); // Remove empty values
+                            if (!empty($timestamps)) {
+                                echo esc_html(implode(', ', $timestamps));
+                            }
                         ?>
                         <?php endif; ?>
                     </li>
