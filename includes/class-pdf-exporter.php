@@ -506,6 +506,33 @@ class Bewerbungstrainer_PDF_Exporter {
     }
 
     /**
+     * Strip emojis and special Unicode characters that DomPDF can't render
+     * Replaces them with nothing or appropriate text alternatives
+     */
+    private function strip_emojis($text) {
+        // Remove emoji characters (most common ranges)
+        $text = preg_replace('/[\x{1F600}-\x{1F64F}]/u', '', $text); // Emoticons
+        $text = preg_replace('/[\x{1F300}-\x{1F5FF}]/u', '', $text); // Misc Symbols and Pictographs
+        $text = preg_replace('/[\x{1F680}-\x{1F6FF}]/u', '', $text); // Transport and Map
+        $text = preg_replace('/[\x{1F700}-\x{1F77F}]/u', '', $text); // Alchemical Symbols
+        $text = preg_replace('/[\x{1F780}-\x{1F7FF}]/u', '', $text); // Geometric Shapes Extended
+        $text = preg_replace('/[\x{1F800}-\x{1F8FF}]/u', '', $text); // Supplemental Arrows-C
+        $text = preg_replace('/[\x{1F900}-\x{1F9FF}]/u', '', $text); // Supplemental Symbols and Pictographs
+        $text = preg_replace('/[\x{1FA00}-\x{1FA6F}]/u', '', $text); // Chess Symbols
+        $text = preg_replace('/[\x{1FA70}-\x{1FAFF}]/u', '', $text); // Symbols and Pictographs Extended-A
+        $text = preg_replace('/[\x{2600}-\x{26FF}]/u', '', $text);   // Misc symbols
+        $text = preg_replace('/[\x{2700}-\x{27BF}]/u', '', $text);   // Dingbats
+        $text = preg_replace('/[\x{FE00}-\x{FE0F}]/u', '', $text);   // Variation Selectors
+        $text = preg_replace('/[\x{1F1E0}-\x{1F1FF}]/u', '', $text); // Flags
+
+        // Clean up any double spaces left behind
+        $text = preg_replace('/\s+/', ' ', $text);
+        $text = trim($text);
+
+        return $text;
+    }
+
+    /**
      * Render section HTML
      */
     private function render_section($type, $title, $items) {
@@ -2142,7 +2169,7 @@ class Bewerbungstrainer_PDF_Exporter {
             <div class="toc-title">Inhalt</div>
             <ul class="toc-list">
                 <?php foreach ($sections as $section) : ?>
-                <li><?php echo esc_html($section->section_title); ?></li>
+                <li><?php echo esc_html($this->strip_emojis($section->section_title)); ?></li>
                 <?php endforeach; ?>
             </ul>
             <?php endif; ?>
@@ -2178,12 +2205,12 @@ class Bewerbungstrainer_PDF_Exporter {
                     }
                 }
             ?>
-            <div class="section-title"><?php echo esc_html($section->section_title); ?></div>
+            <div class="section-title"><?php echo esc_html($this->strip_emojis($section->section_title)); ?></div>
 
             <?php if (!empty($items)) : ?>
                 <?php foreach ($items as $item) : ?>
                     <?php if (!empty($item['label'])) : ?>
-                    <div class="subsection-title"><?php echo esc_html($item['label']); ?></div>
+                    <div class="subsection-title"><?php echo esc_html($this->strip_emojis($item['label'])); ?></div>
                     <?php endif; ?>
 
                     <?php if (!empty($item['content'])) : ?>
