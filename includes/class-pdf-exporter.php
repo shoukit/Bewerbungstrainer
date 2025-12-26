@@ -733,28 +733,18 @@ class Bewerbungstrainer_PDF_Exporter {
                     text-align: center;
                     margin: 0 0 20px 0;
                 }
-                .header-grid {
-                    display: table;
+                .header-wrapper {
                     width: 100%;
-                    margin: 20px 0;
-                    border-spacing: 15px 0;
-                }
-                .header-cell {
-                    display: table-cell;
-                    vertical-align: top;
-                }
-                .header-cell.info {
-                    width: 60%;
-                }
-                .header-cell.score {
-                    width: 40%;
+                    margin: 15px 0 20px 0;
+                    overflow: hidden;
                 }
                 .info-card {
-                    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                    float: left;
+                    width: 58%;
+                    background-color: #f8fafc;
                     border: 1px solid #e2e8f0;
-                    border-radius: 12px;
-                    padding: 20px;
-                    height: 100%;
+                    border-radius: 8px;
+                    padding: 15px;
                 }
                 .info-card-title {
                     font-size: 9pt;
@@ -762,13 +752,14 @@ class Bewerbungstrainer_PDF_Exporter {
                     color: #94a3b8;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
-                    margin-bottom: 12px;
+                    margin-bottom: 10px;
+                    padding-bottom: 8px;
+                    border-bottom: 1px solid #e2e8f0;
                 }
                 .info-item {
-                    margin: 8px 0;
-                    padding: 8px 12px;
-                    background: white;
-                    border-radius: 8px;
+                    margin: 6px 0;
+                    padding: 6px 10px;
+                    background-color: #ffffff;
                     border-left: 3px solid <?php echo $primary_color; ?>;
                 }
                 .info-label {
@@ -784,30 +775,33 @@ class Bewerbungstrainer_PDF_Exporter {
                     font-weight: 500;
                 }
                 .score-card {
-                    background: linear-gradient(135deg, <?php echo $primary_color; ?>15 0%, <?php echo $primary_color; ?>08 100%);
-                    border: 2px solid <?php echo $primary_color; ?>40;
-                    border-radius: 12px;
-                    padding: 25px 20px;
+                    float: right;
+                    width: 38%;
+                    background-color: #f0f9fa;
+                    border: 2px solid <?php echo $primary_color; ?>;
+                    border-radius: 8px;
+                    padding: 20px 15px;
                     text-align: center;
-                    height: 100%;
                 }
                 .score-value {
-                    font-size: 48pt;
+                    font-size: 42pt;
                     font-weight: 800;
                     line-height: 1;
-                    margin-bottom: 8px;
+                    margin-bottom: 5px;
                 }
                 .score-label {
                     font-size: 11pt;
                     font-weight: 600;
                     color: <?php echo $primary_color; ?>;
                     text-transform: uppercase;
-                    letter-spacing: 0.5px;
                 }
                 .score-sublabel {
                     font-size: 9pt;
                     color: #64748b;
-                    margin-top: 4px;
+                    margin-top: 3px;
+                }
+                .clearfix {
+                    clear: both;
                 }
                 .divider {
                     border: none;
@@ -898,32 +892,29 @@ class Bewerbungstrainer_PDF_Exporter {
 
             <h1 class="main-title">Live-Simulation Auswertung</h1>
 
-            <div class="header-grid">
-                <div class="header-cell info">
-                    <div class="info-card">
-                        <div class="info-card-title">Training Details</div>
-                        <?php foreach ($display_info as $label => $value) : ?>
-                        <div class="info-item">
-                            <span class="info-label"><?php echo esc_html($label); ?></span>
-                            <span class="info-value"><?php echo esc_html($value); ?></span>
-                        </div>
-                        <?php endforeach; ?>
-                        <div class="info-item">
-                            <span class="info-label">Datum</span>
-                            <span class="info-value"><?php echo esc_html($formatted_date); ?></span>
-                        </div>
-                    </div>
-                </div>
+            <div class="header-wrapper">
                 <?php if ($overall_rating !== null) : ?>
-                <div class="header-cell score">
-                    <div class="score-card">
-                        <div class="score-value" style="color: <?php echo $score_color; ?>;"><?php echo $overall_rating; ?>/10</div>
-                        <div class="score-label"><?php echo esc_html($grade_label); ?></div>
-                        <div class="score-sublabel">Gesamtbewertung</div>
-                    </div>
+                <div class="score-card">
+                    <div class="score-value" style="color: <?php echo $score_color; ?>;"><?php echo $overall_rating; ?>/10</div>
+                    <div class="score-label"><?php echo esc_html($grade_label); ?></div>
+                    <div class="score-sublabel">Gesamtbewertung</div>
                 </div>
                 <?php endif; ?>
+                <div class="info-card">
+                    <div class="info-card-title">Training Details</div>
+                    <?php foreach ($display_info as $label => $value) : ?>
+                    <div class="info-item">
+                        <span class="info-label"><?php echo esc_html($label); ?></span>
+                        <span class="info-value"><?php echo esc_html($value); ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                    <div class="info-item">
+                        <span class="info-label">Datum</span>
+                        <span class="info-value"><?php echo esc_html($formatted_date); ?></span>
+                    </div>
+                </div>
             </div>
+            <div class="clearfix"></div>
 
             <hr class="divider">
 
