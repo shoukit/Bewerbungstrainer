@@ -619,6 +619,26 @@ class Bewerbungstrainer_PDF_Exporter {
         $formatted_date = $date->format('d.m.Y H:i');
         $primary_color = '#0d6a7c';
 
+        // Extract position and company (may be in variables_json for roleplay sessions)
+        $position = '';
+        $company = '';
+        if (isset($session->position)) {
+            $position = $session->position;
+        }
+        if (isset($session->company)) {
+            $company = $session->company;
+        }
+        // For roleplay sessions, extract from variables_json
+        if (empty($position) && !empty($session->variables_json)) {
+            $variables = is_array($session->variables_json)
+                ? $session->variables_json
+                : json_decode($session->variables_json, true);
+            if (is_array($variables)) {
+                $position = isset($variables['position']) ? $variables['position'] : '';
+                $company = isset($variables['company']) ? $variables['company'] : '';
+            }
+        }
+
         $overall_rating = null;
         if ($feedback && isset($feedback['rating']['overall'])) {
             $overall_rating = $feedback['rating']['overall'];
@@ -792,11 +812,11 @@ class Bewerbungstrainer_PDF_Exporter {
             <div class="info-box-header">
                 <div class="info-row">
                     <span class="info-label">Position:</span>
-                    <span class="info-value"><?php echo esc_html($session->position); ?></span>
+                    <span class="info-value"><?php echo esc_html($position); ?></span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Unternehmen:</span>
-                    <span class="info-value"><?php echo esc_html($session->company); ?></span>
+                    <span class="info-value"><?php echo esc_html($company); ?></span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Datum:</span>
@@ -1138,10 +1158,30 @@ class Bewerbungstrainer_PDF_Exporter {
             wp_die($pdf_path->get_error_message());
         }
 
-        // Get session for filename
-        $session = $this->db->get_session($session_id);
+        // Get session for filename (try both tables)
+        $session = null;
+        if (method_exists($this->db, 'get_roleplay_session')) {
+            $session = $this->db->get_roleplay_session($session_id);
+        }
+        if (!$session) {
+            $session = $this->db->get_session($session_id);
+        }
+
+        // Extract position from session or variables_json
+        $position = '';
+        if (isset($session->position)) {
+            $position = $session->position;
+        } elseif (!empty($session->variables_json)) {
+            $variables = is_array($session->variables_json)
+                ? $session->variables_json
+                : json_decode($session->variables_json, true);
+            if (is_array($variables) && isset($variables['position'])) {
+                $position = $variables['position'];
+            }
+        }
+
         $date = new DateTime($session->created_at);
-        $download_filename = 'Bewertung-' . sanitize_file_name($session->position) . '-' . $date->format('Y-m-d') . '.pdf';
+        $download_filename = 'Bewertung-' . sanitize_file_name($position ?: 'Session') . '-' . $date->format('Y-m-d') . '.pdf';
 
         // Stream PDF
         header('Content-Type: application/pdf');
@@ -1184,8 +1224,22 @@ class Bewerbungstrainer_PDF_Exporter {
         if (!$session) {
             $session = $this->db->get_session($session_id);
         }
+
+        // Extract position from session or variables_json
+        $position = '';
+        if (isset($session->position)) {
+            $position = $session->position;
+        } elseif (!empty($session->variables_json)) {
+            $variables = is_array($session->variables_json)
+                ? $session->variables_json
+                : json_decode($session->variables_json, true);
+            if (is_array($variables) && isset($variables['position'])) {
+                $position = $variables['position'];
+            }
+        }
+
         $date = new DateTime($session->created_at);
-        $download_filename = 'Live-Simulation-' . sanitize_file_name($session->position) . '-' . $date->format('Y-m-d') . '.pdf';
+        $download_filename = 'Live-Simulation-' . sanitize_file_name($position ?: 'Session') . '-' . $date->format('Y-m-d') . '.pdf';
 
         // Clean up temporary file
         wp_delete_file($pdf_path);
