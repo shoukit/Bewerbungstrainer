@@ -560,8 +560,11 @@ class Bewerbungstrainer_PDF_Exporter {
             $user_id = get_current_user_id();
         }
 
-        // Get session
-        $session = $this->db->get_session($session_id);
+        // Try roleplay sessions first (new table), then fall back to old sessions table
+        $session = $this->db->get_roleplay_session($session_id);
+        if (!$session) {
+            $session = $this->db->get_session($session_id);
+        }
 
         if (!$session) {
             return new WP_Error('not_found', __('Sitzung nicht gefunden.', 'bewerbungstrainer'));
@@ -1164,8 +1167,11 @@ class Bewerbungstrainer_PDF_Exporter {
         $pdf_content = file_get_contents($pdf_path);
         $base64_content = base64_encode($pdf_content);
 
-        // Get session for filename
-        $session = $this->db->get_session($session_id);
+        // Get session for filename (try both tables)
+        $session = $this->db->get_roleplay_session($session_id);
+        if (!$session) {
+            $session = $this->db->get_session($session_id);
+        }
         $date = new DateTime($session->created_at);
         $download_filename = 'Live-Simulation-' . sanitize_file_name($session->position) . '-' . $date->format('Y-m-d') . '.pdf';
 
