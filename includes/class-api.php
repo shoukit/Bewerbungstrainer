@@ -999,9 +999,11 @@ class Bewerbungstrainer_API {
         $result = $this->pdf_exporter->get_session_pdf_base64($session_id, $user_id);
 
         if (is_wp_error($result)) {
+            error_log('[PDF EXPORT API] Error: ' . $result->get_error_code() . ' - ' . $result->get_error_message());
             return new WP_REST_Response(array(
                 'success' => false,
                 'error' => $result->get_error_message(),
+                'error_code' => $result->get_error_code(),
             ), 400);
         }
 

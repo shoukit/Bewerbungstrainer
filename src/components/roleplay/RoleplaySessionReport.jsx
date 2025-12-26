@@ -1550,11 +1550,12 @@ const RoleplaySessionReport = ({
         },
       });
 
-      if (!response.ok) {
-        throw new Error('PDF-Export fehlgeschlagen');
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        console.error('[PDF] Server error:', data);
+        throw new Error(data.error || 'PDF-Export fehlgeschlagen');
+      }
 
       if (data.pdf_base64 && data.filename) {
         // Create blob from base64
