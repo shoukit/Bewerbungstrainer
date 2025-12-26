@@ -1696,6 +1696,9 @@ class Bewerbungstrainer_PDF_Exporter {
         // Get variables for display
         $variables = $briefing->variables_json ?: [];
 
+        // Primary color - teal like Six Drivers
+        $primary_color = '#0d6a7c';
+
         ob_start();
         ?>
         <!DOCTYPE html>
@@ -1704,7 +1707,7 @@ class Bewerbungstrainer_PDF_Exporter {
             <meta charset="UTF-8">
             <style>
                 @page {
-                    margin: 15mm 12mm 20mm 12mm;
+                    margin: 12mm 15mm 15mm 15mm;
                 }
                 * {
                     box-sizing: border-box;
@@ -1712,65 +1715,107 @@ class Bewerbungstrainer_PDF_Exporter {
                 body {
                     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
                     font-size: 10pt;
-                    line-height: 1.5;
+                    line-height: 1.6;
                     color: #1a1a2e;
                     margin: 0;
                     padding: 0;
                     background: #ffffff;
                 }
 
-                /* Hero Header - Using table for DomPDF compatibility */
-                .hero-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 20px;
+                /* Header Bar */
+                .header-bar {
+                    background-color: <?php echo $primary_color; ?>;
+                    height: 8px;
+                    margin-bottom: 25px;
                 }
-                .hero-table td {
-                    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #4f46e5 100%);
-                    padding: 30px 35px;
-                    color: white;
-                    border-radius: 12px;
+
+                /* Main Title */
+                .main-title {
+                    font-size: 20pt;
+                    font-weight: 700;
+                    color: <?php echo $primary_color; ?>;
+                    text-align: center;
+                    margin: 0 0 20px 0;
+                    line-height: 1.3;
                 }
-                .hero-badge {
-                    display: inline-block;
-                    background: rgba(255,255,255,0.2);
-                    padding: 5px 12px;
-                    border-radius: 16px;
-                    font-size: 9pt;
-                    font-weight: 600;
-                    letter-spacing: 0.5px;
-                    text-transform: uppercase;
-                    margin-bottom: 10px;
-                }
-                .hero-title {
-                    font-size: 22pt;
-                    font-weight: 800;
-                    margin: 0 0 8px 0;
-                    letter-spacing: -0.5px;
-                    line-height: 1.2;
-                }
-                .hero-subtitle {
+
+                /* Subtitle / Description */
+                .subtitle {
                     font-size: 11pt;
-                    opacity: 0.9;
-                    margin: 0 0 12px 0;
-                    font-weight: 400;
+                    color: #475569;
+                    text-align: center;
+                    margin: 0 0 25px 0;
                 }
-                .hero-meta {
+
+                /* Table of Contents */
+                .toc-title {
+                    font-size: 12pt;
+                    font-weight: 700;
+                    color: <?php echo $primary_color; ?>;
+                    text-align: center;
+                    margin: 20px 0 12px 0;
+                }
+                .toc-list {
+                    margin: 0 auto 30px auto;
+                    padding-left: 30px;
+                    max-width: 500px;
+                }
+                .toc-list li {
+                    margin: 6px 0;
+                    color: #374151;
                     font-size: 10pt;
-                    opacity: 0.85;
                 }
-                .hero-meta-item {
-                    display: inline-block;
-                    margin-right: 20px;
+
+                /* Divider */
+                .divider {
+                    border: none;
+                    border-top: 1px solid #d1d5db;
+                    margin: 25px 0;
+                }
+
+                /* Section Title */
+                .section-title {
+                    font-size: 14pt;
+                    font-weight: 700;
+                    color: <?php echo $primary_color; ?>;
+                    text-align: center;
+                    margin: 30px 0 20px 0;
+                }
+
+                /* Subsection Title */
+                .subsection-title {
+                    font-size: 12pt;
+                    font-weight: 700;
+                    color: <?php echo $primary_color; ?>;
+                    text-align: center;
+                    margin: 20px 0 12px 0;
+                }
+
+                /* Item Title */
+                .item-title {
+                    font-size: 10pt;
+                    font-weight: 700;
+                    color: #1e293b;
+                    margin: 16px 0 4px 0;
+                }
+
+                /* Item Content */
+                .item-content {
+                    font-size: 10pt;
+                    color: #374151;
+                    line-height: 1.6;
+                    margin: 0 0 8px 0;
+                    text-align: justify;
                 }
 
                 /* Variables Box */
                 .variables-box {
-                    background: #f8fafc;
+                    background-color: #f8fafc;
                     border: 1px solid #e2e8f0;
-                    border-radius: 10px;
-                    padding: 16px 20px;
-                    margin: 20px 0;
+                    border-radius: 8px;
+                    padding: 15px 20px;
+                    margin: 20px auto;
+                    max-width: 500px;
                 }
                 .variables-title {
                     font-size: 10pt;
@@ -1779,142 +1824,80 @@ class Bewerbungstrainer_PDF_Exporter {
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                     margin-bottom: 10px;
+                    text-align: center;
                 }
                 .variable-row {
-                    display: table;
-                    width: 100%;
                     margin: 6px 0;
                 }
                 .variable-label {
-                    display: table-cell;
-                    width: 35%;
                     font-weight: 600;
                     color: #475569;
-                    font-size: 10pt;
+                    display: inline;
                 }
                 .variable-value {
-                    display: table-cell;
                     color: #1e293b;
-                    font-size: 10pt;
+                    display: inline;
                 }
 
-                /* Section Styles */
-                .section {
-                    margin: 24px 0;
-                    page-break-inside: avoid;
-                }
-                .section-header {
-                    display: table;
-                    width: 100%;
-                    margin-bottom: 14px;
-                    border-bottom: 2px solid #e2e8f0;
-                    padding-bottom: 8px;
-                }
-                .section-icon {
-                    display: table-cell;
-                    width: 32px;
-                    vertical-align: middle;
-                }
-                .section-icon-circle {
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 8px;
-                    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-                    color: white;
-                    text-align: center;
-                    line-height: 28px;
-                    font-size: 12pt;
-                    font-weight: 700;
-                }
-                .section-title {
-                    display: table-cell;
-                    vertical-align: middle;
-                    padding-left: 10px;
-                    font-size: 13pt;
-                    font-weight: 700;
-                    color: #1e293b;
-                }
-
-                /* Item Styles */
-                .item {
-                    background: #ffffff;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 10px;
-                    padding: 14px 16px;
-                    margin: 10px 0;
-                    page-break-inside: avoid;
-                }
-                .item-label {
-                    font-size: 11pt;
-                    font-weight: 700;
-                    color: #1e293b;
-                    margin-bottom: 6px;
-                }
-                .item-content {
-                    font-size: 10pt;
-                    color: #475569;
-                    line-height: 1.6;
-                }
-
-                /* Note Box - for user notes or empty space */
+                /* Note Box - for user notes */
                 .note-box {
-                    margin-top: 10px;
+                    margin-top: 8px;
                     padding: 10px 14px;
-                    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-                    border-left: 3px solid #f59e0b;
-                    border-radius: 6px;
+                    background-color: #fef9c3;
+                    border-left: 3px solid #eab308;
+                    border-radius: 4px;
                 }
                 .note-label {
                     font-size: 9pt;
                     font-weight: 700;
-                    color: #92400e;
+                    color: #854d0e;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                     margin-bottom: 4px;
                 }
                 .note-content {
                     font-size: 10pt;
-                    color: #78350f;
+                    color: #713f12;
                     font-style: italic;
                     line-height: 1.5;
                 }
 
                 /* Empty Note Space - for handwritten notes */
                 .note-space {
-                    margin-top: 10px;
+                    margin-top: 8px;
                     padding: 8px 14px;
-                    background: #fefce8;
-                    border: 1px dashed #d4a60a;
-                    border-radius: 6px;
-                    min-height: 42px;
+                    background-color: #fffbeb;
+                    border: 1px dashed #d97706;
+                    border-radius: 4px;
+                    min-height: 40px;
                 }
                 .note-space-label {
                     font-size: 8pt;
-                    color: #a16207;
+                    color: #92400e;
                     font-style: italic;
                 }
                 .note-lines {
                     margin-top: 6px;
                     border-bottom: 1px solid #e5e7eb;
-                    height: 18px;
+                    height: 16px;
                 }
 
                 /* Footer */
                 .footer {
-                    margin-top: 30px;
-                    padding-top: 16px;
-                    border-top: 2px solid #e5e7eb;
+                    margin-top: 40px;
+                    padding-top: 15px;
+                    border-top: 1px solid #d1d5db;
                     text-align: center;
                 }
                 .footer-logo {
-                    font-size: 11pt;
-                    font-weight: 700;
-                    color: #8b5cf6;
-                    margin-bottom: 4px;
+                    font-size: 10pt;
+                    font-weight: 600;
+                    color: <?php echo $primary_color; ?>;
+                    margin-bottom: 3px;
                 }
                 .footer-meta {
                     font-size: 9pt;
-                    color: #94a3b8;
+                    color: #9ca3af;
                 }
 
                 .page-break {
@@ -1923,124 +1906,107 @@ class Bewerbungstrainer_PDF_Exporter {
             </style>
         </head>
         <body>
-            <!-- Hero Header - Table-based for DomPDF compatibility -->
-            <table class="hero-table">
-                <tr>
-                    <td>
-                        <div class="hero-badge">SMART BRIEFING</div>
-                        <h1 class="hero-title"><?php echo esc_html($briefing_title); ?></h1>
-                        <?php if ($template && !empty($template->description)) : ?>
-                        <p class="hero-subtitle"><?php echo esc_html($template->description); ?></p>
-                        <?php endif; ?>
-                        <div class="hero-meta">
-                            <span class="hero-meta-item"><?php echo esc_html($formatted_date); ?></span>
-                            <span class="hero-meta-item"><?php echo count($sections); ?> Abschnitte</span>
-                        </div>
-                    </td>
-                </tr>
-            </table>
+            <!-- Header Bar -->
+            <div class="header-bar"></div>
 
-            <div style="padding: 10px 0;">
-                <!-- Variables Box -->
-                <?php if (!empty($variables)) : ?>
-                <div class="variables-box">
-                    <div class="variables-title">Eingaben</div>
-                    <?php foreach ($variables as $key => $value) :
-                        // Skip empty values
-                        if (empty($value)) continue;
-                        // Format label from key
-                        $label = ucfirst(str_replace('_', ' ', $key));
-                    ?>
-                    <div class="variable-row">
-                        <div class="variable-label"><?php echo esc_html($label); ?>:</div>
-                        <div class="variable-value"><?php echo esc_html($value); ?></div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
+            <!-- Main Title -->
+            <h1 class="main-title"><?php echo esc_html($briefing_title); ?></h1>
 
-                <!-- Sections -->
-                <?php
-                $section_number = 0;
-                foreach ($sections as $section) :
-                    $section_number++;
+            <?php if ($template && !empty($template->description)) : ?>
+            <p class="subtitle"><?php echo esc_html($template->description); ?></p>
+            <?php endif; ?>
 
-                    // Parse ai_content
-                    $items = [];
-                    if (!empty($section->ai_content)) {
-                        $parsed = json_decode($section->ai_content, true);
-                        if ($parsed && isset($parsed['items']) && is_array($parsed['items'])) {
-                            // Filter out deleted items
-                            $items = array_filter($parsed['items'], function($item) {
-                                return empty($item['deleted']);
-                            });
-                        }
-                    }
+            <!-- Table of Contents -->
+            <?php if (count($sections) > 1) : ?>
+            <div class="toc-title">So ist Ihr Briefing aufgebaut</div>
+            <ol class="toc-list">
+                <?php foreach ($sections as $section) : ?>
+                <li><?php echo esc_html($section->section_title); ?></li>
+                <?php endforeach; ?>
+            </ol>
+            <?php endif; ?>
+
+            <!-- Variables Box -->
+            <?php if (!empty($variables)) : ?>
+            <div class="variables-box">
+                <div class="variables-title">Ihre Eingaben</div>
+                <?php foreach ($variables as $key => $value) :
+                    if (empty($value)) continue;
+                    $label = ucfirst(str_replace('_', ' ', $key));
                 ?>
-                <div class="section">
-                    <div class="section-header">
-                        <div class="section-icon">
-                            <div class="section-icon-circle"><?php echo $section_number; ?></div>
-                        </div>
-                        <div class="section-title"><?php echo esc_html($section->section_title); ?></div>
-                    </div>
-
-                    <?php if (!empty($items)) : ?>
-                        <?php foreach ($items as $item) : ?>
-                        <div class="item">
-                            <?php if (!empty($item['label'])) : ?>
-                            <div class="item-label"><?php echo esc_html($item['label']); ?></div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($item['content'])) : ?>
-                            <div class="item-content"><?php echo nl2br(esc_html($item['content'])); ?></div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($item['user_note'])) : ?>
-                            <!-- User has added a note -->
-                            <div class="note-box">
-                                <div class="note-label">Meine Notiz</div>
-                                <div class="note-content"><?php echo nl2br(esc_html($item['user_note'])); ?></div>
-                            </div>
-                            <?php else : ?>
-                            <!-- Empty space for handwritten notes -->
-                            <div class="note-space">
-                                <div class="note-space-label">Notizen:</div>
-                                <div class="note-lines"></div>
-                                <div class="note-lines"></div>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php else : ?>
-                        <!-- Fallback: show raw content if no items -->
-                        <?php if (!empty($section->ai_content)) : ?>
-                        <div class="item">
-                            <div class="item-content"><?php echo nl2br(esc_html($section->ai_content)); ?></div>
-                            <div class="note-space">
-                                <div class="note-space-label">Notizen:</div>
-                                <div class="note-lines"></div>
-                                <div class="note-lines"></div>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                    <?php endif; ?>
-
-                    <!-- Section-level notes -->
-                    <?php if (!empty($section->user_notes)) : ?>
-                    <div class="note-box" style="margin-top: 16px;">
-                        <div class="note-label">Abschnitts-Notizen</div>
-                        <div class="note-content"><?php echo nl2br(esc_html($section->user_notes)); ?></div>
-                    </div>
-                    <?php endif; ?>
+                <div class="variable-row">
+                    <span class="variable-label"><?php echo esc_html($label); ?>:</span>
+                    <span class="variable-value"><?php echo esc_html($value); ?></span>
                 </div>
                 <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
 
-                <!-- Footer -->
-                <div class="footer">
-                    <div class="footer-logo">Erstellt mit Karriereheld</div>
-                    <div class="footer-meta"><?php echo esc_html(get_bloginfo('name')); ?> - <?php echo esc_html(date('d.m.Y H:i')); ?></div>
+            <hr class="divider">
+
+            <!-- Sections -->
+            <?php foreach ($sections as $section) :
+                // Parse ai_content
+                $items = [];
+                if (!empty($section->ai_content)) {
+                    $parsed = json_decode($section->ai_content, true);
+                    if ($parsed && isset($parsed['items']) && is_array($parsed['items'])) {
+                        $items = array_filter($parsed['items'], function($item) {
+                            return empty($item['deleted']);
+                        });
+                    }
+                }
+            ?>
+            <div class="section-title"><?php echo esc_html($section->section_title); ?></div>
+
+            <?php if (!empty($items)) : ?>
+                <?php foreach ($items as $item) : ?>
+                    <?php if (!empty($item['label'])) : ?>
+                    <div class="subsection-title"><?php echo esc_html($item['label']); ?></div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($item['content'])) : ?>
+                    <p class="item-content"><?php echo nl2br(esc_html($item['content'])); ?></p>
+                    <?php endif; ?>
+
+                    <?php if (!empty($item['user_note'])) : ?>
+                    <div class="note-box">
+                        <div class="note-label">Meine Notiz</div>
+                        <div class="note-content"><?php echo nl2br(esc_html($item['user_note'])); ?></div>
+                    </div>
+                    <?php else : ?>
+                    <div class="note-space">
+                        <div class="note-space-label">Notizen:</div>
+                        <div class="note-lines"></div>
+                        <div class="note-lines"></div>
+                    </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            <?php else : ?>
+                <?php if (!empty($section->ai_content)) : ?>
+                <p class="item-content"><?php echo nl2br(esc_html($section->ai_content)); ?></p>
+                <div class="note-space">
+                    <div class="note-space-label">Notizen:</div>
+                    <div class="note-lines"></div>
+                    <div class="note-lines"></div>
                 </div>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <?php if (!empty($section->user_notes)) : ?>
+            <div class="note-box">
+                <div class="note-label">Abschnitts-Notizen</div>
+                <div class="note-content"><?php echo nl2br(esc_html($section->user_notes)); ?></div>
+            </div>
+            <?php endif; ?>
+
+            <hr class="divider">
+            <?php endforeach; ?>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div class="footer-logo">Erstellt mit Karriereheld</div>
+                <div class="footer-meta"><?php echo esc_html(date('d.m.Y')); ?></div>
             </div>
         </body>
         </html>
