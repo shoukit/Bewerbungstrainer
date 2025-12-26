@@ -671,7 +671,7 @@ class Bewerbungstrainer_PDF_Exporter {
                     font-size: 14pt;
                     font-weight: 700;
                     color: <?php echo $primary_color; ?>;
-                    text-align: center;
+                    text-align: left;
                     margin: 25px 0 15px 0;
                 }
                 .text-content {
@@ -1150,7 +1150,7 @@ class Bewerbungstrainer_PDF_Exporter {
                     font-size: 14pt;
                     font-weight: 700;
                     color: <?php echo $primary_color; ?>;
-                    text-align: center;
+                    text-align: left;
                     margin: 25px 0 15px 0;
                 }
                 .subsection-title {
@@ -1632,7 +1632,7 @@ class Bewerbungstrainer_PDF_Exporter {
                     font-size: 14pt;
                     font-weight: 700;
                     color: <?php echo $primary_color; ?>;
-                    text-align: center;
+                    text-align: left;
                     margin: 25px 0 15px 0;
                 }
                 .text-content {
@@ -1977,13 +1977,13 @@ class Bewerbungstrainer_PDF_Exporter {
                     font-size: 12pt;
                     font-weight: 700;
                     color: <?php echo $primary_color; ?>;
-                    text-align: center;
+                    text-align: left;
                     margin: 20px 0 12px 0;
                 }
                 .toc-list {
-                    margin: 0 auto 30px auto;
-                    padding-left: 30px;
-                    max-width: 500px;
+                    margin: 0 0 30px 0;
+                    padding-left: 20px;
+                    list-style-type: none;
                 }
                 .toc-list li {
                     margin: 6px 0;
@@ -2003,7 +2003,7 @@ class Bewerbungstrainer_PDF_Exporter {
                     font-size: 14pt;
                     font-weight: 700;
                     color: <?php echo $primary_color; ?>;
-                    text-align: center;
+                    text-align: left;
                     margin: 30px 0 20px 0;
                 }
 
@@ -2012,7 +2012,7 @@ class Bewerbungstrainer_PDF_Exporter {
                     font-size: 12pt;
                     font-weight: 700;
                     color: <?php echo $primary_color; ?>;
-                    text-align: center;
+                    text-align: left;
                     margin: 20px 0 12px 0;
                 }
 
@@ -2035,12 +2035,8 @@ class Bewerbungstrainer_PDF_Exporter {
 
                 /* Variables Box */
                 .variables-box {
-                    background-color: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    padding: 15px 20px;
-                    margin: 20px auto;
-                    max-width: 500px;
+                    padding: 15px 0;
+                    margin: 20px 0;
                 }
                 .variables-title {
                     font-size: 10pt;
@@ -2049,7 +2045,7 @@ class Bewerbungstrainer_PDF_Exporter {
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                     margin-bottom: 10px;
-                    text-align: center;
+                    text-align: left;
                 }
                 .variable-row {
                     margin: 6px 0;
@@ -2143,12 +2139,12 @@ class Bewerbungstrainer_PDF_Exporter {
 
             <!-- Table of Contents -->
             <?php if (count($sections) > 1) : ?>
-            <div class="toc-title">So ist Ihr Briefing aufgebaut</div>
-            <ol class="toc-list">
+            <div class="toc-title">Inhalt</div>
+            <ul class="toc-list">
                 <?php foreach ($sections as $section) : ?>
                 <li><?php echo esc_html($section->section_title); ?></li>
                 <?php endforeach; ?>
-            </ol>
+            </ul>
             <?php endif; ?>
 
             <!-- Variables Box -->
