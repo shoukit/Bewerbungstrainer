@@ -21,6 +21,7 @@ import {
   RotateCcw,
   Lightbulb,
   FileText,
+  Download,
 } from 'lucide-react';
 
 /**
@@ -788,6 +789,7 @@ const BriefingWorkbook = ({
   const [isVariablesExpanded, setIsVariablesExpanded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Get primary accent color from branding
   const primaryAccent = b.primaryAccent;
@@ -893,6 +895,47 @@ const BriefingWorkbook = ({
     return response.data.new_items_count;
   }, []);
 
+  // Handle PDF download
+  const handleDownloadPdf = useCallback(async () => {
+    if (isDownloadingPdf || !briefing?.id) return;
+
+    setIsDownloadingPdf(true);
+    try {
+      const response = await wordpressAPI.request(
+        `/smartbriefing/briefings/${briefing.id}/pdf`,
+        { method: 'GET' }
+      );
+
+      if (!response.success || !response.data?.pdf_base64) {
+        throw new Error(response.message || 'PDF-Export fehlgeschlagen');
+      }
+
+      // Convert base64 to blob and download
+      const byteCharacters = atob(response.data.pdf_base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = response.data.filename || 'Smart-Briefing.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[SmartBriefing] PDF download error:', err);
+      // Could show a toast here
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  }, [briefing?.id, isDownloadingPdf]);
+
   if (!briefing) {
     return null;
   }
@@ -996,29 +1039,58 @@ const BriefingWorkbook = ({
               </div>
             </div>
 
-            {/* Delete Button - mobile and desktop */}
-            {onDelete && (
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
+              {/* PDF Download Button */}
               <button
-                onClick={() => setShowDeleteConfirm(true)}
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf}
+                title="Als PDF herunterladen"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  background: 'rgba(239,68,68,0.2)',
-                  border: '1px solid rgba(239,68,68,0.4)',
+                  justifyContent: 'center',
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
                   borderRadius: '10px',
-                  padding: isMobile ? '10px 12px' : '10px 16px',
-                  cursor: 'pointer',
+                  padding: '10px 12px',
+                  cursor: isDownloadingPdf ? 'not-allowed' : 'pointer',
                   color: '#fff',
-                  fontSize: '14px',
-                  fontWeight: 500,
+                  opacity: isDownloadingPdf ? 0.6 : 1,
                   outline: 'none',
                   WebkitAppearance: 'none',
                 }}
               >
-                <Trash2 size={16} />
+                {isDownloadingPdf ? (
+                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <Download size={16} />
+                )}
               </button>
-            )}
+
+              {/* Delete Button */}
+              {onDelete && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  title="Briefing loschen"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(239,68,68,0.2)',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    borderRadius: '10px',
+                    padding: '10px 12px',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    outline: 'none',
+                    WebkitAppearance: 'none',
+                  }}
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

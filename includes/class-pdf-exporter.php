@@ -34,6 +34,11 @@ class Bewerbungstrainer_PDF_Exporter {
     private $video_db;
 
     /**
+     * Smart Briefing database instance
+     */
+    private $smartbriefing_db;
+
+    /**
      * Get singleton instance
      */
     public static function get_instance() {
@@ -55,6 +60,9 @@ class Bewerbungstrainer_PDF_Exporter {
         }
         if (class_exists('Bewerbungstrainer_Video_Training_Database')) {
             $this->video_db = Bewerbungstrainer_Video_Training_Database::get_instance();
+        }
+        if (class_exists('Bewerbungstrainer_SmartBriefing_Database')) {
+            $this->smartbriefing_db = Bewerbungstrainer_SmartBriefing_Database::get_instance();
         }
     }
 
@@ -1628,5 +1636,432 @@ class Bewerbungstrainer_PDF_Exporter {
         wp_delete_file($pdf_path);
 
         exit;
+    }
+
+    // =========================================================================
+    // SMART BRIEFING PDF EXPORT
+    // =========================================================================
+
+    /**
+     * Export smart briefing to PDF
+     *
+     * @param int $briefing_id Briefing ID
+     * @param int $user_id User ID (for security check)
+     * @return string|WP_Error PDF file path or WP_Error on failure
+     */
+    public function export_briefing_pdf($briefing_id, $user_id = null) {
+        if ($user_id === null) {
+            $user_id = get_current_user_id();
+        }
+
+        if (!$this->smartbriefing_db) {
+            return new WP_Error('not_available', __('Smart Briefing Modul nicht verfugbar.', 'bewerbungstrainer'));
+        }
+
+        // Get briefing
+        $briefing = $this->smartbriefing_db->get_briefing($briefing_id);
+
+        if (!$briefing) {
+            return new WP_Error('not_found', __('Briefing nicht gefunden.', 'bewerbungstrainer'));
+        }
+
+        // Check ownership
+        if ((int) $briefing->user_id !== (int) $user_id) {
+            return new WP_Error('forbidden', __('Keine Berechtigung.', 'bewerbungstrainer'));
+        }
+
+        // Get sections
+        $sections = $this->smartbriefing_db->get_briefing_sections($briefing_id);
+
+        // Get template info
+        $template = $this->smartbriefing_db->get_template($briefing->template_id);
+
+        // Generate HTML content
+        $html = $this->generate_briefing_pdf_html($briefing, $sections, $template);
+
+        // Create PDF
+        $pdf_path = $this->html_to_pdf($html, 'briefing-' . $briefing_id);
+
+        return $pdf_path;
+    }
+
+    /**
+     * Generate HTML content for Smart Briefing PDF
+     * Includes all items with user notes, or space for handwritten notes
+     */
+    private function generate_briefing_pdf_html($briefing, $sections, $template) {
+        $formatted_date = $this->format_date($briefing->created_at);
+        $briefing_title = $briefing->title ?: ($template ? $template->title : 'Smart Briefing');
+
+        // Get variables for display
+        $variables = $briefing->variables_json ?: [];
+
+        ob_start();
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                @page {
+                    margin: 15mm 12mm 20mm 12mm;
+                }
+                * {
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                    font-size: 10pt;
+                    line-height: 1.5;
+                    color: #1a1a2e;
+                    margin: 0;
+                    padding: 0;
+                    background: #ffffff;
+                }
+
+                /* Hero Header */
+                .hero-header {
+                    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #4f46e5 100%);
+                    margin: -15mm -12mm 0 -12mm;
+                    padding: 25px 35px;
+                    color: white;
+                }
+                .hero-badge {
+                    display: inline-block;
+                    background: rgba(255,255,255,0.2);
+                    padding: 5px 12px;
+                    border-radius: 16px;
+                    font-size: 9pt;
+                    font-weight: 600;
+                    letter-spacing: 0.5px;
+                    text-transform: uppercase;
+                    margin-bottom: 10px;
+                }
+                .hero-title {
+                    font-size: 22pt;
+                    font-weight: 800;
+                    margin: 0 0 8px 0;
+                    letter-spacing: -0.5px;
+                    line-height: 1.2;
+                }
+                .hero-meta {
+                    font-size: 10pt;
+                    opacity: 0.85;
+                }
+                .hero-meta-item {
+                    display: inline-block;
+                    margin-right: 20px;
+                }
+
+                /* Variables Box */
+                .variables-box {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
+                    padding: 16px 20px;
+                    margin: 20px 0;
+                }
+                .variables-title {
+                    font-size: 10pt;
+                    font-weight: 700;
+                    color: #64748b;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 10px;
+                }
+                .variable-row {
+                    display: table;
+                    width: 100%;
+                    margin: 6px 0;
+                }
+                .variable-label {
+                    display: table-cell;
+                    width: 35%;
+                    font-weight: 600;
+                    color: #475569;
+                    font-size: 10pt;
+                }
+                .variable-value {
+                    display: table-cell;
+                    color: #1e293b;
+                    font-size: 10pt;
+                }
+
+                /* Section Styles */
+                .section {
+                    margin: 24px 0;
+                    page-break-inside: avoid;
+                }
+                .section-header {
+                    display: table;
+                    width: 100%;
+                    margin-bottom: 14px;
+                    border-bottom: 2px solid #e2e8f0;
+                    padding-bottom: 8px;
+                }
+                .section-icon {
+                    display: table-cell;
+                    width: 32px;
+                    vertical-align: middle;
+                }
+                .section-icon-circle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 8px;
+                    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+                    color: white;
+                    text-align: center;
+                    line-height: 28px;
+                    font-size: 12pt;
+                    font-weight: 700;
+                }
+                .section-title {
+                    display: table-cell;
+                    vertical-align: middle;
+                    padding-left: 10px;
+                    font-size: 13pt;
+                    font-weight: 700;
+                    color: #1e293b;
+                }
+
+                /* Item Styles */
+                .item {
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 10px;
+                    padding: 14px 16px;
+                    margin: 10px 0;
+                    page-break-inside: avoid;
+                }
+                .item-label {
+                    font-size: 11pt;
+                    font-weight: 700;
+                    color: #1e293b;
+                    margin-bottom: 6px;
+                }
+                .item-content {
+                    font-size: 10pt;
+                    color: #475569;
+                    line-height: 1.6;
+                }
+
+                /* Note Box - for user notes or empty space */
+                .note-box {
+                    margin-top: 10px;
+                    padding: 10px 14px;
+                    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                    border-left: 3px solid #f59e0b;
+                    border-radius: 6px;
+                }
+                .note-label {
+                    font-size: 9pt;
+                    font-weight: 700;
+                    color: #92400e;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                }
+                .note-content {
+                    font-size: 10pt;
+                    color: #78350f;
+                    font-style: italic;
+                    line-height: 1.5;
+                }
+
+                /* Empty Note Space - for handwritten notes */
+                .note-space {
+                    margin-top: 10px;
+                    padding: 8px 14px;
+                    background: #fefce8;
+                    border: 1px dashed #d4a60a;
+                    border-radius: 6px;
+                    min-height: 42px;
+                }
+                .note-space-label {
+                    font-size: 8pt;
+                    color: #a16207;
+                    font-style: italic;
+                }
+                .note-lines {
+                    margin-top: 6px;
+                    border-bottom: 1px solid #e5e7eb;
+                    height: 18px;
+                }
+
+                /* Footer */
+                .footer {
+                    margin-top: 30px;
+                    padding-top: 16px;
+                    border-top: 2px solid #e5e7eb;
+                    text-align: center;
+                }
+                .footer-logo {
+                    font-size: 11pt;
+                    font-weight: 700;
+                    color: #8b5cf6;
+                    margin-bottom: 4px;
+                }
+                .footer-meta {
+                    font-size: 9pt;
+                    color: #94a3b8;
+                }
+
+                .page-break {
+                    page-break-before: always;
+                }
+            </style>
+        </head>
+        <body>
+            <!-- Hero Header -->
+            <div class="hero-header">
+                <div class="hero-badge">SMART BRIEFING</div>
+                <h1 class="hero-title"><?php echo esc_html($briefing_title); ?></h1>
+                <div class="hero-meta">
+                    <span class="hero-meta-item"><?php echo esc_html($formatted_date); ?></span>
+                    <span class="hero-meta-item"><?php echo count($sections); ?> Abschnitte</span>
+                </div>
+            </div>
+
+            <div style="padding: 20px 0;">
+                <!-- Variables Box -->
+                <?php if (!empty($variables)) : ?>
+                <div class="variables-box">
+                    <div class="variables-title">Eingaben</div>
+                    <?php foreach ($variables as $key => $value) :
+                        // Skip empty values
+                        if (empty($value)) continue;
+                        // Format label from key
+                        $label = ucfirst(str_replace('_', ' ', $key));
+                    ?>
+                    <div class="variable-row">
+                        <div class="variable-label"><?php echo esc_html($label); ?>:</div>
+                        <div class="variable-value"><?php echo esc_html($value); ?></div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+                <!-- Sections -->
+                <?php
+                $section_number = 0;
+                foreach ($sections as $section) :
+                    $section_number++;
+
+                    // Parse ai_content
+                    $items = [];
+                    if (!empty($section->ai_content)) {
+                        $parsed = json_decode($section->ai_content, true);
+                        if ($parsed && isset($parsed['items']) && is_array($parsed['items'])) {
+                            // Filter out deleted items
+                            $items = array_filter($parsed['items'], function($item) {
+                                return empty($item['deleted']);
+                            });
+                        }
+                    }
+                ?>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <div class="section-icon-circle"><?php echo $section_number; ?></div>
+                        </div>
+                        <div class="section-title"><?php echo esc_html($section->section_title); ?></div>
+                    </div>
+
+                    <?php if (!empty($items)) : ?>
+                        <?php foreach ($items as $item) : ?>
+                        <div class="item">
+                            <?php if (!empty($item['label'])) : ?>
+                            <div class="item-label"><?php echo esc_html($item['label']); ?></div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($item['content'])) : ?>
+                            <div class="item-content"><?php echo nl2br(esc_html($item['content'])); ?></div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($item['user_note'])) : ?>
+                            <!-- User has added a note -->
+                            <div class="note-box">
+                                <div class="note-label">Meine Notiz</div>
+                                <div class="note-content"><?php echo nl2br(esc_html($item['user_note'])); ?></div>
+                            </div>
+                            <?php else : ?>
+                            <!-- Empty space for handwritten notes -->
+                            <div class="note-space">
+                                <div class="note-space-label">Notizen:</div>
+                                <div class="note-lines"></div>
+                                <div class="note-lines"></div>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php else : ?>
+                        <!-- Fallback: show raw content if no items -->
+                        <?php if (!empty($section->ai_content)) : ?>
+                        <div class="item">
+                            <div class="item-content"><?php echo nl2br(esc_html($section->ai_content)); ?></div>
+                            <div class="note-space">
+                                <div class="note-space-label">Notizen:</div>
+                                <div class="note-lines"></div>
+                                <div class="note-lines"></div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
+                    <!-- Section-level notes -->
+                    <?php if (!empty($section->user_notes)) : ?>
+                    <div class="note-box" style="margin-top: 16px;">
+                        <div class="note-label">Abschnitts-Notizen</div>
+                        <div class="note-content"><?php echo nl2br(esc_html($section->user_notes)); ?></div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+
+                <!-- Footer -->
+                <div class="footer">
+                    <div class="footer-logo">Erstellt mit Karriereheld</div>
+                    <div class="footer-meta"><?php echo esc_html(get_bloginfo('name')); ?> - <?php echo esc_html(date('d.m.Y H:i')); ?></div>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Get smart briefing PDF as base64 for REST API response
+     *
+     * @param int $briefing_id Briefing ID
+     * @param int $user_id User ID (for security check)
+     * @return array|WP_Error PDF data or WP_Error on failure
+     */
+    public function get_briefing_pdf_base64($briefing_id, $user_id = null) {
+        $pdf_path = $this->export_briefing_pdf($briefing_id, $user_id);
+
+        if (is_wp_error($pdf_path)) {
+            return $pdf_path;
+        }
+
+        // Read PDF content and encode as base64
+        $pdf_content = file_get_contents($pdf_path);
+        $base64_content = base64_encode($pdf_content);
+
+        // Get briefing for filename
+        $briefing = $this->smartbriefing_db->get_briefing($briefing_id);
+        $template = $this->smartbriefing_db->get_template($briefing->template_id);
+        $briefing_title = $briefing->title ?: ($template ? $template->title : 'Briefing');
+        $date = new DateTime($briefing->created_at);
+        $download_filename = 'Smart-Briefing-' . sanitize_file_name($briefing_title) . '-' . $date->format('Y-m-d') . '.pdf';
+
+        // Clean up temporary file
+        wp_delete_file($pdf_path);
+
+        return array(
+            'pdf_base64' => $base64_content,
+            'filename' => $download_filename,
+            'content_type' => 'application/pdf',
+        );
     }
 }
