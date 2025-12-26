@@ -886,6 +886,7 @@ class Bewerbungstrainer_PDF_Exporter {
             <div class="section-title">Gesprächsverlauf</div>
             <div style="background: #f8fafc; border-radius: 8px; padding: 15px; font-size: 9pt;">
                 <?php foreach ($transcript_data as $entry) :
+                    if (!is_array($entry)) continue;
                     $role = isset($entry['role']) ? $entry['role'] : '';
                     $message = isset($entry['message']) ? $entry['message'] : '';
                     $is_agent = ($role === 'agent' || $role === 'ai');
@@ -940,9 +941,9 @@ class Bewerbungstrainer_PDF_Exporter {
             ?>
             <div class="info-box" style="background-color: <?php echo $filler_count <= 2 ? '#f0fdf4' : ($filler_count <= 5 ? '#fffbeb' : '#fef2f2'); ?>; border-left: 3px solid <?php echo $filler_color; ?>;">
                 <div class="info-box-title" style="color: <?php echo $filler_color; ?>;">Füllwörter: <?php echo $filler_count; ?> erkannt</div>
-                <?php if (isset($speech['filler_word_analysis']) && !empty($speech['filler_word_analysis'])) : ?>
+                <?php if (isset($speech['filler_word_analysis']) && is_array($speech['filler_word_analysis']) && !empty($speech['filler_word_analysis'])) : ?>
                 <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                    <?php foreach ($speech['filler_word_analysis'] as $item) : ?>
+                    <?php foreach ($speech['filler_word_analysis'] as $item) : if (!is_array($item)) continue; ?>
                     <li style="margin: 4px 0; color: #374151;">
                         <strong>"<?php echo esc_html($item['word']); ?>"</strong> (<?php echo esc_html($item['count']); ?>x)
                         <?php if (isset($item['examples']) && !empty($item['examples'])) : ?>
@@ -999,13 +1000,13 @@ class Bewerbungstrainer_PDF_Exporter {
                 <span class="category-name">Tonalität</span>
                 <span class="category-score" style="color: <?php echo $ton_color; ?>;"><?php echo $ton_label; ?></span>
             </div>
-            <?php if (isset($tonality['highlights']) && !empty($tonality['highlights'])) : ?>
+            <?php if (isset($tonality['highlights']) && is_array($tonality['highlights']) && !empty($tonality['highlights'])) : ?>
             <div style="margin: 8px 0; padding: 10px; background: #f0fdfa; border-radius: 6px;">
                 <div style="font-size: 9pt; font-weight: 600; color: #0d9488; margin-bottom: 6px;">Bemerkenswerte Momente:</div>
-                <?php foreach ($tonality['highlights'] as $highlight) : ?>
+                <?php foreach ($tonality['highlights'] as $highlight) : if (!is_array($highlight)) continue; ?>
                 <div style="font-size: 9pt; color: #374151; margin: 4px 0;">
-                    <span style="font-family: monospace; color: #0d9488;"><?php echo esc_html($highlight['timestamp']); ?></span>
-                    - <?php echo esc_html($highlight['note']); ?>
+                    <span style="font-family: monospace; color: #0d9488;"><?php echo esc_html(isset($highlight['timestamp']) ? $highlight['timestamp'] : ''); ?></span>
+                    - <?php echo esc_html(isset($highlight['note']) ? $highlight['note'] : ''); ?>
                 </div>
                 <?php endforeach; ?>
             </div>
