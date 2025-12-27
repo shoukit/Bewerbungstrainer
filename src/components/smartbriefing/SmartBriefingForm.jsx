@@ -374,7 +374,7 @@ const SmartBriefingForm = ({
         }}
       >
         <ArrowLeft size={18} />
-        Zuruck zur Ubersicht
+        <span style={{ lineHeight: '1.4' }}>Zurück zur Übersicht</span>
       </button>
 
       {/* Template Header */}
