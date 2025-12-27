@@ -1361,7 +1361,26 @@ class Bewerbungstrainer_Simulator_Admin {
                 handle: '.handle',
                 placeholder: 'ui-state-highlight',
                 update: function() {
-                    // Re-index after sort if needed
+                    // Re-index after sort - update data-index and name attributes
+                    $('#variables-container .simulator-variable-item').each(function(newIndex) {
+                        var $item = $(this);
+                        var oldIndex = $item.data('index');
+
+                        // Update data-index
+                        $item.data('index', newIndex);
+                        $item.attr('data-index', newIndex);
+
+                        // Update var_required checkbox name
+                        $item.find('input[name^="var_required["]').attr('name', 'var_required[' + newIndex + ']');
+
+                        // Update var_options names
+                        $item.find('input[name^="var_options["]').each(function() {
+                            var name = $(this).attr('name');
+                            // Replace old index with new index in name like var_options[0][value][]
+                            var newName = name.replace(/var_options\[\d+\]/, 'var_options[' + newIndex + ']');
+                            $(this).attr('name', newName);
+                        });
+                    });
                 }
             });
         });
