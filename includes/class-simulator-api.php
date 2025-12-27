@@ -607,53 +607,134 @@ class Bewerbungstrainer_Simulator_API {
         $latest_answer = $this->db->get_latest_answer_for_question($session_id, $question_index);
         $attempt_number = $latest_answer ? $latest_answer->attempt_number + 1 : 1;
 
-        // Build analysis prompt
+        // Build feedback prompt
         $feedback_prompt = $scenario->feedback_prompt ?: $this->get_default_feedback_prompt();
         $feedback_prompt = $this->interpolate_variables($feedback_prompt, $variables);
 
-        $analysis_prompt = $this->build_audio_analysis_prompt(
-            $question_text,
-            $scenario,
-            $variables,
-            $feedback_prompt
-        );
+        // Check if Whisper is available for transcription
+        $whisper_handler = Bewerbungstrainer_Whisper_Handler::get_instance();
+        $use_whisper = $whisper_handler->is_available();
 
-        // Log prompt to prompts.log
-        if (function_exists('bewerbungstrainer_log_prompt')) {
-            bewerbungstrainer_log_prompt(
-                'SIMULATOR_AUDIO_FEEDBACK',
-                'Szenario-Training: Audio-Analyse und Feedback. Transkribiert Antwort, bewertet Inhalt und Sprechweise.',
-                $analysis_prompt,
-                array(
-                    'Szenario' => $scenario->title,
-                    'Frage' => $question_text,
-                    'Frage-Index' => $question_index,
-                    'Versuch-Nr' => $attempt_number,
-                    'Audio-Größe' => strlen($audio_data) . ' bytes',
-                    'MIME-Type' => $mime_type ?? 'audio/webm',
-                    'Session-ID' => $session_id,
-                )
+        if ($use_whisper) {
+            // ========== NEW: Whisper + Gemini Text Pipeline ==========
+            error_log("[SIMULATOR] Using Whisper for transcription...");
+
+            // Step 1: Transcribe with Whisper
+            $whisper_result = $whisper_handler->transcribe_base64(
+                base64_encode($audio_data),
+                $mime_type ?? 'audio/webm',
+                array('language' => 'de')
             );
-        }
 
-        // Call Gemini with multimodal (audio + text)
-        $analysis_result = $this->call_gemini_multimodal($analysis_prompt, $audio_data, $mime_type ?? 'audio/webm', $api_key);
-
-        if (is_wp_error($analysis_result)) {
-            // Log error response
-            if (function_exists('bewerbungstrainer_log_response')) {
-                bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result->get_error_message(), true);
+            if (is_wp_error($whisper_result)) {
+                error_log("[SIMULATOR] Whisper error: " . $whisper_result->get_error_message());
+                return $whisper_result;
             }
-            return $analysis_result;
-        }
 
-        // Log successful response
-        if (function_exists('bewerbungstrainer_log_response')) {
-            bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result);
-        }
+            $transcript = $whisper_result['transcript'];
+            error_log("[SIMULATOR] Whisper transcript: " . substr($transcript, 0, 200) . "...");
 
-        // Parse analysis response
-        $parsed = $this->parse_audio_analysis_response($analysis_result);
+            // Step 2: Check if transcript is empty/failed
+            if ($whisper_handler->is_empty_transcript($transcript)) {
+                error_log("[SIMULATOR] Whisper returned empty transcript, rejecting answer");
+                return new WP_Error(
+                    'empty_transcript',
+                    __('Es wurde keine Sprache erkannt. Bitte sprich deutlich ins Mikrofon und versuche es erneut.', 'bewerbungstrainer'),
+                    array('status' => 400)
+                );
+            }
+
+            // Step 3: Build text-only analysis prompt
+            $analysis_prompt = $this->build_text_analysis_prompt(
+                $question_text,
+                $scenario,
+                $variables,
+                $feedback_prompt,
+                $transcript
+            );
+
+            // Log prompt
+            if (function_exists('bewerbungstrainer_log_prompt')) {
+                bewerbungstrainer_log_prompt(
+                    'SIMULATOR_TEXT_FEEDBACK',
+                    'Szenario-Training: Text-Analyse und Feedback (Whisper-Transkript).',
+                    $analysis_prompt,
+                    array(
+                        'Szenario' => $scenario->title,
+                        'Frage' => $question_text,
+                        'Frage-Index' => $question_index,
+                        'Versuch-Nr' => $attempt_number,
+                        'Transkript-Länge' => strlen($transcript) . ' chars',
+                        'Session-ID' => $session_id,
+                        'Transcription-Method' => 'Whisper',
+                    )
+                );
+            }
+
+            // Step 4: Call Gemini text API for analysis
+            $analysis_result = $this->call_gemini_api($analysis_prompt, $api_key);
+
+            if (is_wp_error($analysis_result)) {
+                if (function_exists('bewerbungstrainer_log_response')) {
+                    bewerbungstrainer_log_response('SIMULATOR_TEXT_FEEDBACK', $analysis_result->get_error_message(), true);
+                }
+                return $analysis_result;
+            }
+
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SIMULATOR_TEXT_FEEDBACK', $analysis_result);
+            }
+
+            // Step 5: Parse text analysis response (includes transcript from Whisper)
+            $parsed = $this->parse_text_analysis_response($analysis_result, $transcript);
+
+        } else {
+            // ========== FALLBACK: Gemini Multimodal Pipeline ==========
+            error_log("[SIMULATOR] Whisper not available, using Gemini multimodal fallback...");
+
+            $analysis_prompt = $this->build_audio_analysis_prompt(
+                $question_text,
+                $scenario,
+                $variables,
+                $feedback_prompt
+            );
+
+            // Log prompt to prompts.log
+            if (function_exists('bewerbungstrainer_log_prompt')) {
+                bewerbungstrainer_log_prompt(
+                    'SIMULATOR_AUDIO_FEEDBACK',
+                    'Szenario-Training: Audio-Analyse und Feedback (Gemini Multimodal).',
+                    $analysis_prompt,
+                    array(
+                        'Szenario' => $scenario->title,
+                        'Frage' => $question_text,
+                        'Frage-Index' => $question_index,
+                        'Versuch-Nr' => $attempt_number,
+                        'Audio-Größe' => strlen($audio_data) . ' bytes',
+                        'MIME-Type' => $mime_type ?? 'audio/webm',
+                        'Session-ID' => $session_id,
+                        'Transcription-Method' => 'Gemini-Multimodal',
+                    )
+                );
+            }
+
+            // Call Gemini with multimodal (audio + text)
+            $analysis_result = $this->call_gemini_multimodal($analysis_prompt, $audio_data, $mime_type ?? 'audio/webm', $api_key);
+
+            if (is_wp_error($analysis_result)) {
+                if (function_exists('bewerbungstrainer_log_response')) {
+                    bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result->get_error_message(), true);
+                }
+                return $analysis_result;
+            }
+
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result);
+            }
+
+            // Parse analysis response
+            $parsed = $this->parse_audio_analysis_response($analysis_result);
+        }
 
         // Create answer record
         $answer_data = array(
@@ -1591,6 +1672,117 @@ AUDIO ZUR ANALYSE:";
     }
 
     /**
+     * Build text-only analysis prompt (for use with pre-transcribed audio via Whisper)
+     *
+     * This version takes an existing transcript and only asks Gemini to analyze it,
+     * avoiding any transcription hallucination issues.
+     *
+     * @param string $question_text The question/situation the user responded to
+     * @param object $scenario The scenario object
+     * @param array $variables Session variables
+     * @param string $feedback_prompt Custom feedback instructions
+     * @param string $transcript The pre-transcribed audio text from Whisper
+     * @return string The complete prompt for text-only analysis
+     */
+    private function build_text_analysis_prompt($question_text, $scenario, $variables, $feedback_prompt, $transcript) {
+        $context = '';
+        if ($variables) {
+            foreach ($variables as $key => $value) {
+                if ($value) {
+                    $context .= "- " . ucfirst(str_replace('_', ' ', $key)) . ": {$value}\n";
+                }
+            }
+        }
+
+        // Determine mode-specific text
+        $mode = $scenario->mode ?? 'INTERVIEW';
+        $isSimulation = ($mode === 'SIMULATION');
+
+        $situationLabel = $isSimulation
+            ? "SITUATION/AUSSAGE DES GEGENÜBERS (auf die der Nutzer reagiert hat)"
+            : "FRAGE DIE BEANTWORTET WURDE";
+
+        $analysisContext = $isSimulation
+            ? "Du analysierst die REAKTION des Nutzers auf eine Gesprächssituation."
+            : "Du analysierst die ANTWORT des Nutzers auf eine Interviewfrage.";
+
+        $feedbackFocus = $isSimulation
+            ? "Bewerte die Reaktion des Nutzers:
+- Angemessenheit der Reaktion auf die Situation
+- Kommunikationstechnik (Deeskalation, Empathie, Lösungsorientierung)
+- Professionalität unter Druck"
+            : "Bewerte die Antwort des Nutzers:
+- Relevanz für die gestellte Frage
+- STAR-Methode (Situation, Task, Action, Result)
+- Professionalität und Selbstbewusstsein";
+
+        return "Du bist ein professioneller Karriere-Coach und analysierst Textantworten.
+
+{$analysisContext}
+
+AUFGABE:
+1. ANALYSIERE die gegebene Antwort/Reaktion inhaltlich
+2. ANALYSIERE die Textqualität (Struktur, Klarheit, Vollständigkeit)
+3. GEBE konstruktives Feedback basierend auf dem Transkript
+
+KONTEXT:
+- Szenario: {$scenario->title}
+{$context}
+
+{$situationLabel}:
+\"{$question_text}\"
+
+TRANSKRIPT DER ANTWORT:
+\"{$transcript}\"
+
+{$feedbackFocus}
+
+{$feedback_prompt}
+
+WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
+
+{
+  \"feedback\": {
+    \"summary\": \"Kurze Zusammenfassung der Antwortqualität (1-2 Sätze)\",
+    \"strengths\": [
+      \"Stärke 1: Konkrete positive Beobachtung\",
+      \"Stärke 2: Was gut gemacht wurde\"
+    ],
+    \"improvements\": [
+      \"Verbesserung 1: Was besser gemacht werden könnte\",
+      \"Verbesserung 2: Konkreter Verbesserungsvorschlag\"
+    ],
+    \"tips\": [
+      \"Tipp 1: Konkreter, umsetzbarer Ratschlag\",
+      \"Tipp 2: Praktische Empfehlung\"
+    ],
+    \"scores\": {
+      \"content\": 7.5,
+      \"structure\": 8.0,
+      \"relevance\": 7.0,
+      \"delivery\": 7.5,
+      \"overall\": 7.5
+    }
+  },
+  \"audio_metrics\": {
+    \"speech_rate\": \"optimal\",
+    \"filler_words\": {
+      \"count\": 3,
+      \"words\": [\"ähm\", \"also\", \"halt\"],
+      \"severity\": \"niedrig\"
+    },
+    \"confidence_score\": 75,
+    \"clarity_score\": 80,
+    \"notes\": \"Optionale zusätzliche Beobachtungen zur Sprechweise\"
+  }
+}
+
+Bewertungsskala für Scores: 1-10 (1=sehr schwach, 10=exzellent)
+
+HINWEIS: Das Transkript wurde bereits von einem spezialisierten Transkriptions-Service erstellt. Analysiere NUR den Inhalt und die Qualität der Aussage.";
+    }
+
+    /**
      * Call Gemini API (text only) with retry logic and model fallback
      */
     private function call_gemini_api($prompt, $api_key, $max_retries = 3) {
@@ -1918,6 +2110,57 @@ AUDIO ZUR ANALYSE:";
         }
 
         error_log('Simulator: Failed to parse audio analysis from response: ' . substr($response, 0, 500));
+        return $default;
+    }
+
+    /**
+     * Parse text analysis response from Gemini (used with Whisper transcription)
+     *
+     * @param string $response The Gemini API response
+     * @param string $transcript The transcript from Whisper (used as-is, not from Gemini)
+     * @return array Parsed response with transcript, feedback, and audio_metrics
+     */
+    private function parse_text_analysis_response($response, $transcript) {
+        // Default structure
+        $default = array(
+            'transcript' => $transcript, // Use Whisper transcript directly
+            'feedback' => array(
+                'summary' => 'Feedback konnte nicht generiert werden.',
+                'strengths' => array(),
+                'improvements' => array(),
+                'tips' => array(),
+                'scores' => array(
+                    'content' => null,
+                    'structure' => null,
+                    'relevance' => null,
+                    'delivery' => null,
+                    'overall' => null
+                )
+            ),
+            'audio_metrics' => array(
+                'speech_rate' => 'unbekannt',
+                'filler_words' => array('count' => 0, 'words' => array()),
+                'confidence_score' => null,
+                'clarity_score' => null
+            )
+        );
+
+        // Try to extract JSON from response
+        $json_match = null;
+        if (preg_match('/\{[\s\S]*\}/', $response, $json_match)) {
+            $json_str = $json_match[0];
+            $parsed = json_decode($json_str, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return array(
+                    'transcript' => $transcript, // Always use Whisper transcript
+                    'feedback' => isset($parsed['feedback']) ? $parsed['feedback'] : $default['feedback'],
+                    'audio_metrics' => isset($parsed['audio_metrics']) ? $parsed['audio_metrics'] : $default['audio_metrics'],
+                );
+            }
+        }
+
+        error_log('Simulator: Failed to parse text analysis from response: ' . substr($response, 0, 500));
         return $default;
     }
 
