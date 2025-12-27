@@ -546,24 +546,22 @@ const AnswerCard = ({ answer, index, primaryAccent, branding }) => {
                   <h5 style={{ fontSize: '13px', fontWeight: 600, color: branding.textMain, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Star size={14} color={primaryAccent} /> Bewertung
                   </h5>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                  {/* 4 individual scores in a row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '8px' }}>
                     {[
                       { key: 'content', label: 'Inhalt' },
                       { key: 'structure', label: 'Struktur' },
                       { key: 'relevance', label: 'Relevanz' },
                       { key: 'delivery', label: 'Präsentation' },
-                      { key: 'overall', label: 'Gesamt' },
                     ].map(({ key, label }) => {
                       const rawScore = feedback.scores[key];
-                      // Convert from scale of 10 to scale of 100
                       const score = rawScore != null ? rawScore * 10 : null;
                       return (
                         <div key={key} style={{
                           padding: '10px 8px',
-                          background: key === 'overall' ? `${primaryAccent}15` : branding.cardBgHover,
+                          background: branding.cardBgHover,
                           borderRadius: '8px',
                           textAlign: 'center',
-                          border: key === 'overall' ? `1px solid ${primaryAccent}30` : 'none',
                         }}>
                           <div style={{
                             fontSize: '16px',
@@ -579,6 +577,35 @@ const AnswerCard = ({ answer, index, primaryAccent, branding }) => {
                       );
                     })}
                   </div>
+                  {/* Overall score spanning full width */}
+                  {(() => {
+                    const rawScore = feedback.scores.overall;
+                    const score = rawScore != null ? rawScore * 10 : null;
+                    return (
+                      <div style={{
+                        padding: '12px 16px',
+                        background: `${primaryAccent}15`,
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        border: `1px solid ${primaryAccent}30`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px',
+                      }}>
+                        <div style={{ fontSize: '10px', color: branding.textMuted }}>
+                          Gesamt
+                        </div>
+                        <div style={{
+                          fontSize: '20px',
+                          fontWeight: 700,
+                          color: score != null ? getScoreColor(score, primaryAccent) : branding.textMuted,
+                        }}>
+                          {score != null ? Math.round(score) : '-'}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
