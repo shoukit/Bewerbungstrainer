@@ -141,6 +141,15 @@ class Bewerbungstrainer_SmartBriefing_API {
             'callback' => array($this, 'generate_more_items'),
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
+
+        // ===== PDF Export Endpoint =====
+
+        // Export briefing as PDF
+        register_rest_route($this->namespace, '/smartbriefing/briefings/(?P<id>\d+)/pdf', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'export_briefing_pdf'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
     }
 
     // Note: Permission callbacks (check_user_logged_in, allow_all_users, etc.)
@@ -1648,5 +1657,45 @@ class Bewerbungstrainer_SmartBriefing_API {
             __('Gemini API nicht verfügbar.', 'bewerbungstrainer'),
             array('status' => 500)
         );
+    }
+
+    // =========================================================================
+    // PDF EXPORT
+    // =========================================================================
+
+    /**
+     * Export briefing as PDF
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function export_briefing_pdf($request) {
+        $briefing_id = intval($request['id']);
+        $user_id = get_current_user_id();
+
+        // Check if PDF exporter is available
+        if (!class_exists('Bewerbungstrainer_PDF_Exporter')) {
+            return new WP_Error(
+                'not_available',
+                __('PDF Export nicht verfugbar.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        $pdf_exporter = Bewerbungstrainer_PDF_Exporter::get_instance();
+        $result = $pdf_exporter->get_briefing_pdf_base64($briefing_id, $user_id);
+
+        if (is_wp_error($result)) {
+            return new WP_Error(
+                $result->get_error_code(),
+                $result->get_error_message(),
+                array('status' => $result->get_error_data()['status'] ?? 500)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $result,
+        ), 200);
     }
 }

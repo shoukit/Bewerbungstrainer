@@ -43,6 +43,7 @@ import {
   Loader2,
   AlertCircle,
   Trash2,
+  Download,
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
@@ -1453,6 +1454,7 @@ const RoleplaySessionReport = ({
   const [activeTab, setActiveTab] = useState(TABS.COACHING);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // State for full session data (fetched if needed)
   const [fullSession, setFullSession] = useState(null);
@@ -1528,6 +1530,57 @@ const RoleplaySessionReport = ({
   const handleSeekToTime = (time) => {
     if (audioSeekRef.current) {
       audioSeekRef.current(time);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!session?.id || isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      const wpApiSettings = window.wpApiSettings || {};
+      const baseUrl = wpApiSettings.root || '/wp-json/';
+      const nonce = getWPNonce();
+
+      const response = await fetch(`${baseUrl}bewerbungstrainer/v1/sessions/${session.id}/export-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': nonce,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('[PDF] Server error:', data);
+        throw new Error(data.error || 'PDF-Export fehlgeschlagen');
+      }
+
+      if (data.pdf_base64 && data.filename) {
+        // Create blob from base64
+        const byteCharacters = atob(data.pdf_base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+        // Download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = data.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('[PDF] Download failed:', error);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -1644,8 +1697,31 @@ const RoleplaySessionReport = ({
             </div>
 
             {/* Action Buttons */}
-            {!isMobile && (onRepeat || onDelete) && (
+            {!isMobile && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {session?.id && (
+                  <button
+                    onClick={handleDownloadPdf}
+                    disabled={isDownloading}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'rgba(255,255,255,0.2)',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      borderRadius: '10px',
+                      padding: '10px 20px',
+                      cursor: isDownloading ? 'wait' : 'pointer',
+                      color: '#fff',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      opacity: isDownloading ? 0.7 : 1,
+                    }}
+                  >
+                    {isDownloading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={16} />}
+                    PDF Export
+                  </button>
+                )}
                 {onRepeat && (
                   <button
                     onClick={onRepeat}
@@ -1804,11 +1880,12 @@ const RoleplaySessionReport = ({
         </div>
 
         {/* Mobile Action Buttons */}
-        {isMobile && (onRepeat || onDelete) && (
+        {isMobile && (
           <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {onRepeat && (
+            {session?.id && (
               <button
-                onClick={onRepeat}
+                onClick={handleDownloadPdf}
+                disabled={isDownloading}
                 style={{
                   width: '100%',
                   display: 'flex',
@@ -1819,8 +1896,32 @@ const RoleplaySessionReport = ({
                   border: 'none',
                   borderRadius: '12px',
                   padding: '14px 24px',
-                  cursor: 'pointer',
+                  cursor: isDownloading ? 'wait' : 'pointer',
                   color: '#fff',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  opacity: isDownloading ? 0.7 : 1,
+                }}
+              >
+                {isDownloading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={18} />}
+                PDF Export
+              </button>
+            )}
+            {onRepeat && (
+              <button
+                onClick={onRepeat}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  background: b.cardBg,
+                  border: `1px solid ${b.borderColor}`,
+                  borderRadius: '12px',
+                  padding: '14px 24px',
+                  cursor: 'pointer',
+                  color: b.textMain,
                   fontSize: '15px',
                   fontWeight: 600,
                 }}

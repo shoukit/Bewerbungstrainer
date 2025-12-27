@@ -36,6 +36,7 @@ import {
   Volume2,
   VolumeX,
   Trash2,
+  Download,
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
@@ -888,6 +889,9 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // PDF download state
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
   // Roleplay-specific state
   const [roleplayData, setRoleplayData] = useState(null);
   const [roleplayScenario, setRoleplayScenario] = useState(scenario);
@@ -931,6 +935,73 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
       console.error('Failed to delete session:', err);
       setIsDeleting(false);
       setShowDeleteConfirm(false);
+    }
+  };
+
+  // Handle PDF download
+  const handleDownloadPdf = async () => {
+    if (isDownloadingPdf || !session?.id) return;
+
+    setIsDownloadingPdf(true);
+    try {
+      // Determine endpoint based on session type
+      let endpoint;
+      if (isSimulator) {
+        endpoint = `${getWPApiUrl()}/simulator/sessions/${session.id}/export-pdf`;
+      } else if (isVideo) {
+        endpoint = `${getWPApiUrl()}/video-training/sessions/${session.id}/export-pdf`;
+      } else if (isRoleplay) {
+        endpoint = `${getWPApiUrl()}/sessions/${session.id}/export-pdf`;
+      } else {
+        throw new Error('Unsupported session type for PDF export');
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'X-WP-Nonce': getWPNonce(),
+          'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+      });
+
+      // Always try to parse JSON response to get error message
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('[PDF] Server error response:', data);
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      if (!data.success || !data.pdf_base64) {
+        console.error('[PDF] Invalid response data:', data);
+        throw new Error(data.error || 'PDF generation failed');
+      }
+
+      // Convert base64 to blob
+      const byteCharacters = atob(data.pdf_base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: data.content_type || 'application/pdf' });
+
+      // Trigger download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = data.filename || 'Training.pdf';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download PDF:', err);
+      // Could show a toast notification here
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
@@ -1144,6 +1215,34 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '12px' }}>
+              {/* PDF Download Button */}
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf}
+                title="Als PDF herunterladen"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  cursor: isDownloadingPdf ? 'wait' : 'pointer',
+                  color: '#fff',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  outline: 'none',
+                  WebkitAppearance: 'none',
+                  opacity: isDownloadingPdf ? 0.7 : 1,
+                }}
+              >
+                {isDownloadingPdf ? (
+                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <Download size={16} />
+                )}
+              </button>
               {/* Repeat Button - Desktop only */}
               {!isMobile && onRepeatSession && (
                 <button

@@ -717,9 +717,9 @@ Gib konkrete Formulierungsvorschläge.',
             $scenarios = $wpdb->get_results($query);
         }
 
-        // Parse JSON fields
+        // Parse JSON fields (handle null values to avoid PHP 8.1+ deprecation)
         foreach ($scenarios as &$scenario) {
-            $scenario->input_configuration = json_decode($scenario->input_configuration, true);
+            $scenario->input_configuration = $scenario->input_configuration ? json_decode($scenario->input_configuration, true) : null;
         }
 
         return $scenarios;
@@ -742,7 +742,7 @@ Gib konkrete Formulierungsvorschläge.',
         );
 
         if ($scenario) {
-            $scenario->input_configuration = json_decode($scenario->input_configuration, true);
+            $scenario->input_configuration = $scenario->input_configuration ? json_decode($scenario->input_configuration, true) : null;
         }
 
         return $scenario;
@@ -1065,9 +1065,9 @@ Gib konkrete Formulierungsvorschläge.',
         );
 
         if ($session) {
-            $session->variables_json = json_decode($session->variables_json, true);
-            $session->questions_json = json_decode($session->questions_json, true);
-            $session->summary_feedback_json = json_decode($session->summary_feedback_json, true);
+            $session->variables_json = $session->variables_json ? json_decode($session->variables_json, true) : null;
+            $session->questions_json = $session->questions_json ? json_decode($session->questions_json, true) : null;
+            $session->summary_feedback_json = $session->summary_feedback_json ? json_decode($session->summary_feedback_json, true) : null;
         }
 
         return $session;
@@ -1093,9 +1093,9 @@ Gib konkrete Formulierungsvorschläge.',
         );
 
         if ($session) {
-            $session->variables_json = json_decode($session->variables_json, true);
-            $session->questions_json = json_decode($session->questions_json, true);
-            $session->summary_feedback_json = json_decode($session->summary_feedback_json, true);
+            $session->variables_json = $session->variables_json ? json_decode($session->variables_json, true) : null;
+            $session->questions_json = $session->questions_json ? json_decode($session->questions_json, true) : null;
+            $session->summary_feedback_json = $session->summary_feedback_json ? json_decode($session->summary_feedback_json, true) : null;
         }
 
         return $session;
@@ -1169,11 +1169,11 @@ Gib konkrete Formulierungsvorschläge.',
             )
         );
 
-        // Parse JSON fields
+        // Parse JSON fields (handle null values to avoid PHP 8.1+ deprecation)
         foreach ($sessions as &$session) {
-            $session->variables_json = json_decode($session->variables_json, true);
-            $session->questions_json = json_decode($session->questions_json, true);
-            $session->summary_feedback_json = json_decode($session->summary_feedback_json, true);
+            $session->variables_json = $session->variables_json ? json_decode($session->variables_json, true) : null;
+            $session->questions_json = $session->questions_json ? json_decode($session->questions_json, true) : null;
+            $session->summary_feedback_json = $session->summary_feedback_json ? json_decode($session->summary_feedback_json, true) : null;
         }
 
         return $sessions;
@@ -1429,10 +1429,10 @@ Gib konkrete Formulierungsvorschläge.',
             )
         );
 
-        // Parse JSON fields
+        // Parse JSON fields (handle null values to avoid PHP 8.1+ deprecation)
         foreach ($answers as &$answer) {
-            $answer->feedback_json = json_decode($answer->feedback_json, true);
-            $answer->audio_analysis_json = json_decode($answer->audio_analysis_json, true);
+            $answer->feedback_json = $answer->feedback_json ? json_decode($answer->feedback_json, true) : null;
+            $answer->audio_analysis_json = $answer->audio_analysis_json ? json_decode($answer->audio_analysis_json, true) : null;
         }
 
         return $answers;
@@ -1455,8 +1455,8 @@ Gib konkrete Formulierungsvorschläge.',
         );
 
         if ($answer) {
-            $answer->feedback_json = json_decode($answer->feedback_json, true);
-            $answer->audio_analysis_json = json_decode($answer->audio_analysis_json, true);
+            $answer->feedback_json = $answer->feedback_json ? json_decode($answer->feedback_json, true) : null;
+            $answer->audio_analysis_json = $answer->audio_analysis_json ? json_decode($answer->audio_analysis_json, true) : null;
         }
 
         return $answer;
@@ -1484,8 +1484,8 @@ Gib konkrete Formulierungsvorschläge.',
         );
 
         if ($answer) {
-            $answer->feedback_json = json_decode($answer->feedback_json, true);
-            $answer->audio_analysis_json = json_decode($answer->audio_analysis_json, true);
+            $answer->feedback_json = $answer->feedback_json ? json_decode($answer->feedback_json, true) : null;
+            $answer->audio_analysis_json = $answer->audio_analysis_json ? json_decode($answer->audio_analysis_json, true) : null;
         }
 
         return $answer;

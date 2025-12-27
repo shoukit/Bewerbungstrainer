@@ -148,6 +148,13 @@ class Bewerbungstrainer_Simulator_API {
             'callback' => array($this, 'generate_next_turn'),
             'permission_callback' => array($this, 'allow_all_users'),
         ));
+
+        // Export session as PDF
+        register_rest_route($this->namespace, '/simulator/sessions/(?P<id>\d+)/export-pdf', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'export_session_pdf'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
     }
 
     // Note: Permission callbacks (check_user_logged_in, allow_all_users, etc.)
@@ -1912,5 +1919,40 @@ AUDIO ZUR ANALYSE:";
 
         error_log('Simulator: Failed to parse audio analysis from response: ' . substr($response, 0, 500));
         return $default;
+    }
+
+    // =========================================================================
+    // PDF EXPORT
+    // =========================================================================
+
+    /**
+     * Export session as PDF
+     */
+    public function export_session_pdf($request) {
+        $session_id = intval($request['id']);
+        $user_id = get_current_user_id();
+
+        error_log('[PDF EXPORT] Simulator export requested for session ' . $session_id . ' by user ' . $user_id);
+
+        // Get PDF exporter instance
+        $pdf_exporter = Bewerbungstrainer_PDF_Exporter::get_instance();
+
+        // Get PDF as base64 for REST API response
+        $result = $pdf_exporter->get_simulator_session_pdf_base64($session_id, $user_id);
+
+        if (is_wp_error($result)) {
+            error_log('[PDF EXPORT] Error: ' . $result->get_error_code() . ' - ' . $result->get_error_message());
+            return new WP_REST_Response(array(
+                'success' => false,
+                'error' => $result->get_error_message(),
+            ), 400);
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'pdf_base64' => $result['pdf_base64'],
+            'filename' => $result['filename'],
+            'content_type' => $result['content_type'],
+        ), 200);
     }
 }

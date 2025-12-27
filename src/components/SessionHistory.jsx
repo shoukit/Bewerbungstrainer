@@ -335,6 +335,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       <BriefingWorkbook
         briefing={selectedBriefing}
         onBack={handleBackFromBriefing}
+        onDelete={handleDeleteBriefing}
       />
     );
   }
@@ -701,9 +702,11 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                 padding: '2px 8px',
                 borderRadius: '10px',
                 background: isActive ? primaryAccent : '#e2e8f0',
-                color: isActive ? '#fff' : '#64748b',
+                color: isActive ? 'white' : '#64748b',
                 fontSize: '12px',
                 fontWeight: 600,
+                minWidth: '24px',
+                textAlign: 'center',
               }}>
                 {count}
               </span>
@@ -739,9 +742,11 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   padding: '2px 6px',
                   borderRadius: '8px',
                   background: isActive ? primaryAccent : '#e2e8f0',
-                  color: isActive ? '#fff' : '#64748b',
+                  color: isActive ? 'white' : '#64748b',
                   fontSize: '11px',
                   fontWeight: 600,
+                  minWidth: '20px',
+                  textAlign: 'center',
                 }}>
                   {count}
                 </span>
