@@ -208,6 +208,7 @@ class Bewerbungstrainer_Simulator_API {
                 'question_count_max' => (int) $scenario->question_count_max,
                 'time_limit_per_question' => (int) $scenario->time_limit_per_question,
                 'allow_retry' => (bool) $scenario->allow_retry,
+                'allow_custom_variables' => (bool) ($scenario->allow_custom_variables ?? 0),
                 'tips' => $tips,
             );
         }, $scenarios);
@@ -263,6 +264,7 @@ class Bewerbungstrainer_Simulator_API {
                 'question_count_max' => (int) $scenario->question_count_max,
                 'time_limit_per_question' => (int) $scenario->time_limit_per_question,
                 'allow_retry' => (bool) $scenario->allow_retry,
+                'allow_custom_variables' => (bool) ($scenario->allow_custom_variables ?? 0),
                 'tips' => $tips,
             ),
         ), 200);

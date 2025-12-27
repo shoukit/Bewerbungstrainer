@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 
@@ -154,6 +154,10 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
 
+  // Custom variables state (only used if scenario.allow_custom_variables is true)
+  const [customVariables, setCustomVariables] = useState([]);
+  const [showCustomVariables, setShowCustomVariables] = useState(false);
+
   // Design tokens
   const b = useBranding();
 
@@ -188,6 +192,23 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
     }
   };
 
+  // Custom variables handlers
+  const addCustomVariable = () => {
+    setCustomVariables(prev => [...prev, { key: '', value: '' }]);
+  };
+
+  const updateCustomVariable = (index, field, value) => {
+    setCustomVariables(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const deleteCustomVariable = (index) => {
+    setCustomVariables(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = () => {
     // Filter to only show variables that require user input
     const userInputVariables = scenario.variables_schema.filter((varDef) => {
@@ -208,8 +229,16 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
       return;
     }
 
-    // Submit ALL values (both user-provided and auto-filled)
-    onSubmit(values);
+    // Merge standard values with custom variables
+    const allValues = { ...values };
+    customVariables.forEach(cv => {
+      if (cv.key && cv.value) {
+        allValues[cv.key] = cv.value;
+      }
+    });
+
+    // Submit ALL values (both user-provided, auto-filled, and custom)
+    onSubmit(allValues);
   };
 
   // Filter to only show variables that require user input
@@ -321,6 +350,148 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
             </div>
           ))}
         </div>
+
+        {/* Custom Variables Section - only shown if scenario allows */}
+        {scenario.allow_custom_variables && (
+          <div style={{
+            marginTop: b.space[4],
+            paddingTop: b.space[4],
+            borderTop: `1px solid ${COLORS.slate[200]}`,
+          }}>
+            <button
+              type="button"
+              onClick={() => setShowCustomVariables(!showCustomVariables)}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: b.space[2],
+                padding: '0',
+                border: 'none',
+                background: 'none',
+                color: COLORS.slate[500],
+                fontSize: b.fontSize.sm,
+                fontWeight: 500,
+                cursor: 'pointer',
+                marginBottom: showCustomVariables ? b.space[4] : '0',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: b.space[2], flexShrink: 0 }}>
+                {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                <Plus size={16} />
+              </span>
+              <span style={{ lineHeight: '1.4' }}>Zusätzliche Variablen hinzufügen (optional)</span>
+            </button>
+
+            {showCustomVariables && (
+              <div style={{
+                backgroundColor: COLORS.slate[50],
+                borderRadius: b.radius.lg,
+                padding: b.space[4],
+              }}>
+                <p style={{
+                  fontSize: b.fontSize.sm,
+                  color: COLORS.slate[500],
+                  margin: `0 0 ${b.space[3]} 0`,
+                }}>
+                  Füge eigene Variablen hinzu, die in das Gespräch einfließen sollen.
+                </p>
+
+                {customVariables.length > 0 && (
+                  <div style={{ marginBottom: b.space[3] }}>
+                    {customVariables.map((cv, index) => (
+                      <div key={index} style={{
+                        backgroundColor: 'white',
+                        border: `1px solid ${COLORS.slate[200]}`,
+                        borderRadius: b.radius.md,
+                        padding: b.space[3],
+                        marginBottom: b.space[3],
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: b.space[2],
+                        }}>
+                          <input
+                            type="text"
+                            value={cv.key || ''}
+                            onChange={(e) => updateCustomVariable(index, 'key', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+                            placeholder="variable_name"
+                            style={{
+                              padding: `${b.space[2]} ${b.space[3]}`,
+                              borderRadius: b.radius.md,
+                              border: `1px solid ${COLORS.slate[200]}`,
+                              fontSize: b.fontSize.sm,
+                              fontFamily: 'monospace',
+                              backgroundColor: COLORS.slate[50],
+                              flex: 1,
+                              marginRight: b.space[2],
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => deleteCustomVariable(index)}
+                            style={{
+                              padding: b.space[2],
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              color: '#ef4444',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                        <textarea
+                          value={cv.value || ''}
+                          onChange={(e) => updateCustomVariable(index, 'value', e.target.value)}
+                          placeholder="Wert eingeben... (mehrzeilig möglich)"
+                          rows={3}
+                          style={{
+                            width: '100%',
+                            padding: `${b.space[2]} ${b.space[3]}`,
+                            borderRadius: b.radius.md,
+                            border: `1px solid ${COLORS.slate[200]}`,
+                            fontSize: b.fontSize.sm,
+                            resize: 'vertical',
+                            minHeight: '80px',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={addCustomVariable}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: b.space[1.5],
+                    padding: `${b.space[2]} ${b.space[3]}`,
+                    border: `1px dashed ${COLORS.slate[300]}`,
+                    borderRadius: b.radius.md,
+                    background: 'transparent',
+                    color: COLORS.slate[600],
+                    fontSize: b.fontSize.sm,
+                    cursor: 'pointer',
+                    width: '100%',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Plus size={16} />
+                  Variable hinzufügen
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <DialogFooter style={{ display: 'flex', flexDirection: 'row', gap: b.space[3], paddingTop: b.space[4] }}>
           <StyledButton onClick={onCancel} variant="outline" b={b}>

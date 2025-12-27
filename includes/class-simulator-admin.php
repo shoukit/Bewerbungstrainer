@@ -349,6 +349,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'question_count_max' => intval($post['question_count_max'] ?? 12),
             'time_limit_per_question' => intval($post['time_limit_per_question'] ?? 120),
             'allow_retry' => isset($post['allow_retry']) ? 1 : 0,
+            'allow_custom_variables' => isset($post['allow_custom_variables']) ? 1 : 0,
             'is_active' => isset($post['is_active']) ? 1 : 0,
             'sort_order' => intval($post['sort_order'] ?? 0),
         );
@@ -473,6 +474,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'question_count_max',
             'time_limit_per_question',
             'allow_retry',
+            'allow_custom_variables',
             'is_active',
             'sort_order'
         ), ';');
@@ -534,6 +536,7 @@ class Bewerbungstrainer_Simulator_Admin {
                 $scenario->question_count_max,
                 $scenario->time_limit_per_question,
                 $scenario->allow_retry,
+                $scenario->allow_custom_variables ?? 0,
                 $scenario->is_active,
                 $scenario->sort_order
             ), ';');
@@ -625,6 +628,7 @@ class Bewerbungstrainer_Simulator_Admin {
                 'question_count_max' => intval($data['question_count_max'] ?? 12),
                 'time_limit_per_question' => intval($data['time_limit_per_question'] ?? 120),
                 'allow_retry' => intval($data['allow_retry'] ?? 1),
+                'allow_custom_variables' => intval($data['allow_custom_variables'] ?? 0),
                 'is_active' => intval($data['is_active'] ?? 1),
                 'sort_order' => intval($data['sort_order'] ?? 0),
             );
@@ -1021,6 +1025,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'question_count_max' => 12,
             'time_limit_per_question' => 120,
             'allow_retry' => 1,
+            'allow_custom_variables' => 0,
             'is_active' => 1,
             'sort_order' => 0,
         );
@@ -1269,6 +1274,13 @@ class Bewerbungstrainer_Simulator_Admin {
                                             <input type="checkbox" name="allow_retry" value="1" <?php checked($data['allow_retry'], 1); ?>>
                                             Wiederholung erlauben
                                         </label>
+                                    </p>
+                                    <p>
+                                        <label>
+                                            <input type="checkbox" name="allow_custom_variables" value="1" <?php checked($data['allow_custom_variables'] ?? 0, 1); ?>>
+                                            Nutzer kann eigene Variablen hinzufügen
+                                        </label>
+                                        <br><small>Zeigt "Zusätzliche Variablen" im Frontend</small>
                                     </p>
                                 </div>
                             </div>
