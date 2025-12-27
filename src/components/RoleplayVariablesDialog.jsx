@@ -352,7 +352,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
         </div>
 
         {/* Custom Variables Section - only shown if scenario allows */}
-        {scenario.allow_custom_variables && (
+        {scenario?.allow_custom_variables && (
           <div style={{
             marginTop: b.space[4],
             paddingTop: b.space[4],

@@ -497,7 +497,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
         )}
 
         {/* Custom Variables Section - only shown if scenario allows */}
-        {scenario.allow_custom_variables && (
+        {scenario?.allow_custom_variables && (
           <div style={{
             marginTop: b.space[5],
             marginBottom: b.space[5],
