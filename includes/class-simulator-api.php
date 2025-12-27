@@ -1689,27 +1689,28 @@ Bei ERKANNTER Sprache:
       \"Tipp 2: Praktische Empfehlung\"
     ],
     \"scores\": {
-      \"content\": 7.5,
-      \"structure\": 8.0,
-      \"relevance\": 7.0,
-      \"delivery\": 7.5,
-      \"overall\": 7.5
+      \"content\": \"<1-10>\",
+      \"structure\": \"<1-10>\",
+      \"relevance\": \"<1-10>\",
+      \"delivery\": \"<1-10>\",
+      \"overall\": \"<1-10>\"
     }
   },
   \"audio_metrics\": {
-    \"speech_rate\": \"optimal\",
+    \"speech_rate\": \"optimal|zu_schnell|zu_langsam\",
     \"filler_words\": {
-      \"count\": 3,
-      \"words\": [\"ähm\", \"also\", \"halt\"],
-      \"severity\": \"niedrig\"
+      \"count\": \"<Anzahl>\",
+      \"words\": [\"<erkannte Füllwörter>\"],
+      \"severity\": \"keine|niedrig|mittel|hoch\"
     },
-    \"confidence_score\": 75,
-    \"clarity_score\": 80,
-    \"notes\": \"Optionale zusätzliche Beobachtungen zur Sprechweise\"
+    \"confidence_score\": \"<0-100>\",
+    \"clarity_score\": \"<0-100>\",
+    \"notes\": \"Beobachtungen zur Sprechweise\"
   }
 }
 
 Bewertungsskala für Scores: 1-10 (1=sehr schwach, 10=exzellent)
+WICHTIG: Nutze die VOLLE Skala! Eine exzellente Antwort verdient 9-10, eine gute 7-8, eine durchschnittliche 5-6, eine schwache 3-4. Vermeide es, standardmäßig 7-8 zu vergeben.
 
 AUDIO ZUR ANALYSE:";
     }
@@ -1803,27 +1804,28 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
       \"Tipp 2: Praktische Empfehlung\"
     ],
     \"scores\": {
-      \"content\": 7.5,
-      \"structure\": 8.0,
-      \"relevance\": 7.0,
-      \"delivery\": 7.5,
-      \"overall\": 7.5
+      \"content\": \"<1-10>\",
+      \"structure\": \"<1-10>\",
+      \"relevance\": \"<1-10>\",
+      \"delivery\": \"<1-10>\",
+      \"overall\": \"<1-10>\"
     }
   },
   \"audio_metrics\": {
-    \"speech_rate\": \"optimal\",
+    \"speech_rate\": \"optimal|zu_schnell|zu_langsam\",
     \"filler_words\": {
-      \"count\": 3,
-      \"words\": [\"ähm\", \"also\", \"halt\"],
-      \"severity\": \"niedrig\"
+      \"count\": \"<Anzahl>\",
+      \"words\": [\"<erkannte Füllwörter>\"],
+      \"severity\": \"keine|niedrig|mittel|hoch\"
     },
-    \"confidence_score\": 75,
-    \"clarity_score\": 80,
-    \"notes\": \"Optionale zusätzliche Beobachtungen zur Sprechweise\"
+    \"confidence_score\": \"<0-100>\",
+    \"clarity_score\": \"<0-100>\",
+    \"notes\": \"Beobachtungen zur Sprechweise\"
   }
 }
 
 Bewertungsskala für Scores: 1-10 (1=sehr schwach, 10=exzellent)
+WICHTIG: Nutze die VOLLE Skala! Eine exzellente Antwort verdient 9-10, eine gute 7-8, eine durchschnittliche 5-6, eine schwache 3-4. Vermeide es, standardmäßig 7-8 zu vergeben.
 
 HINWEIS: Das Transkript wurde bereits von einem spezialisierten Transkriptions-Service erstellt. Analysiere NUR den Inhalt und die Qualität der Aussage.";
     }
