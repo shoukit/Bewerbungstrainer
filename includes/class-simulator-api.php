@@ -941,10 +941,10 @@ class Bewerbungstrainer_Simulator_API {
         // Get role names from variables for clear labeling
         $ai_role_label = !empty($variables['rolle_der_ki'])
             ? strtoupper($variables['rolle_der_ki'])
-            : 'GESPRÄCHSPARTNER';
+            : 'KI-GESPRÄCHSPARTNER';
         $user_role_label = !empty($variables['rolle_des_users'])
             ? strtoupper($variables['rolle_des_users'])
-            : 'USER';
+            : 'TRAINIERENDER';
 
         $history = array();
 
@@ -978,7 +978,7 @@ class Bewerbungstrainer_Simulator_API {
      */
     private function build_next_turn_prompt($system_prompt, $question_prompt, $conversation_history, $turns_so_far, $min_turns, $max_turns, $variables) {
         // Extract role names from variables for explicit role enforcement
-        $rolle_der_ki = isset($variables['rolle_der_ki']) ? $variables['rolle_der_ki'] : 'Gesprächspartner';
+        $rolle_der_ki = isset($variables['rolle_der_ki']) ? $variables['rolle_der_ki'] : 'KI-Gesprächspartner';
         $rolle_des_users = isset($variables['rolle_des_users']) ? $variables['rolle_des_users'] : 'Trainierender';
 
         $prompt = "SYSTEM-KONTEXT:\n{$system_prompt}\n\n";
@@ -1023,7 +1023,7 @@ class Bewerbungstrainer_Simulator_API {
         $prompt .= "ANTWORTE IM FOLGENDEN JSON-FORMAT:\n";
         $prompt .= "```json\n";
         $prompt .= "{\n";
-        $prompt .= "  \"response\": \"Deine nächste Aussage/Reaktion als Gesprächspartner\",\n";
+        $prompt .= "  \"response\": \"Deine nächste Aussage/Reaktion als {$rolle_der_ki}\",\n";
         $prompt .= "  \"category\": \"follow_up|challenge|negotiation|escalation|acceptance|closing\",\n";
         $prompt .= "  \"tips\": [\n";
         $prompt .= "    \"Konkreter Tipp für den User: Wie sollte er auf diese Aussage reagieren?\",\n";
@@ -1536,7 +1536,7 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
      */
     private function get_simulation_prompt_template($count, $variables = array()) {
         // Extract role names from variables for explicit role enforcement
-        $rolle_der_ki = isset($variables['rolle_der_ki']) ? $variables['rolle_der_ki'] : 'Gegenspieler';
+        $rolle_der_ki = isset($variables['rolle_der_ki']) ? $variables['rolle_der_ki'] : 'KI-Gesprächspartner';
         $rolle_des_users = isset($variables['rolle_des_users']) ? $variables['rolle_des_users'] : 'Trainierender';
 
         return "HINWEIS ZUR SZENARIO-BESCHREIBUNG:
