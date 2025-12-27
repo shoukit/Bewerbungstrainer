@@ -623,7 +623,10 @@ class Bewerbungstrainer_Simulator_API {
             $whisper_result = $whisper_handler->transcribe_base64(
                 base64_encode($audio_data),
                 $mime_type ?? 'audio/webm',
-                array('language' => 'de')
+                array(
+                    'language' => 'de',
+                    'scenario_title' => $scenario->title,
+                )
             );
 
             if (is_wp_error($whisper_result)) {

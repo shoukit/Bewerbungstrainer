@@ -164,9 +164,12 @@ class Bewerbungstrainer_Whisper_Handler {
 
         // Log to prompts.log
         if (function_exists('bewerbungstrainer_log_prompt')) {
+            // Use scenario title if provided, otherwise generic description
+            $scenario_title = isset($options['scenario_title']) ? $options['scenario_title'] : 'Audio-Transkription';
+
             bewerbungstrainer_log_prompt(
                 'WHISPER_TRANSCRIPTION',
-                'Audio-Transkription mit OpenAI Whisper API',
+                $scenario_title,
                 "Audio: {$audio_path}",
                 array(
                     'Audio-Größe' => round($file_size / 1024) . ' KB',
