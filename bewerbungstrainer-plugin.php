@@ -299,6 +299,9 @@ class Bewerbungstrainer_Plugin {
         // Load Usage Limits class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-usage-limits.php';
 
+        // Load Settings Admin class
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-settings-admin.php';
+
         // Load Disclaimer class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-disclaimer.php';
 
@@ -633,6 +636,11 @@ class Bewerbungstrainer_Plugin {
 
         // Initialize Usage Limits
         Bewerbungstrainer_Usage_Limits::get_instance();
+
+        // Initialize Settings Admin (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_Settings_Admin::get_instance();
+        }
 
         // Initialize Disclaimer
         Bewerbungstrainer_Disclaimer::get_instance();
