@@ -332,17 +332,17 @@ class Bewerbungstrainer_Simulator_Admin {
         }
 
         return array(
-            'title' => sanitize_text_field($post['title'] ?? ''),
-            'description' => sanitize_textarea_field($post['description'] ?? ''),
-            'long_description' => sanitize_textarea_field($post['long_description'] ?? ''),
+            'title' => sanitize_text_field(wp_unslash($post['title'] ?? '')),
+            'description' => sanitize_textarea_field(wp_unslash($post['description'] ?? '')),
+            'long_description' => sanitize_textarea_field(wp_unslash($post['long_description'] ?? '')),
             'icon' => sanitize_text_field($post['icon'] ?? 'briefcase'),
             'difficulty' => sanitize_text_field($post['difficulty'] ?? 'intermediate'),
             'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($post['categories'] ?? array()),
             'target_audience' => $target_audience,
             'mode' => $mode,
-            'system_prompt' => wp_kses_post($post['system_prompt'] ?? ''),
-            'question_generation_prompt' => wp_kses_post($post['question_generation_prompt'] ?? ''),
-            'feedback_prompt' => wp_kses_post($post['feedback_prompt'] ?? ''),
+            'system_prompt' => wp_kses_post(wp_unslash($post['system_prompt'] ?? '')),
+            'question_generation_prompt' => wp_kses_post(wp_unslash($post['question_generation_prompt'] ?? '')),
+            'feedback_prompt' => wp_kses_post(wp_unslash($post['feedback_prompt'] ?? '')),
             'tips' => $tips,
             'input_configuration' => json_encode($input_configuration, JSON_UNESCAPED_UNICODE),
             'question_count_min' => intval($post['question_count_min'] ?? 8),
