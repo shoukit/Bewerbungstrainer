@@ -1610,7 +1610,10 @@ Die Situation ist nur der Kontext. Das Audio enthält die REAKTION des Nutzers d
         $antiHallucinationRules = Bewerbungstrainer_Transcription_Constants::get_anti_hallucination_rules();
         $noSpeechDetected = Bewerbungstrainer_Transcription_Constants::NO_SPEECH_DETECTED;
 
-        return "Du bist ein professioneller Karriere-Coach und analysierst Audioantworten.
+        // Get coach role from variables with fallback
+        $coach_rolle = !empty($variables['coach_rolle']) ? $variables['coach_rolle'] : 'Trainer';
+
+        return "Du bist ein professioneller {$coach_rolle} und analysierst Audioantworten.
 
 {$analysisContext}
 
@@ -1743,7 +1746,10 @@ AUDIO ZUR ANALYSE:";
 - STAR-Methode (Situation, Task, Action, Result)
 - Professionalität und Selbstbewusstsein";
 
-        return "Du bist ein professioneller Karriere-Coach und analysierst Textantworten.
+        // Get coach role from variables with fallback
+        $coach_rolle = !empty($variables['coach_rolle']) ? $variables['coach_rolle'] : 'Trainer';
+
+        return "Du bist ein professioneller {$coach_rolle} und analysierst Textantworten.
 
 {$analysisContext}
 
