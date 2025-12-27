@@ -50,9 +50,17 @@ class Bewerbungstrainer_Simulator_Admin {
      */
     private function init_hooks() {
         add_action('admin_menu', array($this, 'add_admin_menu'));
+        add_action('admin_init', array($this, 'ensure_schema_updated'));
         add_action('admin_init', array($this, 'handle_form_actions'));
         add_action('admin_init', array($this, 'handle_csv_actions'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
+    }
+
+    /**
+     * Ensure database schema is up to date
+     */
+    public function ensure_schema_updated() {
+        $this->db->ensure_schema_updated();
     }
 
     /**

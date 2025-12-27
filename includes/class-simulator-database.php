@@ -190,6 +190,22 @@ class Bewerbungstrainer_Simulator_Database {
     public function ensure_schema_updated() {
         $this->maybe_add_long_description_column();
         $this->maybe_add_tips_column();
+        $this->maybe_add_allow_custom_variables_column();
+    }
+
+    /**
+     * Add allow_custom_variables column to scenarios table if it doesn't exist
+     */
+    private function maybe_add_allow_custom_variables_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results("SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE 'allow_custom_variables'");
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding allow_custom_variables column to scenarios table...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `allow_custom_variables` tinyint(1) DEFAULT 0 AFTER `allow_retry`");
+            error_log('[SIMULATOR] allow_custom_variables column added successfully');
+        }
     }
 
     /**
