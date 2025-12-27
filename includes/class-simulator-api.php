@@ -611,6 +611,11 @@ class Bewerbungstrainer_Simulator_API {
         $feedback_prompt = $scenario->feedback_prompt ?: $this->get_default_feedback_prompt();
         $feedback_prompt = $this->interpolate_variables($feedback_prompt, $variables);
 
+        // Get previous answers for conversation context in feedback
+        $previous_answers = $this->db->get_session_answers($session_id, true);
+        $questions_list = json_decode($scenario->questions_json, true) ?: array();
+        $conversation_history = $this->build_conversation_history_for_feedback($previous_answers, $questions_list, $variables);
+
         // Check if Whisper is available for transcription
         $whisper_handler = Bewerbungstrainer_Whisper_Handler::get_instance();
         $use_whisper = $whisper_handler->is_available();
@@ -653,7 +658,8 @@ class Bewerbungstrainer_Simulator_API {
                 $scenario,
                 $variables,
                 $feedback_prompt,
-                $transcript
+                $transcript,
+                $conversation_history
             );
 
             // Log prompt
@@ -699,7 +705,8 @@ class Bewerbungstrainer_Simulator_API {
                 $question_text,
                 $scenario,
                 $variables,
-                $feedback_prompt
+                $feedback_prompt,
+                $conversation_history
             );
 
             // Log prompt to prompts.log
@@ -971,6 +978,45 @@ class Bewerbungstrainer_Simulator_API {
         }
 
         return $formatted;
+    }
+
+    /**
+     * Build conversation history for feedback prompts
+     *
+     * Creates a summary of previous turns so Gemini knows what was already said
+     * when giving feedback on the current answer.
+     *
+     * @param array $answers Previous answers in the session
+     * @param array $questions The questions/situations array
+     * @param array $variables Session variables for role names
+     * @return string Formatted conversation history or empty string if no previous turns
+     */
+    private function build_conversation_history_for_feedback($answers, $questions, $variables = array()) {
+        // If no previous answers, return empty
+        if (empty($answers)) {
+            return '';
+        }
+
+        // Get role names from variables for clear labeling
+        $ai_role_label = !empty($variables['rolle_der_ki'])
+            ? strtoupper($variables['rolle_der_ki'])
+            : 'KI-GESPRÄCHSPARTNER';
+        $user_role_label = !empty($variables['rolle_des_users'])
+            ? strtoupper($variables['rolle_des_users'])
+            : 'TRAINIERENDER';
+
+        $history_parts = array();
+        foreach ($answers as $answer) {
+            $q_index = $answer->question_index;
+            $question_text = isset($questions[$q_index]['question'])
+                ? $questions[$q_index]['question']
+                : "Frage " . ($q_index + 1);
+            $transcript = $answer->transcript ?: '[Keine Antwort]';
+
+            $history_parts[] = "TURN " . ($q_index + 1) . ":\n{$ai_role_label}: {$question_text}\n{$user_role_label}: {$transcript}";
+        }
+
+        return implode("\n\n", $history_parts);
     }
 
     /**
@@ -1584,8 +1630,15 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
 
     /**
      * Build audio analysis prompt
+     *
+     * @param string $question_text The question/situation the user responded to
+     * @param object $scenario The scenario object
+     * @param array $variables Session variables
+     * @param string $feedback_prompt Custom feedback instructions
+     * @param string $conversation_history Previous turns in the conversation (optional)
+     * @return string The complete prompt for audio analysis
      */
-    private function build_audio_analysis_prompt($question_text, $scenario, $variables, $feedback_prompt) {
+    private function build_audio_analysis_prompt($question_text, $scenario, $variables, $feedback_prompt, $conversation_history = '') {
         $context = '';
         if ($variables) {
             foreach ($variables as $key => $value) {
@@ -1626,6 +1679,20 @@ Die Situation ist nur der Kontext. Das Audio enthält die REAKTION des Nutzers d
         // Get coach role from variables with fallback
         $coach_rolle = !empty($variables['coach_rolle']) ? $variables['coach_rolle'] : 'Trainer';
 
+        // Build conversation history section if there are previous turns
+        $history_section = '';
+        if (!empty($conversation_history)) {
+            $history_section = "
+BISHERIGER GESPRÄCHSVERLAUF:
+═══════════════════════════════════════════════════════════════
+{$conversation_history}
+═══════════════════════════════════════════════════════════════
+WICHTIG: Der obige Verlauf zeigt, was bereits gesagt wurde. Berücksichtige dies bei deinem Feedback!
+Wenn der Nutzer z.B. bereits eine Entschuldigung ausgesprochen hat, kritisiere nicht, dass eine fehlt.
+
+";
+        }
+
         return "Du bist ein professioneller {$coach_rolle} und analysierst Audioantworten.
 
 {$analysisContext}
@@ -1638,12 +1705,13 @@ AUFGABE (NUR bei klar erkennbarer Sprache):
 2. ANALYSIERE die tatsächlich gegebene Antwort/Reaktion inhaltlich
 3. ANALYSIERE die Sprechweise (Füllwörter, Tempo, Klarheit)
 4. GEBE konstruktives Feedback basierend auf dem was WIRKLICH gesagt wurde
+5. BERÜCKSICHTIGE den bisherigen Gesprächsverlauf (falls vorhanden)
 
 KONTEXT:
 - Szenario: {$scenario->title}
 {$context}
-
-{$situationLabel}:
+{$history_section}
+AKTUELLE {$situationLabel}:
 \"{$question_text}\"
 
 {$feedbackFocus}
@@ -1726,9 +1794,10 @@ AUDIO ZUR ANALYSE:";
      * @param array $variables Session variables
      * @param string $feedback_prompt Custom feedback instructions
      * @param string $transcript The pre-transcribed audio text from Whisper
+     * @param string $conversation_history Previous turns in the conversation (optional)
      * @return string The complete prompt for text-only analysis
      */
-    private function build_text_analysis_prompt($question_text, $scenario, $variables, $feedback_prompt, $transcript) {
+    private function build_text_analysis_prompt($question_text, $scenario, $variables, $feedback_prompt, $transcript, $conversation_history = '') {
         $context = '';
         if ($variables) {
             foreach ($variables as $key => $value) {
@@ -1763,6 +1832,20 @@ AUDIO ZUR ANALYSE:";
         // Get coach role from variables with fallback
         $coach_rolle = !empty($variables['coach_rolle']) ? $variables['coach_rolle'] : 'Trainer';
 
+        // Build conversation history section if there are previous turns
+        $history_section = '';
+        if (!empty($conversation_history)) {
+            $history_section = "
+BISHERIGER GESPRÄCHSVERLAUF:
+═══════════════════════════════════════════════════════════════
+{$conversation_history}
+═══════════════════════════════════════════════════════════════
+WICHTIG: Der obige Verlauf zeigt, was bereits gesagt wurde. Berücksichtige dies bei deinem Feedback!
+Wenn der Nutzer z.B. bereits eine Entschuldigung ausgesprochen hat, kritisiere nicht, dass eine fehlt.
+
+";
+        }
+
         return "Du bist ein professioneller {$coach_rolle} und analysierst Textantworten.
 
 {$analysisContext}
@@ -1771,15 +1854,16 @@ AUFGABE:
 1. ANALYSIERE die gegebene Antwort/Reaktion inhaltlich
 2. ANALYSIERE die Textqualität (Struktur, Klarheit, Vollständigkeit)
 3. GEBE konstruktives Feedback basierend auf dem Transkript
+4. BERÜCKSICHTIGE den bisherigen Gesprächsverlauf (falls vorhanden)
 
 KONTEXT:
 - Szenario: {$scenario->title}
 {$context}
-
-{$situationLabel}:
+{$history_section}
+AKTUELLE {$situationLabel}:
 \"{$question_text}\"
 
-TRANSKRIPT DER ANTWORT:
+AKTUELLE ANTWORT DES NUTZERS:
 \"{$transcript}\"
 
 {$feedbackFocus}
