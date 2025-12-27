@@ -29,7 +29,7 @@ import VideoTrainingManager from './components/admin/VideoTrainingManager';
 import PartnerManager from './components/admin/PartnerManager';
 
 /**
- * Loading Spinner Component
+ * Modern Loading Screen Component
  * Shown while partner branding is being loaded
  */
 const BrandingLoadingSpinner = () => {
@@ -45,42 +45,134 @@ const BrandingLoadingSpinner = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f8fafc',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
         zIndex: 9999,
       }}
     >
+      {/* Animated background circles */}
+      <div style={{
+        position: 'absolute',
+        top: '20%',
+        left: '10%',
+        width: '300px',
+        height: '300px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%)',
+        animation: 'float 6s ease-in-out infinite',
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '20%',
+        right: '10%',
+        width: '400px',
+        height: '400px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%)',
+        animation: 'float 8s ease-in-out infinite reverse',
+      }} />
+
+      {/* Main content */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '16px',
+          gap: '32px',
+          zIndex: 1,
         }}
       >
-        <Loader2
+        {/* Logo icon */}
+        <div
           style={{
-            width: '48px',
-            height: '48px',
-            color: '#3A7FA7',
-            animation: 'spin 1s linear infinite',
-          }}
-        />
-        <p
-          style={{
-            fontSize: '16px',
-            color: '#64748b',
-            fontWeight: 500,
-            margin: 0,
+            width: '80px',
+            height: '80px',
+            borderRadius: '24px',
+            background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 20px 40px rgba(56, 189, 248, 0.3)',
+            animation: 'pulse 2s ease-in-out infinite',
           }}
         >
-          Trainingscenter wird geladen...
-        </p>
+          <svg
+            width="44"
+            height="44"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+
+        {/* Brand name */}
+        <div style={{ textAlign: 'center' }}>
+          <h1
+            style={{
+              fontSize: '28px',
+              fontWeight: 700,
+              color: 'white',
+              margin: 0,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Karriereheld
+          </h1>
+          <p
+            style={{
+              fontSize: '15px',
+              color: 'rgba(255, 255, 255, 0.6)',
+              margin: '8px 0 0 0',
+              fontWeight: 400,
+            }}
+          >
+            wird geladen...
+          </p>
+        </div>
+
+        {/* Loading bar */}
+        <div
+          style={{
+            width: '200px',
+            height: '4px',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '2px',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: '40%',
+              height: '100%',
+              background: 'linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8)',
+              backgroundSize: '200% 100%',
+              borderRadius: '2px',
+              animation: 'loading 1.5s ease-in-out infinite',
+            }}
+          />
+        </div>
       </div>
+
       <style>
         {`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+          @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+          }
+          @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+          }
+          @keyframes loading {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(150%); }
+            100% { transform: translateX(400%); }
           }
         `}
       </style>
