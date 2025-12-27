@@ -76,6 +76,8 @@ class Bewerbungstrainer_Simulator_Database {
             // Add long_description and tips columns for enhanced scenario info
             $this->maybe_add_long_description_column();
             $this->maybe_add_tips_column();
+            // Add allow_custom_variables column for user-defined variables
+            $this->maybe_add_allow_custom_variables_column();
             // Run category migration for existing installations
             self::migrate_category_values();
         }
