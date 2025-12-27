@@ -839,7 +839,8 @@ class Bewerbungstrainer_Simulator_API {
         $variables = $session->variables_json ?: array();
 
         // Build conversation history string (includes all Q&A pairs from database)
-        $conversation_history = $this->build_conversation_history($questions, $answers);
+        // Pass variables for dynamic role labels (e.g., "PATIENT:" instead of "GESPRÄCHSPARTNER:")
+        $conversation_history = $this->build_conversation_history($questions, $answers, $variables);
 
         // Check if we should finish the conversation
         $answered_count = count($answers);
@@ -931,8 +932,20 @@ class Bewerbungstrainer_Simulator_API {
 
     /**
      * Build conversation history string from questions and answers
+     *
+     * @param array $questions The questions/situations array
+     * @param array $answers The user's answers
+     * @param array $variables Session variables (optional, for role names)
      */
-    private function build_conversation_history($questions, $answers) {
+    private function build_conversation_history($questions, $answers, $variables = array()) {
+        // Get role names from variables for clear labeling
+        $ai_role_label = !empty($variables['rolle_der_ki'])
+            ? strtoupper($variables['rolle_der_ki'])
+            : 'GESPRÄCHSPARTNER';
+        $user_role_label = !empty($variables['rolle_des_users'])
+            ? strtoupper($variables['rolle_des_users'])
+            : 'USER';
+
         $history = array();
 
         foreach ($answers as $answer) {
@@ -953,7 +966,7 @@ class Bewerbungstrainer_Simulator_API {
 
         $formatted = "";
         foreach ($history as $turn) {
-            $role_label = $turn['role'] === 'ai' ? 'GESPRÄCHSPARTNER' : 'USER';
+            $role_label = $turn['role'] === 'ai' ? $ai_role_label : $user_role_label;
             $formatted .= "{$role_label}: {$turn['content']}\n\n";
         }
 
