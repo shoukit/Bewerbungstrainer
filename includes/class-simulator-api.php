@@ -964,8 +964,20 @@ class Bewerbungstrainer_Simulator_API {
      * Build prompt for generating the next turn in SIMULATION mode
      */
     private function build_next_turn_prompt($system_prompt, $question_prompt, $conversation_history, $turns_so_far, $min_turns, $max_turns, $variables) {
+        // Extract role names from variables for explicit role enforcement
+        $rolle_der_ki = isset($variables['rolle_der_ki']) ? $variables['rolle_der_ki'] : 'Gesprächspartner';
+        $rolle_des_users = isset($variables['rolle_des_users']) ? $variables['rolle_des_users'] : 'Trainierender';
+
         $prompt = "SYSTEM-KONTEXT:\n{$system_prompt}\n\n";
         $prompt .= "SZENARIO-ANWEISUNGEN:\n{$question_prompt}\n\n";
+
+        // Explicit role enforcement section
+        $prompt .= "═══════════════════════════════════════════════════════════════\n";
+        $prompt .= "KRITISCHE ROLLENVERTEILUNG (NICHT VERTAUSCHEN!):\n";
+        $prompt .= "═══════════════════════════════════════════════════════════════\n";
+        $prompt .= "▶ DEINE ROLLE: {$rolle_der_ki}\n";
+        $prompt .= "▶ ROLLE DES USERS: {$rolle_des_users}\n";
+        $prompt .= "═══════════════════════════════════════════════════════════════\n\n";
 
         $prompt .= "BISHERIGER GESPRÄCHSVERLAUF:\n";
         $prompt .= $conversation_history;
@@ -973,7 +985,7 @@ class Bewerbungstrainer_Simulator_API {
         // (fetched from the database after submit_answer saves it)
 
         $prompt .= "---\n\n";
-        $prompt .= "AUFGABE: Generiere die nächste Reaktion des GESPRÄCHSPARTNERS (deine Rolle).\n\n";
+        $prompt .= "AUFGABE: Generiere die nächste Reaktion als {$rolle_der_ki}.\n\n";
 
         $prompt .= "GESPRÄCHSFORTSCHRITT:\n";
         $prompt .= "- Bisherige Turns: {$turns_so_far}\n";
@@ -982,11 +994,12 @@ class Bewerbungstrainer_Simulator_API {
 
         $prompt .= "REGELN:\n";
         $prompt .= "1. Reagiere natürlich auf die letzte Antwort des Users\n";
-        $prompt .= "2. Bleibe in deiner Rolle als Gesprächspartner\n";
-        $prompt .= "3. Generiere KEINE Aussagen für den User - nur deine eigene Reaktion\n";
+        $prompt .= "2. BLEIBE STRIKT IN DEINER ROLLE ALS {$rolle_der_ki}! Du bist NICHT der {$rolle_des_users}!\n";
+        $prompt .= "3. Generiere KEINE Aussagen für den User ({$rolle_des_users}) - nur deine eigene Reaktion als {$rolle_der_ki}\n";
         $prompt .= "4. Wenn das Gespräch einen natürlichen Endpunkt erreicht hat ODER max_turns erreicht sind, setze is_finished auf true\n";
         $prompt .= "5. Beende das Gespräch NICHT vor min_turns, es sei denn es gibt einen sehr guten Grund\n";
-        $prompt .= "6. NAMEN-REGEL: Wenn der User dich mit einem Namen anspricht (z.B. 'Frau Meyer'), dann ist das DEIN Charakter-Name. Verwende diesen Namen NICHT, um den User anzusprechen! Der User hat keinen festgelegten Namen - sprich ihn neutral an oder gar nicht.\n\n";
+        $prompt .= "6. NAMEN-REGEL: Wenn der User dich mit einem Namen anspricht (z.B. 'Frau Meyer'), dann ist das DEIN Charakter-Name. Verwende diesen Namen NICHT, um den User anzusprechen! Der User hat keinen festgelegten Namen - sprich ihn neutral an oder gar nicht.\n";
+        $prompt .= "7. ROLLEN-WECHSEL VERBOTEN: Antworte NIEMALS aus der Perspektive des {$rolle_des_users}! Du bist ausschließlich {$rolle_der_ki}.\n\n";
 
         $prompt .= "TIPS-REGELN (WICHTIG!):\n";
         $prompt .= "- Die 'tips' sind Handlungsempfehlungen für den TRAINIERENDEN (User), NICHT für dich als KI!\n";
@@ -1465,7 +1478,7 @@ Sei konstruktiv und motivierend. Verwende die "Du"-Form.';
 
         // Select prompt template based on mode
         if ($mode === 'SIMULATION') {
-            $mode_prompt = $this->get_simulation_prompt_template($count);
+            $mode_prompt = $this->get_simulation_prompt_template($count, $variables);
         } else {
             $mode_prompt = $this->get_interview_prompt_template($count);
         }
@@ -1508,7 +1521,11 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
     /**
      * Get the simulation prompt template (new behavior for roleplay/counterpart scenarios)
      */
-    private function get_simulation_prompt_template($count) {
+    private function get_simulation_prompt_template($count, $variables = array()) {
+        // Extract role names from variables for explicit role enforcement
+        $rolle_der_ki = isset($variables['rolle_der_ki']) ? $variables['rolle_der_ki'] : 'Gegenspieler';
+        $rolle_des_users = isset($variables['rolle_des_users']) ? $variables['rolle_des_users'] : 'Trainierender';
+
         return "HINWEIS ZUR SZENARIO-BESCHREIBUNG:
 Die Szenario-Beschreibung oben zeigt den GESAMTEN Gesprächsverlauf als Übersicht (z.B. '3 Versuche').
 Das ist der PLAN für das gesamte Gespräch - NICHT was du jetzt generieren sollst!
@@ -1517,24 +1534,31 @@ DEINE AKTUELLE AUFGABE:
 Generiere NUR {$count} ERÖFFNUNGS-Aussage(n) für den Gesprächsbeginn.
 Die weiteren Gesprächs-Turns werden SPÄTER dynamisch basierend auf den Antworten des Users generiert.
 
-KRITISCH - ROLLENVERTEILUNG:
-- DU generierst NUR die Aussagen/Reaktionen DEINER Rolle (der Gegenspieler)
-- Der USER spielt die andere Rolle und antwortet zwischen deinen Aussagen
-- Generiere NIEMALS Aussagen des Users - nur DEINE eigenen Reaktionen!
-- Jede \"question\" ist EINE Aussage von DIR, auf die der User dann reagiert
+═══════════════════════════════════════════════════════════════
+KRITISCHE ROLLENVERTEILUNG (NICHT VERTAUSCHEN!):
+═══════════════════════════════════════════════════════════════
+▶ DEINE ROLLE: {$rolle_der_ki}
+▶ ROLLE DES USERS: {$rolle_des_users}
+═══════════════════════════════════════════════════════════════
 
-WICHTIG: Das ist KEIN Interview. Du stellst KEINE Fragen an den Nutzer. Du bist der Gegenspieler (z.B. Kunde, Klient, Mitarbeiter) und generierst Aussagen, Einwände oder emotionale Reaktionen, auf die der Nutzer reagieren muss.
+KRITISCH - ROLLENVERTEILUNG:
+- DU bist ausschließlich {$rolle_der_ki} und generierst NUR Aussagen/Reaktionen aus dieser Perspektive
+- Der USER spielt {$rolle_des_users} und antwortet zwischen deinen Aussagen
+- Generiere NIEMALS Aussagen des {$rolle_des_users} - nur DEINE eigenen Reaktionen als {$rolle_der_ki}!
+- Jede \"question\" ist EINE Aussage von DIR ({$rolle_der_ki}), auf die der User ({$rolle_des_users}) dann reagiert
+
+WICHTIG: Das ist KEIN Interview. Du stellst KEINE Fragen an den Nutzer. Du bist {$rolle_der_ki} und generierst Aussagen, Einwände oder emotionale Reaktionen, auf die der {$rolle_des_users} reagieren muss.
 
 Mapping der JSON-Felder:
-- Feld \"question\": DEINE wörtliche Rede oder Handlung (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\"). NUR deine Rolle, NICHT die des Users!
-- Feld \"tips\": 2-3 taktische Verhaltenstipps für den Nutzer, wie er auf DEINE Aussage reagieren sollte.
+- Feld \"question\": DEINE wörtliche Rede oder Handlung als {$rolle_der_ki} (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\"). NUR deine Rolle, NICHT die des {$rolle_des_users}!
+- Feld \"tips\": 2-3 taktische Verhaltenstipps für den {$rolle_des_users}, wie er auf DEINE Aussage reagieren sollte.
 - Feld \"category\": Die Phase des Gesprächs (z.B. \"Eröffnung\", \"Konfrontation\", \"Einwand\", \"Eskalation\").
 
 Antworte NUR mit einem JSON-Array im folgenden Format:
 [
   {
     \"index\": 0,
-    \"question\": \"Die Eröffnungs-Aussage oder Handlung des Gegenübers\",
+    \"question\": \"Die Eröffnungs-Aussage oder Handlung des {$rolle_der_ki}\",
     \"category\": \"Eröffnung\",
     \"estimated_answer_time\": 60,
     \"tips\": [
