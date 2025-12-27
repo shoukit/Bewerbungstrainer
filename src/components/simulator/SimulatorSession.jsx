@@ -701,7 +701,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
                 margin: 0,
                 whiteSpace: 'pre-wrap',
               }}>
-                {scenario.long_description?.replace(/\/n/g, '\n')}
+                {interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n'))}
               </p>
             </div>
           </div>
@@ -952,6 +952,22 @@ const SimulatorSession = ({
     timePerQuestion: isSimulation ? 'Zeit pro Situation' : 'Zeit pro Frage',
     questionsLabel: isSimulation ? 'Situationen' : 'Fragen',
     recommendedTime: isSimulation ? 'Empfohlene Reaktionszeit' : 'Empfohlene Antwortzeit',
+  };
+
+  /**
+   * Interpolate variables in text (e.g., ${variable_name} -> value)
+   */
+  const interpolateVariables = (text) => {
+    if (!text || !variables) return text;
+
+    let result = text;
+    Object.entries(variables).forEach(([key, value]) => {
+      if (value) {
+        result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value);
+        result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+      }
+    });
+    return result;
   };
 
   // Determine if this is a continuation (skip preparation) or repeat (has preloaded questions)

@@ -114,6 +114,28 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
     setFormValues(defaults);
   }, [inputConfig]);
 
+  /**
+   * Interpolate variables in text (e.g., ${variable_name} -> value)
+   * @param {string} text - Text with variable placeholders
+   * @param {object} values - Object with variable values
+   * @returns {string} - Text with variables replaced
+   */
+  const interpolateVariables = (text, values) => {
+    if (!text) return text;
+
+    let result = text;
+
+    // Replace ${key} and {key} patterns
+    Object.entries(values || {}).forEach(([key, value]) => {
+      if (value) {
+        result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value);
+        result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+      }
+    });
+
+    return result;
+  };
+
   const handleChange = (key, value) => {
     setFormValues(prev => ({ ...prev, [key]: value }));
     // Clear error when user starts typing
@@ -341,7 +363,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
                 margin: 0,
                 whiteSpace: 'pre-wrap',
               }}>
-                {scenario.long_description?.replace(/\/n/g, '\n')}
+                {interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n'), formValues)}
               </p>
             </div>
           </div>
