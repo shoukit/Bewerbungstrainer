@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { usePartner } from '@/context/PartnerContext';
 import { analyzeDecision, brainstormArguments } from '@/services/gemini';
+import AudioRecorder from './AudioRecorder';
 
 /**
  * Generate unique ID for items
@@ -797,6 +798,17 @@ const DecisionBoardInput = ({
     }
   }, []);
 
+  // Handle audio transcript - append to context
+  const handleTranscriptReady = useCallback((transcript) => {
+    setContext(prev => {
+      // If there's existing text, add a space or newline before appending
+      if (prev.trim()) {
+        return prev.trim() + '\n\n' + transcript;
+      }
+      return transcript;
+    });
+  }, []);
+
   // Analyze decision
   const handleAnalyze = useCallback(async () => {
     if (!canAnalyze) return;
@@ -917,6 +929,20 @@ const DecisionBoardInput = ({
                 minHeight: '80px',
               }}
             />
+
+            {/* Audio Recorder for voice input */}
+            <div style={{ marginTop: '12px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#94a3b8',
+                marginBottom: '8px',
+              }}>
+                Oder per Spracheingabe:
+              </label>
+              <AudioRecorder onTranscriptReady={handleTranscriptReady} />
+            </div>
           </div>
         </CardContent>
       </Card>

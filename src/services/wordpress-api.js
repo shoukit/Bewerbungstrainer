@@ -797,6 +797,36 @@ class WordPressAPI {
             throw error;
         }
     }
+
+    // ===== Audio Transcription API Methods =====
+
+    /**
+     * Transcribe audio using Whisper API
+     *
+     * @param {string} audioBase64 - Base64 encoded audio data (without data URI prefix)
+     * @param {string} mimeType - MIME type of the audio (default: audio/webm)
+     * @returns {Promise<object>} Transcription result with transcript and language
+     */
+    async transcribeAudio(audioBase64, mimeType = 'audio/webm') {
+        try {
+            const response = await this.request('/audio/transcribe', {
+                method: 'POST',
+                body: JSON.stringify({
+                    audio_base64: audioBase64,
+                    mime_type: mimeType,
+                })
+            });
+
+            if (response.success && response.data) {
+                return response.data;
+            }
+
+            throw new Error(response.message || 'Transkription fehlgeschlagen');
+        } catch (error) {
+            console.error('❌ [WordPressAPI] Failed to transcribe audio:', error);
+            throw error;
+        }
+    }
 }
 
 // Export singleton instance
