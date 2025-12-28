@@ -62,6 +62,7 @@ const CardSkeleton = () => (
 
 /**
  * AI Coaching Card Component
+ * Renders structured content with bullet points
  */
 const CoachingCard = ({ card, index }) => {
   const cardStyles = {
@@ -70,6 +71,7 @@ const CoachingCard = ({ card, index }) => {
       borderColor: '#fde047',
       iconBg: '#fef08a',
       iconColor: '#ca8a04',
+      bulletColor: '#ca8a04',
       icon: Lightbulb,
     },
     challenger: {
@@ -77,6 +79,7 @@ const CoachingCard = ({ card, index }) => {
       borderColor: '#fca5a5',
       iconBg: '#fee2e2',
       iconColor: '#dc2626',
+      bulletColor: '#dc2626',
       icon: Flame,
     },
     intuition: {
@@ -84,12 +87,16 @@ const CoachingCard = ({ card, index }) => {
       borderColor: '#c4b5fd',
       iconBg: '#ede9fe',
       iconColor: '#7c3aed',
+      bulletColor: '#7c3aed',
       icon: Heart,
     },
   };
 
   const style = cardStyles[card.type] || cardStyles.blind_spot;
   const Icon = style.icon;
+
+  // Get points array - support both old (content) and new (points) format
+  const points = card.points || (card.content ? [card.content] : []);
 
   return (
     <motion.div
@@ -126,14 +133,75 @@ const CoachingCard = ({ card, index }) => {
       }}>
         {card.title}
       </h3>
-      <p style={{
-        fontSize: '15px',
-        lineHeight: 1.6,
-        color: '#475569',
+
+      {/* Challenger: Show the argument being questioned */}
+      {card.type === 'challenger' && card.argument && (
+        <div style={{
+          padding: '10px 14px',
+          backgroundColor: 'rgba(255,255,255,0.6)',
+          borderRadius: '8px',
+          marginBottom: '12px',
+          borderLeft: `3px solid ${style.bulletColor}`,
+        }}>
+          <span style={{ fontSize: '13px', color: '#64748b', display: 'block', marginBottom: '2px' }}>
+            Hinterfragtes Argument:
+          </span>
+          <span style={{ fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
+            "{card.argument}"
+          </span>
+        </div>
+      )}
+
+      {/* Intuition: Show the guiding question */}
+      {card.type === 'intuition' && card.question && (
+        <div style={{
+          padding: '10px 14px',
+          backgroundColor: 'rgba(255,255,255,0.6)',
+          borderRadius: '8px',
+          marginBottom: '12px',
+          borderLeft: `3px solid ${style.bulletColor}`,
+        }}>
+          <span style={{ fontSize: '13px', color: '#64748b', display: 'block', marginBottom: '2px' }}>
+            Reflexionsfrage:
+          </span>
+          <span style={{ fontSize: '15px', fontWeight: 600, color: '#1e293b', fontStyle: 'italic' }}>
+            {card.question}
+          </span>
+        </div>
+      )}
+
+      {/* Structured bullet points */}
+      <ul style={{
+        listStyle: 'none',
+        padding: 0,
+        margin: 0,
         flex: 1,
       }}>
-        {card.content}
-      </p>
+        {points.map((point, idx) => (
+          <li
+            key={idx}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              marginBottom: '10px',
+              fontSize: '15px',
+              lineHeight: 1.5,
+              color: '#475569',
+            }}
+          >
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: style.bulletColor,
+              marginTop: '8px',
+              flexShrink: 0,
+            }} />
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
     </motion.div>
   );
 };

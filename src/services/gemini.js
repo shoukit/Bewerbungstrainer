@@ -569,24 +569,44 @@ GENERATION RULES:
 
 WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Markdown, kein Intro, keine Erklärung außerhalb des JSON.
 
+FORMATIERUNG DER INHALTE:
+- Jede Card soll STRUKTURIERT sein, NICHT als Fließtext
+- Verwende kurze, prägnante Aufzählungspunkte
+- Maximal 3-5 Punkte pro Card
+- Jeder Punkt soll ein konkreter, handlungsorientierter Gedanke sein
+
 JSON SCHEMA:
 {
-  "analysis_summary": "Ein bis zwei Sätze zum rationalen Ergebnis und was auffällt (z.B. 'Die Zahlen sprechen klar für Ja, aber die emotionalen Aspekte scheinen unterbewertet.').",
+  "analysis_summary": "Ein bis zwei Sätze zum rationalen Ergebnis.",
   "cards": [
     {
       "type": "blind_spot",
       "title": "Der blinde Fleck",
-      "content": "Dein konkreter Hinweis auf einen fehlenden Aspekt..."
+      "points": [
+        "Erster fehlender Aspekt oder Lebensbereich",
+        "Zweiter fehlender Aspekt",
+        "Dritter fehlender Aspekt (optional)"
+      ]
     },
     {
       "type": "challenger",
       "title": "Der Härtetest",
-      "content": "Deine kritische Hinterfragung des stärksten Arguments..."
+      "argument": "Das hinterfragte Argument (z.B. 'Mehr Geld')",
+      "points": [
+        "Erste kritische Frage zum Argument",
+        "Zweite kritische Frage",
+        "Dritte kritische Frage (optional)"
+      ]
     },
     {
       "type": "intuition",
       "title": "Der Bauch-Check",
-      "content": "Deine systemische Frage zur Intuitionsprüfung..."
+      "question": "Die zentrale Reflexionsfrage (z.B. '10-10-10 Methode')",
+      "points": [
+        "Erster Reflexionsimpuls",
+        "Zweiter Reflexionsimpuls",
+        "Dritter Reflexionsimpuls (optional)"
+      ]
     }
   ]
 }`;
