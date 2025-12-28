@@ -1241,16 +1241,12 @@ class WordPressAPI {
                 });
             }
 
-            // Helper to parse MySQL/WordPress date format
+            // Helper to parse MySQL/WordPress date format (stored in local server time)
             const parseDate = (dateString) => {
                 if (!dateString) return new Date(0);
-                // Handle MySQL format "YYYY-MM-DD HH:MM:SS"
+                // Handle MySQL format "YYYY-MM-DD HH:MM:SS" - local time, not UTC
                 if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
-                    return new Date(dateString.replace(' ', 'T') + 'Z');
-                }
-                // Handle ISO format without timezone
-                if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dateString)) {
-                    return new Date(dateString + 'Z');
+                    return new Date(dateString.replace(' ', 'T'));
                 }
                 return new Date(dateString);
             };

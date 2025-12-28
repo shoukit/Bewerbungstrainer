@@ -183,15 +183,15 @@ const QuadDashboard = ({ onNavigate }) => {
     }
   };
 
-  // Format activity date - handles MySQL/WordPress date format
+  // Format activity date - handles MySQL/WordPress date format (stored in local time)
   const formatActivityDate = (dateString) => {
     if (!dateString) return '';
 
+    // MySQL format "YYYY-MM-DD HH:MM:SS" - WordPress stores in local server time
+    // Just replace space with T, don't add Z (not UTC)
     let normalizedDate = dateString;
     if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
-      normalizedDate = dateString.replace(' ', 'T') + 'Z';
-    } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dateString)) {
-      normalizedDate = dateString + 'Z';
+      normalizedDate = dateString.replace(' ', 'T');
     }
 
     const date = new Date(normalizedDate);
@@ -203,6 +203,7 @@ const QuadDashboard = ({ onNavigate }) => {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
+    if (diffMins < 0) return 'gerade eben'; // Future dates (clock skew)
     if (diffMins < 1) return 'gerade eben';
     if (diffMins < 60) return `vor ${diffMins} Min.`;
     if (diffHours < 24) return `vor ${diffHours} Std.`;
