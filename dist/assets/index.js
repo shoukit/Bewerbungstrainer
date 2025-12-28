@@ -363,7 +363,8 @@ JSON SCHEMA:
 Situationsbeschreibung:
 "${i}"
 `:"",d=r.filter(g=>g.text?.trim()).map(g=>`- ${g.text}`),c=o.filter(g=>g.text?.trim()).map(g=>`- ${g.text}`);let u="";(d.length>0||c.length>0)&&(u=`
-BEREITS ERFASSTE ARGUMENTE (nicht wiederholen, sondern neue Perspektiven liefern):`,d.length>0&&(u+=`
+BEREITS ERFASSTE ARGUMENTE DES USERS:
+Nutze diese als Kontext, um ERGÄNZENDE Perspektiven zu generieren. Wiederhole NICHT dieselben Punkte, sondern baue darauf auf oder beleuchte andere Aspekte.`,d.length>0&&(u+=`
 Pro-Argumente:
 ${d.join(`
 `)}`),c.length>0&&(u+=`
@@ -372,8 +373,7 @@ ${c.join(`
 `)}`),u+=`
 `);const h=`Du bist ein kreativer Entscheidungs-Assistent für die Karriere-Plattform 'KarriereHeld'.
 Deine Aufgabe: Generiere für eine spezifische Entscheidungsfrage Argumente aus der strikten Sicht einer gewählten Persona.
-${l?"Berücksichtige dabei den Kontext/Hintergrund der Situation.":""}
-${u?"WICHTIG: Vermeide Wiederholungen der bereits erfassten Argumente und bringe neue, andere Perspektiven ein!":""}
+${l?"WICHTIG: Berücksichtige unbedingt die Situationsbeschreibung des Users - seine Wünsche, Ängste und Rahmenbedingungen!":""}
 
 INPUT:
 Thema: ${t}${l}${u}

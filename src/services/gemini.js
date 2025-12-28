@@ -745,7 +745,9 @@ export async function brainstormArguments(topic, persona, apiKey, context = null
 
   let existingArgsSection = '';
   if (existingProTexts.length > 0 || existingConTexts.length > 0) {
-    existingArgsSection = '\nBEREITS ERFASSTE ARGUMENTE (nicht wiederholen, sondern neue Perspektiven liefern):';
+    existingArgsSection = `
+BEREITS ERFASSTE ARGUMENTE DES USERS:
+Nutze diese als Kontext, um ERGÄNZENDE Perspektiven zu generieren. Wiederhole NICHT dieselben Punkte, sondern baue darauf auf oder beleuchte andere Aspekte.`;
     if (existingProTexts.length > 0) {
       existingArgsSection += `\nPro-Argumente:\n${existingProTexts.join('\n')}`;
     }
@@ -757,8 +759,7 @@ export async function brainstormArguments(topic, persona, apiKey, context = null
 
   const prompt = `Du bist ein kreativer Entscheidungs-Assistent für die Karriere-Plattform 'KarriereHeld'.
 Deine Aufgabe: Generiere für eine spezifische Entscheidungsfrage Argumente aus der strikten Sicht einer gewählten Persona.
-${contextSection ? 'Berücksichtige dabei den Kontext/Hintergrund der Situation.' : ''}
-${existingArgsSection ? 'WICHTIG: Vermeide Wiederholungen der bereits erfassten Argumente und bringe neue, andere Perspektiven ein!' : ''}
+${contextSection ? 'WICHTIG: Berücksichtige unbedingt die Situationsbeschreibung des Users - seine Wünsche, Ängste und Rahmenbedingungen!' : ''}
 
 INPUT:
 Thema: ${topic}${contextSection}${existingArgsSection}
