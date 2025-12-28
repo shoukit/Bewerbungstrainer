@@ -48,8 +48,52 @@ import DecisionBoardResult from './decision-board/DecisionBoardResult';
 import { formatDateTime, formatDuration } from '@/utils/formatting';
 import { BRIEFING_ICON_MAP, getBriefingIcon } from '@/utils/iconMaps';
 import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
-import { BriefingCard, SessionCard, DecisionCard } from '@/components/session-history';
-import { Scale } from 'lucide-react';
+import { BriefingCard, SessionCard, DecisionCard, IkigaiCard } from '@/components/session-history';
+import IkigaiCompass from '@/components/ikigai/IkigaiCompass';
+import IkigaiResults from '@/components/ikigai/IkigaiResults';
+import { Scale, Compass } from 'lucide-react';
+
+/**
+ * Dimension configuration for Ikigai
+ */
+const IKIGAI_DIMENSIONS = {
+  love: {
+    key: 'love',
+    label: 'Liebe',
+    icon: '❤️',
+    color: '#E11D48',
+    question: 'Vergiss mal Geld und Karriere. Bei welchen Tätigkeiten vergisst du die Zeit?',
+    placeholder: 'Erzähle mir, was du wirklich liebst zu tun...',
+    description: 'Was du liebst',
+  },
+  talent: {
+    key: 'talent',
+    label: 'Talent',
+    icon: '⭐',
+    color: '#F59E0B',
+    question: 'Worin bist du richtig gut? Was fällt dir leicht, während andere damit kämpfen?',
+    placeholder: 'Beschreibe deine Stärken und Fähigkeiten...',
+    description: 'Worin du gut bist',
+  },
+  need: {
+    key: 'need',
+    label: 'Welt',
+    icon: '🌍',
+    color: '#10B981',
+    question: 'Welche Probleme der Welt würdest du gerne lösen? Wo siehst du Bedarf?',
+    placeholder: 'Welchen Beitrag möchtest du leisten...',
+    description: 'Was die Welt braucht',
+  },
+  market: {
+    key: 'market',
+    label: 'Markt',
+    icon: '💰',
+    color: '#6366F1',
+    question: 'Wofür werden Menschen in deinem Bereich bezahlt? Was ist gefragt?',
+    placeholder: 'Welche Berufe oder Märkte interessieren dich...',
+    description: 'Wofür du bezahlt wirst',
+  },
+};
 
 
 /**
@@ -61,11 +105,13 @@ const TABS = {
   VIDEO: 'video',
   BRIEFINGS: 'briefings',
   DECISIONS: 'decisions',
+  IKIGAI: 'ikigai',
 };
 
 const TAB_CONFIG = [
   { id: TABS.BRIEFINGS, label: 'Smart Briefings', icon: Sparkles },
   { id: TABS.DECISIONS, label: 'Entscheidungs-Kompass', icon: Scale },
+  { id: TABS.IKIGAI, label: 'Ikigai-Kompass', icon: Compass },
   { id: TABS.SIMULATOR, label: 'Szenario-Training', icon: Target },
   { id: TABS.VIDEO, label: 'Wirkungs-Analyse', icon: Video },
   { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
@@ -107,6 +153,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const [videoSessions, setVideoSessions] = useState([]);
   const [briefings, setBriefings] = useState([]);
   const [decisions, setDecisions] = useState([]);
+  const [ikigais, setIkigais] = useState([]);
   const [roleplayScenarios, setRoleplayScenarios] = useState([]);
   const [simulatorScenarios, setSimulatorScenarios] = useState([]);
   const [videoScenarios, setVideoScenarios] = useState([]);
@@ -117,6 +164,17 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Selected decision for detail view
   const [selectedDecision, setSelectedDecision] = useState(null);
   const [decisionAnalysisResult, setDecisionAnalysisResult] = useState(null);
+
+  // Selected ikigai for edit view
+  const [selectedIkigai, setSelectedIkigai] = useState(null);
+  const [ikigaiDimensions, setIkigaiDimensions] = useState({
+    love: { input: '', tags: [] },
+    talent: { input: '', tags: [] },
+    need: { input: '', tags: [] },
+    market: { input: '', tags: [] },
+  });
+  const [ikigaiSynthesisResult, setIkigaiSynthesisResult] = useState(null);
+  const [isIkigaiSynthesizing, setIsIkigaiSynthesizing] = useState(false);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -149,6 +207,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         videoData,
         briefingsData,
         decisionsData,
+        ikigaisData,
         roleplayScenariosData,
         simulatorScenariosData,
         videoScenariosData,
@@ -169,6 +228,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         }).catch(() => ({ success: false, data: { briefings: [] } })),
         // Decision Board entries (pass demo_code)
         wordpressAPI.getDecisions().catch(() => ({ success: false, data: { decisions: [] } })),
+        // Ikigai Career Pathfinder entries
+        wordpressAPI.getIkigais().catch(() => ({ success: false, data: { ikigais: [] } })),
         // Roleplay scenarios
         getRoleplayScenarios().catch(() => []),
         // Simulator scenarios
@@ -204,6 +265,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       setVideoSessions(extractSessions(videoData));
       setBriefings(briefingsData?.data?.briefings || []);
       setDecisions(decisionsData?.data?.decisions || []);
+      setIkigais(ikigaisData?.data?.ikigais || []);
       setRoleplayScenarios(extractScenarios(roleplayScenariosData));
       setSimulatorScenarios(extractScenarios(simulatorScenariosData));
       setVideoScenarios(extractScenarios(videoScenariosData));
@@ -241,6 +303,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       case TABS.VIDEO: return videoSessions;
       case TABS.BRIEFINGS: return briefings;
       case TABS.DECISIONS: return decisions;
+      case TABS.IKIGAI: return ikigais;
       default: return roleplaySessions;
     }
   };
@@ -286,6 +349,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     }
   };
 
+  // Handle delete ikigai
+  const handleDeleteIkigai = async (ikigaiId) => {
+    const result = await wordpressAPI.deleteIkigai(ikigaiId);
+
+    if (result) {
+      setIkigais((prev) => prev.filter((i) => i.id !== ikigaiId));
+    }
+  };
+
   // Handle decision click - open detail view
   const handleDecisionClick = (decision) => {
     setSelectedDecision(decision);
@@ -296,6 +368,131 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     setSelectedDecision(null);
     setDecisionAnalysisResult(null);
   };
+
+  // Handle ikigai click - open edit view with existing data
+  const handleIkigaiClick = (ikigai) => {
+    setSelectedIkigai(ikigai);
+    // Transform ikigai data to dimensions format
+    setIkigaiDimensions({
+      love: { input: ikigai.love_input || '', tags: ikigai.love_tags || [] },
+      talent: { input: ikigai.talent_input || '', tags: ikigai.talent_tags || [] },
+      need: { input: ikigai.need_input || '', tags: ikigai.need_tags || [] },
+      market: { input: ikigai.market_input || '', tags: ikigai.market_tags || [] },
+    });
+    // Set synthesis result if completed
+    if (ikigai.status === 'completed' && ikigai.paths) {
+      setIkigaiSynthesisResult({
+        summary: ikigai.summary,
+        paths: ikigai.paths,
+      });
+    } else {
+      setIkigaiSynthesisResult(null);
+    }
+  };
+
+  // Handle back from ikigai edit
+  const handleBackFromIkigai = () => {
+    setSelectedIkigai(null);
+    setIkigaiDimensions({
+      love: { input: '', tags: [] },
+      talent: { input: '', tags: [] },
+      need: { input: '', tags: [] },
+      market: { input: '', tags: [] },
+    });
+    setIkigaiSynthesisResult(null);
+  };
+
+  // Handle ikigai dimension update
+  const handleIkigaiUpdateDimension = async (dimensionKey, input, tags) => {
+    setIkigaiDimensions((prev) => ({
+      ...prev,
+      [dimensionKey]: { input, tags },
+    }));
+
+    // Save to backend
+    if (selectedIkigai?.id) {
+      try {
+        await wordpressAPI.updateIkigai(selectedIkigai.id, {
+          [`${dimensionKey}_input`]: input,
+          [`${dimensionKey}_tags`]: tags,
+        });
+      } catch (err) {
+        console.error('[Ikigai] Failed to save dimension:', err);
+      }
+    }
+  };
+
+  // Handle ikigai keyword extraction
+  const handleIkigaiExtractKeywords = async (dimensionKey, userInput) => {
+    try {
+      const response = await wordpressAPI.extractIkigaiKeywords(dimensionKey, userInput);
+      return response?.keywords || [];
+    } catch (err) {
+      console.error('[Ikigai] Failed to extract keywords:', err);
+      return [];
+    }
+  };
+
+  // Handle ikigai remove tag
+  const handleIkigaiRemoveTag = (dimensionKey, tagToRemove) => {
+    setIkigaiDimensions((prev) => {
+      const newTags = prev[dimensionKey].tags.filter((tag) => tag !== tagToRemove);
+      return {
+        ...prev,
+        [dimensionKey]: { ...prev[dimensionKey], tags: newTags },
+      };
+    });
+  };
+
+  // Handle ikigai synthesis
+  const handleIkigaiSynthesize = async () => {
+    const allFilled = Object.values(ikigaiDimensions).every(
+      (dim) => dim.tags && dim.tags.length > 0
+    );
+    if (!allFilled) return;
+
+    setIsIkigaiSynthesizing(true);
+
+    try {
+      const response = await wordpressAPI.synthesizeIkigaiPaths({
+        love_tags: ikigaiDimensions.love.tags,
+        talent_tags: ikigaiDimensions.talent.tags,
+        need_tags: ikigaiDimensions.need.tags,
+        market_tags: ikigaiDimensions.market.tags,
+      });
+
+      if (response) {
+        setIkigaiSynthesisResult(response);
+
+        // Save synthesis to backend
+        if (selectedIkigai?.id) {
+          await wordpressAPI.updateIkigai(selectedIkigai.id, {
+            summary: response.summary,
+            paths: response.paths,
+            status: 'completed',
+          });
+
+          // Update local ikigais state
+          setIkigais((prev) =>
+            prev.map((i) =>
+              i.id === selectedIkigai.id
+                ? { ...i, summary: response.summary, paths: response.paths, status: 'completed' }
+                : i
+            )
+          );
+        }
+      }
+    } catch (err) {
+      console.error('[Ikigai] Failed to synthesize paths:', err);
+    } finally {
+      setIsIkigaiSynthesizing(false);
+    }
+  };
+
+  // Check if all ikigai dimensions are filled
+  const allIkigaiDimensionsFilled = Object.values(ikigaiDimensions).every(
+    (dim) => dim.tags && dim.tags.length > 0
+  );
 
   // Handle decision update (from edit view)
   const handleDecisionUpdate = (updatedDecision) => {
@@ -532,6 +729,87 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     );
   }
 
+  // Show ikigai edit view if an ikigai is selected
+  if (selectedIkigai) {
+    return (
+      <div style={{ padding: b.space[6], maxWidth: '900px', margin: '0 auto' }}>
+        {/* Back button and title */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: b.space[6],
+        }}>
+          <button
+            onClick={handleBackFromIkigai}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: b.space[2],
+              padding: `${b.space[2]} ${b.space[4]}`,
+              backgroundColor: 'transparent',
+              border: `1px solid ${b.borderColor}`,
+              borderRadius: b.radius.lg,
+              color: b.textSecondary,
+              cursor: 'pointer',
+              fontSize: b.fontSize.sm,
+              fontWeight: b.fontWeight.medium,
+            }}
+          >
+            <ArrowLeft size={16} />
+            Zurück
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm('Möchtest du diese Ikigai-Analyse wirklich löschen?')) {
+                handleDeleteIkigai(selectedIkigai.id);
+                handleBackFromIkigai();
+              }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: b.space[2],
+              padding: `${b.space[2]} ${b.space[3]}`,
+              backgroundColor: 'transparent',
+              border: `1px solid ${b.error}`,
+              borderRadius: b.radius.lg,
+              color: b.error,
+              cursor: 'pointer',
+              fontSize: b.fontSize.sm,
+              fontWeight: b.fontWeight.medium,
+            }}
+          >
+            <Trash2 size={16} />
+            Löschen
+          </button>
+        </div>
+
+        {/* Show Results if synthesis is complete, otherwise show Compass */}
+        {ikigaiSynthesisResult ? (
+          <IkigaiResults
+            dimensions={ikigaiDimensions}
+            synthesisResult={ikigaiSynthesisResult}
+            onStartNew={handleBackFromIkigai}
+            onEdit={() => setIkigaiSynthesisResult(null)}
+            DIMENSIONS={IKIGAI_DIMENSIONS}
+          />
+        ) : (
+          <IkigaiCompass
+            dimensions={ikigaiDimensions}
+            DIMENSIONS={IKIGAI_DIMENSIONS}
+            onExtractKeywords={handleIkigaiExtractKeywords}
+            onUpdateDimension={handleIkigaiUpdateDimension}
+            onRemoveTag={handleIkigaiRemoveTag}
+            allDimensionsFilled={allIkigaiDimensionsFilled}
+            onSynthesize={handleIkigaiSynthesize}
+            isSynthesizing={isIkigaiSynthesizing}
+          />
+        )}
+      </div>
+    );
+  }
+
   // Show detail view for selected training session
   if (selectedTrainingSession) {
     // Use RoleplaySessionReport for Live-Simulations
@@ -747,13 +1025,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         .session-tabs-desktop {
           margin: 0 24px 24px;
           display: flex;
+          flex-wrap: wrap;
           gap: 8px;
           background: #f1f5f9;
           padding: 6px;
           border-radius: 14px;
         }
         .session-tab-btn-desktop {
-          flex: 1;
+          flex: 1 1 auto;
+          min-width: fit-content;
           padding: 12px 16px;
           border-radius: 10px;
           border: none;
@@ -875,6 +1155,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                        tab.id === TABS.VIDEO ? videoSessions.length :
                        tab.id === TABS.BRIEFINGS ? briefings.length :
                        tab.id === TABS.DECISIONS ? decisions.length :
+                       tab.id === TABS.IKIGAI ? ikigais.length :
                        roleplaySessions.length;
 
           return (
@@ -967,6 +1248,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
               const moduleMap = {
                 [TABS.BRIEFINGS]: 'smart_briefing',
                 [TABS.DECISIONS]: 'decision_board',
+                [TABS.IKIGAI]: 'ikigai',
                 [TABS.SIMULATOR]: 'simulator',
                 [TABS.VIDEO]: 'video_training',
                 [TABS.ROLEPLAY]: 'dashboard',
@@ -981,6 +1263,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             <Plus style={{ width: '16px', height: '16px', marginRight: '8px' }} />
             {activeTab === TABS.BRIEFINGS ? 'Neues Briefing' :
              activeTab === TABS.DECISIONS ? 'Neue Entscheidungs-Analyse' :
+             activeTab === TABS.IKIGAI ? 'Neue Ikigai-Analyse' :
              activeTab === TABS.SIMULATOR ? 'Neues Szenario-Training' :
              activeTab === TABS.VIDEO ? 'Neue Wirkungs-Analyse' :
              'Neue Live-Simulation'}
@@ -1003,19 +1286,22 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             {activeTab === TABS.VIDEO && <Video style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
             {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
             {activeTab === TABS.DECISIONS && <Scale style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
+            {activeTab === TABS.IKIGAI && <Compass style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
             <h3 style={{ fontSize: b.fontSize['2xl'], fontWeight: b.fontWeight.semibold, color: b.textSecondary, marginBottom: b.space[2] }}>
-              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : activeTab === TABS.DECISIONS ? 'Entscheidungs-Analysen' : 'Live-Simulationen'}
+              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : activeTab === TABS.DECISIONS ? 'Entscheidungs-Analysen' : activeTab === TABS.IKIGAI ? 'Ikigai-Analysen' : 'Live-Simulationen'}
             </h3>
             <p style={{ color: b.textMuted, fontSize: b.fontSize.base, marginBottom: b.space[6] }}>
               {activeTab === TABS.BRIEFINGS
                 ? 'Erstelle dein erstes Briefing, um dich optimal vorzubereiten.'
                 : activeTab === TABS.DECISIONS
                 ? 'Nutze den Entscheidungs-Kompass, um deine erste Entscheidung zu analysieren.'
+                : activeTab === TABS.IKIGAI
+                ? 'Entdecke deinen idealen Karrierepfad mit dem Ikigai-Kompass.'
                 : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
             </p>
             <Button onClick={onBack}>
               <Play style={{ width: b.iconSize.sm, height: b.iconSize.sm, marginRight: b.space[2] }} />
-              {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : activeTab === TABS.DECISIONS ? 'Entscheidung analysieren' : 'Training starten'}
+              {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : activeTab === TABS.DECISIONS ? 'Entscheidung analysieren' : activeTab === TABS.IKIGAI ? 'Ikigai entdecken' : 'Training starten'}
             </Button>
           </div>
         ) : (
@@ -1052,6 +1338,19 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   decision={decision}
                   onClick={() => handleDecisionClick(decision)}
                   onDelete={handleDeleteDecision}
+                  headerGradient={headerGradient}
+                  headerText={headerText}
+                  primaryAccent={primaryAccent}
+                />
+              ))
+            ) : activeTab === TABS.IKIGAI ? (
+              // Render ikigai analyses
+              ikigais.map((ikigai) => (
+                <IkigaiCard
+                  key={ikigai.id}
+                  ikigai={ikigai}
+                  onDelete={handleDeleteIkigai}
+                  onNavigate={() => handleIkigaiClick(ikigai)}
                   headerGradient={headerGradient}
                   headerText={headerText}
                   primaryAccent={primaryAccent}

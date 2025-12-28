@@ -300,6 +300,10 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-decision-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-decision-api.php';
 
+        // Load Ikigai Career Pathfinder classes
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-ikigai-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-ikigai-api.php';
+
         // Load PDF exporter AFTER database classes (depends on Simulator and Video Training databases)
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-pdf-exporter.php';
 
@@ -643,6 +647,12 @@ class Bewerbungstrainer_Plugin {
         // Ensure table exists (for updates without re-activation)
         $decision_db->create_table();
         Bewerbungstrainer_Decision_API::get_instance();
+
+        // Initialize Ikigai Career Pathfinder
+        $ikigai_db = Bewerbungstrainer_Ikigai_Database::get_instance();
+        // Ensure table exists (for updates without re-activation)
+        $ikigai_db->create_table();
+        Bewerbungstrainer_Ikigai_API::get_instance();
 
         // Initialize Categories (centralized for all modules)
         Bewerbungstrainer_Categories_Database::get_instance();

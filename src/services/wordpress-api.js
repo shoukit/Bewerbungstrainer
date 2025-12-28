@@ -899,6 +899,173 @@ class WordPressAPI {
         throw new Error(response.message || 'Fehler beim Löschen der Entscheidung');
     }
 
+    // ===== Ikigai Career Pathfinder API Methods =====
+
+    /**
+     * Get all ikigai sessions for current user
+     *
+     * @returns {Promise<object>} Response with ikigais array
+     */
+    async getIkigais() {
+        try {
+            const response = await this.request('/ikigai', {
+                method: 'GET'
+            });
+
+            // Return full response for consistency
+            return response;
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to get ikigais:', error);
+            return { success: false, data: { ikigais: [] } };
+        }
+    }
+
+    /**
+     * Get a specific ikigai session by ID
+     *
+     * @param {number} ikigaiId - Ikigai ID
+     * @returns {Promise<object|null>} Ikigai object or null
+     */
+    async getIkigai(ikigaiId) {
+        try {
+            const response = await this.request(`/ikigai/${ikigaiId}`, {
+                method: 'GET'
+            });
+
+            if (response.success && response.data?.ikigai) {
+                return response.data.ikigai;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to get ikigai:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Get current (in-progress) ikigai session
+     *
+     * @returns {Promise<object|null>} Ikigai object or null
+     */
+    async getCurrentIkigai() {
+        try {
+            const response = await this.request('/ikigai/current', {
+                method: 'GET'
+            });
+
+            if (response.success && response.data?.ikigai) {
+                return response.data.ikigai;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to get current ikigai:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Create a new ikigai session
+     *
+     * @returns {Promise<object>} Created ikigai object
+     */
+    async createIkigai() {
+        const response = await this.request('/ikigai', {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+
+        if (response.success && response.data?.ikigai) {
+            return response.data.ikigai;
+        }
+
+        throw new Error(response.message || 'Fehler beim Erstellen der Ikigai-Analyse');
+    }
+
+    /**
+     * Update an ikigai session
+     *
+     * @param {number} ikigaiId - Ikigai ID
+     * @param {object} data - Data to update
+     * @returns {Promise<object>} Updated ikigai object
+     */
+    async updateIkigai(ikigaiId, data) {
+        const response = await this.request(`/ikigai/${ikigaiId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+
+        if (response.success && response.data?.ikigai) {
+            return response.data.ikigai;
+        }
+
+        throw new Error(response.message || 'Fehler beim Aktualisieren der Ikigai-Analyse');
+    }
+
+    /**
+     * Delete an ikigai session
+     *
+     * @param {number} ikigaiId - Ikigai ID
+     * @returns {Promise<boolean>} True on success
+     */
+    async deleteIkigai(ikigaiId) {
+        const response = await this.request(`/ikigai/${ikigaiId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.success) {
+            return true;
+        }
+
+        throw new Error(response.message || 'Fehler beim Löschen der Ikigai-Analyse');
+    }
+
+    /**
+     * Extract keywords from user input for a dimension
+     *
+     * @param {string} dimension - Dimension key (love, talent, need, market)
+     * @param {string} userInput - User's text input
+     * @returns {Promise<object>} Object with keywords array
+     */
+    async extractIkigaiKeywords(dimension, userInput) {
+        const response = await this.request('/ikigai/extract', {
+            method: 'POST',
+            body: JSON.stringify({
+                dimension,
+                user_input: userInput
+            })
+        });
+
+        if (response.success && response.data?.keywords) {
+            return { keywords: response.data.keywords };
+        }
+
+        throw new Error(response.message || 'Fehler beim Extrahieren der Keywords');
+    }
+
+    /**
+     * Synthesize career paths from all dimensions
+     *
+     * @param {object} tags - Object with love_tags, talent_tags, need_tags, market_tags arrays
+     * @returns {Promise<object>} Object with summary and paths array
+     */
+    async synthesizeIkigaiPaths(tags) {
+        const response = await this.request('/ikigai/synthesize', {
+            method: 'POST',
+            body: JSON.stringify(tags)
+        });
+
+        if (response.success && response.data) {
+            return {
+                summary: response.data.summary,
+                paths: response.data.paths
+            };
+        }
+
+        throw new Error(response.message || 'Fehler beim Erstellen der Karrierepfade');
+    }
+
     // ===== Audio Transcription API Methods =====
 
     /**
