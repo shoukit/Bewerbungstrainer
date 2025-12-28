@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import QuadDashboard from './components/QuadDashboard';
 import OverviewDashboard from './components/OverviewDashboard';
 import RoleplayDashboard from './components/RoleplayDashboard';
 import RoleplayDeviceSetup from './components/RoleplayDeviceSetup';
@@ -681,7 +682,7 @@ function AppContent() {
   // Admin route guard - redirects non-admins to overview
   const AdminRoute = useCallback(({ children }) => {
     if (!isAdmin) {
-      return <OverviewDashboard onNavigate={handleSidebarNavigate} />;
+      return <QuadDashboard onNavigate={handleSidebarNavigate} />;
     }
     return children;
   }, [isAdmin, handleSidebarNavigate]);
@@ -703,14 +704,14 @@ function AppContent() {
   // ===== CONTENT RENDERING WITH ROUTES =====
   const renderContent = () => (
     <Routes>
-      {/* Overview / Home */}
+      {/* Overview / Home - Quad Dashboard */}
       <Route
         path="/"
-        element={<OverviewDashboard onNavigate={handleSidebarNavigate} />}
+        element={<QuadDashboard onNavigate={handleSidebarNavigate} />}
       />
       <Route
         path={ROUTES.OVERVIEW}
-        element={<OverviewDashboard onNavigate={handleSidebarNavigate} />}
+        element={<QuadDashboard onNavigate={handleSidebarNavigate} />}
       />
 
       {/* Live Training (Roleplay) Routes */}
@@ -968,7 +969,7 @@ function AppContent() {
       {/* Fallback - redirect to overview */}
       <Route
         path="*"
-        element={<OverviewDashboard onNavigate={handleSidebarNavigate} />}
+        element={<QuadDashboard onNavigate={handleSidebarNavigate} />}
       />
     </Routes>
   );

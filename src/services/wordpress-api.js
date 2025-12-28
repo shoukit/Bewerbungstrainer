@@ -1095,6 +1095,119 @@ class WordPressAPI {
             throw error;
         }
     }
+
+    // ===== Dashboard / Recent Activities API Methods =====
+
+    /**
+     * Get recent activities across all modules for the dashboard
+     * Combines sessions from roleplay, simulator, video, briefings, games
+     *
+     * @param {number} limit - Maximum number of activities to return (default: 5)
+     * @returns {Promise<Array>} Array of recent activity objects
+     */
+    async getRecentActivities(limit = 5) {
+        try {
+            const activities = [];
+
+            // Fetch from all modules in parallel
+            const [sessions, simulatorSessions, videoSessions, gameSessions] = await Promise.allSettled([
+                this.getSessions({ limit: 3 }),
+                this.getSimulatorSessions({ limit: 3 }),
+                this.getVideoTrainings({ limit: 3 }),
+                this.getGameSessions({ limit: 3 }),
+            ]);
+
+            // Process roleplay sessions
+            if (sessions.status === 'fulfilled' && Array.isArray(sessions.value)) {
+                sessions.value.forEach(session => {
+                    activities.push({
+                        id: `roleplay_${session.id}`,
+                        type: 'roleplay',
+                        title: session.position || 'Live-Simulation',
+                        created_at: session.created_at,
+                        score: session.score,
+                    });
+                });
+            }
+
+            // Process simulator sessions
+            if (simulatorSessions.status === 'fulfilled' && simulatorSessions.value?.data?.sessions) {
+                simulatorSessions.value.data.sessions.forEach(session => {
+                    activities.push({
+                        id: `simulator_${session.id}`,
+                        type: 'simulator',
+                        title: session.scenario_title || 'Szenario-Training',
+                        created_at: session.created_at,
+                        score: session.overall_score,
+                    });
+                });
+            } else if (simulatorSessions.status === 'fulfilled' && Array.isArray(simulatorSessions.value)) {
+                simulatorSessions.value.forEach(session => {
+                    activities.push({
+                        id: `simulator_${session.id}`,
+                        type: 'simulator',
+                        title: session.scenario_title || 'Szenario-Training',
+                        created_at: session.created_at,
+                        score: session.overall_score,
+                    });
+                });
+            }
+
+            // Process video sessions
+            if (videoSessions.status === 'fulfilled' && videoSessions.value?.data?.sessions) {
+                videoSessions.value.data.sessions.forEach(session => {
+                    activities.push({
+                        id: `video_${session.id}`,
+                        type: 'video',
+                        title: session.scenario_title || 'Wirkungs-Analyse',
+                        created_at: session.created_at,
+                        score: session.overall_score,
+                    });
+                });
+            } else if (videoSessions.status === 'fulfilled' && Array.isArray(videoSessions.value)) {
+                videoSessions.value.forEach(session => {
+                    activities.push({
+                        id: `video_${session.id}`,
+                        type: 'video',
+                        title: session.scenario_title || 'Wirkungs-Analyse',
+                        created_at: session.created_at,
+                        score: session.overall_score,
+                    });
+                });
+            }
+
+            // Process game sessions
+            if (gameSessions.status === 'fulfilled' && gameSessions.value?.data?.sessions) {
+                gameSessions.value.data.sessions.forEach(session => {
+                    activities.push({
+                        id: `game_${session.id}`,
+                        type: 'game',
+                        title: session.topic || 'Rhetorik-Gym',
+                        created_at: session.created_at,
+                        score: session.score,
+                    });
+                });
+            } else if (gameSessions.status === 'fulfilled' && Array.isArray(gameSessions.value)) {
+                gameSessions.value.forEach(session => {
+                    activities.push({
+                        id: `game_${session.id}`,
+                        type: 'game',
+                        title: session.topic || 'Rhetorik-Gym',
+                        created_at: session.created_at,
+                        score: session.score,
+                    });
+                });
+            }
+
+            // Sort by created_at descending and limit
+            activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            return activities.slice(0, limit);
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to get recent activities:', error);
+            return [];
+        }
+    }
 }
 
 // Export singleton instance
@@ -1115,4 +1228,12 @@ export function getWPNonce() {
  */
 export function getWPApiUrl() {
     return window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+}
+
+/**
+ * Get recent activities for the dashboard
+ * Convenience export for QuadDashboard component
+ */
+export function getRecentActivities(limit = 5) {
+    return wordpressAPI.getRecentActivities(limit);
 }
