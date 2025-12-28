@@ -60,13 +60,23 @@ const ExtractedItemSlider = ({ value, onChange, type, b }) => {
 };
 
 /**
- * Extracted Item Card with checkbox
+ * Extracted Item Card with checkbox and editable text
  */
-const ExtractedItemCard = ({ item, onToggle, onWeightChange, b }) => {
+const ExtractedItemCard = ({ item, onToggle, onWeightChange, onTextChange, b }) => {
   const isPro = item.type === 'pro';
   const bgColor = isPro ? b.successLight : b.errorLight;
   const borderColor = isPro ? '#bbf7d0' : '#fecaca';
   const iconColor = isPro ? b.successDark : b.errorDark;
+  const textareaRef = React.useRef(null);
+
+  // Auto-resize textarea
+  React.useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.max(36, textarea.scrollHeight) + 'px';
+    }
+  }, [item.text]);
 
   return (
     <motion.div
@@ -80,24 +90,26 @@ const ExtractedItemCard = ({ item, onToggle, onWeightChange, b }) => {
         backgroundColor: item.selected ? bgColor : b.cardBgHover,
         borderRadius: b.radius.lg,
         border: `2px solid ${item.selected ? borderColor : b.borderColor}`,
-        cursor: 'pointer',
         transition: b.transition.normal,
       }}
-      onClick={() => onToggle(item.id)}
     >
       {/* Checkbox */}
-      <div style={{
-        width: '24px',
-        height: '24px',
-        borderRadius: b.radius.md,
-        border: `2px solid ${item.selected ? iconColor : b.borderColor}`,
-        backgroundColor: item.selected ? iconColor : 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        transition: b.transition.normal,
-      }}>
+      <div
+        onClick={() => onToggle(item.id)}
+        style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: b.radius.md,
+          border: `2px solid ${item.selected ? iconColor : b.borderColor}`,
+          backgroundColor: item.selected ? iconColor : 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          cursor: 'pointer',
+          transition: b.transition.normal,
+        }}
+      >
         {item.selected && <Check size={14} color={b.white} strokeWidth={3} />}
       </div>
 
@@ -118,14 +130,26 @@ const ExtractedItemCard = ({ item, onToggle, onWeightChange, b }) => {
             {isPro ? 'Pro' : 'Contra'}
           </span>
         </div>
-        <p style={{
-          fontSize: b.fontSize.md,
-          fontWeight: b.fontWeight.medium,
-          color: b.textMain,
-          marginBottom: b.space[2],
-        }}>
-          {item.text}
-        </p>
+        <textarea
+          ref={textareaRef}
+          value={item.text}
+          onChange={(e) => onTextChange(item.id, e.target.value)}
+          style={{
+            width: '100%',
+            fontSize: b.fontSize.md,
+            fontWeight: b.fontWeight.medium,
+            color: b.textMain,
+            marginBottom: b.space[2],
+            padding: `${b.space[2]} ${b.space[2.5]}`,
+            border: `1px solid ${borderColor}`,
+            borderRadius: b.radius.md,
+            backgroundColor: b.white,
+            resize: 'none',
+            overflow: 'hidden',
+            minHeight: '36px',
+            lineHeight: 1.4,
+          }}
+        />
         {item.source_quote && (
           <div style={{
             display: 'flex',
@@ -277,6 +301,12 @@ const DeepDiveWizard = ({
   const handleWeightChange = useCallback((id, weight) => {
     setExtractedItems(prev => prev.map(item =>
       item.id === id ? { ...item, weight } : item
+    ));
+  }, []);
+
+  const handleTextChange = useCallback((id, text) => {
+    setExtractedItems(prev => prev.map(item =>
+      item.id === id ? { ...item, text } : item
     ));
   }, []);
 
@@ -581,6 +611,7 @@ const DeepDiveWizard = ({
                         item={item}
                         onToggle={handleToggleItem}
                         onWeightChange={handleWeightChange}
+                        onTextChange={handleTextChange}
                         b={b}
                       />
                     ))}
