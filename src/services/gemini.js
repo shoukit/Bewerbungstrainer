@@ -645,11 +645,16 @@ JSON SCHEMA:
   try {
     // Clean up the response - remove markdown code blocks if present
     let cleanedResponse = responseText.trim();
+
+    // Remove opening markdown code block
     if (cleanedResponse.startsWith('```json')) {
-      cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+      cleanedResponse = cleanedResponse.replace(/^```json\s*\n?/, '');
     } else if (cleanedResponse.startsWith('```')) {
-      cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+      cleanedResponse = cleanedResponse.replace(/^```\s*\n?/, '');
     }
+
+    // Always remove trailing markdown code block (may have newlines before it)
+    cleanedResponse = cleanedResponse.replace(/\n?```\s*$/, '').trim();
 
     // Fix common JSON issues from Gemini:
     // Pattern: "text." (Gewicht: X/10)" -> removes the (Gewicht...) part that breaks JSON
