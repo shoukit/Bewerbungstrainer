@@ -44,6 +44,7 @@ import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
 import DecisionBoardInput from './decision-board/DecisionBoardInput';
+import DecisionBoardResult from './decision-board/DecisionBoardResult';
 import { formatDateTime, formatDuration } from '@/utils/formatting';
 import { BRIEFING_ICON_MAP, getBriefingIcon } from '@/utils/iconMaps';
 import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
@@ -115,6 +116,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Selected decision for detail view
   const [selectedDecision, setSelectedDecision] = useState(null);
+  const [decisionAnalysisResult, setDecisionAnalysisResult] = useState(null);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -292,6 +294,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Handle back from decision detail
   const handleBackFromDecision = () => {
     setSelectedDecision(null);
+    setDecisionAnalysisResult(null);
   };
 
   // Handle decision update (from edit view)
@@ -393,7 +396,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       contraScore: selectedDecision.contra_score || 0,
     };
 
-    // Handler for when analysis completes - update the decision
+    // Handler for when analysis completes - update the decision and show results
     const handleDecisionAnalysisComplete = async (data, result) => {
       try {
         const updateData = {
@@ -415,6 +418,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           ...updateData,
         };
         handleDecisionUpdate(updatedDecision);
+
+        // Show the result view
+        setDecisionAnalysisResult({ data, result });
       } catch (err) {
         console.error('[SessionHistory] Failed to update decision:', err);
       }
@@ -498,17 +504,30 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           </button>
         </div>
 
-        {/* Decision Board Input - same as create view */}
-        {/* Note: onCancel is NOT passed here since SessionHistory already has Zurück/Löschen buttons */}
-        <DecisionBoardInput
-          initialData={initialDecisionData}
-          onAnalysisComplete={handleDecisionAnalysisComplete}
-          isAuthenticated={isAuthenticated}
-          savedDecisionId={selectedDecision.id}
-          onSaveDraft={handleDecisionDraftSave}
-          onUpdateSession={handleDecisionSessionUpdate}
-          onDecisionIdChange={() => {}}
-        />
+        {/* Show Result if analysis is complete, otherwise show Input */}
+        {decisionAnalysisResult ? (
+          <DecisionBoardResult
+            decisionData={decisionAnalysisResult.data}
+            analysisResult={decisionAnalysisResult.result}
+            onStartNew={() => {
+              setDecisionAnalysisResult(null);
+              setSelectedDecision(null);
+            }}
+            onEditDecision={() => {
+              setDecisionAnalysisResult(null);
+            }}
+          />
+        ) : (
+          <DecisionBoardInput
+            initialData={initialDecisionData}
+            onAnalysisComplete={handleDecisionAnalysisComplete}
+            isAuthenticated={isAuthenticated}
+            savedDecisionId={selectedDecision.id}
+            onSaveDraft={handleDecisionDraftSave}
+            onUpdateSession={handleDecisionSessionUpdate}
+            onDecisionIdChange={() => {}}
+          />
+        )}
       </div>
     );
   }
