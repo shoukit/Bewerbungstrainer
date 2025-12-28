@@ -217,7 +217,7 @@ const IkigaiResults = ({
                 </span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                {tags.slice(0, 3).map((tag, idx) => (
+                {tags.map((tag, idx) => (
                   <span
                     key={idx}
                     style={{
