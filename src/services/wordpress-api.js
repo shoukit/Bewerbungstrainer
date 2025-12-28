@@ -798,6 +798,110 @@ class WordPressAPI {
         }
     }
 
+    // ===== Decision Board API Methods =====
+
+    /**
+     * Get all decisions for current user
+     *
+     * @returns {Promise<Array>} Array of decision objects
+     */
+    async getDecisions() {
+        try {
+            const response = await this.request('/decisions', {
+                method: 'GET'
+            });
+
+            if (response.success && response.data?.decisions) {
+                return response.data.decisions;
+            }
+
+            return [];
+        } catch (error) {
+            console.error('❌ [WordPressAPI] Failed to get decisions:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get a specific decision by ID
+     *
+     * @param {number} decisionId - Decision ID
+     * @returns {Promise<object|null>} Decision object or null
+     */
+    async getDecision(decisionId) {
+        try {
+            const response = await this.request(`/decisions/${decisionId}`, {
+                method: 'GET'
+            });
+
+            if (response.success && response.data?.decision) {
+                return response.data.decision;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('❌ [WordPressAPI] Failed to get decision:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Create a new decision
+     *
+     * @param {object} data - Decision data (topic, context, pros, cons, etc.)
+     * @returns {Promise<object>} Created decision object
+     */
+    async createDecision(data) {
+        const response = await this.request('/decisions', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        if (response.success && response.data?.decision) {
+            return response.data.decision;
+        }
+
+        throw new Error(response.message || 'Fehler beim Erstellen der Entscheidung');
+    }
+
+    /**
+     * Update a decision
+     *
+     * @param {number} decisionId - Decision ID
+     * @param {object} data - Data to update
+     * @returns {Promise<object>} Updated decision object
+     */
+    async updateDecision(decisionId, data) {
+        const response = await this.request(`/decisions/${decisionId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+
+        if (response.success && response.data?.decision) {
+            return response.data.decision;
+        }
+
+        throw new Error(response.message || 'Fehler beim Aktualisieren der Entscheidung');
+    }
+
+    /**
+     * Delete a decision
+     *
+     * @param {number} decisionId - Decision ID
+     * @returns {Promise<boolean>} True on success
+     */
+    async deleteDecision(decisionId) {
+        const response = await this.request(`/decisions/${decisionId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.success) {
+            return true;
+        }
+
+        throw new Error(response.message || 'Fehler beim Löschen der Entscheidung');
+    }
+
     // ===== Audio Transcription API Methods =====
 
     /**

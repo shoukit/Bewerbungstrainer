@@ -752,7 +752,9 @@ const DecisionBoardInput = ({
         throw new Error('API-Key nicht konfiguriert');
       }
 
-      const result = await brainstormArguments(topic, personaId, apiKey);
+      // Pass context to brainstorming for better suggestions
+      const contextTrimmed = context.trim() || null;
+      const result = await brainstormArguments(topic, personaId, apiKey, contextTrimmed);
 
       setBrainstormState(prev => ({
         ...prev,
@@ -768,7 +770,7 @@ const DecisionBoardInput = ({
       }));
       setError(err.message || 'Fehler beim Brainstorming');
     }
-  }, [topic]);
+  }, [topic, context]);
 
   const handleCloseBrainstorm = useCallback(() => {
     setBrainstormState({

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import DecisionBoardInput from './DecisionBoardInput';
 import DecisionBoardResult from './DecisionBoardResult';
+import wordpressAPI from '@/services/wordpress-api';
 
 /**
  * View states for the decision board flow
@@ -28,6 +29,7 @@ const DecisionBoardApp = ({
   const [currentView, setCurrentView] = useState(VIEWS.INPUT);
   const [decisionData, setDecisionData] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [savedDecisionId, setSavedDecisionId] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Scroll to top on every view change
@@ -36,12 +38,35 @@ const DecisionBoardApp = ({
   }, [currentView]);
 
   /**
-   * Handle analysis complete - transition to result view
+   * Handle analysis complete - save to backend and transition to result view
    */
-  const handleAnalysisComplete = useCallback((data, result) => {
+  const handleAnalysisComplete = useCallback(async (data, result) => {
     setDecisionData(data);
     setAnalysisResult(result);
     setCurrentView(VIEWS.RESULT);
+
+    // Save decision to backend (async, don't block UI)
+    try {
+      const saveData = {
+        topic: data.topic,
+        context: data.context || null,
+        pros: data.pros,
+        cons: data.cons,
+        pro_score: data.proScore,
+        contra_score: data.contraScore,
+        analysis: result,
+      };
+
+      const response = await wordpressAPI.createDecision(saveData);
+
+      if (response.success && response.data?.decision?.id) {
+        setSavedDecisionId(response.data.decision.id);
+        console.log('[DecisionBoard] Decision saved with ID:', response.data.decision.id);
+      }
+    } catch (err) {
+      console.error('[DecisionBoard] Failed to save decision:', err);
+      // Don't show error to user - the analysis was successful, just saving failed
+    }
   }, []);
 
   /**
@@ -50,6 +75,7 @@ const DecisionBoardApp = ({
   const handleStartNew = useCallback(() => {
     setDecisionData(null);
     setAnalysisResult(null);
+    setSavedDecisionId(null);
     setCurrentView(VIEWS.INPUT);
   }, []);
 

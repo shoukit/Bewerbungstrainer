@@ -663,6 +663,22 @@ JSON SCHEMA:
       throw new Error('Invalid response structure: missing cards array');
     }
 
+    // Log prompt and response to server-side prompts.log
+    wordpressAPI.logPrompt(
+      'GEMINI_DECISION_ANALYSIS',
+      'Entscheidungs-Kompass Analyse',
+      prompt,
+      {
+        topic: topic,
+        context: context ? 'vorhanden' : 'nicht angegeben',
+        pro_count: pros.length,
+        contra_count: cons.length,
+        pro_score: proScore,
+        contra_score: contraScore,
+      },
+      responseText
+    );
+
     return result;
   } catch (parseError) {
     console.error('❌ [GEMINI DECISION] Failed to parse response:', parseError);
@@ -686,9 +702,10 @@ JSON SCHEMA:
  * @param {string} topic - The decision question
  * @param {string} persona - One of: 'strategist', 'security', 'feelgood', 'growth', 'future'
  * @param {string} apiKey - Google Gemini API key
+ * @param {string|null} context - Optional situation context for better suggestions
  * @returns {Promise<Object>} - Parsed result with suggestions array
  */
-export async function brainstormArguments(topic, persona, apiKey) {
+export async function brainstormArguments(topic, persona, apiKey, context = null) {
   // Validate input
   if (!topic || topic.trim().length === 0) {
     throw new Error('Entscheidungsfrage fehlt');
@@ -703,13 +720,20 @@ export async function brainstormArguments(topic, persona, apiKey) {
     console.log(`💭 [GEMINI BRAINSTORM] Starting brainstorm`);
     console.log(`💭 [GEMINI BRAINSTORM] Topic: ${topic}`);
     console.log(`💭 [GEMINI BRAINSTORM] Persona: ${persona}`);
+    console.log(`💭 [GEMINI BRAINSTORM] Context: ${context ? 'provided' : 'none'}`);
   }
+
+  // Format context section if provided
+  const contextSection = context
+    ? `\nSituationsbeschreibung:\n"${context}"\n`
+    : '';
 
   const prompt = `Du bist ein kreativer Entscheidungs-Assistent für die Karriere-Plattform 'KarriereHeld'.
 Deine Aufgabe: Generiere für eine spezifische Entscheidungsfrage Argumente aus der strikten Sicht einer gewählten Persona.
+${contextSection ? 'Berücksichtige dabei den Kontext/Hintergrund der Situation.' : ''}
 
 INPUT:
-Thema: ${topic}
+Thema: ${topic}${contextSection}
 Persona: ${persona}
 
 PERSONA DEFINITIONEN:
@@ -740,6 +764,7 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Markdown, 
     prompt,
     {
       'Thema': topic,
+      'Kontext': context ? 'vorhanden' : 'nicht angegeben',
       'Persona': persona,
     }
   );
@@ -770,6 +795,19 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Markdown, 
     if (!result.suggestions || !Array.isArray(result.suggestions)) {
       throw new Error('Invalid response structure: missing suggestions array');
     }
+
+    // Log prompt and response to server-side prompts.log
+    wordpressAPI.logPrompt(
+      'GEMINI_DECISION_BRAINSTORM',
+      `Entscheidungs-Kompass Brainstorming (${persona})`,
+      prompt,
+      {
+        topic: topic,
+        context: context ? 'vorhanden' : 'nicht angegeben',
+        persona: persona,
+      },
+      responseText
+    );
 
     return result;
   } catch (parseError) {

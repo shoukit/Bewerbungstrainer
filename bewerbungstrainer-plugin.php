@@ -296,6 +296,10 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-smartbriefing-api.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-smartbriefing-admin.php';
 
+        // Load Decision Board classes
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-decision-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-decision-api.php';
+
         // Load PDF exporter AFTER database classes (depends on Simulator and Video Training databases)
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-pdf-exporter.php';
 
@@ -471,6 +475,9 @@ class Bewerbungstrainer_Plugin {
         // Create smart briefing database tables
         Bewerbungstrainer_SmartBriefing_Database::create_tables();
 
+        // Create decision board database table
+        Bewerbungstrainer_Decision_Database::get_instance()->create_table();
+
         // Create categories database table (centralized for all modules)
         Bewerbungstrainer_Categories_Database::create_tables();
 
@@ -630,6 +637,10 @@ class Bewerbungstrainer_Plugin {
         if (is_admin()) {
             Bewerbungstrainer_SmartBriefing_Admin::get_instance();
         }
+
+        // Initialize Decision Board
+        Bewerbungstrainer_Decision_Database::get_instance();
+        Bewerbungstrainer_Decision_API::get_instance();
 
         // Initialize Categories (centralized for all modules)
         Bewerbungstrainer_Categories_Database::get_instance();
