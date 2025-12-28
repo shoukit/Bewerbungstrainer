@@ -265,7 +265,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         border: `1px solid ${b.borderColor}`,
       }}>
         <Loader2
-          size={b.iconSize.lg}
+          size={b.iconSize['2xl']}
           color={b.textSecondary}
           style={{ animation: 'spin 1s linear infinite' }}
         />
@@ -293,8 +293,8 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         <button
           onClick={cancelRecording}
           style={{
-            width: '36px',
-            height: '36px',
+            width: '40px',
+            height: '40px',
             borderRadius: b.radius.full,
             border: 'none',
             backgroundColor: b.borderColorLight,
@@ -313,7 +313,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
             e.currentTarget.style.backgroundColor = b.borderColorLight;
           }}
         >
-          <X size={b.iconSize.md} strokeWidth={2.5} />
+          <X size={b.iconSize.xl} strokeWidth={2.5} />
         </button>
 
         {/* Waveform */}
@@ -322,10 +322,10 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         {/* Timer */}
         <span style={{
           fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: b.fontSize.base,
+          fontSize: b.fontSize.lg,
           fontWeight: b.fontWeight.medium,
           color: b.textMain,
-          minWidth: '36px',
+          minWidth: '40px',
           textAlign: 'right',
           flexShrink: 0,
         }}>
@@ -336,11 +336,11 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         <button
           onClick={confirmRecording}
           style={{
-            width: '36px',
-            height: '36px',
+            width: '40px',
+            height: '40px',
             borderRadius: b.radius.full,
             border: 'none',
-            backgroundColor: b.textMain,
+            backgroundColor: b.primaryAccent,
             color: b.white,
             cursor: 'pointer',
             display: 'flex',
@@ -356,7 +356,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
             e.currentTarget.style.opacity = '1';
           }}
         >
-          <Check size={b.iconSize.md} strokeWidth={2.5} />
+          <Check size={b.iconSize.xl} strokeWidth={2.5} />
         </button>
       </div>
     );
@@ -373,8 +373,8 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         disabled={disabled}
         title="Spracheingabe"
         style={{
-          width: '40px',
-          height: '40px',
+          width: '44px',
+          height: '44px',
           borderRadius: b.radius.full,
           border: 'none',
           backgroundColor: b.textMain,
@@ -393,7 +393,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
           if (!disabled) e.currentTarget.style.opacity = '1';
         }}
       >
-        <Mic size={b.iconSize.lg} />
+        <Mic size={b.iconSize['2xl']} />
       </button>
     </div>
   );

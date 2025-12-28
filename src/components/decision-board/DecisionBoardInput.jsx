@@ -84,7 +84,7 @@ const WeightSlider = ({ value, onChange, color, b }) => {
   const accentLight = isGreen ? b.successLight : b.errorLight;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[1.5], minWidth: '100px', width: '100px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], minWidth: '90px', flexShrink: 0 }}>
       <input
         type="range"
         min="1"
@@ -92,24 +92,23 @@ const WeightSlider = ({ value, onChange, color, b }) => {
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
         style={{
-          flex: 1,
+          width: '60px',
           height: '6px',
           borderRadius: b.radius.sm,
           background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(value - 1) * 11.1}%, ${b.borderColor} ${(value - 1) * 11.1}%, ${b.borderColor} 100%)`,
           appearance: 'none',
           cursor: 'pointer',
+          flexShrink: 0,
         }}
       />
       <span
         style={{
-          minWidth: '28px',
+          minWidth: '20px',
           textAlign: 'center',
           fontWeight: b.fontWeight.semibold,
           fontSize: b.fontSize.sm,
           color: accentDark,
-          backgroundColor: accentLight,
-          padding: `${b.space[1]} ${b.space[1.5]}`,
-          borderRadius: b.radius.sm,
+          flexShrink: 0,
         }}
       >
         {value}
@@ -126,6 +125,7 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b 
   const bgColor = isGreen ? b.successLight : b.errorLight;
   const borderColor = isGreen ? '#bbf7d0' : '#fecaca';
   const inputBorderColor = isGreen ? '#86efac' : '#fca5a5';
+  const iconColor = isGreen ? b.successDark : b.errorDark;
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -154,6 +154,14 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b 
         border: `1px solid ${borderColor}`,
       }}
     >
+      {/* Icon */}
+      <div style={{ flexShrink: 0 }}>
+        {isGreen ? (
+          <ThumbsUp size={b.iconSize.lg} color={iconColor} />
+        ) : (
+          <ThumbsDown size={b.iconSize.lg} color={iconColor} />
+        )}
+      </div>
       <Input
         value={item.text}
         onChange={(e) => onUpdate(item.id, { text: e.target.value })}
@@ -161,7 +169,7 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b 
         autoFocus={autoFocus}
         placeholder={isGreen ? 'Pro-Argument...' : 'Contra-Argument...'}
         style={{
-          flex: '1 1 200px',
+          flex: '1 1 180px',
           minWidth: '0',
           backgroundColor: b.white,
           border: `1px solid ${inputBorderColor}`,
@@ -517,7 +525,7 @@ const PersonaToolbar = ({
   const hasTopic = topic.trim().length > 0;
 
   return (
-    <Card variant="elevated" padding="md" style={{ marginBottom: b.space[4] }}>
+    <Card variant="elevated" padding="lg" style={{ marginBottom: b.space[4] }}>
       <div
         style={{
           display: 'flex',
@@ -528,22 +536,22 @@ const PersonaToolbar = ({
         }}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2.5], minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], minWidth: 0 }}>
           <div style={{
             width: b.space[10],
             height: b.space[10],
-            borderRadius: b.radius.sm,
+            borderRadius: b.radius.md,
             background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
           }}>
-            <Users size={b.iconSize.md} color="white" />
+            <Users size={b.iconSize.lg} color="white" />
           </div>
           <div style={{ minWidth: 0 }}>
             <h3 style={{
-              fontSize: b.fontSize.md,
+              fontSize: b.fontSize.lg,
               fontWeight: b.fontWeight.semibold,
               color: b.textMain,
               margin: 0,
@@ -551,7 +559,7 @@ const PersonaToolbar = ({
               Brainstorming
             </h3>
             <p style={{
-              fontSize: b.fontSize.sm,
+              fontSize: b.fontSize.base,
               color: b.textSecondary,
               margin: 0,
               whiteSpace: 'nowrap',
@@ -563,9 +571,9 @@ const PersonaToolbar = ({
           </div>
         </div>
         {isExpanded ? (
-          <ChevronUp size={b.iconSize.lg} color={b.textSecondary} style={{ flexShrink: 0 }} />
+          <ChevronUp size={b.iconSize.xl} color={b.textSecondary} style={{ flexShrink: 0 }} />
         ) : (
-          <ChevronDown size={b.iconSize.lg} color={b.textSecondary} style={{ flexShrink: 0 }} />
+          <ChevronDown size={b.iconSize.xl} color={b.textSecondary} style={{ flexShrink: 0 }} />
         )}
       </div>
 
