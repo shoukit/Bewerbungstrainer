@@ -370,12 +370,13 @@ const DeepDiveWizard = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
+          className="wizard-modal"
           style={{
             backgroundColor: b.cardBgColor,
             borderRadius: b.radius.xl,
             width: '100%',
             maxWidth: '640px',
-            maxHeight: '90vh',
+            maxHeight: '90dvh', // Use dvh for better mobile viewport handling
             overflow: 'hidden',
             boxShadow: b.shadow.xl,
             display: 'flex',
@@ -631,12 +632,15 @@ const DeepDiveWizard = ({
           </div>
 
           {/* Footer */}
-          <div style={{
+          <div className="wizard-footer" style={{
             padding: `${b.space[4]} ${b.space[5]}`,
             borderTop: `1px solid ${b.borderColor}`,
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'space-between',
             gap: b.space[3],
+            flexShrink: 0,
+            backgroundColor: b.cardBgColor,
           }}>
             {step === 'input' && (
               <>
@@ -700,6 +704,28 @@ const DeepDiveWizard = ({
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+          }
+
+          /* Mobile responsive: footer buttons stack on small screens */
+          @media (max-width: 480px) {
+            .wizard-modal {
+              max-height: calc(100dvh - 16px) !important;
+              border-radius: 16px !important;
+            }
+            .wizard-footer {
+              padding: 12px 16px !important;
+            }
+            .wizard-footer > button,
+            .wizard-footer > div {
+              flex: 1 1 auto;
+            }
+            .wizard-footer > div {
+              width: 100%;
+              justify-content: stretch;
+            }
+            .wizard-footer > div > button {
+              flex: 1;
+            }
           }
         `}
       </style>

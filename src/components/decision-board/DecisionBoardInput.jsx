@@ -150,6 +150,7 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoF
       className="decision-item"
       style={{
         display: 'flex',
+        flexWrap: 'wrap',
         alignItems: 'flex-start',
         gap: b.space[2.5],
         padding: b.space[3],
@@ -158,36 +159,53 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoF
         border: `1px solid ${borderColor}`,
       }}
     >
-      {/* Icon */}
-      <div style={{ flexShrink: 0, paddingTop: b.space[2] }}>
-        {isGreen ? (
-          <ThumbsUp size={b.iconSize.lg} color={iconColor} />
-        ) : (
-          <ThumbsDown size={b.iconSize.lg} color={iconColor} />
-        )}
+      {/* Icon + Textarea Row */}
+      <div className="decision-item-input-row" style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: b.space[2.5],
+        flex: '1 1 100%',
+        minWidth: 0,
+      }}>
+        {/* Icon */}
+        <div style={{ flexShrink: 0, paddingTop: b.space[2] }}>
+          {isGreen ? (
+            <ThumbsUp size={b.iconSize.lg} color={iconColor} />
+          ) : (
+            <ThumbsDown size={b.iconSize.lg} color={iconColor} />
+          )}
+        </div>
+        <Textarea
+          ref={textareaRef}
+          value={item.text}
+          onChange={(e) => onUpdate(item.id, { text: e.target.value })}
+          onBlur={onBlur}
+          autoFocus={autoFocus}
+          placeholder={isGreen ? 'Pro-Argument...' : 'Contra-Argument...'}
+          rows={1}
+          style={{
+            flex: 1,
+            minWidth: '0',
+            backgroundColor: b.white,
+            border: `1px solid ${inputBorderColor}`,
+            borderRadius: b.radius.md,
+            padding: `${b.space[2]} ${b.space[3]}`,
+            fontSize: b.fontSize.base,
+            resize: 'none',
+            minHeight: '44px',
+            overflow: 'hidden',
+          }}
+        />
       </div>
-      <Textarea
-        ref={textareaRef}
-        value={item.text}
-        onChange={(e) => onUpdate(item.id, { text: e.target.value })}
-        onBlur={onBlur}
-        autoFocus={autoFocus}
-        placeholder={isGreen ? 'Pro-Argument...' : 'Contra-Argument...'}
-        rows={1}
-        style={{
-          flex: 1,
-          minWidth: '0',
-          backgroundColor: b.white,
-          border: `1px solid ${inputBorderColor}`,
-          borderRadius: b.radius.md,
-          padding: `${b.space[2]} ${b.space[3]}`,
-          fontSize: b.fontSize.base,
-          resize: 'none',
-          minHeight: '44px',
-          overflow: 'hidden',
-        }}
-      />
-      <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], flexShrink: 0, paddingTop: b.space[1.5] }}>
+      {/* Controls Row - wraps to new line on mobile */}
+      <div className="decision-item-controls" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: b.space[2],
+        flex: '0 0 auto',
+        marginLeft: 'auto',
+      }}>
         <WeightSlider
           value={item.weight}
           onChange={(weight) => onUpdate(item.id, { weight })}
@@ -1209,8 +1227,9 @@ const DecisionBoardInput = ({
               Beschreibe die Situation (optional)
             </label>
 
-            <div style={{
+            <div className="context-input-wrapper" style={{
               display: 'flex',
+              flexWrap: 'wrap',
               alignItems: 'flex-end',
               gap: b.space[3],
             }}>
@@ -1221,7 +1240,8 @@ const DecisionBoardInput = ({
                 placeholder="Hintergrund, Rahmenbedingungen, Gefühle, was dich beschäftigt..."
                 rows={3}
                 style={{
-                  flex: 1,
+                  flex: '1 1 300px',
+                  minWidth: 0,
                   fontSize: b.fontSize.md,
                   padding: `${b.space[3]} ${b.space[4]}`,
                   borderRadius: b.radius.lg,
@@ -1263,13 +1283,14 @@ const DecisionBoardInput = ({
         }}
         onClick={() => topic.trim() && setIsWizardOpen(true)}
       >
-        <div style={{
+        <div className="deep-dive-card-content" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: b.space[3],
+          flexWrap: 'wrap',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], flex: '1 1 auto', minWidth: '200px' }}>
             <div style={{
               width: b.space[10],
               height: b.space[10],
@@ -1292,12 +1313,10 @@ const DecisionBoardInput = ({
                 Deep Dive Interview
               </h3>
               <p style={{
-                fontSize: b.fontSize.base,
+                fontSize: b.fontSize.sm,
                 color: b.textSecondary,
                 margin: 0,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                lineHeight: 1.4,
               }}>
                 Entdecke verborgene Argumente durch gezielte Coaching-Fragen
               </p>
@@ -1544,6 +1563,22 @@ const DecisionBoardInput = ({
             border: 2px solid currentColor;
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+
+          /* Mobile responsive: stack controls below textarea */
+          @media (max-width: 480px) {
+            .decision-item {
+              flex-direction: column !important;
+            }
+            .decision-item-input-row {
+              width: 100% !important;
+              flex: 1 1 100% !important;
+            }
+            .decision-item-controls {
+              width: 100% !important;
+              justify-content: flex-start !important;
+              padding-left: 32px;
+            }
           }
         `}
       </style>
