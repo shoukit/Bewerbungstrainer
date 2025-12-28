@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Wand2,
   Quote,
+  SkipForward,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -358,12 +359,12 @@ const DeepDiveWizard = ({
             justifyContent: 'space-between',
             padding: `${b.space[4]} ${b.space[5]}`,
             borderBottom: `1px solid ${b.borderColor}`,
-            background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)',
+            background: b.headerGradient,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3] }}>
               <div style={{
-                width: '40px',
-                height: '40px',
+                width: b.space[10],
+                height: b.space[10],
                 borderRadius: b.radius.lg,
                 backgroundColor: 'rgba(255,255,255,0.2)',
                 display: 'flex',
@@ -393,8 +394,8 @@ const DeepDiveWizard = ({
             <button
               onClick={onClose}
               style={{
-                width: '36px',
-                height: '36px',
+                width: b.space[10],
+                height: b.space[10],
                 borderRadius: b.radius.md,
                 border: 'none',
                 backgroundColor: 'rgba(255,255,255,0.2)',
@@ -405,7 +406,7 @@ const DeepDiveWizard = ({
                 justifyContent: 'center',
               }}
             >
-              <X size={b.iconSize.lg} />
+              <X size={b.iconSize.xl} />
             </button>
           </div>
 
@@ -427,7 +428,7 @@ const DeepDiveWizard = ({
               }}>
                 <Loader2
                   size={48}
-                  color="#7c3aed"
+                  color={b.primaryAccent}
                   style={{ animation: 'spin 1s linear infinite' }}
                 />
                 <p style={{ color: b.textSecondary, fontSize: b.fontSize.lg }}>
@@ -441,11 +442,11 @@ const DeepDiveWizard = ({
               <div>
                 {/* Question Display */}
                 <div style={{
-                  backgroundColor: '#f5f3ff',
+                  backgroundColor: `${b.primaryAccent}10`,
                   borderRadius: b.radius.lg,
                   padding: b.space[5],
                   marginBottom: b.space[5],
-                  borderLeft: '4px solid #7c3aed',
+                  borderLeft: `4px solid ${b.primaryAccent}`,
                 }}>
                   <div style={{
                     display: 'flex',
@@ -453,11 +454,11 @@ const DeepDiveWizard = ({
                     gap: b.space[2],
                     marginBottom: b.space[2],
                   }}>
-                    <MessageCircle size={b.iconSize.md} color="#7c3aed" />
+                    <MessageCircle size={b.iconSize.md} color={b.primaryAccent} />
                     <span style={{
                       fontSize: b.fontSize.sm,
                       fontWeight: b.fontWeight.semibold,
-                      color: '#7c3aed',
+                      color: b.primaryAccent,
                       textTransform: 'uppercase',
                     }}>
                       Coach fragt
@@ -530,7 +531,7 @@ const DeepDiveWizard = ({
                   animate={{ rotate: 360 }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                 >
-                  <Sparkles size={48} color="#7c3aed" />
+                  <Sparkles size={48} color={b.primaryAccent} />
                 </motion.div>
                 <p style={{ color: b.textSecondary, fontSize: b.fontSize.lg }}>
                   KI extrahiert Argumente...
@@ -547,7 +548,7 @@ const DeepDiveWizard = ({
                   gap: b.space[2],
                   marginBottom: b.space[4],
                 }}>
-                  <Sparkles size={b.iconSize.lg} color="#7c3aed" />
+                  <Sparkles size={b.iconSize.lg} color={b.primaryAccent} />
                   <h3 style={{
                     fontSize: b.fontSize.lg,
                     fontWeight: b.fontWeight.semibold,
@@ -611,17 +612,26 @@ const DeepDiveWizard = ({
                 <Button variant="ghost" onClick={onClose}>
                   Abbrechen
                 </Button>
-                <Button
-                  variant="solid"
-                  onClick={handleAnalyze}
-                  disabled={!userAnswer.trim() || userAnswer.length < 10}
-                  style={{
-                    background: userAnswer.trim().length >= 10 ? 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)' : undefined,
-                  }}
-                >
-                  <Sparkles size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
-                  Antwort auswerten
-                </Button>
+                <div style={{ display: 'flex', gap: b.space[2] }}>
+                  <Button
+                    variant="outline"
+                    onClick={handleSkipToNextQuestion}
+                  >
+                    <SkipForward size={b.iconSize.md} style={{ marginRight: b.space[1.5] }} />
+                    Überspringen
+                  </Button>
+                  <Button
+                    variant="solid"
+                    onClick={handleAnalyze}
+                    disabled={!userAnswer.trim() || userAnswer.length < 10}
+                    style={{
+                      background: userAnswer.trim().length >= 10 ? b.headerGradient : undefined,
+                    }}
+                  >
+                    <Sparkles size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
+                    Auswerten
+                  </Button>
+                </div>
               </>
             )}
 
@@ -645,7 +655,7 @@ const DeepDiveWizard = ({
                     variant="solid"
                     onClick={extractedItems.length > 0 ? handleConfirmSelection : handleSkipToNextQuestion}
                     style={{
-                      background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)',
+                      background: b.headerGradient,
                     }}
                   >
                     {extractedItems.length > 0 ? 'Übernehmen & Weiter' : 'Nächste Frage'}

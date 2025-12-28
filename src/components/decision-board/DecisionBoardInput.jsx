@@ -1274,7 +1274,7 @@ const DecisionBoardInput = ({
               width: b.space[10],
               height: b.space[10],
               borderRadius: b.radius.md,
-              background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)',
+              background: b.headerGradient,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1312,7 +1312,7 @@ const DecisionBoardInput = ({
               if (topic.trim()) setIsWizardOpen(true);
             }}
             style={{
-              background: topic.trim() ? 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)' : undefined,
+              background: topic.trim() ? b.headerGradient : undefined,
               flexShrink: 0,
             }}
           >
