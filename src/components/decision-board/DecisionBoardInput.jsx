@@ -315,7 +315,7 @@ const SuggestionCard = ({ suggestion, onAdd, isAdded }) => {
           flexShrink: 0,
         }}
       >
-        {isAdded ? '✓' : <Plus size={18} />}
+        {isAdded ? '✓' : <Plus size={18} color="white" strokeWidth={3} />}
       </button>
     </motion.div>
   );
