@@ -512,9 +512,142 @@ export async function analyzeRhetoricGame(
   }
 }
 
+/**
+ * Analyzes a decision using the "Decisio" AI coach approach
+ *
+ * Provides structured coaching insights:
+ * - Blind Spot: Missing life areas or considerations
+ * - Challenger: Questions the highest-weighted argument
+ * - Intuition: Systemic question to check gut feeling
+ *
+ * @param {Object} decisionData - The decision data to analyze
+ * @param {string} decisionData.topic - The decision question
+ * @param {Array} decisionData.pros - Array of {text, weight} objects for pro arguments
+ * @param {Array} decisionData.cons - Array of {text, weight} objects for contra arguments
+ * @param {number} decisionData.proScore - Total pro score
+ * @param {number} decisionData.contraScore - Total contra score
+ * @param {string} apiKey - Google Gemini API key
+ * @returns {Promise<Object>} - Parsed analysis result with summary and coaching cards
+ */
+export async function analyzeDecision(decisionData, apiKey) {
+  const { topic, pros, cons, proScore, contraScore } = decisionData;
+
+  // Validate input
+  if (!topic || topic.trim().length === 0) {
+    throw new Error('Entscheidungsfrage fehlt');
+  }
+
+  if (DEBUG_PROMPTS) {
+    console.log(`🧠 [GEMINI DECISION] Starting decision analysis`);
+    console.log(`🧠 [GEMINI DECISION] Topic: ${topic}`);
+    console.log(`🧠 [GEMINI DECISION] Pros: ${pros.length}, Cons: ${cons.length}`);
+  }
+
+  // Format pros and cons for the prompt
+  const prosFormatted = pros.map(p => `- "${p.text}" (Gewicht: ${p.weight}/10)`).join('\n');
+  const consFormatted = cons.map(c => `- "${c.text}" (Gewicht: ${c.weight}/10)`).join('\n');
+
+  // Build the system prompt as specified
+  const prompt = `Du bist 'Decisio', ein analytischer Entscheidungs-Coach.
+Deine Aufgabe: Analysiere die Entscheidungsmatrix des Users (Thema, Pro/Contra mit Gewichtung 1-10).
+Ziel: Deck blinde Flecken auf und hinterfrage die Gewichtung kritisch. Nimm dem User die Entscheidung NICHT ab, sondern verbessere seine Datengrundlage.
+
+INPUT:
+Thema: ${topic}
+Pro-Liste (Gesamtpunkte: ${proScore}):
+${prosFormatted || '(keine Pro-Argumente)'}
+
+Contra-Liste (Gesamtpunkte: ${contraScore}):
+${consFormatted || '(keine Contra-Argumente)'}
+
+Rationaler Score: ${proScore > contraScore ? 'Pro führt' : contraScore > proScore ? 'Contra führt' : 'Ausgeglichen'} (${proScore} vs ${contraScore})
+
+GENERATION RULES:
+1. "Blind Spot": Welcher Lebensbereich (Gesundheit, Langzeit, Familie, Werte, Finanzen, Karriere, Work-Life-Balance) fehlt? Welche Perspektive wurde nicht berücksichtigt?
+2. "Challenger": Greife das Argument mit der HÖCHSTEN Gewichtung an. Ist es wirklich eine ${Math.max(...pros.map(p => p.weight), ...cons.map(c => c.weight))}/10? Warum könnte diese Bewertung übertrieben oder unterschätzt sein?
+3. "Intuition": Stelle eine systemische Frage (z.B. 10-10-10 Methode: Wie wirst du in 10 Minuten/10 Monaten/10 Jahren darüber denken? Oder: Was würdest du einem Freund in dieser Situation raten?), um das Bauchgefühl zu prüfen.
+
+WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Markdown, kein Intro, keine Erklärung außerhalb des JSON.
+
+JSON SCHEMA:
+{
+  "analysis_summary": "Ein bis zwei Sätze zum rationalen Ergebnis und was auffällt (z.B. 'Die Zahlen sprechen klar für Ja, aber die emotionalen Aspekte scheinen unterbewertet.').",
+  "cards": [
+    {
+      "type": "blind_spot",
+      "title": "Der blinde Fleck",
+      "content": "Dein konkreter Hinweis auf einen fehlenden Aspekt..."
+    },
+    {
+      "type": "challenger",
+      "title": "Der Härtetest",
+      "content": "Deine kritische Hinterfragung des stärksten Arguments..."
+    },
+    {
+      "type": "intuition",
+      "title": "Der Bauch-Check",
+      "content": "Deine systemische Frage zur Intuitionsprüfung..."
+    }
+  ]
+}`;
+
+  // Debug logging
+  logPromptDebug(
+    'DECISION',
+    'Entscheidungs-Kompass: Analysiert Pro/Contra-Matrix mit Gewichtungen. Identifiziert blinde Flecken und hinterfragt Annahmen.',
+    prompt,
+    {
+      'Thema': topic,
+      'Pro-Argumente': pros.length,
+      'Contra-Argumente': cons.length,
+      'Pro-Score': proScore,
+      'Contra-Score': contraScore,
+      'Stärkstes Argument': Math.max(...pros.map(p => p.weight), ...cons.map(c => c.weight)),
+    }
+  );
+
+  const responseText = await callGeminiWithFallback({
+    apiKey,
+    content: prompt,
+    context: 'DECISION',
+  });
+
+  // Parse JSON response
+  try {
+    // Clean up the response - remove markdown code blocks if present
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const result = JSON.parse(cleanedResponse);
+
+    if (DEBUG_PROMPTS) {
+      console.log(`✅ [GEMINI DECISION] Analysis complete`);
+      console.log(`✅ [GEMINI DECISION] Summary: ${result.analysis_summary?.substring(0, 50)}...`);
+    }
+
+    // Validate structure
+    if (!result.cards || !Array.isArray(result.cards)) {
+      throw new Error('Invalid response structure: missing cards array');
+    }
+
+    return result;
+  } catch (parseError) {
+    console.error('❌ [GEMINI DECISION] Failed to parse response:', parseError);
+    console.error('❌ [GEMINI DECISION] Raw response:', responseText);
+
+    // Return a default error result
+    throw new Error(`Fehler beim Verarbeiten der Analyse: ${parseError.message}`);
+  }
+}
+
 export default {
   listAvailableModels,
   generateInterviewFeedback,
   generateAudioAnalysis,
   analyzeRhetoricGame,
+  analyzeDecision,
 };

@@ -24,6 +24,7 @@ import {
   Settings,
   Sparkles,
   Clock,
+  Scale,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/Toast';
@@ -96,6 +97,14 @@ const NAV_ITEMS = [
     shortLabel: 'Briefing',
     icon: Sparkles,
     description: 'KI-Vorbereitungs-Assistent',
+  },
+  {
+    id: 'decision_board',
+    moduleId: 'decision_board', // Maps to WordPress module
+    label: 'Entscheidungs-Kompass',
+    shortLabel: 'Entscheidung',
+    icon: Scale,
+    description: 'KI-gestützte Entscheidungshilfe',
   },
   {
     id: 'simulator',
