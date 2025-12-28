@@ -361,6 +361,7 @@ const BrainstormPopover = ({
   isLoading,
   suggestions,
   onAddSuggestion,
+  onLoadMore,
   addedSuggestions,
   b,
 }) => {
@@ -500,6 +501,44 @@ const BrainstormPopover = ({
                 b={b}
               />
             ))}
+
+          {/* Load More Button */}
+          {suggestions.length > 0 && onLoadMore && (
+            <button
+              onClick={onLoadMore}
+              disabled={isLoading}
+              style={{
+                marginTop: b.space[4],
+                padding: `${b.space[3]} ${b.space[4]}`,
+                backgroundColor: 'transparent',
+                border: `2px dashed ${persona?.color || b.borderColor}`,
+                borderRadius: b.radius.lg,
+                color: persona?.color || b.textSecondary,
+                fontSize: b.fontSize.base,
+                fontWeight: b.fontWeight.medium,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: b.space[2],
+                width: '100%',
+                transition: b.transition.normal,
+                opacity: isLoading ? 0.6 : 1,
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={b.iconSize.md} style={{ animation: 'spin 1s linear infinite' }} />
+                  Generiere mehr...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={b.iconSize.md} />
+                  Mehr Inspirationen
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
     </motion.div>
@@ -517,6 +556,7 @@ const PersonaToolbar = ({
   suggestions,
   onCloseBrainstorm,
   onAddSuggestion,
+  onLoadMore,
   addedSuggestions,
   b,
 }) => {
@@ -668,6 +708,7 @@ const PersonaToolbar = ({
                     isLoading={isLoading}
                     suggestions={suggestions}
                     onAddSuggestion={onAddSuggestion}
+                    onLoadMore={onLoadMore}
                     addedSuggestions={addedSuggestions}
                     b={b}
                   />
@@ -903,6 +944,56 @@ const DecisionBoardInput = ({
     }
   }, []);
 
+  /**
+   * Load more suggestions - generates 3 more pro and 3 more contra
+   * Passes all existing captured points AND current suggestions to avoid duplicates
+   */
+  const handleLoadMore = useCallback(async () => {
+    const { activePersona, suggestions: currentSuggestions } = brainstormState;
+    if (!activePersona) return;
+
+    setBrainstormState(prev => ({
+      ...prev,
+      isLoading: true,
+    }));
+
+    try {
+      const apiKey = window.bewerbungstrainerConfig?.geminiApiKey;
+      if (!apiKey) {
+        throw new Error('API-Key nicht konfiguriert');
+      }
+
+      // Combine existing captured pros/cons with current suggestions
+      // This prevents the API from repeating any previously shown suggestions
+      const currentProSuggestions = currentSuggestions
+        .filter(s => s.type === 'pro')
+        .map(s => ({ text: s.text }));
+      const currentConSuggestions = currentSuggestions
+        .filter(s => s.type === 'con')
+        .map(s => ({ text: s.text }));
+
+      const combinedPros = [...pros, ...currentProSuggestions];
+      const combinedCons = [...cons, ...currentConSuggestions];
+
+      const contextTrimmed = context.trim() || null;
+      const result = await brainstormArguments(topic, activePersona, apiKey, contextTrimmed, combinedPros, combinedCons);
+
+      // Append new suggestions to existing ones
+      setBrainstormState(prev => ({
+        ...prev,
+        isLoading: false,
+        suggestions: [...prev.suggestions, ...(result.suggestions || [])],
+      }));
+    } catch (err) {
+      console.error('[DecisionBoard] Load more error:', err);
+      setBrainstormState(prev => ({
+        ...prev,
+        isLoading: false,
+      }));
+      setError(err.message || 'Fehler beim Laden weiterer Vorschläge');
+    }
+  }, [brainstormState, topic, context, pros, cons]);
+
   // Handle audio transcript
   const handleTranscriptReady = useCallback((transcript) => {
     setContext(prev => {
@@ -1095,6 +1186,7 @@ const DecisionBoardInput = ({
         suggestions={brainstormState.suggestions}
         onCloseBrainstorm={handleCloseBrainstorm}
         onAddSuggestion={handleAddSuggestion}
+        onLoadMore={handleLoadMore}
         addedSuggestions={addedSuggestions}
         b={b}
       />
