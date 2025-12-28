@@ -16,6 +16,9 @@ import {
   Coins,
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
+import { useMobile } from '@/hooks/useMobile';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import wordpressAPI from '@/services/wordpress-api';
 
 /**
@@ -43,7 +46,8 @@ const IkigaiResults = ({
   onEdit,
   DIMENSIONS,
 }) => {
-  const branding = useBranding();
+  const b = useBranding();
+  const isMobile = useMobile(768);
   const [scenarios, setScenarios] = useState([]);
   const [loadingScenarios, setLoadingScenarios] = useState(true);
 
@@ -119,41 +123,56 @@ const IkigaiResults = ({
   };
 
   /**
-   * Card colors for paths
+   * Card colors for paths (using dimension colors)
    */
   const pathColors = [
-    { bg: '#FEF2F2', border: '#E11D48', accent: '#E11D48' },
-    { bg: '#FFFBEB', border: '#F59E0B', accent: '#F59E0B' },
-    { bg: '#F0FDF4', border: '#10B981', accent: '#10B981' },
+    { bg: `${DIMENSIONS.love.color}08`, border: DIMENSIONS.love.color, accent: DIMENSIONS.love.color },
+    { bg: `${DIMENSIONS.talent.color}08`, border: DIMENSIONS.talent.color, accent: DIMENSIONS.talent.color },
+    { bg: `${DIMENSIONS.need.color}08`, border: DIMENSIONS.need.color, accent: DIMENSIONS.need.color },
   ];
 
   return (
-    <div className="px-4 py-8 max-w-5xl mx-auto">
+    <div style={{ padding: isMobile ? b.space[4] : b.space[8], maxWidth: '900px', margin: '0 auto' }}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-10"
+        style={{ textAlign: 'center', marginBottom: b.space[8] }}
       >
-        <div className="flex justify-center mb-4">
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: b.space[4] }}>
           <div
-            className="w-20 h-20 rounded-full flex items-center justify-center"
             style={{
-              background: 'linear-gradient(135deg, #E11D48, #F59E0B, #10B981, #6366F1)',
+              width: isMobile ? '64px' : '80px',
+              height: isMobile ? '64px' : '80px',
+              borderRadius: b.radius.full,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: b.headerGradient,
+              boxShadow: b.shadow.lg,
             }}
           >
-            <Sparkles size={36} className="text-white" />
+            <Sparkles size={isMobile ? 28 : 36} color="white" />
           </div>
         </div>
         <h1
-          className="text-3xl font-bold mb-2"
-          style={{ color: branding.colors?.text?.primary || '#1e293b' }}
+          style={{
+            fontSize: isMobile ? b.fontSize['2xl'] : b.fontSize['3xl'],
+            fontWeight: b.fontWeight.bold,
+            color: b.textMain,
+            marginBottom: b.space[2],
+          }}
         >
           Dein Ikigai-Kompass
         </h1>
         <p
-          className="text-lg max-w-2xl mx-auto"
-          style={{ color: branding.colors?.text?.secondary || '#64748b' }}
+          style={{
+            fontSize: b.fontSize.base,
+            color: b.textSecondary,
+            maxWidth: '600px',
+            margin: '0 auto',
+            lineHeight: 1.6,
+          }}
         >
           {synthesisResult?.summary || 'Basierend auf deinen Eingaben haben wir diese Karrierepfade für dich identifiziert.'}
         </p>
@@ -164,7 +183,12 @@ const IkigaiResults = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: b.space[3],
+          marginBottom: b.space[8],
+        }}
       >
         {Object.entries(DIMENSIONS).map(([key, config]) => {
           const Icon = DIMENSION_ICONS[key];
@@ -173,27 +197,33 @@ const IkigaiResults = ({
           return (
             <div
               key={key}
-              className="p-3 rounded-xl"
               style={{
+                padding: b.space[3],
+                borderRadius: b.radius.xl,
                 backgroundColor: `${config.color}10`,
                 border: `1px solid ${config.color}30`,
               }}
             >
-              <div className="flex items-center gap-2 mb-2">
+              <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], marginBottom: b.space[2] }}>
                 <Icon size={16} style={{ color: config.color }} />
                 <span
-                  className="font-semibold text-sm"
-                  style={{ color: config.color }}
+                  style={{
+                    fontWeight: b.fontWeight.semibold,
+                    fontSize: b.fontSize.sm,
+                    color: config.color,
+                  }}
                 >
                   {config.label}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {tags.slice(0, 3).map((tag, idx) => (
                   <span
                     key={idx}
-                    className="px-2 py-0.5 rounded-full text-xs"
                     style={{
+                      padding: `2px ${b.space[2]}`,
+                      borderRadius: b.radius.full,
+                      fontSize: b.fontSize.xs,
                       backgroundColor: `${config.color}20`,
                       color: config.color,
                     }}
@@ -208,10 +238,13 @@ const IkigaiResults = ({
       </motion.div>
 
       {/* Career paths */}
-      <div className="space-y-6 mb-10">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[6], marginBottom: b.space[8] }}>
         <h2
-          className="text-xl font-bold"
-          style={{ color: branding.colors?.text?.primary || '#1e293b' }}
+          style={{
+            fontSize: b.fontSize.xl,
+            fontWeight: b.fontWeight.bold,
+            color: b.textMain,
+          }}
         >
           Deine Karrierepfade
         </h2>
@@ -226,69 +259,101 @@ const IkigaiResults = ({
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 + index * 0.1 }}
-              className="rounded-2xl overflow-hidden shadow-lg"
               style={{
-                backgroundColor: colors.bg,
+                borderRadius: b.radius['2xl'],
+                overflow: 'hidden',
+                boxShadow: b.shadow.md,
+                backgroundColor: b.cardBgColor,
                 border: `2px solid ${colors.border}30`,
               }}
             >
               {/* Path header */}
               <div
-                className="px-6 py-4"
                 style={{
+                  padding: isMobile ? `${b.space[3]} ${b.space[4]}` : `${b.space[4]} ${b.space[6]}`,
                   backgroundColor: colors.border,
                 }}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                    <Briefcase size={20} className="text-white" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3] }}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: b.radius.full,
+                      background: 'rgba(255,255,255,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Briefcase size={20} color="white" />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">
-                      {path.role_title}
-                    </h3>
-                  </div>
+                  <h3
+                    style={{
+                      fontSize: isMobile ? b.fontSize.lg : b.fontSize.xl,
+                      fontWeight: b.fontWeight.bold,
+                      color: 'white',
+                    }}
+                  >
+                    {path.role_title}
+                  </h3>
                 </div>
               </div>
 
               {/* Path content */}
-              <div className="p-6">
+              <div style={{ padding: isMobile ? b.space[4] : b.space[6] }}>
                 <p
-                  className="text-gray-700 mb-4"
-                  style={{ lineHeight: 1.6 }}
+                  style={{
+                    color: b.textSecondary,
+                    marginBottom: b.space[4],
+                    lineHeight: 1.6,
+                    fontSize: b.fontSize.base,
+                  }}
                 >
                   {path.description}
                 </p>
 
                 {/* Why this fits */}
                 <div
-                  className="flex items-start gap-3 p-4 rounded-xl mb-4"
-                  style={{ backgroundColor: `${colors.border}15` }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: b.space[3],
+                    padding: b.space[4],
+                    borderRadius: b.radius.xl,
+                    marginBottom: b.space[4],
+                    backgroundColor: `${colors.border}15`,
+                  }}
                 >
                   <CheckCircle
                     size={20}
-                    style={{ color: colors.accent }}
-                    className="flex-shrink-0 mt-0.5"
+                    style={{ color: colors.accent, flexShrink: 0, marginTop: '2px' }}
                   />
                   <div>
                     <p
-                      className="font-semibold mb-1"
-                      style={{ color: colors.accent }}
+                      style={{
+                        fontWeight: b.fontWeight.semibold,
+                        marginBottom: '4px',
+                        color: colors.accent,
+                      }}
                     >
                       Warum passt das zu dir?
                     </p>
-                    <p className="text-gray-600 text-sm">{path.why_fit}</p>
+                    <p style={{ color: b.textSecondary, fontSize: b.fontSize.sm }}>{path.why_fit}</p>
                   </div>
                 </div>
 
                 {/* Training tags */}
                 {path.training_tags && path.training_tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: b.space[2], marginBottom: b.space[4] }}>
                     {path.training_tags.map((tag, idx) => (
                       <span
                         key={idx}
-                        className="px-3 py-1 rounded-full text-xs font-medium"
                         style={{
+                          padding: `${b.space[1]} ${b.space[3]}`,
+                          borderRadius: b.radius.full,
+                          fontSize: b.fontSize.xs,
+                          fontWeight: b.fontWeight.medium,
                           backgroundColor: `${colors.border}20`,
                           color: colors.accent,
                         }}
@@ -301,54 +366,74 @@ const IkigaiResults = ({
 
                 {/* Recommended trainings */}
                 {recommendedScenarios.length > 0 && (
-                  <div className="border-t border-gray-200 pt-4 mt-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <GraduationCap size={18} className="text-gray-500" />
-                      <span className="font-semibold text-gray-700">
+                  <div style={{ borderTop: `1px solid ${b.borderColor}`, paddingTop: b.space[4], marginTop: b.space[4] }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], marginBottom: b.space[3] }}>
+                      <GraduationCap size={18} style={{ color: b.textMuted }} />
+                      <span style={{ fontWeight: b.fontWeight.semibold, color: b.textSecondary }}>
                         Passende Trainings:
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                        gap: b.space[3],
+                      }}
+                    >
                       {recommendedScenarios.map((scenario, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-white border border-gray-200 hover:border-gray-300 transition-colors cursor-pointer group"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: b.space[3],
+                            padding: b.space[3],
+                            borderRadius: b.radius.xl,
+                            background: b.cardBgColor,
+                            border: `1px solid ${b.borderColor}`,
+                            cursor: 'pointer',
+                          }}
                         >
                           <div
-                            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                             style={{
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: b.radius.lg,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
                               backgroundColor:
                                 scenario.type === 'simulator'
-                                  ? '#3B82F620'
-                                  : '#8B5CF620',
+                                  ? `${b.primaryAccent}15`
+                                  : '#8B5CF615',
                             }}
                           >
                             {scenario.type === 'simulator' ? (
-                              <Target
-                                size={18}
-                                style={{ color: '#3B82F6' }}
-                              />
+                              <Target size={18} style={{ color: b.primaryAccent }} />
                             ) : (
-                              <Play
-                                size={18}
-                                style={{ color: '#8B5CF6' }}
-                              />
+                              <Play size={18} style={{ color: '#8B5CF6' }} />
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-800 truncate">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p
+                              style={{
+                                fontWeight: b.fontWeight.medium,
+                                color: b.textMain,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
                               {scenario.title}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p style={{ fontSize: b.fontSize.xs, color: b.textMuted }}>
                               {scenario.type === 'simulator'
                                 ? 'Szenario-Training'
                                 : 'Live-Simulation'}
                             </p>
                           </div>
-                          <ChevronRight
-                            size={18}
-                            className="text-gray-400 group-hover:text-gray-600 transition-colors"
-                          />
+                          <ChevronRight size={18} style={{ color: b.textMuted }} />
                         </div>
                       ))}
                     </div>
@@ -357,10 +442,10 @@ const IkigaiResults = ({
 
                 {/* No scenarios found */}
                 {!loadingScenarios && recommendedScenarios.length === 0 && (
-                  <div className="border-t border-gray-200 pt-4 mt-4">
-                    <div className="flex items-center gap-2 text-gray-500">
+                  <div style={{ borderTop: `1px solid ${b.borderColor}`, paddingTop: b.space[4], marginTop: b.space[4] }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], color: b.textMuted }}>
                       <GraduationCap size={18} />
-                      <span className="text-sm">
+                      <span style={{ fontSize: b.fontSize.sm }}>
                         Entdecke unsere Trainings im Menü links
                       </span>
                     </div>
@@ -377,46 +462,72 @@ const IkigaiResults = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
-        className="flex flex-col sm:flex-row justify-center gap-4"
+        style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'center',
+          gap: b.space[4],
+        }}
       >
-        <button
+        <Button
           onClick={onEdit}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium border-2 transition-all hover:scale-105"
+          variant="outline"
           style={{
-            borderColor: branding.colors?.primary || '#6366F1',
-            color: branding.colors?.primary || '#6366F1',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: b.space[2],
+            padding: `${b.space[3]} ${b.space[6]}`,
+            borderRadius: b.radius.xl,
+            fontWeight: b.fontWeight.medium,
+            borderWidth: '2px',
+            borderColor: b.primaryAccent,
+            color: b.primaryAccent,
+            background: 'transparent',
           }}
         >
           <Edit3 size={20} />
           <span>Anpassen</span>
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onStartNew}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium text-white transition-all hover:scale-105"
           style={{
-            background: 'linear-gradient(135deg, #E11D48, #6366F1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: b.space[2],
+            padding: `${b.space[3]} ${b.space[6]}`,
+            borderRadius: b.radius.xl,
+            fontWeight: b.fontWeight.medium,
+            color: 'white',
+            background: b.headerGradient,
+            boxShadow: b.shadow.md,
           }}
         >
           <RefreshCw size={20} />
           <span>Neu starten</span>
-        </button>
+        </Button>
       </motion.div>
 
       {/* Empty state */}
       {(!synthesisResult?.paths || synthesisResult.paths.length === 0) && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">
+        <div style={{ textAlign: 'center', padding: `${b.space[12]} 0` }}>
+          <p style={{ color: b.textMuted }}>
             Du bist einzigartig - wir brauchen mehr Details, um passende Pfade zu finden.
           </p>
-          <button
+          <Button
             onClick={onEdit}
-            className="mt-4 px-6 py-3 rounded-xl font-medium text-white"
             style={{
-              background: 'linear-gradient(135deg, #E11D48, #6366F1)',
+              marginTop: b.space[4],
+              padding: `${b.space[3]} ${b.space[6]}`,
+              borderRadius: b.radius.xl,
+              fontWeight: b.fontWeight.medium,
+              color: 'white',
+              background: b.headerGradient,
             }}
           >
             Zurück zur Eingabe
-          </button>
+          </Button>
         </div>
       )}
     </div>
