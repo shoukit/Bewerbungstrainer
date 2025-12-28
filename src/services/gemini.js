@@ -572,7 +572,7 @@ Rationaler Score: ${proScore > contraScore ? 'Pro führt' : contraScore > proSco
 
 GENERATION RULES:
 1. "Blind Spot": Welcher Lebensbereich (Gesundheit, Langzeit, Familie, Werte, Finanzen, Karriere, Work-Life-Balance) fehlt? Welche Perspektive wurde nicht berücksichtigt?
-2. "Challenger": Greife das Argument mit der HÖCHSTEN Gewichtung an. Ist es wirklich eine ${Math.max(...pros.map(p => p.weight), ...cons.map(c => c.weight))}/10? Warum könnte diese Bewertung übertrieben oder unterschätzt sein?
+2. "Challenger": Identifiziere das INTERESSANTESTE oder KRITISCHSTE Argument (nicht unbedingt das mit der höchsten Gewichtung). Wähle das Argument, das am meisten hinterfragt werden sollte - vielleicht weil die Bewertung unrealistisch wirkt, wichtige Aspekte ignoriert werden, oder es auf Annahmen basiert die geprüft werden sollten.
 3. "Intuition": Stelle eine systemische Frage (z.B. 10-10-10 Methode: Wie wirst du in 10 Minuten/10 Monaten/10 Jahren darüber denken? Oder: Was würdest du einem Freund in dieser Situation raten?), um das Bauchgefühl zu prüfen.
 
 WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Markdown, kein Intro, keine Erklärung außerhalb des JSON.

@@ -61,6 +61,21 @@ const CardSkeleton = ({ b }) => (
 );
 
 /**
+ * Parse markdown bold (**text**) and return React elements
+ */
+const parseMarkdownBold = (text) => {
+  if (!text) return text;
+
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
+/**
  * AI Coaching Card Component
  * Renders structured content with bullet points
  */
@@ -165,7 +180,7 @@ const CoachingCard = ({ card, index, b }) => {
             Reflexionsfrage:
           </span>
           <span style={{ fontSize: b.fontSize.md, fontWeight: b.fontWeight.semibold, color: b.textMain, fontStyle: 'italic' }}>
-            {card.question}
+            {parseMarkdownBold(card.question)}
           </span>
         </div>
       )}
@@ -198,7 +213,7 @@ const CoachingCard = ({ card, index, b }) => {
               marginTop: '8px',
               flexShrink: 0,
             }} />
-            <span>{point}</span>
+            <span>{parseMarkdownBold(point)}</span>
           </li>
         ))}
       </ul>
