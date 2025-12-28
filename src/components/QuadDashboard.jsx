@@ -11,6 +11,7 @@ import {
   Mic,
   Video,
   Zap,
+  ChevronRight,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -21,15 +22,7 @@ import { getRecentActivities } from '@/services/wordpress-api';
  * QuadDashboard - Homepage with two-zone layout
  *
  * Zone A: Strategy Suite (Phase 1) - 3 cards
- *   1. Orientierung (Ikigai)
- *   2. Entscheiden (Decision Navigator)
- *   3. Vorbereiten (Smart Briefing)
- *
  * Zone B: Training Arena (Phase 2) - 2x2 grid
- *   1. Szenario Training (Chat)
- *   2. Live Simulation (Voice)
- *   3. Wirkungsanalyse (Video)
- *   4. Rhetorik Gym (Drills)
  */
 const QuadDashboard = ({ onNavigate }) => {
   const { branding, user } = usePartner();
@@ -78,11 +71,11 @@ const QuadDashboard = ({ onNavigate }) => {
       step: '1',
       title: 'Orientierung',
       subtitle: 'Ikigai-Kompass',
-      description: 'Wohin willst du? Finde den Schnittpunkt deiner Talente.',
+      description: 'Finde den Schnittpunkt deiner Talente, Leidenschaften und Möglichkeiten.',
       icon: Compass,
       color: COLORS.purple[500],
       bgLight: COLORS.purple[50],
-      gradient: `linear-gradient(135deg, ${COLORS.purple[500]} 0%, ${COLORS.purple[600]} 100%)`,
+      gradient: `linear-gradient(135deg, ${COLORS.purple[400]} 0%, ${COLORS.purple[600]} 100%)`,
       route: 'ikigai',
     },
     {
@@ -90,11 +83,11 @@ const QuadDashboard = ({ onNavigate }) => {
       step: '2',
       title: 'Entscheiden',
       subtitle: 'Decision-Navigator',
-      description: 'Dilemma lösen. KI-gestützte Pro & Contra Analyse.',
+      description: 'Löse dein Dilemma mit KI-gestützter Pro & Contra Analyse.',
       icon: Scale,
       color: COLORS.blue[500],
       bgLight: COLORS.blue[50],
-      gradient: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.blue[600]} 100%)`,
+      gradient: `linear-gradient(135deg, ${COLORS.blue[400]} 0%, ${COLORS.blue[600]} 100%)`,
       route: 'decision_board',
     },
     {
@@ -102,11 +95,11 @@ const QuadDashboard = ({ onNavigate }) => {
       step: '3',
       title: 'Vorbereiten',
       subtitle: 'Smart Briefing',
-      description: 'Dein Schlachtplan. Erstelle Leitfäden für Termine.',
+      description: 'Erstelle deinen Schlachtplan mit personalisierten Leitfäden.',
       icon: FileText,
       color: COLORS.amber[500],
       bgLight: COLORS.amber[50],
-      gradient: `linear-gradient(135deg, ${COLORS.amber[500]} 0%, ${COLORS.amber[600]} 100%)`,
+      gradient: `linear-gradient(135deg, ${COLORS.amber[400]} 0%, ${COLORS.amber[600]} 100%)`,
       route: 'smart_briefing',
     },
   ];
@@ -117,48 +110,48 @@ const QuadDashboard = ({ onNavigate }) => {
       id: 'simulator',
       title: 'Szenario Training',
       subtitle: 'Chat-Simulation',
-      description: 'Löse Konflikte und Cases im Messenger-Stil.',
+      description: 'Übe Konflikte und Cases im Messenger-Stil.',
       icon: MessageSquare,
       tag: 'Text-Chat',
       color: COLORS.green[500],
       bgLight: COLORS.green[50],
-      gradient: `linear-gradient(135deg, ${COLORS.green[500]} 0%, ${COLORS.green[600]} 100%)`,
+      gradient: `linear-gradient(135deg, ${COLORS.green[400]} 0%, ${COLORS.teal[500]} 100%)`,
       route: 'simulator',
     },
     {
       id: 'roleplay',
       title: 'Live Simulation',
       subtitle: 'Voice-Roleplay',
-      description: 'Echtzeit-Gespräche. Sprich laut mit der KI.',
+      description: 'Führe Echtzeit-Gespräche mit der KI.',
       icon: Mic,
       tag: 'Voice-KI',
-      color: COLORS.amber[600],
+      color: COLORS.amber[500],
       bgLight: COLORS.amber[50],
-      gradient: `linear-gradient(135deg, ${COLORS.amber[500]} 0%, ${COLORS.red[500]} 100%)`,
+      gradient: `linear-gradient(135deg, ${COLORS.amber[400]} 0%, ${COLORS.red[400]} 100%)`,
       route: 'dashboard',
     },
     {
       id: 'video',
       title: 'Wirkungsanalyse',
       subtitle: 'Video-Feedback',
-      description: 'Analysiere deine Präsenz, Mimik und Gestik.',
+      description: 'Analysiere Präsenz, Mimik und Gestik.',
       icon: Video,
       tag: 'Video-KI',
       color: COLORS.red[500],
       bgLight: COLORS.red[50],
-      gradient: `linear-gradient(135deg, ${COLORS.red[500]} 0%, ${COLORS.purple[500]} 100%)`,
+      gradient: `linear-gradient(135deg, ${COLORS.red[400]} 0%, ${COLORS.purple[500]} 100%)`,
       route: 'video_training',
     },
     {
       id: 'gym',
       title: 'Rhetorik Gym',
       subtitle: 'Speed-Drills',
-      description: 'Tägliche Übungen für Schlagfertigkeit & Stimme.',
+      description: 'Trainiere Schlagfertigkeit und Stimme.',
       icon: Zap,
       tag: 'Drills',
-      color: COLORS.purple[600],
+      color: COLORS.purple[500],
       bgLight: COLORS.purple[50],
-      gradient: `linear-gradient(135deg, ${COLORS.purple[600]} 0%, ${COLORS.blue[600]} 100%)`,
+      gradient: `linear-gradient(135deg, ${COLORS.purple[500]} 0%, ${COLORS.blue[500]} 100%)`,
       route: 'gym_klassiker',
     },
   ];
@@ -169,18 +162,18 @@ const QuadDashboard = ({ onNavigate }) => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.1,
+        staggerChildren: 0.1,
+        delayChildren: 0.15,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 24 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.4, ease: 'easeOut' },
+      transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
     },
   };
 
@@ -194,13 +187,10 @@ const QuadDashboard = ({ onNavigate }) => {
   const formatActivityDate = (dateString) => {
     if (!dateString) return '';
 
-    // Handle MySQL format "YYYY-MM-DD HH:MM:SS" - append 'Z' for UTC if no timezone
     let normalizedDate = dateString;
     if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
-      // MySQL format without timezone - WordPress stores UTC
       normalizedDate = dateString.replace(' ', 'T') + 'Z';
     } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dateString)) {
-      // ISO format without timezone
       normalizedDate = dateString + 'Z';
     }
 
@@ -234,23 +224,38 @@ const QuadDashboard = ({ onNavigate }) => {
     return labels[type] || type;
   };
 
-  return (
-    <div className="min-h-screen py-6 lg:py-10 px-4 lg:px-6">
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+  // Get activity color
+  const getActivityColor = (type) => {
+    const colors = {
+      briefing: COLORS.amber[500],
+      simulator: COLORS.green[500],
+      video: COLORS.red[500],
+      roleplay: COLORS.amber[600],
+      game: COLORS.purple[500],
+      ikigai: COLORS.purple[500],
+      decision: COLORS.blue[500],
+    };
+    return colors[type] || COLORS.slate[400];
+  };
 
-        {/* HEADER - Centered */}
+  return (
+    <div className="min-h-screen py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+
+        {/* HEADER */}
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+          className="text-center mb-14"
         >
           <h1 style={{
-            fontSize: 'clamp(28px, 5vw, 42px)',
+            fontSize: 'clamp(26px, 4.5vw, 38px)',
             fontWeight: 800,
             color: COLORS.slate[900],
-            marginBottom: '8px',
+            marginBottom: '12px',
             lineHeight: 1.2,
+            letterSpacing: '-0.02em',
           }}>
             {firstName ? (
               <>
@@ -263,7 +268,7 @@ const QuadDashboard = ({ onNavigate }) => {
                 }}>
                   {firstName}
                 </span>
-                , wo stehst du gerade?
+                , wo stehst du?
               </>
             ) : (
               <>
@@ -282,39 +287,42 @@ const QuadDashboard = ({ onNavigate }) => {
           <p style={{
             fontSize: 'clamp(15px, 2vw, 17px)',
             color: COLORS.slate[500],
-            maxWidth: '500px',
+            maxWidth: '420px',
             margin: '0 auto',
+            lineHeight: 1.6,
           }}>
             Erst denken, dann handeln. Wähle deine Phase.
           </p>
         </motion.header>
 
-        {/* ZONE A: STRATEGIE SUITE (Phase 1) */}
+        {/* ZONE A: STRATEGIE */}
         <motion.section
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="mb-12"
+          style={{ marginBottom: '48px' }}
         >
           {/* Section Header */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            marginBottom: '20px',
+            gap: '14px',
+            marginBottom: '24px',
           }}>
             <span style={{
-              background: COLORS.slate[100],
-              color: COLORS.slate[600],
-              padding: '6px 12px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 600,
+              background: `linear-gradient(135deg, ${COLORS.slate[100]} 0%, ${COLORS.slate[200]} 100%)`,
+              color: COLORS.slate[700],
+              padding: '8px 14px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
             }}>
               Phase 1
             </span>
             <h2 style={{
-              fontSize: '20px',
+              fontSize: '18px',
               fontWeight: 700,
               color: COLORS.slate[800],
               margin: 0,
@@ -323,51 +331,66 @@ const QuadDashboard = ({ onNavigate }) => {
             </h2>
           </div>
 
-          {/* Strategy Cards - 3 columns */}
+          {/* Strategy Cards */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '20px',
-          }}>
+          }}
+          className="strategy-grid"
+          >
             {strategyCards.map((card) => (
               <motion.div
                 key={card.id}
                 variants={itemVariants}
-                whileHover={{ scale: 1.02, y: -4 }}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleNavigate(card.route)}
                 style={{
                   background: 'white',
-                  borderRadius: '16px',
-                  padding: '24px',
+                  borderRadius: '20px',
+                  padding: '28px',
                   cursor: 'pointer',
-                  border: `1px solid ${COLORS.slate[200]}`,
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                  transition: 'all 0.3s ease',
+                  border: `1px solid ${COLORS.slate[100]}`,
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
                   position: 'relative',
+                  overflow: 'hidden',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = `0 12px 24px -8px ${card.color}30`;
-                  e.currentTarget.style.borderColor = card.color;
+                  e.currentTarget.style.boxShadow = `0 20px 40px -12px ${card.color}25`;
+                  e.currentTarget.style.borderColor = `${card.color}30`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                  e.currentTarget.style.borderColor = COLORS.slate[200];
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.04)';
+                  e.currentTarget.style.borderColor = COLORS.slate[100];
                 }}
               >
+                {/* Background Accent */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-30px',
+                  right: '-30px',
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  background: `${card.color}08`,
+                  pointerEvents: 'none',
+                }} />
+
                 {/* Step Badge */}
                 <div style={{
                   position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '8px',
+                  top: '20px',
+                  right: '20px',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '10px',
                   background: card.bgLight,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '13px',
+                  fontSize: '14px',
                   fontWeight: 700,
                   color: card.color,
                 }}>
@@ -376,45 +399,44 @@ const QuadDashboard = ({ onNavigate }) => {
 
                 {/* Icon */}
                 <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '16px',
                   background: card.gradient,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '16px',
-                  boxShadow: `0 6px 12px -3px ${card.color}40`,
+                  marginBottom: '20px',
+                  boxShadow: `0 8px 20px -4px ${card.color}40`,
                 }}>
-                  <card.icon style={{ width: '24px', height: '24px', color: 'white' }} />
+                  <card.icon style={{ width: '26px', height: '26px', color: 'white' }} />
                 </div>
 
-                {/* Title */}
+                {/* Content */}
                 <h3 style={{
-                  fontSize: '18px',
+                  fontSize: '20px',
                   fontWeight: 700,
                   color: COLORS.slate[900],
-                  marginBottom: '4px',
+                  marginBottom: '6px',
                 }}>
                   {card.title}
                 </h3>
 
-                {/* Subtitle */}
                 <p style={{
                   fontSize: '13px',
-                  fontWeight: 500,
+                  fontWeight: 600,
                   color: card.color,
-                  marginBottom: '8px',
+                  marginBottom: '10px',
                 }}>
                   {card.subtitle}
                 </p>
 
-                {/* Description */}
                 <p style={{
                   fontSize: '14px',
-                  color: COLORS.slate[600],
-                  lineHeight: 1.5,
+                  color: COLORS.slate[500],
+                  lineHeight: 1.6,
                   margin: 0,
+                  minHeight: '44px',
                 }}>
                   {card.description}
                 </p>
@@ -423,44 +445,58 @@ const QuadDashboard = ({ onNavigate }) => {
                 <div style={{
                   display: 'flex',
                   justifyContent: 'flex-end',
-                  marginTop: '16px',
+                  marginTop: '20px',
                 }}>
-                  <ArrowRight style={{
-                    width: '18px',
-                    height: '18px',
-                    color: COLORS.slate[400],
-                  }} />
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '10px',
+                    background: COLORS.slate[50],
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                  }}>
+                    <ArrowRight style={{
+                      width: '16px',
+                      height: '16px',
+                      color: COLORS.slate[400],
+                    }} />
+                  </div>
                 </div>
               </motion.div>
             ))}
           </div>
         </motion.section>
 
-        {/* ZONE B: TRAININGS-ARENA (Phase 2) */}
+        {/* ZONE B: TRAINING */}
         <motion.section
           variants={containerVariants}
           initial="hidden"
           animate="visible"
+          style={{ marginBottom: '48px' }}
         >
           {/* Section Header */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            marginBottom: '20px',
+            gap: '14px',
+            marginBottom: '24px',
           }}>
             <span style={{
-              background: COLORS.green[100],
+              background: `linear-gradient(135deg, ${COLORS.green[50]} 0%, ${COLORS.green[100]} 100%)`,
               color: COLORS.green[700],
-              padding: '6px 12px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 600,
+              padding: '8px 14px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
             }}>
               Phase 2
             </span>
             <h2 style={{
-              fontSize: '20px',
+              fontSize: '18px',
               fontWeight: 700,
               color: COLORS.slate[800],
               margin: 0,
@@ -472,66 +508,73 @@ const QuadDashboard = ({ onNavigate }) => {
           {/* Training Cards - 2x2 Grid */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gridTemplateColumns: 'repeat(2, 1fr)',
             gap: '20px',
-          }}>
+          }}
+          className="training-grid"
+          >
             {trainingCards.map((card) => (
               <motion.div
                 key={card.id}
                 variants={itemVariants}
-                whileHover={{ scale: 1.02, y: -4 }}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleNavigate(card.route)}
                 style={{
                   background: 'white',
-                  borderRadius: '16px',
-                  padding: '24px',
+                  borderRadius: '20px',
+                  padding: '26px',
                   cursor: 'pointer',
-                  border: `1px solid ${COLORS.slate[200]}`,
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                  transition: 'all 0.3s ease',
+                  border: `1px solid ${COLORS.slate[100]}`,
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
                   position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = `0 12px 24px -8px ${card.color}30`;
-                  e.currentTarget.style.borderColor = card.color;
+                  e.currentTarget.style.boxShadow = `0 20px 40px -12px ${card.color}25`;
+                  e.currentTarget.style.borderColor = `${card.color}30`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                  e.currentTarget.style.borderColor = COLORS.slate[200];
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.04)';
+                  e.currentTarget.style.borderColor = COLORS.slate[100];
                 }}
               >
                 {/* Tag Badge */}
                 <div style={{
                   position: 'absolute',
-                  top: '16px',
-                  right: '16px',
+                  top: '18px',
+                  right: '18px',
                   background: card.bgLight,
                   color: card.color,
-                  padding: '4px 10px',
-                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
                   fontSize: '11px',
-                  fontWeight: 600,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.3px',
                 }}>
                   {card.tag}
                 </div>
 
                 {/* Icon */}
                 <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '14px',
                   background: card.gradient,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '16px',
-                  boxShadow: `0 6px 12px -3px ${card.color}40`,
+                  marginBottom: '18px',
+                  boxShadow: `0 8px 20px -4px ${card.color}40`,
                 }}>
                   <card.icon style={{ width: '24px', height: '24px', color: 'white' }} />
                 </div>
 
-                {/* Title */}
+                {/* Content */}
                 <h3 style={{
                   fontSize: '18px',
                   fontWeight: 700,
@@ -541,22 +584,21 @@ const QuadDashboard = ({ onNavigate }) => {
                   {card.title}
                 </h3>
 
-                {/* Subtitle */}
                 <p style={{
                   fontSize: '13px',
-                  fontWeight: 500,
+                  fontWeight: 600,
                   color: card.color,
                   marginBottom: '8px',
                 }}>
                   {card.subtitle}
                 </p>
 
-                {/* Description */}
                 <p style={{
                   fontSize: '14px',
-                  color: COLORS.slate[600],
+                  color: COLORS.slate[500],
                   lineHeight: 1.5,
                   margin: 0,
+                  flex: 1,
                 }}>
                   {card.description}
                 </p>
@@ -567,11 +609,21 @@ const QuadDashboard = ({ onNavigate }) => {
                   justifyContent: 'flex-end',
                   marginTop: '16px',
                 }}>
-                  <ArrowRight style={{
-                    width: '18px',
-                    height: '18px',
-                    color: COLORS.slate[400],
-                  }} />
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '10px',
+                    background: COLORS.slate[50],
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <ArrowRight style={{
+                      width: '16px',
+                      height: '16px',
+                      color: COLORS.slate[400],
+                    }} />
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -583,39 +635,86 @@ const QuadDashboard = ({ onNavigate }) => {
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
-            className="mt-12"
+            transition={{ delay: 0.6, duration: 0.5 }}
           >
             <div style={{
-              borderTop: `1px solid ${COLORS.slate[200]}`,
-              paddingTop: '32px',
+              background: 'white',
+              borderRadius: '20px',
+              padding: '28px',
+              border: `1px solid ${COLORS.slate[100]}`,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
             }}>
-              <h3 style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                color: COLORS.slate[400],
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '16px',
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                justifyContent: 'space-between',
+                marginBottom: '20px',
               }}>
-                <Clock style={{ width: '14px', height: '14px' }} />
-                Deine letzten Aktivitäten
-              </h3>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: COLORS.slate[100],
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Clock style={{ width: '18px', height: '18px', color: COLORS.slate[500] }} />
+                  </div>
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: COLORS.slate[800],
+                    margin: 0,
+                  }}>
+                    Letzte Aktivitäten
+                  </h3>
+                </div>
+                <button
+                  onClick={() => handleNavigate('history')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: primaryAccent,
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '6px 10px',
+                    borderRadius: '8px',
+                    transition: 'background 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = COLORS.slate[50];
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'none';
+                  }}
+                >
+                  Alle ansehen
+                  <ChevronRight style={{ width: '16px', height: '16px' }} />
+                </button>
+              </div>
 
               {loadingActivities ? (
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '12px',
-                  padding: '16px',
+                  padding: '32px',
                   color: COLORS.slate[500],
                 }}>
                   <div className="animate-spin" style={{
-                    width: '16px',
-                    height: '16px',
+                    width: '20px',
+                    height: '20px',
                     border: `2px solid ${COLORS.slate[200]}`,
                     borderTopColor: primaryAccent,
                     borderRadius: '50%',
@@ -624,11 +723,11 @@ const QuadDashboard = ({ onNavigate }) => {
                 </div>
               ) : (
                 <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-                  gap: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
                 }}>
-                  {recentActivities.slice(0, 6).map((activity, index) => (
+                  {recentActivities.slice(0, 5).map((activity, index) => (
                     <motion.div
                       key={activity.id || index}
                       initial={{ opacity: 0, x: -10 }}
@@ -638,32 +737,35 @@ const QuadDashboard = ({ onNavigate }) => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        padding: '12px 16px',
+                        padding: '14px 16px',
                         background: COLORS.slate[50],
-                        borderRadius: '10px',
+                        borderRadius: '12px',
                         cursor: 'pointer',
-                        transition: 'background 0.2s ease',
+                        transition: 'all 0.2s ease',
+                        border: '1px solid transparent',
                       }}
                       onClick={() => handleNavigate('history')}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = COLORS.slate[100];
+                        e.currentTarget.style.background = 'white';
+                        e.currentTarget.style.borderColor = COLORS.slate[200];
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = COLORS.slate[50];
+                        e.currentTarget.style.borderColor = 'transparent';
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, flex: 1 }}>
                         <div style={{
-                          width: '8px',
-                          height: '8px',
+                          width: '10px',
+                          height: '10px',
                           borderRadius: '50%',
-                          background: primaryAccent,
+                          background: getActivityColor(activity.type),
                           flexShrink: 0,
                         }} />
-                        <div style={{ minWidth: 0 }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
                           <p style={{
                             fontSize: '14px',
-                            fontWeight: 500,
+                            fontWeight: 600,
                             color: COLORS.slate[800],
                             margin: 0,
                             overflow: 'hidden',
@@ -684,8 +786,9 @@ const QuadDashboard = ({ onNavigate }) => {
                       <span style={{
                         fontSize: '12px',
                         color: COLORS.slate[400],
+                        fontWeight: 500,
                         flexShrink: 0,
-                        marginLeft: '12px',
+                        marginLeft: '16px',
                       }}>
                         {formatActivityDate(activity.created_at || activity.date)}
                       </span>
@@ -704,30 +807,72 @@ const QuadDashboard = ({ onNavigate }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.4 }}
             style={{
-              marginTop: '48px',
               textAlign: 'center',
-              padding: '32px',
-              background: `linear-gradient(135deg, ${COLORS.slate[50]} 0%, ${COLORS.blue[50]} 100%)`,
-              borderRadius: '16px',
-              border: `1px solid ${COLORS.slate[200]}`,
+              padding: '40px 32px',
+              background: 'white',
+              borderRadius: '20px',
+              border: `1px solid ${COLORS.slate[100]}`,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
             }}
           >
-            <TrendingUp style={{
-              width: '32px',
-              height: '32px',
-              color: COLORS.slate[400],
-              margin: '0 auto 12px',
-            }} />
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '16px',
+              background: `linear-gradient(135deg, ${COLORS.blue[50]} 0%, ${COLORS.purple[50]} 100%)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px',
+            }}>
+              <TrendingUp style={{
+                width: '28px',
+                height: '28px',
+                color: COLORS.blue[500],
+              }} />
+            </div>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: 700,
+              color: COLORS.slate[800],
+              marginBottom: '8px',
+            }}>
+              Verfolge deinen Fortschritt
+            </h3>
             <p style={{
-              fontSize: '15px',
-              color: COLORS.slate[600],
+              fontSize: '14px',
+              color: COLORS.slate[500],
               margin: 0,
+              maxWidth: '360px',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              lineHeight: 1.6,
             }}>
               Melde dich an, um deinen Fortschritt zu speichern und personalisierte Empfehlungen zu erhalten.
             </p>
           </motion.div>
         )}
       </div>
+
+      {/* Responsive CSS */}
+      <style>{`
+        @media (max-width: 900px) {
+          .strategy-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .training-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (min-width: 901px) and (max-width: 1100px) {
+          .strategy-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+          }
+          .training-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
