@@ -212,23 +212,26 @@ const IkigaiCompass = ({
   };
 
   /**
-   * Render desktop Venn diagram circle
+   * Render desktop Venn diagram circle using CSS Grid positioning
    */
-  const renderDesktopCircle = (key, config, position) => {
+  const renderDesktopCircle = (key, config, gridArea) => {
     const Icon = DIMENSION_ICONS[key];
     const isFilled = hasTags(key);
     const tags = dimensions[key]?.tags || [];
+    const circleSize = 'min(200px, 22vw)';
 
     return (
       <motion.div
         key={key}
-        className="absolute cursor-pointer"
         style={{
-          width: '200px',
-          height: '200px',
-          ...position,
+          gridArea,
+          width: circleSize,
+          height: circleSize,
+          cursor: 'pointer',
+          justifySelf: gridArea === 'love' || gridArea === 'need' ? 'end' : 'start',
+          alignSelf: gridArea === 'love' || gridArea === 'talent' ? 'end' : 'start',
         }}
-        whileHover={{ scale: 1.05 }}
+        whileHover={{ scale: 1.03, zIndex: 10 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => handleCircleClick(key)}
       >
@@ -244,47 +247,51 @@ const IkigaiCompass = ({
             background: isFilled ? `${config.color}25` : `${config.color}10`,
             border: `3px solid ${isFilled ? config.color : `${config.color}40`}`,
             boxShadow: isFilled ? b.coloredShadow(config.color, 'md') : 'none',
-            transition: 'all 0.3s ease',
+            transition: 'background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease',
           }}
         >
-          <Icon size={32} style={{ color: config.color, marginBottom: b.space[2] }} />
-          <span style={{ fontWeight: b.fontWeight.semibold, fontSize: b.fontSize.base, color: config.color }}>
+          <Icon size={28} style={{ color: config.color, marginBottom: b.space[1] }} />
+          <span style={{ fontWeight: b.fontWeight.semibold, fontSize: b.fontSize.sm, color: config.color }}>
             {config.label}
           </span>
-          <span style={{ fontSize: b.fontSize.xs, color: `${config.color}99`, textAlign: 'center', padding: `0 ${b.space[3]}` }}>
+          <span style={{ fontSize: '11px', color: `${config.color}99`, textAlign: 'center', padding: `0 ${b.space[2]}` }}>
             {config.description}
           </span>
 
           {/* Tags preview */}
           {isFilled && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px', marginTop: b.space[2], padding: `0 ${b.space[2]}`, maxHeight: '50px', overflow: 'hidden' }}>
-              {tags.slice(0, 3).map((tag, idx) => (
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3px', marginTop: b.space[1], padding: `0 ${b.space[1]}`, maxHeight: '44px', overflow: 'hidden' }}>
+              {tags.slice(0, 2).map((tag, idx) => (
                 <span
                   key={idx}
                   style={{
-                    padding: '2px 8px',
+                    padding: '2px 6px',
                     borderRadius: b.radius.full,
-                    fontSize: b.fontSize.xs,
+                    fontSize: '10px',
                     fontWeight: b.fontWeight.medium,
                     background: config.color,
                     color: 'white',
+                    maxWidth: '70px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {tag}
                 </span>
               ))}
-              {tags.length > 3 && (
+              {tags.length > 2 && (
                 <span
                   style={{
-                    padding: '2px 8px',
+                    padding: '2px 6px',
                     borderRadius: b.radius.full,
-                    fontSize: b.fontSize.xs,
+                    fontSize: '10px',
                     fontWeight: b.fontWeight.medium,
                     background: `${config.color}30`,
                     color: config.color,
                   }}
                 >
-                  +{tags.length - 3}
+                  +{tags.length - 2}
                 </span>
               )}
             </div>
@@ -294,12 +301,12 @@ const IkigaiCompass = ({
     );
   };
 
-  // Desktop circle positions for Venn diagram
-  const desktopPositions = {
-    love: { top: '0', left: '80px' },
-    talent: { top: '0', right: '80px' },
-    need: { bottom: '0', left: '0' },
-    market: { bottom: '0', right: '0' },
+  // Grid areas for Venn diagram layout
+  const gridAreas = {
+    love: 'love',
+    talent: 'talent',
+    need: 'need',
+    market: 'market',
   };
 
   return (
@@ -348,72 +355,167 @@ const IkigaiCompass = ({
 
       {/* Mobile: Card Grid */}
       {isMobile ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3], marginBottom: b.space[6] }}>
-          {Object.entries(DIMENSIONS).map(([key, config]) => renderMobileCircle(key, config))}
-        </div>
-      ) : (
-        /* Desktop: Venn Diagram */
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            maxWidth: '500px',
-            height: '420px',
-            margin: `0 auto ${b.space[8]}`,
-          }}
-        >
-          {Object.entries(DIMENSIONS).map(([key, config]) =>
-            renderDesktopCircle(key, config, desktopPositions[key])
-          )}
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3], marginBottom: b.space[4] }}>
+            {Object.entries(DIMENSIONS).map(([key, config]) => renderMobileCircle(key, config))}
+          </div>
 
-          {/* Center "Ikigai" indicator */}
-          <motion.div
+          {/* Synthesize button - directly after mobile cards */}
+          {allDimensionsFilled && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ display: 'flex', justifyContent: 'center', marginBottom: b.space[6] }}
+            >
+              <Button
+                onClick={onSynthesize}
+                disabled={isSynthesizing}
+                size="lg"
+                style={{
+                  background: b.headerGradient,
+                  color: 'white',
+                  padding: `${b.space[3]} ${b.space[6]}`,
+                  fontSize: b.fontSize.base,
+                  fontWeight: b.fontWeight.semibold,
+                  borderRadius: b.radius.xl,
+                  boxShadow: b.shadow.lg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: b.space[2],
+                  width: '100%',
+                  justifyContent: 'center',
+                }}
+              >
+                {isSynthesizing ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    <span>Analysiere...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={20} />
+                    <span>Mein Ikigai finden</span>
+                    <ArrowRight size={20} />
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          )}
+        </>
+      ) : (
+        /* Desktop: Venn Diagram with CSS Grid */
+        <>
+          <div
             style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 10,
-            }}
-            animate={{
-              scale: allDimensionsFilled ? [1, 1.05, 1] : 1,
-            }}
-            transition={{
-              duration: 2,
-              repeat: allDimensionsFilled ? Infinity : 0,
-              ease: 'easeInOut',
+              display: 'grid',
+              gridTemplateAreas: `
+                "love talent"
+                "center center"
+                "need market"
+              `,
+              gridTemplateColumns: '1fr 1fr',
+              gridTemplateRows: 'auto auto auto',
+              gap: '-30px',
+              width: '100%',
+              maxWidth: '480px',
+              margin: '0 auto',
+              marginBottom: b.space[4],
             }}
           >
-            <div
+            {Object.entries(DIMENSIONS).map(([key, config]) =>
+              renderDesktopCircle(key, config, gridAreas[key])
+            )}
+
+            {/* Center "Ikigai" indicator */}
+            <motion.div
               style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: b.radius.full,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: allDimensionsFilled
-                  ? b.headerGradient
-                  : b.cardBgHover,
-                boxShadow: allDimensionsFilled ? b.shadow.lg : b.shadow.sm,
-                border: `2px solid ${allDimensionsFilled ? 'transparent' : b.borderColor}`,
+                gridArea: 'center',
+                justifySelf: 'center',
+                alignSelf: 'center',
+                zIndex: 10,
+                marginTop: '-50px',
+                marginBottom: '-50px',
+              }}
+              animate={{
+                scale: allDimensionsFilled ? [1, 1.05, 1] : 1,
+              }}
+              transition={{
+                duration: 2,
+                repeat: allDimensionsFilled ? Infinity : 0,
+                ease: 'easeInOut',
               }}
             >
-              <span style={{
-                color: allDimensionsFilled ? 'white' : b.textMuted,
-                fontWeight: b.fontWeight.bold,
-                fontSize: b.fontSize.base,
-              }}>
-                {allDimensionsFilled ? 'Ikigai' : `${filledCount}/4`}
-              </span>
-            </div>
-          </motion.div>
-        </div>
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: b.radius.full,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: allDimensionsFilled
+                    ? b.headerGradient
+                    : b.cardBgHover,
+                  boxShadow: allDimensionsFilled ? b.shadow.lg : b.shadow.sm,
+                  border: `2px solid ${allDimensionsFilled ? 'transparent' : b.borderColor}`,
+                }}
+              >
+                <span style={{
+                  color: allDimensionsFilled ? 'white' : b.textMuted,
+                  fontWeight: b.fontWeight.bold,
+                  fontSize: b.fontSize.base,
+                }}>
+                  {allDimensionsFilled ? 'Ikigai' : `${filledCount}/4`}
+                </span>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Synthesize button - right after circles on desktop */}
+          {allDimensionsFilled && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ display: 'flex', justifyContent: 'center', marginBottom: b.space[6] }}
+            >
+              <Button
+                onClick={onSynthesize}
+                disabled={isSynthesizing}
+                size="lg"
+                style={{
+                  background: b.headerGradient,
+                  color: 'white',
+                  padding: `${b.space[4]} ${b.space[8]}`,
+                  fontSize: b.fontSize.lg,
+                  fontWeight: b.fontWeight.semibold,
+                  borderRadius: b.radius.xl,
+                  boxShadow: b.shadow.lg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: b.space[3],
+                }}
+              >
+                {isSynthesizing ? (
+                  <>
+                    <Loader2 className="animate-spin" size={24} />
+                    <span>Analysiere dein Ikigai...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={24} />
+                    <span>Mein Ikigai finden</span>
+                    <ArrowRight size={24} />
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          )}
+        </>
       )}
 
-      {/* Tags display and edit area (Desktop only when not mobile) */}
+      {/* Tags display and edit area (Desktop only) */}
       {!isMobile && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: b.space[4], marginBottom: b.space[6] }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: b.space[4] }}>
           {Object.entries(DIMENSIONS).map(([key, config]) => {
             const tags = dimensions[key]?.tags || [];
             if (tags.length === 0) return null;
@@ -485,46 +587,6 @@ const IkigaiCompass = ({
             );
           })}
         </div>
-      )}
-
-      {/* Synthesize button */}
-      {allDimensionsFilled && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{ display: 'flex', justifyContent: 'center' }}
-        >
-          <Button
-            onClick={onSynthesize}
-            disabled={isSynthesizing}
-            size="lg"
-            style={{
-              background: b.headerGradient,
-              color: 'white',
-              padding: `${b.space[4]} ${b.space[8]}`,
-              fontSize: b.fontSize.lg,
-              fontWeight: b.fontWeight.semibold,
-              borderRadius: b.radius.xl,
-              boxShadow: b.shadow.lg,
-              display: 'flex',
-              alignItems: 'center',
-              gap: b.space[3],
-            }}
-          >
-            {isSynthesizing ? (
-              <>
-                <Loader2 className="animate-spin" size={24} />
-                <span>Analysiere dein Ikigai...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={24} />
-                <span>Mein Ikigai finden</span>
-                <ArrowRight size={24} />
-              </>
-            )}
-          </Button>
-        </motion.div>
       )}
 
       {/* Chat overlay for dimension input */}

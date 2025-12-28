@@ -49,7 +49,51 @@ import { formatDateTime, formatDuration } from '@/utils/formatting';
 import { BRIEFING_ICON_MAP, getBriefingIcon } from '@/utils/iconMaps';
 import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
 import { BriefingCard, SessionCard, DecisionCard, IkigaiCard } from '@/components/session-history';
+import IkigaiCompass from '@/components/ikigai/IkigaiCompass';
+import IkigaiResults from '@/components/ikigai/IkigaiResults';
 import { Scale, Compass } from 'lucide-react';
+
+/**
+ * Dimension configuration for Ikigai
+ */
+const IKIGAI_DIMENSIONS = {
+  love: {
+    key: 'love',
+    label: 'Liebe',
+    icon: '❤️',
+    color: '#E11D48',
+    question: 'Vergiss mal Geld und Karriere. Bei welchen Tätigkeiten vergisst du die Zeit?',
+    placeholder: 'Erzähle mir, was du wirklich liebst zu tun...',
+    description: 'Was du liebst',
+  },
+  talent: {
+    key: 'talent',
+    label: 'Talent',
+    icon: '⭐',
+    color: '#F59E0B',
+    question: 'Worin bist du richtig gut? Was fällt dir leicht, während andere damit kämpfen?',
+    placeholder: 'Beschreibe deine Stärken und Fähigkeiten...',
+    description: 'Worin du gut bist',
+  },
+  need: {
+    key: 'need',
+    label: 'Welt',
+    icon: '🌍',
+    color: '#10B981',
+    question: 'Welche Probleme der Welt würdest du gerne lösen? Wo siehst du Bedarf?',
+    placeholder: 'Welchen Beitrag möchtest du leisten...',
+    description: 'Was die Welt braucht',
+  },
+  market: {
+    key: 'market',
+    label: 'Markt',
+    icon: '💰',
+    color: '#6366F1',
+    question: 'Wofür werden Menschen in deinem Bereich bezahlt? Was ist gefragt?',
+    placeholder: 'Welche Berufe oder Märkte interessieren dich...',
+    description: 'Wofür du bezahlt wirst',
+  },
+};
 
 
 /**
@@ -120,6 +164,17 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Selected decision for detail view
   const [selectedDecision, setSelectedDecision] = useState(null);
   const [decisionAnalysisResult, setDecisionAnalysisResult] = useState(null);
+
+  // Selected ikigai for edit view
+  const [selectedIkigai, setSelectedIkigai] = useState(null);
+  const [ikigaiDimensions, setIkigaiDimensions] = useState({
+    love: { input: '', tags: [] },
+    talent: { input: '', tags: [] },
+    need: { input: '', tags: [] },
+    market: { input: '', tags: [] },
+  });
+  const [ikigaiSynthesisResult, setIkigaiSynthesisResult] = useState(null);
+  const [isIkigaiSynthesizing, setIsIkigaiSynthesizing] = useState(false);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -313,6 +368,131 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     setSelectedDecision(null);
     setDecisionAnalysisResult(null);
   };
+
+  // Handle ikigai click - open edit view with existing data
+  const handleIkigaiClick = (ikigai) => {
+    setSelectedIkigai(ikigai);
+    // Transform ikigai data to dimensions format
+    setIkigaiDimensions({
+      love: { input: ikigai.love_input || '', tags: ikigai.love_tags || [] },
+      talent: { input: ikigai.talent_input || '', tags: ikigai.talent_tags || [] },
+      need: { input: ikigai.need_input || '', tags: ikigai.need_tags || [] },
+      market: { input: ikigai.market_input || '', tags: ikigai.market_tags || [] },
+    });
+    // Set synthesis result if completed
+    if (ikigai.status === 'completed' && ikigai.paths) {
+      setIkigaiSynthesisResult({
+        summary: ikigai.summary,
+        paths: ikigai.paths,
+      });
+    } else {
+      setIkigaiSynthesisResult(null);
+    }
+  };
+
+  // Handle back from ikigai edit
+  const handleBackFromIkigai = () => {
+    setSelectedIkigai(null);
+    setIkigaiDimensions({
+      love: { input: '', tags: [] },
+      talent: { input: '', tags: [] },
+      need: { input: '', tags: [] },
+      market: { input: '', tags: [] },
+    });
+    setIkigaiSynthesisResult(null);
+  };
+
+  // Handle ikigai dimension update
+  const handleIkigaiUpdateDimension = async (dimensionKey, input, tags) => {
+    setIkigaiDimensions((prev) => ({
+      ...prev,
+      [dimensionKey]: { input, tags },
+    }));
+
+    // Save to backend
+    if (selectedIkigai?.id) {
+      try {
+        await wordpressAPI.updateIkigai(selectedIkigai.id, {
+          [`${dimensionKey}_input`]: input,
+          [`${dimensionKey}_tags`]: tags,
+        });
+      } catch (err) {
+        console.error('[Ikigai] Failed to save dimension:', err);
+      }
+    }
+  };
+
+  // Handle ikigai keyword extraction
+  const handleIkigaiExtractKeywords = async (dimensionKey, userInput) => {
+    try {
+      const response = await wordpressAPI.extractIkigaiKeywords(dimensionKey, userInput);
+      return response?.keywords || [];
+    } catch (err) {
+      console.error('[Ikigai] Failed to extract keywords:', err);
+      return [];
+    }
+  };
+
+  // Handle ikigai remove tag
+  const handleIkigaiRemoveTag = (dimensionKey, tagToRemove) => {
+    setIkigaiDimensions((prev) => {
+      const newTags = prev[dimensionKey].tags.filter((tag) => tag !== tagToRemove);
+      return {
+        ...prev,
+        [dimensionKey]: { ...prev[dimensionKey], tags: newTags },
+      };
+    });
+  };
+
+  // Handle ikigai synthesis
+  const handleIkigaiSynthesize = async () => {
+    const allFilled = Object.values(ikigaiDimensions).every(
+      (dim) => dim.tags && dim.tags.length > 0
+    );
+    if (!allFilled) return;
+
+    setIsIkigaiSynthesizing(true);
+
+    try {
+      const response = await wordpressAPI.synthesizeIkigaiPaths({
+        love_tags: ikigaiDimensions.love.tags,
+        talent_tags: ikigaiDimensions.talent.tags,
+        need_tags: ikigaiDimensions.need.tags,
+        market_tags: ikigaiDimensions.market.tags,
+      });
+
+      if (response) {
+        setIkigaiSynthesisResult(response);
+
+        // Save synthesis to backend
+        if (selectedIkigai?.id) {
+          await wordpressAPI.updateIkigai(selectedIkigai.id, {
+            summary: response.summary,
+            paths: response.paths,
+            status: 'completed',
+          });
+
+          // Update local ikigais state
+          setIkigais((prev) =>
+            prev.map((i) =>
+              i.id === selectedIkigai.id
+                ? { ...i, summary: response.summary, paths: response.paths, status: 'completed' }
+                : i
+            )
+          );
+        }
+      }
+    } catch (err) {
+      console.error('[Ikigai] Failed to synthesize paths:', err);
+    } finally {
+      setIsIkigaiSynthesizing(false);
+    }
+  };
+
+  // Check if all ikigai dimensions are filled
+  const allIkigaiDimensionsFilled = Object.values(ikigaiDimensions).every(
+    (dim) => dim.tags && dim.tags.length > 0
+  );
 
   // Handle decision update (from edit view)
   const handleDecisionUpdate = (updatedDecision) => {
@@ -543,6 +723,87 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             onSaveDraft={handleDecisionDraftSave}
             onUpdateSession={handleDecisionSessionUpdate}
             onDecisionIdChange={() => {}}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Show ikigai edit view if an ikigai is selected
+  if (selectedIkigai) {
+    return (
+      <div style={{ padding: b.space[6], maxWidth: '900px', margin: '0 auto' }}>
+        {/* Back button and title */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: b.space[6],
+        }}>
+          <button
+            onClick={handleBackFromIkigai}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: b.space[2],
+              padding: `${b.space[2]} ${b.space[4]}`,
+              backgroundColor: 'transparent',
+              border: `1px solid ${b.borderColor}`,
+              borderRadius: b.radius.lg,
+              color: b.textSecondary,
+              cursor: 'pointer',
+              fontSize: b.fontSize.sm,
+              fontWeight: b.fontWeight.medium,
+            }}
+          >
+            <ArrowLeft size={16} />
+            Zurück
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm('Möchtest du diese Ikigai-Analyse wirklich löschen?')) {
+                handleDeleteIkigai(selectedIkigai.id);
+                handleBackFromIkigai();
+              }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: b.space[2],
+              padding: `${b.space[2]} ${b.space[3]}`,
+              backgroundColor: 'transparent',
+              border: `1px solid ${b.error}`,
+              borderRadius: b.radius.lg,
+              color: b.error,
+              cursor: 'pointer',
+              fontSize: b.fontSize.sm,
+              fontWeight: b.fontWeight.medium,
+            }}
+          >
+            <Trash2 size={16} />
+            Löschen
+          </button>
+        </div>
+
+        {/* Show Results if synthesis is complete, otherwise show Compass */}
+        {ikigaiSynthesisResult ? (
+          <IkigaiResults
+            dimensions={ikigaiDimensions}
+            synthesisResult={ikigaiSynthesisResult}
+            onStartNew={handleBackFromIkigai}
+            onEdit={() => setIkigaiSynthesisResult(null)}
+            DIMENSIONS={IKIGAI_DIMENSIONS}
+          />
+        ) : (
+          <IkigaiCompass
+            dimensions={ikigaiDimensions}
+            DIMENSIONS={IKIGAI_DIMENSIONS}
+            onExtractKeywords={handleIkigaiExtractKeywords}
+            onUpdateDimension={handleIkigaiUpdateDimension}
+            onRemoveTag={handleIkigaiRemoveTag}
+            allDimensionsFilled={allIkigaiDimensionsFilled}
+            onSynthesize={handleIkigaiSynthesize}
+            isSynthesizing={isIkigaiSynthesizing}
           />
         )}
       </div>
@@ -1087,7 +1348,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   key={ikigai.id}
                   ikigai={ikigai}
                   onDelete={handleDeleteIkigai}
-                  onNavigate={() => onNavigateToModule('ikigai')}
+                  onNavigate={() => handleIkigaiClick(ikigai)}
                   headerGradient={headerGradient}
                   headerText={headerText}
                   primaryAccent={primaryAccent}
