@@ -23,6 +23,7 @@ import {
   Sparkles,
   Trash2,
   Plus,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,10 +43,13 @@ import RoleplaySessionReport from './roleplay/RoleplaySessionReport';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
+import DecisionBoardInput from './decision-board/DecisionBoardInput';
+import DecisionBoardResult from './decision-board/DecisionBoardResult';
 import { formatDateTime, formatDuration } from '@/utils/formatting';
 import { BRIEFING_ICON_MAP, getBriefingIcon } from '@/utils/iconMaps';
 import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
-import { BriefingCard, SessionCard } from '@/components/session-history';
+import { BriefingCard, SessionCard, DecisionCard } from '@/components/session-history';
+import { Scale } from 'lucide-react';
 
 
 /**
@@ -56,10 +60,12 @@ const TABS = {
   ROLEPLAY: 'roleplay',
   VIDEO: 'video',
   BRIEFINGS: 'briefings',
+  DECISIONS: 'decisions',
 };
 
 const TAB_CONFIG = [
   { id: TABS.BRIEFINGS, label: 'Smart Briefings', icon: Sparkles },
+  { id: TABS.DECISIONS, label: 'Entscheidungs-Kompass', icon: Scale },
   { id: TABS.SIMULATOR, label: 'Szenario-Training', icon: Target },
   { id: TABS.VIDEO, label: 'Wirkungs-Analyse', icon: Video },
   { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
@@ -100,12 +106,17 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const [simulatorSessions, setSimulatorSessions] = useState([]);
   const [videoSessions, setVideoSessions] = useState([]);
   const [briefings, setBriefings] = useState([]);
+  const [decisions, setDecisions] = useState([]);
   const [roleplayScenarios, setRoleplayScenarios] = useState([]);
   const [simulatorScenarios, setSimulatorScenarios] = useState([]);
   const [videoScenarios, setVideoScenarios] = useState([]);
 
   // Selected briefing for workbook view
   const [selectedBriefing, setSelectedBriefing] = useState(null);
+
+  // Selected decision for detail view
+  const [selectedDecision, setSelectedDecision] = useState(null);
+  const [decisionAnalysisResult, setDecisionAnalysisResult] = useState(null);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -137,6 +148,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         simulatorData,
         videoData,
         briefingsData,
+        decisionsData,
         roleplayScenariosData,
         simulatorScenariosData,
         videoScenariosData,
@@ -155,6 +167,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         wordpressAPI.request(`/smartbriefing/briefings?limit=50${demoCode ? `&demo_code=${encodeURIComponent(demoCode)}` : ''}`, {
           method: 'GET',
         }).catch(() => ({ success: false, data: { briefings: [] } })),
+        // Decision Board entries (pass demo_code)
+        wordpressAPI.getDecisions().catch(() => ({ success: false, data: { decisions: [] } })),
         // Roleplay scenarios
         getRoleplayScenarios().catch(() => []),
         // Simulator scenarios
@@ -189,6 +203,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       setSimulatorSessions(extractSessions(simulatorData));
       setVideoSessions(extractSessions(videoData));
       setBriefings(briefingsData?.data?.briefings || []);
+      setDecisions(decisionsData?.data?.decisions || []);
       setRoleplayScenarios(extractScenarios(roleplayScenariosData));
       setSimulatorScenarios(extractScenarios(simulatorScenariosData));
       setVideoScenarios(extractScenarios(videoScenariosData));
@@ -225,6 +240,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       case TABS.SIMULATOR: return simulatorSessions;
       case TABS.VIDEO: return videoSessions;
       case TABS.BRIEFINGS: return briefings;
+      case TABS.DECISIONS: return decisions;
       default: return roleplaySessions;
     }
   };
@@ -238,7 +254,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   };
 
   // Total sessions count
-  const totalSessions = roleplaySessions.length + simulatorSessions.length + videoSessions.length + briefings.length;
+  const totalSessions = roleplaySessions.length + simulatorSessions.length + videoSessions.length + briefings.length + decisions.length;
 
   // Delete briefing handler
   const handleDeleteBriefing = async (briefingId) => {
@@ -259,6 +275,34 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Handle back from briefing workbook
   const handleBackFromBriefing = () => {
     setSelectedBriefing(null);
+  };
+
+  // Delete decision handler
+  const handleDeleteDecision = async (decisionId) => {
+    const response = await wordpressAPI.deleteDecision(decisionId);
+
+    if (response.success) {
+      setDecisions((prev) => prev.filter((d) => d.id !== decisionId));
+    }
+  };
+
+  // Handle decision click - open detail view
+  const handleDecisionClick = (decision) => {
+    setSelectedDecision(decision);
+  };
+
+  // Handle back from decision detail
+  const handleBackFromDecision = () => {
+    setSelectedDecision(null);
+    setDecisionAnalysisResult(null);
+  };
+
+  // Handle decision update (from edit view)
+  const handleDecisionUpdate = (updatedDecision) => {
+    setDecisions((prev) =>
+      prev.map((d) => (d.id === updatedDecision.id ? updatedDecision : d))
+    );
+    setSelectedDecision(updatedDecision);
   };
 
   // Handle session click
@@ -337,6 +381,154 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         onBack={handleBackFromBriefing}
         onDelete={handleDeleteBriefing}
       />
+    );
+  }
+
+  // Show decision edit view if a decision is selected
+  if (selectedDecision) {
+    // Transform decision data to format expected by DecisionBoardInput
+    const initialDecisionData = {
+      topic: selectedDecision.topic || '',
+      context: selectedDecision.context || '',
+      pros: selectedDecision.pros || [],
+      cons: selectedDecision.cons || [],
+      proScore: selectedDecision.pro_score || 0,
+      contraScore: selectedDecision.contra_score || 0,
+    };
+
+    // Handler for when analysis completes - update the decision and show results
+    const handleDecisionAnalysisComplete = async (data, result) => {
+      try {
+        const updateData = {
+          topic: data.topic,
+          context: data.context || null,
+          pros: data.pros,
+          cons: data.cons,
+          pro_score: data.proScore,
+          contra_score: data.contraScore,
+          analysis: result,
+          status: 'completed',
+        };
+
+        await wordpressAPI.updateDecision(selectedDecision.id, updateData);
+
+        // Update local state
+        const updatedDecision = {
+          ...selectedDecision,
+          ...updateData,
+        };
+        handleDecisionUpdate(updatedDecision);
+
+        // Show the result view
+        setDecisionAnalysisResult({ data, result });
+      } catch (err) {
+        console.error('[SessionHistory] Failed to update decision:', err);
+      }
+    };
+
+    // Handler for auto-save during editing
+    const handleDecisionDraftSave = async (data) => {
+      // This is an existing decision, so we don't need to create a new one
+      return selectedDecision.id;
+    };
+
+    // Handler for updating during editing
+    const handleDecisionSessionUpdate = async (id, data) => {
+      try {
+        await wordpressAPI.updateDecision(id, {
+          topic: data.topic,
+          context: data.context || null,
+          pros: data.pros,
+          cons: data.cons,
+          pro_score: data.proScore,
+          contra_score: data.contraScore,
+          status: data.status || 'draft',
+        });
+      } catch (err) {
+        console.error('[SessionHistory] Failed to update decision:', err);
+      }
+    };
+
+    return (
+      <div>
+        {/* Header with back button */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: b.space[4],
+          paddingBottom: b.space[4],
+          borderBottom: `1px solid ${b.borderColor}`,
+        }}>
+          <button
+            onClick={handleBackFromDecision}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: b.space[2],
+              padding: `${b.space[2]} ${b.space[3]}`,
+              backgroundColor: 'transparent',
+              border: `1px solid ${b.borderColor}`,
+              borderRadius: b.radius.md,
+              cursor: 'pointer',
+              color: b.textSecondary,
+              fontSize: b.fontSize.base,
+            }}
+          >
+            <ArrowLeft size={b.iconSize.md} />
+            Zurück
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.confirm('Möchtest du diese Entscheidungs-Analyse wirklich löschen?')) {
+                handleDeleteDecision(selectedDecision.id);
+                handleBackFromDecision();
+              }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: b.space[2],
+              padding: `${b.space[2]} ${b.space[3]}`,
+              backgroundColor: 'transparent',
+              border: `1px solid ${b.error}`,
+              borderRadius: b.radius.md,
+              cursor: 'pointer',
+              color: b.error,
+              fontSize: b.fontSize.base,
+            }}
+          >
+            <Trash2 size={b.iconSize.md} />
+            Löschen
+          </button>
+        </div>
+
+        {/* Show Result if analysis is complete, otherwise show Input */}
+        {decisionAnalysisResult ? (
+          <DecisionBoardResult
+            decisionData={decisionAnalysisResult.data}
+            analysisResult={decisionAnalysisResult.result}
+            onStartNew={() => {
+              setDecisionAnalysisResult(null);
+              setSelectedDecision(null);
+            }}
+            onEditDecision={() => {
+              setDecisionAnalysisResult(null);
+            }}
+          />
+        ) : (
+          <DecisionBoardInput
+            initialData={initialDecisionData}
+            onAnalysisComplete={handleDecisionAnalysisComplete}
+            isAuthenticated={isAuthenticated}
+            savedDecisionId={selectedDecision.id}
+            onSaveDraft={handleDecisionDraftSave}
+            onUpdateSession={handleDecisionSessionUpdate}
+            onDecisionIdChange={() => {}}
+          />
+        )}
+      </div>
     );
   }
 
@@ -682,6 +874,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
                        tab.id === TABS.VIDEO ? videoSessions.length :
                        tab.id === TABS.BRIEFINGS ? briefings.length :
+                       tab.id === TABS.DECISIONS ? decisions.length :
                        roleplaySessions.length;
 
           return (
@@ -724,6 +917,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
                          tab.id === TABS.VIDEO ? videoSessions.length :
                          tab.id === TABS.BRIEFINGS ? briefings.length :
+                         tab.id === TABS.DECISIONS ? decisions.length :
                          roleplaySessions.length;
 
             return (
@@ -772,6 +966,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
               // Navigate to the corresponding module based on active tab
               const moduleMap = {
                 [TABS.BRIEFINGS]: 'smart_briefing',
+                [TABS.DECISIONS]: 'decision_board',
                 [TABS.SIMULATOR]: 'simulator',
                 [TABS.VIDEO]: 'video_training',
                 [TABS.ROLEPLAY]: 'dashboard',
@@ -785,6 +980,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           >
             <Plus style={{ width: '16px', height: '16px', marginRight: '8px' }} />
             {activeTab === TABS.BRIEFINGS ? 'Neues Briefing' :
+             activeTab === TABS.DECISIONS ? 'Neue Entscheidungs-Analyse' :
              activeTab === TABS.SIMULATOR ? 'Neues Szenario-Training' :
              activeTab === TABS.VIDEO ? 'Neue Wirkungs-Analyse' :
              'Neue Live-Simulation'}
@@ -806,17 +1002,20 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
             {activeTab === TABS.VIDEO && <Video style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
             {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
+            {activeTab === TABS.DECISIONS && <Scale style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
             <h3 style={{ fontSize: b.fontSize['2xl'], fontWeight: b.fontWeight.semibold, color: b.textSecondary, marginBottom: b.space[2] }}>
-              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : 'Live-Simulationen'}
+              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : activeTab === TABS.DECISIONS ? 'Entscheidungs-Analysen' : 'Live-Simulationen'}
             </h3>
             <p style={{ color: b.textMuted, fontSize: b.fontSize.base, marginBottom: b.space[6] }}>
               {activeTab === TABS.BRIEFINGS
                 ? 'Erstelle dein erstes Briefing, um dich optimal vorzubereiten.'
+                : activeTab === TABS.DECISIONS
+                ? 'Nutze den Entscheidungs-Kompass, um deine erste Entscheidung zu analysieren.'
                 : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
             </p>
             <Button onClick={onBack}>
               <Play style={{ width: b.iconSize.sm, height: b.iconSize.sm, marginRight: b.space[2] }} />
-              {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : 'Training starten'}
+              {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : activeTab === TABS.DECISIONS ? 'Entscheidung analysieren' : 'Training starten'}
             </Button>
           </div>
         ) : (
@@ -840,6 +1039,19 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   briefing={briefing}
                   onClick={() => handleBriefingClick(briefing)}
                   onDelete={handleDeleteBriefing}
+                  headerGradient={headerGradient}
+                  headerText={headerText}
+                  primaryAccent={primaryAccent}
+                />
+              ))
+            ) : activeTab === TABS.DECISIONS ? (
+              // Render decisions
+              decisions.map((decision) => (
+                <DecisionCard
+                  key={decision.id}
+                  decision={decision}
+                  onClick={() => handleDecisionClick(decision)}
+                  onDelete={handleDeleteDecision}
                   headerGradient={headerGradient}
                   headerText={headerText}
                   primaryAccent={primaryAccent}

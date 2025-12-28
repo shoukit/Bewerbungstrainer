@@ -27,6 +27,9 @@ export const ROUTES = {
   // Smart Briefing routes
   SMART_BRIEFING: '/smart-briefing',
 
+  // Decision Board routes
+  DECISION_BOARD: '/entscheidungs-kompass',
+
   // Rhetorik-Gym routes
   RHETORIK_GYM: '/rhetorik-gym',
   RHETORIK_GYM_SESSION: '/rhetorik-gym/session',
@@ -59,6 +62,7 @@ export const VIEW_TO_ROUTE = {
   simulator: ROUTES.SCENARIO_TRAINING,
   video_training: ROUTES.VIDEO_TRAINING,
   smart_briefing: ROUTES.SMART_BRIEFING,
+  decision_board: ROUTES.DECISION_BOARD,
   history: ROUTES.HISTORY,
   session_detail: ROUTES.SESSION_DETAIL,
   usage_limits: ROUTES.USAGE_LIMITS,
@@ -86,6 +90,7 @@ export const ROUTE_TO_VIEW = {
   [ROUTES.SCENARIO_TRAINING]: 'simulator',
   [ROUTES.VIDEO_TRAINING]: 'video_training',
   [ROUTES.SMART_BRIEFING]: 'smart_briefing',
+  [ROUTES.DECISION_BOARD]: 'decision_board',
   [ROUTES.RHETORIK_GYM]: 'gym_klassiker',
   [ROUTES.RHETORIK_GYM_SESSION]: 'gym_klassiker',
   [ROUTES.HISTORY]: 'history',

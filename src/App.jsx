@@ -12,6 +12,7 @@ import { SimulatorApp } from './components/simulator';
 import { VideoTrainingApp } from './components/video-training';
 import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SmartBriefingApp } from './components/smartbriefing';
+import { DecisionBoardApp } from './components/decision-board';
 import UsageLimitsDisplay from './components/UsageLimitsDisplay';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
@@ -191,6 +192,7 @@ const VIEWS = {
   SIMULATOR: 'simulator',
   VIDEO_TRAINING: 'video_training',
   SMART_BRIEFING: 'smart_briefing',
+  DECISION_BOARD: 'decision_board',
   HISTORY: 'history',
   SESSION_DETAIL: 'session_detail',
   USAGE_LIMITS: 'usage_limits',
@@ -817,6 +819,18 @@ function AppContent() {
             demoCode={demoCode}
             onNavigateToSimulator={() => navigate(ROUTES.SCENARIO_TRAINING)}
             onNavigateToHistory={() => handleNavigateToHistoryWithTab('briefings')}
+          />
+        }
+      />
+
+      {/* Decision Board (Entscheidungs-Kompass) */}
+      <Route
+        path={ROUTES.DECISION_BOARD}
+        element={
+          <DecisionBoardApp
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
           />
         }
       />

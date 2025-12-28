@@ -797,6 +797,137 @@ class WordPressAPI {
             throw error;
         }
     }
+
+    // ===== Decision Board API Methods =====
+
+    /**
+     * Get all decisions for current user
+     *
+     * @returns {Promise<object>} Response with decisions array
+     */
+    async getDecisions() {
+        try {
+            const response = await this.request('/decisions', {
+                method: 'GET'
+            });
+
+            // Return full response for consistency with SessionHistory
+            return response;
+        } catch (error) {
+            console.error('❌ [WordPressAPI] Failed to get decisions:', error);
+            return { success: false, data: { decisions: [] } };
+        }
+    }
+
+    /**
+     * Get a specific decision by ID
+     *
+     * @param {number} decisionId - Decision ID
+     * @returns {Promise<object|null>} Decision object or null
+     */
+    async getDecision(decisionId) {
+        try {
+            const response = await this.request(`/decisions/${decisionId}`, {
+                method: 'GET'
+            });
+
+            if (response.success && response.data?.decision) {
+                return response.data.decision;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('❌ [WordPressAPI] Failed to get decision:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Create a new decision
+     *
+     * @param {object} data - Decision data (topic, context, pros, cons, etc.)
+     * @returns {Promise<object>} Created decision object
+     */
+    async createDecision(data) {
+        const response = await this.request('/decisions', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        if (response.success && response.data?.decision) {
+            return response.data.decision;
+        }
+
+        throw new Error(response.message || 'Fehler beim Erstellen der Entscheidung');
+    }
+
+    /**
+     * Update a decision
+     *
+     * @param {number} decisionId - Decision ID
+     * @param {object} data - Data to update
+     * @returns {Promise<object>} Updated decision object
+     */
+    async updateDecision(decisionId, data) {
+        const response = await this.request(`/decisions/${decisionId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+
+        if (response.success && response.data?.decision) {
+            return response.data.decision;
+        }
+
+        throw new Error(response.message || 'Fehler beim Aktualisieren der Entscheidung');
+    }
+
+    /**
+     * Delete a decision
+     *
+     * @param {number} decisionId - Decision ID
+     * @returns {Promise<boolean>} True on success
+     */
+    async deleteDecision(decisionId) {
+        const response = await this.request(`/decisions/${decisionId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.success) {
+            return true;
+        }
+
+        throw new Error(response.message || 'Fehler beim Löschen der Entscheidung');
+    }
+
+    // ===== Audio Transcription API Methods =====
+
+    /**
+     * Transcribe audio using Whisper API
+     *
+     * @param {string} audioBase64 - Base64 encoded audio data (without data URI prefix)
+     * @param {string} mimeType - MIME type of the audio (default: audio/webm)
+     * @returns {Promise<object>} Transcription result with transcript and language
+     */
+    async transcribeAudio(audioBase64, mimeType = 'audio/webm') {
+        try {
+            const response = await this.request('/audio/transcribe', {
+                method: 'POST',
+                body: JSON.stringify({
+                    audio_base64: audioBase64,
+                    mime_type: mimeType,
+                })
+            });
+
+            if (response.success && response.data) {
+                return response.data;
+            }
+
+            throw new Error(response.message || 'Transkription fehlgeschlagen');
+        } catch (error) {
+            console.error('❌ [WordPressAPI] Failed to transcribe audio:', error);
+            throw error;
+        }
+    }
 }
 
 // Export singleton instance

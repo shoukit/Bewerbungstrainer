@@ -420,3 +420,18 @@
 #bewerbungstrainer-app .elementor-widget-container * {
   color: inherit;
 }
+
+/* Decision Board Pro/Contra Card Borders - override global border-border */
+#bewerbungstrainer-app .decision-card-pro {
+  border-top: 4px solid #22c55e !important;
+  border-right: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-left: 1px solid #e2e8f0 !important;
+}
+
+#bewerbungstrainer-app .decision-card-contra {
+  border-top: 4px solid #ef4444 !important;
+  border-right: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-left: 1px solid #e2e8f0 !important;
+}

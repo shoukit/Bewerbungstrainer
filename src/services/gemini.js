@@ -512,9 +512,556 @@ export async function analyzeRhetoricGame(
   }
 }
 
+/**
+ * Analyzes a decision using the "Decisio" AI coach approach
+ *
+ * Provides structured coaching insights:
+ * - Blind Spot: Missing life areas or considerations
+ * - Challenger: Questions the highest-weighted argument
+ * - Intuition: Systemic question to check gut feeling
+ *
+ * @param {Object} decisionData - The decision data to analyze
+ * @param {string} decisionData.topic - The decision question
+ * @param {string|null} decisionData.context - Optional context/situation description
+ * @param {Array} decisionData.pros - Array of {text, weight} objects for pro arguments
+ * @param {Array} decisionData.cons - Array of {text, weight} objects for contra arguments
+ * @param {number} decisionData.proScore - Total pro score
+ * @param {number} decisionData.contraScore - Total contra score
+ * @param {string} apiKey - Google Gemini API key
+ * @returns {Promise<Object>} - Parsed analysis result with summary and coaching cards
+ */
+export async function analyzeDecision(decisionData, apiKey) {
+  const { topic, context, pros, cons, proScore, contraScore } = decisionData;
+
+  // Validate input
+  if (!topic || topic.trim().length === 0) {
+    throw new Error('Entscheidungsfrage fehlt');
+  }
+
+  if (DEBUG_PROMPTS) {
+    console.log(`🧠 [GEMINI DECISION] Starting decision analysis`);
+    console.log(`🧠 [GEMINI DECISION] Topic: ${topic}`);
+    console.log(`🧠 [GEMINI DECISION] Context: ${context ? 'provided' : 'none'}`);
+    console.log(`🧠 [GEMINI DECISION] Pros: ${pros.length}, Cons: ${cons.length}`);
+  }
+
+  // Format pros and cons for the prompt
+  const prosFormatted = pros.map(p => `- "${p.text}" (Gewicht: ${p.weight}/10)`).join('\n');
+  const consFormatted = cons.map(c => `- "${c.text}" (Gewicht: ${c.weight}/10)`).join('\n');
+
+  // Format context section if provided
+  const contextSection = context
+    ? `\nSituationsbeschreibung des Users:\n"${context}"\n`
+    : '';
+
+  // Build the system prompt as specified
+  const prompt = `Du bist 'Decisio', ein analytischer Entscheidungs-Coach.
+Deine Aufgabe: Analysiere die Entscheidungsmatrix des Users (Thema, Pro/Contra mit Gewichtung 1-10).
+Ziel: Deck blinde Flecken auf und hinterfrage die Gewichtung kritisch. Nimm dem User die Entscheidung NICHT ab, sondern verbessere seine Datengrundlage.
+
+INPUT:
+Thema: ${topic}
+${contextSection}
+Pro-Liste (Gesamtpunkte: ${proScore}):
+${prosFormatted || '(keine Pro-Argumente)'}
+
+Contra-Liste (Gesamtpunkte: ${contraScore}):
+${consFormatted || '(keine Contra-Argumente)'}
+
+Rationaler Score: ${proScore > contraScore ? 'Pro führt' : contraScore > proScore ? 'Contra führt' : 'Ausgeglichen'} (${proScore} vs ${contraScore})
+
+GENERATION RULES:
+1. "Blind Spot": Welcher Lebensbereich (Gesundheit, Langzeit, Familie, Werte, Finanzen, Karriere, Work-Life-Balance) fehlt? Welche Perspektive wurde nicht berücksichtigt?
+2. "Challenger": Identifiziere das INTERESSANTESTE oder KRITISCHSTE Argument (nicht unbedingt das mit der höchsten Gewichtung). Wähle das Argument, das am meisten hinterfragt werden sollte - vielleicht weil die Bewertung unrealistisch wirkt, wichtige Aspekte ignoriert werden, oder es auf Annahmen basiert die geprüft werden sollten.
+3. "Intuition": Stelle eine systemische Frage (z.B. 10-10-10 Methode: Wie wirst du in 10 Minuten/10 Monaten/10 Jahren darüber denken? Oder: Was würdest du einem Freund in dieser Situation raten?), um das Bauchgefühl zu prüfen.
+
+WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Markdown, kein Intro, keine Erklärung außerhalb des JSON.
+
+FORMATIERUNG DER INHALTE:
+- Jede Card soll STRUKTURIERT sein, NICHT als Fließtext
+- Verwende kurze, prägnante Aufzählungspunkte
+- Maximal 3-5 Punkte pro Card
+- Jeder Punkt soll ein konkreter, handlungsorientierter Gedanke sein
+
+JSON SCHEMA:
+{
+  "analysis_summary": "Ein bis zwei Sätze zum rationalen Ergebnis.",
+  "cards": [
+    {
+      "type": "blind_spot",
+      "title": "Der blinde Fleck",
+      "points": [
+        "Erster fehlender Aspekt oder Lebensbereich",
+        "Zweiter fehlender Aspekt",
+        "Dritter fehlender Aspekt (optional)"
+      ]
+    },
+    {
+      "type": "challenger",
+      "title": "Der Härtetest",
+      "argument": "NUR der Text des Arguments, OHNE Gewicht (z.B. Mehr Gehalt oder Flexible Arbeitszeiten)",
+      "points": [
+        "Erste kritische Frage zum Argument",
+        "Zweite kritische Frage",
+        "Dritte kritische Frage (optional)"
+      ]
+    },
+    {
+      "type": "intuition",
+      "title": "Der Bauch-Check",
+      "question": "Die zentrale Reflexionsfrage (z.B. '10-10-10 Methode')",
+      "points": [
+        "Erster Reflexionsimpuls",
+        "Zweiter Reflexionsimpuls",
+        "Dritter Reflexionsimpuls (optional)"
+      ]
+    }
+  ]
+}`;
+
+  // Debug logging
+  logPromptDebug(
+    'DECISION',
+    'Entscheidungs-Kompass: Analysiert Pro/Contra-Matrix mit Gewichtungen. Identifiziert blinde Flecken und hinterfragt Annahmen.',
+    prompt,
+    {
+      'Thema': topic,
+      'Kontext': context ? 'vorhanden' : 'nicht angegeben',
+      'Pro-Argumente': pros.length,
+      'Contra-Argumente': cons.length,
+      'Pro-Score': proScore,
+      'Contra-Score': contraScore,
+      'Stärkstes Argument': Math.max(...pros.map(p => p.weight), ...cons.map(c => c.weight)),
+    }
+  );
+
+  const responseText = await callGeminiWithFallback({
+    apiKey,
+    content: prompt,
+    context: 'DECISION',
+  });
+
+  // Parse JSON response
+  try {
+    // Clean up the response - remove markdown code blocks if present
+    let cleanedResponse = responseText.trim();
+
+    // Remove opening markdown code block
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/^```json\s*\n?/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/^```\s*\n?/, '');
+    }
+
+    // Always remove trailing markdown code block (may have newlines before it)
+    cleanedResponse = cleanedResponse.replace(/\n?```\s*$/, '').trim();
+
+    // Fix common JSON issues from Gemini:
+    // Pattern: "text." (Gewicht: X/10)" -> removes the (Gewicht...) part that breaks JSON
+    cleanedResponse = cleanedResponse.replace(
+      /"\s*\(Gewicht:\s*\d+\/10\)"/g,
+      '"'
+    );
+
+    const result = JSON.parse(cleanedResponse);
+
+    if (DEBUG_PROMPTS) {
+      console.log(`✅ [GEMINI DECISION] Analysis complete`);
+      console.log(`✅ [GEMINI DECISION] Summary: ${result.analysis_summary?.substring(0, 50)}...`);
+    }
+
+    // Validate structure
+    if (!result.cards || !Array.isArray(result.cards)) {
+      throw new Error('Invalid response structure: missing cards array');
+    }
+
+    // Log prompt and response to server-side prompts.log
+    wordpressAPI.logPrompt(
+      'GEMINI_DECISION_ANALYSIS',
+      'Entscheidungs-Kompass Analyse',
+      prompt,
+      {
+        topic: topic,
+        context: context ? 'vorhanden' : 'nicht angegeben',
+        pro_count: pros.length,
+        contra_count: cons.length,
+        pro_score: proScore,
+        contra_score: contraScore,
+      },
+      responseText
+    );
+
+    return result;
+  } catch (parseError) {
+    console.error('❌ [GEMINI DECISION] Failed to parse response:', parseError);
+    console.error('❌ [GEMINI DECISION] Raw response:', responseText);
+
+    // Return a default error result
+    throw new Error(`Fehler beim Verarbeiten der Analyse: ${parseError.message}`);
+  }
+}
+
+/**
+ * Brainstorms arguments from a specific persona's perspective
+ *
+ * Generates 2 pro and 2 contra arguments from the viewpoint of one of 5 personas:
+ * - strategist: Career, money, power, prestige
+ * - security: Job security, risk minimization, stability
+ * - feelgood: Work-life balance, culture, mental health
+ * - growth: Learning, innovation, high risk/high reward
+ * - future: Long-term perspective, regret minimization
+ *
+ * @param {string} topic - The decision question
+ * @param {string} persona - One of: 'strategist', 'security', 'feelgood', 'growth', 'future'
+ * @param {string} apiKey - Google Gemini API key
+ * @param {string|null} context - Optional situation context for better suggestions
+ * @param {Array} existingPros - Existing pro arguments (to avoid duplicates)
+ * @param {Array} existingCons - Existing contra arguments (to avoid duplicates)
+ * @returns {Promise<Object>} - Parsed result with suggestions array
+ */
+export async function brainstormArguments(topic, persona, apiKey, context = null, existingPros = [], existingCons = []) {
+  // Validate input
+  if (!topic || topic.trim().length === 0) {
+    throw new Error('Entscheidungsfrage fehlt');
+  }
+
+  const validPersonas = ['strategist', 'security', 'feelgood', 'growth', 'future'];
+  if (!validPersonas.includes(persona)) {
+    throw new Error(`Ungültige Persona: ${persona}`);
+  }
+
+  if (DEBUG_PROMPTS) {
+    console.log(`💭 [GEMINI BRAINSTORM] Starting brainstorm`);
+    console.log(`💭 [GEMINI BRAINSTORM] Topic: ${topic}`);
+    console.log(`💭 [GEMINI BRAINSTORM] Persona: ${persona}`);
+    console.log(`💭 [GEMINI BRAINSTORM] Context: ${context ? 'provided' : 'none'}`);
+    console.log(`💭 [GEMINI BRAINSTORM] Existing pros: ${existingPros.length}`);
+    console.log(`💭 [GEMINI BRAINSTORM] Existing cons: ${existingCons.length}`);
+  }
+
+  // Format context section if provided
+  const contextSection = context
+    ? `\nSituationsbeschreibung:\n"${context}"\n`
+    : '';
+
+  // Format existing arguments section
+  const existingProTexts = existingPros.filter(p => p.text?.trim()).map(p => `- ${p.text}`);
+  const existingConTexts = existingCons.filter(c => c.text?.trim()).map(c => `- ${c.text}`);
+
+  let existingArgsSection = '';
+  if (existingProTexts.length > 0 || existingConTexts.length > 0) {
+    existingArgsSection = `
+BEREITS ERFASSTE ARGUMENTE DES USERS:
+Nutze diese als Kontext, um ERGÄNZENDE Perspektiven zu generieren. Wiederhole NICHT dieselben Punkte, sondern baue darauf auf oder beleuchte andere Aspekte.`;
+    if (existingProTexts.length > 0) {
+      existingArgsSection += `\nPro-Argumente:\n${existingProTexts.join('\n')}`;
+    }
+    if (existingConTexts.length > 0) {
+      existingArgsSection += `\nContra-Argumente:\n${existingConTexts.join('\n')}`;
+    }
+    existingArgsSection += '\n';
+  }
+
+  const prompt = `Du bist ein kreativer Entscheidungs-Assistent für die Karriere-Plattform 'KarriereHeld'.
+Deine Aufgabe: Generiere für eine spezifische Entscheidungsfrage Argumente aus der strikten Sicht einer gewählten Persona.
+${contextSection ? 'WICHTIG: Berücksichtige unbedingt die Situationsbeschreibung des Users - seine Wünsche, Ängste und Rahmenbedingungen!' : ''}
+
+INPUT:
+Thema: ${topic}${contextSection}${existingArgsSection}
+Persona: ${persona}
+
+PERSONA DEFINITIONEN:
+- 'strategist' (Der Stratege): Fokus auf CV, Marktwert, Geld, Macht, Karriereleiter, Prestige.
+- 'security' (Der Sicherheits-Beauftragte): Fokus auf Arbeitsplatzsicherheit, Gehaltsgarantie, Risikominimierung, Beständigkeit.
+- 'feelgood' (Der Feel-Good Manager): Fokus auf Mental Health, Stresslevel, Team-Kultur, Zeit für Familie, Spaß.
+- 'growth' (Der Gründer): Fokus auf steile Lernkurve, Innovation, Netzwerk, "High Risk / High Reward".
+- 'future' (Das Zukunfts-Ich): Fokus auf langfristigen Sinn, "Regret Minimization" (Was werde ich in 10 Jahren bereuen?), Lebensziele.
+
+OUTPUT FORMAT (JSON):
+Generiere genau 4 Vorschläge (2 Pro, 2 Contra), die extrem kurz und knackig sind (max. 10 Wörter pro Punkt).
+
+WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Markdown, kein Intro.
+
+{
+  "suggestions": [
+    { "type": "pro", "text": "Argument für JA aus Sicht der Persona" },
+    { "type": "pro", "text": "Weiteres Argument für JA..." },
+    { "type": "con", "text": "Argument für NEIN aus Sicht der Persona" },
+    { "type": "con", "text": "Weiteres Argument für NEIN..." }
+  ]
+}`;
+
+  // Debug logging
+  logPromptDebug(
+    'BRAINSTORM',
+    `Entscheidungs-Kompass Brainstorming: Generiert Argumente aus Sicht der Persona "${persona}".`,
+    prompt,
+    {
+      'Thema': topic,
+      'Kontext': context ? 'vorhanden' : 'nicht angegeben',
+      'Persona': persona,
+    }
+  );
+
+  const responseText = await callGeminiWithFallback({
+    apiKey,
+    content: prompt,
+    context: 'BRAINSTORM',
+  });
+
+  // Parse JSON response
+  try {
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const result = JSON.parse(cleanedResponse);
+
+    if (DEBUG_PROMPTS) {
+      console.log(`✅ [GEMINI BRAINSTORM] Complete`);
+      console.log(`✅ [GEMINI BRAINSTORM] Suggestions: ${result.suggestions?.length}`);
+    }
+
+    // Validate structure
+    if (!result.suggestions || !Array.isArray(result.suggestions)) {
+      throw new Error('Invalid response structure: missing suggestions array');
+    }
+
+    // Log prompt and response to server-side prompts.log
+    wordpressAPI.logPrompt(
+      'GEMINI_DECISION_BRAINSTORM',
+      `Entscheidungs-Kompass Brainstorming (${persona})`,
+      prompt,
+      {
+        topic: topic,
+        context: context ? 'vorhanden' : 'nicht angegeben',
+        persona: persona,
+      },
+      responseText
+    );
+
+    return result;
+  } catch (parseError) {
+    console.error('❌ [GEMINI BRAINSTORM] Failed to parse response:', parseError);
+    console.error('❌ [GEMINI BRAINSTORM] Raw response:', responseText);
+    throw new Error(`Fehler beim Verarbeiten der Vorschläge: ${parseError.message}`);
+  }
+}
+
+// =============================================================================
+// DEEP DIVE WIZARD FUNCTIONS
+// =============================================================================
+
+/**
+ * Generates the next coaching question for the Deep Dive Wizard
+ * @param {string} topic - The decision topic
+ * @param {Array} existingPros - Already captured pro arguments
+ * @param {Array} existingCons - Already captured contra arguments
+ * @param {Array} conversationHistory - Previous Q&A pairs
+ * @param {string} apiKey - Gemini API key
+ * @returns {Promise<{question: string, questionType: string}>}
+ */
+export async function generateWizardQuestion(topic, existingPros = [], existingCons = [], conversationHistory = [], apiKey) {
+  if (!topic || topic.trim().length === 0) {
+    throw new Error('Entscheidungsfrage fehlt');
+  }
+
+  if (DEBUG_PROMPTS) {
+    console.log(`🧙 [GEMINI WIZARD] Generating question for: ${topic}`);
+    console.log(`🧙 [GEMINI WIZARD] Existing pros: ${existingPros.length}, cons: ${existingCons.length}`);
+    console.log(`🧙 [GEMINI WIZARD] Conversation history: ${conversationHistory.length} exchanges`);
+  }
+
+  // Format existing arguments
+  const prosText = existingPros.filter(p => p.text?.trim()).map(p => `- ${p.text}`).join('\n') || '(keine)';
+  const consText = existingCons.filter(c => c.text?.trim()).map(c => `- ${c.text}`).join('\n') || '(keine)';
+
+  // Format conversation history
+  let historyText = '';
+  if (conversationHistory.length > 0) {
+    historyText = '\nBISHERIGER GESPRÄCHSVERLAUF:\n' + conversationHistory.map((entry, i) =>
+      `Frage ${i + 1}: "${entry.question}"\nAntwort: "${entry.answer}"`
+    ).join('\n\n');
+  }
+
+  const prompt = `Du bist ein einfühlsamer systemischer Coach, der Menschen hilft, versteckte Motive und Gefühle bei wichtigen Entscheidungen zu entdecken.
+
+ENTSCHEIDUNGSTHEMA: "${topic}"
+
+BEREITS ERFASSTE ARGUMENTE:
+Pro:
+${prosText}
+
+Contra:
+${consText}
+${historyText}
+
+DEINE AUFGABE:
+1. Analysiere, welche PERSPEKTIVE oder welcher LEBENSBEREICH noch nicht beleuchtet wurde
+2. Identifiziere eine LÜCKE (z.B. fehlen Emotionen? Langzeitperspektive? Werte? Beziehungen? Ängste? Träume?)
+3. Stelle GENAU EINE tiefgründige, offene Frage, um diese Lücke zu füllen
+
+FRAGE-TECHNIKEN (wähle passend):
+- Wunderfrage: "Stell dir vor, du wachst morgen auf und alles ist perfekt gelöst..."
+- Worst-Case: "Was ist das Schlimmste, das passieren könnte, wenn..."
+- Zukunfts-Ich: "Stell dir vor, es ist 5 Jahre später..."
+- Werte-Check: "Was sagt diese Entscheidung über das aus, was dir wirklich wichtig ist?"
+- Bauchgefühl: "Wenn du ganz ehrlich bist, was sagt dein Körper dazu?"
+- Mentor-Perspektive: "Was würde dir jemand raten, der dich sehr gut kennt?"
+
+REGELN:
+- Verwende die "Du"-Form (persönlich, warm)
+- Halte die Frage kurz (max. 2 Sätze)
+- Vermeide Wiederholungen von bereits gestellten Fragen
+- Die Frage soll zum Nachdenken anregen, nicht suggestiv sein
+
+AUSGABE (nur JSON, kein Markdown):
+{
+  "question": "Deine Frage hier...",
+  "question_type": "wunderfrage|worst_case|zukunft|werte|bauchgefühl|mentor|andere",
+  "targets_gap": "Kurze Beschreibung, welche Lücke diese Frage adressiert"
+}`;
+
+  const responseText = await callGeminiWithFallback({
+    apiKey,
+    content: prompt,
+    context: 'WIZARD_QUESTION',
+  });
+
+  try {
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const result = JSON.parse(cleanedResponse);
+
+    if (DEBUG_PROMPTS) {
+      console.log(`✅ [GEMINI WIZARD] Question generated: ${result.question?.substring(0, 50)}...`);
+    }
+
+    // Log to server
+    wordpressAPI.logPrompt(
+      'GEMINI_WIZARD_QUESTION',
+      'Deep Dive Wizard - Frage generieren',
+      prompt,
+      { topic, existing_pros: existingPros.length, existing_cons: existingCons.length },
+      responseText
+    );
+
+    return result;
+  } catch (parseError) {
+    console.error('❌ [GEMINI WIZARD] Failed to parse question response:', parseError);
+    throw new Error(`Fehler beim Generieren der Frage: ${parseError.message}`);
+  }
+}
+
+/**
+ * Extracts arguments from the user's free-text answer
+ * @param {string} topic - The decision topic
+ * @param {string} question - The question that was asked
+ * @param {string} userAnswer - The user's free-text answer
+ * @param {string} apiKey - Gemini API key
+ * @returns {Promise<{extracted_items: Array}>}
+ */
+export async function extractWizardArguments(topic, question, userAnswer, apiKey) {
+  if (!userAnswer || userAnswer.trim().length < 10) {
+    return { extracted_items: [], message: 'Antwort zu kurz für Analyse' };
+  }
+
+  if (DEBUG_PROMPTS) {
+    console.log(`🔍 [GEMINI EXTRACT] Extracting from answer (${userAnswer.length} chars)`);
+  }
+
+  const prompt = `Du bist ein Daten-Analyst für Entscheidungsprozesse. Deine Aufgabe ist es, aus Freitext-Antworten strukturierte Argumente zu extrahieren.
+
+KONTEXT:
+Entscheidungsthema: "${topic}"
+Gestellte Frage: "${question}"
+
+ANTWORT DES USERS:
+"${userAnswer}"
+
+DEINE AUFGABE:
+1. Identifiziere die KERN-ARGUMENTE im Text (max. 3 Stück)
+2. Klassifiziere jedes als "pro" (spricht FÜR das Thema/JA) oder "con" (spricht DAGEGEN/NEIN)
+3. Formuliere sie in KURZE, PRÄGNANTE Stichpunkte um (substantivisch, max. 8 Wörter)
+4. Schätze die WICHTIGKEIT (weight 1-10) basierend auf:
+   - Emotionale Intensität der Wortwahl
+   - Wie oft/ausführlich der Punkt erwähnt wird
+   - Körperliche Reaktionen (Bauchgefühl, Stress, etc.)
+
+BEISPIELE für gute Extraktionen:
+- "Ich kriege immer Bauchschmerzen" → "Körperliche Stressreaktion", weight: 8-9
+- "Das Geld ist halt wichtig" → "Finanzielle Sicherheit", weight: 6-7
+- "Ich träume davon seit Jahren" → "Langgehegter Lebenstraum", weight: 9
+
+WICHTIG:
+- Wenn der Text keine klaren Argumente enthält (z.B. "weiß nicht", zu vage), gib ein leeres Array zurück
+- Extrahiere NUR das, was der User tatsächlich gesagt hat - erfinde nichts dazu
+- Pro/Con bezieht sich auf das THEMA, nicht auf die Frage
+
+AUSGABE (nur JSON, kein Markdown):
+{
+  "extracted_items": [
+    {
+      "type": "pro|con",
+      "text": "Kurzer prägnanter Stichpunkt",
+      "weight": 1-10,
+      "source_quote": "Originalzitat aus der Antwort"
+    }
+  ],
+  "analysis_note": "Kurze Notiz, was du erkannt hast (optional)"
+}`;
+
+  const responseText = await callGeminiWithFallback({
+    apiKey,
+    content: prompt,
+    context: 'WIZARD_EXTRACT',
+  });
+
+  try {
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const result = JSON.parse(cleanedResponse);
+
+    if (DEBUG_PROMPTS) {
+      console.log(`✅ [GEMINI EXTRACT] Extracted ${result.extracted_items?.length || 0} items`);
+    }
+
+    // Log to server
+    wordpressAPI.logPrompt(
+      'GEMINI_WIZARD_EXTRACT',
+      'Deep Dive Wizard - Argumente extrahieren',
+      prompt,
+      { topic, question_length: question.length, answer_length: userAnswer.length },
+      responseText
+    );
+
+    return result;
+  } catch (parseError) {
+    console.error('❌ [GEMINI EXTRACT] Failed to parse extraction response:', parseError);
+    throw new Error(`Fehler beim Extrahieren der Argumente: ${parseError.message}`);
+  }
+}
+
 export default {
   listAvailableModels,
   generateInterviewFeedback,
   generateAudioAnalysis,
   analyzeRhetoricGame,
+  analyzeDecision,
+  brainstormArguments,
+  generateWizardQuestion,
+  extractWizardArguments,
 };

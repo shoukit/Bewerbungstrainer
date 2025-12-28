@@ -132,6 +132,13 @@ class Bewerbungstrainer_API {
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
+        // Transcribe audio using Whisper
+        register_rest_route($this->namespace, '/audio/transcribe', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'transcribe_audio'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
+
         // Get user info
         register_rest_route($this->namespace, '/user/info', array(
             'methods' => 'GET',
@@ -3303,6 +3310,73 @@ class Bewerbungstrainer_API {
                     'used_minutes' => round($availability['used'], 1),
                     'monthly_limit' => $availability['limit'],
                 ),
+            ),
+        ), 200);
+    }
+
+    /**
+     * Transcribe audio using Whisper API
+     *
+     * @param WP_REST_Request $request Request object with audio_base64 and mime_type
+     * @return WP_REST_Response|WP_Error Response with transcript or error
+     */
+    public function transcribe_audio($request) {
+        $params = $request->get_json_params();
+
+        // Get audio data
+        $audio_base64 = isset($params['audio_base64']) ? $params['audio_base64'] : '';
+        $mime_type = isset($params['mime_type']) ? sanitize_text_field($params['mime_type']) : 'audio/webm';
+
+        if (empty($audio_base64)) {
+            return new WP_Error(
+                'missing_audio',
+                __('Keine Audio-Daten übermittelt.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get Whisper handler
+        $whisper_handler = Bewerbungstrainer_Whisper_Handler::get_instance();
+
+        if (!$whisper_handler->is_available()) {
+            return new WP_Error(
+                'whisper_unavailable',
+                __('Whisper-Transkription ist nicht konfiguriert. OpenAI API-Key fehlt.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Transcribe
+        $result = $whisper_handler->transcribe_base64(
+            $audio_base64,
+            $mime_type,
+            array(
+                'language' => 'de',
+                'scenario_title' => 'Entscheidungs-Kompass Audio-Eingabe',
+            )
+        );
+
+        if (is_wp_error($result)) {
+            error_log("[TRANSCRIBE] Whisper error: " . $result->get_error_message());
+            return $result;
+        }
+
+        $transcript = $result['transcript'];
+
+        // Check if transcript is empty
+        if ($whisper_handler->is_empty_transcript($transcript)) {
+            return new WP_Error(
+                'empty_transcript',
+                __('Es wurde keine Sprache erkannt. Bitte sprich deutlich ins Mikrofon.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'transcript' => $transcript,
+                'language' => $result['language'],
             ),
         ), 200);
     }
