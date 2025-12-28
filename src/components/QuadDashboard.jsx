@@ -187,12 +187,12 @@ const QuadDashboard = ({ onNavigate }) => {
   const formatActivityDate = (dateString) => {
     if (!dateString) return '';
 
-    // MySQL format "YYYY-MM-DD HH:MM:SS" - WordPress stores in local server time
-    // Just replace space with T, don't add Z (not UTC)
-    let normalizedDate = dateString;
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
-      normalizedDate = dateString.replace(' ', 'T');
-    }
+    // WordPress stores dates in local server time, not UTC
+    // Remove any timezone suffix (Z or +00:00) and normalize format
+    let normalizedDate = dateString
+      .replace(' ', 'T')           // MySQL format: "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
+      .replace(/Z$/, '')           // Remove UTC marker
+      .replace(/[+-]\d{2}:\d{2}$/, ''); // Remove timezone offset
 
     const date = new Date(normalizedDate);
     if (isNaN(date.getTime())) return '';

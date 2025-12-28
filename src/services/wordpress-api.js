@@ -1244,11 +1244,13 @@ class WordPressAPI {
             // Helper to parse MySQL/WordPress date format (stored in local server time)
             const parseDate = (dateString) => {
                 if (!dateString) return new Date(0);
-                // Handle MySQL format "YYYY-MM-DD HH:MM:SS" - local time, not UTC
-                if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
-                    return new Date(dateString.replace(' ', 'T'));
-                }
-                return new Date(dateString);
+                // WordPress stores dates in local server time, not UTC
+                // Remove any timezone suffix and normalize format
+                const normalized = dateString
+                    .replace(' ', 'T')           // MySQL format
+                    .replace(/Z$/, '')           // Remove UTC marker
+                    .replace(/[+-]\d{2}:\d{2}$/, ''); // Remove timezone offset
+                return new Date(normalized);
             };
 
             // Sort by created_at descending and limit
