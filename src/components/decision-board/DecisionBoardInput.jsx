@@ -74,11 +74,11 @@ const PERSONAS = [
 ];
 
 /**
- * Weight Slider Component
+ * Weight Slider Component - compact for mobile
  */
 const WeightSlider = ({ value, onChange, color }) => {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '140px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '100px', width: '100px' }}>
       <input
         type="range"
         min="1"
@@ -96,13 +96,13 @@ const WeightSlider = ({ value, onChange, color }) => {
       />
       <span
         style={{
-          minWidth: '32px',
+          minWidth: '28px',
           textAlign: 'center',
           fontWeight: 600,
-          fontSize: '14px',
+          fontSize: '13px',
           color: color === 'green' ? '#16a34a' : '#dc2626',
           backgroundColor: color === 'green' ? '#dcfce7' : '#fee2e2',
-          padding: '2px 8px',
+          padding: '2px 6px',
           borderRadius: '6px',
         }}
       >
@@ -113,7 +113,7 @@ const WeightSlider = ({ value, onChange, color }) => {
 };
 
 /**
- * Decision Item Component
+ * Decision Item Component - Mobile responsive
  */
 const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus }) => {
   const handleKeyDown = (e) => {
@@ -132,10 +132,12 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus }) 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: color === 'green' ? -20 : 20 }}
       transition={{ duration: 0.2 }}
+      className="decision-item"
       style={{
         display: 'flex',
+        flexWrap: 'wrap',
         alignItems: 'center',
-        gap: '12px',
+        gap: '10px',
         padding: '12px',
         backgroundColor: color === 'green' ? '#f0fdf4' : '#fef2f2',
         borderRadius: '12px',
@@ -149,38 +151,42 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus }) 
         autoFocus={autoFocus}
         placeholder={color === 'green' ? 'Pro-Argument...' : 'Contra-Argument...'}
         style={{
-          flex: 1,
+          flex: '1 1 200px',
+          minWidth: '0',
           backgroundColor: 'white',
           border: `1px solid ${color === 'green' ? '#86efac' : '#fca5a5'}`,
         }}
       />
-      <WeightSlider
-        value={item.weight}
-        onChange={(weight) => onUpdate(item.id, { weight })}
-        color={color}
-      />
-      <button
-        onClick={() => onDelete(item.id)}
-        style={{
-          padding: '8px',
-          backgroundColor: 'transparent',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          color: '#94a3b8',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#fee2e2';
-          e.currentTarget.style.color = '#dc2626';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent';
-          e.currentTarget.style.color = '#94a3b8';
-        }}
-      >
-        <Trash2 size={18} />
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <WeightSlider
+          value={item.weight}
+          onChange={(weight) => onUpdate(item.id, { weight })}
+          color={color}
+        />
+        <button
+          onClick={() => onDelete(item.id)}
+          style={{
+            padding: '8px',
+            backgroundColor: 'transparent',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            color: '#94a3b8',
+            transition: 'all 0.2s',
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#fee2e2';
+            e.currentTarget.style.color = '#dc2626';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.color = '#94a3b8';
+          }}
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>
     </motion.div>
   );
 };
@@ -487,54 +493,59 @@ const PersonaToolbar = ({
   onAddSuggestion,
   addedSuggestions,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false); // Start collapsed to save space on mobile
   const hasTopic = topic.trim().length > 0;
 
   return (
-    <Card variant="elevated" padding="lg" style={{ marginBottom: '24px' }}>
+    <Card variant="elevated" padding="md" style={{ marginBottom: '16px' }}>
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: 'pointer',
+          gap: '8px',
         }}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
+            width: '36px',
+            height: '36px',
+            borderRadius: '8px',
             background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            flexShrink: 0,
           }}>
-            <Users size={20} color="white" />
+            <Users size={18} color="white" />
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <h3 style={{
-              fontSize: '16px',
+              fontSize: '15px',
               fontWeight: 600,
               color: '#1e293b',
               margin: 0,
             }}>
-              Fehlen dir Argumente?
+              Brainstorming
             </h3>
             <p style={{
-              fontSize: '14px',
+              fontSize: '13px',
               color: '#64748b',
               margin: 0,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}>
-              Frag dein inneres Team um Inspiration
+              Frag dein inneres Team
             </p>
           </div>
         </div>
         {isExpanded ? (
-          <ChevronUp size={20} color="#64748b" />
+          <ChevronUp size={20} color="#64748b" style={{ flexShrink: 0 }} />
         ) : (
-          <ChevronDown size={20} color="#64748b" />
+          <ChevronDown size={20} color="#64748b" style={{ flexShrink: 0 }} />
         )}
       </div>
 
@@ -547,12 +558,20 @@ const PersonaToolbar = ({
             transition={{ duration: 0.2 }}
             style={{ overflow: 'hidden' }}
           >
-            <div style={{ marginTop: '20px' }}>
-              {/* Persona Buttons */}
+            <div style={{ marginTop: '16px' }}>
+              {/* Persona Buttons - horizontal scroll on mobile */}
               <div style={{
                 display: 'flex',
-                flexWrap: 'wrap',
-                gap: '10px',
+                gap: '8px',
+                overflowX: 'auto',
+                paddingBottom: '8px',
+                marginLeft: '-4px',
+                marginRight: '-4px',
+                paddingLeft: '4px',
+                paddingRight: '4px',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
               }}>
                 {PERSONAS.map((persona) => (
                   <button
@@ -565,9 +584,9 @@ const PersonaToolbar = ({
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 16px',
-                      borderRadius: '12px',
+                      gap: '6px',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
                       border: activePersona === persona.id
                         ? `2px solid ${persona.color}`
                         : '2px solid #e2e8f0',
@@ -577,19 +596,21 @@ const PersonaToolbar = ({
                       cursor: hasTopic ? 'pointer' : 'not-allowed',
                       opacity: hasTopic ? 1 : 0.5,
                       transition: 'all 0.2s',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                   >
                     {isLoading && activePersona === persona.id ? (
                       <Loader2
-                        size={18}
+                        size={16}
                         color={persona.color}
                         style={{ animation: 'spin 1s linear infinite' }}
                       />
                     ) : (
-                      <span style={{ fontSize: '18px' }}>{persona.icon}</span>
+                      <span style={{ fontSize: '16px' }}>{persona.icon}</span>
                     )}
                     <span style={{
-                      fontSize: '14px',
+                      fontSize: '13px',
                       fontWeight: 500,
                       color: activePersona === persona.id ? persona.color : '#475569',
                     }}>
@@ -816,35 +837,36 @@ const DecisionBoardInput = ({
   const primaryColor = branding?.['--primary-accent'] || '#4A9EC9';
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+    <div style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Header - responsive */}
+      <div style={{ marginBottom: '24px', textAlign: 'center' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '64px',
-          height: '64px',
-          borderRadius: '16px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '14px',
           background: `linear-gradient(135deg, ${primaryColor} 0%, #7C3AED 100%)`,
-          marginBottom: '16px',
+          marginBottom: '12px',
           boxShadow: '0 8px 24px rgba(124, 58, 237, 0.3)',
         }}>
-          <Scale size={32} color="white" />
+          <Scale size={28} color="white" />
         </div>
         <h1 style={{
-          fontSize: '28px',
+          fontSize: '24px',
           fontWeight: 700,
           color: '#1e293b',
-          marginBottom: '8px',
+          marginBottom: '6px',
         }}>
           Der Entscheidungs-Kompass
         </h1>
         <p style={{
-          fontSize: '16px',
+          fontSize: '14px',
           color: '#64748b',
           maxWidth: '600px',
           margin: '0 auto',
+          padding: '0 8px',
         }}>
           Analysiere deine Entscheidung objektiv. Gewichte Pro und Contra,
           und erhalte KI-gestützte Impulse für blinde Flecken.
@@ -852,7 +874,7 @@ const DecisionBoardInput = ({
       </div>
 
       {/* Decision Question */}
-      <Card variant="elevated" padding="lg" style={{ marginBottom: '24px' }}>
+      <Card variant="elevated" padding="md" style={{ marginBottom: '16px' }}>
         <CardHeader>
           <CardTitle icon={Lightbulb} size="md">
             Deine Entscheidungsfrage
@@ -864,7 +886,7 @@ const DecisionBoardInput = ({
             onChange={(e) => setTopic(e.target.value)}
             placeholder="z.B. Soll ich das Jobangebot annehmen?"
             style={{
-              fontSize: '18px',
+              fontSize: '16px',
               padding: '16px',
               borderRadius: '12px',
               marginBottom: '16px',
@@ -911,11 +933,11 @@ const DecisionBoardInput = ({
         addedSuggestions={addedSuggestions}
       />
 
-      {/* Pro/Contra Split */}
+      {/* Pro/Contra Split - responsive grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-        gap: '24px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
+        gap: '16px',
         marginBottom: '24px',
       }}>
         {/* Pro Column */}
