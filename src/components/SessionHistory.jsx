@@ -1025,13 +1025,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         .session-tabs-desktop {
           margin: 0 24px 24px;
           display: flex;
+          flex-wrap: wrap;
           gap: 8px;
           background: #f1f5f9;
           padding: 6px;
           border-radius: 14px;
         }
         .session-tab-btn-desktop {
-          flex: 1;
+          flex: 1 1 auto;
+          min-width: fit-content;
           padding: 12px 16px;
           border-radius: 10px;
           border: none;
