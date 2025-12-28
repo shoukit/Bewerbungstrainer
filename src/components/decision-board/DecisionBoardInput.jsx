@@ -972,8 +972,10 @@ const DecisionBoardInput = ({
         <div style={{
           backgroundColor: '#fff',
           borderRadius: '12px',
-          border: '1px solid #e2e8f0',
           borderTop: '4px solid #22c55e',
+          borderRight: '1px solid #e2e8f0',
+          borderBottom: '1px solid #e2e8f0',
+          borderLeft: '1px solid #e2e8f0',
           padding: '24px',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         }}>
@@ -1031,8 +1033,10 @@ const DecisionBoardInput = ({
         <div style={{
           backgroundColor: '#fff',
           borderRadius: '12px',
-          border: '1px solid #e2e8f0',
           borderTop: '4px solid #ef4444',
+          borderRight: '1px solid #e2e8f0',
+          borderBottom: '1px solid #e2e8f0',
+          borderLeft: '1px solid #e2e8f0',
           padding: '24px',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         }}>
