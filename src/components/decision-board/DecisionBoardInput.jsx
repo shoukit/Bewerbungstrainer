@@ -907,7 +907,7 @@ const DecisionBoardInput = ({
             }}
           />
 
-          {/* Context / Situation Description */}
+          {/* Context / Situation Description with integrated Audio */}
           <div style={{ marginTop: '8px' }}>
             <label style={{
               display: 'block',
@@ -918,32 +918,39 @@ const DecisionBoardInput = ({
             }}>
               Beschreibe die Situation (optional)
             </label>
-            <Textarea
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-              placeholder="Hintergrund, Rahmenbedingungen, Gefühle, was dich beschäftigt..."
-              rows={3}
-              style={{
-                fontSize: '15px',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                resize: 'vertical',
-                minHeight: '80px',
-              }}
-            />
 
-            {/* Audio Recorder for voice input */}
-            <div style={{ marginTop: '12px' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '13px',
-                fontWeight: 500,
-                color: '#94a3b8',
-                marginBottom: '8px',
+            {/* Textarea with mic button - Gemini style */}
+            <div style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+            }}>
+              <div style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: '12px',
               }}>
-                Oder per Spracheingabe:
-              </label>
-              <AudioRecorder onTranscriptReady={handleTranscriptReady} />
+                <Textarea
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  placeholder="Hintergrund, Rahmenbedingungen, Gefühle, was dich beschäftigt..."
+                  rows={3}
+                  style={{
+                    flex: 1,
+                    fontSize: '15px',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    resize: 'vertical',
+                    minHeight: '80px',
+                  }}
+                />
+                {/* Mic button positioned to the right of textarea */}
+                <div style={{ flexShrink: 0, paddingBottom: '4px' }}>
+                  <AudioRecorder onTranscriptReady={handleTranscriptReady} />
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
