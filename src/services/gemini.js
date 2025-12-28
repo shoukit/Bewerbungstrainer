@@ -846,6 +846,210 @@ WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Markdown, 
   }
 }
 
+// =============================================================================
+// DEEP DIVE WIZARD FUNCTIONS
+// =============================================================================
+
+/**
+ * Generates the next coaching question for the Deep Dive Wizard
+ * @param {string} topic - The decision topic
+ * @param {Array} existingPros - Already captured pro arguments
+ * @param {Array} existingCons - Already captured contra arguments
+ * @param {Array} conversationHistory - Previous Q&A pairs
+ * @param {string} apiKey - Gemini API key
+ * @returns {Promise<{question: string, questionType: string}>}
+ */
+export async function generateWizardQuestion(topic, existingPros = [], existingCons = [], conversationHistory = [], apiKey) {
+  if (!topic || topic.trim().length === 0) {
+    throw new Error('Entscheidungsfrage fehlt');
+  }
+
+  if (DEBUG_PROMPTS) {
+    console.log(`🧙 [GEMINI WIZARD] Generating question for: ${topic}`);
+    console.log(`🧙 [GEMINI WIZARD] Existing pros: ${existingPros.length}, cons: ${existingCons.length}`);
+    console.log(`🧙 [GEMINI WIZARD] Conversation history: ${conversationHistory.length} exchanges`);
+  }
+
+  // Format existing arguments
+  const prosText = existingPros.filter(p => p.text?.trim()).map(p => `- ${p.text}`).join('\n') || '(keine)';
+  const consText = existingCons.filter(c => c.text?.trim()).map(c => `- ${c.text}`).join('\n') || '(keine)';
+
+  // Format conversation history
+  let historyText = '';
+  if (conversationHistory.length > 0) {
+    historyText = '\nBISHERIGER GESPRÄCHSVERLAUF:\n' + conversationHistory.map((entry, i) =>
+      `Frage ${i + 1}: "${entry.question}"\nAntwort: "${entry.answer}"`
+    ).join('\n\n');
+  }
+
+  const prompt = `Du bist ein einfühlsamer systemischer Coach, der Menschen hilft, versteckte Motive und Gefühle bei wichtigen Entscheidungen zu entdecken.
+
+ENTSCHEIDUNGSTHEMA: "${topic}"
+
+BEREITS ERFASSTE ARGUMENTE:
+Pro:
+${prosText}
+
+Contra:
+${consText}
+${historyText}
+
+DEINE AUFGABE:
+1. Analysiere, welche PERSPEKTIVE oder welcher LEBENSBEREICH noch nicht beleuchtet wurde
+2. Identifiziere eine LÜCKE (z.B. fehlen Emotionen? Langzeitperspektive? Werte? Beziehungen? Ängste? Träume?)
+3. Stelle GENAU EINE tiefgründige, offene Frage, um diese Lücke zu füllen
+
+FRAGE-TECHNIKEN (wähle passend):
+- Wunderfrage: "Stell dir vor, du wachst morgen auf und alles ist perfekt gelöst..."
+- Worst-Case: "Was ist das Schlimmste, das passieren könnte, wenn..."
+- Zukunfts-Ich: "Stell dir vor, es ist 5 Jahre später..."
+- Werte-Check: "Was sagt diese Entscheidung über das aus, was dir wirklich wichtig ist?"
+- Bauchgefühl: "Wenn du ganz ehrlich bist, was sagt dein Körper dazu?"
+- Mentor-Perspektive: "Was würde dir jemand raten, der dich sehr gut kennt?"
+
+REGELN:
+- Verwende die "Du"-Form (persönlich, warm)
+- Halte die Frage kurz (max. 2 Sätze)
+- Vermeide Wiederholungen von bereits gestellten Fragen
+- Die Frage soll zum Nachdenken anregen, nicht suggestiv sein
+
+AUSGABE (nur JSON, kein Markdown):
+{
+  "question": "Deine Frage hier...",
+  "question_type": "wunderfrage|worst_case|zukunft|werte|bauchgefühl|mentor|andere",
+  "targets_gap": "Kurze Beschreibung, welche Lücke diese Frage adressiert"
+}`;
+
+  const responseText = await callGeminiWithFallback({
+    apiKey,
+    content: prompt,
+    context: 'WIZARD_QUESTION',
+  });
+
+  try {
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const result = JSON.parse(cleanedResponse);
+
+    if (DEBUG_PROMPTS) {
+      console.log(`✅ [GEMINI WIZARD] Question generated: ${result.question?.substring(0, 50)}...`);
+    }
+
+    // Log to server
+    wordpressAPI.logPrompt(
+      'GEMINI_WIZARD_QUESTION',
+      'Deep Dive Wizard - Frage generieren',
+      prompt,
+      { topic, existing_pros: existingPros.length, existing_cons: existingCons.length },
+      responseText
+    );
+
+    return result;
+  } catch (parseError) {
+    console.error('❌ [GEMINI WIZARD] Failed to parse question response:', parseError);
+    throw new Error(`Fehler beim Generieren der Frage: ${parseError.message}`);
+  }
+}
+
+/**
+ * Extracts arguments from the user's free-text answer
+ * @param {string} topic - The decision topic
+ * @param {string} question - The question that was asked
+ * @param {string} userAnswer - The user's free-text answer
+ * @param {string} apiKey - Gemini API key
+ * @returns {Promise<{extracted_items: Array}>}
+ */
+export async function extractWizardArguments(topic, question, userAnswer, apiKey) {
+  if (!userAnswer || userAnswer.trim().length < 10) {
+    return { extracted_items: [], message: 'Antwort zu kurz für Analyse' };
+  }
+
+  if (DEBUG_PROMPTS) {
+    console.log(`🔍 [GEMINI EXTRACT] Extracting from answer (${userAnswer.length} chars)`);
+  }
+
+  const prompt = `Du bist ein Daten-Analyst für Entscheidungsprozesse. Deine Aufgabe ist es, aus Freitext-Antworten strukturierte Argumente zu extrahieren.
+
+KONTEXT:
+Entscheidungsthema: "${topic}"
+Gestellte Frage: "${question}"
+
+ANTWORT DES USERS:
+"${userAnswer}"
+
+DEINE AUFGABE:
+1. Identifiziere die KERN-ARGUMENTE im Text (max. 3 Stück)
+2. Klassifiziere jedes als "pro" (spricht FÜR das Thema/JA) oder "con" (spricht DAGEGEN/NEIN)
+3. Formuliere sie in KURZE, PRÄGNANTE Stichpunkte um (substantivisch, max. 8 Wörter)
+4. Schätze die WICHTIGKEIT (weight 1-10) basierend auf:
+   - Emotionale Intensität der Wortwahl
+   - Wie oft/ausführlich der Punkt erwähnt wird
+   - Körperliche Reaktionen (Bauchgefühl, Stress, etc.)
+
+BEISPIELE für gute Extraktionen:
+- "Ich kriege immer Bauchschmerzen" → "Körperliche Stressreaktion", weight: 8-9
+- "Das Geld ist halt wichtig" → "Finanzielle Sicherheit", weight: 6-7
+- "Ich träume davon seit Jahren" → "Langgehegter Lebenstraum", weight: 9
+
+WICHTIG:
+- Wenn der Text keine klaren Argumente enthält (z.B. "weiß nicht", zu vage), gib ein leeres Array zurück
+- Extrahiere NUR das, was der User tatsächlich gesagt hat - erfinde nichts dazu
+- Pro/Con bezieht sich auf das THEMA, nicht auf die Frage
+
+AUSGABE (nur JSON, kein Markdown):
+{
+  "extracted_items": [
+    {
+      "type": "pro|con",
+      "text": "Kurzer prägnanter Stichpunkt",
+      "weight": 1-10,
+      "source_quote": "Originalzitat aus der Antwort"
+    }
+  ],
+  "analysis_note": "Kurze Notiz, was du erkannt hast (optional)"
+}`;
+
+  const responseText = await callGeminiWithFallback({
+    apiKey,
+    content: prompt,
+    context: 'WIZARD_EXTRACT',
+  });
+
+  try {
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const result = JSON.parse(cleanedResponse);
+
+    if (DEBUG_PROMPTS) {
+      console.log(`✅ [GEMINI EXTRACT] Extracted ${result.extracted_items?.length || 0} items`);
+    }
+
+    // Log to server
+    wordpressAPI.logPrompt(
+      'GEMINI_WIZARD_EXTRACT',
+      'Deep Dive Wizard - Argumente extrahieren',
+      prompt,
+      { topic, question_length: question.length, answer_length: userAnswer.length },
+      responseText
+    );
+
+    return result;
+  } catch (parseError) {
+    console.error('❌ [GEMINI EXTRACT] Failed to parse extraction response:', parseError);
+    throw new Error(`Fehler beim Extrahieren der Argumente: ${parseError.message}`);
+  }
+}
+
 export default {
   listAvailableModels,
   generateInterviewFeedback,
@@ -853,4 +1057,6 @@ export default {
   analyzeRhetoricGame,
   analyzeDecision,
   brainstormArguments,
+  generateWizardQuestion,
+  extractWizardArguments,
 };

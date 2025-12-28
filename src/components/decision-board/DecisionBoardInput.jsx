@@ -14,6 +14,7 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  Wand2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useBranding } from '@/hooks/useBranding';
 import { analyzeDecision, brainstormArguments } from '@/services/gemini';
 import AudioRecorder from './AudioRecorder';
+import DeepDiveWizard from './DeepDiveWizard';
 
 /**
  * Generate unique ID for items
@@ -763,6 +765,7 @@ const DecisionBoardInput = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
   const [focusedItemId, setFocusedItemId] = useState(null);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   // Auto-save tracking
   const [isSaving, setIsSaving] = useState(false);
@@ -1029,6 +1032,38 @@ const DecisionBoardInput = ({
     });
   }, []);
 
+  // Handle items from Deep Dive Wizard
+  const handleWizardAddItems = useCallback((items) => {
+    items.forEach((item) => {
+      const newItem = {
+        id: generateId(),
+        text: item.text,
+        weight: item.weight || 5,
+      };
+
+      if (item.type === 'pro') {
+        setPros(prev => {
+          // If first item is empty placeholder, replace it
+          if (prev.length === 1 && !prev[0].text.trim()) {
+            return [newItem];
+          }
+          return [...prev, newItem];
+        });
+      } else {
+        setCons(prev => {
+          // If first item is empty placeholder, replace it
+          if (prev.length === 1 && !prev[0].text.trim()) {
+            return [newItem];
+          }
+          return [...prev, newItem];
+        });
+      }
+    });
+
+    // Trigger auto-save after adding items
+    setTimeout(() => autoSave(), 100);
+  }, [autoSave]);
+
   // Analyze decision
   const handleAnalyze = useCallback(async () => {
     if (!canAnalyze) return;
@@ -1215,6 +1250,77 @@ const DecisionBoardInput = ({
         addedSuggestions={addedSuggestions}
         b={b}
       />
+
+      {/* Deep Dive Wizard Card */}
+      <Card
+        variant="elevated"
+        padding="lg"
+        style={{
+          marginBottom: b.space[4],
+          cursor: topic.trim() ? 'pointer' : 'not-allowed',
+          opacity: topic.trim() ? 1 : 0.6,
+          transition: b.transition.normal,
+        }}
+        onClick={() => topic.trim() && setIsWizardOpen(true)}
+      >
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: b.space[3],
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], minWidth: 0 }}>
+            <div style={{
+              width: b.space[10],
+              height: b.space[10],
+              borderRadius: b.radius.md,
+              background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Wand2 size={b.iconSize.lg} color="white" />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <h3 style={{
+                fontSize: b.fontSize.lg,
+                fontWeight: b.fontWeight.semibold,
+                color: b.textMain,
+                margin: 0,
+              }}>
+                Deep Dive Interview
+              </h3>
+              <p style={{
+                fontSize: b.fontSize.base,
+                color: b.textSecondary,
+                margin: 0,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                Entdecke verborgene Argumente durch gezielte Coaching-Fragen
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="solid"
+            size="sm"
+            disabled={!topic.trim()}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (topic.trim()) setIsWizardOpen(true);
+            }}
+            style={{
+              background: topic.trim() ? 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)' : undefined,
+              flexShrink: 0,
+            }}
+          >
+            <Sparkles size={b.iconSize.md} style={{ marginRight: b.space[1.5] }} />
+            Starten
+          </Button>
+        </div>
+      </Card>
 
       {/* Pro/Contra Split - responsive grid */}
       <div style={{
@@ -1542,6 +1648,16 @@ const DecisionBoardInput = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Deep Dive Wizard Modal */}
+      <DeepDiveWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        topic={topic}
+        existingPros={pros}
+        existingCons={cons}
+        onAddItems={handleWizardAddItems}
+      />
     </div>
   );
 };
