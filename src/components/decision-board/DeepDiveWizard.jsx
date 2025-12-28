@@ -684,13 +684,19 @@ const DeepDiveWizard = ({
                 </Button>
                 <Button
                   variant="solid"
-                  onClick={extractedItems.length > 0 ? handleConfirmSelection : handleSkipToNextQuestion}
-                  disabled={extractedItems.length > 0 && !extractedItems.some(i => i.selected)}
+                  onClick={() => {
+                    const selectedItems = extractedItems.filter(i => i.selected);
+                    if (selectedItems.length > 0) {
+                      handleConfirmSelection();
+                    } else {
+                      handleSkipToNextQuestion();
+                    }
+                  }}
                   style={{
                     background: b.headerGradient,
                   }}
                 >
-                  {extractedItems.length > 0 ? 'Übernehmen & Weiter' : 'Nächste Frage'}
+                  {extractedItems.some(i => i.selected) ? 'Übernehmen & Weiter' : 'Nächste Frage'}
                   <ChevronRight size={b.iconSize.md} style={{ marginLeft: b.space[1] }} />
                 </Button>
               </>
