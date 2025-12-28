@@ -639,7 +639,9 @@ class Bewerbungstrainer_Plugin {
         }
 
         // Initialize Decision Board
-        Bewerbungstrainer_Decision_Database::get_instance();
+        $decision_db = Bewerbungstrainer_Decision_Database::get_instance();
+        // Ensure table exists (for updates without re-activation)
+        $decision_db->create_table();
         Bewerbungstrainer_Decision_API::get_instance();
 
         // Initialize Categories (centralized for all modules)
