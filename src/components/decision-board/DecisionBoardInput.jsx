@@ -77,7 +77,7 @@ const PERSONAS = [
 /**
  * Weight Slider Component - compact for mobile
  */
-const WeightSlider = ({ value, onChange, color, b }) => {
+const WeightSlider = ({ value, onChange, onChangeEnd, color, b }) => {
   const isGreen = color === 'green';
   const accentColor = isGreen ? b.success : b.error;
   const accentDark = isGreen ? b.successDark : b.errorDark;
@@ -91,6 +91,8 @@ const WeightSlider = ({ value, onChange, color, b }) => {
         max="10"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
+        onMouseUp={onChangeEnd}
+        onTouchEnd={onChangeEnd}
         style={{
           width: '60px',
           height: '6px',
@@ -120,7 +122,7 @@ const WeightSlider = ({ value, onChange, color, b }) => {
 /**
  * Decision Item Component - Mobile responsive with multiline support
  */
-const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b }) => {
+const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoFocus, b }) => {
   const isGreen = color === 'green';
   const bgColor = isGreen ? b.successLight : b.errorLight;
   const borderColor = isGreen ? '#bbf7d0' : '#fecaca';
@@ -155,6 +157,7 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b 
       <Textarea
         value={item.text}
         onChange={(e) => onUpdate(item.id, { text: e.target.value })}
+        onBlur={onBlur}
         autoFocus={autoFocus}
         placeholder={isGreen ? 'Pro-Argument...' : 'Contra-Argument...'}
         rows={2}
@@ -174,6 +177,7 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b 
         <WeightSlider
           value={item.weight}
           onChange={(weight) => onUpdate(item.id, { weight })}
+          onChangeEnd={onBlur}
           color={color}
           b={b}
         />
@@ -686,6 +690,10 @@ const DecisionBoardInput = ({
   onCancel,
   isAuthenticated,
   requireAuth,
+  savedDecisionId,
+  onSaveDraft,
+  onUpdateSession,
+  onDecisionIdChange,
 }) => {
   const b = useBranding();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -702,6 +710,10 @@ const DecisionBoardInput = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
   const [focusedItemId, setFocusedItemId] = useState(null);
+
+  // Auto-save tracking
+  const [isSaving, setIsSaving] = useState(false);
+  const saveTimeoutRef = React.useRef(null);
 
   // Brainstorming state
   const [brainstormState, setBrainstormState] = useState({
@@ -726,6 +738,75 @@ const DecisionBoardInput = ({
   const hasValidPros = pros.some(item => item.text.trim());
   const hasValidCons = cons.some(item => item.text.trim());
   const canAnalyze = topic.trim() && (hasValidPros || hasValidCons);
+
+  /**
+   * Auto-save current data (debounced)
+   */
+  const autoSave = useCallback(async () => {
+    // Clear any pending save
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Don't save if no topic or no save handlers
+    if (!topic.trim() || !onSaveDraft || !onUpdateSession) {
+      return;
+    }
+
+    const currentData = {
+      topic,
+      context,
+      pros,
+      cons,
+      proScore,
+      contraScore,
+    };
+
+    setIsSaving(true);
+
+    try {
+      if (savedDecisionId) {
+        // Update existing session
+        await onUpdateSession(savedDecisionId, {
+          ...currentData,
+          status: 'draft',
+        });
+        console.log('[DecisionBoard] Auto-saved (update):', savedDecisionId);
+      } else {
+        // Create new session
+        const newId = await onSaveDraft(currentData);
+        if (newId && onDecisionIdChange) {
+          onDecisionIdChange(newId);
+        }
+        console.log('[DecisionBoard] Auto-saved (create):', newId);
+      }
+    } catch (err) {
+      console.error('[DecisionBoard] Auto-save failed:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [topic, context, pros, cons, proScore, contraScore, savedDecisionId, onSaveDraft, onUpdateSession, onDecisionIdChange]);
+
+  /**
+   * Debounced auto-save (wait 500ms after last change)
+   */
+  const debouncedAutoSave = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      autoSave();
+    }, 500);
+  }, [autoSave]);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Add new item
   const addPro = useCallback(() => {
@@ -954,6 +1035,7 @@ const DecisionBoardInput = ({
           <Input
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
+            onBlur={debouncedAutoSave}
             placeholder="z.B. Soll ich das Jobangebot annehmen?"
             style={{
               fontSize: b.fontSize.lg,
@@ -983,6 +1065,7 @@ const DecisionBoardInput = ({
               <Textarea
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
+                onBlur={debouncedAutoSave}
                 placeholder="Hintergrund, Rahmenbedingungen, Gefühle, was dich beschäftigt..."
                 rows={3}
                 style={{
@@ -1062,6 +1145,7 @@ const DecisionBoardInput = ({
                   onUpdate={updatePro}
                   onDelete={deletePro}
                   onAddNew={addPro}
+                  onBlur={debouncedAutoSave}
                   color="green"
                   autoFocus={focusedItemId === item.id}
                   b={b}
@@ -1123,6 +1207,7 @@ const DecisionBoardInput = ({
                   onUpdate={updateCon}
                   onDelete={deleteCon}
                   onAddNew={addCon}
+                  onBlur={debouncedAutoSave}
                   color="red"
                   autoFocus={focusedItemId === item.id}
                   b={b}

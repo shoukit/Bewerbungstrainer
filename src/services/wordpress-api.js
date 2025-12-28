@@ -803,7 +803,7 @@ class WordPressAPI {
     /**
      * Get all decisions for current user
      *
-     * @returns {Promise<Array>} Array of decision objects
+     * @returns {Promise<object>} Response with decisions array
      */
     async getDecisions() {
         try {
@@ -811,14 +811,11 @@ class WordPressAPI {
                 method: 'GET'
             });
 
-            if (response.success && response.data?.decisions) {
-                return response.data.decisions;
-            }
-
-            return [];
+            // Return full response for consistency with SessionHistory
+            return response;
         } catch (error) {
             console.error('❌ [WordPressAPI] Failed to get decisions:', error);
-            return [];
+            return { success: false, data: { decisions: [] } };
         }
     }
 

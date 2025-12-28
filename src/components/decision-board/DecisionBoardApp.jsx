@@ -221,6 +221,10 @@ const DecisionBoardApp = ({
             onCancel={onNavigateToHistory ? handleCancel : null}
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
+            savedDecisionId={savedDecisionId}
+            onSaveDraft={saveSessionDraft}
+            onUpdateSession={updateSession}
+            onDecisionIdChange={setSavedDecisionId}
           />
         );
     }
