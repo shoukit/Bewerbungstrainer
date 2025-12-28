@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
   X,
@@ -8,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getBestSupportedMimeType, fileToBase64 } from '@/utils/audio';
 import wordpressAPI from '@/services/wordpress-api';
+import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Format duration to M:SS format (like Gemini: 0:16)
@@ -21,7 +21,7 @@ const formatDuration = (seconds) => {
 /**
  * Simple bar waveform visualization (like Gemini)
  */
-const SimpleWaveform = ({ isRecording, analyserNode }) => {
+const SimpleWaveform = ({ isRecording, analyserNode, b }) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
 
@@ -58,7 +58,7 @@ const SimpleWaveform = ({ isRecording, analyserNode }) => {
         const value = dataArray[dataIndex] || 0;
         const barHeight = Math.max(2, (value / 255) * (canvas.height * 0.8));
 
-        ctx.fillStyle = '#1f2937'; // Dark gray like Gemini
+        ctx.fillStyle = b.textMain;
         ctx.fillRect(
           i * (barWidth + gap),
           centerY - barHeight / 2,
@@ -77,7 +77,7 @@ const SimpleWaveform = ({ isRecording, analyserNode }) => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isRecording, analyserNode]);
+  }, [isRecording, analyserNode, b]);
 
   return (
     <canvas
@@ -98,10 +98,12 @@ const SimpleWaveform = ({ isRecording, analyserNode }) => {
  *
  * States:
  * 1. Idle: Just a mic button
- * 2. Recording: [X] [Waveform] [Timer] [✓]
+ * 2. Recording: [X] [Waveform] [Timer] [checkmark]
  * 3. Transcribing: Loading state
  */
 const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
+  const b = useBranding();
+
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -256,18 +258,18 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '8px',
-        padding: '12px 16px',
-        backgroundColor: '#f9fafb',
-        borderRadius: '24px',
-        border: '1px solid #e5e7eb',
+        gap: b.space[2],
+        padding: `${b.space[3]} ${b.space[4]}`,
+        backgroundColor: b.cardBgHover,
+        borderRadius: b.radius.full,
+        border: `1px solid ${b.borderColor}`,
       }}>
         <Loader2
-          size={20}
-          color="#6b7280"
+          size={b.iconSize.lg}
+          color={b.textSecondary}
           style={{ animation: 'spin 1s linear infinite' }}
         />
-        <span style={{ fontSize: '14px', color: '#6b7280' }}>
+        <span style={{ fontSize: b.fontSize.base, color: b.textSecondary }}>
           Wird transkribiert...
         </span>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
@@ -281,11 +283,11 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        padding: '8px 12px',
-        backgroundColor: '#f9fafb',
-        borderRadius: '24px',
-        border: '1px solid #e5e7eb',
+        gap: b.space[3],
+        padding: `${b.space[2]} ${b.space[3]}`,
+        backgroundColor: b.cardBgHover,
+        borderRadius: b.radius.full,
+        border: `1px solid ${b.borderColor}`,
       }}>
         {/* Cancel button */}
         <button
@@ -293,36 +295,36 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
           style={{
             width: '36px',
             height: '36px',
-            borderRadius: '50%',
+            borderRadius: b.radius.full,
             border: 'none',
-            backgroundColor: '#f3f4f6',
-            color: '#6b7280',
+            backgroundColor: b.borderColorLight,
+            color: b.textSecondary,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.15s',
+            transition: `all ${b.transition.fast}`,
             flexShrink: 0,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#e5e7eb';
+            e.currentTarget.style.backgroundColor = b.borderColor;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#f3f4f6';
+            e.currentTarget.style.backgroundColor = b.borderColorLight;
           }}
         >
-          <X size={18} strokeWidth={2.5} />
+          <X size={b.iconSize.md} strokeWidth={2.5} />
         </button>
 
         {/* Waveform */}
-        <SimpleWaveform isRecording={isRecording} analyserNode={analyserRef.current} />
+        <SimpleWaveform isRecording={isRecording} analyserNode={analyserRef.current} b={b} />
 
         {/* Timer */}
         <span style={{
           fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: '14px',
-          fontWeight: 500,
-          color: '#374151',
+          fontSize: b.fontSize.base,
+          fontWeight: b.fontWeight.medium,
+          color: b.textMain,
           minWidth: '36px',
           textAlign: 'right',
           flexShrink: 0,
@@ -336,25 +338,25 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
           style={{
             width: '36px',
             height: '36px',
-            borderRadius: '50%',
+            borderRadius: b.radius.full,
             border: 'none',
-            backgroundColor: '#1f2937',
-            color: 'white',
+            backgroundColor: b.textMain,
+            color: b.white,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.15s',
+            transition: `all ${b.transition.fast}`,
             flexShrink: 0,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#111827';
+            e.currentTarget.style.opacity = '0.9';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#1f2937';
+            e.currentTarget.style.opacity = '1';
           }}
         >
-          <Check size={18} strokeWidth={2.5} />
+          <Check size={b.iconSize.md} strokeWidth={2.5} />
         </button>
       </div>
     );
@@ -362,9 +364,9 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
 
   // Idle state - just the mic button
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2] }}>
       {error && (
-        <span style={{ fontSize: '13px', color: '#dc2626' }}>{error}</span>
+        <span style={{ fontSize: b.fontSize.sm, color: b.error }}>{error}</span>
       )}
       <button
         onClick={startRecording}
@@ -373,25 +375,25 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         style={{
           width: '40px',
           height: '40px',
-          borderRadius: '50%',
+          borderRadius: b.radius.full,
           border: 'none',
-          backgroundColor: '#1f2937',
-          color: 'white',
+          backgroundColor: b.textMain,
+          color: b.white,
           cursor: disabled ? 'not-allowed' : 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'all 0.15s',
+          transition: `all ${b.transition.fast}`,
           opacity: disabled ? 0.5 : 1,
         }}
         onMouseEnter={(e) => {
-          if (!disabled) e.currentTarget.style.backgroundColor = '#111827';
+          if (!disabled) e.currentTarget.style.opacity = '0.9';
         }}
         onMouseLeave={(e) => {
-          if (!disabled) e.currentTarget.style.backgroundColor = '#1f2937';
+          if (!disabled) e.currentTarget.style.opacity = '1';
         }}
       >
-        <Mic size={20} />
+        <Mic size={b.iconSize.lg} />
       </button>
     </div>
   );

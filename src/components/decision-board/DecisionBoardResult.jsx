@@ -14,47 +14,47 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { usePartner } from '@/context/PartnerContext';
+import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Skeleton Loader for AI Cards
  */
-const CardSkeleton = () => (
+const CardSkeleton = ({ b }) => (
   <div style={{
-    padding: '24px',
-    borderRadius: '16px',
-    backgroundColor: '#f8fafc',
-    border: '1px solid #e2e8f0',
+    padding: b.space[6],
+    borderRadius: b.radius.xl,
+    backgroundColor: b.cardBgHover,
+    border: `1px solid ${b.borderColor}`,
   }}>
     <div style={{
       width: '48px',
       height: '48px',
-      borderRadius: '12px',
-      backgroundColor: '#e2e8f0',
-      marginBottom: '16px',
+      borderRadius: b.radius.lg,
+      backgroundColor: b.borderColor,
+      marginBottom: b.space[4],
       animation: 'pulse 1.5s ease-in-out infinite',
     }} />
     <div style={{
       width: '60%',
       height: '24px',
-      borderRadius: '8px',
-      backgroundColor: '#e2e8f0',
-      marginBottom: '12px',
+      borderRadius: b.radius.md,
+      backgroundColor: b.borderColor,
+      marginBottom: b.space[3],
       animation: 'pulse 1.5s ease-in-out infinite',
     }} />
     <div style={{
       width: '100%',
       height: '16px',
-      borderRadius: '6px',
-      backgroundColor: '#e2e8f0',
-      marginBottom: '8px',
+      borderRadius: b.radius.sm,
+      backgroundColor: b.borderColor,
+      marginBottom: b.space[2],
       animation: 'pulse 1.5s ease-in-out infinite',
     }} />
     <div style={{
       width: '85%',
       height: '16px',
-      borderRadius: '6px',
-      backgroundColor: '#e2e8f0',
+      borderRadius: b.radius.sm,
+      backgroundColor: b.borderColor,
       animation: 'pulse 1.5s ease-in-out infinite',
     }} />
   </div>
@@ -64,22 +64,22 @@ const CardSkeleton = () => (
  * AI Coaching Card Component
  * Renders structured content with bullet points
  */
-const CoachingCard = ({ card, index }) => {
+const CoachingCard = ({ card, index, b }) => {
   const cardStyles = {
     blind_spot: {
-      bgColor: '#fefce8',
-      borderColor: '#fde047',
+      bgColor: b.warningLight,
+      borderColor: b.warning,
       iconBg: '#fef08a',
-      iconColor: '#ca8a04',
-      bulletColor: '#ca8a04',
+      iconColor: b.warningDark,
+      bulletColor: b.warningDark,
       icon: Lightbulb,
     },
     challenger: {
-      bgColor: '#fef2f2',
+      bgColor: b.errorLight,
       borderColor: '#fca5a5',
-      iconBg: '#fee2e2',
-      iconColor: '#dc2626',
-      bulletColor: '#dc2626',
+      iconBg: b.errorLight,
+      iconColor: b.error,
+      bulletColor: b.error,
       icon: Flame,
     },
     intuition: {
@@ -104,8 +104,8 @@ const CoachingCard = ({ card, index }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.15 }}
       style={{
-        padding: '24px',
-        borderRadius: '16px',
+        padding: b.space[6],
+        borderRadius: b.radius.xl,
         backgroundColor: style.bgColor,
         border: `2px solid ${style.borderColor}`,
         height: '100%',
@@ -116,20 +116,20 @@ const CoachingCard = ({ card, index }) => {
       <div style={{
         width: '48px',
         height: '48px',
-        borderRadius: '12px',
+        borderRadius: b.radius.lg,
         backgroundColor: style.iconBg,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: '16px',
+        marginBottom: b.space[4],
       }}>
-        <Icon size={24} color={style.iconColor} />
+        <Icon size={b.iconSize['2xl']} color={style.iconColor} />
       </div>
       <h3 style={{
-        fontSize: '18px',
-        fontWeight: 700,
-        color: '#1e293b',
-        marginBottom: '12px',
+        fontSize: b.fontSize.xl,
+        fontWeight: b.fontWeight.bold,
+        color: b.textMain,
+        marginBottom: b.space[3],
       }}>
         {card.title}
       </h3>
@@ -137,16 +137,16 @@ const CoachingCard = ({ card, index }) => {
       {/* Challenger: Show the argument being questioned */}
       {card.type === 'challenger' && card.argument && (
         <div style={{
-          padding: '10px 14px',
+          padding: `${b.space[2.5]} ${b.space[3.5]}`,
           backgroundColor: 'rgba(255,255,255,0.6)',
-          borderRadius: '8px',
-          marginBottom: '12px',
+          borderRadius: b.radius.md,
+          marginBottom: b.space[3],
           borderLeft: `3px solid ${style.bulletColor}`,
         }}>
-          <span style={{ fontSize: '13px', color: '#64748b', display: 'block', marginBottom: '2px' }}>
+          <span style={{ fontSize: b.fontSize.sm, color: b.textSecondary, display: 'block', marginBottom: '2px' }}>
             Hinterfragtes Argument:
           </span>
-          <span style={{ fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
+          <span style={{ fontSize: b.fontSize.md, fontWeight: b.fontWeight.semibold, color: b.textMain }}>
             "{card.argument}"
           </span>
         </div>
@@ -155,16 +155,16 @@ const CoachingCard = ({ card, index }) => {
       {/* Intuition: Show the guiding question */}
       {card.type === 'intuition' && card.question && (
         <div style={{
-          padding: '10px 14px',
+          padding: `${b.space[2.5]} ${b.space[3.5]}`,
           backgroundColor: 'rgba(255,255,255,0.6)',
-          borderRadius: '8px',
-          marginBottom: '12px',
+          borderRadius: b.radius.md,
+          marginBottom: b.space[3],
           borderLeft: `3px solid ${style.bulletColor}`,
         }}>
-          <span style={{ fontSize: '13px', color: '#64748b', display: 'block', marginBottom: '2px' }}>
+          <span style={{ fontSize: b.fontSize.sm, color: b.textSecondary, display: 'block', marginBottom: '2px' }}>
             Reflexionsfrage:
           </span>
-          <span style={{ fontSize: '15px', fontWeight: 600, color: '#1e293b', fontStyle: 'italic' }}>
+          <span style={{ fontSize: b.fontSize.md, fontWeight: b.fontWeight.semibold, color: b.textMain, fontStyle: 'italic' }}>
             {card.question}
           </span>
         </div>
@@ -183,17 +183,17 @@ const CoachingCard = ({ card, index }) => {
             style={{
               display: 'flex',
               alignItems: 'flex-start',
-              gap: '10px',
-              marginBottom: '10px',
-              fontSize: '15px',
+              gap: b.space[2.5],
+              marginBottom: b.space[2.5],
+              fontSize: b.fontSize.md,
               lineHeight: 1.5,
-              color: '#475569',
+              color: b.textSecondary,
             }}
           >
             <span style={{
               width: '6px',
               height: '6px',
-              borderRadius: '50%',
+              borderRadius: b.radius.full,
               backgroundColor: style.bulletColor,
               marginTop: '8px',
               flexShrink: 0,
@@ -209,7 +209,7 @@ const CoachingCard = ({ card, index }) => {
 /**
  * Rational Score Display
  */
-const RationalScoreDisplay = ({ proScore, contraScore }) => {
+const RationalScoreDisplay = ({ proScore, contraScore, b }) => {
   const total = proScore + contraScore;
   const proPercentage = total > 0 ? Math.round((proScore / total) * 100) : 50;
   const contraPercentage = 100 - proPercentage;
@@ -217,7 +217,7 @@ const RationalScoreDisplay = ({ proScore, contraScore }) => {
   const dominantSide = proScore > contraScore ? 'pro' : proScore < contraScore ? 'contra' : 'neutral';
 
   return (
-    <Card variant="elevated" padding="lg" style={{ marginBottom: '24px' }}>
+    <Card variant="elevated" padding="lg" style={{ marginBottom: b.space[6] }}>
       <CardHeader>
         <CardTitle icon={Scale} size="lg">
           Rationaler Score
@@ -227,43 +227,43 @@ const RationalScoreDisplay = ({ proScore, contraScore }) => {
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
-          marginBottom: '12px',
+          marginBottom: b.space[3],
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ThumbsUp size={20} color="#16a34a" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2] }}>
+            <ThumbsUp size={b.iconSize.lg} color={b.success} />
             <span style={{
-              fontSize: '24px',
-              fontWeight: 700,
-              color: '#16a34a',
+              fontSize: b.fontSize['4xl'],
+              fontWeight: b.fontWeight.bold,
+              color: b.success,
             }}>
               {proPercentage}%
             </span>
-            <span style={{ color: '#64748b', fontSize: '14px' }}>
+            <span style={{ color: b.textSecondary, fontSize: b.fontSize.base }}>
               ({proScore} Punkte)
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: '#64748b', fontSize: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2] }}>
+            <span style={{ color: b.textSecondary, fontSize: b.fontSize.base }}>
               ({contraScore} Punkte)
             </span>
             <span style={{
-              fontSize: '24px',
-              fontWeight: 700,
-              color: '#dc2626',
+              fontSize: b.fontSize['4xl'],
+              fontWeight: b.fontWeight.bold,
+              color: b.error,
             }}>
               {contraPercentage}%
             </span>
-            <ThumbsDown size={20} color="#dc2626" />
+            <ThumbsDown size={b.iconSize.lg} color={b.error} />
           </div>
         </div>
 
         {/* Score Bar */}
         <div style={{
           height: '32px',
-          borderRadius: '16px',
+          borderRadius: b.radius.xl,
           overflow: 'hidden',
           display: 'flex',
-          backgroundColor: '#f1f5f9',
+          backgroundColor: b.cardBgHover,
           boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
         }}>
           <motion.div
@@ -271,7 +271,7 @@ const RationalScoreDisplay = ({ proScore, contraScore }) => {
             animate={{ width: `${proPercentage}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
             style={{
-              background: 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)',
+              background: `linear-gradient(90deg, ${b.success} 0%, ${b.successDark} 100%)`,
               height: '100%',
             }}
           />
@@ -280,7 +280,7 @@ const RationalScoreDisplay = ({ proScore, contraScore }) => {
             animate={{ width: `${contraPercentage}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
             style={{
-              background: 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)',
+              background: `linear-gradient(90deg, ${b.error} 0%, ${b.errorDark} 100%)`,
               height: '100%',
             }}
           />
@@ -288,16 +288,16 @@ const RationalScoreDisplay = ({ proScore, contraScore }) => {
 
         {/* Summary text */}
         <p style={{
-          marginTop: '16px',
+          marginTop: b.space[4],
           textAlign: 'center',
-          fontSize: '15px',
-          color: '#475569',
+          fontSize: b.fontSize.md,
+          color: b.textSecondary,
         }}>
           {dominantSide === 'pro' && (
-            <>Die Zahlen sprechen <strong style={{ color: '#16a34a' }}>für</strong> deine Entscheidung.</>
+            <>Die Zahlen sprechen <strong style={{ color: b.success }}>für</strong> deine Entscheidung.</>
           )}
           {dominantSide === 'contra' && (
-            <>Die Zahlen sprechen <strong style={{ color: '#dc2626' }}>gegen</strong> deine Entscheidung.</>
+            <>Die Zahlen sprechen <strong style={{ color: b.error }}>gegen</strong> deine Entscheidung.</>
           )}
           {dominantSide === 'neutral' && (
             <>Die Argumente sind <strong>ausgeglichen</strong> - hier lohnt sich ein genauerer Blick.</>
@@ -317,38 +317,37 @@ const DecisionBoardResult = ({
   onStartNew,
   onEditDecision,
 }) => {
-  const { branding } = usePartner();
-  const primaryColor = branding?.['--primary-accent'] || '#4A9EC9';
+  const b = useBranding();
 
   const isLoading = !analysisResult;
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: b.space[6], maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        style={{ marginBottom: '32px' }}
+        style={{ marginBottom: b.space[8] }}
       >
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '16px',
+          marginBottom: b.space[4],
         }}>
           <Button
             variant="ghost"
             onClick={onEditDecision}
           >
-            <ArrowLeft size={18} style={{ marginRight: '8px' }} />
+            <ArrowLeft size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
             Bearbeiten
           </Button>
           <Button
             variant="outline"
             onClick={onStartNew}
           >
-            <RefreshCw size={18} style={{ marginRight: '8px' }} />
+            <RefreshCw size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
             Neue Analyse
           </Button>
         </div>
@@ -360,24 +359,24 @@ const DecisionBoardResult = ({
             justifyContent: 'center',
             width: '64px',
             height: '64px',
-            borderRadius: '16px',
-            background: `linear-gradient(135deg, ${primaryColor} 0%, #7C3AED 100%)`,
-            marginBottom: '16px',
-            boxShadow: '0 8px 24px rgba(124, 58, 237, 0.3)',
+            borderRadius: b.radius.xl,
+            background: b.headerGradient,
+            marginBottom: b.space[4],
+            boxShadow: b.coloredShadow(b.primaryAccent, 'lg'),
           }}>
-            <Sparkles size={32} color="white" />
+            <Sparkles size={b.iconSize['3xl']} color={b.white} />
           </div>
           <h1 style={{
-            fontSize: '24px',
-            fontWeight: 700,
-            color: '#1e293b',
-            marginBottom: '8px',
+            fontSize: b.fontSize['4xl'],
+            fontWeight: b.fontWeight.bold,
+            color: b.textMain,
+            marginBottom: b.space[2],
           }}>
             Deine Entscheidungsanalyse
           </h1>
           <p style={{
-            fontSize: '18px',
-            color: '#64748b',
+            fontSize: b.fontSize.xl,
+            color: b.textSecondary,
             fontStyle: 'italic',
           }}>
             "{decisionData?.topic}"
@@ -390,6 +389,7 @@ const DecisionBoardResult = ({
         <RationalScoreDisplay
           proScore={decisionData.proScore}
           contraScore={decisionData.contraScore}
+          b={b}
         />
       )}
 
@@ -400,12 +400,12 @@ const DecisionBoardResult = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
         >
-          <Card variant="gradient" padding="lg" style={{ marginBottom: '24px' }}>
+          <Card variant="gradient" padding="lg" style={{ marginBottom: b.space[6] }}>
             <CardContent>
               <p style={{
-                fontSize: '17px',
+                fontSize: b.fontSize.lg,
                 lineHeight: 1.7,
-                color: '#334155',
+                color: b.textMain,
                 textAlign: 'center',
                 fontStyle: 'italic',
               }}>
@@ -421,37 +421,37 @@ const DecisionBoardResult = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.3 }}
-        style={{ marginBottom: '32px' }}
+        style={{ marginBottom: b.space[8] }}
       >
         <h2 style={{
-          fontSize: '20px',
-          fontWeight: 700,
-          color: '#1e293b',
-          marginBottom: '20px',
+          fontSize: b.fontSize['2xl'],
+          fontWeight: b.fontWeight.bold,
+          color: b.textMain,
+          marginBottom: b.space[5],
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          gap: b.space[2.5],
         }}>
-          <Sparkles size={22} color={primaryColor} />
+          <Sparkles size={b.iconSize.xl} color={b.primaryAccent} />
           KI-Coaching Impulse
         </h2>
 
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '20px',
+          gap: b.space[5],
         }}>
           {isLoading ? (
             // Skeleton loaders
             <>
-              <CardSkeleton />
-              <CardSkeleton />
-              <CardSkeleton />
+              <CardSkeleton b={b} />
+              <CardSkeleton b={b} />
+              <CardSkeleton b={b} />
             </>
           ) : (
             // Actual cards
             analysisResult?.cards?.map((card, index) => (
-              <CoachingCard key={card.type || index} card={card} index={index} />
+              <CoachingCard key={card.type || index} card={card} index={index} b={b} />
             ))
           )}
         </div>
@@ -468,20 +468,20 @@ const DecisionBoardResult = ({
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '24px',
+            gap: b.space[6],
           }}>
             {/* Pro Arguments */}
             <div>
               <h4 style={{
-                fontSize: '16px',
-                fontWeight: 600,
-                color: '#16a34a',
-                marginBottom: '12px',
+                fontSize: b.fontSize.lg,
+                fontWeight: b.fontWeight.semibold,
+                color: b.success,
+                marginBottom: b.space[3],
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: b.space[2],
               }}>
-                <ThumbsUp size={18} />
+                <ThumbsUp size={b.iconSize.md} />
                 Pro ({decisionData?.proScore} Punkte)
               </h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -489,23 +489,23 @@ const DecisionBoardResult = ({
                   <li
                     key={item.id || index}
                     style={{
-                      padding: '10px 14px',
-                      backgroundColor: '#f0fdf4',
-                      borderRadius: '8px',
-                      marginBottom: '8px',
+                      padding: `${b.space[2.5]} ${b.space[3.5]}`,
+                      backgroundColor: b.successLight,
+                      borderRadius: b.radius.md,
+                      marginBottom: b.space[2],
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                     }}
                   >
-                    <span style={{ color: '#15803d' }}>{item.text}</span>
+                    <span style={{ color: b.successDark }}>{item.text}</span>
                     <span style={{
                       backgroundColor: '#dcfce7',
-                      color: '#16a34a',
-                      padding: '2px 8px',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      fontWeight: 600,
+                      color: b.success,
+                      padding: `2px ${b.space[2]}`,
+                      borderRadius: b.radius.sm,
+                      fontSize: b.fontSize.sm,
+                      fontWeight: b.fontWeight.semibold,
                     }}>
                       {item.weight}
                     </span>
@@ -517,15 +517,15 @@ const DecisionBoardResult = ({
             {/* Contra Arguments */}
             <div>
               <h4 style={{
-                fontSize: '16px',
-                fontWeight: 600,
-                color: '#dc2626',
-                marginBottom: '12px',
+                fontSize: b.fontSize.lg,
+                fontWeight: b.fontWeight.semibold,
+                color: b.error,
+                marginBottom: b.space[3],
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: b.space[2],
               }}>
-                <ThumbsDown size={18} />
+                <ThumbsDown size={b.iconSize.md} />
                 Contra ({decisionData?.contraScore} Punkte)
               </h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -533,23 +533,23 @@ const DecisionBoardResult = ({
                   <li
                     key={item.id || index}
                     style={{
-                      padding: '10px 14px',
-                      backgroundColor: '#fef2f2',
-                      borderRadius: '8px',
-                      marginBottom: '8px',
+                      padding: `${b.space[2.5]} ${b.space[3.5]}`,
+                      backgroundColor: b.errorLight,
+                      borderRadius: b.radius.md,
+                      marginBottom: b.space[2],
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                     }}
                   >
-                    <span style={{ color: '#b91c1c' }}>{item.text}</span>
+                    <span style={{ color: b.errorDark }}>{item.text}</span>
                     <span style={{
                       backgroundColor: '#fee2e2',
-                      color: '#dc2626',
-                      padding: '2px 8px',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      fontWeight: 600,
+                      color: b.error,
+                      padding: `2px ${b.space[2]}`,
+                      borderRadius: b.radius.sm,
+                      fontSize: b.fontSize.sm,
+                      fontWeight: b.fontWeight.semibold,
                     }}>
                       {item.weight}
                     </span>
@@ -565,15 +565,15 @@ const DecisionBoardResult = ({
       <div style={{
         display: 'flex',
         justifyContent: 'center',
-        gap: '16px',
-        marginTop: '32px',
+        gap: b.space[4],
+        marginTop: b.space[8],
       }}>
         <Button
           variant="outline"
           size="lg"
           onClick={onEditDecision}
         >
-          <Edit3 size={18} style={{ marginRight: '8px' }} />
+          <Edit3 size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
           Argumente anpassen
         </Button>
         <Button
@@ -581,10 +581,10 @@ const DecisionBoardResult = ({
           size="lg"
           onClick={onStartNew}
           style={{
-            background: `linear-gradient(135deg, ${primaryColor} 0%, #7C3AED 100%)`,
+            background: b.headerGradient,
           }}
         >
-          <RefreshCw size={18} style={{ marginRight: '8px' }} />
+          <RefreshCw size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
           Neue Entscheidung
         </Button>
       </div>
