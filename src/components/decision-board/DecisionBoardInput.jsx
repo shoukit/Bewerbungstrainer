@@ -969,116 +969,122 @@ const DecisionBoardInput = ({
         marginBottom: '24px',
       }}>
         {/* Pro Column */}
-        <Card variant="elevated" padding="lg" style={{ borderTop: '4px solid #22c55e' }}>
-          <CardHeader>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                backgroundColor: '#dcfce7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <ThumbsUp size={20} color="#16a34a" />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#16a34a', margin: 0 }}>
-                  PRO
-                </h3>
-                <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
-                  Was spricht dafür?
-                </p>
-              </div>
+        <div style={{
+          backgroundColor: '#fff',
+          borderRadius: '12px',
+          border: '1px solid #e2e8f0',
+          borderTop: '4px solid #22c55e',
+          padding: '24px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              backgroundColor: '#dcfce7',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <ThumbsUp size={20} color="#16a34a" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <AnimatePresence mode="popLayout">
-                {pros.map((item) => (
-                  <DecisionItem
-                    key={item.id}
-                    item={item}
-                    onUpdate={updatePro}
-                    onDelete={deletePro}
-                    onAddNew={addPro}
-                    color="green"
-                    autoFocus={focusedItemId === item.id}
-                  />
-                ))}
-              </AnimatePresence>
-              <Button
-                variant="outline"
-                onClick={addPro}
-                style={{
-                  borderColor: '#22c55e',
-                  color: '#16a34a',
-                  borderStyle: 'dashed',
-                }}
-              >
-                <Plus size={18} style={{ marginRight: '8px' }} />
-                Argument hinzufügen
-              </Button>
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#16a34a', margin: 0 }}>
+                PRO
+              </h3>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
+                Was spricht dafür?
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <AnimatePresence mode="popLayout">
+              {pros.map((item) => (
+                <DecisionItem
+                  key={item.id}
+                  item={item}
+                  onUpdate={updatePro}
+                  onDelete={deletePro}
+                  onAddNew={addPro}
+                  color="green"
+                  autoFocus={focusedItemId === item.id}
+                />
+              ))}
+            </AnimatePresence>
+            <Button
+              variant="outline"
+              onClick={addPro}
+              style={{
+                borderColor: '#22c55e',
+                color: '#16a34a',
+                borderStyle: 'dashed',
+              }}
+            >
+              <Plus size={18} style={{ marginRight: '8px' }} />
+              Argument hinzufügen
+            </Button>
+          </div>
+        </div>
 
         {/* Contra Column */}
-        <Card variant="elevated" padding="lg" style={{ borderTop: '4px solid #ef4444' }}>
-          <CardHeader>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                backgroundColor: '#fee2e2',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <ThumbsDown size={20} color="#dc2626" />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#dc2626', margin: 0 }}>
-                  CONTRA
-                </h3>
-                <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
-                  Was spricht dagegen?
-                </p>
-              </div>
+        <div style={{
+          backgroundColor: '#fff',
+          borderRadius: '12px',
+          border: '1px solid #e2e8f0',
+          borderTop: '4px solid #ef4444',
+          padding: '24px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              backgroundColor: '#fee2e2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <ThumbsDown size={20} color="#dc2626" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <AnimatePresence mode="popLayout">
-                {cons.map((item) => (
-                  <DecisionItem
-                    key={item.id}
-                    item={item}
-                    onUpdate={updateCon}
-                    onDelete={deleteCon}
-                    onAddNew={addCon}
-                    color="red"
-                    autoFocus={focusedItemId === item.id}
-                  />
-                ))}
-              </AnimatePresence>
-              <Button
-                variant="outline"
-                onClick={addCon}
-                style={{
-                  borderColor: '#ef4444',
-                  color: '#dc2626',
-                  borderStyle: 'dashed',
-                }}
-              >
-                <Plus size={18} style={{ marginRight: '8px' }} />
-                Argument hinzufügen
-              </Button>
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#dc2626', margin: 0 }}>
+                CONTRA
+              </h3>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
+                Was spricht dagegen?
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <AnimatePresence mode="popLayout">
+              {cons.map((item) => (
+                <DecisionItem
+                  key={item.id}
+                  item={item}
+                  onUpdate={updateCon}
+                  onDelete={deleteCon}
+                  onAddNew={addCon}
+                  color="red"
+                  autoFocus={focusedItemId === item.id}
+                />
+              ))}
+            </AnimatePresence>
+            <Button
+              variant="outline"
+              onClick={addCon}
+              style={{
+                borderColor: '#ef4444',
+                color: '#dc2626',
+                borderStyle: 'dashed',
+              }}
+            >
+              <Plus size={18} style={{ marginRight: '8px' }} />
+              Argument hinzufügen
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Score Bar */}
