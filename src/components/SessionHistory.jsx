@@ -23,6 +23,7 @@ import {
   Sparkles,
   Trash2,
   Plus,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,7 +43,7 @@ import RoleplaySessionReport from './roleplay/RoleplaySessionReport';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from './smartbriefing/BriefingWorkbook';
-import DecisionDetailView from './decision-board/DecisionDetailView';
+import DecisionBoardInput from './decision-board/DecisionBoardInput';
 import { formatDateTime, formatDuration } from '@/utils/formatting';
 import { BRIEFING_ICON_MAP, getBriefingIcon } from '@/utils/iconMaps';
 import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
@@ -380,15 +381,135 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     );
   }
 
-  // Show decision detail view if a decision is selected
+  // Show decision edit view if a decision is selected
   if (selectedDecision) {
+    // Transform decision data to format expected by DecisionBoardInput
+    const initialDecisionData = {
+      topic: selectedDecision.topic || '',
+      context: selectedDecision.context || '',
+      pros: selectedDecision.pros || [],
+      cons: selectedDecision.cons || [],
+      proScore: selectedDecision.pro_score || 0,
+      contraScore: selectedDecision.contra_score || 0,
+    };
+
+    // Handler for when analysis completes - update the decision
+    const handleDecisionAnalysisComplete = async (data, result) => {
+      try {
+        const updateData = {
+          topic: data.topic,
+          context: data.context || null,
+          pros: data.pros,
+          cons: data.cons,
+          pro_score: data.proScore,
+          contra_score: data.contraScore,
+          analysis: result,
+          status: 'completed',
+        };
+
+        await wordpressAPI.updateDecision(selectedDecision.id, updateData);
+
+        // Update local state
+        const updatedDecision = {
+          ...selectedDecision,
+          ...updateData,
+        };
+        handleDecisionUpdate(updatedDecision);
+      } catch (err) {
+        console.error('[SessionHistory] Failed to update decision:', err);
+      }
+    };
+
+    // Handler for auto-save during editing
+    const handleDecisionDraftSave = async (data) => {
+      // This is an existing decision, so we don't need to create a new one
+      return selectedDecision.id;
+    };
+
+    // Handler for updating during editing
+    const handleDecisionSessionUpdate = async (id, data) => {
+      try {
+        await wordpressAPI.updateDecision(id, {
+          topic: data.topic,
+          context: data.context || null,
+          pros: data.pros,
+          cons: data.cons,
+          pro_score: data.proScore,
+          contra_score: data.contraScore,
+          status: data.status || 'draft',
+        });
+      } catch (err) {
+        console.error('[SessionHistory] Failed to update decision:', err);
+      }
+    };
+
     return (
-      <DecisionDetailView
-        decision={selectedDecision}
-        onBack={handleBackFromDecision}
-        onDelete={handleDeleteDecision}
-        onUpdate={handleDecisionUpdate}
-      />
+      <div>
+        {/* Header with back button */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: b.space[4],
+          paddingBottom: b.space[4],
+          borderBottom: `1px solid ${b.borderColor}`,
+        }}>
+          <button
+            onClick={handleBackFromDecision}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: b.space[2],
+              padding: `${b.space[2]} ${b.space[3]}`,
+              backgroundColor: 'transparent',
+              border: `1px solid ${b.borderColor}`,
+              borderRadius: b.radius.md,
+              cursor: 'pointer',
+              color: b.textSecondary,
+              fontSize: b.fontSize.base,
+            }}
+          >
+            <ArrowLeft size={b.iconSize.md} />
+            Zurück
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.confirm('Möchtest du diese Entscheidungs-Analyse wirklich löschen?')) {
+                handleDeleteDecision(selectedDecision.id);
+                handleBackFromDecision();
+              }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: b.space[2],
+              padding: `${b.space[2]} ${b.space[3]}`,
+              backgroundColor: 'transparent',
+              border: `1px solid ${b.error}`,
+              borderRadius: b.radius.md,
+              cursor: 'pointer',
+              color: b.error,
+              fontSize: b.fontSize.base,
+            }}
+          >
+            <Trash2 size={b.iconSize.md} />
+            Löschen
+          </button>
+        </div>
+
+        {/* Decision Board Input - same as create view */}
+        <DecisionBoardInput
+          initialData={initialDecisionData}
+          onAnalysisComplete={handleDecisionAnalysisComplete}
+          onCancel={handleBackFromDecision}
+          isAuthenticated={isAuthenticated}
+          savedDecisionId={selectedDecision.id}
+          onSaveDraft={handleDecisionDraftSave}
+          onUpdateSession={handleDecisionSessionUpdate}
+          onDecisionIdChange={() => {}}
+        />
+      </div>
     );
   }
 
