@@ -599,6 +599,22 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
       value: value
     })) : [];
 
+  /**
+   * Interpolate variables in text (e.g., ${variable_name} -> value)
+   */
+  const interpolateVariables = (text) => {
+    if (!text || !variables) return text;
+
+    let result = text;
+    Object.entries(variables).forEach(([key, value]) => {
+      if (value) {
+        result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value);
+        result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+      }
+    });
+    return result;
+  };
+
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
       {/* Header */}
@@ -701,7 +717,7 @@ const PreSessionView = ({ scenario, variables, questions, onStart, onBack, selec
                 margin: 0,
                 whiteSpace: 'pre-wrap',
               }}>
-                {scenario.long_description?.replace(/\/n/g, '\n')}
+                {interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n'))}
               </p>
             </div>
           </div>

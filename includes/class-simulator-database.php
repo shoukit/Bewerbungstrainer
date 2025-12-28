@@ -76,6 +76,8 @@ class Bewerbungstrainer_Simulator_Database {
             // Add long_description and tips columns for enhanced scenario info
             $this->maybe_add_long_description_column();
             $this->maybe_add_tips_column();
+            // Add allow_custom_variables column for user-defined variables
+            $this->maybe_add_allow_custom_variables_column();
             // Run category migration for existing installations
             self::migrate_category_values();
         }
@@ -190,6 +192,22 @@ class Bewerbungstrainer_Simulator_Database {
     public function ensure_schema_updated() {
         $this->maybe_add_long_description_column();
         $this->maybe_add_tips_column();
+        $this->maybe_add_allow_custom_variables_column();
+    }
+
+    /**
+     * Add allow_custom_variables column to scenarios table if it doesn't exist
+     */
+    private function maybe_add_allow_custom_variables_column() {
+        global $wpdb;
+
+        $column_exists = $wpdb->get_results("SHOW COLUMNS FROM `{$this->table_scenarios}` LIKE 'allow_custom_variables'");
+
+        if (empty($column_exists)) {
+            error_log('[SIMULATOR] Adding allow_custom_variables column to scenarios table...');
+            $wpdb->query("ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `allow_custom_variables` tinyint(1) DEFAULT 0 AFTER `allow_retry`");
+            error_log('[SIMULATOR] allow_custom_variables column added successfully');
+        }
     }
 
     /**
@@ -242,6 +260,7 @@ class Bewerbungstrainer_Simulator_Database {
             `question_count_max` tinyint UNSIGNED DEFAULT 12,
             `time_limit_per_question` int DEFAULT 120,
             `allow_retry` tinyint(1) DEFAULT 1,
+            `allow_custom_variables` tinyint(1) DEFAULT 0,
             `is_active` tinyint(1) DEFAULT 1,
             `sort_order` int DEFAULT 0,
             `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -345,6 +364,13 @@ class Bewerbungstrainer_Simulator_Database {
             $wpdb->query("ALTER TABLE `$table_scenarios` ADD COLUMN `mode` varchar(20) DEFAULT 'INTERVIEW' AFTER `category`");
             $wpdb->query("ALTER TABLE `$table_scenarios` ADD KEY `mode` (`mode`)");
             error_log('[SIMULATOR] Migration: Added mode column to scenarios table');
+        }
+
+        // Migration: Add 'allow_custom_variables' column if it doesn't exist
+        $custom_vars_exists = $wpdb->get_results("SHOW COLUMNS FROM `$table_scenarios` LIKE 'allow_custom_variables'");
+        if (empty($custom_vars_exists)) {
+            $wpdb->query("ALTER TABLE `$table_scenarios` ADD COLUMN `allow_custom_variables` tinyint(1) DEFAULT 0 AFTER `allow_retry`");
+            error_log('[SIMULATOR] Migration: Added allow_custom_variables column to scenarios table');
         }
 
         // Migration: Normalize legacy category values to new enum format
@@ -806,10 +832,11 @@ Gib konkrete Formulierungsvorschläge.',
                 'question_count_max' => intval($data['question_count_max']),
                 'time_limit_per_question' => intval($data['time_limit_per_question']),
                 'allow_retry' => intval($data['allow_retry']),
+                'allow_custom_variables' => intval($data['allow_custom_variables'] ?? 0),
                 'is_active' => intval($data['is_active']),
                 'sort_order' => intval($data['sort_order']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
         );
 
         if ($result === false) {
@@ -837,7 +864,7 @@ Gib konkrete Formulierungsvorschläge.',
             'title', 'description', 'long_description', 'icon', 'difficulty', 'target_audience', 'category', 'mode',
             'system_prompt', 'question_generation_prompt', 'feedback_prompt', 'tips',
             'input_configuration', 'question_count_min', 'question_count_max',
-            'time_limit_per_question', 'allow_retry', 'is_active', 'sort_order'
+            'time_limit_per_question', 'allow_retry', 'allow_custom_variables', 'is_active', 'sort_order'
         );
 
         foreach ($allowed_fields as $field) {
@@ -859,7 +886,7 @@ Gib konkrete Formulierungsvorschläge.',
                 $update_data[$field] = $value;
 
                 // Determine format
-                if (in_array($field, array('question_count_min', 'question_count_max', 'time_limit_per_question', 'allow_retry', 'is_active', 'sort_order'))) {
+                if (in_array($field, array('question_count_min', 'question_count_max', 'time_limit_per_question', 'allow_retry', 'allow_custom_variables', 'is_active', 'sort_order'))) {
                     $update_format[] = '%d';
                 } else {
                     $update_format[] = '%s';

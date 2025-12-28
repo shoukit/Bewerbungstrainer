@@ -2391,6 +2391,7 @@ class Bewerbungstrainer_API {
             'initial_message' => get_post_meta($post->ID, '_roleplay_initial_message', true),
             'difficulty' => get_post_meta($post->ID, '_roleplay_difficulty', true),
             'variables_schema' => $variables,
+            'allow_custom_variables' => (bool) get_post_meta($post->ID, '_roleplay_allow_custom_variables', true),
             'tags' => is_array($tags) ? $tags : array(),
             'feedback_prompt' => get_post_meta($post->ID, '_roleplay_feedback_prompt', true),
             'interviewer_profile' => array(

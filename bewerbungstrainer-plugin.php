@@ -128,8 +128,13 @@ function bewerbungstrainer_log_prompt($scenario, $description, $prompt, $metadat
     $separator = str_repeat('=', 80);
     $timestamp = date('Y-m-d H:i:s');
 
+    // Determine provider based on scenario name
+    $is_whisper = (strpos($scenario, 'WHISPER') !== false);
+    $provider_icon = $is_whisper ? '🎙️' : '🤖';
+    $provider_name = $is_whisper ? 'OPENAI WHISPER' : 'GEMINI';
+
     $log_content = "\n" . $separator . "\n";
-    $log_content .= "🤖 GEMINI PROMPT DEBUG - " . $scenario . "\n";
+    $log_content .= $provider_icon . " " . $provider_name . " - " . $scenario . "\n";
     $log_content .= "📅 " . $timestamp . "\n";
     $log_content .= $separator . "\n";
     $log_content .= "📋 SZENARIO: " . $description . "\n";
@@ -164,7 +169,8 @@ function bewerbungstrainer_log_prompt($scenario, $description, $prompt, $metadat
     file_put_contents($log_file, $log_content, FILE_APPEND | LOCK_EX);
 
     // Also log to error_log for immediate visibility
-    error_log("[GEMINI PROMPT] " . $scenario . " - " . $description . " (see prompts.log for full details)");
+    $log_prefix = $is_whisper ? 'WHISPER' : 'GEMINI PROMPT';
+    error_log("[" . $log_prefix . "] " . $scenario . " - " . $description . " (see prompts.log for full details)");
 }
 
 /**
@@ -190,11 +196,15 @@ function bewerbungstrainer_log_response($scenario, $response, $is_error = false)
     $separator = str_repeat('=', 80);
     $timestamp = date('Y-m-d H:i:s');
 
+    // Determine provider based on scenario name
+    $is_whisper = (strpos($scenario, 'WHISPER') !== false);
+    $provider_name = $is_whisper ? 'OPENAI WHISPER' : 'GEMINI';
+
     $status_icon = $is_error ? '❌' : '✅';
     $status_text = $is_error ? 'ERROR RESPONSE' : 'RESPONSE';
 
     $log_content = $separator . "\n";
-    $log_content .= $status_icon . " GEMINI " . $status_text . " - " . $scenario . "\n";
+    $log_content .= $status_icon . " " . $provider_name . " " . $status_text . " - " . $scenario . "\n";
     $log_content .= "📅 " . $timestamp . "\n";
     $log_content .= $separator . "\n";
 
@@ -215,7 +225,8 @@ function bewerbungstrainer_log_response($scenario, $response, $is_error = false)
 
     // Also log to error_log for immediate visibility
     $log_type = $is_error ? 'ERROR' : 'RESPONSE';
-    error_log("[GEMINI " . $log_type . "] " . $scenario . " - " . strlen($response) . " chars (see prompts.log for full details)");
+    $log_prefix = $is_whisper ? 'WHISPER' : 'GEMINI';
+    error_log("[" . $log_prefix . " " . $log_type . "] " . $scenario . " - " . strlen($response) . " chars (see prompts.log for full details)");
 }
 
 /**
@@ -255,6 +266,7 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-audio-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-video-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whisper-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
 
         // Load shared API trait (must be loaded before API classes)
@@ -298,6 +310,9 @@ class Bewerbungstrainer_Plugin {
 
         // Load Usage Limits class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-usage-limits.php';
+
+        // Load Settings Admin class
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-settings-admin.php';
 
         // Load Disclaimer class
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-disclaimer.php';
@@ -633,6 +648,11 @@ class Bewerbungstrainer_Plugin {
 
         // Initialize Usage Limits
         Bewerbungstrainer_Usage_Limits::get_instance();
+
+        // Initialize Settings Admin (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_Settings_Admin::get_instance();
+        }
 
         // Initialize Disclaimer
         Bewerbungstrainer_Disclaimer::get_instance();

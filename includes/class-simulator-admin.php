@@ -50,9 +50,17 @@ class Bewerbungstrainer_Simulator_Admin {
      */
     private function init_hooks() {
         add_action('admin_menu', array($this, 'add_admin_menu'));
+        add_action('admin_init', array($this, 'ensure_schema_updated'));
         add_action('admin_init', array($this, 'handle_form_actions'));
         add_action('admin_init', array($this, 'handle_csv_actions'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
+    }
+
+    /**
+     * Ensure database schema is up to date
+     */
+    public function ensure_schema_updated() {
+        $this->db->ensure_schema_updated();
     }
 
     /**
@@ -332,23 +340,24 @@ class Bewerbungstrainer_Simulator_Admin {
         }
 
         return array(
-            'title' => sanitize_text_field($post['title'] ?? ''),
-            'description' => sanitize_textarea_field($post['description'] ?? ''),
-            'long_description' => sanitize_textarea_field($post['long_description'] ?? ''),
+            'title' => sanitize_text_field(wp_unslash($post['title'] ?? '')),
+            'description' => sanitize_textarea_field(wp_unslash($post['description'] ?? '')),
+            'long_description' => sanitize_textarea_field(wp_unslash($post['long_description'] ?? '')),
             'icon' => sanitize_text_field($post['icon'] ?? 'briefcase'),
             'difficulty' => sanitize_text_field($post['difficulty'] ?? 'intermediate'),
             'category' => Bewerbungstrainer_Categories_Admin::parse_categories_input($post['categories'] ?? array()),
             'target_audience' => $target_audience,
             'mode' => $mode,
-            'system_prompt' => wp_kses_post($post['system_prompt'] ?? ''),
-            'question_generation_prompt' => wp_kses_post($post['question_generation_prompt'] ?? ''),
-            'feedback_prompt' => wp_kses_post($post['feedback_prompt'] ?? ''),
+            'system_prompt' => wp_kses_post(wp_unslash($post['system_prompt'] ?? '')),
+            'question_generation_prompt' => wp_kses_post(wp_unslash($post['question_generation_prompt'] ?? '')),
+            'feedback_prompt' => wp_kses_post(wp_unslash($post['feedback_prompt'] ?? '')),
             'tips' => $tips,
             'input_configuration' => json_encode($input_configuration, JSON_UNESCAPED_UNICODE),
             'question_count_min' => intval($post['question_count_min'] ?? 8),
             'question_count_max' => intval($post['question_count_max'] ?? 12),
             'time_limit_per_question' => intval($post['time_limit_per_question'] ?? 120),
             'allow_retry' => isset($post['allow_retry']) ? 1 : 0,
+            'allow_custom_variables' => isset($post['allow_custom_variables']) ? 1 : 0,
             'is_active' => isset($post['is_active']) ? 1 : 0,
             'sort_order' => intval($post['sort_order'] ?? 0),
         );
@@ -473,6 +482,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'question_count_max',
             'time_limit_per_question',
             'allow_retry',
+            'allow_custom_variables',
             'is_active',
             'sort_order'
         ), ';');
@@ -534,6 +544,7 @@ class Bewerbungstrainer_Simulator_Admin {
                 $scenario->question_count_max,
                 $scenario->time_limit_per_question,
                 $scenario->allow_retry,
+                $scenario->allow_custom_variables ?? 0,
                 $scenario->is_active,
                 $scenario->sort_order
             ), ';');
@@ -625,6 +636,7 @@ class Bewerbungstrainer_Simulator_Admin {
                 'question_count_max' => intval($data['question_count_max'] ?? 12),
                 'time_limit_per_question' => intval($data['time_limit_per_question'] ?? 120),
                 'allow_retry' => intval($data['allow_retry'] ?? 1),
+                'allow_custom_variables' => intval($data['allow_custom_variables'] ?? 0),
                 'is_active' => intval($data['is_active'] ?? 1),
                 'sort_order' => intval($data['sort_order'] ?? 0),
             );
@@ -1021,6 +1033,7 @@ class Bewerbungstrainer_Simulator_Admin {
             'question_count_max' => 12,
             'time_limit_per_question' => 120,
             'allow_retry' => 1,
+            'allow_custom_variables' => 0,
             'is_active' => 1,
             'sort_order' => 0,
         );
@@ -1270,6 +1283,13 @@ class Bewerbungstrainer_Simulator_Admin {
                                             Wiederholung erlauben
                                         </label>
                                     </p>
+                                    <p>
+                                        <label>
+                                            <input type="checkbox" name="allow_custom_variables" value="1" <?php checked($data['allow_custom_variables'] ?? 0, 1); ?>>
+                                            Nutzer kann eigene Variablen hinzufügen
+                                        </label>
+                                        <br><small>Zeigt "Zusätzliche Variablen" im Frontend</small>
+                                    </p>
                                 </div>
                             </div>
 
@@ -1361,7 +1381,26 @@ class Bewerbungstrainer_Simulator_Admin {
                 handle: '.handle',
                 placeholder: 'ui-state-highlight',
                 update: function() {
-                    // Re-index after sort if needed
+                    // Re-index after sort - update data-index and name attributes
+                    $('#variables-container .simulator-variable-item').each(function(newIndex) {
+                        var $item = $(this);
+                        var oldIndex = $item.data('index');
+
+                        // Update data-index
+                        $item.data('index', newIndex);
+                        $item.attr('data-index', newIndex);
+
+                        // Update var_required checkbox name
+                        $item.find('input[name^="var_required["]').attr('name', 'var_required[' + newIndex + ']');
+
+                        // Update var_options names
+                        $item.find('input[name^="var_options["]').each(function() {
+                            var name = $(this).attr('name');
+                            // Replace old index with new index in name like var_options[0][value][]
+                            var newName = name.replace(/var_options\[\d+\]/, 'var_options[' + newIndex + ']');
+                            $(this).attr('name', newName);
+                        });
+                    });
                 }
             });
         });

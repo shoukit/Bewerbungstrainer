@@ -6,6 +6,10 @@ import {
   Sparkles,
   CheckCircle,
   Info,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
@@ -201,6 +205,10 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
   const [formValues, setFormValues] = useState({});
   const [errors, setErrors] = useState({});
 
+  // Custom variables state (only used if scenario.allow_custom_variables is true)
+  const [customVariables, setCustomVariables] = useState([]);
+  const [showCustomVariables, setShowCustomVariables] = useState(false);
+
   // Partner theming
   const b = useBranding();
 
@@ -244,6 +252,23 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
         return next;
       });
     }
+  };
+
+  // Custom variables handlers
+  const addCustomVariable = () => {
+    setCustomVariables(prev => [...prev, { key: '', value: '' }]);
+  };
+
+  const updateCustomVariable = (index, field, value) => {
+    setCustomVariables(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const deleteCustomVariable = (index) => {
+    setCustomVariables(prev => prev.filter((_, i) => i !== index));
   };
 
   const validateForm = () => {
@@ -294,8 +319,16 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
       return;
     }
 
+    // Merge form values with custom variables
+    const allVariables = { ...formValues };
+    customVariables.forEach(cv => {
+      if (cv.key && cv.value) {
+        allVariables[cv.key] = cv.value;
+      }
+    });
+
     // Pass variables to next step
-    onNext(formValues);
+    onNext(allVariables);
   };
 
   // If no variables needed, auto-proceed to next step
@@ -399,6 +432,147 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
             branding={b}
           />
         ))}
+
+        {/* Custom Variables Section - only shown if scenario allows */}
+        {scenario?.allow_custom_variables && (
+          <div style={{
+            marginTop: b.space[5],
+            marginBottom: b.space[5],
+            paddingTop: b.space[5],
+            borderTop: `1px solid ${COLORS.slate[200]}`,
+          }}>
+            <button
+              type="button"
+              onClick={() => setShowCustomVariables(!showCustomVariables)}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: b.space[2],
+                padding: '0',
+                border: 'none',
+                background: 'none',
+                color: COLORS.slate[500],
+                fontSize: b.fontSize.sm,
+                fontWeight: 500,
+                cursor: 'pointer',
+                marginBottom: showCustomVariables ? b.space[4] : '0',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: b.space[2], flexShrink: 0 }}>
+                {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                <Plus size={16} />
+              </span>
+              <span style={{ lineHeight: '1.4' }}>Zusätzliche Variablen hinzufügen (optional)</span>
+            </button>
+
+            {showCustomVariables && (
+              <div style={{
+                backgroundColor: COLORS.slate[50],
+                borderRadius: b.radius.lg,
+                padding: b.space[4],
+              }}>
+                <p style={{
+                  fontSize: b.fontSize.sm,
+                  color: COLORS.slate[500],
+                  margin: `0 0 ${b.space[3]} 0`,
+                }}>
+                  Füge eigene Variablen hinzu, die in das Training einfließen sollen.
+                </p>
+
+                {customVariables.length > 0 && (
+                  <div style={{ marginBottom: b.space[3] }}>
+                    {customVariables.map((cv, index) => (
+                      <div key={index} style={{
+                        backgroundColor: 'white',
+                        border: `1px solid ${COLORS.slate[200]}`,
+                        borderRadius: b.radius.md,
+                        padding: b.space[3],
+                        marginBottom: b.space[3],
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: b.space[2],
+                        }}>
+                          <input
+                            type="text"
+                            value={cv.key || ''}
+                            onChange={(e) => updateCustomVariable(index, 'key', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+                            placeholder="variable_name"
+                            style={{
+                              padding: `${b.space[2]} ${b.space[3]}`,
+                              borderRadius: b.radius.md,
+                              border: `1px solid ${COLORS.slate[200]}`,
+                              fontSize: b.fontSize.sm,
+                              fontFamily: 'monospace',
+                              backgroundColor: COLORS.slate[50],
+                              flex: 1,
+                              marginRight: b.space[2],
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => deleteCustomVariable(index)}
+                            style={{
+                              padding: b.space[2],
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              color: COLORS.red[500],
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        <textarea
+                          value={cv.value || ''}
+                          onChange={(e) => updateCustomVariable(index, 'value', e.target.value)}
+                          placeholder="Wert der Variable..."
+                          rows={2}
+                          style={{
+                            width: '100%',
+                            padding: `${b.space[2]} ${b.space[3]}`,
+                            borderRadius: b.radius.md,
+                            border: `1px solid ${COLORS.slate[200]}`,
+                            fontSize: b.fontSize.sm,
+                            resize: 'vertical',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={addCustomVariable}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: b.space[2],
+                    padding: `${b.space[2]} ${b.space[3]}`,
+                    border: `1px dashed ${COLORS.slate[300]}`,
+                    borderRadius: b.radius.md,
+                    backgroundColor: 'white',
+                    color: COLORS.slate[600],
+                    fontSize: b.fontSize.sm,
+                    cursor: 'pointer',
+                    width: '100%',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Plus size={16} />
+                  Variable hinzufügen
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Session Info */}
         <div style={{

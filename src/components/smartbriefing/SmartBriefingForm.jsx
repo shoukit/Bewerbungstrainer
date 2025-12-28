@@ -374,7 +374,7 @@ const SmartBriefingForm = ({
         }}
       >
         <ArrowLeft size={18} />
-        Zuruck zur Ubersicht
+        <span style={{ lineHeight: '1.4' }}>Zurück zur Übersicht</span>
       </button>
 
       {/* Template Header */}
@@ -477,7 +477,7 @@ const SmartBriefingForm = ({
                     onClick={() => setShowCustomVariables(!showCustomVariables)}
                     style={{
                       display: 'flex',
-                      alignItems: 'center',
+                      alignItems: 'flex-start',
                       gap: '8px',
                       padding: '0',
                       border: 'none',
@@ -487,11 +487,14 @@ const SmartBriefingForm = ({
                       fontWeight: 500,
                       cursor: 'pointer',
                       marginBottom: showCustomVariables ? '16px' : '0',
+                      textAlign: 'left',
                     }}
                   >
-                    {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                    <Plus size={16} />
-                    Zusätzliche Variablen hinzufügen (optional)
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                      {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                      <Plus size={16} />
+                    </span>
+                    <span style={{ lineHeight: '1.4' }}>Zusätzliche Variablen hinzufügen (optional)</span>
                   </button>
 
                   {showCustomVariables && (

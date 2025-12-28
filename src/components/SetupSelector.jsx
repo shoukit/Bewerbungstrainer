@@ -63,7 +63,13 @@ const SetupCard = ({ setup, isSelected, onSelect }) => {
       </h3>
 
       {/* Description */}
-      <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
+      <p className="text-xs text-gray-500 leading-relaxed mb-3" style={{
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+        wordBreak: 'break-word',
+      }}>
         {setup.description}
       </p>
 
@@ -254,11 +260,10 @@ const SetupSelector = () => {
                         border: 'none',
                         outline: 'none',
                         cursor: 'pointer',
-                        color: '#6b7280',
                         WebkitAppearance: 'none',
                       }}
                     >
-                      <X size={18} />
+                      <X size={18} style={{ color: '#6b7280' }} />
                     </button>
                   </div>
 

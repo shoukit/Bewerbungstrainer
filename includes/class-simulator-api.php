@@ -208,6 +208,7 @@ class Bewerbungstrainer_Simulator_API {
                 'question_count_max' => (int) $scenario->question_count_max,
                 'time_limit_per_question' => (int) $scenario->time_limit_per_question,
                 'allow_retry' => (bool) $scenario->allow_retry,
+                'allow_custom_variables' => (bool) ($scenario->allow_custom_variables ?? 0),
                 'tips' => $tips,
             );
         }, $scenarios);
@@ -263,6 +264,7 @@ class Bewerbungstrainer_Simulator_API {
                 'question_count_max' => (int) $scenario->question_count_max,
                 'time_limit_per_question' => (int) $scenario->time_limit_per_question,
                 'allow_retry' => (bool) $scenario->allow_retry,
+                'allow_custom_variables' => (bool) ($scenario->allow_custom_variables ?? 0),
                 'tips' => $tips,
             ),
         ), 200);
@@ -607,53 +609,144 @@ class Bewerbungstrainer_Simulator_API {
         $latest_answer = $this->db->get_latest_answer_for_question($session_id, $question_index);
         $attempt_number = $latest_answer ? $latest_answer->attempt_number + 1 : 1;
 
-        // Build analysis prompt
+        // Build feedback prompt
         $feedback_prompt = $scenario->feedback_prompt ?: $this->get_default_feedback_prompt();
         $feedback_prompt = $this->interpolate_variables($feedback_prompt, $variables);
 
-        $analysis_prompt = $this->build_audio_analysis_prompt(
-            $question_text,
-            $scenario,
-            $variables,
-            $feedback_prompt
-        );
+        // Get previous answers for conversation context in feedback
+        $previous_answers = $this->db->get_session_answers($session_id, true);
+        $questions_list = json_decode($scenario->questions_json, true) ?: array();
+        $conversation_history = $this->build_conversation_history_for_feedback($previous_answers, $questions_list, $variables);
 
-        // Log prompt to prompts.log
-        if (function_exists('bewerbungstrainer_log_prompt')) {
-            bewerbungstrainer_log_prompt(
-                'SIMULATOR_AUDIO_FEEDBACK',
-                'Szenario-Training: Audio-Analyse und Feedback. Transkribiert Antwort, bewertet Inhalt und Sprechweise.',
-                $analysis_prompt,
+        // Check if Whisper is available for transcription
+        $whisper_handler = Bewerbungstrainer_Whisper_Handler::get_instance();
+        $use_whisper = $whisper_handler->is_available();
+
+        if ($use_whisper) {
+            // ========== NEW: Whisper + Gemini Text Pipeline ==========
+            error_log("[SIMULATOR] Using Whisper for transcription...");
+
+            // Step 1: Transcribe with Whisper
+            $whisper_result = $whisper_handler->transcribe_base64(
+                base64_encode($audio_data),
+                $mime_type ?? 'audio/webm',
                 array(
-                    'Szenario' => $scenario->title,
-                    'Frage' => $question_text,
-                    'Frage-Index' => $question_index,
-                    'Versuch-Nr' => $attempt_number,
-                    'Audio-Größe' => strlen($audio_data) . ' bytes',
-                    'MIME-Type' => $mime_type ?? 'audio/webm',
-                    'Session-ID' => $session_id,
+                    'language' => 'de',
+                    'scenario_title' => $scenario->title,
                 )
             );
-        }
 
-        // Call Gemini with multimodal (audio + text)
-        $analysis_result = $this->call_gemini_multimodal($analysis_prompt, $audio_data, $mime_type ?? 'audio/webm', $api_key);
-
-        if (is_wp_error($analysis_result)) {
-            // Log error response
-            if (function_exists('bewerbungstrainer_log_response')) {
-                bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result->get_error_message(), true);
+            if (is_wp_error($whisper_result)) {
+                error_log("[SIMULATOR] Whisper error: " . $whisper_result->get_error_message());
+                return $whisper_result;
             }
-            return $analysis_result;
-        }
 
-        // Log successful response
-        if (function_exists('bewerbungstrainer_log_response')) {
-            bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result);
-        }
+            $transcript = $whisper_result['transcript'];
+            error_log("[SIMULATOR] Whisper transcript: " . substr($transcript, 0, 200) . "...");
 
-        // Parse analysis response
-        $parsed = $this->parse_audio_analysis_response($analysis_result);
+            // Step 2: Check if transcript is empty/failed
+            if ($whisper_handler->is_empty_transcript($transcript)) {
+                error_log("[SIMULATOR] Whisper returned empty transcript, rejecting answer");
+                return new WP_Error(
+                    'empty_transcript',
+                    __('Es wurde keine Sprache erkannt. Bitte sprich deutlich ins Mikrofon und versuche es erneut.', 'bewerbungstrainer'),
+                    array('status' => 400)
+                );
+            }
+
+            // Step 3: Build text-only analysis prompt
+            $analysis_prompt = $this->build_text_analysis_prompt(
+                $question_text,
+                $scenario,
+                $variables,
+                $feedback_prompt,
+                $transcript,
+                $conversation_history
+            );
+
+            // Log prompt
+            if (function_exists('bewerbungstrainer_log_prompt')) {
+                bewerbungstrainer_log_prompt(
+                    'SIMULATOR_TEXT_FEEDBACK',
+                    'Szenario-Training: Text-Analyse und Feedback (Whisper-Transkript).',
+                    $analysis_prompt,
+                    array(
+                        'Szenario' => $scenario->title,
+                        'Frage' => $question_text,
+                        'Frage-Index' => $question_index,
+                        'Versuch-Nr' => $attempt_number,
+                        'Transkript-Länge' => strlen($transcript) . ' chars',
+                        'Session-ID' => $session_id,
+                        'Transcription-Method' => 'Whisper',
+                    )
+                );
+            }
+
+            // Step 4: Call Gemini text API for analysis
+            $analysis_result = $this->call_gemini_api($analysis_prompt, $api_key);
+
+            if (is_wp_error($analysis_result)) {
+                if (function_exists('bewerbungstrainer_log_response')) {
+                    bewerbungstrainer_log_response('SIMULATOR_TEXT_FEEDBACK', $analysis_result->get_error_message(), true);
+                }
+                return $analysis_result;
+            }
+
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SIMULATOR_TEXT_FEEDBACK', $analysis_result);
+            }
+
+            // Step 5: Parse text analysis response (includes transcript from Whisper)
+            $parsed = $this->parse_text_analysis_response($analysis_result, $transcript);
+
+        } else {
+            // ========== FALLBACK: Gemini Multimodal Pipeline ==========
+            error_log("[SIMULATOR] Whisper not available, using Gemini multimodal fallback...");
+
+            $analysis_prompt = $this->build_audio_analysis_prompt(
+                $question_text,
+                $scenario,
+                $variables,
+                $feedback_prompt,
+                $conversation_history
+            );
+
+            // Log prompt to prompts.log
+            if (function_exists('bewerbungstrainer_log_prompt')) {
+                bewerbungstrainer_log_prompt(
+                    'SIMULATOR_AUDIO_FEEDBACK',
+                    'Szenario-Training: Audio-Analyse und Feedback (Gemini Multimodal).',
+                    $analysis_prompt,
+                    array(
+                        'Szenario' => $scenario->title,
+                        'Frage' => $question_text,
+                        'Frage-Index' => $question_index,
+                        'Versuch-Nr' => $attempt_number,
+                        'Audio-Größe' => strlen($audio_data) . ' bytes',
+                        'MIME-Type' => $mime_type ?? 'audio/webm',
+                        'Session-ID' => $session_id,
+                        'Transcription-Method' => 'Gemini-Multimodal',
+                    )
+                );
+            }
+
+            // Call Gemini with multimodal (audio + text)
+            $analysis_result = $this->call_gemini_multimodal($analysis_prompt, $audio_data, $mime_type ?? 'audio/webm', $api_key);
+
+            if (is_wp_error($analysis_result)) {
+                if (function_exists('bewerbungstrainer_log_response')) {
+                    bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result->get_error_message(), true);
+                }
+                return $analysis_result;
+            }
+
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SIMULATOR_AUDIO_FEEDBACK', $analysis_result);
+            }
+
+            // Parse analysis response
+            $parsed = $this->parse_audio_analysis_response($analysis_result);
+        }
 
         // Create answer record
         $answer_data = array(
@@ -755,7 +848,8 @@ class Bewerbungstrainer_Simulator_API {
         $variables = $session->variables_json ?: array();
 
         // Build conversation history string (includes all Q&A pairs from database)
-        $conversation_history = $this->build_conversation_history($questions, $answers);
+        // Pass variables for dynamic role labels (e.g., "PATIENT:" instead of "GESPRÄCHSPARTNER:")
+        $conversation_history = $this->build_conversation_history($questions, $answers, $variables);
 
         // Check if we should finish the conversation
         $answered_count = count($answers);
@@ -847,8 +941,20 @@ class Bewerbungstrainer_Simulator_API {
 
     /**
      * Build conversation history string from questions and answers
+     *
+     * @param array $questions The questions/situations array
+     * @param array $answers The user's answers
+     * @param array $variables Session variables (optional, for role names)
      */
-    private function build_conversation_history($questions, $answers) {
+    private function build_conversation_history($questions, $answers, $variables = array()) {
+        // Get role names from variables for clear labeling
+        $ai_role_label = !empty($variables['rolle_der_ki'])
+            ? strtoupper($variables['rolle_der_ki'])
+            : 'KI-GESPRÄCHSPARTNER';
+        $user_role_label = !empty($variables['rolle_des_users'])
+            ? strtoupper($variables['rolle_des_users'])
+            : 'TRAINIERENDER';
+
         $history = array();
 
         foreach ($answers as $answer) {
@@ -869,7 +975,7 @@ class Bewerbungstrainer_Simulator_API {
 
         $formatted = "";
         foreach ($history as $turn) {
-            $role_label = $turn['role'] === 'ai' ? 'GESPRÄCHSPARTNER' : 'USER';
+            $role_label = $turn['role'] === 'ai' ? $ai_role_label : $user_role_label;
             $formatted .= "{$role_label}: {$turn['content']}\n\n";
         }
 
@@ -877,11 +983,62 @@ class Bewerbungstrainer_Simulator_API {
     }
 
     /**
+     * Build conversation history for feedback prompts
+     *
+     * Creates a summary of previous turns so Gemini knows what was already said
+     * when giving feedback on the current answer.
+     *
+     * @param array $answers Previous answers in the session
+     * @param array $questions The questions/situations array
+     * @param array $variables Session variables for role names
+     * @return string Formatted conversation history or empty string if no previous turns
+     */
+    private function build_conversation_history_for_feedback($answers, $questions, $variables = array()) {
+        // If no previous answers, return empty
+        if (empty($answers)) {
+            return '';
+        }
+
+        // Get role names from variables for clear labeling
+        $ai_role_label = !empty($variables['rolle_der_ki'])
+            ? strtoupper($variables['rolle_der_ki'])
+            : 'KI-GESPRÄCHSPARTNER';
+        $user_role_label = !empty($variables['rolle_des_users'])
+            ? strtoupper($variables['rolle_des_users'])
+            : 'TRAINIERENDER';
+
+        $history_parts = array();
+        foreach ($answers as $answer) {
+            $q_index = $answer->question_index;
+            $question_text = isset($questions[$q_index]['question'])
+                ? $questions[$q_index]['question']
+                : "Frage " . ($q_index + 1);
+            $transcript = $answer->transcript ?: '[Keine Antwort]';
+
+            $history_parts[] = "TURN " . ($q_index + 1) . ":\n{$ai_role_label}: {$question_text}\n{$user_role_label}: {$transcript}";
+        }
+
+        return implode("\n\n", $history_parts);
+    }
+
+    /**
      * Build prompt for generating the next turn in SIMULATION mode
      */
     private function build_next_turn_prompt($system_prompt, $question_prompt, $conversation_history, $turns_so_far, $min_turns, $max_turns, $variables) {
+        // Extract role names from variables for explicit role enforcement
+        $rolle_der_ki = isset($variables['rolle_der_ki']) ? $variables['rolle_der_ki'] : 'KI-Gesprächspartner';
+        $rolle_des_users = isset($variables['rolle_des_users']) ? $variables['rolle_des_users'] : 'Trainierender';
+
         $prompt = "SYSTEM-KONTEXT:\n{$system_prompt}\n\n";
         $prompt .= "SZENARIO-ANWEISUNGEN:\n{$question_prompt}\n\n";
+
+        // Explicit role enforcement section
+        $prompt .= "═══════════════════════════════════════════════════════════════\n";
+        $prompt .= "KRITISCHE ROLLENVERTEILUNG (NICHT VERTAUSCHEN!):\n";
+        $prompt .= "═══════════════════════════════════════════════════════════════\n";
+        $prompt .= "▶ DEINE ROLLE: {$rolle_der_ki}\n";
+        $prompt .= "▶ ROLLE DES USERS: {$rolle_des_users}\n";
+        $prompt .= "═══════════════════════════════════════════════════════════════\n\n";
 
         $prompt .= "BISHERIGER GESPRÄCHSVERLAUF:\n";
         $prompt .= $conversation_history;
@@ -889,7 +1046,7 @@ class Bewerbungstrainer_Simulator_API {
         // (fetched from the database after submit_answer saves it)
 
         $prompt .= "---\n\n";
-        $prompt .= "AUFGABE: Generiere die nächste Reaktion des GESPRÄCHSPARTNERS (deine Rolle).\n\n";
+        $prompt .= "AUFGABE: Generiere die nächste Reaktion als {$rolle_der_ki}.\n\n";
 
         $prompt .= "GESPRÄCHSFORTSCHRITT:\n";
         $prompt .= "- Bisherige Turns: {$turns_so_far}\n";
@@ -898,11 +1055,12 @@ class Bewerbungstrainer_Simulator_API {
 
         $prompt .= "REGELN:\n";
         $prompt .= "1. Reagiere natürlich auf die letzte Antwort des Users\n";
-        $prompt .= "2. Bleibe in deiner Rolle als Gesprächspartner\n";
-        $prompt .= "3. Generiere KEINE Aussagen für den User - nur deine eigene Reaktion\n";
+        $prompt .= "2. BLEIBE STRIKT IN DEINER ROLLE ALS {$rolle_der_ki}! Du bist NICHT der {$rolle_des_users}!\n";
+        $prompt .= "3. Generiere KEINE Aussagen für den User ({$rolle_des_users}) - nur deine eigene Reaktion als {$rolle_der_ki}\n";
         $prompt .= "4. Wenn das Gespräch einen natürlichen Endpunkt erreicht hat ODER max_turns erreicht sind, setze is_finished auf true\n";
         $prompt .= "5. Beende das Gespräch NICHT vor min_turns, es sei denn es gibt einen sehr guten Grund\n";
-        $prompt .= "6. NAMEN-REGEL: Wenn der User dich mit einem Namen anspricht (z.B. 'Frau Meyer'), dann ist das DEIN Charakter-Name. Verwende diesen Namen NICHT, um den User anzusprechen! Der User hat keinen festgelegten Namen - sprich ihn neutral an oder gar nicht.\n\n";
+        $prompt .= "6. NAMEN-REGEL: Wenn der User dich mit einem Namen anspricht (z.B. 'Frau Meyer'), dann ist das DEIN Charakter-Name. Verwende diesen Namen NICHT, um den User anzusprechen! Der User hat keinen festgelegten Namen - sprich ihn neutral an oder gar nicht.\n";
+        $prompt .= "7. ROLLEN-WECHSEL VERBOTEN: Antworte NIEMALS aus der Perspektive des {$rolle_des_users}! Du bist ausschließlich {$rolle_der_ki}.\n\n";
 
         $prompt .= "TIPS-REGELN (WICHTIG!):\n";
         $prompt .= "- Die 'tips' sind Handlungsempfehlungen für den TRAINIERENDEN (User), NICHT für dich als KI!\n";
@@ -913,7 +1071,7 @@ class Bewerbungstrainer_Simulator_API {
         $prompt .= "ANTWORTE IM FOLGENDEN JSON-FORMAT:\n";
         $prompt .= "```json\n";
         $prompt .= "{\n";
-        $prompt .= "  \"response\": \"Deine nächste Aussage/Reaktion als Gesprächspartner\",\n";
+        $prompt .= "  \"response\": \"Deine nächste Aussage/Reaktion als {$rolle_der_ki}\",\n";
         $prompt .= "  \"category\": \"follow_up|challenge|negotiation|escalation|acceptance|closing\",\n";
         $prompt .= "  \"tips\": [\n";
         $prompt .= "    \"Konkreter Tipp für den User: Wie sollte er auf diese Aussage reagieren?\",\n";
@@ -1381,7 +1539,7 @@ Sei konstruktiv und motivierend. Verwende die "Du"-Form.';
 
         // Select prompt template based on mode
         if ($mode === 'SIMULATION') {
-            $mode_prompt = $this->get_simulation_prompt_template($count);
+            $mode_prompt = $this->get_simulation_prompt_template($count, $variables);
         } else {
             $mode_prompt = $this->get_interview_prompt_template($count);
         }
@@ -1424,7 +1582,11 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
     /**
      * Get the simulation prompt template (new behavior for roleplay/counterpart scenarios)
      */
-    private function get_simulation_prompt_template($count) {
+    private function get_simulation_prompt_template($count, $variables = array()) {
+        // Extract role names from variables for explicit role enforcement
+        $rolle_der_ki = isset($variables['rolle_der_ki']) ? $variables['rolle_der_ki'] : 'KI-Gesprächspartner';
+        $rolle_des_users = isset($variables['rolle_des_users']) ? $variables['rolle_des_users'] : 'Trainierender';
+
         return "HINWEIS ZUR SZENARIO-BESCHREIBUNG:
 Die Szenario-Beschreibung oben zeigt den GESAMTEN Gesprächsverlauf als Übersicht (z.B. '3 Versuche').
 Das ist der PLAN für das gesamte Gespräch - NICHT was du jetzt generieren sollst!
@@ -1433,24 +1595,31 @@ DEINE AKTUELLE AUFGABE:
 Generiere NUR {$count} ERÖFFNUNGS-Aussage(n) für den Gesprächsbeginn.
 Die weiteren Gesprächs-Turns werden SPÄTER dynamisch basierend auf den Antworten des Users generiert.
 
-KRITISCH - ROLLENVERTEILUNG:
-- DU generierst NUR die Aussagen/Reaktionen DEINER Rolle (der Gegenspieler)
-- Der USER spielt die andere Rolle und antwortet zwischen deinen Aussagen
-- Generiere NIEMALS Aussagen des Users - nur DEINE eigenen Reaktionen!
-- Jede \"question\" ist EINE Aussage von DIR, auf die der User dann reagiert
+═══════════════════════════════════════════════════════════════
+KRITISCHE ROLLENVERTEILUNG (NICHT VERTAUSCHEN!):
+═══════════════════════════════════════════════════════════════
+▶ DEINE ROLLE: {$rolle_der_ki}
+▶ ROLLE DES USERS: {$rolle_des_users}
+═══════════════════════════════════════════════════════════════
 
-WICHTIG: Das ist KEIN Interview. Du stellst KEINE Fragen an den Nutzer. Du bist der Gegenspieler (z.B. Kunde, Klient, Mitarbeiter) und generierst Aussagen, Einwände oder emotionale Reaktionen, auf die der Nutzer reagieren muss.
+KRITISCH - ROLLENVERTEILUNG:
+- DU bist ausschließlich {$rolle_der_ki} und generierst NUR Aussagen/Reaktionen aus dieser Perspektive
+- Der USER spielt {$rolle_des_users} und antwortet zwischen deinen Aussagen
+- Generiere NIEMALS Aussagen des {$rolle_des_users} - nur DEINE eigenen Reaktionen als {$rolle_der_ki}!
+- Jede \"question\" ist EINE Aussage von DIR ({$rolle_der_ki}), auf die der User ({$rolle_des_users}) dann reagiert
+
+WICHTIG: Das ist KEIN Interview. Du stellst KEINE Fragen an den Nutzer. Du bist {$rolle_der_ki} und generierst Aussagen, Einwände oder emotionale Reaktionen, auf die der {$rolle_des_users} reagieren muss.
 
 Mapping der JSON-Felder:
-- Feld \"question\": DEINE wörtliche Rede oder Handlung (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\"). NUR deine Rolle, NICHT die des Users!
-- Feld \"tips\": 2-3 taktische Verhaltenstipps für den Nutzer, wie er auf DEINE Aussage reagieren sollte.
+- Feld \"question\": DEINE wörtliche Rede oder Handlung als {$rolle_der_ki} (z.B. \"Das ist mir zu teuer!\" oder \"*Schlägt wütend auf den Tisch*\"). NUR deine Rolle, NICHT die des {$rolle_des_users}!
+- Feld \"tips\": 2-3 taktische Verhaltenstipps für den {$rolle_des_users}, wie er auf DEINE Aussage reagieren sollte.
 - Feld \"category\": Die Phase des Gesprächs (z.B. \"Eröffnung\", \"Konfrontation\", \"Einwand\", \"Eskalation\").
 
 Antworte NUR mit einem JSON-Array im folgenden Format:
 [
   {
     \"index\": 0,
-    \"question\": \"Die Eröffnungs-Aussage oder Handlung des Gegenübers\",
+    \"question\": \"Die Eröffnungs-Aussage oder Handlung des {$rolle_der_ki}\",
     \"category\": \"Eröffnung\",
     \"estimated_answer_time\": 60,
     \"tips\": [
@@ -1463,8 +1632,15 @@ Antworte NUR mit einem JSON-Array im folgenden Format:
 
     /**
      * Build audio analysis prompt
+     *
+     * @param string $question_text The question/situation the user responded to
+     * @param object $scenario The scenario object
+     * @param array $variables Session variables
+     * @param string $feedback_prompt Custom feedback instructions
+     * @param string $conversation_history Previous turns in the conversation (optional)
+     * @return string The complete prompt for audio analysis
      */
-    private function build_audio_analysis_prompt($question_text, $scenario, $variables, $feedback_prompt) {
+    private function build_audio_analysis_prompt($question_text, $scenario, $variables, $feedback_prompt, $conversation_history = '') {
         $context = '';
         if ($variables) {
             foreach ($variables as $key => $value) {
@@ -1502,7 +1678,24 @@ Die Situation ist nur der Kontext. Das Audio enthält die REAKTION des Nutzers d
         $antiHallucinationRules = Bewerbungstrainer_Transcription_Constants::get_anti_hallucination_rules();
         $noSpeechDetected = Bewerbungstrainer_Transcription_Constants::NO_SPEECH_DETECTED;
 
-        return "Du bist ein professioneller Karriere-Coach und analysierst Audioantworten.
+        // Get coach role from variables with fallback
+        $coach_rolle = !empty($variables['coach_rolle']) ? $variables['coach_rolle'] : 'Trainer';
+
+        // Build conversation history section if there are previous turns
+        $history_section = '';
+        if (!empty($conversation_history)) {
+            $history_section = "
+BISHERIGER GESPRÄCHSVERLAUF:
+═══════════════════════════════════════════════════════════════
+{$conversation_history}
+═══════════════════════════════════════════════════════════════
+WICHTIG: Der obige Verlauf zeigt, was bereits gesagt wurde. Berücksichtige dies bei deinem Feedback!
+Wenn der Nutzer z.B. bereits eine Entschuldigung ausgesprochen hat, kritisiere nicht, dass eine fehlt.
+
+";
+        }
+
+        return "Du bist ein professioneller {$coach_rolle} und analysierst Audioantworten.
 
 {$analysisContext}
 
@@ -1514,12 +1707,13 @@ AUFGABE (NUR bei klar erkennbarer Sprache):
 2. ANALYSIERE die tatsächlich gegebene Antwort/Reaktion inhaltlich
 3. ANALYSIERE die Sprechweise (Füllwörter, Tempo, Klarheit)
 4. GEBE konstruktives Feedback basierend auf dem was WIRKLICH gesagt wurde
+5. BERÜCKSICHTIGE den bisherigen Gesprächsverlauf (falls vorhanden)
 
 KONTEXT:
 - Szenario: {$scenario->title}
 {$context}
-
-{$situationLabel}:
+{$history_section}
+AKTUELLE {$situationLabel}:
 \"{$question_text}\"
 
 {$feedbackFocus}
@@ -1565,29 +1759,161 @@ Bei ERKANNTER Sprache:
       \"Tipp 2: Praktische Empfehlung\"
     ],
     \"scores\": {
-      \"content\": 7.5,
-      \"structure\": 8.0,
-      \"relevance\": 7.0,
-      \"delivery\": 7.5,
-      \"overall\": 7.5
+      \"content\": \"<1-10>\",
+      \"structure\": \"<1-10>\",
+      \"relevance\": \"<1-10>\",
+      \"delivery\": \"<1-10>\",
+      \"overall\": \"<1-10>\"
     }
   },
   \"audio_metrics\": {
-    \"speech_rate\": \"optimal\",
+    \"speech_rate\": \"optimal|zu_schnell|zu_langsam\",
     \"filler_words\": {
-      \"count\": 3,
-      \"words\": [\"ähm\", \"also\", \"halt\"],
-      \"severity\": \"niedrig\"
+      \"count\": \"<Anzahl>\",
+      \"words\": [\"<erkannte Füllwörter>\"],
+      \"severity\": \"keine|niedrig|mittel|hoch\"
     },
-    \"confidence_score\": 75,
-    \"clarity_score\": 80,
-    \"notes\": \"Optionale zusätzliche Beobachtungen zur Sprechweise\"
+    \"confidence_score\": \"<0-100>\",
+    \"clarity_score\": \"<0-100>\",
+    \"notes\": \"Beobachtungen zur Sprechweise\"
   }
 }
 
 Bewertungsskala für Scores: 1-10 (1=sehr schwach, 10=exzellent)
+WICHTIG: Nutze die VOLLE Skala! Eine exzellente Antwort verdient 9-10, eine gute 7-8, eine durchschnittliche 5-6, eine schwache 3-4. Vermeide es, standardmäßig 7-8 zu vergeben.
 
 AUDIO ZUR ANALYSE:";
+    }
+
+    /**
+     * Build text-only analysis prompt (for use with pre-transcribed audio via Whisper)
+     *
+     * This version takes an existing transcript and only asks Gemini to analyze it,
+     * avoiding any transcription hallucination issues.
+     *
+     * @param string $question_text The question/situation the user responded to
+     * @param object $scenario The scenario object
+     * @param array $variables Session variables
+     * @param string $feedback_prompt Custom feedback instructions
+     * @param string $transcript The pre-transcribed audio text from Whisper
+     * @param string $conversation_history Previous turns in the conversation (optional)
+     * @return string The complete prompt for text-only analysis
+     */
+    private function build_text_analysis_prompt($question_text, $scenario, $variables, $feedback_prompt, $transcript, $conversation_history = '') {
+        $context = '';
+        if ($variables) {
+            foreach ($variables as $key => $value) {
+                if ($value) {
+                    $context .= "- " . ucfirst(str_replace('_', ' ', $key)) . ": {$value}\n";
+                }
+            }
+        }
+
+        // Determine mode-specific text
+        $mode = $scenario->mode ?? 'INTERVIEW';
+        $isSimulation = ($mode === 'SIMULATION');
+
+        $situationLabel = $isSimulation
+            ? "SITUATION/AUSSAGE DES GEGENÜBERS (auf die der Nutzer reagiert hat)"
+            : "FRAGE DIE BEANTWORTET WURDE";
+
+        $analysisContext = $isSimulation
+            ? "Du analysierst die REAKTION des Nutzers auf eine Gesprächssituation."
+            : "Du analysierst die ANTWORT des Nutzers auf eine Interviewfrage.";
+
+        $feedbackFocus = $isSimulation
+            ? "Bewerte die Reaktion des Nutzers:
+- Angemessenheit der Reaktion auf die Situation
+- Kommunikationstechnik (Deeskalation, Empathie, Lösungsorientierung)
+- Professionalität unter Druck"
+            : "Bewerte die Antwort des Nutzers:
+- Relevanz für die gestellte Frage
+- STAR-Methode (Situation, Task, Action, Result)
+- Professionalität und Selbstbewusstsein";
+
+        // Get coach role from variables with fallback
+        $coach_rolle = !empty($variables['coach_rolle']) ? $variables['coach_rolle'] : 'Trainer';
+
+        // Build conversation history section if there are previous turns
+        $history_section = '';
+        if (!empty($conversation_history)) {
+            $history_section = "
+BISHERIGER GESPRÄCHSVERLAUF:
+═══════════════════════════════════════════════════════════════
+{$conversation_history}
+═══════════════════════════════════════════════════════════════
+WICHTIG: Der obige Verlauf zeigt, was bereits gesagt wurde. Berücksichtige dies bei deinem Feedback!
+Wenn der Nutzer z.B. bereits eine Entschuldigung ausgesprochen hat, kritisiere nicht, dass eine fehlt.
+
+";
+        }
+
+        return "Du bist ein professioneller {$coach_rolle} und analysierst Textantworten.
+
+{$analysisContext}
+
+AUFGABE:
+1. ANALYSIERE die gegebene Antwort/Reaktion inhaltlich
+2. ANALYSIERE die Textqualität (Struktur, Klarheit, Vollständigkeit)
+3. GEBE konstruktives Feedback basierend auf dem Transkript
+4. BERÜCKSICHTIGE den bisherigen Gesprächsverlauf (falls vorhanden)
+
+KONTEXT:
+- Szenario: {$scenario->title}
+{$context}
+{$history_section}
+AKTUELLE {$situationLabel}:
+\"{$question_text}\"
+
+AKTUELLE ANTWORT DES NUTZERS:
+\"{$transcript}\"
+
+{$feedbackFocus}
+
+{$feedback_prompt}
+
+WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
+
+{
+  \"feedback\": {
+    \"summary\": \"Kurze Zusammenfassung der Antwortqualität (1-2 Sätze)\",
+    \"strengths\": [
+      \"Stärke 1: Konkrete positive Beobachtung\",
+      \"Stärke 2: Was gut gemacht wurde\"
+    ],
+    \"improvements\": [
+      \"Verbesserung 1: Was besser gemacht werden könnte\",
+      \"Verbesserung 2: Konkreter Verbesserungsvorschlag\"
+    ],
+    \"tips\": [
+      \"Tipp 1: Konkreter, umsetzbarer Ratschlag\",
+      \"Tipp 2: Praktische Empfehlung\"
+    ],
+    \"scores\": {
+      \"content\": \"<1-10>\",
+      \"structure\": \"<1-10>\",
+      \"relevance\": \"<1-10>\",
+      \"delivery\": \"<1-10>\",
+      \"overall\": \"<1-10>\"
+    }
+  },
+  \"audio_metrics\": {
+    \"speech_rate\": \"optimal|zu_schnell|zu_langsam\",
+    \"filler_words\": {
+      \"count\": \"<Anzahl>\",
+      \"words\": [\"<erkannte Füllwörter>\"],
+      \"severity\": \"keine|niedrig|mittel|hoch\"
+    },
+    \"confidence_score\": \"<0-100>\",
+    \"clarity_score\": \"<0-100>\",
+    \"notes\": \"Beobachtungen zur Sprechweise\"
+  }
+}
+
+Bewertungsskala für Scores: 1-10 (1=sehr schwach, 10=exzellent)
+WICHTIG: Nutze die VOLLE Skala! Eine exzellente Antwort verdient 9-10, eine gute 7-8, eine durchschnittliche 5-6, eine schwache 3-4. Vermeide es, standardmäßig 7-8 zu vergeben.
+
+HINWEIS: Das Transkript wurde bereits von einem spezialisierten Transkriptions-Service erstellt. Analysiere NUR den Inhalt und die Qualität der Aussage.";
     }
 
     /**
@@ -1918,6 +2244,57 @@ AUDIO ZUR ANALYSE:";
         }
 
         error_log('Simulator: Failed to parse audio analysis from response: ' . substr($response, 0, 500));
+        return $default;
+    }
+
+    /**
+     * Parse text analysis response from Gemini (used with Whisper transcription)
+     *
+     * @param string $response The Gemini API response
+     * @param string $transcript The transcript from Whisper (used as-is, not from Gemini)
+     * @return array Parsed response with transcript, feedback, and audio_metrics
+     */
+    private function parse_text_analysis_response($response, $transcript) {
+        // Default structure
+        $default = array(
+            'transcript' => $transcript, // Use Whisper transcript directly
+            'feedback' => array(
+                'summary' => 'Feedback konnte nicht generiert werden.',
+                'strengths' => array(),
+                'improvements' => array(),
+                'tips' => array(),
+                'scores' => array(
+                    'content' => null,
+                    'structure' => null,
+                    'relevance' => null,
+                    'delivery' => null,
+                    'overall' => null
+                )
+            ),
+            'audio_metrics' => array(
+                'speech_rate' => 'unbekannt',
+                'filler_words' => array('count' => 0, 'words' => array()),
+                'confidence_score' => null,
+                'clarity_score' => null
+            )
+        );
+
+        // Try to extract JSON from response
+        $json_match = null;
+        if (preg_match('/\{[\s\S]*\}/', $response, $json_match)) {
+            $json_str = $json_match[0];
+            $parsed = json_decode($json_str, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return array(
+                    'transcript' => $transcript, // Always use Whisper transcript
+                    'feedback' => isset($parsed['feedback']) ? $parsed['feedback'] : $default['feedback'],
+                    'audio_metrics' => isset($parsed['audio_metrics']) ? $parsed['audio_metrics'] : $default['audio_metrics'],
+                );
+            }
+        }
+
+        error_log('Simulator: Failed to parse text analysis from response: ' . substr($response, 0, 500));
         return $default;
     }
 

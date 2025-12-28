@@ -12,7 +12,11 @@ import {
   Lightbulb,
   Clock,
   MessageSquare,
-  Brain
+  Brain,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import wordpressAPI from '@/services/wordpress-api';
 import MicrophoneSelector from '@/components/MicrophoneSelector';
@@ -80,6 +84,10 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
+  // Custom variables state (only used if scenario.allow_custom_variables is true)
+  const [customVariables, setCustomVariables] = useState([]);
+  const [showCustomVariables, setShowCustomVariables] = useState(false);
+
   // Partner theming and demo code
   const b = useBranding();
   const { demoCode } = usePartner();
@@ -114,6 +122,28 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
     setFormValues(defaults);
   }, [inputConfig]);
 
+  /**
+   * Interpolate variables in text (e.g., ${variable_name} -> value)
+   * @param {string} text - Text with variable placeholders
+   * @param {object} values - Object with variable values
+   * @returns {string} - Text with variables replaced
+   */
+  const interpolateVariables = (text, values) => {
+    if (!text) return text;
+
+    let result = text;
+
+    // Replace ${key} and {key} patterns
+    Object.entries(values || {}).forEach(([key, value]) => {
+      if (value) {
+        result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value);
+        result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+      }
+    });
+
+    return result;
+  };
+
   const handleChange = (key, value) => {
     setFormValues(prev => ({ ...prev, [key]: value }));
     // Clear error when user starts typing
@@ -124,6 +154,23 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
         return next;
       });
     }
+  };
+
+  // Custom variables handlers
+  const addCustomVariable = () => {
+    setCustomVariables(prev => [...prev, { key: '', value: '' }]);
+  };
+
+  const updateCustomVariable = (index, field, value) => {
+    setCustomVariables(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const deleteCustomVariable = (index) => {
+    setCustomVariables(prev => prev.filter((_, i) => i !== index));
   };
 
   const validateForm = () => {
@@ -178,10 +225,18 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
     setIsSubmitting(true);
 
     try {
+      // Merge form values with custom variables
+      const allVariables = { ...formValues };
+      customVariables.forEach(cv => {
+        if (cv.key && cv.value) {
+          allVariables[cv.key] = cv.value;
+        }
+      });
+
       // 1. Create session with variables (and optionally preloaded questions)
       const sessionResponse = await wordpressAPI.createSimulatorSession({
         scenario_id: scenario.id,
-        variables: formValues,
+        variables: allVariables,
         demo_code: demoCode || null,
         // If we have preloaded questions (repeating a session), include them
         questions: preloadedQuestions || null,
@@ -215,7 +270,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
         session: { ...session, questions_json: questions },
         questions: questions,
         scenario: scenario,
-        variables: formValues,
+        variables: allVariables,
         selectedMicrophoneId: selectedMicrophoneId,
       });
 
@@ -341,7 +396,7 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
                 margin: 0,
                 whiteSpace: 'pre-wrap',
               }}>
-                {scenario.long_description?.replace(/\/n/g, '\n')}
+                {interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n'), formValues)}
               </p>
             </div>
           </div>
@@ -438,6 +493,149 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
           }}>
             <CheckCircle style={{ width: '32px', height: '32px', marginBottom: b.space[3], opacity: 0.5 }} />
             <p style={{ margin: 0 }}>Keine zusätzliche Konfiguration erforderlich.</p>
+          </div>
+        )}
+
+        {/* Custom Variables Section - only shown if scenario allows */}
+        {scenario?.allow_custom_variables && (
+          <div style={{
+            marginTop: b.space[5],
+            marginBottom: b.space[5],
+            paddingTop: b.space[5],
+            borderTop: `1px solid ${COLORS.slate[200]}`,
+          }}>
+            <button
+              type="button"
+              onClick={() => setShowCustomVariables(!showCustomVariables)}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: b.space[2],
+                padding: '0',
+                border: 'none',
+                background: 'none',
+                color: COLORS.slate[500],
+                fontSize: b.fontSize.sm,
+                fontWeight: 500,
+                cursor: 'pointer',
+                marginBottom: showCustomVariables ? b.space[4] : '0',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: b.space[2], flexShrink: 0 }}>
+                {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                <Plus size={16} />
+              </span>
+              <span style={{ lineHeight: '1.4' }}>Zusätzliche Variablen hinzufügen (optional)</span>
+            </button>
+
+            {showCustomVariables && (
+              <div style={{
+                backgroundColor: COLORS.slate[50],
+                borderRadius: b.radius.lg,
+                padding: b.space[4],
+              }}>
+                <p style={{
+                  fontSize: b.fontSize.sm,
+                  color: COLORS.slate[500],
+                  margin: `0 0 ${b.space[3]} 0`,
+                }}>
+                  Füge eigene Variablen hinzu, die in die Fragen-Generierung und Feedback einfließen sollen.
+                </p>
+
+                {customVariables.length > 0 && (
+                  <div style={{ marginBottom: b.space[3] }}>
+                    {customVariables.map((cv, index) => (
+                      <div key={index} style={{
+                        backgroundColor: 'white',
+                        border: `1px solid ${COLORS.slate[200]}`,
+                        borderRadius: b.radius.md,
+                        padding: b.space[3],
+                        marginBottom: b.space[3],
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: b.space[2],
+                        }}>
+                          <input
+                            type="text"
+                            value={cv.key || ''}
+                            onChange={(e) => updateCustomVariable(index, 'key', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+                            placeholder="variable_name"
+                            style={{
+                              padding: `${b.space[2]} ${b.space[3]}`,
+                              borderRadius: b.radius.md,
+                              border: `1px solid ${COLORS.slate[200]}`,
+                              fontSize: b.fontSize.sm,
+                              fontFamily: 'monospace',
+                              backgroundColor: COLORS.slate[50],
+                              flex: 1,
+                              marginRight: b.space[2],
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => deleteCustomVariable(index)}
+                            style={{
+                              padding: b.space[2],
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              color: '#ef4444',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                        <textarea
+                          value={cv.value || ''}
+                          onChange={(e) => updateCustomVariable(index, 'value', e.target.value)}
+                          placeholder="Wert eingeben... (mehrzeilig möglich)"
+                          rows={3}
+                          style={{
+                            width: '100%',
+                            padding: `${b.space[2]} ${b.space[3]}`,
+                            borderRadius: b.radius.md,
+                            border: `1px solid ${COLORS.slate[200]}`,
+                            fontSize: b.fontSize.sm,
+                            resize: 'vertical',
+                            minHeight: '80px',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={addCustomVariable}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: b.space[1.5],
+                    padding: `${b.space[2]} ${b.space[3]}`,
+                    border: `1px dashed ${COLORS.slate[300]}`,
+                    borderRadius: b.radius.md,
+                    background: 'transparent',
+                    color: COLORS.slate[600],
+                    fontSize: b.fontSize.sm,
+                    cursor: 'pointer',
+                    width: '100%',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Plus size={16} />
+                  Variable hinzufügen
+                </button>
+              </div>
+            )}
           </div>
         )}
 

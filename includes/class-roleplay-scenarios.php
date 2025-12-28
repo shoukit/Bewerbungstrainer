@@ -373,6 +373,22 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                     </p>
                 </td>
             </tr>
+
+            <tr>
+                <th scope="row">
+                    <label><?php _e('Zusätzliche Optionen', 'bewerbungstrainer'); ?></label>
+                </th>
+                <td>
+                    <?php $allow_custom_vars = get_post_meta($post->ID, '_roleplay_allow_custom_variables', true); ?>
+                    <label>
+                        <input type="checkbox" name="roleplay_allow_custom_variables" value="1" <?php checked($allow_custom_vars, '1'); ?>>
+                        <?php _e('Nutzer kann eigene Variablen hinzufügen', 'bewerbungstrainer'); ?>
+                    </label>
+                    <p class="description">
+                        <?php _e('Zeigt "Zusätzliche Variablen" im Frontend, damit Nutzer eigene Kontextinformationen eingeben können.', 'bewerbungstrainer'); ?>
+                    </p>
+                </td>
+            </tr>
         </table>
         <?php
     }
@@ -647,6 +663,13 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             }
         }
 
+        // Save allow_custom_variables
+        update_post_meta(
+            $post_id,
+            '_roleplay_allow_custom_variables',
+            isset($_POST['roleplay_allow_custom_variables']) ? '1' : '0'
+        );
+
         // Save interviewer profile
         if (isset($_POST['roleplay_interviewer_name'])) {
             update_post_meta($post_id, '_roleplay_interviewer_name', sanitize_text_field($_POST['roleplay_interviewer_name']));
@@ -789,6 +812,7 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'role_type' => $role_type,
             'user_role_label' => $user_role_label,
             'variables_schema' => $variables,
+            'allow_custom_variables' => (bool) get_post_meta($post->ID, '_roleplay_allow_custom_variables', true),
             'tags' => $tags,
             'tips' => $tips,
             'created_at' => $post->post_date,

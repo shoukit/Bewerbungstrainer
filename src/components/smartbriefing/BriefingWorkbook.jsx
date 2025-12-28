@@ -591,8 +591,9 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
           width: '100%',
           padding: `${branding.space[4]} ${branding.space[5]}`,
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'space-between',
+          gap: branding.space[2],
           border: 'none',
           background: 'none',
           cursor: 'pointer',
@@ -606,11 +607,15 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
             color: branding.textMain,
             margin: 0,
             textAlign: 'left',
+            flex: 1,
+            minWidth: 0,
+            wordBreak: 'break-word',
+            lineHeight: 1.3,
           }}
         >
           {section.section_title}
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: branding.space[2] }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: branding.space[2], flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {type === 'items' && (
             <span
               style={{
