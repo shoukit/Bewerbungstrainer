@@ -92,12 +92,12 @@ const NAV_ITEMS = [
     alwaysVisible: true, // This item is always shown regardless of partner config
   },
   {
-    id: 'smart_briefing',
-    moduleId: 'smart_briefing', // Maps to WordPress module
-    label: 'Smart Briefing',
-    shortLabel: 'Briefing',
-    icon: Sparkles,
-    description: 'KI-Vorbereitungs-Assistent',
+    id: 'ikigai',
+    moduleId: 'ikigai', // Maps to WordPress module
+    label: 'Ikigai-Kompass',
+    shortLabel: 'Ikigai',
+    icon: Compass,
+    description: 'Finde deinen idealen Karrierepfad',
   },
   {
     id: 'decision_board',
@@ -108,12 +108,12 @@ const NAV_ITEMS = [
     description: 'KI-gestützte Entscheidungshilfe',
   },
   {
-    id: 'ikigai',
-    moduleId: 'ikigai', // Maps to WordPress module
-    label: 'Ikigai-Kompass',
-    shortLabel: 'Ikigai',
-    icon: Compass,
-    description: 'Finde deinen idealen Karrierepfad',
+    id: 'smart_briefing',
+    moduleId: 'smart_briefing', // Maps to WordPress module
+    label: 'Smart Briefing',
+    shortLabel: 'Briefing',
+    icon: Sparkles,
+    description: 'KI-Vorbereitungs-Assistent',
   },
   {
     id: 'simulator',

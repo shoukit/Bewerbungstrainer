@@ -190,15 +190,30 @@ const QuadDashboard = ({ onNavigate }) => {
     }
   };
 
-  // Format activity date
+  // Format activity date - handles MySQL/WordPress date format
   const formatActivityDate = (dateString) => {
-    const date = new Date(dateString);
+    if (!dateString) return '';
+
+    // Handle MySQL format "YYYY-MM-DD HH:MM:SS" - append 'Z' for UTC if no timezone
+    let normalizedDate = dateString;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
+      // MySQL format without timezone - WordPress stores UTC
+      normalizedDate = dateString.replace(' ', 'T') + 'Z';
+    } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dateString)) {
+      // ISO format without timezone
+      normalizedDate = dateString + 'Z';
+    }
+
+    const date = new Date(normalizedDate);
+    if (isNaN(date.getTime())) return '';
+
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
+    if (diffMins < 1) return 'gerade eben';
     if (diffMins < 60) return `vor ${diffMins} Min.`;
     if (diffHours < 24) return `vor ${diffHours} Std.`;
     if (diffDays < 7) return `vor ${diffDays} Tagen`;

@@ -1241,8 +1241,22 @@ class WordPressAPI {
                 });
             }
 
+            // Helper to parse MySQL/WordPress date format
+            const parseDate = (dateString) => {
+                if (!dateString) return new Date(0);
+                // Handle MySQL format "YYYY-MM-DD HH:MM:SS"
+                if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) {
+                    return new Date(dateString.replace(' ', 'T') + 'Z');
+                }
+                // Handle ISO format without timezone
+                if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dateString)) {
+                    return new Date(dateString + 'Z');
+                }
+                return new Date(dateString);
+            };
+
             // Sort by created_at descending and limit
-            activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            activities.sort((a, b) => parseDate(b.created_at) - parseDate(a.created_at));
 
             return activities.slice(0, limit);
         } catch (error) {
