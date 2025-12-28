@@ -25,6 +25,7 @@ import {
   Sparkles,
   Clock,
   Scale,
+  Compass,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/Toast';
@@ -105,6 +106,14 @@ const NAV_ITEMS = [
     shortLabel: 'Entscheidung',
     icon: Scale,
     description: 'KI-gestützte Entscheidungshilfe',
+  },
+  {
+    id: 'ikigai',
+    moduleId: 'ikigai', // Maps to WordPress module
+    label: 'Ikigai-Kompass',
+    shortLabel: 'Ikigai',
+    icon: Compass,
+    description: 'Finde deinen idealen Karrierepfad',
   },
   {
     id: 'simulator',

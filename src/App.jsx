@@ -13,6 +13,7 @@ import { VideoTrainingApp } from './components/video-training';
 import { RhetorikGym, GameSession } from './components/rhetorik-gym';
 import { SmartBriefingApp } from './components/smartbriefing';
 import { DecisionBoardApp } from './components/decision-board';
+import IkigaiApp from './components/ikigai/IkigaiApp';
 import UsageLimitsDisplay from './components/UsageLimitsDisplay';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
@@ -831,6 +832,19 @@ function AppContent() {
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+          />
+        }
+      />
+
+      {/* Ikigai Career Pathfinder */}
+      <Route
+        path={ROUTES.IKIGAI}
+        element={
+          <IkigaiApp
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+            onNavigateToHistory={() => navigate(ROUTES.HISTORY)}
           />
         }
       />
