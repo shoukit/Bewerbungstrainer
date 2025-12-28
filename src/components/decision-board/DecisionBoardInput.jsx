@@ -118,7 +118,7 @@ const WeightSlider = ({ value, onChange, color, b }) => {
 };
 
 /**
- * Decision Item Component - Mobile responsive
+ * Decision Item Component - Mobile responsive with multiline support
  */
 const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b }) => {
   const isGreen = color === 'green';
@@ -126,15 +126,6 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b 
   const borderColor = isGreen ? '#bbf7d0' : '#fecaca';
   const inputBorderColor = isGreen ? '#86efac' : '#fca5a5';
   const iconColor = isGreen ? b.successDark : b.errorDark;
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (item.text.trim()) {
-        onAddNew();
-      }
-    }
-  };
 
   return (
     <motion.div
@@ -145,8 +136,7 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b 
       className="decision-item"
       style={{
         display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: b.space[2.5],
         padding: b.space[3],
         backgroundColor: bgColor,
@@ -155,27 +145,32 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus, b 
       }}
     >
       {/* Icon */}
-      <div style={{ flexShrink: 0 }}>
+      <div style={{ flexShrink: 0, paddingTop: b.space[2] }}>
         {isGreen ? (
           <ThumbsUp size={b.iconSize.lg} color={iconColor} />
         ) : (
           <ThumbsDown size={b.iconSize.lg} color={iconColor} />
         )}
       </div>
-      <Input
+      <Textarea
         value={item.text}
         onChange={(e) => onUpdate(item.id, { text: e.target.value })}
-        onKeyDown={handleKeyDown}
         autoFocus={autoFocus}
         placeholder={isGreen ? 'Pro-Argument...' : 'Contra-Argument...'}
+        rows={2}
         style={{
-          flex: '1 1 180px',
+          flex: 1,
           minWidth: '0',
           backgroundColor: b.white,
           border: `1px solid ${inputBorderColor}`,
+          borderRadius: b.radius.md,
+          padding: `${b.space[2]} ${b.space[3]}`,
+          fontSize: b.fontSize.base,
+          resize: 'vertical',
+          minHeight: '44px',
         }}
       />
-      <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], flexShrink: 0, paddingTop: b.space[1.5] }}>
         <WeightSlider
           value={item.weight}
           onChange={(weight) => onUpdate(item.id, { weight })}
@@ -688,10 +683,12 @@ const PersonaToolbar = ({
 const DecisionBoardInput = ({
   initialData,
   onAnalysisComplete,
+  onCancel,
   isAuthenticated,
   requireAuth,
 }) => {
   const b = useBranding();
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Initialize state from initialData if provided (for editing)
   const [topic, setTopic] = useState(initialData?.topic || '');
@@ -871,6 +868,46 @@ const DecisionBoardInput = ({
 
   return (
     <div style={{ padding: b.space[4], maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Top Bar with Cancel Button */}
+      {onCancel && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: b.space[4],
+        }}>
+          <button
+            onClick={() => setShowCancelConfirm(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: b.space[2],
+              padding: `${b.space[2]} ${b.space[4]}`,
+              borderRadius: b.radius.md,
+              border: `1px solid ${b.borderColor}`,
+              backgroundColor: b.cardBgColor,
+              color: b.textSecondary,
+              cursor: 'pointer',
+              fontSize: b.fontSize.base,
+              fontWeight: b.fontWeight.medium,
+              transition: b.transition.normal,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = b.errorLight;
+              e.currentTarget.style.borderColor = b.error;
+              e.currentTarget.style.color = b.errorDark;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = b.cardBgColor;
+              e.currentTarget.style.borderColor = b.borderColor;
+              e.currentTarget.style.color = b.textSecondary;
+            }}
+          >
+            <X size={b.iconSize.md} />
+            Abbrechen
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ marginBottom: b.space[6], textAlign: 'center' }}>
         <div style={{
@@ -1201,6 +1238,107 @@ const DecisionBoardInput = ({
           }
         `}
       </style>
+
+      {/* Cancel Confirmation Dialog */}
+      <AnimatePresence>
+        {showCancelConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: b.zIndex.modal,
+              padding: b.space[4],
+            }}
+            onClick={() => setShowCancelConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: b.cardBgColor,
+                borderRadius: b.radius.xl,
+                padding: b.space[6],
+                maxWidth: '400px',
+                width: '100%',
+                boxShadow: b.shadow.xl,
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: b.space[3],
+                marginBottom: b.space[4],
+              }}>
+                <div style={{
+                  width: b.space[10],
+                  height: b.space[10],
+                  borderRadius: b.radius.md,
+                  backgroundColor: b.errorLight,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <AlertCircle size={b.iconSize.xl} color={b.error} />
+                </div>
+                <h3 style={{
+                  fontSize: b.fontSize.xl,
+                  fontWeight: b.fontWeight.semibold,
+                  color: b.textMain,
+                  margin: 0,
+                }}>
+                  Session abbrechen?
+                </h3>
+              </div>
+              <p style={{
+                fontSize: b.fontSize.base,
+                color: b.textSecondary,
+                marginBottom: b.space[6],
+                lineHeight: 1.5,
+              }}>
+                Alle eingegebenen Daten werden verworfen und nicht gespeichert.
+              </p>
+              <div style={{
+                display: 'flex',
+                gap: b.space[3],
+                justifyContent: 'flex-end',
+              }}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCancelConfirm(false)}
+                >
+                  Zurück
+                </Button>
+                <Button
+                  variant="solid"
+                  onClick={() => {
+                    setShowCancelConfirm(false);
+                    onCancel();
+                  }}
+                  style={{
+                    backgroundColor: b.error,
+                    color: b.white,
+                  }}
+                >
+                  <X size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
+                  Abbrechen
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
