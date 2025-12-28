@@ -664,10 +664,117 @@ JSON SCHEMA:
   }
 }
 
+/**
+ * Brainstorms arguments from a specific persona's perspective
+ *
+ * Generates 2 pro and 2 contra arguments from the viewpoint of one of 5 personas:
+ * - strategist: Career, money, power, prestige
+ * - security: Job security, risk minimization, stability
+ * - feelgood: Work-life balance, culture, mental health
+ * - growth: Learning, innovation, high risk/high reward
+ * - future: Long-term perspective, regret minimization
+ *
+ * @param {string} topic - The decision question
+ * @param {string} persona - One of: 'strategist', 'security', 'feelgood', 'growth', 'future'
+ * @param {string} apiKey - Google Gemini API key
+ * @returns {Promise<Object>} - Parsed result with suggestions array
+ */
+export async function brainstormArguments(topic, persona, apiKey) {
+  // Validate input
+  if (!topic || topic.trim().length === 0) {
+    throw new Error('Entscheidungsfrage fehlt');
+  }
+
+  const validPersonas = ['strategist', 'security', 'feelgood', 'growth', 'future'];
+  if (!validPersonas.includes(persona)) {
+    throw new Error(`Ungültige Persona: ${persona}`);
+  }
+
+  if (DEBUG_PROMPTS) {
+    console.log(`💭 [GEMINI BRAINSTORM] Starting brainstorm`);
+    console.log(`💭 [GEMINI BRAINSTORM] Topic: ${topic}`);
+    console.log(`💭 [GEMINI BRAINSTORM] Persona: ${persona}`);
+  }
+
+  const prompt = `Du bist ein kreativer Entscheidungs-Assistent für die Karriere-Plattform 'KarriereHeld'.
+Deine Aufgabe: Generiere für eine spezifische Entscheidungsfrage Argumente aus der strikten Sicht einer gewählten Persona.
+
+INPUT:
+Thema: ${topic}
+Persona: ${persona}
+
+PERSONA DEFINITIONEN:
+- 'strategist' (Der Stratege): Fokus auf CV, Marktwert, Geld, Macht, Karriereleiter, Prestige.
+- 'security' (Der Sicherheits-Beauftragte): Fokus auf Arbeitsplatzsicherheit, Gehaltsgarantie, Risikominimierung, Beständigkeit.
+- 'feelgood' (Der Feel-Good Manager): Fokus auf Mental Health, Stresslevel, Team-Kultur, Zeit für Familie, Spaß.
+- 'growth' (Der Gründer): Fokus auf steile Lernkurve, Innovation, Netzwerk, "High Risk / High Reward".
+- 'future' (Das Zukunfts-Ich): Fokus auf langfristigen Sinn, "Regret Minimization" (Was werde ich in 10 Jahren bereuen?), Lebensziele.
+
+OUTPUT FORMAT (JSON):
+Generiere genau 4 Vorschläge (2 Pro, 2 Contra), die extrem kurz und knackig sind (max. 10 Wörter pro Punkt).
+
+WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt. Kein Markdown, kein Intro.
+
+{
+  "suggestions": [
+    { "type": "pro", "text": "Argument für JA aus Sicht der Persona" },
+    { "type": "pro", "text": "Weiteres Argument für JA..." },
+    { "type": "con", "text": "Argument für NEIN aus Sicht der Persona" },
+    { "type": "con", "text": "Weiteres Argument für NEIN..." }
+  ]
+}`;
+
+  // Debug logging
+  logPromptDebug(
+    'BRAINSTORM',
+    `Entscheidungs-Kompass Brainstorming: Generiert Argumente aus Sicht der Persona "${persona}".`,
+    prompt,
+    {
+      'Thema': topic,
+      'Persona': persona,
+    }
+  );
+
+  const responseText = await callGeminiWithFallback({
+    apiKey,
+    content: prompt,
+    context: 'BRAINSTORM',
+  });
+
+  // Parse JSON response
+  try {
+    let cleanedResponse = responseText.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const result = JSON.parse(cleanedResponse);
+
+    if (DEBUG_PROMPTS) {
+      console.log(`✅ [GEMINI BRAINSTORM] Complete`);
+      console.log(`✅ [GEMINI BRAINSTORM] Suggestions: ${result.suggestions?.length}`);
+    }
+
+    // Validate structure
+    if (!result.suggestions || !Array.isArray(result.suggestions)) {
+      throw new Error('Invalid response structure: missing suggestions array');
+    }
+
+    return result;
+  } catch (parseError) {
+    console.error('❌ [GEMINI BRAINSTORM] Failed to parse response:', parseError);
+    console.error('❌ [GEMINI BRAINSTORM] Raw response:', responseText);
+    throw new Error(`Fehler beim Verarbeiten der Vorschläge: ${parseError.message}`);
+  }
+}
+
 export default {
   listAvailableModels,
   generateInterviewFeedback,
   generateAudioAnalysis,
   analyzeRhetoricGame,
   analyzeDecision,
+  brainstormArguments,
 };
