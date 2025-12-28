@@ -128,6 +128,16 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoF
   const borderColor = isGreen ? '#bbf7d0' : '#fecaca';
   const inputBorderColor = isGreen ? '#86efac' : '#fca5a5';
   const iconColor = isGreen ? b.successDark : b.errorDark;
+  const textareaRef = React.useRef(null);
+
+  // Auto-resize textarea based on content
+  React.useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.max(44, textarea.scrollHeight) + 'px';
+    }
+  }, [item.text]);
 
   return (
     <motion.div
@@ -155,12 +165,13 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoF
         )}
       </div>
       <Textarea
+        ref={textareaRef}
         value={item.text}
         onChange={(e) => onUpdate(item.id, { text: e.target.value })}
         onBlur={onBlur}
         autoFocus={autoFocus}
         placeholder={isGreen ? 'Pro-Argument...' : 'Contra-Argument...'}
-        rows={2}
+        rows={1}
         style={{
           flex: 1,
           minWidth: '0',
@@ -169,8 +180,9 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoF
           borderRadius: b.radius.md,
           padding: `${b.space[2]} ${b.space[3]}`,
           fontSize: b.fontSize.base,
-          resize: 'vertical',
+          resize: 'none',
           minHeight: '44px',
+          overflow: 'hidden',
         }}
       />
       <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], flexShrink: 0, paddingTop: b.space[1.5] }}>
@@ -939,9 +951,21 @@ const DecisionBoardInput = ({
     };
 
     if (suggestion.type === 'pro') {
-      setPros(prev => [...prev, newItem]);
+      setPros(prev => {
+        // If first item is empty placeholder, replace it
+        if (prev.length === 1 && !prev[0].text.trim()) {
+          return [newItem];
+        }
+        return [...prev, newItem];
+      });
     } else {
-      setCons(prev => [...prev, newItem]);
+      setCons(prev => {
+        // If first item is empty placeholder, replace it
+        if (prev.length === 1 && !prev[0].text.trim()) {
+          return [newItem];
+        }
+        return [...prev, newItem];
+      });
     }
   }, []);
 

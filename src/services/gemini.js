@@ -599,7 +599,7 @@ JSON SCHEMA:
     {
       "type": "challenger",
       "title": "Der Härtetest",
-      "argument": "Das hinterfragte Argument (z.B. 'Mehr Geld')",
+      "argument": "NUR der Text des Arguments, OHNE Gewicht (z.B. Mehr Gehalt oder Flexible Arbeitszeiten)",
       "points": [
         "Erste kritische Frage zum Argument",
         "Zweite kritische Frage",
@@ -650,6 +650,13 @@ JSON SCHEMA:
     } else if (cleanedResponse.startsWith('```')) {
       cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
     }
+
+    // Fix common JSON issues from Gemini:
+    // Pattern: "text." (Gewicht: X/10)" -> removes the (Gewicht...) part that breaks JSON
+    cleanedResponse = cleanedResponse.replace(
+      /"\s*\(Gewicht:\s*\d+\/10\)"/g,
+      '"'
+    );
 
     const result = JSON.parse(cleanedResponse);
 
