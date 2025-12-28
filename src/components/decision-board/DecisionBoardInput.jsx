@@ -829,15 +829,16 @@ const DecisionBoardInput = ({
   }, [topic, context, pros, cons, proScore, contraScore, savedDecisionId, onSaveDraft, onUpdateSession, onDecisionIdChange]);
 
   /**
-   * Debounced auto-save (wait 500ms after last change)
+   * Handle blur - save immediately (no debounce)
+   * This ensures data is saved when user leaves a field
    */
-  const debouncedAutoSave = useCallback(() => {
+  const handleFieldBlur = useCallback(() => {
+    // Clear any pending debounced saves
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-    saveTimeoutRef.current = setTimeout(() => {
-      autoSave();
-    }, 500);
+    // Save immediately
+    autoSave();
   }, [autoSave]);
 
   // Cleanup timeout on unmount
@@ -1127,7 +1128,7 @@ const DecisionBoardInput = ({
           <Input
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            onBlur={debouncedAutoSave}
+            onBlur={handleFieldBlur}
             placeholder="z.B. Soll ich das Jobangebot annehmen?"
             style={{
               fontSize: b.fontSize.lg,
@@ -1157,7 +1158,7 @@ const DecisionBoardInput = ({
               <Textarea
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
-                onBlur={debouncedAutoSave}
+                onBlur={handleFieldBlur}
                 placeholder="Hintergrund, Rahmenbedingungen, Gefühle, was dich beschäftigt..."
                 rows={3}
                 style={{
@@ -1238,7 +1239,7 @@ const DecisionBoardInput = ({
                   onUpdate={updatePro}
                   onDelete={deletePro}
                   onAddNew={addPro}
-                  onBlur={debouncedAutoSave}
+                  onBlur={handleFieldBlur}
                   color="green"
                   autoFocus={focusedItemId === item.id}
                   b={b}
@@ -1300,7 +1301,7 @@ const DecisionBoardInput = ({
                   onUpdate={updateCon}
                   onDelete={deleteCon}
                   onAddNew={addCon}
-                  onBlur={debouncedAutoSave}
+                  onBlur={handleFieldBlur}
                   color="red"
                   autoFocus={focusedItemId === item.id}
                   b={b}

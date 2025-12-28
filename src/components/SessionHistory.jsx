@@ -499,10 +499,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         </div>
 
         {/* Decision Board Input - same as create view */}
+        {/* Note: onCancel is NOT passed here since SessionHistory already has Zurück/Löschen buttons */}
         <DecisionBoardInput
           initialData={initialDecisionData}
           onAnalysisComplete={handleDecisionAnalysisComplete}
-          onCancel={handleBackFromDecision}
           isAuthenticated={isAuthenticated}
           savedDecisionId={selectedDecision.id}
           onSaveDraft={handleDecisionDraftSave}
