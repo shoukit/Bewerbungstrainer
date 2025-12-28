@@ -1100,21 +1100,24 @@ class WordPressAPI {
 
     /**
      * Get recent activities across all modules for the dashboard
-     * Combines sessions from roleplay, simulator, video, briefings, games
+     * Combines sessions from roleplay, simulator, video, briefings, games, ikigai, decisions
      *
-     * @param {number} limit - Maximum number of activities to return (default: 5)
+     * @param {number} limit - Maximum number of activities to return (default: 6)
      * @returns {Promise<Array>} Array of recent activity objects
      */
-    async getRecentActivities(limit = 5) {
+    async getRecentActivities(limit = 6) {
         try {
             const activities = [];
 
             // Fetch from all modules in parallel
-            const [sessions, simulatorSessions, videoSessions, gameSessions] = await Promise.allSettled([
+            const [sessions, simulatorSessions, videoSessions, gameSessions, briefings, ikigais, decisions] = await Promise.allSettled([
                 this.getSessions({ limit: 3 }),
                 this.getSimulatorSessions({ limit: 3 }),
                 this.getVideoTrainings({ limit: 3 }),
                 this.getGameSessions({ limit: 3 }),
+                this.request('/smartbriefing/briefings?limit=3', { method: 'GET' }),
+                this.getIkigais(),
+                this.getDecisions(),
             ]);
 
             // Process roleplay sessions
@@ -1195,6 +1198,45 @@ class WordPressAPI {
                         title: session.topic || 'Rhetorik-Gym',
                         created_at: session.created_at,
                         score: session.score,
+                    });
+                });
+            }
+
+            // Process Smart Briefings
+            if (briefings.status === 'fulfilled') {
+                const briefingData = briefings.value?.data?.briefings || briefings.value?.briefings || [];
+                briefingData.slice(0, 3).forEach(briefing => {
+                    activities.push({
+                        id: `briefing_${briefing.id}`,
+                        type: 'briefing',
+                        title: briefing.title || 'Smart Briefing',
+                        created_at: briefing.created_at,
+                    });
+                });
+            }
+
+            // Process Ikigai sessions
+            if (ikigais.status === 'fulfilled') {
+                const ikigaiData = ikigais.value?.data?.ikigais || [];
+                ikigaiData.slice(0, 3).forEach(ikigai => {
+                    activities.push({
+                        id: `ikigai_${ikigai.id}`,
+                        type: 'ikigai',
+                        title: 'Ikigai-Analyse',
+                        created_at: ikigai.created_at,
+                    });
+                });
+            }
+
+            // Process Decision Board entries
+            if (decisions.status === 'fulfilled') {
+                const decisionData = decisions.value?.data?.decisions || [];
+                decisionData.slice(0, 3).forEach(decision => {
+                    activities.push({
+                        id: `decision_${decision.id}`,
+                        type: 'decision',
+                        title: decision.topic || 'Entscheidung',
+                        created_at: decision.created_at,
                     });
                 });
             }

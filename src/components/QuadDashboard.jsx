@@ -9,6 +9,10 @@ import {
   Clock,
   TrendingUp,
   Sparkles,
+  Target,
+  Video,
+  MessageSquare,
+  Dumbbell,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
@@ -44,7 +48,7 @@ const QuadDashboard = ({ onNavigate }) => {
   const loadRecentActivities = async () => {
     setLoadingActivities(true);
     try {
-      const activities = await getRecentActivities(5);
+      const activities = await getRecentActivities(6);
       setRecentActivities(activities || []);
     } catch (error) {
       console.error('Failed to load recent activities:', error);
@@ -76,6 +80,38 @@ const QuadDashboard = ({ onNavigate }) => {
     // Could add more intelligent recommendations based on activity patterns
     return 'Dein letztes Training war stark. Bereit für die nächste Challenge?';
   };
+
+  // Training sub-features for the Training Arena card
+  const trainingSubFeatures = [
+    {
+      id: 'simulator',
+      title: 'Szenario-Training',
+      description: 'Strukturiertes Q&A mit Sofort-Feedback',
+      icon: Target,
+      route: 'simulator',
+    },
+    {
+      id: 'video_training',
+      title: 'Wirkungs-Analyse',
+      description: 'Video-Training mit Körpersprache-Feedback',
+      icon: Video,
+      route: 'video_training',
+    },
+    {
+      id: 'dashboard',
+      title: 'Live-Simulationen',
+      description: 'Echtzeit-Gespräche mit KI-Interviewer',
+      icon: MessageSquare,
+      route: 'dashboard',
+    },
+    {
+      id: 'gym_klassiker',
+      title: 'Rhetorik-Gym',
+      description: 'Gamifiziertes Sprechtraining',
+      icon: Dumbbell,
+      route: 'gym_klassiker',
+    },
+  ];
 
   // The 4 main feature cards - the "Power Quad"
   const quadFeatures = [
@@ -114,19 +150,18 @@ const QuadDashboard = ({ onNavigate }) => {
       hoverBgColor: COLORS.amber[100],
       gradient: `linear-gradient(135deg, ${COLORS.amber[500]} 0%, ${COLORS.amber[600]} 100%)`,
       route: 'smart_briefing',
-      badge: 'NEU',
     },
     {
       id: 'training',
       phase: 'Skills trainieren',
       title: 'Trainings-Arena',
-      description: 'Wende dein Wissen an. Chat-, Voice- und Video-Simulationen für die Praxis.',
+      description: 'Wende dein Wissen an mit unseren 4 Trainingsmodi:',
       icon: Rocket,
       color: COLORS.green[500],
       bgColor: COLORS.green[50],
       hoverBgColor: COLORS.green[100],
       gradient: `linear-gradient(135deg, ${COLORS.green[500]} 0%, ${COLORS.teal[500]} 100%)`,
-      route: 'simulator', // Goes to Szenario-Training as the main entry
+      hasSubFeatures: true, // Special flag for the training card
     },
   ];
 
@@ -185,6 +220,250 @@ const QuadDashboard = ({ onNavigate }) => {
     };
     return labels[type] || type;
   };
+
+  // Render a standard feature card
+  const renderStandardCard = (feature) => (
+    <motion.div
+      key={feature.id}
+      variants={itemVariants}
+      whileHover={{ scale: 1.02, y: -6 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => handleFeatureClick(feature.route)}
+      style={{
+        background: 'white',
+        borderRadius: '20px',
+        padding: '28px',
+        cursor: 'pointer',
+        border: `1px solid ${COLORS.slate[200]}`,
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '240px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 20px 40px -12px rgba(0, 0, 0, 0.15)';
+        e.currentTarget.style.borderColor = feature.color;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)';
+        e.currentTarget.style.borderColor = COLORS.slate[200];
+      }}
+    >
+      {/* Icon */}
+      <div style={{
+        width: '56px',
+        height: '56px',
+        borderRadius: '14px',
+        background: feature.gradient,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '20px',
+        boxShadow: `0 8px 16px -4px ${feature.color}40`,
+      }}>
+        <feature.icon style={{ width: '28px', height: '28px', color: 'white' }} />
+      </div>
+
+      {/* Phase Label */}
+      <p style={{
+        fontSize: '13px',
+        fontWeight: 600,
+        color: feature.color,
+        marginBottom: '4px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+      }}>
+        {feature.phase}
+      </p>
+
+      {/* Title */}
+      <h3 style={{
+        fontSize: '22px',
+        fontWeight: 700,
+        color: COLORS.slate[900],
+        marginBottom: '8px',
+        lineHeight: 1.2,
+      }}>
+        {feature.title}
+      </h3>
+
+      {/* Description */}
+      <p style={{
+        fontSize: '15px',
+        color: COLORS.slate[600],
+        lineHeight: 1.6,
+        flex: 1,
+      }}>
+        {feature.description}
+      </p>
+
+      {/* Arrow indicator */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: '16px',
+      }}>
+        <div style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '10px',
+          background: COLORS.slate[100],
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s ease',
+        }}>
+          <ArrowRight style={{ width: '18px', height: '18px', color: COLORS.slate[500] }} />
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  // Render the Training Arena card with sub-features
+  const renderTrainingCard = (feature) => (
+    <motion.div
+      key={feature.id}
+      variants={itemVariants}
+      style={{
+        background: 'white',
+        borderRadius: '20px',
+        padding: '28px',
+        border: `1px solid ${COLORS.slate[200]}`,
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '240px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Icon */}
+      <div style={{
+        width: '56px',
+        height: '56px',
+        borderRadius: '14px',
+        background: feature.gradient,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '20px',
+        boxShadow: `0 8px 16px -4px ${feature.color}40`,
+      }}>
+        <feature.icon style={{ width: '28px', height: '28px', color: 'white' }} />
+      </div>
+
+      {/* Phase Label */}
+      <p style={{
+        fontSize: '13px',
+        fontWeight: 600,
+        color: feature.color,
+        marginBottom: '4px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+      }}>
+        {feature.phase}
+      </p>
+
+      {/* Title */}
+      <h3 style={{
+        fontSize: '22px',
+        fontWeight: 700,
+        color: COLORS.slate[900],
+        marginBottom: '8px',
+        lineHeight: 1.2,
+      }}>
+        {feature.title}
+      </h3>
+
+      {/* Description */}
+      <p style={{
+        fontSize: '15px',
+        color: COLORS.slate[600],
+        lineHeight: 1.6,
+        marginBottom: '16px',
+      }}>
+        {feature.description}
+      </p>
+
+      {/* Sub-features list */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        flex: 1,
+      }}>
+        {trainingSubFeatures.map((subFeature) => (
+          <div
+            key={subFeature.id}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFeatureClick(subFeature.route);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 12px',
+              background: COLORS.slate[50],
+              borderRadius: '10px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = COLORS.green[50];
+              e.currentTarget.style.transform = 'translateX(4px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = COLORS.slate[50];
+              e.currentTarget.style.transform = 'translateX(0)';
+            }}
+          >
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: feature.gradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <subFeature.icon style={{ width: '16px', height: '16px', color: 'white' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{
+                fontSize: '14px',
+                fontWeight: 600,
+                color: COLORS.slate[800],
+                margin: 0,
+                lineHeight: 1.3,
+              }}>
+                {subFeature.title}
+              </p>
+              <p style={{
+                fontSize: '12px',
+                color: COLORS.slate[500],
+                margin: 0,
+                lineHeight: 1.3,
+              }}>
+                {subFeature.description}
+              </p>
+            </div>
+            <ArrowRight style={{
+              width: '14px',
+              height: '14px',
+              color: COLORS.slate[400],
+              flexShrink: 0,
+            }} />
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
 
   return (
     <div className="min-h-screen py-6 lg:py-10 px-4 lg:px-6">
@@ -265,122 +544,9 @@ const QuadDashboard = ({ onNavigate }) => {
         }}
       >
         {quadFeatures.map((feature) => (
-          <motion.div
-            key={feature.id}
-            variants={itemVariants}
-            whileHover={{ scale: 1.02, y: -6 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => handleFeatureClick(feature.route)}
-            style={{
-              background: 'white',
-              borderRadius: '20px',
-              padding: '28px',
-              cursor: 'pointer',
-              border: `1px solid ${COLORS.slate[200]}`,
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
-              transition: 'all 0.3s ease',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: '240px',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 20px 40px -12px rgba(0, 0, 0, 0.15)';
-              e.currentTarget.style.borderColor = feature.color;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)';
-              e.currentTarget.style.borderColor = COLORS.slate[200];
-            }}
-          >
-            {/* Badge */}
-            {feature.badge && (
-              <div style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: feature.gradient,
-                color: 'white',
-                fontSize: '11px',
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: '12px',
-                letterSpacing: '0.5px',
-              }}>
-                {feature.badge}
-              </div>
-            )}
-
-            {/* Icon */}
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '14px',
-              background: feature.gradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '20px',
-              boxShadow: `0 8px 16px -4px ${feature.color}40`,
-            }}>
-              <feature.icon style={{ width: '28px', height: '28px', color: 'white' }} />
-            </div>
-
-            {/* Phase Label */}
-            <p style={{
-              fontSize: '13px',
-              fontWeight: 600,
-              color: feature.color,
-              marginBottom: '4px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}>
-              {feature.phase}
-            </p>
-
-            {/* Title */}
-            <h3 style={{
-              fontSize: '22px',
-              fontWeight: 700,
-              color: COLORS.slate[900],
-              marginBottom: '8px',
-              lineHeight: 1.2,
-            }}>
-              {feature.title}
-            </h3>
-
-            {/* Description */}
-            <p style={{
-              fontSize: '15px',
-              color: COLORS.slate[600],
-              lineHeight: 1.6,
-              flex: 1,
-            }}>
-              {feature.description}
-            </p>
-
-            {/* Arrow indicator */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              marginTop: '16px',
-            }}>
-              <div style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                background: COLORS.slate[100],
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease',
-              }}>
-                <ArrowRight style={{ width: '18px', height: '18px', color: COLORS.slate[500] }} />
-              </div>
-            </div>
-          </motion.div>
+          feature.hasSubFeatures
+            ? renderTrainingCard(feature)
+            : renderStandardCard(feature)
         ))}
       </motion.div>
 
