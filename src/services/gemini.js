@@ -522,6 +522,7 @@ export async function analyzeRhetoricGame(
  *
  * @param {Object} decisionData - The decision data to analyze
  * @param {string} decisionData.topic - The decision question
+ * @param {string|null} decisionData.context - Optional context/situation description
  * @param {Array} decisionData.pros - Array of {text, weight} objects for pro arguments
  * @param {Array} decisionData.cons - Array of {text, weight} objects for contra arguments
  * @param {number} decisionData.proScore - Total pro score
@@ -530,7 +531,7 @@ export async function analyzeRhetoricGame(
  * @returns {Promise<Object>} - Parsed analysis result with summary and coaching cards
  */
 export async function analyzeDecision(decisionData, apiKey) {
-  const { topic, pros, cons, proScore, contraScore } = decisionData;
+  const { topic, context, pros, cons, proScore, contraScore } = decisionData;
 
   // Validate input
   if (!topic || topic.trim().length === 0) {
@@ -540,12 +541,18 @@ export async function analyzeDecision(decisionData, apiKey) {
   if (DEBUG_PROMPTS) {
     console.log(`🧠 [GEMINI DECISION] Starting decision analysis`);
     console.log(`🧠 [GEMINI DECISION] Topic: ${topic}`);
+    console.log(`🧠 [GEMINI DECISION] Context: ${context ? 'provided' : 'none'}`);
     console.log(`🧠 [GEMINI DECISION] Pros: ${pros.length}, Cons: ${cons.length}`);
   }
 
   // Format pros and cons for the prompt
   const prosFormatted = pros.map(p => `- "${p.text}" (Gewicht: ${p.weight}/10)`).join('\n');
   const consFormatted = cons.map(c => `- "${c.text}" (Gewicht: ${c.weight}/10)`).join('\n');
+
+  // Format context section if provided
+  const contextSection = context
+    ? `\nSituationsbeschreibung des Users:\n"${context}"\n`
+    : '';
 
   // Build the system prompt as specified
   const prompt = `Du bist 'Decisio', ein analytischer Entscheidungs-Coach.
@@ -554,6 +561,7 @@ Ziel: Deck blinde Flecken auf und hinterfrage die Gewichtung kritisch. Nimm dem 
 
 INPUT:
 Thema: ${topic}
+${contextSection}
 Pro-Liste (Gesamtpunkte: ${proScore}):
 ${prosFormatted || '(keine Pro-Argumente)'}
 
@@ -618,6 +626,7 @@ JSON SCHEMA:
     prompt,
     {
       'Thema': topic,
+      'Kontext': context ? 'vorhanden' : 'nicht angegeben',
       'Pro-Argumente': pros.length,
       'Contra-Argumente': cons.length,
       'Pro-Score': proScore,

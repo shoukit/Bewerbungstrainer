@@ -18,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { usePartner } from '@/context/PartnerContext';
 import { analyzeDecision, brainstormArguments } from '@/services/gemini';
 
@@ -644,6 +645,7 @@ const DecisionBoardInput = ({
 
   // Initialize state from initialData if provided (for editing)
   const [topic, setTopic] = useState(initialData?.topic || '');
+  const [context, setContext] = useState(initialData?.context || '');
   const [pros, setPros] = useState(initialData?.pros || [
     { id: generateId(), text: '', weight: 5 },
   ]);
@@ -793,6 +795,7 @@ const DecisionBoardInput = ({
 
       const decisionData = {
         topic,
+        context: context.trim() || null,
         pros: validPros,
         cons: validCons,
         proScore,
@@ -808,7 +811,7 @@ const DecisionBoardInput = ({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [topic, pros, cons, proScore, contraScore, canAnalyze, onAnalysisComplete]);
+  }, [topic, context, pros, cons, proScore, contraScore, canAnalyze, onAnalysisComplete]);
 
   const primaryColor = branding?.['--primary-accent'] || '#4A9EC9';
 
@@ -864,8 +867,35 @@ const DecisionBoardInput = ({
               fontSize: '18px',
               padding: '16px',
               borderRadius: '12px',
+              marginBottom: '16px',
             }}
           />
+
+          {/* Context / Situation Description */}
+          <div style={{ marginTop: '8px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#64748b',
+              marginBottom: '8px',
+            }}>
+              Beschreibe die Situation (optional)
+            </label>
+            <Textarea
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              placeholder="Hintergrund, Rahmenbedingungen, Gefühle, was dich beschäftigt..."
+              rows={3}
+              style={{
+                fontSize: '15px',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                resize: 'vertical',
+                minHeight: '80px',
+              }}
+            />
+          </div>
         </CardContent>
       </Card>
 
