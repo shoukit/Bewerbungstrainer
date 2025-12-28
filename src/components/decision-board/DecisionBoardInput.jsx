@@ -332,9 +332,9 @@ const SuggestionCard = ({ suggestion, onAdd, isAdded, b }) => {
         onClick={() => onAdd(suggestion)}
         disabled={isAdded}
         style={{
-          width: b.space[8],
-          height: b.space[8],
-          borderRadius: b.radius.sm,
+          width: b.space[10],
+          height: b.space[10],
+          borderRadius: b.radius.md,
           border: 'none',
           backgroundColor: isAdded ? b.borderColor : buttonBg,
           color: isAdded ? b.textMuted : b.white,
@@ -346,7 +346,7 @@ const SuggestionCard = ({ suggestion, onAdd, isAdded, b }) => {
           flexShrink: 0,
         }}
       >
-        {isAdded ? '✓' : <Plus size={b.iconSize.md} color="white" strokeWidth={3} />}
+        {isAdded ? '✓' : <Plus size={b.iconSize.xl} color="white" strokeWidth={2.5} />}
       </button>
     </motion.div>
   );
@@ -391,9 +391,9 @@ const BrainstormPopover = ({
           position: 'absolute',
           top: b.space[3],
           right: b.space[3],
-          width: b.space[7],
-          height: b.space[7],
-          borderRadius: b.radius.sm,
+          width: b.space[8],
+          height: b.space[8],
+          borderRadius: b.radius.md,
           border: 'none',
           backgroundColor: b.borderColorLight,
           color: b.textSecondary,
@@ -403,7 +403,7 @@ const BrainstormPopover = ({
           justifyContent: 'center',
         }}
       >
-        <X size={b.iconSize.sm} />
+        <X size={b.iconSize.lg} strokeWidth={2.5} />
       </button>
 
       {/* Header */}
