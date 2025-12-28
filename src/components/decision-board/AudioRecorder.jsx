@@ -19,6 +19,45 @@ const formatDuration = (seconds) => {
 };
 
 /**
+ * Common Whisper hallucination patterns to filter out
+ * These appear when recording silence or very quiet audio
+ */
+const HALLUCINATION_PATTERNS = [
+  /^untertitel/i,
+  /amara\.org/i,
+  /vielen dank f[üu]r'?s? zusch/i,
+  /bis zum n[äa]chsten mal/i,
+  /thank you for watching/i,
+  /subscribe/i,
+  /^\.+$/,
+  /^[♪♫🎵🎶\s]+$/,
+  /^\s*$/,
+  /^(ähm?|uhm?|hmm?|ja|nein|ok|okay)\.?\s*$/i,
+];
+
+/**
+ * Check if transcript is likely a Whisper hallucination
+ */
+const isHallucination = (transcript) => {
+  if (!transcript || typeof transcript !== 'string') return true;
+
+  const trimmed = transcript.trim();
+
+  // Too short (less than 10 chars is suspicious)
+  if (trimmed.length < 10) return true;
+
+  // Check against known hallucination patterns
+  for (const pattern of HALLUCINATION_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      console.log('[AudioRecorder] Filtered hallucination:', trimmed);
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/**
  * Simple bar waveform visualization (like Gemini)
  */
 const SimpleWaveform = ({ isRecording, analyserNode, b }) => {
@@ -116,12 +155,19 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
   const timerRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
+  const speechDetectedRef = useRef(false);
+  const peakLevelRef = useRef(0);
+  const speechCheckIntervalRef = useRef(null);
 
   // Cleanup function
   const cleanup = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+    if (speechCheckIntervalRef.current) {
+      clearInterval(speechCheckIntervalRef.current);
+      speechCheckIntervalRef.current = null;
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -132,6 +178,8 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
       audioContextRef.current = null;
     }
     audioChunksRef.current = [];
+    speechDetectedRef.current = false;
+    peakLevelRef.current = 0;
   }, []);
 
   // Cleanup on unmount
@@ -174,11 +222,31 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
       mediaRecorder.start(100);
       setIsRecording(true);
       setDuration(0);
+      speechDetectedRef.current = false;
+      peakLevelRef.current = 0;
 
       // Start timer
       timerRef.current = setInterval(() => {
         setDuration(prev => prev + 1);
       }, 1000);
+
+      // Start speech detection check
+      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+      speechCheckIntervalRef.current = setInterval(() => {
+        if (analyserRef.current) {
+          analyserRef.current.getByteFrequencyData(dataArray);
+          // Calculate average level
+          const average = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
+          // Track peak level
+          if (average > peakLevelRef.current) {
+            peakLevelRef.current = average;
+          }
+          // Speech threshold: average frequency level > 20 indicates actual speech
+          if (average > 20) {
+            speechDetectedRef.current = true;
+          }
+        }
+      }, 100);
 
     } catch (err) {
       console.error('[AudioRecorder] Error starting recording:', err);
@@ -201,6 +269,11 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
   const confirmRecording = useCallback(async () => {
     if (!mediaRecorderRef.current || !isRecording) return;
 
+    // Capture speech detection state before stopping
+    const wasSpeechDetected = speechDetectedRef.current;
+    const peakLevel = peakLevelRef.current;
+    const recordingDuration = duration;
+
     // Stop recording
     mediaRecorderRef.current.stop();
     setIsRecording(false);
@@ -208,6 +281,11 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+
+    if (speechCheckIntervalRef.current) {
+      clearInterval(speechCheckIntervalRef.current);
+      speechCheckIntervalRef.current = null;
     }
 
     if (streamRef.current) {
@@ -219,6 +297,23 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
 
     if (audioChunksRef.current.length === 0) {
       setError('Keine Aufnahme');
+      return;
+    }
+
+    // Check minimum duration (at least 1 second)
+    if (recordingDuration < 1) {
+      setError('Aufnahme zu kurz');
+      cleanup();
+      setDuration(0);
+      return;
+    }
+
+    // Check if speech was detected
+    if (!wasSpeechDetected || peakLevel < 15) {
+      console.log('[AudioRecorder] No speech detected. Peak level:', peakLevel);
+      setError('Keine Sprache erkannt');
+      cleanup();
+      setDuration(0);
       return;
     }
 
@@ -237,6 +332,11 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
       const result = await wordpressAPI.transcribeAudio(base64, mimeType);
 
       if (result.transcript) {
+        // Check for hallucinations
+        if (isHallucination(result.transcript)) {
+          throw new Error('Keine verständliche Sprache erkannt');
+        }
+
         onTranscriptReady(result.transcript);
         cleanup();
         setDuration(0);
@@ -249,7 +349,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
     } finally {
       setIsTranscribing(false);
     }
-  }, [isRecording, onTranscriptReady, cleanup]);
+  }, [isRecording, duration, onTranscriptReady, cleanup]);
 
   // Transcribing state
   if (isTranscribing) {
