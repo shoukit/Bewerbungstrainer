@@ -703,9 +703,11 @@ JSON SCHEMA:
  * @param {string} persona - One of: 'strategist', 'security', 'feelgood', 'growth', 'future'
  * @param {string} apiKey - Google Gemini API key
  * @param {string|null} context - Optional situation context for better suggestions
+ * @param {Array} existingPros - Existing pro arguments (to avoid duplicates)
+ * @param {Array} existingCons - Existing contra arguments (to avoid duplicates)
  * @returns {Promise<Object>} - Parsed result with suggestions array
  */
-export async function brainstormArguments(topic, persona, apiKey, context = null) {
+export async function brainstormArguments(topic, persona, apiKey, context = null, existingPros = [], existingCons = []) {
   // Validate input
   if (!topic || topic.trim().length === 0) {
     throw new Error('Entscheidungsfrage fehlt');
@@ -721,6 +723,8 @@ export async function brainstormArguments(topic, persona, apiKey, context = null
     console.log(`💭 [GEMINI BRAINSTORM] Topic: ${topic}`);
     console.log(`💭 [GEMINI BRAINSTORM] Persona: ${persona}`);
     console.log(`💭 [GEMINI BRAINSTORM] Context: ${context ? 'provided' : 'none'}`);
+    console.log(`💭 [GEMINI BRAINSTORM] Existing pros: ${existingPros.length}`);
+    console.log(`💭 [GEMINI BRAINSTORM] Existing cons: ${existingCons.length}`);
   }
 
   // Format context section if provided
@@ -728,12 +732,29 @@ export async function brainstormArguments(topic, persona, apiKey, context = null
     ? `\nSituationsbeschreibung:\n"${context}"\n`
     : '';
 
+  // Format existing arguments section
+  const existingProTexts = existingPros.filter(p => p.text?.trim()).map(p => `- ${p.text}`);
+  const existingConTexts = existingCons.filter(c => c.text?.trim()).map(c => `- ${c.text}`);
+
+  let existingArgsSection = '';
+  if (existingProTexts.length > 0 || existingConTexts.length > 0) {
+    existingArgsSection = '\nBEREITS ERFASSTE ARGUMENTE (nicht wiederholen, sondern neue Perspektiven liefern):';
+    if (existingProTexts.length > 0) {
+      existingArgsSection += `\nPro-Argumente:\n${existingProTexts.join('\n')}`;
+    }
+    if (existingConTexts.length > 0) {
+      existingArgsSection += `\nContra-Argumente:\n${existingConTexts.join('\n')}`;
+    }
+    existingArgsSection += '\n';
+  }
+
   const prompt = `Du bist ein kreativer Entscheidungs-Assistent für die Karriere-Plattform 'KarriereHeld'.
 Deine Aufgabe: Generiere für eine spezifische Entscheidungsfrage Argumente aus der strikten Sicht einer gewählten Persona.
 ${contextSection ? 'Berücksichtige dabei den Kontext/Hintergrund der Situation.' : ''}
+${existingArgsSection ? 'WICHTIG: Vermeide Wiederholungen der bereits erfassten Argumente und bringe neue, andere Perspektiven ein!' : ''}
 
 INPUT:
-Thema: ${topic}${contextSection}
+Thema: ${topic}${contextSection}${existingArgsSection}
 Persona: ${persona}
 
 PERSONA DEFINITIONEN:

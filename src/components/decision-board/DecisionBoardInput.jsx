@@ -859,7 +859,8 @@ const DecisionBoardInput = ({
       }
 
       const contextTrimmed = context.trim() || null;
-      const result = await brainstormArguments(topic, personaId, apiKey, contextTrimmed);
+      // Pass existing pros and cons to avoid duplicates and get fresh perspectives
+      const result = await brainstormArguments(topic, personaId, apiKey, contextTrimmed, pros, cons);
 
       setBrainstormState(prev => ({
         ...prev,
@@ -875,7 +876,7 @@ const DecisionBoardInput = ({
       }));
       setError(err.message || 'Fehler beim Brainstorming');
     }
-  }, [topic, context]);
+  }, [topic, context, pros, cons]);
 
   const handleCloseBrainstorm = useCallback(() => {
     setBrainstormState({
