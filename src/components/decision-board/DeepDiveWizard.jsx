@@ -637,31 +637,27 @@ const DeepDiveWizard = ({
 
             {step === 'selection' && (
               <>
-                <Button variant="ghost" onClick={handleFinish}>
+                <Button
+                  variant="outline"
+                  onClick={handleFinish}
+                  style={{
+                    borderColor: b.borderColor,
+                    backgroundColor: b.cardBgHover,
+                  }}
+                >
                   Fertig
                 </Button>
-                <div style={{ display: 'flex', gap: b.space[2] }}>
-                  {extractedItems.length > 0 && (
-                    <Button
-                      variant="outline"
-                      onClick={handleConfirmSelection}
-                      disabled={!extractedItems.some(i => i.selected)}
-                    >
-                      <Check size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
-                      Übernehmen
-                    </Button>
-                  )}
-                  <Button
-                    variant="solid"
-                    onClick={extractedItems.length > 0 ? handleConfirmSelection : handleSkipToNextQuestion}
-                    style={{
-                      background: b.headerGradient,
-                    }}
-                  >
-                    {extractedItems.length > 0 ? 'Übernehmen & Weiter' : 'Nächste Frage'}
-                    <ChevronRight size={b.iconSize.md} style={{ marginLeft: b.space[1] }} />
-                  </Button>
-                </div>
+                <Button
+                  variant="solid"
+                  onClick={extractedItems.length > 0 ? handleConfirmSelection : handleSkipToNextQuestion}
+                  disabled={extractedItems.length > 0 && !extractedItems.some(i => i.selected)}
+                  style={{
+                    background: b.headerGradient,
+                  }}
+                >
+                  {extractedItems.length > 0 ? 'Übernehmen & Weiter' : 'Nächste Frage'}
+                  <ChevronRight size={b.iconSize.md} style={{ marginLeft: b.space[1] }} />
+                </Button>
               </>
             )}
           </div>
