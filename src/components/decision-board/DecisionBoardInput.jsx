@@ -114,7 +114,17 @@ const WeightSlider = ({ value, onChange, color }) => {
 /**
  * Decision Item Component
  */
-const DecisionItem = ({ item, onUpdate, onDelete, color }) => {
+const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, color, autoFocus }) => {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      // Only add new line if current has some text
+      if (item.text.trim()) {
+        onAddNew();
+      }
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -134,6 +144,8 @@ const DecisionItem = ({ item, onUpdate, onDelete, color }) => {
       <Input
         value={item.text}
         onChange={(e) => onUpdate(item.id, { text: e.target.value })}
+        onKeyDown={handleKeyDown}
+        autoFocus={autoFocus}
         placeholder={color === 'green' ? 'Pro-Argument...' : 'Contra-Argument...'}
         style={{
           flex: 1,
@@ -640,6 +652,7 @@ const DecisionBoardInput = ({
   ]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
+  const [focusedItemId, setFocusedItemId] = useState(null);
 
   // Brainstorming state
   const [brainstormState, setBrainstormState] = useState({
@@ -667,11 +680,15 @@ const DecisionBoardInput = ({
 
   // Add new item
   const addPro = useCallback(() => {
-    setPros(prev => [...prev, { id: generateId(), text: '', weight: 5 }]);
+    const newId = generateId();
+    setPros(prev => [...prev, { id: newId, text: '', weight: 5 }]);
+    setFocusedItemId(newId);
   }, []);
 
   const addCon = useCallback(() => {
-    setCons(prev => [...prev, { id: generateId(), text: '', weight: 5 }]);
+    const newId = generateId();
+    setCons(prev => [...prev, { id: newId, text: '', weight: 5 }]);
+    setFocusedItemId(newId);
   }, []);
 
   // Update item
@@ -905,7 +922,9 @@ const DecisionBoardInput = ({
                     item={item}
                     onUpdate={updatePro}
                     onDelete={deletePro}
+                    onAddNew={addPro}
                     color="green"
+                    autoFocus={focusedItemId === item.id}
                   />
                 ))}
               </AnimatePresence>
@@ -959,7 +978,9 @@ const DecisionBoardInput = ({
                     item={item}
                     onUpdate={updateCon}
                     onDelete={deleteCon}
+                    onAddNew={addCon}
                     color="red"
+                    autoFocus={focusedItemId === item.id}
                   />
                 ))}
               </AnimatePresence>
