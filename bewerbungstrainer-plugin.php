@@ -715,7 +715,7 @@ class Bewerbungstrainer_Plugin {
 
         // Enqueue React app (built version)
         $asset_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/index.js';
-        $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/wordpress-api.css';
+        $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/designTokens.css';
 
         // Check if build files exist
         if (!file_exists($asset_file) || !file_exists($css_file)) {
@@ -729,7 +729,7 @@ class Bewerbungstrainer_Plugin {
         // Enqueue CSS first
         wp_enqueue_style(
             'bewerbungstrainer-app',
-            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/wordpress-api.css',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/designTokens.css',
             array(),
             filemtime($css_file)
         );
