@@ -5,6 +5,8 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Use relative paths so chunks load correctly from WordPress plugin directory
+  base: './',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
