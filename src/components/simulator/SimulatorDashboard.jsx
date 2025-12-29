@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
+import FeatureInfoModal from '@/components/FeatureInfoModal';
 
 /**
  * Icon mapping for scenarios
@@ -77,7 +78,11 @@ const SimulatorDashboard = ({
   onNavigateToHistory,
 }) => {
   return (
-    <ScenarioDashboard
+    <>
+      {/* Feature Info Modal - shows on first visit */}
+      <FeatureInfoModal featureId="simulator" showOnMount />
+
+      <ScenarioDashboard
       // Header
       title="Szenario-Training"
       subtitle="Trainiere wichtige Karriere-Skills mit KI-Feedback"
@@ -118,6 +123,7 @@ const SimulatorDashboard = ({
       // Loading
       loadingMessage="Szenarien werden geladen..."
     />
+    </>
   );
 };
 

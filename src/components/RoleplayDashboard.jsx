@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
+import FeatureInfoModal from '@/components/FeatureInfoModal';
 
 /**
  * Render meta information for a scenario card
@@ -49,7 +50,11 @@ const RoleplayDashboard = ({
   onNavigateToHistory,
 }) => {
   return (
-    <ScenarioDashboard
+    <>
+      {/* Feature Info Modal - shows on first visit */}
+      <FeatureInfoModal featureId="roleplay" showOnMount />
+
+      <ScenarioDashboard
       // Header
       title="Live-Simulationen"
       subtitle="Live Simulationen mit KI-Interviewer"
@@ -94,6 +99,7 @@ const RoleplayDashboard = ({
       // Loading
       loadingMessage="Szenarien werden geladen..."
     />
+    </>
   );
 };
 

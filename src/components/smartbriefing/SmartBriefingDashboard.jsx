@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
+import FeatureInfoModal from '@/components/FeatureInfoModal';
 
 /**
  * Icon mapping for template icons
@@ -399,8 +400,12 @@ const SmartBriefingDashboard = ({
   );
 
   return (
-    <ScenarioDashboard
-      key={refreshKey}
+    <>
+      {/* Feature Info Modal - shows on first visit */}
+      <FeatureInfoModal featureId="smartbriefing" showOnMount />
+
+      <ScenarioDashboard
+        key={refreshKey}
 
       // Header
       title="Smart Briefing"
@@ -453,7 +458,8 @@ const SmartBriefingDashboard = ({
 
       // Loading
       loadingMessage="Templates werden geladen..."
-    />
+      />
+    </>
   );
 };
 

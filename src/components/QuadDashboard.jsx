@@ -20,6 +20,7 @@ import { getRecentActivities, getWPApiUrl, getWPNonce } from '@/services/wordpre
 import { getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { formatRelativeTime } from '@/utils/formatting';
 import SetupSelector from './SetupSelector';
+import FeatureInfoButton from './FeatureInfoButton';
 
 /**
  * QuadDashboard - Homepage with two-zone layout
@@ -141,6 +142,7 @@ const QuadDashboard = ({ onNavigate }) => {
   const strategyCards = [
     {
       id: 'ikigai',
+      featureId: 'ikigai',
       step: '1',
       title: 'Orientierung',
       subtitle: 'Ikigai-Kompass',
@@ -153,6 +155,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'decision',
+      featureId: 'decisionboard',
       step: '2',
       title: 'Entscheiden',
       subtitle: 'Decision-Navigator',
@@ -165,6 +168,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'briefing',
+      featureId: 'smartbriefing',
       step: '3',
       title: 'Vorbereiten',
       subtitle: 'Smart Briefing',
@@ -181,6 +185,7 @@ const QuadDashboard = ({ onNavigate }) => {
   const trainingCards = [
     {
       id: 'simulator',
+      featureId: 'simulator',
       title: 'Szenario Training',
       subtitle: 'Frage-Antwort',
       description: 'Beantworte Interview-Fragen und erhalte sofortiges KI-Feedback.',
@@ -194,6 +199,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'roleplay',
+      featureId: 'roleplay',
       title: 'Live Simulation',
       subtitle: 'Echtzeit-Dialog',
       description: 'Führe ein realistisches Gespräch mit dem KI-Interviewer.',
@@ -207,6 +213,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'video',
+      featureId: 'videotraining',
       title: 'Wirkungsanalyse',
       subtitle: 'Körpersprache',
       description: 'Nimm dich auf Video auf und erhalte Feedback zu deiner Wirkung.',
@@ -220,6 +227,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'gym',
+      featureId: 'rhetorikgym',
       title: 'Rhetorik Gym',
       subtitle: 'Sprechtraining',
       description: 'Reduziere Füllwörter und verbessere deine Redegewandtheit.',
@@ -428,23 +436,34 @@ const QuadDashboard = ({ onNavigate }) => {
                   pointerEvents: 'none',
                 }} />
 
-                {/* Step Badge */}
+                {/* Step Badge & Info Button */}
                 <div style={{
                   position: 'absolute',
                   top: '20px',
                   right: '20px',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '10px',
-                  background: card.bgLight,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: card.color,
+                  gap: '8px',
                 }}>
-                  {card.step}
+                  <FeatureInfoButton
+                    featureId={card.featureId}
+                    size="sm"
+                    variant="dark"
+                  />
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '10px',
+                    background: card.bgLight,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: card.color,
+                  }}>
+                    {card.step}
+                  </div>
                 </div>
 
                 {/* Icon */}
@@ -597,21 +616,32 @@ const QuadDashboard = ({ onNavigate }) => {
                   e.currentTarget.style.borderColor = COLORS.slate[100];
                 }}
               >
-                {/* Tag Badge */}
+                {/* Tag Badge & Info Button */}
                 <div style={{
                   position: 'absolute',
                   top: '18px',
                   right: '18px',
-                  background: card.bgLight,
-                  color: card.color,
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
                 }}>
-                  {card.tag}
+                  <FeatureInfoButton
+                    featureId={card.featureId}
+                    size="sm"
+                    variant="dark"
+                  />
+                  <div style={{
+                    background: card.bgLight,
+                    color: card.color,
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.3px',
+                  }}>
+                    {card.tag}
+                  </div>
                 </div>
 
                 {/* Icon */}
