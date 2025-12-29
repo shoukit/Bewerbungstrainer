@@ -36,11 +36,11 @@ const SetupCard = ({ setup, isSelected, onSelect }) => {
         WebkitAppearance: 'none',
       }}
     >
-      {/* Colored Header Banner */}
+      {/* Colored Header Banner - Fixed height for consistency */}
       <div
         style={{
           background: `linear-gradient(135deg, ${safeColor} 0%, ${safeColor}dd 100%)`,
-          padding: '24px 20px',
+          height: '100px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

@@ -42,34 +42,41 @@ const QuadDashboard = ({ onNavigate }) => {
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
-  // Load scenario counts
+  // Load scenario counts when setup changes
   useEffect(() => {
+    const loadScenarioCounts = async () => {
+      try {
+        // Fetch all scenarios in parallel
+        const [simulatorData, roleplayData, videoData] = await Promise.all([
+          wordpressAPI.getSimulatorScenarios().catch(() => []),
+          getRoleplayScenarios().catch(() => []),
+          wordpressAPI.getVideoScenarios().catch(() => []),
+        ]);
+
+        // Filter and count based on current setup
+        const simulatorFiltered = filterScenariosBySetupAndPartner(simulatorData || [], 'simulator');
+        const roleplayFiltered = filterScenariosBySetupAndPartner(roleplayData || [], 'roleplay');
+        const videoFiltered = filterScenariosBySetupAndPartner(videoData || [], 'video_training');
+
+        console.log('[QuadDashboard] Scenario counts:', {
+          currentSetup: currentSetup?.id,
+          simulator: simulatorFiltered.length,
+          roleplay: roleplayFiltered.length,
+          video: videoFiltered.length,
+        });
+
+        setScenarioCounts({
+          simulator: simulatorFiltered.length,
+          roleplay: roleplayFiltered.length,
+          video: videoFiltered.length,
+        });
+      } catch (error) {
+        console.error('Failed to load scenario counts:', error);
+      }
+    };
+
     loadScenarioCounts();
-  }, [currentSetup]);
-
-  const loadScenarioCounts = async () => {
-    try {
-      // Fetch all scenarios in parallel
-      const [simulatorData, roleplayData, videoData] = await Promise.all([
-        wordpressAPI.getSimulatorScenarios().catch(() => []),
-        getRoleplayScenarios().catch(() => []),
-        wordpressAPI.getVideoScenarios().catch(() => []),
-      ]);
-
-      // Filter and count based on current setup
-      const simulatorFiltered = filterScenariosBySetupAndPartner(simulatorData || [], 'simulator');
-      const roleplayFiltered = filterScenariosBySetupAndPartner(roleplayData || [], 'roleplay');
-      const videoFiltered = filterScenariosBySetupAndPartner(videoData || [], 'video_training');
-
-      setScenarioCounts({
-        simulator: simulatorFiltered.length,
-        roleplay: roleplayFiltered.length,
-        video: videoFiltered.length,
-      });
-    } catch (error) {
-      console.error('Failed to load scenario counts:', error);
-    }
-  };
+  }, [currentSetup, filterScenariosBySetupAndPartner]);
 
   // Load recent activities if authenticated
   useEffect(() => {
