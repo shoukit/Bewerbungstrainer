@@ -215,12 +215,11 @@ const BrandingLoadingSpinner = () => {
         </div>
 
         {/* Brand name */}
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', color: 'white' }}>
           <h1
             style={{
               fontSize: '28px',
               fontWeight: 700,
-              color: 'white',
               margin: 0,
               letterSpacing: '-0.02em',
             }}
@@ -230,7 +229,7 @@ const BrandingLoadingSpinner = () => {
           <p
             style={{
               fontSize: '15px',
-              color: 'rgba(255, 255, 255, 0.6)',
+              opacity: 0.6,
               margin: '8px 0 0 0',
               fontWeight: 400,
             }}

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import IkigaiCompass from './IkigaiCompass';
 import IkigaiResults from './IkigaiResults';
 import wordpressAPI from '@/services/wordpress-api';
+import FeatureInfoModal from '@/components/FeatureInfoModal';
 
 /**
  * View states for the Ikigai flow
@@ -271,9 +272,14 @@ const IkigaiApp = ({
   };
 
   return (
-    <div style={{ minHeight: '100%' }}>
-      {renderContent()}
-    </div>
+    <>
+      {/* Feature Info Modal - shows on first visit */}
+      <FeatureInfoModal featureId="ikigai" showOnMount />
+
+      <div style={{ minHeight: '100%' }}>
+        {renderContent()}
+      </div>
+    </>
   );
 };
 

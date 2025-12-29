@@ -3,9 +3,12 @@
  *
  * Uses the project's design system (colors, shadows, radius, spacing)
  * for consistent styling across the application.
+ *
+ * Uses React Portal to render at body level, avoiding transform ancestor issues.
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Clock, Target, Sparkles, ChevronRight } from 'lucide-react';
 import { COLORS, hexToRgba } from '@/config/colors';
@@ -59,7 +62,8 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
     return null;
   }
 
-  return (
+  // Modal content - rendered via portal to avoid transform ancestor issues
+  const modalContent = (
     <AnimatePresence>
       {internalOpen && (
         <>
@@ -75,11 +79,12 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
               inset: 0,
               backgroundColor: hexToRgba(COLORS.slate[900], 0.6),
               backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
               zIndex: 99999,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: SPACING[5],
+              padding: '16px',
             }}
           >
             {/* Modal */}
@@ -94,10 +99,12 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
                 borderRadius: RADIUS['2xl'],
                 maxWidth: '560px',
                 width: '100%',
-                maxHeight: '90vh',
+                maxHeight: 'calc(100vh - 32px)',
                 overflow: 'hidden',
                 boxShadow: SHADOWS.xl,
                 border: `1px solid ${COLORS.slate[200]}`,
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
               {/* Header with gradient */}
@@ -196,12 +203,13 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
                 </div>
               </div>
 
-              {/* Content */}
+              {/* Content - scrollable */}
               <div
                 style={{
-                  padding: `${SPACING[6]} ${SPACING[8]} ${SPACING[8]}`,
-                  maxHeight: 'calc(90vh - 200px)',
+                  padding: `${SPACING[5]} ${SPACING[6]}`,
+                  flex: 1,
                   overflowY: 'auto',
+                  minHeight: 0,
                 }}
               >
                 {/* Description */}
@@ -319,7 +327,6 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
                     display: 'flex',
                     gap: SPACING[3],
                     flexWrap: 'wrap',
-                    marginBottom: SPACING[6],
                   }}
                 >
                   <div
@@ -355,67 +362,70 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
                     {feature.idealFor}
                   </div>
                 </div>
+              </div>
 
-                {/* Footer with checkbox and button */}
-                <div
+              {/* Sticky Footer with checkbox and button */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: `${SPACING[4]} ${SPACING[6]}`,
+                  borderTop: `1px solid ${COLORS.slate[200]}`,
+                  gap: SPACING[3],
+                  flexWrap: 'wrap',
+                  backgroundColor: COLORS.white,
+                  flexShrink: 0,
+                }}
+              >
+                <label
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingTop: SPACING[4],
-                    borderTop: `1px solid ${COLORS.slate[200]}`,
-                    gap: SPACING[4],
-                    flexWrap: 'wrap',
+                    gap: SPACING[2],
+                    cursor: 'pointer',
+                    color: COLORS.slate[500],
+                    fontSize: FONT_SIZE.sm,
                   }}
                 >
-                  <label
+                  <input
+                    type="checkbox"
+                    checked={dontShowAgain}
+                    onChange={(e) => setDontShowAgain(e.target.checked)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: SPACING[2.5],
+                      width: '18px',
+                      height: '18px',
+                      accentColor: feature.color,
                       cursor: 'pointer',
-                      color: COLORS.slate[500],
-                      fontSize: FONT_SIZE.sm,
                     }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={dontShowAgain}
-                      onChange={(e) => setDontShowAgain(e.target.checked)}
-                      style={{
-                        width: '18px',
-                        height: '18px',
-                        accentColor: feature.color,
-                        cursor: 'pointer',
-                      }}
-                    />
-                    Nicht mehr automatisch anzeigen
-                  </label>
+                  />
+                  Nicht mehr anzeigen
+                </label>
 
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleClose}
-                    style={{
-                      background: feature.gradient,
-                      color: COLORS.white,
-                      border: 'none',
-                      borderRadius: RADIUS.lg,
-                      padding: `${SPACING[3]} ${SPACING[6]}`,
-                      fontSize: FONT_SIZE.base,
-                      fontWeight: FONT_WEIGHT.semibold,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: SPACING[2],
-                      boxShadow: coloredShadow(feature.color, 'md'),
-                      transition: TRANSITIONS.normal,
-                    }}
-                  >
-                    Los geht's
-                    <ChevronRight size={18} />
-                  </motion.button>
-                </div>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleClose}
+                  style={{
+                    background: feature.gradient,
+                    color: COLORS.white,
+                    border: 'none',
+                    borderRadius: RADIUS.lg,
+                    padding: `${SPACING[3]} ${SPACING[5]}`,
+                    fontSize: FONT_SIZE.sm,
+                    fontWeight: FONT_WEIGHT.semibold,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: SPACING[2],
+                    boxShadow: coloredShadow(feature.color, 'md'),
+                    transition: TRANSITIONS.normal,
+                    flexShrink: 0,
+                  }}
+                >
+                  Los geht's
+                  <ChevronRight size={16} />
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>
@@ -423,6 +433,9 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
       )}
     </AnimatePresence>
   );
+
+  // Render via portal to document body to avoid transform ancestor issues
+  return createPortal(modalContent, document.body);
 };
 
 export default FeatureInfoModal;
