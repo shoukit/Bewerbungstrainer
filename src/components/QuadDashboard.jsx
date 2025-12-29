@@ -17,6 +17,7 @@ import { usePartner, useAuth } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
 import { getRecentActivities } from '@/services/wordpress-api';
+import { formatRelativeTime } from '@/utils/formatting';
 
 /**
  * QuadDashboard - Homepage with two-zone layout
@@ -181,34 +182,6 @@ const QuadDashboard = ({ onNavigate }) => {
     if (onNavigate) {
       onNavigate(route);
     }
-  };
-
-  // Format activity date - handles MySQL/WordPress date format (stored in local time)
-  const formatActivityDate = (dateString) => {
-    if (!dateString) return '';
-
-    // WordPress stores dates in local server time, not UTC
-    // Remove any timezone suffix (Z or +00:00) and normalize format
-    let normalizedDate = dateString
-      .replace(' ', 'T')           // MySQL format: "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
-      .replace(/Z$/, '')           // Remove UTC marker
-      .replace(/[+-]\d{2}:\d{2}$/, ''); // Remove timezone offset
-
-    const date = new Date(normalizedDate);
-    if (isNaN(date.getTime())) return '';
-
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 0) return 'gerade eben'; // Future dates (clock skew)
-    if (diffMins < 1) return 'gerade eben';
-    if (diffMins < 60) return `vor ${diffMins} Min.`;
-    if (diffHours < 24) return `vor ${diffHours} Std.`;
-    if (diffDays < 7) return `vor ${diffDays} Tagen`;
-    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   };
 
   // Get activity type label
@@ -791,7 +764,7 @@ const QuadDashboard = ({ onNavigate }) => {
                         flexShrink: 0,
                         marginLeft: '16px',
                       }}>
-                        {formatActivityDate(activity.created_at || activity.date)}
+                        {formatRelativeTime(activity.created_at || activity.date)}
                       </span>
                     </motion.div>
                   ))}
