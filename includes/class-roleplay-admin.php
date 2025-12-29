@@ -50,7 +50,8 @@ class Bewerbungstrainer_Roleplay_Admin {
      * Initialize hooks
      */
     private function init_hooks() {
-        add_action('admin_menu', array($this, 'add_admin_menu'), 5);
+        // Priority 15 to ensure parent menu (priority 9) is registered first
+        add_action('admin_menu', array($this, 'add_admin_menu'), 15);
         add_action('admin_init', array($this, 'handle_form_actions'));
         add_action('admin_init', array($this, 'handle_csv_actions'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
