@@ -123,11 +123,19 @@ const LazyLoadFallback = () => (
   </div>
 );
 
+// Track if initial splash has been shown - persists across all renders
+let initialSplashShown = false;
+
 /**
  * Modern Loading Screen Component
- * Shown while partner branding is being loaded
+ * Shown ONLY on initial app load, never on navigation
  */
 const BrandingLoadingSpinner = () => {
+  // Mark splash as shown on first render
+  React.useEffect(() => {
+    initialSplashShown = true;
+  }, []);
+
   return (
     <div
       style={{
@@ -780,8 +788,9 @@ function AppContent() {
   }, [isAdmin, handleSidebarNavigate]);
 
   // ===== CONDITIONAL RETURNS AFTER ALL HOOKS =====
-  // Show loading spinner while branding is loading
-  if (isLoading) {
+  // Show loading spinner ONLY on initial app load, not on navigation
+  // Once the splash has been shown, never show it again
+  if (isLoading && !initialSplashShown) {
     return <BrandingLoadingSpinner />;
   }
 
