@@ -481,8 +481,8 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         disabled={disabled}
         title="Spracheingabe"
         style={{
-          width: '44px',
-          height: '44px',
+          width: '52px',
+          height: '52px',
           borderRadius: b.radius.full,
           border: 'none',
           backgroundColor: b.textMain,
@@ -501,7 +501,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
           if (!disabled) e.currentTarget.style.opacity = '1';
         }}
       >
-        <Mic size={20} />
+        <Mic size={24} />
       </button>
     </div>
   );
