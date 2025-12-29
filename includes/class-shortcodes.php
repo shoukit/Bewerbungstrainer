@@ -54,6 +54,105 @@ class Bewerbungstrainer_Shortcodes {
         // Return container div where React app will mount
         ob_start();
         ?>
+        <style>
+            /* Modern Loading Screen - Inline for immediate display */
+            .bewerbungstrainer-loading {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+                z-index: 9999 !important;
+            }
+            .bewerbungstrainer-loading-circle {
+                position: absolute !important;
+                border-radius: 50% !important;
+            }
+            .bewerbungstrainer-loading-circle-1 {
+                top: 20% !important;
+                left: 10% !important;
+                width: 300px !important;
+                height: 300px !important;
+                background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%) !important;
+                animation: bwt-float 6s ease-in-out infinite !important;
+            }
+            .bewerbungstrainer-loading-circle-2 {
+                bottom: 20% !important;
+                right: 10% !important;
+                width: 400px !important;
+                height: 400px !important;
+                background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%) !important;
+                animation: bwt-float 8s ease-in-out infinite reverse !important;
+            }
+            .bewerbungstrainer-loading-content {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 32px !important;
+                z-index: 1 !important;
+            }
+            .bewerbungstrainer-loading-icon {
+                width: 80px !important;
+                height: 80px !important;
+                border-radius: 24px !important;
+                background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-shadow: 0 20px 40px rgba(56, 189, 248, 0.3) !important;
+                animation: bwt-pulse 2s ease-in-out infinite !important;
+            }
+            .bewerbungstrainer-loading-text {
+                text-align: center !important;
+            }
+            .bewerbungstrainer-loading-text h1 {
+                font-size: 28px !important;
+                font-weight: 700 !important;
+                color: white !important;
+                margin: 0 !important;
+                letter-spacing: -0.02em !important;
+                background: transparent !important;
+            }
+            .bewerbungstrainer-loading-text p {
+                font-size: 15px !important;
+                color: rgba(255, 255, 255, 0.6) !important;
+                margin: 8px 0 0 0 !important;
+                font-weight: 400 !important;
+            }
+            .bewerbungstrainer-loading-bar {
+                width: 200px !important;
+                height: 4px !important;
+                background-color: rgba(255, 255, 255, 0.1) !important;
+                border-radius: 2px !important;
+                overflow: hidden !important;
+            }
+            .bewerbungstrainer-loading-bar-progress {
+                width: 40% !important;
+                height: 100% !important;
+                background: linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8) !important;
+                background-size: 200% 100% !important;
+                border-radius: 2px !important;
+                animation: bwt-loading 1.5s ease-in-out infinite !important;
+            }
+            @keyframes bwt-pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+            @keyframes bwt-float {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-20px); }
+            }
+            @keyframes bwt-loading {
+                0% { transform: translateX(-100%); }
+                50% { transform: translateX(150%); }
+                100% { transform: translateX(400%); }
+            }
+        </style>
         <div id="bewerbungstrainer-app" class="bewerbungstrainer-interview-container">
             <div class="bewerbungstrainer-loading">
                 <!-- Animated background circles -->
@@ -111,6 +210,105 @@ class Bewerbungstrainer_Shortcodes {
         // Return container div where React app will mount
         ob_start();
         ?>
+        <style>
+            /* Modern Loading Screen - Inline for immediate display */
+            .bewerbungstrainer-loading {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+                z-index: 9999 !important;
+            }
+            .bewerbungstrainer-loading-circle {
+                position: absolute !important;
+                border-radius: 50% !important;
+            }
+            .bewerbungstrainer-loading-circle-1 {
+                top: 20% !important;
+                left: 10% !important;
+                width: 300px !important;
+                height: 300px !important;
+                background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%) !important;
+                animation: bwt-float 6s ease-in-out infinite !important;
+            }
+            .bewerbungstrainer-loading-circle-2 {
+                bottom: 20% !important;
+                right: 10% !important;
+                width: 400px !important;
+                height: 400px !important;
+                background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%) !important;
+                animation: bwt-float 8s ease-in-out infinite reverse !important;
+            }
+            .bewerbungstrainer-loading-content {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 32px !important;
+                z-index: 1 !important;
+            }
+            .bewerbungstrainer-loading-icon {
+                width: 80px !important;
+                height: 80px !important;
+                border-radius: 24px !important;
+                background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-shadow: 0 20px 40px rgba(56, 189, 248, 0.3) !important;
+                animation: bwt-pulse 2s ease-in-out infinite !important;
+            }
+            .bewerbungstrainer-loading-text {
+                text-align: center !important;
+            }
+            .bewerbungstrainer-loading-text h1 {
+                font-size: 28px !important;
+                font-weight: 700 !important;
+                color: white !important;
+                margin: 0 !important;
+                letter-spacing: -0.02em !important;
+                background: transparent !important;
+            }
+            .bewerbungstrainer-loading-text p {
+                font-size: 15px !important;
+                color: rgba(255, 255, 255, 0.6) !important;
+                margin: 8px 0 0 0 !important;
+                font-weight: 400 !important;
+            }
+            .bewerbungstrainer-loading-bar {
+                width: 200px !important;
+                height: 4px !important;
+                background-color: rgba(255, 255, 255, 0.1) !important;
+                border-radius: 2px !important;
+                overflow: hidden !important;
+            }
+            .bewerbungstrainer-loading-bar-progress {
+                width: 40% !important;
+                height: 100% !important;
+                background: linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8) !important;
+                background-size: 200% 100% !important;
+                border-radius: 2px !important;
+                animation: bwt-loading 1.5s ease-in-out infinite !important;
+            }
+            @keyframes bwt-pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+            @keyframes bwt-float {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-20px); }
+            }
+            @keyframes bwt-loading {
+                0% { transform: translateX(-100%); }
+                50% { transform: translateX(150%); }
+                100% { transform: translateX(400%); }
+            }
+        </style>
         <script type="text/javascript">
             window.bewerbungstrainerVideoTraining = <?php echo wp_json_encode($config); ?>;
         </script>
