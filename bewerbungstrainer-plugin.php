@@ -396,7 +396,7 @@ class Bewerbungstrainer_Plugin {
         // Define the desired order with menu slugs
         $desired_order = array(
             // Main features (1-4)
-            'edit.php?post_type=roleplay_scenario',  // 1: Live-Simulationen
+            'roleplay-scenarios',                     // 1: Live-Simulationen (new database-based admin)
             'simulator-scenarios',                    // 2: Szenario-Training
             'bewerbungstrainer-video-training',       // 3: Wirkungs-Analyse
             'smartbriefing-templates',                // 4: Smart Briefing
