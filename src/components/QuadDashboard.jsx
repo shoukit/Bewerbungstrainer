@@ -16,7 +16,7 @@ import {
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
-import wordpressAPI, { getRecentActivities, getWPApiUrl, getWPNonce } from '@/services/wordpress-api';
+import { getRecentActivities, getWPApiUrl, getWPNonce } from '@/services/wordpress-api';
 import { getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { formatRelativeTime } from '@/utils/formatting';
 import SetupSelector from './SetupSelector';
@@ -42,6 +42,21 @@ const QuadDashboard = ({ onNavigate }) => {
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
+  // Helper function to fetch simulator scenarios
+  const fetchSimulatorScenarios = async () => {
+    try {
+      const response = await fetch(`${getWPApiUrl()}/simulator/scenarios`, {
+        headers: { 'X-WP-Nonce': getWPNonce() },
+        credentials: 'same-origin',
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.success && data.data?.scenarios ? data.data.scenarios : [];
+    } catch {
+      return [];
+    }
+  };
+
   // Helper function to fetch video scenarios
   const fetchVideoScenarios = async () => {
     try {
@@ -62,7 +77,7 @@ const QuadDashboard = ({ onNavigate }) => {
       try {
         // Fetch all scenarios in parallel
         const [simulatorData, roleplayData, videoData] = await Promise.all([
-          wordpressAPI.getSimulatorScenarios().catch(() => []),
+          fetchSimulatorScenarios(),
           getRoleplayScenarios().catch(() => []),
           fetchVideoScenarios(),
         ]);
