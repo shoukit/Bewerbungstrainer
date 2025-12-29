@@ -40,9 +40,9 @@ const FeatureInfoButton = ({
 
   // Size configurations
   const sizes = {
-    sm: { button: 24, icon: 14 },
-    md: { button: 28, icon: 16 },
-    lg: { button: 32, icon: 18 },
+    sm: { button: 28, icon: 16 },
+    md: { button: 32, icon: 18 },
+    lg: { button: 36, icon: 20 },
   };
 
   const sizeConfig = sizes[size] || sizes.md;
@@ -60,9 +60,9 @@ const FeatureInfoButton = ({
       hoverBackground: 'rgba(255, 255, 255, 0.3)',
     },
     dark: {
-      background: COLORS.slate[200],
-      color: COLORS.slate[600],
-      hoverBackground: COLORS.slate[300],
+      background: COLORS.slate[300],
+      color: COLORS.slate[700],
+      hoverBackground: COLORS.slate[400],
     },
   };
 

@@ -20,7 +20,7 @@ import {
 } from '@/config/featureDescriptions';
 
 // Standard icon size for close buttons
-const CLOSE_ICON_SIZE = 18;
+const CLOSE_ICON_SIZE = 22;
 
 /**
  * FeatureInfoModal Component
