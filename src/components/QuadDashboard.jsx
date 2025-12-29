@@ -16,7 +16,7 @@ import {
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
-import wordpressAPI, { getRecentActivities } from '@/services/wordpress-api';
+import wordpressAPI, { getRecentActivities, getWPApiUrl, getWPNonce } from '@/services/wordpress-api';
 import { getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { formatRelativeTime } from '@/utils/formatting';
 import SetupSelector from './SetupSelector';
@@ -42,6 +42,20 @@ const QuadDashboard = ({ onNavigate }) => {
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
+  // Helper function to fetch video scenarios
+  const fetchVideoScenarios = async () => {
+    try {
+      const response = await fetch(`${getWPApiUrl()}/video-training/scenarios`, {
+        headers: { 'X-WP-Nonce': getWPNonce() },
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.success && data.data?.scenarios ? data.data.scenarios : [];
+    } catch {
+      return [];
+    }
+  };
+
   // Load scenario counts when setup changes
   useEffect(() => {
     const loadScenarioCounts = async () => {
@@ -50,7 +64,7 @@ const QuadDashboard = ({ onNavigate }) => {
         const [simulatorData, roleplayData, videoData] = await Promise.all([
           wordpressAPI.getSimulatorScenarios().catch(() => []),
           getRoleplayScenarios().catch(() => []),
-          wordpressAPI.getVideoScenarios().catch(() => []),
+          fetchVideoScenarios(),
         ]);
 
         // Filter and count based on current setup
