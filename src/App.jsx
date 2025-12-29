@@ -1,21 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import QuadDashboard from './components/QuadDashboard';
-import OverviewDashboard from './components/OverviewDashboard';
-import RoleplayDashboard from './components/RoleplayDashboard';
-import RoleplayDeviceSetup from './components/RoleplayDeviceSetup';
-import RoleplayVariablesPage from './components/RoleplayVariablesPage';
-import RoleplaySessionUnified from './components/RoleplaySessionUnified';
-import { CONNECTION_MODES } from './services/conversation-adapters';
-import SessionHistory, { SESSION_TABS } from './components/SessionHistory';
-import SessionDetailView from './components/SessionDetailView';
-import { SimulatorApp } from './components/simulator';
-import { VideoTrainingApp } from './components/video-training';
-import { RhetorikGym, GameSession } from './components/rhetorik-gym';
-import { SmartBriefingApp } from './components/smartbriefing';
-import { DecisionBoardApp } from './components/decision-board';
-import IkigaiApp from './components/ikigai/IkigaiApp';
-import UsageLimitsDisplay from './components/UsageLimitsDisplay';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
 import { LoginModal } from './components/LoginModal';
@@ -24,12 +8,120 @@ import { ToastProvider } from './components/Toast';
 import { Loader2 } from 'lucide-react';
 import { ROUTES, VIEW_TO_ROUTE, getViewFromPath } from './routes';
 
-// Admin components
-import AdminDashboard from './components/admin/AdminDashboard';
-import ScenarioManager from './components/admin/ScenarioManager';
-import SimulatorScenarioManager from './components/admin/SimulatorScenarioManager';
-import VideoTrainingManager from './components/admin/VideoTrainingManager';
-import PartnerManager from './components/admin/PartnerManager';
+// ============================================================================
+// CRITICAL PATH COMPONENTS (loaded immediately)
+// These are needed for the initial render / homepage
+// ============================================================================
+import QuadDashboard from './components/QuadDashboard';
+
+// ============================================================================
+// LAZY-LOADED COMPONENTS
+// These are loaded on-demand when the user navigates to them
+// ============================================================================
+
+// Live Training (Roleplay) - includes ElevenLabs SDK (~100KB+)
+const RoleplayDashboard = lazy(() => import('./components/RoleplayDashboard'));
+const RoleplayDeviceSetup = lazy(() => import('./components/RoleplayDeviceSetup'));
+const RoleplayVariablesPage = lazy(() => import('./components/RoleplayVariablesPage'));
+const RoleplaySessionUnified = lazy(() => import('./components/RoleplaySessionUnified'));
+
+// Session History
+const SessionHistory = lazy(() => import('./components/SessionHistory').then(m => ({ default: m.default })));
+const SessionDetailView = lazy(() => import('./components/SessionDetailView'));
+
+// Simulator (Scenario Training)
+const SimulatorApp = lazy(() => import('./components/simulator').then(m => ({ default: m.SimulatorApp })));
+
+// Video Training
+const VideoTrainingApp = lazy(() => import('./components/video-training').then(m => ({ default: m.VideoTrainingApp })));
+
+// Rhetorik-Gym
+const RhetorikGym = lazy(() => import('./components/rhetorik-gym').then(m => ({ default: m.RhetorikGym })));
+const GameSession = lazy(() => import('./components/rhetorik-gym').then(m => ({ default: m.GameSession })));
+
+// Smart Briefing
+const SmartBriefingApp = lazy(() => import('./components/smartbriefing').then(m => ({ default: m.SmartBriefingApp })));
+
+// Decision Board
+const DecisionBoardApp = lazy(() => import('./components/decision-board').then(m => ({ default: m.DecisionBoardApp })));
+
+// Ikigai
+const IkigaiApp = lazy(() => import('./components/ikigai/IkigaiApp'));
+
+// Usage Limits
+const UsageLimitsDisplay = lazy(() => import('./components/UsageLimitsDisplay'));
+
+// Admin components (only loaded for admins)
+const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
+const ScenarioManager = lazy(() => import('./components/admin/ScenarioManager'));
+const SimulatorScenarioManager = lazy(() => import('./components/admin/SimulatorScenarioManager'));
+const VideoTrainingManager = lazy(() => import('./components/admin/VideoTrainingManager'));
+const PartnerManager = lazy(() => import('./components/admin/PartnerManager'));
+
+// CONNECTION_MODES - defined inline to avoid importing the adapter module eagerly
+const CONNECTION_MODES = {
+  DIRECT: 'direct',
+  PROXY: 'proxy',
+};
+
+// SESSION_TABS - defined inline to avoid async dependency
+const SESSION_TABS = {
+  BRIEFINGS: 'briefings',
+  SIMULATOR: 'simulator',
+  VIDEO: 'video',
+  ROLEPLAY: 'roleplay',
+};
+
+/**
+ * Lazy Load Fallback Component
+ * Shown while lazy-loaded components are being fetched
+ */
+const LazyLoadFallback = () => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '400px',
+      gap: '16px',
+    }}
+  >
+    <div
+      style={{
+        width: '48px',
+        height: '48px',
+        borderRadius: '12px',
+        background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        animation: 'pulse 1.5s ease-in-out infinite',
+      }}
+    >
+      <Loader2
+        size={24}
+        color="white"
+        style={{ animation: 'spin 1s linear infinite' }}
+      />
+    </div>
+    <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
+      Modul wird geladen...
+    </p>
+    <style>
+      {`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.05); opacity: 0.8; }
+        }
+      `}
+    </style>
+  </div>
+);
 
 /**
  * Modern Loading Screen Component
@@ -703,16 +795,17 @@ function AppContent() {
 
   // ===== CONTENT RENDERING WITH ROUTES =====
   const renderContent = () => (
-    <Routes>
-      {/* Overview / Home - Quad Dashboard */}
-      <Route
-        path="/"
-        element={<QuadDashboard onNavigate={handleSidebarNavigate} />}
-      />
-      <Route
-        path={ROUTES.OVERVIEW}
-        element={<QuadDashboard onNavigate={handleSidebarNavigate} />}
-      />
+    <Suspense fallback={<LazyLoadFallback />}>
+      <Routes>
+        {/* Overview / Home - Quad Dashboard (not lazy - critical path) */}
+        <Route
+          path="/"
+          element={<QuadDashboard onNavigate={handleSidebarNavigate} />}
+        />
+        <Route
+          path={ROUTES.OVERVIEW}
+          element={<QuadDashboard onNavigate={handleSidebarNavigate} />}
+        />
 
       {/* Live Training (Roleplay) Routes */}
       <Route
@@ -966,12 +1059,13 @@ function AppContent() {
         }
       />
 
-      {/* Fallback - redirect to overview */}
-      <Route
-        path="*"
-        element={<QuadDashboard onNavigate={handleSidebarNavigate} />}
-      />
-    </Routes>
+        {/* Fallback - redirect to overview */}
+        <Route
+          path="*"
+          element={<QuadDashboard onNavigate={handleSidebarNavigate} />}
+        />
+      </Routes>
+    </Suspense>
   );
 
   // All views now use the sidebar layout for consistent navigation
