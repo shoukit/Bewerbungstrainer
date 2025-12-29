@@ -393,8 +393,8 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         <button
           onClick={cancelRecording}
           style={{
-            width: '40px',
-            height: '40px',
+            width: '44px',
+            height: '44px',
             borderRadius: b.radius.full,
             border: 'none',
             backgroundColor: b.borderColorLight,
@@ -436,8 +436,8 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         <button
           onClick={confirmRecording}
           style={{
-            width: '40px',
-            height: '40px',
+            width: '44px',
+            height: '44px',
             borderRadius: b.radius.full,
             border: 'none',
             backgroundColor: b.primaryAccent,
