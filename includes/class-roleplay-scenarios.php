@@ -36,39 +36,12 @@ class Bewerbungstrainer_Roleplay_Scenarios {
      * Constructor
      */
     private function __construct() {
-        // Register custom post type
+        // Register custom post type (still needed for legacy data access)
         add_action('init', array($this, 'register_post_type'));
 
-        // Add meta boxes
-        add_action('add_meta_boxes', array($this, 'add_meta_boxes'));
-
-        // Save meta box data
-        add_action('save_post_' . self::POST_TYPE, array($this, 'save_meta_boxes'), 10, 2);
-
-        // Handle CSV import/export
-        add_action('admin_init', array($this, 'handle_csv_actions'));
-
-        // Add import submenu page
-        add_action('admin_menu', array($this, 'add_import_submenu'), 20);
-
-        // Handle CSV import on import page
-        add_action('admin_init', array($this, 'handle_import_page_submission'));
-
-        // Add bulk action for export
-        add_filter('bulk_actions-edit-' . self::POST_TYPE, array($this, 'add_bulk_actions'));
-
-        // Handle bulk actions
-        add_filter('handle_bulk_actions-edit-' . self::POST_TYPE, array($this, 'handle_bulk_actions'), 10, 3);
-
-        // Add export/import buttons to post list
-        add_action('restrict_manage_posts', array($this, 'add_import_export_buttons'));
-
-        // Add custom columns
-        add_filter('manage_' . self::POST_TYPE . '_posts_columns', array($this, 'add_custom_columns'));
-        add_action('manage_' . self::POST_TYPE . '_posts_custom_column', array($this, 'render_custom_columns'), 10, 2);
-
-        // Filter query for category/setup filters
-        add_action('pre_get_posts', array($this, 'filter_scenarios_query'));
+        // NOTE: All admin hooks have been removed.
+        // The new database-based admin is in class-roleplay-admin.php
+        // This class is only kept for backwards compatibility with existing CPT data.
     }
 
     /**
