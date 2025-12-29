@@ -7,7 +7,7 @@
  * Uses React Portal to render at body level, avoiding transform ancestor issues.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Clock, Target, Sparkles, ChevronRight } from 'lucide-react';
@@ -34,6 +34,7 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const hasAutoShownRef = useRef(false);
 
   const feature = FEATURE_DESCRIPTIONS[featureId];
 
@@ -43,9 +44,10 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
     return () => setMounted(false);
   }, []);
 
-  // Handle auto-show on mount
+  // Handle auto-show on mount - only once per mount
   useEffect(() => {
-    if (showOnMount && feature && !isFeatureInfoDismissed(featureId)) {
+    if (showOnMount && feature && !isFeatureInfoDismissed(featureId) && !hasAutoShownRef.current) {
+      hasAutoShownRef.current = true;
       const timer = setTimeout(() => setInternalOpen(true), 400);
       return () => clearTimeout(timer);
     }
