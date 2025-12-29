@@ -78,8 +78,8 @@ const SetupCard = ({ setup, isSelected, onSelect }) => {
         </span>
       </div>
 
-      {/* Card Content */}
-      <div style={{ padding: '20px' }}>
+      {/* Card Content - Fixed height for consistency */}
+      <div style={{ padding: '20px', height: '140px', display: 'flex', flexDirection: 'column' }}>
         {/* Title */}
         <h3 style={{
           fontSize: '16px',
@@ -101,13 +101,13 @@ const SetupCard = ({ setup, isSelected, onSelect }) => {
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden',
-          minHeight: '39px',
+          flex: 1,
         }}>
           {setup.description}
         </p>
 
         {/* Tags */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: 'auto' }}>
           <span
             style={{
               display: 'inline-flex',

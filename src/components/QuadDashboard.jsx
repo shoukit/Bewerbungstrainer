@@ -650,8 +650,8 @@ const QuadDashboard = ({ onNavigate }) => {
                   alignItems: 'center',
                   marginTop: '16px',
                 }}>
-                  {/* Scenario Count - only show when setup is selected and count is available */}
-                  {currentSetup && card.countKey && scenarioCounts[card.countKey] !== null && (
+                  {/* Scenario Count - always show when count is available */}
+                  {card.countKey && scenarioCounts[card.countKey] !== null && (
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -677,7 +677,7 @@ const QuadDashboard = ({ onNavigate }) => {
                     </div>
                   )}
                   {/* Spacer when no count shown */}
-                  {(!currentSetup || !card.countKey || scenarioCounts[card.countKey] === null) && (
+                  {(!card.countKey || scenarioCounts[card.countKey] === null) && (
                     <div />
                   )}
                   <div style={{
