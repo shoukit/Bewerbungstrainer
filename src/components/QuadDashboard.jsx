@@ -16,7 +16,8 @@ import {
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
-import { getRecentActivities } from '@/services/wordpress-api';
+import wordpressAPI, { getRecentActivities } from '@/services/wordpress-api';
+import { getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { formatRelativeTime } from '@/utils/formatting';
 import SetupSelector from './SetupSelector';
 
@@ -27,14 +28,48 @@ import SetupSelector from './SetupSelector';
  * Zone B: Training Arena (Phase 2) - 2x2 grid
  */
 const QuadDashboard = ({ onNavigate }) => {
-  const { branding, user } = usePartner();
+  const { branding, user, filterScenariosBySetupAndPartner, currentSetup } = usePartner();
   const { isAuthenticated } = useAuth();
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
+  const [scenarioCounts, setScenarioCounts] = useState({
+    simulator: null,
+    roleplay: null,
+    video: null,
+  });
 
   // Get themed styles
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+
+  // Load scenario counts
+  useEffect(() => {
+    loadScenarioCounts();
+  }, [currentSetup]);
+
+  const loadScenarioCounts = async () => {
+    try {
+      // Fetch all scenarios in parallel
+      const [simulatorData, roleplayData, videoData] = await Promise.all([
+        wordpressAPI.getSimulatorScenarios().catch(() => []),
+        getRoleplayScenarios().catch(() => []),
+        wordpressAPI.getVideoScenarios().catch(() => []),
+      ]);
+
+      // Filter and count based on current setup
+      const simulatorFiltered = filterScenariosBySetupAndPartner(simulatorData || [], 'simulator');
+      const roleplayFiltered = filterScenariosBySetupAndPartner(roleplayData || [], 'roleplay');
+      const videoFiltered = filterScenariosBySetupAndPartner(videoData || [], 'video_training');
+
+      setScenarioCounts({
+        simulator: simulatorFiltered.length,
+        roleplay: roleplayFiltered.length,
+        video: videoFiltered.length,
+      });
+    } catch (error) {
+      console.error('Failed to load scenario counts:', error);
+    }
+  };
 
   // Load recent activities if authenticated
   useEffect(() => {
@@ -119,6 +154,7 @@ const QuadDashboard = ({ onNavigate }) => {
       bgLight: COLORS.green[50],
       gradient: `linear-gradient(135deg, ${COLORS.green[400]} 0%, ${COLORS.teal[500]} 100%)`,
       route: 'simulator',
+      countKey: 'simulator',
     },
     {
       id: 'roleplay',
@@ -131,6 +167,7 @@ const QuadDashboard = ({ onNavigate }) => {
       bgLight: COLORS.amber[50],
       gradient: `linear-gradient(135deg, ${COLORS.amber[400]} 0%, ${COLORS.red[400]} 100%)`,
       route: 'dashboard',
+      countKey: 'roleplay',
     },
     {
       id: 'video',
@@ -143,6 +180,7 @@ const QuadDashboard = ({ onNavigate }) => {
       bgLight: COLORS.red[50],
       gradient: `linear-gradient(135deg, ${COLORS.red[400]} 0%, ${COLORS.purple[500]} 100%)`,
       route: 'video_training',
+      countKey: 'video',
     },
     {
       id: 'gym',
@@ -155,6 +193,7 @@ const QuadDashboard = ({ onNavigate }) => {
       bgLight: COLORS.purple[50],
       gradient: `linear-gradient(135deg, ${COLORS.purple[500]} 0%, ${COLORS.blue[500]} 100%)`,
       route: 'gym_klassiker',
+      countKey: null, // No scenarios for gym
     },
   ];
 
@@ -583,12 +622,43 @@ const QuadDashboard = ({ onNavigate }) => {
                   {card.description}
                 </p>
 
-                {/* Arrow */}
+                {/* Scenario Count Badge & Arrow */}
                 <div style={{
                   display: 'flex',
-                  justifyContent: 'flex-end',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   marginTop: '16px',
                 }}>
+                  {/* Scenario Count - only show when setup is selected and count is available */}
+                  {currentSetup && card.countKey && scenarioCounts[card.countKey] !== null && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: COLORS.slate[50],
+                      border: `1px solid ${COLORS.slate[100]}`,
+                    }}>
+                      <span style={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: scenarioCounts[card.countKey] > 0 ? card.color : COLORS.slate[400],
+                      }}>
+                        {scenarioCounts[card.countKey]}
+                      </span>
+                      <span style={{
+                        fontSize: '12px',
+                        color: COLORS.slate[500],
+                      }}>
+                        {scenarioCounts[card.countKey] === 1 ? 'Szenario' : 'Szenarien'}
+                      </span>
+                    </div>
+                  )}
+                  {/* Spacer when no count shown */}
+                  {(!currentSetup || !card.countKey || scenarioCounts[card.countKey] === null) && (
+                    <div />
+                  )}
                   <div style={{
                     width: '32px',
                     height: '32px',
