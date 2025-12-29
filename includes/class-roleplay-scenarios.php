@@ -1025,8 +1025,19 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                 $category_json = get_post_meta($post_id, '_roleplay_category', true);
                 $categories = Bewerbungstrainer_Categories_Admin::get_categories_array($category_json);
 
+                // Debug logging
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("[ROLEPLAY CATEGORIES] Post $post_id - Raw: " . print_r($category_json, true) . " - Parsed: " . print_r($categories, true));
+                }
+
                 if (!empty($categories)) {
                     $all_categories = Bewerbungstrainer_Categories_Admin::get_all_categories();
+
+                    // Debug: Log if all_categories is empty
+                    if (empty($all_categories) && defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("[ROLEPLAY CATEGORIES] WARNING: all_categories is empty!");
+                    }
+
                     $badges = array();
 
                     foreach ($categories as $cat_slug) {
