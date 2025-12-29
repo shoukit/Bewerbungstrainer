@@ -57,7 +57,7 @@ class Bewerbungstrainer_Shortcodes {
         <div id="bewerbungstrainer-app" class="bewerbungstrainer-interview-container">
             <div class="bewerbungstrainer-loading">
                 <div class="spinner"></div>
-                <p><?php esc_html_e('Bewerbungstrainer wird geladen...', 'bewerbungstrainer'); ?></p>
+                <p><?php esc_html_e('Karriereheld wird geladen...', 'bewerbungstrainer'); ?></p>
             </div>
         </div>
         <?php
@@ -859,17 +859,29 @@ class Bewerbungstrainer_Shortcodes {
             }
 
             .bewerbungstrainer-loading {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
                 text-align: center;
-                padding: 60px 20px;
+                padding: 20px;
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             }
             .bewerbungstrainer-loading .spinner {
-                width: 50px;
-                height: 50px;
-                margin: 0 auto 20px;
-                border: 4px solid #f3f3f3;
-                border-top: 4px solid #3498db;
+                width: 60px;
+                height: 60px;
+                margin-bottom: 24px;
+                border: 4px solid rgba(255, 255, 255, 0.1);
+                border-top: 4px solid #38bdf8;
                 border-radius: 50%;
                 animation: spin 1s linear infinite;
+            }
+            .bewerbungstrainer-loading p {
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 16px;
+                font-weight: 500;
+                margin: 0;
             }
             @keyframes spin {
                 0% { transform: rotate(0deg); }
@@ -990,17 +1002,29 @@ class Bewerbungstrainer_Shortcodes {
                 margin: 0 auto;
             }
             .bewerbungstrainer-loading {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
                 text-align: center;
-                padding: 60px 20px;
+                padding: 20px;
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             }
             .bewerbungstrainer-loading .spinner {
-                width: 50px;
-                height: 50px;
-                margin: 0 auto 20px;
-                border: 4px solid #f3f3f3;
-                border-top: 4px solid #3498db;
+                width: 60px;
+                height: 60px;
+                margin-bottom: 24px;
+                border: 4px solid rgba(255, 255, 255, 0.1);
+                border-top: 4px solid #38bdf8;
                 border-radius: 50%;
                 animation: spin 1s linear infinite;
+            }
+            .bewerbungstrainer-loading p {
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 16px;
+                font-weight: 500;
+                margin: 0;
             }
             @keyframes spin {
                 0% { transform: rotate(0deg); }
