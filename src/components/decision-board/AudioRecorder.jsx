@@ -290,6 +290,11 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
     }
 
     // Wait a bit for all data to be collected
@@ -346,6 +351,9 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
     } catch (err) {
       console.error('[AudioRecorder] Transcription error:', err);
       setError(err.message || 'Transkription fehlgeschlagen');
+      // Clean up on error too
+      cleanup();
+      setDuration(0);
     } finally {
       setIsTranscribing(false);
     }

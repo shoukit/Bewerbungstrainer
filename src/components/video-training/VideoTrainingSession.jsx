@@ -309,6 +309,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   // Finish and upload
   const finishRecording = async () => {
     stopRecording();
+    stopCamera(); // Release camera immediately after stopping recording
     setIsUploading(true);
     setError(null);
 
