@@ -269,6 +269,7 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whisper-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-admin.php';
 
         // Load shared API trait (must be loaded before API classes)
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/trait-api-utils.php';
@@ -609,8 +610,13 @@ class Bewerbungstrainer_Plugin {
         // Initialize database
         Bewerbungstrainer_Database::get_instance();
 
-        // Initialize roleplay scenarios
-        Bewerbungstrainer_Roleplay_Scenarios::get_instance();
+        // Initialize roleplay database
+        Bewerbungstrainer_Roleplay_Database::get_instance();
+
+        // Initialize roleplay admin (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_Roleplay_Admin::get_instance();
+        }
 
         // Initialize REST API
         Bewerbungstrainer_API::get_instance();

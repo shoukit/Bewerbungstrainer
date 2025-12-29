@@ -96,8 +96,8 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             'description'           => __('Live-Simulationen für Interview-Training', 'bewerbungstrainer'),
             'public'                => false,
             'publicly_queryable'    => false,
-            'show_ui'               => true,
-            'show_in_menu'          => 'bewerbungstrainer',
+            'show_ui'               => false,  // Hidden - now using database-based admin
+            'show_in_menu'          => false,  // Hidden - now using database-based admin
             'menu_icon'             => 'dashicons-format-chat',
             'query_var'             => false,
             'rewrite'               => false,
