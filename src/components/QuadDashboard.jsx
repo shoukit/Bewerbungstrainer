@@ -447,8 +447,7 @@ const QuadDashboard = ({ onNavigate }) => {
                 }}>
                   <FeatureInfoButton
                     featureId={card.featureId}
-                    size="sm"
-                    variant="dark"
+                    size="md"
                   />
                   <div style={{
                     width: '32px',
@@ -627,8 +626,7 @@ const QuadDashboard = ({ onNavigate }) => {
                 }}>
                   <FeatureInfoButton
                     featureId={card.featureId}
-                    size="sm"
-                    variant="dark"
+                    size="md"
                   />
                   <div style={{
                     background: card.bgLight,
