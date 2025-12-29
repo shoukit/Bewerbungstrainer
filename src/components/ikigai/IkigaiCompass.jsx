@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, Sparkles, ArrowRight, Heart, Star, Globe, Coins } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import AudioRecorder from '@/components/decision-board/AudioRecorder';
 
 /**
  * Dimension icon components
@@ -88,14 +89,16 @@ const IkigaiCompass = ({
   };
 
   /**
-   * Handle key press in textarea
+   * Handle audio transcript from AudioRecorder
    */
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
+  const handleTranscriptReady = useCallback((transcript) => {
+    setInputValue((prev) => {
+      if (prev.trim()) {
+        return prev.trim() + '\n\n' + transcript;
+      }
+      return transcript;
+    });
+  }, []);
 
   /**
    * Check if dimension has tags
@@ -704,7 +707,6 @@ const IkigaiCompass = ({
                     ref={textareaRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyPress}
                     placeholder={currentDimension.placeholder}
                     rows={4}
                     disabled={isExtracting}
@@ -747,8 +749,22 @@ const IkigaiCompass = ({
                     )}
                   </button>
                 </div>
+
+                {/* Audio Recorder */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: b.space[3],
+                }}>
+                  <AudioRecorder
+                    onTranscriptReady={handleTranscriptReady}
+                    disabled={isExtracting}
+                  />
+                </div>
+
                 <p style={{ fontSize: b.fontSize.xs, color: b.textMuted, marginTop: b.space[2], textAlign: 'center' }}>
-                  Drücke Enter zum Absenden oder Shift+Enter für neue Zeile
+                  Tippe oder sprich deine Gedanken ein
                 </p>
               </div>
             </motion.div>
