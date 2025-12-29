@@ -18,6 +18,7 @@ import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
 import { getRecentActivities } from '@/services/wordpress-api';
 import { formatRelativeTime } from '@/utils/formatting';
+import SetupSelector from './SetupSelector';
 
 /**
  * QuadDashboard - Homepage with two-zone layout
@@ -477,6 +478,11 @@ const QuadDashboard = ({ onNavigate }) => {
             }}>
               Trainings-Arena
             </h2>
+          </div>
+
+          {/* Setup Selector - Filter training scenarios */}
+          <div style={{ marginBottom: '24px' }}>
+            <SetupSelector />
           </div>
 
           {/* Training Cards - 2x2 Grid */}
