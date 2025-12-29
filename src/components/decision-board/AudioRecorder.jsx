@@ -413,7 +413,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
             e.currentTarget.style.backgroundColor = b.borderColorLight;
           }}
         >
-          <X size={b.iconSize.xl} strokeWidth={2.5} />
+          <X size={20} strokeWidth={2.5} />
         </button>
 
         {/* Waveform */}
@@ -456,7 +456,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
             e.currentTarget.style.opacity = '1';
           }}
         >
-          <Check size={b.iconSize.xl} strokeWidth={2.5} />
+          <Check size={20} strokeWidth={2.5} />
         </button>
       </div>
     );
@@ -493,7 +493,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
           if (!disabled) e.currentTarget.style.opacity = '1';
         }}
       >
-        <Mic size={b.iconSize['2xl']} />
+        <Mic size={20} />
       </button>
     </div>
   );
