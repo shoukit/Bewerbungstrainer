@@ -268,6 +268,7 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whisper-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-database.php';
 
         // Load shared API trait (must be loaded before API classes)
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/trait-api-utils.php';
@@ -475,6 +476,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create video training database tables
         Bewerbungstrainer_Video_Training_Database::create_tables();
+
+        // Create roleplay database tables
+        Bewerbungstrainer_Roleplay_Database::create_tables();
 
         // Create smart briefing database tables
         Bewerbungstrainer_SmartBriefing_Database::create_tables();

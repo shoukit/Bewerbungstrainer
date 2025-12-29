@@ -1314,11 +1314,26 @@ class Bewerbungstrainer_Roleplay_Scenarios {
      * Render the import page
      */
     public function render_import_page() {
+        // Get database instance
+        $db = Bewerbungstrainer_Roleplay_Database::get_instance();
+        $db_count = $db->get_scenarios_count(array('is_active' => null));
+        $cpt_count = wp_count_posts(self::POST_TYPE);
+        $cpt_total = ($cpt_count->publish ?? 0) + ($cpt_count->draft ?? 0);
+
         // Show notices
         if (isset($_GET['imported'])) {
             $imported = intval($_GET['imported']);
             $updated = isset($_GET['csv_updated']) ? intval($_GET['csv_updated']) : 0;
             echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(__('%d Szenario(s) importiert, %d aktualisiert.', 'bewerbungstrainer'), $imported, $updated) . '</p></div>';
+        }
+        if (isset($_GET['db_imported'])) {
+            $db_imported = intval($_GET['db_imported']);
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(__('%d Szenario(s) in die neue Datenbank-Tabelle importiert.', 'bewerbungstrainer'), $db_imported) . '</p></div>';
+        }
+        if (isset($_GET['migrated'])) {
+            $migrated = intval($_GET['migrated']);
+            $failed = isset($_GET['failed']) ? intval($_GET['failed']) : 0;
+            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(__('Migration abgeschlossen: %d Szenarios migriert, %d fehlgeschlagen.', 'bewerbungstrainer'), $migrated, $failed) . '</p></div>';
         }
         if (isset($_GET['import_error'])) {
             $error_code = isset($_GET['error_code']) ? ' (Code: ' . esc_html($_GET['error_code']) . ')' : '';
@@ -1332,11 +1347,63 @@ class Bewerbungstrainer_Roleplay_Scenarios {
         }
         ?>
         <div class="wrap">
-            <h1><?php _e('Live-Simulationen CSV Import', 'bewerbungstrainer'); ?></h1>
+            <h1><?php _e('Live-Simulationen Import & Migration', 'bewerbungstrainer'); ?></h1>
 
-            <div class="card" style="max-width: 600px; padding: 20px; margin-top: 20px;">
-                <h2><?php _e('CSV-Datei importieren', 'bewerbungstrainer'); ?></h2>
-                <p><?php _e('Wähle eine CSV-Datei zum Importieren. Die Datei sollte das gleiche Format haben wie der CSV-Export.', 'bewerbungstrainer'); ?></p>
+            <!-- Migration Section -->
+            <div class="card" style="max-width: 700px; padding: 20px; margin-top: 20px; border-left: 4px solid #2271b1;">
+                <h2 style="margin-top: 0;">🔄 <?php _e('Migration zur neuen Datenbank-Tabelle', 'bewerbungstrainer'); ?></h2>
+                <p><?php _e('Migriere alle Live-Simulationen von WordPress Custom Post Types zur neuen einheitlichen Datenbank-Tabelle.', 'bewerbungstrainer'); ?></p>
+
+                <table class="widefat" style="margin: 15px 0; max-width: 400px;">
+                    <tr>
+                        <td><strong><?php _e('Custom Post Types (alt)', 'bewerbungstrainer'); ?></strong></td>
+                        <td><?php echo $cpt_total; ?> <?php _e('Szenarien', 'bewerbungstrainer'); ?></td>
+                    </tr>
+                    <tr>
+                        <td><strong><?php _e('Datenbank-Tabelle (neu)', 'bewerbungstrainer'); ?></strong></td>
+                        <td><?php echo $db_count; ?> <?php _e('Szenarien', 'bewerbungstrainer'); ?></td>
+                    </tr>
+                </table>
+
+                <?php if ($cpt_total > 0): ?>
+                <form method="post" style="margin-top: 15px;">
+                    <?php wp_nonce_field('migrate_roleplay_scenarios', 'roleplay_migrate_nonce'); ?>
+                    <input type="hidden" name="roleplay_migrate_action" value="1">
+                    <button type="submit" class="button button-primary" onclick="return confirm('<?php _e('Alle Szenarien von Custom Post Types zur Datenbank-Tabelle migrieren?', 'bewerbungstrainer'); ?>');">
+                        <?php _e('Jetzt migrieren', 'bewerbungstrainer'); ?>
+                    </button>
+                    <p class="description" style="margin-top: 10px;">
+                        <?php _e('Hinweis: Die originalen Custom Post Types bleiben erhalten und können später gelöscht werden.', 'bewerbungstrainer'); ?>
+                    </p>
+                </form>
+                <?php else: ?>
+                <p><em><?php _e('Keine Custom Post Types zum Migrieren vorhanden.', 'bewerbungstrainer'); ?></em></p>
+                <?php endif; ?>
+            </div>
+
+            <!-- CSV Import to Database Table -->
+            <div class="card" style="max-width: 700px; padding: 20px; margin-top: 20px; border-left: 4px solid #00a32a;">
+                <h2 style="margin-top: 0;">📥 <?php _e('CSV in Datenbank-Tabelle importieren (empfohlen)', 'bewerbungstrainer'); ?></h2>
+                <p><?php _e('Importiere CSV-Daten direkt in die neue Datenbank-Tabelle. Dies ist die empfohlene Methode.', 'bewerbungstrainer'); ?></p>
+
+                <form method="post" enctype="multipart/form-data" style="margin-top: 20px;">
+                    <?php wp_nonce_field('import_roleplay_to_db', 'roleplay_import_db_nonce'); ?>
+                    <input type="hidden" name="roleplay_import_db_action" value="1">
+
+                    <p>
+                        <input type="file" name="csv_file" accept=".csv" required style="width: 100%;">
+                    </p>
+
+                    <p style="margin-top: 15px;">
+                        <button type="submit" class="button button-primary"><?php _e('In Datenbank importieren', 'bewerbungstrainer'); ?></button>
+                    </p>
+                </form>
+            </div>
+
+            <!-- Legacy CSV Import (to CPT) -->
+            <div class="card" style="max-width: 700px; padding: 20px; margin-top: 20px; border-left: 4px solid #dba617;">
+                <h2 style="margin-top: 0;">📁 <?php _e('CSV in Custom Post Types importieren (Legacy)', 'bewerbungstrainer'); ?></h2>
+                <p><?php _e('Importiere in das alte WordPress Custom Post Type System. Nur für Abwärtskompatibilität.', 'bewerbungstrainer'); ?></p>
 
                 <form method="post" enctype="multipart/form-data" style="margin-top: 20px;">
                     <?php wp_nonce_field('import_roleplay_scenarios', 'roleplay_import_nonce'); ?>
@@ -1347,19 +1414,20 @@ class Bewerbungstrainer_Roleplay_Scenarios {
                     </p>
 
                     <p style="margin-top: 15px;">
-                        <button type="submit" class="button button-primary"><?php _e('Importieren', 'bewerbungstrainer'); ?></button>
+                        <button type="submit" class="button"><?php _e('In Custom Post Types importieren', 'bewerbungstrainer'); ?></button>
                         <a href="<?php echo admin_url('edit.php?post_type=' . self::POST_TYPE); ?>" class="button"><?php _e('Zurück zur Übersicht', 'bewerbungstrainer'); ?></a>
                     </p>
                 </form>
             </div>
 
-            <div class="card" style="max-width: 600px; padding: 20px; margin-top: 20px;">
-                <h2><?php _e('Hinweise', 'bewerbungstrainer'); ?></h2>
+            <!-- Hints -->
+            <div class="card" style="max-width: 700px; padding: 20px; margin-top: 20px;">
+                <h2 style="margin-top: 0;"><?php _e('Hinweise zum CSV-Format', 'bewerbungstrainer'); ?></h2>
                 <ul style="list-style: disc; margin-left: 20px;">
                     <li><?php _e('Die CSV-Datei muss Semikolon (;) als Trennzeichen verwenden.', 'bewerbungstrainer'); ?></li>
                     <li><?php _e('Die erste Zeile muss die Spaltenüberschriften enthalten.', 'bewerbungstrainer'); ?></li>
-                    <li><?php _e('Wenn eine ID angegeben ist, wird der bestehende Eintrag aktualisiert.', 'bewerbungstrainer'); ?></li>
                     <li><?php _e('Exportiere zuerst eine Vorlage, um das korrekte Format zu sehen.', 'bewerbungstrainer'); ?></li>
+                    <li><?php _e('JSON-Felder (category, tips, variables_schema) müssen gültiges JSON enthalten.', 'bewerbungstrainer'); ?></li>
                 </ul>
             </div>
         </div>
@@ -1375,33 +1443,202 @@ class Bewerbungstrainer_Roleplay_Scenarios {
             return;
         }
 
-        // Check if this is an import request
-        if (!isset($_POST['roleplay_import_action'])) {
+        // Verify user capabilities
+        if (!current_user_can('manage_options')) {
             return;
         }
 
-        error_log('[ROLEPLAY IMPORT] handle_import_page_submission called');
+        $redirect_base = 'admin.php?page=roleplay-scenarios-import';
 
-        // Verify user capabilities
-        if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized access');
-        }
+        // Handle Migration from CPT to Database
+        if (isset($_POST['roleplay_migrate_action'])) {
+            error_log('[ROLEPLAY MIGRATION] Migration action triggered');
 
-        // Verify nonce
-        if (!isset($_POST['roleplay_import_nonce']) || !wp_verify_nonce($_POST['roleplay_import_nonce'], 'import_roleplay_scenarios')) {
-            wp_die('Security check failed - Invalid nonce');
-        }
+            // Verify nonce
+            if (!isset($_POST['roleplay_migrate_nonce']) || !wp_verify_nonce($_POST['roleplay_migrate_nonce'], 'migrate_roleplay_scenarios')) {
+                wp_die('Security check failed - Invalid nonce');
+            }
 
-        // Check if file was uploaded
-        if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
-            $error_code = isset($_FILES['csv_file']) ? $_FILES['csv_file']['error'] : 'no_file';
-            wp_redirect(admin_url('admin.php?page=roleplay-scenarios-import&import_error=upload&error_code=' . $error_code));
+            $db = Bewerbungstrainer_Roleplay_Database::get_instance();
+            $results = $db->migrate_from_posts();
+
+            error_log('[ROLEPLAY MIGRATION] Results: ' . print_r($results, true));
+
+            wp_redirect(admin_url($redirect_base . '&migrated=' . $results['migrated'] . '&failed=' . $results['failed']));
             exit;
         }
 
-        error_log('[ROLEPLAY IMPORT] Processing file upload...');
-        // Process the import (redirect to import page instead of edit.php)
-        $this->import_scenarios_csv($_FILES['csv_file'], 'admin.php?page=roleplay-scenarios-import');
+        // Handle CSV Import to Database Table
+        if (isset($_POST['roleplay_import_db_action'])) {
+            error_log('[ROLEPLAY IMPORT DB] Database import action triggered');
+
+            // Verify nonce
+            if (!isset($_POST['roleplay_import_db_nonce']) || !wp_verify_nonce($_POST['roleplay_import_db_nonce'], 'import_roleplay_to_db')) {
+                wp_die('Security check failed - Invalid nonce');
+            }
+
+            // Check if file was uploaded
+            if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+                $error_code = isset($_FILES['csv_file']) ? $_FILES['csv_file']['error'] : 'no_file';
+                wp_redirect(admin_url($redirect_base . '&import_error=upload&error_code=' . $error_code));
+                exit;
+            }
+
+            $imported = $this->import_scenarios_to_database($_FILES['csv_file']);
+            wp_redirect(admin_url($redirect_base . '&db_imported=' . $imported));
+            exit;
+        }
+
+        // Handle Legacy CSV Import to CPT
+        if (isset($_POST['roleplay_import_action'])) {
+            error_log('[ROLEPLAY IMPORT] Legacy CPT import action triggered');
+
+            // Verify nonce
+            if (!isset($_POST['roleplay_import_nonce']) || !wp_verify_nonce($_POST['roleplay_import_nonce'], 'import_roleplay_scenarios')) {
+                wp_die('Security check failed - Invalid nonce');
+            }
+
+            // Check if file was uploaded
+            if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+                $error_code = isset($_FILES['csv_file']) ? $_FILES['csv_file']['error'] : 'no_file';
+                wp_redirect(admin_url($redirect_base . '&import_error=upload&error_code=' . $error_code));
+                exit;
+            }
+
+            error_log('[ROLEPLAY IMPORT] Processing file upload...');
+            $this->import_scenarios_csv($_FILES['csv_file'], $redirect_base);
+        }
+    }
+
+    /**
+     * Import scenarios from CSV to the new database table
+     *
+     * @param array $file The uploaded file from $_FILES
+     * @return int Number of scenarios imported
+     */
+    private function import_scenarios_to_database($file) {
+        error_log('[ROLEPLAY IMPORT DB] import_scenarios_to_database called');
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            error_log('[ROLEPLAY IMPORT DB] File upload error: ' . $file['error']);
+            return 0;
+        }
+
+        $handle = fopen($file['tmp_name'], 'r');
+        if (!$handle) {
+            error_log('[ROLEPLAY IMPORT DB] Could not open file');
+            return 0;
+        }
+
+        // Skip BOM if present
+        $bom = fread($handle, 3);
+        if ($bom !== chr(0xEF) . chr(0xBB) . chr(0xBF)) {
+            rewind($handle);
+        }
+
+        // Get header row
+        $header = fgetcsv($handle, 0, ';');
+        if (!$header || !in_array('title', $header)) {
+            fclose($handle);
+            error_log('[ROLEPLAY IMPORT DB] Invalid CSV format - missing title column');
+            return 0;
+        }
+
+        error_log('[ROLEPLAY IMPORT DB] CSV headers: ' . implode(', ', $header));
+
+        $db = Bewerbungstrainer_Roleplay_Database::get_instance();
+        $imported = 0;
+
+        // Helper to restore newlines
+        $restore_newlines = function($text) {
+            if (empty($text)) return '';
+            $text = str_replace('/n', "\n", $text);
+            $text = str_replace('\\n', "\n", $text);
+            return $text;
+        };
+
+        while (($row = fgetcsv($handle, 0, ';')) !== false) {
+            if (count($row) < count($header)) {
+                continue;
+            }
+
+            $data = array_combine($header, $row);
+
+            // Skip empty titles
+            if (empty($data['title'])) {
+                error_log('[ROLEPLAY IMPORT DB] Skipping row with empty title');
+                continue;
+            }
+
+            error_log('[ROLEPLAY IMPORT DB] Processing: ' . $data['title']);
+
+            // Build system prompt from content and initial_message if not present
+            $system_prompt = $data['system_prompt'] ?? '';
+            if (empty($system_prompt) && !empty($data['content'])) {
+                $system_prompt = $restore_newlines($data['content']);
+            }
+
+            // Build AI instructions from interviewer profile
+            $ai_instructions = '';
+            $interviewer_parts = array();
+            if (!empty($data['interviewer_name'])) {
+                $interviewer_parts[] = 'Name: ' . $restore_newlines($data['interviewer_name']);
+            }
+            if (!empty($data['interviewer_role'])) {
+                $interviewer_parts[] = 'Rolle: ' . $restore_newlines($data['interviewer_role']);
+            }
+            if (!empty($data['interviewer_properties'])) {
+                $interviewer_parts[] = 'Eigenschaften: ' . $restore_newlines($data['interviewer_properties']);
+            }
+            if (!empty($data['interviewer_objections'])) {
+                $interviewer_parts[] = 'Typische Einwände: ' . $restore_newlines($data['interviewer_objections']);
+            }
+            if (!empty($data['interviewer_questions'])) {
+                $interviewer_parts[] = 'Wichtige Fragen: ' . $restore_newlines($data['interviewer_questions']);
+            }
+            if (!empty($interviewer_parts)) {
+                $ai_instructions = "## Interviewer-Profil\n" . implode("\n", $interviewer_parts);
+            }
+            if (!empty($data['coaching_hints'])) {
+                $ai_instructions .= "\n\n## Coaching-Hinweise\n" . $restore_newlines($data['coaching_hints']);
+            }
+
+            // Prepare scenario data for database
+            $scenario_data = array(
+                'title' => sanitize_text_field($restore_newlines($data['title'])),
+                'description' => sanitize_textarea_field($restore_newlines($data['description'] ?? '')),
+                'long_description' => sanitize_textarea_field($restore_newlines($data['long_description'] ?? '')),
+                'icon' => 'mic', // Default icon
+                'difficulty' => sanitize_text_field($data['difficulty'] ?? 'medium'),
+                'target_audience' => sanitize_text_field($restore_newlines($data['target_audience'] ?? '')),
+                'category' => $data['category'] ?? '[]',
+                'role_type' => sanitize_text_field($data['role_type'] ?? 'interview'),
+                'user_role_label' => sanitize_text_field($restore_newlines($data['user_role_label'] ?? 'Bewerber')),
+                'agent_id' => sanitize_text_field($data['agent_id'] ?? ''),
+                'system_prompt' => $system_prompt,
+                'feedback_prompt' => sanitize_textarea_field($restore_newlines($data['feedback_prompt'] ?? '')),
+                'ai_instructions' => $ai_instructions,
+                'tips' => $data['tips'] ?? '[]',
+                'input_configuration' => $data['variables_schema'] ?? '[]',
+                'is_active' => ($data['status'] ?? 'publish') === 'publish' ? 1 : 0,
+                'sort_order' => 0,
+            );
+
+            $scenario_id = $db->create_scenario($scenario_data);
+
+            if ($scenario_id) {
+                $imported++;
+                error_log('[ROLEPLAY IMPORT DB] Created scenario ID: ' . $scenario_id);
+            } else {
+                error_log('[ROLEPLAY IMPORT DB] Failed to create scenario for: ' . $data['title']);
+            }
+        }
+
+        fclose($handle);
+
+        error_log('[ROLEPLAY IMPORT DB] Done! Imported: ' . $imported);
+
+        return $imported;
     }
 
     /**
