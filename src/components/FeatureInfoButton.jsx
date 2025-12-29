@@ -60,9 +60,9 @@ const FeatureInfoButton = ({
       hoverBackground: 'rgba(255, 255, 255, 0.3)',
     },
     dark: {
-      background: COLORS.slate[100],
-      color: COLORS.slate[500],
-      hoverBackground: COLORS.slate[200],
+      background: COLORS.slate[200],
+      color: COLORS.slate[600],
+      hoverBackground: COLORS.slate[300],
     },
   };
 

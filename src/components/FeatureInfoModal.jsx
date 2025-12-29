@@ -137,7 +137,7 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
               flexShrink: 0,
             }}
           >
-            {/* Decorative circles */}
+            {/* Decorative circles - pointerEvents none to not block clicks */}
             <div
               style={{
                 position: 'absolute',
@@ -147,6 +147,7 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
                 height: '120px',
                 borderRadius: RADIUS.full,
                 background: 'rgba(255, 255, 255, 0.1)',
+                pointerEvents: 'none',
               }}
             />
             <div
@@ -158,6 +159,7 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
                 height: '60px',
                 borderRadius: RADIUS.full,
                 background: 'rgba(255, 255, 255, 0.08)',
+                pointerEvents: 'none',
               }}
             />
 
@@ -168,8 +170,8 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
                 position: 'absolute',
                 top: SPACING[3],
                 right: SPACING[3],
-                width: '32px',
-                height: '32px',
+                width: '36px',
+                height: '36px',
                 borderRadius: RADIUS.full,
                 backgroundColor: 'rgba(255, 255, 255, 0.2)',
                 border: 'none',
@@ -179,6 +181,7 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
                 justifyContent: 'center',
                 color: COLORS.white,
                 transition: TRANSITIONS.normal,
+                zIndex: 10,
               }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)')}
