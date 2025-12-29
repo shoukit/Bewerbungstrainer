@@ -17,39 +17,43 @@ const VIEWS = {
 const DIMENSIONS = {
   love: {
     key: 'love',
-    label: 'Liebe',
+    label: 'Leidenschaft',
+    title: 'Deine Leidenschaft',
     icon: '❤️',
     color: '#E11D48', // Rose-600
-    question: 'Vergiss mal Geld und Karriere. Bei welchen Tätigkeiten vergisst du die Zeit?',
-    placeholder: 'Erzähle mir, was du wirklich liebst zu tun...',
-    description: 'Was du liebst',
+    question: 'Stell dir vor, Geld spielt keine Rolle: Womit würdest du deinen Tag verbringen? Bei welchem Thema vergisst du völlig die Zeit?',
+    placeholder: 'Schreib einfach drauf los: Hobbys, Themen, Tätigkeiten...',
+    description: 'Was treibt dich an?',
   },
   talent: {
     key: 'talent',
-    label: 'Talent',
+    label: 'Stärken',
+    title: 'Deine Stärken',
     icon: '⭐',
     color: '#F59E0B', // Amber-500
-    question: 'Worin bist du richtig gut? Was fällt dir leicht, während andere damit kämpfen?',
-    placeholder: 'Beschreibe deine Stärken und Fähigkeiten...',
-    description: 'Worin du gut bist',
+    question: 'Wofür bitten dich Freunde oder Kollegen oft um Rat? Was erledigst du "mit links", während andere daran verzweifeln?',
+    placeholder: 'Z.B. Organisieren, Zuhören, Coden, Designen...',
+    description: 'Was fällt dir leicht?',
   },
   need: {
     key: 'need',
-    label: 'Welt',
+    label: 'Mission',
+    title: 'Deine Mission',
     icon: '🌍',
     color: '#10B981', // Emerald-500
-    question: 'Welche Probleme der Welt würdest du gerne lösen? Wo siehst du Bedarf?',
-    placeholder: 'Welchen Beitrag möchtest du leisten...',
-    description: 'Was die Welt braucht',
+    question: 'Welches Problem in der Gesellschaft oder Wirtschaft nervt dich? Wo würdest du gerne mitanpacken, um Dinge zu verbessern?',
+    placeholder: 'Z.B. Nachhaltigkeit, Bildung, bessere Software, Pflege...',
+    description: 'Welchen Beitrag leistest du?',
   },
   market: {
     key: 'market',
     label: 'Markt',
+    title: 'Der Markt',
     icon: '💰',
     color: '#6366F1', // Indigo-500
-    question: 'Wofür werden Menschen in deinem Bereich bezahlt? Was ist gefragt?',
-    placeholder: 'Welche Berufe oder Märkte interessieren dich...',
-    description: 'Wofür du bezahlt wirst',
+    question: 'Welche deiner Fähigkeiten sind bares Geld wert? Für welche Jobs oder Dienstleistungen existiert ein echtes Budget?',
+    placeholder: 'Z.B. Projektmanagement, Beratung, Handwerk...',
+    description: 'Wofür wirst du bezahlt?',
   },
 };
 

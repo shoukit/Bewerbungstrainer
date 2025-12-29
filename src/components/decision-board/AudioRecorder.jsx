@@ -290,6 +290,11 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
     }
 
     // Wait a bit for all data to be collected
@@ -346,6 +351,9 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
     } catch (err) {
       console.error('[AudioRecorder] Transcription error:', err);
       setError(err.message || 'Transkription fehlgeschlagen');
+      // Clean up on error too
+      cleanup();
+      setDuration(0);
     } finally {
       setIsTranscribing(false);
     }
@@ -393,8 +401,8 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         <button
           onClick={cancelRecording}
           style={{
-            width: '40px',
-            height: '40px',
+            width: '44px',
+            height: '44px',
             borderRadius: b.radius.full,
             border: 'none',
             backgroundColor: b.borderColorLight,
@@ -413,7 +421,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
             e.currentTarget.style.backgroundColor = b.borderColorLight;
           }}
         >
-          <X size={b.iconSize.xl} strokeWidth={2.5} />
+          <X size={20} strokeWidth={2.5} />
         </button>
 
         {/* Waveform */}
@@ -436,8 +444,8 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         <button
           onClick={confirmRecording}
           style={{
-            width: '40px',
-            height: '40px',
+            width: '44px',
+            height: '44px',
             borderRadius: b.radius.full,
             border: 'none',
             backgroundColor: b.primaryAccent,
@@ -456,7 +464,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
             e.currentTarget.style.opacity = '1';
           }}
         >
-          <Check size={b.iconSize.xl} strokeWidth={2.5} />
+          <Check size={20} strokeWidth={2.5} />
         </button>
       </div>
     );
@@ -473,8 +481,8 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
         disabled={disabled}
         title="Spracheingabe"
         style={{
-          width: '44px',
-          height: '44px',
+          width: '52px',
+          height: '52px',
           borderRadius: b.radius.full,
           border: 'none',
           backgroundColor: b.textMain,
@@ -493,7 +501,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
           if (!disabled) e.currentTarget.style.opacity = '1';
         }}
       >
-        <Mic size={b.iconSize['2xl']} />
+        <Mic size={24} />
       </button>
     </div>
   );

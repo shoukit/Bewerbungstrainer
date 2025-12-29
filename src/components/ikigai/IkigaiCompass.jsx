@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, Sparkles, ArrowRight, Heart, Star, Globe, Coins } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import AudioRecorder from '@/components/decision-board/AudioRecorder';
 
 /**
  * Dimension icon components
@@ -88,14 +89,16 @@ const IkigaiCompass = ({
   };
 
   /**
-   * Handle key press in textarea
+   * Handle audio transcript from AudioRecorder
    */
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
+  const handleTranscriptReady = useCallback((transcript) => {
+    setInputValue((prev) => {
+      if (prev.trim()) {
+        return prev.trim() + '\n\n' + transcript;
+      }
+      return transcript;
+    });
+  }, []);
 
   /**
    * Check if dimension has tags
@@ -180,8 +183,9 @@ const IkigaiCompass = ({
                   borderRadius: b.radius.full,
                   fontSize: b.fontSize.xs,
                   fontWeight: b.fontWeight.medium,
-                  background: config.color,
-                  color: 'white',
+                  background: 'transparent',
+                  border: `1.5px solid ${config.color}`,
+                  color: config.color,
                 }}
               >
                 {tag}
@@ -194,7 +198,8 @@ const IkigaiCompass = ({
                   borderRadius: b.radius.full,
                   fontSize: b.fontSize.xs,
                   fontWeight: b.fontWeight.medium,
-                  background: `${config.color}20`,
+                  background: 'transparent',
+                  border: `1.5px solid ${config.color}50`,
                   color: config.color,
                 }}
               >
@@ -269,8 +274,9 @@ const IkigaiCompass = ({
                     borderRadius: b.radius.full,
                     fontSize: '10px',
                     fontWeight: b.fontWeight.medium,
-                    background: config.color,
-                    color: 'white',
+                    background: 'white',
+                    border: `1.5px solid ${config.color}`,
+                    color: config.color,
                     maxWidth: '70px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -287,7 +293,8 @@ const IkigaiCompass = ({
                     borderRadius: b.radius.full,
                     fontSize: '10px',
                     fontWeight: b.fontWeight.medium,
-                    background: `${config.color}30`,
+                    background: 'white',
+                    border: `1.5px solid ${config.color}50`,
                     color: config.color,
                   }}
                 >
@@ -314,13 +321,13 @@ const IkigaiCompass = ({
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: b.space[6] }}>
         <h1 style={{ fontSize: isMobile ? b.fontSize['2xl'] : b.fontSize['3xl'], fontWeight: b.fontWeight.bold, color: b.textMain, marginBottom: b.space[2] }}>
-          Der Ikigai-Kompass
+          Dein Ikigai-Kompass
         </h1>
         <p style={{ fontSize: b.fontSize.base, color: b.textSecondary }}>
-          Entdecke deinen idealen Karrierepfad
+          Finde den Job, der dich wirklich erfüllt.
         </p>
         <p style={{ fontSize: b.fontSize.sm, color: b.textMuted, marginTop: b.space[2] }}>
-          Klicke auf einen Bereich und erzähle mir davon. Die KI extrahiert die Kernpunkte.
+          Fülle die 4 Kreise mit deinen Gedanken. Dein KI-Coach extrahiert daraus automatisch deine Stärken und Ziele.
         </p>
       </div>
 
@@ -543,8 +550,9 @@ const IkigaiCompass = ({
                           borderRadius: b.radius.full,
                           fontSize: b.fontSize.sm,
                           fontWeight: b.fontWeight.medium,
-                          background: config.color,
-                          color: 'white',
+                          background: 'transparent',
+                          border: `1.5px solid ${config.color}`,
+                          color: config.color,
                         }}
                       >
                         <span>{tag}</span>
@@ -562,7 +570,7 @@ const IkigaiCompass = ({
                             display: 'flex',
                           }}
                         >
-                          <X size={14} color="white" />
+                          <X size={14} color={config.color} />
                         </button>
                       </div>
                     ))}
@@ -644,7 +652,7 @@ const IkigaiCompass = ({
                   })}
                   <div>
                     <h3 style={{ fontWeight: b.fontWeight.bold, fontSize: b.fontSize.lg, color: currentDimension.color }}>
-                      {currentDimension.label}
+                      {currentDimension.title || currentDimension.label}
                     </h3>
                     <p style={{ fontSize: b.fontSize.sm, color: b.textSecondary }}>
                       {currentDimension.description}
@@ -686,8 +694,9 @@ const IkigaiCompass = ({
                           borderRadius: b.radius.full,
                           fontSize: b.fontSize.sm,
                           fontWeight: b.fontWeight.medium,
-                          background: currentDimension.color,
-                          color: 'white',
+                          background: 'transparent',
+                          border: `1.5px solid ${currentDimension.color}`,
+                          color: currentDimension.color,
                         }}
                       >
                         {tag}
@@ -704,7 +713,6 @@ const IkigaiCompass = ({
                     ref={textareaRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyPress}
                     placeholder={currentDimension.placeholder}
                     rows={4}
                     disabled={isExtracting}
@@ -747,8 +755,22 @@ const IkigaiCompass = ({
                     )}
                   </button>
                 </div>
+
+                {/* Audio Recorder */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: b.space[3],
+                }}>
+                  <AudioRecorder
+                    onTranscriptReady={handleTranscriptReady}
+                    disabled={isExtracting}
+                  />
+                </div>
+
                 <p style={{ fontSize: b.fontSize.xs, color: b.textMuted, marginTop: b.space[2], textAlign: 'center' }}>
-                  Drücke Enter zum Absenden oder Shift+Enter für neue Zeile
+                  Tippe oder sprich deine Gedanken ein
                 </p>
               </div>
             </motion.div>

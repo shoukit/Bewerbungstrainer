@@ -1095,6 +1095,173 @@ class WordPressAPI {
             throw error;
         }
     }
+
+    // ===== Dashboard / Recent Activities API Methods =====
+
+    /**
+     * Get recent activities across all modules for the dashboard
+     * Combines sessions from roleplay, simulator, video, briefings, games, ikigai, decisions
+     *
+     * @param {number} limit - Maximum number of activities to return (default: 6)
+     * @returns {Promise<Array>} Array of recent activity objects
+     */
+    async getRecentActivities(limit = 6) {
+        try {
+            const activities = [];
+
+            // Fetch from all modules in parallel
+            const [sessions, simulatorSessions, videoSessions, gameSessions, briefings, ikigais, decisions] = await Promise.allSettled([
+                this.getSessions({ limit: 3 }),
+                this.getSimulatorSessions({ limit: 3 }),
+                this.getVideoTrainings({ limit: 3 }),
+                this.getGameSessions({ limit: 3 }),
+                this.request('/smartbriefing/briefings?limit=3', { method: 'GET' }),
+                this.getIkigais(),
+                this.getDecisions(),
+            ]);
+
+            // Process roleplay sessions
+            if (sessions.status === 'fulfilled' && Array.isArray(sessions.value)) {
+                sessions.value.forEach(session => {
+                    activities.push({
+                        id: `roleplay_${session.id}`,
+                        type: 'roleplay',
+                        title: session.position || 'Live-Simulation',
+                        created_at: session.created_at,
+                        score: session.score,
+                    });
+                });
+            }
+
+            // Process simulator sessions
+            if (simulatorSessions.status === 'fulfilled' && simulatorSessions.value?.data?.sessions) {
+                simulatorSessions.value.data.sessions.forEach(session => {
+                    activities.push({
+                        id: `simulator_${session.id}`,
+                        type: 'simulator',
+                        title: session.scenario_title || 'Szenario-Training',
+                        created_at: session.created_at,
+                        score: session.overall_score,
+                    });
+                });
+            } else if (simulatorSessions.status === 'fulfilled' && Array.isArray(simulatorSessions.value)) {
+                simulatorSessions.value.forEach(session => {
+                    activities.push({
+                        id: `simulator_${session.id}`,
+                        type: 'simulator',
+                        title: session.scenario_title || 'Szenario-Training',
+                        created_at: session.created_at,
+                        score: session.overall_score,
+                    });
+                });
+            }
+
+            // Process video sessions
+            if (videoSessions.status === 'fulfilled' && videoSessions.value?.data?.sessions) {
+                videoSessions.value.data.sessions.forEach(session => {
+                    activities.push({
+                        id: `video_${session.id}`,
+                        type: 'video',
+                        title: session.scenario_title || 'Wirkungs-Analyse',
+                        created_at: session.created_at,
+                        score: session.overall_score,
+                    });
+                });
+            } else if (videoSessions.status === 'fulfilled' && Array.isArray(videoSessions.value)) {
+                videoSessions.value.forEach(session => {
+                    activities.push({
+                        id: `video_${session.id}`,
+                        type: 'video',
+                        title: session.scenario_title || 'Wirkungs-Analyse',
+                        created_at: session.created_at,
+                        score: session.overall_score,
+                    });
+                });
+            }
+
+            // Process game sessions
+            if (gameSessions.status === 'fulfilled' && gameSessions.value?.data?.sessions) {
+                gameSessions.value.data.sessions.forEach(session => {
+                    activities.push({
+                        id: `game_${session.id}`,
+                        type: 'game',
+                        title: session.topic || 'Rhetorik-Gym',
+                        created_at: session.created_at,
+                        score: session.score,
+                    });
+                });
+            } else if (gameSessions.status === 'fulfilled' && Array.isArray(gameSessions.value)) {
+                gameSessions.value.forEach(session => {
+                    activities.push({
+                        id: `game_${session.id}`,
+                        type: 'game',
+                        title: session.topic || 'Rhetorik-Gym',
+                        created_at: session.created_at,
+                        score: session.score,
+                    });
+                });
+            }
+
+            // Process Smart Briefings
+            if (briefings.status === 'fulfilled') {
+                const briefingData = briefings.value?.data?.briefings || briefings.value?.briefings || [];
+                briefingData.slice(0, 3).forEach(briefing => {
+                    activities.push({
+                        id: `briefing_${briefing.id}`,
+                        type: 'briefing',
+                        title: briefing.title || 'Smart Briefing',
+                        created_at: briefing.created_at,
+                    });
+                });
+            }
+
+            // Process Ikigai sessions
+            if (ikigais.status === 'fulfilled') {
+                const ikigaiData = ikigais.value?.data?.ikigais || [];
+                ikigaiData.slice(0, 3).forEach(ikigai => {
+                    activities.push({
+                        id: `ikigai_${ikigai.id}`,
+                        type: 'ikigai',
+                        title: 'Ikigai-Analyse',
+                        created_at: ikigai.created_at,
+                    });
+                });
+            }
+
+            // Process Decision Board entries
+            if (decisions.status === 'fulfilled') {
+                const decisionData = decisions.value?.data?.decisions || [];
+                decisionData.slice(0, 3).forEach(decision => {
+                    activities.push({
+                        id: `decision_${decision.id}`,
+                        type: 'decision',
+                        title: decision.topic || 'Entscheidung',
+                        created_at: decision.created_at,
+                    });
+                });
+            }
+
+            // Helper to parse MySQL/WordPress date format (stored in local server time)
+            const parseDate = (dateString) => {
+                if (!dateString) return new Date(0);
+                // WordPress stores dates in local server time, not UTC
+                // Remove any timezone suffix and normalize format
+                const normalized = dateString
+                    .replace(' ', 'T')           // MySQL format
+                    .replace(/Z$/, '')           // Remove UTC marker
+                    .replace(/[+-]\d{2}:\d{2}$/, ''); // Remove timezone offset
+                return new Date(normalized);
+            };
+
+            // Sort by created_at descending and limit
+            activities.sort((a, b) => parseDate(b.created_at) - parseDate(a.created_at));
+
+            return activities.slice(0, limit);
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to get recent activities:', error);
+            return [];
+        }
+    }
 }
 
 // Export singleton instance
@@ -1115,4 +1282,12 @@ export function getWPNonce() {
  */
 export function getWPApiUrl() {
     return window.bewerbungstrainerConfig?.apiUrl || '/wp-json/bewerbungstrainer/v1';
+}
+
+/**
+ * Get recent activities for the dashboard
+ * Convenience export for QuadDashboard component
+ */
+export function getRecentActivities(limit = 5) {
+    return wordpressAPI.getRecentActivities(limit);
 }
