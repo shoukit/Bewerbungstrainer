@@ -40,9 +40,9 @@ const FeatureInfoButton = ({
 
   // Size configurations
   const sizes = {
-    sm: { button: 28, icon: 16 },
-    md: { button: 32, icon: 18 },
-    lg: { button: 36, icon: 20 },
+    sm: { button: 32, icon: 18 },
+    md: { button: 36, icon: 20 },
+    lg: { button: 40, icon: 22 },
   };
 
   const sizeConfig = sizes[size] || sizes.md;
@@ -60,9 +60,9 @@ const FeatureInfoButton = ({
       hoverBackground: 'rgba(255, 255, 255, 0.3)',
     },
     dark: {
-      background: COLORS.slate[300],
-      color: COLORS.slate[700],
-      hoverBackground: COLORS.slate[400],
+      background: COLORS.slate[500],
+      color: COLORS.white,
+      hoverBackground: COLORS.slate[600],
     },
   };
 
@@ -96,6 +96,7 @@ const FeatureInfoButton = ({
           justifyContent: 'center',
           transition: TRANSITIONS.normal,
           flexShrink: 0,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           ...style,
         }}
         onMouseEnter={(e) => {
