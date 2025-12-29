@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import DecisionBoardInput from './DecisionBoardInput';
 import DecisionBoardResult from './DecisionBoardResult';
 import wordpressAPI from '@/services/wordpress-api';
+import FeatureInfoModal from '@/components/FeatureInfoModal';
 
 /**
  * View states for the decision board flow
@@ -231,9 +232,14 @@ const DecisionBoardApp = ({
   };
 
   return (
-    <div style={{ minHeight: '100%' }}>
-      {renderContent()}
-    </div>
+    <>
+      {/* Feature Info Modal - shows on first visit */}
+      <FeatureInfoModal featureId="decisionboard" showOnMount />
+
+      <div style={{ minHeight: '100%' }}>
+        {renderContent()}
+      </div>
+    </>
   );
 };
 

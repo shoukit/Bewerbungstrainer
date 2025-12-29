@@ -48,9 +48,14 @@ class Bewerbungstrainer_API {
     private $gemini_handler;
 
     /**
-     * Roleplay scenarios instance
+     * Roleplay scenarios instance (legacy CPT)
      */
     private $roleplay_scenarios;
+
+    /**
+     * Roleplay database instance (new unified table)
+     */
+    private $roleplay_db;
 
     /**
      * Get singleton instance
@@ -72,6 +77,7 @@ class Bewerbungstrainer_API {
         $this->pdf_exporter = Bewerbungstrainer_PDF_Exporter::get_instance();
         $this->gemini_handler = Bewerbungstrainer_Gemini_Handler::get_instance();
         $this->roleplay_scenarios = Bewerbungstrainer_Roleplay_Scenarios::get_instance();
+        $this->roleplay_db = Bewerbungstrainer_Roleplay_Database::get_instance();
 
         // Disable cookie authentication errors for public scenario endpoints
         add_filter('rest_authentication_errors', array($this, 'disable_cookie_check_for_public_endpoints'));
@@ -1727,6 +1733,46 @@ class Bewerbungstrainer_API {
     public function get_roleplay_scenarios($request) {
         $params = $request->get_params();
 
+        // Check if we should use the new database table
+        $use_db = $this->roleplay_db->get_scenarios_count() > 0;
+
+        if ($use_db) {
+            // Use new database table
+            $db_args = array(
+                'is_active' => 1,
+            );
+
+            // Filter by difficulty
+            if (isset($params['difficulty'])) {
+                // Note: difficulty filtering would need custom implementation if needed
+            }
+
+            // Filter by category
+            if (isset($params['category'])) {
+                $db_args['category'] = sanitize_text_field($params['category']);
+            }
+
+            // Filter by target audience
+            if (isset($params['target_audience'])) {
+                $db_args['target_audience'] = sanitize_text_field($params['target_audience']);
+            }
+
+            $db_scenarios = $this->roleplay_db->get_scenarios($db_args);
+
+            // Format for API response (match existing structure)
+            $scenarios = array();
+            foreach ($db_scenarios as $scenario) {
+                $scenarios[] = $this->format_db_scenario_for_api($scenario);
+            }
+
+            return new WP_REST_Response(array(
+                'success' => true,
+                'data' => $scenarios,
+                'source' => 'database',
+            ), 200);
+        }
+
+        // Fallback to legacy CPT
         $args = array();
 
         // Filter by difficulty
@@ -1756,7 +1802,64 @@ class Bewerbungstrainer_API {
         return new WP_REST_Response(array(
             'success' => true,
             'data' => $scenarios,
+            'source' => 'cpt',
         ), 200);
+    }
+
+    /**
+     * Format database scenario for API response
+     *
+     * @param object $scenario Database scenario object
+     * @return array Formatted scenario
+     */
+    private function format_db_scenario_for_api($scenario) {
+        // Parse JSON fields
+        $category = json_decode($scenario->category, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $category = array();
+        }
+
+        $tips = json_decode($scenario->tips, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $tips = array();
+        }
+
+        $input_configuration = json_decode($scenario->input_configuration, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $input_configuration = array();
+        }
+
+        return array(
+            'id' => intval($scenario->id),
+            'title' => $scenario->title,
+            'description' => $scenario->description,
+            'long_description' => $scenario->long_description,
+            'icon' => $scenario->icon ?: 'mic',
+            'difficulty' => $scenario->difficulty,
+            'target_audience' => $scenario->target_audience,
+            'category' => $category,
+            'role_type' => $scenario->role_type,
+            'user_role_label' => $scenario->user_role_label,
+            'agent_id' => $scenario->agent_id,
+            'system_prompt' => $scenario->system_prompt,
+            'feedback_prompt' => $scenario->feedback_prompt,
+            'ai_instructions' => $scenario->ai_instructions,
+            'tips' => $tips,
+            'variables_schema' => $input_configuration,
+            'is_active' => (bool) $scenario->is_active,
+            'sort_order' => intval($scenario->sort_order),
+            // For backwards compatibility with existing frontend
+            'interviewer_profile' => array(
+                'name' => '',
+                'role' => '',
+                'image_url' => '',
+                'properties' => '',
+                'typical_objections' => '',
+                'important_questions' => '',
+            ),
+            'tags' => array(),
+            'coaching_hints' => '',
+        );
     }
 
     /**
@@ -1767,6 +1870,24 @@ class Bewerbungstrainer_API {
      */
     public function get_roleplay_scenario($request) {
         $scenario_id = intval($request['id']);
+
+        // Check if we should use the new database table
+        $use_db = $this->roleplay_db->get_scenarios_count() > 0;
+
+        if ($use_db) {
+            // Try database first
+            $db_scenario = $this->roleplay_db->get_scenario($scenario_id);
+
+            if ($db_scenario) {
+                return new WP_REST_Response(array(
+                    'success' => true,
+                    'data' => $this->format_db_scenario_for_api($db_scenario),
+                    'source' => 'database',
+                ), 200);
+            }
+        }
+
+        // Fallback to legacy CPT
         $scenario = $this->roleplay_scenarios->get_scenario($scenario_id);
 
         if (!$scenario) {
@@ -1780,6 +1901,7 @@ class Bewerbungstrainer_API {
         return new WP_REST_Response(array(
             'success' => true,
             'data' => $scenario,
+            'source' => 'cpt',
         ), 200);
     }
 

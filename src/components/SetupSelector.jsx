@@ -6,89 +6,139 @@ import { usePartner } from '@/context/PartnerContext';
 import { sanitizeColor } from '@/utils/colorUtils';
 
 /**
- * Individual Setup Card with hover state management
+ * Individual Setup Card with premium styling
  */
 const SetupCard = ({ setup, isSelected, onSelect }) => {
   const [isHovered, setIsHovered] = useState(false);
   const safeColor = sanitizeColor(setup.color);
 
-  // Determine border and background colors based on state
-  const getBorderColor = () => {
-    if (isSelected) return safeColor;
-    if (isHovered) return '#d1d5db'; // gray-300
-    return '#f3f4f6'; // gray-100
-  };
-
-  const getBackgroundColor = () => {
-    if (isSelected) return `${safeColor}08`;
-    if (isHovered) return '#f9fafb'; // gray-50
-    return 'white';
-  };
-
   return (
-    <button
+    <motion.button
       onClick={onSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative p-4 rounded-xl text-left transition-all"
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
       style={{
-        border: `2px solid ${getBorderColor()}`,
-        backgroundColor: getBackgroundColor(),
-        boxShadow: isHovered || isSelected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+        position: 'relative',
+        width: '100%',
+        textAlign: 'left',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        border: isSelected ? `2px solid ${safeColor}` : '2px solid #e5e7eb',
+        backgroundColor: 'white',
+        boxShadow: isHovered || isSelected
+          ? `0 12px 24px -8px ${safeColor}30, 0 4px 8px -2px rgba(0,0,0,0.08)`
+          : '0 2px 8px -2px rgba(0,0,0,0.06)',
+        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         outline: 'none',
+        cursor: 'pointer',
         WebkitAppearance: 'none',
       }}
     >
-      {/* Selected checkmark */}
-      {isSelected && (
-        <div
-          className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: safeColor }}
-        >
-          <Check size={12} className="text-white" strokeWidth={3} />
-        </div>
-      )}
-
-      {/* Icon */}
+      {/* Colored Header Banner - Fixed height for consistency */}
       <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
-        style={{ backgroundColor: `${safeColor}15` }}
+        style={{
+          background: `linear-gradient(135deg, ${safeColor} 0%, ${safeColor}dd 100%)`,
+          height: '100px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+        }}
       >
-        <span className="text-2xl">{setup.icon}</span>
-      </div>
+        {/* Selected checkmark - top right */}
+        {isSelected && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              backgroundColor: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            }}
+          >
+            <Check size={14} style={{ color: safeColor }} strokeWidth={3} />
+          </div>
+        )}
 
-      {/* Title */}
-      <h3 className="text-sm font-semibold text-gray-900 mb-1 pr-6">
-        {setup.name}
-      </h3>
-
-      {/* Description */}
-      <p className="text-xs text-gray-500 leading-relaxed mb-3" style={{
-        display: '-webkit-box',
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: 'vertical',
-        overflow: 'hidden',
-        wordBreak: 'break-word',
-      }}>
-        {setup.description}
-      </p>
-
-      {/* Tags */}
-      <div className="flex flex-wrap gap-1.5">
-        <span
-          className="inline-flex text-[10px] px-2 py-0.5 rounded-full font-medium"
-          style={{
-            backgroundColor: `${safeColor}15`,
-            color: safeColor,
-          }}
-        >
-          {setup.focus}
-        </span>
-        <span className="inline-flex text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
-          {setup.targetGroup}
+        {/* Large Icon */}
+        <span style={{
+          fontSize: '48px',
+          lineHeight: 1,
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
+        }}>
+          {setup.icon}
         </span>
       </div>
-    </button>
+
+      {/* Card Content - Fixed height for consistency */}
+      <div style={{ padding: '20px', height: '140px', display: 'flex', flexDirection: 'column' }}>
+        {/* Title */}
+        <h3 style={{
+          fontSize: '16px',
+          fontWeight: 700,
+          color: '#1e293b',
+          marginBottom: '6px',
+          lineHeight: 1.3,
+        }}>
+          {setup.name}
+        </h3>
+
+        {/* Description */}
+        <p style={{
+          fontSize: '13px',
+          color: '#64748b',
+          lineHeight: 1.5,
+          marginBottom: '16px',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          flex: 1,
+        }}>
+          {setup.description}
+        </p>
+
+        {/* Tags */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: 'auto' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontSize: '11px',
+              padding: '5px 10px',
+              borderRadius: '20px',
+              fontWeight: 600,
+              backgroundColor: `${safeColor}15`,
+              color: safeColor,
+            }}
+          >
+            {setup.focus}
+          </span>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontSize: '11px',
+              padding: '5px 10px',
+              borderRadius: '20px',
+              fontWeight: 500,
+              backgroundColor: '#f1f5f9',
+              color: '#64748b',
+            }}
+          >
+            {setup.targetGroup}
+          </span>
+        </div>
+      </div>
+    </motion.button>
   );
 };
 
@@ -155,41 +205,79 @@ const SetupSelector = () => {
         className="w-full"
       >
         {/* Description text above the selector */}
-        <p className="text-sm text-gray-500 mb-2 px-1">
+        <p style={{
+          fontSize: '14px',
+          color: '#64748b',
+          marginBottom: '8px',
+          paddingLeft: '4px',
+        }}>
           Filtere Trainingsszenarien nach deinem Fokus
         </p>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="w-full flex items-center justify-between gap-3 transition-all cursor-pointer group"
           style={{
-            padding: '12px 16px',
-            borderRadius: '12px',
-            border: '1px solid #e5e7eb',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            padding: '14px 18px',
+            borderRadius: '14px',
+            border: '1px solid #e2e8f0',
             backgroundColor: 'white',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
             outline: 'none',
             WebkitAppearance: 'none',
           }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#cbd5e1';
+            e.currentTarget.style.boxShadow = '0 4px 12px -2px rgba(0,0,0,0.08)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#e2e8f0';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         >
           {/* Left side - Current setup info */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
                 backgroundColor: currentSetupColor ? `${currentSetupColor}15` : '#f1f5f9',
               }}
             >
               {currentSetup ? (
-                <span className="text-xl">{currentSetup.icon}</span>
+                <span style={{ fontSize: '24px' }}>{currentSetup.icon}</span>
               ) : (
-                <Sparkles size={20} className="text-gray-400" />
+                <Sparkles size={22} style={{ color: '#94a3b8' }} />
               )}
             </div>
-            <div className="text-left min-w-0">
-              <div className="text-sm font-semibold text-gray-900 truncate">
+            <div style={{ textAlign: 'left', minWidth: 0 }}>
+              <div style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                color: '#1e293b',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
                 {currentSetup ? currentSetup.name : 'Alle Szenarien'}
               </div>
-              <div className="text-xs text-gray-500 truncate">
+              <div style={{
+                fontSize: '13px',
+                color: '#64748b',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
                 {currentSetup
                   ? `${currentSetup.focus} • ${currentSetup.targetGroup}`
                   : 'Trainings-Setup wählen'
@@ -199,11 +287,15 @@ const SetupSelector = () => {
           </div>
 
           {/* Right side - Change indicator */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs font-medium text-gray-400 hidden sm:inline group-hover:text-gray-600">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{
+              fontSize: '13px',
+              fontWeight: 500,
+              color: '#94a3b8',
+            }}>
               Ändern
             </span>
-            <ChevronDown size={18} className="text-gray-400 group-hover:text-gray-600" />
+            <ChevronDown size={18} style={{ color: '#94a3b8' }} />
           </div>
         </button>
       </motion.div>
@@ -219,60 +311,110 @@ const SetupSelector = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsModalOpen(false)}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-                style={{ zIndex: 9999 }}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  backgroundColor: 'rgba(15, 23, 42, 0.5)',
+                  backdropFilter: 'blur(4px)',
+                  zIndex: 9999,
+                }}
               />
 
               {/* Modal - Full screen on mobile, centered on desktop */}
               <div
-                className="fixed inset-0 flex items-end sm:items-center justify-center sm:p-4"
-                style={{ zIndex: 10000 }}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: isMobile ? 'flex-end' : 'center',
+                  justifyContent: 'center',
+                  padding: isMobile ? 0 : '16px',
+                  zIndex: 10000,
+                }}
               >
                 <motion.div
                   initial={{ opacity: 0, y: isMobile ? 100 : 20, scale: isMobile ? 1 : 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: isMobile ? 100 : 20, scale: isMobile ? 1 : 0.95 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                  className="w-full sm:max-w-2xl bg-white shadow-2xl flex flex-col"
                   style={{
+                    width: '100%',
+                    maxWidth: isMobile ? '100%' : '720px',
+                    backgroundColor: '#f8fafc',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    display: 'flex',
+                    flexDirection: 'column',
                     maxHeight: isMobile ? 'calc(100vh - 60px)' : 'calc(100vh - 2rem)',
-                    borderRadius: isMobile ? '20px 20px 0 0' : '16px',
+                    borderRadius: isMobile ? '24px 24px 0 0' : '20px',
+                    overflow: 'hidden',
                   }}
                 >
                   {/* Header */}
-                  <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100 flex-shrink-0">
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: isMobile ? '20px' : '24px 28px',
+                    backgroundColor: 'white',
+                    borderBottom: '1px solid #e2e8f0',
+                    flexShrink: 0,
+                  }}>
                     <div>
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                      <h2 style={{
+                        fontSize: isMobile ? '18px' : '22px',
+                        fontWeight: 700,
+                        color: '#0f172a',
+                        marginBottom: '4px',
+                      }}>
                         Trainings-Setup wählen
                       </h2>
-                      <p className="text-sm text-gray-500 mt-0.5 hidden sm:block">
+                      <p style={{
+                        fontSize: '14px',
+                        color: '#64748b',
+                        margin: 0,
+                        display: isMobile ? 'none' : 'block',
+                      }}>
                         Wähle deinen Schwerpunkt für passende Trainingsszenarien
                       </p>
                     </div>
                     <button
                       onClick={() => setIsModalOpen(false)}
-                      className="flex items-center justify-center transition-colors flex-shrink-0"
                       style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        backgroundColor: '#f3f4f6',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        backgroundColor: '#f1f5f9',
                         border: 'none',
-                        outline: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        outline: 'none',
                         WebkitAppearance: 'none',
+                        flexShrink: 0,
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                     >
-                      <X size={18} style={{ color: '#6b7280' }} />
+                      <X size={20} style={{ color: '#64748b' }} />
                     </button>
                   </div>
 
                   {/* Body - Scrollable */}
                   <div
-                    className="flex-1 overflow-y-auto p-4 sm:p-5 overscroll-contain"
-                    style={{ WebkitOverflowScrolling: 'touch' }}
+                    style={{
+                      flex: 1,
+                      overflowY: 'auto',
+                      padding: isMobile ? '20px' : '24px 28px',
+                      WebkitOverflowScrolling: 'touch',
+                    }}
                   >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                      gap: '16px',
+                    }}>
                       {availableSetups.map((setup) => (
                         <SetupCard
                           key={setup.id}
@@ -286,41 +428,66 @@ const SetupSelector = () => {
 
                   {/* Footer - Fixed at bottom */}
                   <div
-                    className="flex items-center justify-between p-4 sm:p-5 border-t border-gray-100 bg-gray-50/80 flex-shrink-0"
-                    style={{ paddingBottom: isMobile ? 'max(16px, env(safe-area-inset-bottom))' : undefined }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: isMobile ? '16px 20px' : '20px 28px',
+                      paddingBottom: isMobile ? 'max(20px, env(safe-area-inset-bottom))' : '20px',
+                      backgroundColor: 'white',
+                      borderTop: '1px solid #e2e8f0',
+                      flexShrink: 0,
+                    }}
                   >
                     <button
                       onClick={handleShowAll}
-                      className="transition-colors"
                       style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        border: '1px solid #e5e7eb',
+                        padding: '10px 18px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
                         backgroundColor: 'white',
-                        color: '#4b5563',
+                        color: '#475569',
                         fontSize: '14px',
                         fontWeight: 500,
                         cursor: 'pointer',
+                        transition: 'all 0.2s ease',
                         outline: 'none',
                         WebkitAppearance: 'none',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'white';
+                        e.currentTarget.style.borderColor = '#e2e8f0';
                       }}
                     >
                       Alle anzeigen
                     </button>
                     <button
                       onClick={() => setIsModalOpen(false)}
-                      className="transition-all"
                       style={{
-                        padding: '8px 20px',
-                        borderRadius: '8px',
+                        padding: '10px 24px',
+                        borderRadius: '10px',
                         border: 'none',
                         background: primaryAccent,
                         color: 'white',
                         fontSize: '14px',
                         fontWeight: 600,
                         cursor: 'pointer',
+                        transition: 'all 0.2s ease',
                         outline: 'none',
                         WebkitAppearance: 'none',
+                        boxShadow: `0 4px 12px -2px ${primaryAccent}50`,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = `0 6px 16px -2px ${primaryAccent}60`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = `0 4px 12px -2px ${primaryAccent}50`;
                       }}
                     >
                       Fertig

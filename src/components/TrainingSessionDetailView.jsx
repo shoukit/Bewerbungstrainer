@@ -1324,8 +1324,6 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
 
       {/* Main Content */}
       <div style={{
-        maxWidth: '1400px',
-        margin: '0 auto',
         padding: isMobile ? '16px' : '24px 32px',
         overflow: 'hidden',
       }}>

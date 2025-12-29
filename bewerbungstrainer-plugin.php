@@ -268,6 +268,8 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-gemini-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-whisper-handler.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-scenarios.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-roleplay-admin.php';
 
         // Load shared API trait (must be loaded before API classes)
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/trait-api-utils.php';
@@ -394,7 +396,7 @@ class Bewerbungstrainer_Plugin {
         // Define the desired order with menu slugs
         $desired_order = array(
             // Main features (1-4)
-            'edit.php?post_type=roleplay_scenario',  // 1: Live-Simulationen
+            'roleplay-scenarios',                     // 1: Live-Simulationen (new database-based admin)
             'simulator-scenarios',                    // 2: Szenario-Training
             'bewerbungstrainer-video-training',       // 3: Wirkungs-Analyse
             'smartbriefing-templates',                // 4: Smart Briefing
@@ -475,6 +477,9 @@ class Bewerbungstrainer_Plugin {
 
         // Create video training database tables
         Bewerbungstrainer_Video_Training_Database::create_tables();
+
+        // Create roleplay database tables
+        Bewerbungstrainer_Roleplay_Database::create_tables();
 
         // Create smart briefing database tables
         Bewerbungstrainer_SmartBriefing_Database::create_tables();
@@ -605,8 +610,13 @@ class Bewerbungstrainer_Plugin {
         // Initialize database
         Bewerbungstrainer_Database::get_instance();
 
-        // Initialize roleplay scenarios
-        Bewerbungstrainer_Roleplay_Scenarios::get_instance();
+        // Initialize roleplay database
+        Bewerbungstrainer_Roleplay_Database::get_instance();
+
+        // Initialize roleplay admin (only in admin area)
+        if (is_admin()) {
+            Bewerbungstrainer_Roleplay_Admin::get_instance();
+        }
 
         // Initialize REST API
         Bewerbungstrainer_API::get_instance();
@@ -705,7 +715,7 @@ class Bewerbungstrainer_Plugin {
 
         // Enqueue React app (built version)
         $asset_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/index.js';
-        $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/wordpress-api.css';
+        $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/designTokens.css';
 
         // Check if build files exist
         if (!file_exists($asset_file) || !file_exists($css_file)) {
@@ -719,7 +729,7 @@ class Bewerbungstrainer_Plugin {
         // Enqueue CSS first
         wp_enqueue_style(
             'bewerbungstrainer-app',
-            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/wordpress-api.css',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/designTokens.css',
             array(),
             filemtime($css_file)
         );

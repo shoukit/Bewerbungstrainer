@@ -16,6 +16,7 @@ import {
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
+import FeatureInfoModal from '@/components/FeatureInfoModal';
 
 // Icon mapping for scenarios
 const ICON_MAP = {
@@ -143,7 +144,11 @@ const VideoTrainingDashboard = ({
   const primaryAccent = branding?.primaryAccent || branding?.['--primary-accent'] || '#3A7FA7';
 
   return (
-    <ScenarioDashboard
+    <>
+      {/* Feature Info Modal - shows on first visit */}
+      <FeatureInfoModal featureId="videotraining" showOnMount />
+
+      <ScenarioDashboard
       // Header
       title="Wirkungs-Analyse"
       subtitle="Video-Feedback zu Auftreten und Kommunikation"
@@ -188,6 +193,7 @@ const VideoTrainingDashboard = ({
       // Loading
       loadingMessage="Szenarien werden geladen..."
     />
+    </>
   );
 };
 

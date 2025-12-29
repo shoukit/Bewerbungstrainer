@@ -31,6 +31,7 @@ import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
 import { useBranding } from '@/hooks/useBranding';
 import { COLORS, GAME_MODE_COLORS } from '@/config/colors';
 import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
+import FeatureInfoModal from '@/components/FeatureInfoModal';
 
 /**
  * Icon mapping for game modes
@@ -521,7 +522,11 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
 
   // Main Mode Selection View
   return (
-    <div style={{ padding: isMobile ? b.space[4] : b.space[6] }}>
+    <>
+      {/* Feature Info Modal - shows on first visit */}
+      <FeatureInfoModal featureId="rhetorikgym" showOnMount />
+
+      <div style={{ padding: isMobile ? b.space[4] : b.space[6] }}>
       {/* Header - Compact on mobile */}
       <div style={{ marginBottom: isMobile ? b.space[5] : b.space[8], textAlign: 'center' }}>
         <div style={{
@@ -615,6 +620,7 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
         </ScenarioCardGrid>
       </div>
     </div>
+    </>
   );
 };
 

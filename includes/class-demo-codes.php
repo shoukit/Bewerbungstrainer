@@ -76,12 +76,14 @@ class Bewerbungstrainer_Demo_Codes {
         }
 
         // Handle reserve action
+        $just_reserved_code = null;
         if (isset($_POST['reserve_code']) && check_admin_referer('reserve_demo_code')) {
             $code = isset($_POST['code']) ? sanitize_text_field($_POST['code']) : '';
             $reserved_for = isset($_POST['reserved_for']) ? sanitize_text_field($_POST['reserved_for']) : '';
             if (!empty($code) && !empty($reserved_for)) {
                 if ($this->reserve_code($code, $reserved_for)) {
-                    echo '<div class="notice notice-success"><p>' . sprintf(__('Code %s wurde reserviert für: %s', 'bewerbungstrainer'), $code, $reserved_for) . '</p></div>';
+                    $just_reserved_code = $code;
+                    echo '<div class="notice notice-success"><p>' . sprintf(__('Code %s wurde reserviert für: %s', 'bewerbungstrainer'), $code, $reserved_for) . ' <strong style="color: #059669;">✓ Zugangsdaten in Zwischenablage kopiert!</strong></p></div>';
                 } else {
                     echo '<div class="notice notice-error"><p>' . __('Fehler beim Reservieren des Codes.', 'bewerbungstrainer') . '</p></div>';
                 }
@@ -385,6 +387,24 @@ class Bewerbungstrainer_Demo_Codes {
                     }
                 });
             });
+
+            <?php if ($just_reserved_code): ?>
+            // Auto-copy credentials to clipboard after successful reservation
+            (function() {
+                var credentials = 'URL: https://wordpress-1074446-6005961.cloudwaysapps.com/trainingscenter\n' +
+                                  'Benutzername: demo\n' +
+                                  'Passwort: karrierehelddemo\n' +
+                                  'Code: <?php echo esc_js($just_reserved_code); ?>';
+
+                navigator.clipboard.writeText(credentials).then(function() {
+                    console.log('Demo credentials copied to clipboard');
+                }).catch(function(err) {
+                    console.error('Failed to copy credentials:', err);
+                    // Fallback: show alert with credentials
+                    alert('Bitte manuell kopieren:\n\n' + credentials);
+                });
+            })();
+            <?php endif; ?>
             </script>
 
             <!-- Copy Codes Section for Unused Codes -->

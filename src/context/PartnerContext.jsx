@@ -23,13 +23,44 @@ const PartnerContext = createContext(null);
  * PartnerProvider Component
  * Wraps the app and provides partner configuration and authentication to all children
  */
+// Minimum splash screen duration in milliseconds
+const SPLASH_MIN_DURATION = 3000;
+
+// Track if app has been initialized (persists across re-renders)
+let hasAppInitialized = false;
+
 export function PartnerProvider({ children }) {
   const [partner, setPartner] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true); // Internal loading state for data
+
+  // Splash screen minimum time - ensures loader shows for at least 3 seconds
+  // Only on FIRST app load, not on navigation
+  const [splashMinTimeElapsed, setSplashMinTimeElapsed] = useState(hasAppInitialized);
 
   // Setups from database
   const [setupsFromDb, setSetupsFromDb] = useState(null);
   const [setupsLoading, setSetupsLoading] = useState(true);
+
+  // Start splash timer on mount - only if app hasn't been initialized yet
+  useEffect(() => {
+    if (hasAppInitialized) {
+      // App was already initialized, skip splash
+      setSplashMinTimeElapsed(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setSplashMinTimeElapsed(true);
+      hasAppInitialized = true; // Mark as initialized for future navigations
+    }, SPLASH_MIN_DURATION);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Combined loading state: show loader until BOTH conditions are met
+  // 1. Minimum splash time has elapsed (3 seconds) - only on first load
+  // 2. Data has finished loading
+  const isLoading = !splashMinTimeElapsed || dataLoading;
 
   // Authentication state
   const [user, setUser] = useState(null);
@@ -184,7 +215,7 @@ export function PartnerProvider({ children }) {
         }
       }
 
-      setIsLoading(false);
+      setDataLoading(false);
     };
 
     initializePartner();

@@ -10,6 +10,7 @@ export {
   formatDuration,
   formatTime,
   formatDurationText,
+  parseWordPressDate,
   formatDate,
   formatDateTime,
   formatRelativeTime,

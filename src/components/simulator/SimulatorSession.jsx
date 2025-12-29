@@ -187,7 +187,7 @@ const Timer = ({ seconds, maxSeconds, isRecording, branding }) => {
 /**
  * Audio Recorder Component - With Pause functionality
  */
-const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels, onOpenSettings, branding, isMobile }) => {
+const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, themedGradient, primaryAccent, isSubmitting, labels, onOpenSettings, branding, isMobile, onStreamChange }) => {
   const [recordingState, setRecordingState] = useState('idle'); // 'idle' | 'recording' | 'paused'
   const [seconds, setSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -225,6 +225,8 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
+      // Notify parent that stream is cleaned up
+      if (onStreamChange) onStreamChange(null);
     }
   };
 
@@ -252,6 +254,8 @@ const AudioRecorder = ({ onRecordingComplete, timeLimit, disabled, deviceId, the
         throw constraintErr;
       }
       streamRef.current = stream;
+      // Notify parent of new stream for cleanup tracking
+      if (onStreamChange) onStreamChange(stream);
 
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       analyserRef.current = audioContextRef.current.createAnalyser();
@@ -1002,6 +1006,29 @@ const SimulatorSession = ({
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
 
+  // Track active media stream for cleanup
+  const activeStreamRef = useRef(null);
+
+  // Cleanup function that can be called from anywhere
+  const cleanupMediaStream = useCallback(() => {
+    if (activeStreamRef.current) {
+      activeStreamRef.current.getTracks().forEach(track => track.stop());
+      activeStreamRef.current = null;
+    }
+  }, []);
+
+  // Handler to track stream changes from AudioRecorder
+  const handleStreamChange = useCallback((stream) => {
+    activeStreamRef.current = stream;
+  }, []);
+
+  // Global cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupMediaStream();
+    };
+  }, [cleanupMediaStream]);
+
   // Save microphone selection to localStorage whenever it changes
   useEffect(() => {
     if (selectedMicrophoneId) {
@@ -1189,6 +1216,11 @@ const SimulatorSession = ({
   // Actually complete the session after confirmation
   const handleCompleteSession = async () => {
     setShowCompleteConfirm(false);
+    // Close any open dialogs to trigger their cleanup
+    setShowDeviceSettings(false);
+    setShowMicrophoneTest(false);
+    // Explicitly cleanup any active media stream
+    cleanupMediaStream();
     try {
       const response = await wordpressAPI.completeSimulatorSession(session.id);
       if (response.success) {
@@ -1210,6 +1242,11 @@ const SimulatorSession = ({
   // Actually cancel the session after confirmation
   const handleCancelSession = () => {
     setShowCancelConfirm(false);
+    // Close any open dialogs to trigger their cleanup
+    setShowDeviceSettings(false);
+    setShowMicrophoneTest(false);
+    // Explicitly cleanup any active media stream
+    cleanupMediaStream();
     onExit();
   };
 
@@ -1844,6 +1881,7 @@ const SimulatorSession = ({
                 onOpenSettings={() => setShowDeviceSettings(true)}
                 branding={b}
                 isMobile={true}
+                onStreamChange={handleStreamChange}
               />
 
               {/* Error State - Mobile */}
@@ -1902,6 +1940,7 @@ const SimulatorSession = ({
                   onOpenSettings={() => setShowDeviceSettings(true)}
                   branding={b}
                   isMobile={false}
+                  onStreamChange={handleStreamChange}
                 />
 
                 {/* Error State */}

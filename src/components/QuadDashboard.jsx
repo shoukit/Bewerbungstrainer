@@ -16,7 +16,11 @@ import {
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
-import { getRecentActivities } from '@/services/wordpress-api';
+import { getRecentActivities, getWPApiUrl, getWPNonce } from '@/services/wordpress-api';
+import { getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
+import { formatRelativeTime } from '@/utils/formatting';
+import SetupSelector from './SetupSelector';
+import FeatureInfoButton from './FeatureInfoButton';
 
 /**
  * QuadDashboard - Homepage with two-zone layout
@@ -25,14 +29,84 @@ import { getRecentActivities } from '@/services/wordpress-api';
  * Zone B: Training Arena (Phase 2) - 2x2 grid
  */
 const QuadDashboard = ({ onNavigate }) => {
-  const { branding, user } = usePartner();
+  const { branding, user, filterScenariosBySetupAndPartner, currentSetup } = usePartner();
   const { isAuthenticated } = useAuth();
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
+  const [scenarioCounts, setScenarioCounts] = useState({
+    simulator: null,
+    roleplay: null,
+    video: null,
+  });
 
   // Get themed styles
   const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+
+  // Helper function to fetch simulator scenarios
+  const fetchSimulatorScenarios = async () => {
+    try {
+      const response = await fetch(`${getWPApiUrl()}/simulator/scenarios`, {
+        headers: { 'X-WP-Nonce': getWPNonce() },
+        credentials: 'same-origin',
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.success && data.data?.scenarios ? data.data.scenarios : [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Helper function to fetch video scenarios
+  const fetchVideoScenarios = async () => {
+    try {
+      const response = await fetch(`${getWPApiUrl()}/video-training/scenarios`, {
+        headers: { 'X-WP-Nonce': getWPNonce() },
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.success && data.data?.scenarios ? data.data.scenarios : [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Load scenario counts when setup changes
+  useEffect(() => {
+    const loadScenarioCounts = async () => {
+      try {
+        // Fetch all scenarios in parallel
+        const [simulatorData, roleplayData, videoData] = await Promise.all([
+          fetchSimulatorScenarios(),
+          getRoleplayScenarios().catch(() => []),
+          fetchVideoScenarios(),
+        ]);
+
+        // Filter and count based on current setup
+        const simulatorFiltered = filterScenariosBySetupAndPartner(simulatorData || [], 'simulator');
+        const roleplayFiltered = filterScenariosBySetupAndPartner(roleplayData || [], 'roleplay');
+        const videoFiltered = filterScenariosBySetupAndPartner(videoData || [], 'video_training');
+
+        console.log('[QuadDashboard] Scenario counts:', {
+          currentSetup: currentSetup?.id,
+          simulator: simulatorFiltered.length,
+          roleplay: roleplayFiltered.length,
+          video: videoFiltered.length,
+        });
+
+        setScenarioCounts({
+          simulator: simulatorFiltered.length,
+          roleplay: roleplayFiltered.length,
+          video: videoFiltered.length,
+        });
+      } catch (error) {
+        console.error('Failed to load scenario counts:', error);
+      }
+    };
+
+    loadScenarioCounts();
+  }, [currentSetup, filterScenariosBySetupAndPartner]);
 
   // Load recent activities if authenticated
   useEffect(() => {
@@ -68,6 +142,7 @@ const QuadDashboard = ({ onNavigate }) => {
   const strategyCards = [
     {
       id: 'ikigai',
+      featureId: 'ikigai',
       step: '1',
       title: 'Orientierung',
       subtitle: 'Ikigai-Kompass',
@@ -80,6 +155,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'decision',
+      featureId: 'decisionboard',
       step: '2',
       title: 'Entscheiden',
       subtitle: 'Decision-Navigator',
@@ -92,6 +168,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'briefing',
+      featureId: 'smartbriefing',
       step: '3',
       title: 'Vorbereiten',
       subtitle: 'Smart Briefing',
@@ -108,6 +185,7 @@ const QuadDashboard = ({ onNavigate }) => {
   const trainingCards = [
     {
       id: 'simulator',
+      featureId: 'simulator',
       title: 'Szenario Training',
       subtitle: 'Frage-Antwort',
       description: 'Beantworte Interview-Fragen und erhalte sofortiges KI-Feedback.',
@@ -117,9 +195,11 @@ const QuadDashboard = ({ onNavigate }) => {
       bgLight: COLORS.green[50],
       gradient: `linear-gradient(135deg, ${COLORS.green[400]} 0%, ${COLORS.teal[500]} 100%)`,
       route: 'simulator',
+      countKey: 'simulator',
     },
     {
       id: 'roleplay',
+      featureId: 'roleplay',
       title: 'Live Simulation',
       subtitle: 'Echtzeit-Dialog',
       description: 'Führe ein realistisches Gespräch mit dem KI-Interviewer.',
@@ -129,9 +209,11 @@ const QuadDashboard = ({ onNavigate }) => {
       bgLight: COLORS.amber[50],
       gradient: `linear-gradient(135deg, ${COLORS.amber[400]} 0%, ${COLORS.red[400]} 100%)`,
       route: 'dashboard',
+      countKey: 'roleplay',
     },
     {
       id: 'video',
+      featureId: 'videotraining',
       title: 'Wirkungsanalyse',
       subtitle: 'Körpersprache',
       description: 'Nimm dich auf Video auf und erhalte Feedback zu deiner Wirkung.',
@@ -141,9 +223,11 @@ const QuadDashboard = ({ onNavigate }) => {
       bgLight: COLORS.red[50],
       gradient: `linear-gradient(135deg, ${COLORS.red[400]} 0%, ${COLORS.purple[500]} 100%)`,
       route: 'video_training',
+      countKey: 'video',
     },
     {
       id: 'gym',
+      featureId: 'rhetorikgym',
       title: 'Rhetorik Gym',
       subtitle: 'Sprechtraining',
       description: 'Reduziere Füllwörter und verbessere deine Redegewandtheit.',
@@ -153,6 +237,7 @@ const QuadDashboard = ({ onNavigate }) => {
       bgLight: COLORS.purple[50],
       gradient: `linear-gradient(135deg, ${COLORS.purple[500]} 0%, ${COLORS.blue[500]} 100%)`,
       route: 'gym_klassiker',
+      countKey: null, // No scenarios for gym
     },
   ];
 
@@ -181,34 +266,6 @@ const QuadDashboard = ({ onNavigate }) => {
     if (onNavigate) {
       onNavigate(route);
     }
-  };
-
-  // Format activity date - handles MySQL/WordPress date format (stored in local time)
-  const formatActivityDate = (dateString) => {
-    if (!dateString) return '';
-
-    // WordPress stores dates in local server time, not UTC
-    // Remove any timezone suffix (Z or +00:00) and normalize format
-    let normalizedDate = dateString
-      .replace(' ', 'T')           // MySQL format: "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
-      .replace(/Z$/, '')           // Remove UTC marker
-      .replace(/[+-]\d{2}:\d{2}$/, ''); // Remove timezone offset
-
-    const date = new Date(normalizedDate);
-    if (isNaN(date.getTime())) return '';
-
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 0) return 'gerade eben'; // Future dates (clock skew)
-    if (diffMins < 1) return 'gerade eben';
-    if (diffMins < 60) return `vor ${diffMins} Min.`;
-    if (diffHours < 24) return `vor ${diffHours} Std.`;
-    if (diffDays < 7) return `vor ${diffDays} Tagen`;
-    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   };
 
   // Get activity type label
@@ -379,23 +436,34 @@ const QuadDashboard = ({ onNavigate }) => {
                   pointerEvents: 'none',
                 }} />
 
-                {/* Step Badge */}
+                {/* Step Badge & Info Button */}
                 <div style={{
                   position: 'absolute',
                   top: '20px',
                   right: '20px',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '10px',
-                  background: card.bgLight,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: card.color,
+                  gap: '8px',
                 }}>
-                  {card.step}
+                  <FeatureInfoButton
+                    featureId={card.featureId}
+                    size="sm"
+                    variant="dark"
+                  />
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '10px',
+                    background: card.bgLight,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: card.color,
+                  }}>
+                    {card.step}
+                  </div>
                 </div>
 
                 {/* Icon */}
@@ -506,6 +574,11 @@ const QuadDashboard = ({ onNavigate }) => {
             </h2>
           </div>
 
+          {/* Setup Selector - Filter training scenarios */}
+          <div style={{ marginBottom: '24px' }}>
+            <SetupSelector />
+          </div>
+
           {/* Training Cards - 2x2 Grid */}
           <div style={{
             display: 'grid',
@@ -543,21 +616,32 @@ const QuadDashboard = ({ onNavigate }) => {
                   e.currentTarget.style.borderColor = COLORS.slate[100];
                 }}
               >
-                {/* Tag Badge */}
+                {/* Tag Badge & Info Button */}
                 <div style={{
                   position: 'absolute',
                   top: '18px',
                   right: '18px',
-                  background: card.bgLight,
-                  color: card.color,
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
                 }}>
-                  {card.tag}
+                  <FeatureInfoButton
+                    featureId={card.featureId}
+                    size="sm"
+                    variant="dark"
+                  />
+                  <div style={{
+                    background: card.bgLight,
+                    color: card.color,
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.3px',
+                  }}>
+                    {card.tag}
+                  </div>
                 </div>
 
                 {/* Icon */}
@@ -604,12 +688,43 @@ const QuadDashboard = ({ onNavigate }) => {
                   {card.description}
                 </p>
 
-                {/* Arrow */}
+                {/* Scenario Count Badge & Arrow */}
                 <div style={{
                   display: 'flex',
-                  justifyContent: 'flex-end',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   marginTop: '16px',
                 }}>
+                  {/* Scenario Count - always show when count is available */}
+                  {card.countKey && scenarioCounts[card.countKey] !== null && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: COLORS.slate[50],
+                      border: `1px solid ${COLORS.slate[100]}`,
+                    }}>
+                      <span style={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: scenarioCounts[card.countKey] > 0 ? card.color : COLORS.slate[400],
+                      }}>
+                        {scenarioCounts[card.countKey]}
+                      </span>
+                      <span style={{
+                        fontSize: '12px',
+                        color: COLORS.slate[500],
+                      }}>
+                        {scenarioCounts[card.countKey] === 1 ? 'Szenario' : 'Szenarien'}
+                      </span>
+                    </div>
+                  )}
+                  {/* Spacer when no count shown */}
+                  {(!card.countKey || scenarioCounts[card.countKey] === null) && (
+                    <div />
+                  )}
                   <div style={{
                     width: '32px',
                     height: '32px',
@@ -791,7 +906,7 @@ const QuadDashboard = ({ onNavigate }) => {
                         flexShrink: 0,
                         marginLeft: '16px',
                       }}>
-                        {formatActivityDate(activity.created_at || activity.date)}
+                        {formatRelativeTime(activity.created_at || activity.date)}
                       </span>
                     </motion.div>
                   ))}

@@ -52,6 +52,28 @@ export const formatDurationText = (seconds) => {
 };
 
 /**
+ * Parse WordPress/MySQL date string correctly
+ * WordPress stores dates in local server time, not UTC.
+ * This function normalizes the date string to be parsed as local time.
+ *
+ * @param {string|Date} dateString - Date to parse
+ * @returns {Date} Parsed date object
+ */
+export const parseWordPressDate = (dateString) => {
+  if (!dateString) return new Date(0);
+  if (dateString instanceof Date) return dateString;
+
+  // WordPress stores dates in local server time, not UTC
+  // Remove any timezone suffix (Z or +00:00) and normalize format
+  const normalized = String(dateString)
+    .replace(' ', 'T')           // MySQL format: "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
+    .replace(/Z$/, '')           // Remove UTC marker
+    .replace(/[+-]\d{2}:\d{2}$/, ''); // Remove timezone offset
+
+  return new Date(normalized);
+};
+
+/**
  * Format date string to German locale
  * @param {string|Date} dateString - Date to format
  * @param {object} options - Intl.DateTimeFormat options
@@ -61,7 +83,7 @@ export const formatDate = (dateString, options = {}) => {
   if (!dateString) return '-';
 
   try {
-    const date = new Date(dateString);
+    const date = parseWordPressDate(dateString);
     if (isNaN(date.getTime())) return '-';
 
     const defaults = {
@@ -82,13 +104,22 @@ export const formatDate = (dateString, options = {}) => {
  * @returns {string} Formatted date and time string
  */
 export const formatDateTime = (dateString) => {
-  return formatDate(dateString, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  if (!dateString) return '-';
+
+  try {
+    const date = parseWordPressDate(dateString);
+    if (isNaN(date.getTime())) return '-';
+
+    return date.toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return '-';
+  }
 };
 
 /**
@@ -100,7 +131,9 @@ export const formatRelativeTime = (dateString) => {
   if (!dateString) return '-';
 
   try {
-    const date = new Date(dateString);
+    const date = parseWordPressDate(dateString);
+    if (isNaN(date.getTime())) return '-';
+
     const now = new Date();
     const diffMs = now - date;
     const diffSecs = Math.floor(diffMs / 1000);
@@ -108,6 +141,7 @@ export const formatRelativeTime = (dateString) => {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
+    if (diffSecs < 0) return 'Gerade eben'; // Future dates (clock skew)
     if (diffSecs < 60) return 'Gerade eben';
     if (diffMins < 60) return `vor ${diffMins} ${diffMins === 1 ? 'Minute' : 'Minuten'}`;
     if (diffHours < 24) return `vor ${diffHours} ${diffHours === 1 ? 'Stunde' : 'Stunden'}`;
