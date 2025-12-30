@@ -26,6 +26,11 @@ const DEBUG_PREFIX = '[FEATURE_INFO_MODAL]';
 // Session-based tracking to prevent double auto-show (survives StrictMode remounts)
 const AUTO_SHOW_SESSION_KEY = 'karriereheld_feature_info_session_shown';
 
+// GLOBAL tracking to ensure only ONE modal per feature can be open at a time
+// This prevents duplicate modals from any source
+const globalOpenModals = new Set();
+const globalMountedInstances = new Map(); // featureId -> mountId
+
 const isAutoShownThisSession = (featureId) => {
   try {
     const shown = JSON.parse(sessionStorage.getItem(AUTO_SHOW_SESSION_KEY) || '{}');
@@ -56,11 +61,24 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
 
   const feature = FEATURE_DESCRIPTIONS[featureId];
 
-  // Log on mount/unmount
+  // Log on mount/unmount and track globally
   useEffect(() => {
-    console.log(`${DEBUG_PREFIX} 🔵 MOUNT featureId="${featureId}" mountId=${mountIdRef.current} showOnMount=${showOnMount}`);
+    const mountId = mountIdRef.current;
+    const existingMountId = globalMountedInstances.get(featureId);
+
+    console.log(`${DEBUG_PREFIX} 🔵 MOUNT featureId="${featureId}" mountId=${mountId} showOnMount=${showOnMount} existingInstance=${existingMountId || 'none'}`);
+
+    // Register this instance
+    globalMountedInstances.set(featureId, mountId);
+
     return () => {
-      console.log(`${DEBUG_PREFIX} 🔴 UNMOUNT featureId="${featureId}" mountId=${mountIdRef.current}`);
+      console.log(`${DEBUG_PREFIX} 🔴 UNMOUNT featureId="${featureId}" mountId=${mountId}`);
+      // Only remove if this is the current instance
+      if (globalMountedInstances.get(featureId) === mountId) {
+        globalMountedInstances.delete(featureId);
+      }
+      // Also remove from open modals
+      globalOpenModals.delete(featureId);
     };
   }, [featureId, showOnMount]);
 
@@ -69,6 +87,7 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
   useEffect(() => {
     const isDismissed = isFeatureInfoDismissed(featureId);
     const isSessionShown = isAutoShownThisSession(featureId);
+    const isGloballyOpen = globalOpenModals.has(featureId);
 
     console.log(`${DEBUG_PREFIX} 🔄 Auto-show effect for "${featureId}":`, {
       showOnMount,
@@ -76,26 +95,29 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
       isDismissed,
       hasAutoShownRef: hasAutoShownRef.current,
       isSessionShown,
-      willShow: showOnMount && feature && !isDismissed && !hasAutoShownRef.current && !isSessionShown,
+      isGloballyOpen,
+      willShow: showOnMount && feature && !isDismissed && !hasAutoShownRef.current && !isSessionShown && !isGloballyOpen,
     });
 
-    if (showOnMount && feature && !isDismissed && !hasAutoShownRef.current && !isSessionShown) {
+    if (showOnMount && feature && !isDismissed && !hasAutoShownRef.current && !isSessionShown && !isGloballyOpen) {
       console.log(`${DEBUG_PREFIX} ✅ Will auto-show "${featureId}" in 400ms`);
       hasAutoShownRef.current = true;
       setAutoShownThisSession(featureId);
+      globalOpenModals.add(featureId); // Mark as globally open immediately
 
       // Track if component is still mounted
       let isMounted = true;
 
       const timer = setTimeout(() => {
-        // Double-check sessionStorage again in case of race condition
-        const stillShouldShow = !isAutoShownThisSession(featureId) || isMounted;
-        console.log(`${DEBUG_PREFIX} 🎉 Timer fired for "${featureId}": isMounted=${isMounted}, stillShouldShow=${stillShouldShow}`);
+        // Double-check all conditions again in case of race condition
+        const alreadyOpen = globalOpenModals.has(featureId) && internalOpen;
+        console.log(`${DEBUG_PREFIX} 🎉 Timer fired for "${featureId}": isMounted=${isMounted}, alreadyOpen=${alreadyOpen}`);
 
-        if (isMounted) {
+        if (isMounted && !internalOpen) {
           setInternalOpen(true);
-        } else {
+        } else if (!isMounted) {
           console.log(`${DEBUG_PREFIX} ⚠️ Component unmounted before timer, skipping open`);
+          globalOpenModals.delete(featureId);
         }
       }, 400);
 
@@ -105,7 +127,7 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
         clearTimeout(timer);
       };
     }
-  }, [showOnMount, featureId, feature]);
+  }, [showOnMount, featureId, feature, internalOpen]);
 
   // Sync external isOpen with internal state and load saved checkbox state
   useEffect(() => {
@@ -129,11 +151,13 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
   }, [internalOpen]);
 
   const handleClose = () => {
+    console.log(`${DEBUG_PREFIX} 🚪 handleClose for "${featureId}"`);
     // Always save the checkbox state (true or false)
     if (feature) {
       setFeatureInfoDismissed(featureId, dontShowAgain);
     }
     setInternalOpen(false);
+    globalOpenModals.delete(featureId); // Remove from global tracking
     onClose?.();
   };
 
@@ -146,6 +170,20 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
 
   if (!internalOpen) {
     return null;
+  }
+
+  // CRITICAL: Check if another instance already has this modal open
+  // This prevents duplicate modals even if multiple components try to open the same featureId
+  const currentMountId = mountIdRef.current;
+  const registeredMountId = globalMountedInstances.get(featureId);
+  if (registeredMountId && registeredMountId !== currentMountId) {
+    console.log(`${DEBUG_PREFIX} ⛔ Blocking render - another instance (${registeredMountId}) owns this modal`);
+    return null;
+  }
+
+  // Mark as globally open when rendering
+  if (!globalOpenModals.has(featureId)) {
+    globalOpenModals.add(featureId);
   }
 
   // Modal content - always renders as a fixed overlay
