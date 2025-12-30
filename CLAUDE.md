@@ -1179,6 +1179,90 @@ UI_TIMING.ANIMATION_DURATION_NORMAL = 0.4
 
 ## Code-Konventionen
 
+### ⚠️ WICHTIG: Styling-Entscheidung
+
+**Dieses Projekt verwendet primär INLINE STYLES**, nicht Tailwind-Klassen. Das ist eine bewusste Entscheidung für Konsistenz.
+
+```jsx
+// ✅ RICHTIG: Inline Styles (Standard in diesem Projekt)
+<div style={{
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  padding: '24px',
+}}>
+
+// ❌ VERMEIDEN: Tailwind-Klassen (nur in ui/ Komponenten)
+<div className="flex items-center gap-3 p-6">
+```
+
+**Ausnahme**: Die Basis-UI-Komponenten in `src/components/ui/` dürfen Tailwind verwenden.
+
+---
+
+### Komponenten-Patterns
+
+#### 1. Dashboard-Komponenten
+
+**Für Szenarien-basierte Features** → `ScenarioDashboard` verwenden:
+```jsx
+// ✅ SimulatorDashboard, RoleplayDashboard, SmartBriefingDashboard, VideoTrainingDashboard
+<ScenarioDashboard
+  title="Feature-Name"
+  subtitle="Beschreibung"
+  headerIcon={Icon}
+  headerActions={<FeatureInfoButton featureId="xxx" size="sm" />}
+  fetchScenarios={fetchFunction}
+  moduleKey="module_key"
+  historyButtonLabel="Meine Sessions"
+  onNavigateToHistory={navigateFunction}  // ⚠️ NICHT VERGESSEN!
+  // ... weitere Props
+/>
+```
+
+**Für spezielle Features** (IkigaiApp, DecisionBoardApp) → Eigene Struktur, aber gleiche Header-Logik.
+
+#### 2. Feature-Info System
+
+Jedes Feature braucht:
+```jsx
+// 1. Modal beim ersten Besuch (auto-show)
+<FeatureInfoModal featureId="featurename" showOnMount />
+
+// 2. Info-Button im Header (manuell öffnen)
+headerActions={<FeatureInfoButton featureId="featurename" size="sm" />}
+
+// 3. Eintrag in featureDescriptions.js
+```
+
+#### 3. Auth-geschützte Features
+
+```jsx
+// Für Features die Login erfordern (Ikigai, DecisionBoard):
+useEffect(() => {
+  if (!isAuthenticated && requireAuth) {
+    requireAuth();
+  }
+}, [isAuthenticated, requireAuth]);
+```
+
+---
+
+### Props-Checkliste
+
+Beim Hinzufügen neuer Features in `App.jsx`, IMMER prüfen:
+
+```jsx
+<FeatureApp
+  isAuthenticated={isAuthenticated}      // ✅ Auth-Status
+  requireAuth={requireAuth}              // ✅ Login-Funktion
+  setPendingAction={setPendingAction}    // ✅ Für Post-Login-Actions
+  onNavigateToHistory={() => navigate(ROUTES.HISTORY)}  // ⚠️ OFT VERGESSEN!
+/>
+```
+
+---
+
 ### JavaScript/React
 
 ```javascript
@@ -1203,7 +1287,7 @@ function MyComponent({ prop1, prop2, onAction }) {
 
   // Render
   return (
-    <div className="tailwind-classes">
+    <div style={{ padding: '24px' }}>
       {/* JSX */}
     </div>
   );
@@ -1222,35 +1306,47 @@ export default MyComponent;
 | Konstanten | camelCase | `constants.js` |
 | PHP-Klassen | kebab-case mit `class-` | `class-database.php` |
 
-### CSS mit Tailwind
+### Design Tokens
+
+**Verwende die zentralen Design-Tokens** aus `src/config/`:
 
 ```jsx
-// Utility-Klassen direkt im JSX
-<button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-  Button
-</button>
+import { COLORS } from '@/config/colors';
+import { RADIUS, SPACING, TRANSITIONS } from '@/config/designTokens';
 
-// Mit cn() für bedingte Klassen
-import { cn } from '@/lib/utils';
+// ✅ Richtig
+style={{
+  color: COLORS.slate[600],
+  borderRadius: RADIUS.lg,
+  transition: TRANSITIONS.normal,
+}}
 
-<div className={cn(
-  "base-classes",
-  isActive && "active-classes",
-  variant === 'primary' && "primary-classes"
-)}>
+// ❌ Vermeiden: Hardcoded Werte
+style={{ color: '#64748b', borderRadius: '12px' }}
 ```
 
 ### Console Logging
 
 ```javascript
-// Einheitliches Format mit Emoji-Präfixen
+// Einheitliches Format mit Präfixen
 console.log('[APP] Module loaded');
 console.log('[GEMINI] Starting request...');
 console.log('[SUCCESS] Operation completed');
 console.log('[ERROR] Something failed:', error);
 console.log('[WARN] Potential issue');
-console.log('[RETRY] Trying again...');
 ```
+
+---
+
+### Häufige Fehler vermeiden
+
+| Fehler | Lösung |
+|--------|--------|
+| `onNavigateToHistory` nicht übergeben | Immer in App.jsx bei Route prüfen |
+| History-Button fehlt | `showHistoryButton` und `onNavigateToHistory` Props setzen |
+| Feature-Info fehlt | `FeatureInfoModal` + `FeatureInfoButton` + Eintrag in config |
+| Inkonsistentes Styling | Inline Styles verwenden, nicht Tailwind |
+| Hardcoded Farben | `COLORS` aus config verwenden |
 
 ---
 
