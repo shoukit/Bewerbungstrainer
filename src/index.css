@@ -739,6 +739,30 @@
 #bewerbungstrainer-app button:focus,
 #bewerbungstrainer-app button:active {
   color: inherit;
+  /* Prevent Elementor from overriding backgrounds - only if not explicitly set */
+  background-color: inherit;
+}
+
+/* Buttons with explicit background classes should NOT inherit */
+#bewerbungstrainer-app button[class*="bg-"],
+#bewerbungstrainer-app button[class*="btn-"],
+#bewerbungstrainer-app button.btn {
+  background-color: unset; /* Let Tailwind/our classes handle it */
+}
+
+/* Glass button on gradient backgrounds - with explicit hover protection */
+#bewerbungstrainer-app .btn-glass,
+#bewerbungstrainer-app .btn-glass:hover,
+#bewerbungstrainer-app .btn-glass:focus,
+#bewerbungstrainer-app .btn-glass:active {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#bewerbungstrainer-app .btn-glass:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Fix for session sidebar tab buttons - let inline styles handle colors (partner branding) */
