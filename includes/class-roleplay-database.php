@@ -44,6 +44,7 @@ class Bewerbungstrainer_Roleplay_Database {
     private function __construct() {
         global $wpdb;
         $this->table_scenarios = $wpdb->prefix . 'bewerbungstrainer_roleplay_scenarios';
+        $this->maybe_create_tables();
     }
 
     /**
