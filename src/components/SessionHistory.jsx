@@ -51,6 +51,7 @@ import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
 import { BriefingCard, SessionCard, DecisionCard, IkigaiCard } from '@/components/session-history';
 import IkigaiCompass from '@/components/ikigai/IkigaiCompass';
 import IkigaiResults from '@/components/ikigai/IkigaiResults';
+import SessionDetailHeader from '@/components/SessionDetailHeader';
 import { Scale, Compass } from 'lucide-react';
 
 /**
@@ -647,62 +648,26 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     };
 
     return (
-      <div>
-        {/* Header with back button */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: b.space[4],
-          paddingBottom: b.space[4],
-          borderBottom: `1px solid ${b.borderColor}`,
-        }}>
-          <button
-            onClick={handleBackFromDecision}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: b.space[2],
-              padding: `${b.space[2]} ${b.space[3]}`,
-              backgroundColor: 'transparent',
-              border: `1px solid ${b.borderColor}`,
-              borderRadius: b.radius.md,
-              cursor: 'pointer',
-              color: b.textSecondary,
-              fontSize: b.fontSize.base,
-            }}
-          >
-            <ArrowLeft size={b.iconSize.md} />
-            Zurück
-          </button>
+      <div style={{ minHeight: '100vh', background: b.pageBg }}>
+        {/* Unified Header */}
+        <SessionDetailHeader
+          type="decision"
+          title={selectedDecision.topic || 'Entscheidung'}
+          status={selectedDecision.status}
+          createdAt={selectedDecision.created_at}
+          onBack={handleBackFromDecision}
+          onDelete={() => {
+            if (window.confirm('Möchtest du diese Entscheidungs-Analyse wirklich löschen?')) {
+              handleDeleteDecision(selectedDecision.id);
+              handleBackFromDecision();
+            }
+          }}
+        />
 
-          <button
-            onClick={() => {
-              if (window.confirm('Möchtest du diese Entscheidungs-Analyse wirklich löschen?')) {
-                handleDeleteDecision(selectedDecision.id);
-                handleBackFromDecision();
-              }
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: b.space[2],
-              padding: `${b.space[2]} ${b.space[3]}`,
-              backgroundColor: 'transparent',
-              border: `1px solid ${b.error}`,
-              borderRadius: b.radius.md,
-              cursor: 'pointer',
-              color: b.error,
-              fontSize: b.fontSize.base,
-            }}
-          >
-            <Trash2 size={b.iconSize.md} />
-            Löschen
-          </button>
-        </div>
-
-        {/* Show Result if analysis is complete, otherwise show Input */}
-        {decisionAnalysisResult ? (
+        {/* Content */}
+        <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
+          {/* Show Result if analysis is complete, otherwise show Input */}
+          {decisionAnalysisResult ? (
           <DecisionBoardResult
             decisionData={decisionAnalysisResult.data}
             analysisResult={decisionAnalysisResult.result}
@@ -725,6 +690,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             onDecisionIdChange={() => {}}
           />
         )}
+        </div>
       </div>
     );
   }
@@ -732,80 +698,47 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Show ikigai edit view if an ikigai is selected
   if (selectedIkigai) {
     return (
-      <div style={{ padding: b.space[6], maxWidth: '900px', margin: '0 auto' }}>
-        {/* Back button and title */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: b.space[6],
-        }}>
-          <button
-            onClick={handleBackFromIkigai}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: b.space[2],
-              padding: `${b.space[2]} ${b.space[4]}`,
-              backgroundColor: 'transparent',
-              border: `1px solid ${b.borderColor}`,
-              borderRadius: b.radius.lg,
-              color: b.textSecondary,
-              cursor: 'pointer',
-              fontSize: b.fontSize.sm,
-              fontWeight: b.fontWeight.medium,
-            }}
-          >
-            <ArrowLeft size={16} />
-            Zurück
-          </button>
-          <button
-            onClick={() => {
-              if (window.confirm('Möchtest du diese Ikigai-Analyse wirklich löschen?')) {
-                handleDeleteIkigai(selectedIkigai.id);
-                handleBackFromIkigai();
-              }
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: b.space[2],
-              padding: `${b.space[2]} ${b.space[3]}`,
-              backgroundColor: 'transparent',
-              border: `1px solid ${b.error}`,
-              borderRadius: b.radius.lg,
-              color: b.error,
-              cursor: 'pointer',
-              fontSize: b.fontSize.sm,
-              fontWeight: b.fontWeight.medium,
-            }}
-          >
-            <Trash2 size={16} />
-            Löschen
-          </button>
-        </div>
+      <div style={{ minHeight: '100vh', background: b.pageBg }}>
+        {/* Unified Header */}
+        <SessionDetailHeader
+          type="ikigai"
+          title="Ikigai-Analyse"
+          subtitle={selectedIkigai.status === 'completed' ? 'Berufliche Orientierung' : 'In Bearbeitung'}
+          status={selectedIkigai.status}
+          createdAt={selectedIkigai.created_at}
+          onBack={handleBackFromIkigai}
+          onDelete={() => {
+            if (window.confirm('Möchtest du diese Ikigai-Analyse wirklich löschen?')) {
+              handleDeleteIkigai(selectedIkigai.id);
+              handleBackFromIkigai();
+            }
+          }}
+        />
 
-        {/* Show Results if synthesis is complete, otherwise show Compass */}
-        {ikigaiSynthesisResult ? (
-          <IkigaiResults
-            dimensions={ikigaiDimensions}
-            synthesisResult={ikigaiSynthesisResult}
-            onStartNew={handleBackFromIkigai}
-            onEdit={() => setIkigaiSynthesisResult(null)}
-            DIMENSIONS={IKIGAI_DIMENSIONS}
-          />
-        ) : (
-          <IkigaiCompass
-            dimensions={ikigaiDimensions}
-            DIMENSIONS={IKIGAI_DIMENSIONS}
-            onExtractKeywords={handleIkigaiExtractKeywords}
-            onUpdateDimension={handleIkigaiUpdateDimension}
-            onRemoveTag={handleIkigaiRemoveTag}
-            allDimensionsFilled={allIkigaiDimensionsFilled}
-            onSynthesize={handleIkigaiSynthesize}
-            isSynthesizing={isIkigaiSynthesizing}
-          />
-        )}
+        {/* Content */}
+        <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
+          {/* Show Results if synthesis is complete, otherwise show Compass */}
+          {ikigaiSynthesisResult ? (
+            <IkigaiResults
+              dimensions={ikigaiDimensions}
+              synthesisResult={ikigaiSynthesisResult}
+              onStartNew={handleBackFromIkigai}
+              onEdit={() => setIkigaiSynthesisResult(null)}
+              DIMENSIONS={IKIGAI_DIMENSIONS}
+            />
+          ) : (
+            <IkigaiCompass
+              dimensions={ikigaiDimensions}
+              DIMENSIONS={IKIGAI_DIMENSIONS}
+              onExtractKeywords={handleIkigaiExtractKeywords}
+              onUpdateDimension={handleIkigaiUpdateDimension}
+              onRemoveTag={handleIkigaiRemoveTag}
+              allDimensionsFilled={allIkigaiDimensionsFilled}
+              onSynthesize={handleIkigaiSynthesize}
+              isSynthesizing={isIkigaiSynthesizing}
+            />
+          )}
+        </div>
       </div>
     );
   }
