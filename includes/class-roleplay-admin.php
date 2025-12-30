@@ -408,7 +408,8 @@ class Bewerbungstrainer_Roleplay_Admin {
             if (!wp_verify_nonce($_POST['_wpnonce'], 'import_roleplay_scenarios')) {
                 wp_die('Security check failed');
             }
-            $this->import_scenarios_csv($_FILES['csv_file']);
+            $force_update = isset($_POST['force_update']) && $_POST['force_update'] === '1';
+            $this->import_scenarios_csv($_FILES['csv_file'], $force_update);
         }
     }
 
@@ -506,8 +507,11 @@ class Bewerbungstrainer_Roleplay_Admin {
 
     /**
      * Import scenarios from CSV
+     *
+     * @param array $file Uploaded file data
+     * @param bool $force_update If true, overwrite all fields (not just empty ones)
      */
-    private function import_scenarios_csv($file) {
+    private function import_scenarios_csv($file, $force_update = false) {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             wp_redirect(admin_url('admin.php?page=roleplay-scenarios&import_error=upload'));
             exit;
@@ -602,13 +606,22 @@ class Bewerbungstrainer_Roleplay_Admin {
             }
 
             if ($existing) {
-                // Update existing - fill empty fields only (like migration)
+                // Update existing
                 $update_data = array();
                 foreach ($scenario_data as $field => $value) {
                     if ($field === 'title') continue; // Don't update title
-                    $existing_value = $existing->$field ?? '';
-                    if (empty($existing_value) && !empty($value)) {
-                        $update_data[$field] = $value;
+
+                    if ($force_update) {
+                        // Force mode: update all non-empty values from CSV
+                        if (!empty($value)) {
+                            $update_data[$field] = $value;
+                        }
+                    } else {
+                        // Normal mode: only fill empty fields in DB
+                        $existing_value = $existing->$field ?? '';
+                        if (empty($existing_value) && !empty($value)) {
+                            $update_data[$field] = $value;
+                        }
                     }
                 }
 
@@ -714,6 +727,10 @@ class Bewerbungstrainer_Roleplay_Admin {
                     <span style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
                         <strong>CSV Import:</strong>
                         <input type="file" name="csv_file" accept=".csv" form="csv-import-form">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 12px;" form="csv-import-form">
+                            <input type="checkbox" name="force_update" value="1" form="csv-import-form">
+                            Überschreiben
+                        </label>
                         <button type="submit" form="csv-import-form" name="roleplay_import_csv" class="button">Importieren</button>
                     </span>
                 </form>

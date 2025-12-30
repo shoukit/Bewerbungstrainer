@@ -563,7 +563,7 @@ class Bewerbungstrainer_Categories_Admin {
                 'slug' => $cat->slug,
                 'icon' => $cat->icon,
                 'color' => $cat->color,
-                'description' => $cat->description,
+                'description' => $cat->short_name ?? '', // Use short_name as description fallback
             );
         }
 
