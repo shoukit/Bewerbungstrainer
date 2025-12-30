@@ -299,11 +299,20 @@ class Bewerbungstrainer_Roleplay_Admin {
             'role_type' => sanitize_text_field($post['role_type'] ?? 'interview'),
             'user_role_label' => sanitize_text_field(wp_unslash($post['user_role_label'] ?? 'Bewerber')),
             'agent_id' => sanitize_text_field($post['agent_id'] ?? ''),
+            'voice_id' => sanitize_text_field($post['voice_id'] ?? ''),
+            'initial_message' => sanitize_textarea_field(wp_unslash($post['initial_message'] ?? '')),
             'system_prompt' => wp_kses_post(wp_unslash($post['system_prompt'] ?? '')),
             'feedback_prompt' => wp_kses_post(wp_unslash($post['feedback_prompt'] ?? '')),
             'ai_instructions' => wp_kses_post(wp_unslash($post['ai_instructions'] ?? '')),
             'tips' => $tips,
             'input_configuration' => json_encode($input_configuration, JSON_UNESCAPED_UNICODE),
+            'interviewer_name' => sanitize_text_field(wp_unslash($post['interviewer_name'] ?? '')),
+            'interviewer_role' => sanitize_text_field(wp_unslash($post['interviewer_role'] ?? '')),
+            'interviewer_image' => esc_url_raw($post['interviewer_image'] ?? ''),
+            'interviewer_properties' => sanitize_textarea_field(wp_unslash($post['interviewer_properties'] ?? '')),
+            'interviewer_objections' => sanitize_textarea_field(wp_unslash($post['interviewer_objections'] ?? '')),
+            'interviewer_questions' => sanitize_textarea_field(wp_unslash($post['interviewer_questions'] ?? '')),
+            'coaching_hints' => sanitize_textarea_field(wp_unslash($post['coaching_hints'] ?? '')),
             'is_active' => isset($post['is_active']) ? 1 : 0,
             'sort_order' => intval($post['sort_order'] ?? 0),
         );
@@ -990,6 +999,20 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <td><input type="text" name="agent_id" id="agent_id" class="regular-text" value="<?php echo esc_attr($scenario->agent_id ?? ''); ?>"></td>
                     </tr>
                     <tr>
+                        <th><label for="voice_id">ElevenLabs Voice ID</label></th>
+                        <td>
+                            <input type="text" name="voice_id" id="voice_id" class="regular-text" value="<?php echo esc_attr($scenario->voice_id ?? ''); ?>">
+                            <p class="description">Die Voice ID für die Stimme des KI-Interviewers (z.B. "ErXwobaYiN019PkySvjV")</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="initial_message">Begrüßungsnachricht</label></th>
+                        <td>
+                            <textarea name="initial_message" id="initial_message" rows="3" class="large-text"><?php echo esc_textarea($scenario->initial_message ?? ''); ?></textarea>
+                            <p class="description">Die erste Nachricht, die der KI-Interviewer sagt</p>
+                        </td>
+                    </tr>
+                    <tr>
                         <th><label for="system_prompt">System Prompt</label></th>
                         <td><textarea name="system_prompt" id="system_prompt" rows="10" class="large-text code"><?php echo esc_textarea($scenario->system_prompt ?? ''); ?></textarea></td>
                     </tr>
@@ -1005,6 +1028,68 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <th><label for="tips">Tipps (JSON)</label></th>
                         <td><textarea name="tips" id="tips" rows="4" class="large-text code"><?php echo esc_textarea(json_encode($tips, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></textarea></td>
                     </tr>
+                </table>
+
+                <h2>Interviewer-Profil</h2>
+                <p class="description">Diese Informationen werden dem Nutzer vor dem Gespräch angezeigt.</p>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="interviewer_name">Name des Gesprächspartners</label></th>
+                        <td>
+                            <input type="text" name="interviewer_name" id="interviewer_name" class="regular-text" value="<?php echo esc_attr($scenario->interviewer_name ?? ''); ?>">
+                            <p class="description">Wird als {{interviewer_name}} im System-Prompt verfügbar</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_role">Rolle/Position</label></th>
+                        <td>
+                            <input type="text" name="interviewer_role" id="interviewer_role" class="regular-text" value="<?php echo esc_attr($scenario->interviewer_role ?? ''); ?>">
+                            <p class="description">z.B. "HR-Manager", "Abteilungsleiter"</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_image">Profilbild URL</label></th>
+                        <td>
+                            <input type="url" name="interviewer_image" id="interviewer_image" class="large-text" value="<?php echo esc_attr($scenario->interviewer_image ?? ''); ?>">
+                            <p class="description">URL zu einem Profilbild des Interviewers</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_properties">Eigenschaften</label></th>
+                        <td>
+                            <textarea name="interviewer_properties" id="interviewer_properties" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_properties ?? ''); ?></textarea>
+                            <p class="description">Charaktereigenschaften, zeilengetrennt oder kommagetrennt</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_objections">Typische Einwände</label></th>
+                        <td>
+                            <textarea name="interviewer_objections" id="interviewer_objections" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_objections ?? ''); ?></textarea>
+                            <p class="description">Typische kritische Fragen oder Einwände</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_questions">Wichtige Fragen</label></th>
+                        <td>
+                            <textarea name="interviewer_questions" id="interviewer_questions" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_questions ?? ''); ?></textarea>
+                            <p class="description">Wichtige Fragen, die der Interviewer stellen wird</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2>Coaching</h2>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="coaching_hints">Coaching-Tipps</label></th>
+                        <td>
+                            <textarea name="coaching_hints" id="coaching_hints" rows="4" class="large-text"><?php echo esc_textarea($scenario->coaching_hints ?? ''); ?></textarea>
+                            <p class="description">Statische Tipps für das Coaching-Panel während des Gesprächs (zeilengetrennt)</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2>Einstellungen</h2>
+                <table class="form-table">
                     <tr>
                         <th><label>Aktiv</label></th>
                         <td>

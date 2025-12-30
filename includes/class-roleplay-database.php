@@ -26,7 +26,7 @@ class Bewerbungstrainer_Roleplay_Database {
     /**
      * Database version
      */
-    const DB_VERSION = '1.0.0';
+    const DB_VERSION = '1.1.0';
 
     /**
      * Get singleton instance
@@ -75,11 +75,20 @@ class Bewerbungstrainer_Roleplay_Database {
             `role_type` varchar(20) DEFAULT 'interview',
             `user_role_label` varchar(100) DEFAULT 'Bewerber',
             `agent_id` varchar(100) DEFAULT NULL,
+            `voice_id` varchar(100) DEFAULT NULL,
+            `initial_message` text DEFAULT NULL,
             `system_prompt` longtext DEFAULT NULL,
             `feedback_prompt` longtext DEFAULT NULL,
             `ai_instructions` longtext DEFAULT NULL,
             `tips` longtext DEFAULT NULL,
             `input_configuration` longtext DEFAULT NULL,
+            `interviewer_name` varchar(255) DEFAULT NULL,
+            `interviewer_role` varchar(255) DEFAULT NULL,
+            `interviewer_image` text DEFAULT NULL,
+            `interviewer_properties` text DEFAULT NULL,
+            `interviewer_objections` text DEFAULT NULL,
+            `interviewer_questions` text DEFAULT NULL,
+            `coaching_hints` text DEFAULT NULL,
             `is_active` tinyint(1) DEFAULT 1,
             `sort_order` int DEFAULT 0,
             `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -115,6 +124,57 @@ class Bewerbungstrainer_Roleplay_Database {
 
         if (!$table_exists) {
             self::create_tables();
+        } else {
+            // Check for schema upgrades
+            $this->maybe_upgrade_schema();
+        }
+    }
+
+    /**
+     * Check and upgrade schema if needed
+     */
+    private function maybe_upgrade_schema() {
+        global $wpdb;
+
+        $current_version = get_option('bewerbungstrainer_roleplay_db_version', '1.0.0');
+
+        if (version_compare($current_version, self::DB_VERSION, '<')) {
+            // Add missing columns for v1.1.0
+            $columns_to_add = array(
+                'voice_id' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `voice_id` varchar(100) DEFAULT NULL AFTER `agent_id`",
+                'initial_message' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `initial_message` text DEFAULT NULL AFTER `voice_id`",
+                'interviewer_name' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_name` varchar(255) DEFAULT NULL AFTER `input_configuration`",
+                'interviewer_role' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_role` varchar(255) DEFAULT NULL AFTER `interviewer_name`",
+                'interviewer_image' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_image` text DEFAULT NULL AFTER `interviewer_role`",
+                'interviewer_properties' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_properties` text DEFAULT NULL AFTER `interviewer_image`",
+                'interviewer_objections' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_objections` text DEFAULT NULL AFTER `interviewer_properties`",
+                'interviewer_questions' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_questions` text DEFAULT NULL AFTER `interviewer_objections`",
+                'coaching_hints' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `coaching_hints` text DEFAULT NULL AFTER `interviewer_questions`",
+            );
+
+            foreach ($columns_to_add as $column => $sql) {
+                // Check if column exists
+                $column_exists = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                        DB_NAME,
+                        $this->table_scenarios,
+                        $column
+                    )
+                );
+
+                if (!$column_exists) {
+                    $wpdb->query($sql);
+                    if ($wpdb->last_error) {
+                        error_log("[ROLEPLAY DB] Error adding column {$column}: " . $wpdb->last_error);
+                    } else {
+                        error_log("[ROLEPLAY DB] Added column {$column}");
+                    }
+                }
+            }
+
+            update_option('bewerbungstrainer_roleplay_db_version', self::DB_VERSION);
+            error_log('[ROLEPLAY DB] Schema upgraded to ' . self::DB_VERSION);
         }
     }
 

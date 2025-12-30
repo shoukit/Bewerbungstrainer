@@ -1841,24 +1841,26 @@ class Bewerbungstrainer_API {
             'role_type' => $scenario->role_type,
             'user_role_label' => $scenario->user_role_label,
             'agent_id' => $scenario->agent_id,
+            'voice_id' => $scenario->voice_id ?? '',
+            'initial_message' => $scenario->initial_message ?? '',
             'system_prompt' => $scenario->system_prompt,
+            'content' => $scenario->system_prompt, // Alias for frontend compatibility
             'feedback_prompt' => $scenario->feedback_prompt,
             'ai_instructions' => $scenario->ai_instructions,
             'tips' => $tips,
             'variables_schema' => $input_configuration,
             'is_active' => (bool) $scenario->is_active,
             'sort_order' => intval($scenario->sort_order),
-            // For backwards compatibility with existing frontend
             'interviewer_profile' => array(
-                'name' => '',
-                'role' => '',
-                'image_url' => '',
-                'properties' => '',
-                'typical_objections' => '',
-                'important_questions' => '',
+                'name' => $scenario->interviewer_name ?? '',
+                'role' => $scenario->interviewer_role ?? '',
+                'image_url' => $scenario->interviewer_image ?? '',
+                'properties' => $scenario->interviewer_properties ?? '',
+                'typical_objections' => $scenario->interviewer_objections ?? '',
+                'important_questions' => $scenario->interviewer_questions ?? '',
             ),
             'tags' => array(),
-            'coaching_hints' => '',
+            'coaching_hints' => $scenario->coaching_hints ?? '',
         );
     }
 
