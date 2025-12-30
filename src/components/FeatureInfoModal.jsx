@@ -83,12 +83,25 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
       console.log(`${DEBUG_PREFIX} ✅ Will auto-show "${featureId}" in 400ms`);
       hasAutoShownRef.current = true;
       setAutoShownThisSession(featureId);
+
+      // Track if component is still mounted
+      let isMounted = true;
+
       const timer = setTimeout(() => {
-        console.log(`${DEBUG_PREFIX} 🎉 Opening modal "${featureId}" now!`);
-        setInternalOpen(true);
+        // Double-check sessionStorage again in case of race condition
+        const stillShouldShow = !isAutoShownThisSession(featureId) || isMounted;
+        console.log(`${DEBUG_PREFIX} 🎉 Timer fired for "${featureId}": isMounted=${isMounted}, stillShouldShow=${stillShouldShow}`);
+
+        if (isMounted) {
+          setInternalOpen(true);
+        } else {
+          console.log(`${DEBUG_PREFIX} ⚠️ Component unmounted before timer, skipping open`);
+        }
       }, 400);
+
       return () => {
         console.log(`${DEBUG_PREFIX} 🧹 Cleanup: clearing timer for "${featureId}"`);
+        isMounted = false;
         clearTimeout(timer);
       };
     }
