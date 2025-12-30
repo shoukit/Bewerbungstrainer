@@ -158,7 +158,20 @@ JSON Feedback:`;
  * @returns {string} - Complete prompt with transcript inserted
  */
 export function applyCustomPrompt(customPrompt, transcript) {
-  return customPrompt.replace('${transcript}', transcript);
+  // If the custom prompt contains ${transcript} placeholder, replace it
+  if (customPrompt.includes('${transcript}')) {
+    return customPrompt.replace('${transcript}', transcript);
+  }
+
+  // Otherwise, append the transcript to the prompt
+  // This ensures the transcript is always included even if the placeholder is missing
+  return `${customPrompt}
+
+=== TRANSKRIPT ===
+${transcript}
+=== ENDE TRANSKRIPT ===
+
+Analysiere das obige Transkript und gib dein Feedback als JSON zurück.`;
 }
 
 export default {
