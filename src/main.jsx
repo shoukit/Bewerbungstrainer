@@ -33,8 +33,17 @@ function initReactApp() {
   }
 
   // Check if element already has React root - skip re-mounting
+  // This handles BOTH same-script remounts AND multiple-script-loads (caching issues)
   if (rootElement._reactRootContainer || rootElement.__reactRoot || reactRoot) {
     console.warn(`${DEBUG_PREFIX} ⚠️ Root element already has a React root, skipping re-mount...`);
+    hasAlreadyMounted = true;
+    return;
+  }
+
+  // DOM-based check for multiple script loads (caching issue workaround)
+  // This marker survives across different script loads
+  if (rootElement.dataset.reactMounted === 'true') {
+    console.warn(`${DEBUG_PREFIX} ⚠️ DOM marker indicates React already mounted (likely caching issue), skipping...`);
     hasAlreadyMounted = true;
     return;
   }
@@ -55,6 +64,10 @@ function initReactApp() {
       </StrictMode>
     );
     hasAlreadyMounted = true;
+
+    // Set DOM marker to prevent duplicate mounts from cached scripts
+    rootElement.dataset.reactMounted = 'true';
+
     console.log(`${DEBUG_PREFIX} ✅ React app mounted successfully!`);
   } catch (error) {
     console.error(`${DEBUG_PREFIX} ❌ Failed to mount React app:`, error);
