@@ -13,6 +13,7 @@ import {
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
 import FeatureInfoModal from '@/components/FeatureInfoModal';
+import FeatureInfoButton from '@/components/FeatureInfoButton';
 
 // Debug logging
 const DEBUG_PREFIX = '[SIMULATOR_DASHBOARD]';
@@ -98,6 +99,7 @@ const SimulatorDashboard = ({
       title="Szenario-Training"
       subtitle="Trainiere wichtige Karriere-Skills mit KI-Feedback"
       headerIcon={Sparkles}
+      headerActions={<FeatureInfoButton featureId="simulator" size="sm" />}
 
       // Data
       fetchScenarios={fetchSimulatorScenarios}

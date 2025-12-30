@@ -17,6 +17,7 @@ import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
 import FeatureInfoModal from '@/components/FeatureInfoModal';
+import FeatureInfoButton from '@/components/FeatureInfoButton';
 
 // Icon mapping for scenarios
 const ICON_MAP = {
@@ -153,6 +154,7 @@ const VideoTrainingDashboard = ({
       title="Wirkungs-Analyse"
       subtitle="Video-Feedback zu Auftreten und Kommunikation"
       headerIcon={Video}
+      headerActions={<FeatureInfoButton featureId="videotraining" size="sm" />}
 
       // Data
       fetchScenarios={fetchVideoScenarios}

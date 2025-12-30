@@ -28,6 +28,7 @@ import {
 import { DEFAULT_BRANDING } from '@/config/partners';
 import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
 import FeatureInfoModal from '@/components/FeatureInfoModal';
+import FeatureInfoButton from '@/components/FeatureInfoButton';
 
 /**
  * Icon mapping for template icons
@@ -411,6 +412,7 @@ const SmartBriefingDashboard = ({
       title="Smart Briefing"
       subtitle="Dein KI-gestützter Vorbereitungs-Assistent"
       headerIcon={FileText}
+      headerActions={<FeatureInfoButton featureId="smartbriefing" size="sm" />}
 
       // Data
       fetchScenarios={fetchTemplates}
