@@ -44,11 +44,11 @@ const FeatureInfoButton = ({
     return null;
   }
 
-  // Size configurations - balanced sizes for visibility
+  // Size configurations - button size good, icon larger for visibility
   const sizes = {
-    sm: { button: 32, icon: 18 },
-    md: { button: 38, icon: 22 },
-    lg: { button: 46, icon: 26 },
+    sm: { button: 32, icon: 24 },
+    md: { button: 38, icon: 28 },
+    lg: { button: 46, icon: 34 },
   };
 
   const sizeConfig = sizes[size] || sizes.md;
