@@ -166,6 +166,12 @@
   #bewerbungstrainer-app div:hover {
     color: inherit !important;
   }
+
+  /* Fullscreen loader - white text on dark background */
+  #bewerbungstrainer-app .fullscreen-loader,
+  #bewerbungstrainer-app .fullscreen-loader * {
+    color: white !important;
+  }
 }
 
 /* =============================================================================

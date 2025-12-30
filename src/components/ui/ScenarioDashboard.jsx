@@ -473,8 +473,8 @@ const ScenarioDashboard = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {headerActions}
 
-            {/* My Sessions Button - Only for authenticated users */}
-            {showHistoryButton && isAuthenticated && onNavigateToHistory && (
+            {/* My Sessions Button - Always visible when onNavigateToHistory is provided */}
+            {showHistoryButton && onNavigateToHistory && (
               <button
                 onClick={onNavigateToHistory}
                 style={{

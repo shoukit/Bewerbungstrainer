@@ -10,6 +10,7 @@ import {
 import { getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
 import FeatureInfoModal from '@/components/FeatureInfoModal';
+import FeatureInfoButton from '@/components/FeatureInfoButton';
 
 /**
  * Render meta information for a scenario card
@@ -59,6 +60,7 @@ const RoleplayDashboard = ({
       title="Live-Simulationen"
       subtitle="Live Simulationen mit KI-Interviewer"
       headerIcon={MessageSquare}
+      headerActions={<FeatureInfoButton featureId="roleplay" size="sm" />}
 
       // Data
       fetchScenarios={getRoleplayScenarios}

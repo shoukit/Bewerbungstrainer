@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Briefcase,
   Banknote,
@@ -13,6 +13,10 @@ import {
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
 import FeatureInfoModal from '@/components/FeatureInfoModal';
+import FeatureInfoButton from '@/components/FeatureInfoButton';
+
+// Debug logging
+const DEBUG_PREFIX = '[SIMULATOR_DASHBOARD]';
 
 /**
  * Icon mapping for scenarios
@@ -77,6 +81,14 @@ const SimulatorDashboard = ({
   setPendingScenario,
   onNavigateToHistory,
 }) => {
+  // Log mount/unmount
+  useEffect(() => {
+    console.log(`${DEBUG_PREFIX} 🔵 MOUNT`);
+    return () => {
+      console.log(`${DEBUG_PREFIX} 🔴 UNMOUNT`);
+    };
+  }, []);
+
   return (
     <>
       {/* Feature Info Modal - shows on first visit */}
@@ -87,6 +99,7 @@ const SimulatorDashboard = ({
       title="Szenario-Training"
       subtitle="Trainiere wichtige Karriere-Skills mit KI-Feedback"
       headerIcon={Sparkles}
+      headerActions={<FeatureInfoButton featureId="simulator" size="sm" />}
 
       // Data
       fetchScenarios={fetchSimulatorScenarios}
