@@ -182,7 +182,6 @@ const DialogTitle = React.forwardRef(({
     <Component
       ref={ref}
       className={cn('text-lg font-semibold', className)}
-      style={{ color: 'inherit' }}
       {...props}
     >
       {children}
@@ -204,7 +203,6 @@ const DialogDescription = React.forwardRef(({
     <p
       ref={ref}
       className={cn('text-sm mt-1 opacity-80', className)}
-      style={{ color: 'inherit' }}
       {...props}
     >
       {children}
@@ -248,10 +246,9 @@ const DialogFooter = React.forwardRef(({
       ref={ref}
       className={cn(
         'flex-shrink-0 flex items-center justify-end gap-3 px-6 py-4',
-        'border-t',
+        'border-t border-slate-100',
         className
       )}
-      style={{ borderColor: 'var(--border-color-light)' }}
       {...props}
     >
       {children}
@@ -283,29 +280,20 @@ const ConfirmDialog = ({
       <DialogBody className="text-center pt-6">
         {icon && (
           <div
-            className="w-14 h-14 rounded-full mx-auto mb-4 flex-center"
-            style={{
-              background: variant === 'danger'
-                ? 'var(--color-error-light)'
-                : 'var(--primary-accent-light)',
-            }}
+            className={cn(
+              'w-14 h-14 rounded-full mx-auto mb-4 flex-center',
+              variant === 'danger' ? 'bg-red-100' : 'bg-primary/10'
+            )}
           >
             {React.cloneElement(icon, {
               size: 24,
-              style: {
-                color: variant === 'danger'
-                  ? 'var(--color-error)'
-                  : 'var(--primary-accent)',
-              },
+              className: variant === 'danger' ? 'text-red-600' : 'text-primary',
             })}
           </div>
         )}
         <DialogTitle className="mb-2">{title}</DialogTitle>
         {description && (
-          <p
-            className="text-sm"
-            style={{ color: 'var(--text-secondary)' }}
-          >
+          <p className="text-sm text-slate-600">
             {description}
           </p>
         )}

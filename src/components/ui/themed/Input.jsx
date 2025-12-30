@@ -190,8 +190,7 @@ const Select = React.forwardRef(({
           ))}
         </select>
         <ChevronDown
-          className="absolute right-3 top-1/2 -translate-y-1/2 icon-md pointer-events-none"
-          style={{ color: 'var(--text-muted)' }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 icon-md pointer-events-none text-slate-400"
         />
       </div>
     </InputWrapper>
@@ -221,12 +220,11 @@ const Checkbox = React.forwardRef(({
         type="checkbox"
         className={cn(
           'w-5 h-5 rounded-md border-2 cursor-pointer mt-0.5',
-          'checked:bg-brand checked:border-brand',
-          'focus:ring-2 focus:ring-offset-2',
-          error && 'border-status-error'
+          'checked:bg-primary checked:border-primary',
+          'focus:ring-2 focus:ring-offset-2 focus:ring-primary/50',
+          error ? 'border-red-500' : 'border-slate-300'
         )}
         style={{
-          borderColor: error ? 'var(--color-error)' : 'var(--border-color)',
           accentColor: 'var(--primary-accent)',
         }}
         {...props}
@@ -234,8 +232,7 @@ const Checkbox = React.forwardRef(({
       {label && (
         <label
           htmlFor={inputId}
-          className="text-sm cursor-pointer"
-          style={{ color: 'var(--text-secondary)' }}
+          className="text-sm text-slate-600 cursor-pointer"
         >
           {label}
         </label>

@@ -77,31 +77,9 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
     >
       {children}
       <DialogPrimitive.Close
-        style={{
-          position: 'absolute',
-          right: '16px',
-          top: '16px',
-          borderRadius: '8px',
-          padding: '6px',
-          color: '#94a3b8',
-          backgroundColor: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = '#475569';
-          e.currentTarget.style.backgroundColor = '#f1f5f9';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = '#94a3b8';
-          e.currentTarget.style.backgroundColor = 'transparent';
-        }}
+        className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 bg-transparent border-none cursor-pointer transition-all flex items-center justify-center hover:text-slate-600 hover:bg-slate-100"
       >
-        <X style={{ width: '20px', height: '20px' }} />
+        <X className="w-5 h-5" />
         <span className="sr-only">Schließen</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

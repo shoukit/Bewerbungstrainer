@@ -27,73 +27,30 @@ const FullscreenLoader = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.7)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-          }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/70 backdrop-blur-lg"
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '20px',
-              padding: '40px 60px',
-              backgroundColor: 'white',
-              borderRadius: '24px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
-            }}
+            className="flex flex-col items-center gap-5 py-10 px-15 bg-white rounded-3xl shadow-2xl"
           >
             {/* Spinner */}
             <div
-              style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                background: headerGradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ background: headerGradient }}
             >
-              <Loader2
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  color: 'white',
-                  animation: 'spin 1s linear infinite',
-                }}
-              />
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
             </div>
 
             {/* Message */}
-            <div style={{ textAlign: 'center' }}>
-              <p style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#0f172a',
-                margin: 0,
-              }}>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-slate-900 m-0">
                 {message}
               </p>
               {subMessage && (
-                <p style={{
-                  fontSize: '14px',
-                  color: '#64748b',
-                  marginTop: '8px',
-                  margin: '8px 0 0 0',
-                }}>
+                <p className="text-sm text-slate-600 mt-2 m-0">
                   {subMessage}
                 </p>
               )}

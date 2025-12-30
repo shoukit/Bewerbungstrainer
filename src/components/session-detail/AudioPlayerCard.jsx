@@ -153,7 +153,7 @@ export function AudioPlayerCard({
                 {isPlaying ? (
                   <Pause size={22} />
                 ) : (
-                  <Play size={22} style={{ marginLeft: '2px' }} />
+                  <Play size={22} className="ml-0.5" />
                 )}
               </Button>
               <Button

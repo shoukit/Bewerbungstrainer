@@ -10,34 +10,23 @@ import { formatDuration } from '@/utils/formatting';
 const ReportTranscriptView = ({ transcript, scenario, primaryAccent, branding, onSeekToTime }) => {
   if (!transcript || transcript.length === 0) {
     return (
-      <div style={{
-        background: '#fff',
-        borderRadius: '16px',
-        padding: '40px 20px',
-        border: `1px solid ${branding.borderColor}`,
-        textAlign: 'center',
-      }}>
-        <MessageSquare size={32} color={branding.textMuted} style={{ marginBottom: '12px' }} />
-        <p style={{ color: branding.textMuted, fontSize: '14px' }}>Kein Transkript verfügbar</p>
+      <div className="bg-white rounded-2xl p-10 border border-slate-200 text-center">
+        <MessageSquare size={32} className="text-slate-400 mb-3 mx-auto" />
+        <p className="text-slate-500 text-sm">Kein Transkript verfügbar</p>
       </div>
     );
   }
 
   return (
-    <div style={{
-      background: '#fff',
-      borderRadius: '16px',
-      padding: '20px',
-      border: `1px solid ${branding.borderColor}`,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-        <MessageSquare size={18} color={primaryAccent} />
-        <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+    <div className="bg-white rounded-2xl p-5 border border-slate-200">
+      <div className="flex items-center gap-2 mb-4">
+        <MessageSquare size={18} className="text-primary" />
+        <span className="text-sm font-semibold text-slate-900">
           Gesprächsverlauf
         </span>
       </div>
 
-      <div style={{ maxHeight: '500px', overflowY: 'auto', paddingRight: '8px' }}>
+      <div className="max-h-[500px] overflow-y-auto pr-2">
         {transcript.map((entry, idx) => {
           const isAgent = entry.role === 'agent';
           const timeLabel = entry.timeLabel || (entry.elapsedTime !== undefined ? formatDuration(entry.elapsedTime) : null);
@@ -48,60 +37,31 @@ const ReportTranscriptView = ({ transcript, scenario, primaryAccent, branding, o
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.03 }}
-              style={{
-                display: 'flex',
-                gap: '10px',
-                marginBottom: '12px',
-                flexDirection: isAgent ? 'row' : 'row-reverse',
-              }}
+              className={`flex gap-2.5 mb-3 ${isAgent ? 'flex-row' : 'flex-row-reverse'}`}
             >
               {/* Avatar */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
                 {isAgent ? (
                   scenario?.interviewer_profile?.image_url ? (
                     <img
                       src={scenario.interviewer_profile.image_url}
                       alt={scenario.interviewer_profile.name || 'Interviewer'}
-                      style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${primaryAccent}30` }}
+                      className="w-8 h-8 rounded-full object-cover border-2 border-primary/20"
                     />
                   ) : (
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}cc)`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      <Bot size={16} color="#fff" />
+                    <div className="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center">
+                      <Bot size={16} className="text-white" />
                     </div>
                   )
                 ) : (
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <User size={16} color="#fff" />
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                    <User size={16} className="text-white" />
                   </div>
                 )}
                 {!isAgent && timeLabel && (
                   <button
                     onClick={() => onSeekToTime?.(entry.elapsedTime)}
-                    style={{
-                      fontSize: '10px',
-                      fontFamily: 'monospace',
-                      color: primaryAccent,
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
+                    className="text-[10px] font-mono text-primary bg-transparent border-none cursor-pointer p-0"
                   >
                     {timeLabel}
                   </button>
@@ -109,16 +69,13 @@ const ReportTranscriptView = ({ transcript, scenario, primaryAccent, branding, o
               </div>
 
               {/* Message Bubble */}
-              <div style={{
-                maxWidth: '85%',
-                padding: '10px 14px',
-                borderRadius: isAgent ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
-                background: isAgent ? branding.cardBgHover : 'linear-gradient(135deg, #14b8a6, #0d9488)',
-                color: isAgent ? branding.textMain : '#fff',
-                fontSize: '13px',
-                lineHeight: 1.5,
-                border: isAgent ? `1px solid ${branding.borderColor}` : 'none',
-              }}>
+              <div
+                className={`max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed border ${
+                  isAgent
+                    ? 'rounded-[4px_16px_16px_16px] bg-slate-50 text-slate-900 border-slate-200'
+                    : 'rounded-[16px_4px_16px_16px] bg-gradient-to-br from-teal-500 to-teal-600 text-white border-transparent'
+                }`}
+              >
                 {entry.text}
               </div>
             </motion.div>

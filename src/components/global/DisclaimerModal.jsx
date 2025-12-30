@@ -131,38 +131,27 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      style={{ zIndex: 99999 }}
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 z-[99999]"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="disclaimer-modal-title"
     >
-      <div
-        className="bg-white rounded-2xl shadow-2xl w-full flex flex-col"
-        style={{
-          maxHeight: 'min(85vh, 600px)',
-          maxWidth: '520px',
-          width: '100%',
-        }}
-      >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[520px] max-h-[min(85vh,600px)] flex flex-col">
         {/* Header - fixed at top */}
         <div
           className="px-4 sm:px-6 py-4 flex-shrink-0 rounded-t-2xl"
           style={{ background: headerGradient, color: headerText }}
         >
           <div className="flex items-center gap-3">
-            <div
-              className="p-2 rounded-xl hidden sm:flex"
-              style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-            >
+            <div className="p-2 rounded-xl hidden sm:flex bg-white/20">
               <Shield className="w-5 h-5" style={{ color: headerText }} />
             </div>
             <div>
               <h2 id="disclaimer-modal-title" className="text-lg sm:text-xl font-semibold" style={{ color: headerText }}>
                 {disclaimer.title}
               </h2>
-              <p className="text-xs sm:text-sm mt-0.5" style={{ color: headerText, opacity: 0.8 }}>
+              <p className="text-xs sm:text-sm mt-0.5 opacity-80" style={{ color: headerText }}>
                 Version {disclaimer.version}
               </p>
             </div>
@@ -229,33 +218,10 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
           <button
             onClick={handleAcknowledge}
             disabled={isLoading}
+            className="w-full px-5 py-3 text-[15px] font-semibold border-none rounded-xl cursor-pointer flex items-center justify-center gap-2.5 transition-all shadow-lg disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none hover:enabled:-translate-y-0.5 hover:enabled:shadow-xl"
             style={{
-              width: '100%',
-              padding: '12px 20px',
-              fontSize: '15px',
-              fontWeight: 600,
               color: sidebarTextColor,
               background: isLoading ? '#94a3b8' : buttonGradient,
-              border: 'none',
-              borderRadius: '12px',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              transition: 'all 0.2s ease',
-              opacity: isLoading ? 0.7 : 1,
-              boxShadow: isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)',
-            }}
-            onMouseEnter={(e) => {
-              if (!isLoading) {
-                e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = '0 6px 20px rgba(58, 127, 167, 0.4)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)';
             }}
           >
             {isLoading ? (
@@ -263,20 +229,16 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
                 <svg
                   fill="none"
                   viewBox="0 0 24 24"
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    color: sidebarTextColor,
-                    animation: 'spin 1s linear infinite',
-                  }}
+                  className="w-[18px] h-[18px] animate-spin"
+                  style={{ color: sidebarTextColor }}
                 >
-                  <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span style={{ color: sidebarTextColor, fontSize: '15px', fontWeight: 600 }}>Wird gespeichert...</span>
+                <span style={{ color: sidebarTextColor }}>Wird gespeichert...</span>
               </>
             ) : (
-              <span style={{ color: sidebarTextColor, fontSize: '15px', fontWeight: 600 }}>
+              <span style={{ color: sidebarTextColor }}>
                 Verstanden
               </span>
             )}

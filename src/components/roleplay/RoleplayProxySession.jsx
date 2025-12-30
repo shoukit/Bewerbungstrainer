@@ -789,21 +789,7 @@ const RoleplayProxySession = ({
     const currentStepIndex = stepOrder.indexOf(analysisStep);
 
     return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 9999, // Above sidebar (z-50) and all other elements
-          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-        }}
-      >
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -921,29 +907,10 @@ const RoleplayProxySession = ({
                   <img
                     src={scenario.interviewer_profile.image_url}
                     alt={scenario.interviewer_profile.name}
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '50%',
-                      border: '4px solid white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      objectFit: 'cover',
-                    }}
+                    className="w-20 h-20 rounded-full border-4 border-white shadow-md object-cover"
                   />
                 ) : (
-                  <div
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '50%',
-                      border: '4px solid white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      background: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
+                  <div className="w-20 h-20 rounded-full border-4 border-white shadow-md bg-white flex items-center justify-center">
                     <User className="w-10 h-10 text-slate-400" />
                   </div>
                 )}

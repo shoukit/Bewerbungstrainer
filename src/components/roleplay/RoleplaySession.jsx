@@ -855,29 +855,10 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                           <img
                             src={scenario.interviewer_profile.image_url}
                             alt={replaceVariables(scenario.interviewer_profile.name)}
-                            style={{
-                              width: '64px',
-                              height: '64px',
-                              borderRadius: '50%',
-                              border: '3px solid white',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                              objectFit: 'cover',
-                            }}
+                            className="w-16 h-16 rounded-full border-[3px] border-white shadow-md object-cover"
                           />
                         ) : (
-                          <div
-                            style={{
-                              width: '64px',
-                              height: '64px',
-                              borderRadius: '50%',
-                              border: '3px solid white',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                              background: 'white',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
+                          <div className="w-16 h-16 rounded-full border-[3px] border-white shadow-md bg-white flex items-center justify-center">
                             <User className="w-8 h-8 text-slate-400" />
                           </div>
                         )}
@@ -902,29 +883,10 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                             <img
                               src={scenario.interviewer_profile.image_url}
                               alt={replaceVariables(scenario.interviewer_profile.name)}
-                              style={{
-                                width: '80px',
-                                height: '80px',
-                                borderRadius: '50%',
-                                border: '4px solid white',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                objectFit: 'cover',
-                              }}
+                              className="w-20 h-20 rounded-full border-4 border-white shadow-md object-cover"
                             />
                           ) : (
-                            <div
-                              style={{
-                                width: '80px',
-                                height: '80px',
-                                borderRadius: '50%',
-                                border: '4px solid white',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                background: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}
-                            >
+                            <div className="w-20 h-20 rounded-full border-4 border-white shadow-md bg-white flex items-center justify-center">
                               <User className="w-10 h-10 text-slate-400" />
                             </div>
                           )}
@@ -1036,7 +998,12 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                     <div className="bg-white py-2 px-4">
                       <button
                         onClick={() => setShowProfileOnMobile(!showProfileOnMobile)}
-                        className="w-full flex items-center justify-between text-sm font-medium text-primary bg-primary/10 border border-primary/30 rounded-[10px] py-3 px-4 cursor-pointer outline-none transition-all"
+                        className="w-full flex items-center justify-between text-sm font-medium rounded-[10px] py-3 px-4 cursor-pointer transition-all"
+                        style={{
+                          color: themedStyles.primaryAccent,
+                          backgroundColor: `${themedStyles.primaryAccent}10`,
+                          border: `1px solid ${themedStyles.primaryAccent}30`,
+                        }}
                       >
                         <span>Profil-Details</span>
                         <ChevronDown

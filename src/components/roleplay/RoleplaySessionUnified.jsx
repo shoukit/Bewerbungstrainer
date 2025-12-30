@@ -287,21 +287,7 @@ const RoleplaySessionUnified = ({
     const currentStepIndex = stepOrder.indexOf(analysisStep);
 
     return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 9999,
-          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-        }}
-      >
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -396,30 +382,17 @@ const RoleplaySessionUnified = ({
                   <img
                     src={scenario.interviewer_profile.image_url}
                     alt={replaceVariables(scenario.interviewer_profile.name)}
-                    style={{
-                      width: isMobile ? '64px' : '80px',
-                      height: isMobile ? '64px' : '80px',
-                      borderRadius: '50%',
-                      border: isMobile ? '3px solid white' : '4px solid white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      objectFit: 'cover',
-                    }}
+                    className={`rounded-full shadow-md object-cover ${
+                      isMobile ? 'w-16 h-16 border-[3px]' : 'w-20 h-20 border-4'
+                    } border-white`}
                   />
                 ) : (
                   <div
-                    style={{
-                      width: isMobile ? '64px' : '80px',
-                      height: isMobile ? '64px' : '80px',
-                      borderRadius: '50%',
-                      border: isMobile ? '3px solid white' : '4px solid white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      background: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
+                    className={`rounded-full bg-white shadow-md flex items-center justify-center ${
+                      isMobile ? 'w-16 h-16 border-[3px]' : 'w-20 h-20 border-4'
+                    } border-white`}
                   >
-                    <User className={isMobile ? 'w-8 h-8' : 'w-10 h-10'} style={{ color: '#94a3b8' }} />
+                    <User className={`text-slate-400 ${isMobile ? 'w-8 h-8' : 'w-10 h-10'}`} />
                   </div>
                 )}
               </div>
@@ -529,31 +502,20 @@ const RoleplaySessionUnified = ({
 
             {/* Profile Toggle (Mobile) */}
             {isMobile && (
-              <div style={{ backgroundColor: 'white', padding: '8px 16px' }}>
+              <div className="bg-white py-2 px-4">
                 <button
                   onClick={() => setShowProfileOnMobile(!showProfileOnMobile)}
+                  className="w-full flex items-center justify-between text-sm font-medium rounded-[10px] py-3 px-4 cursor-pointer transition-all"
                   style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: '14px',
-                    fontWeight: 500,
                     color: themedStyles.primaryAccent,
                     backgroundColor: `${themedStyles.primaryAccent}10`,
                     border: `1px solid ${themedStyles.primaryAccent}30`,
-                    borderRadius: '10px',
-                    padding: '12px 16px',
-                    cursor: 'pointer',
                   }}
                 >
                   <span>Profil-Details</span>
                   <ChevronDown
                     size={16}
-                    style={{
-                      transform: showProfileOnMobile ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 0.2s',
-                    }}
+                    className={`transition-transform duration-200 ${showProfileOnMobile ? 'rotate-180' : ''}`}
                   />
                 </button>
               </div>
@@ -658,7 +620,7 @@ const RoleplaySessionUnified = ({
             <motion.button
               onClick={() => setShowCoachingOnMobile(!showCoachingOnMobile)}
               style={{ background: themedStyles.headerGradient, color: themedStyles.headerText }}
-              className="w-14 h-14 rounded-full shadow-xl flex items-center justify-center relative"
+              className="w-14 h-14 rounded-full shadow-xl flex items-center justify-center"
               whileTap={{ scale: 0.95 }}
             >
               <Lightbulb className="w-6 h-6" />

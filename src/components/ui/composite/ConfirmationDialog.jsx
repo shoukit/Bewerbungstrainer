@@ -122,121 +122,48 @@ const ConfirmationDialog = ({
   return (
     <div
       onClick={handleBackdropClick}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(4px)',
-        padding: '16px',
-      }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
     >
-      <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          maxWidth: '420px',
-          width: '100%',
-          padding: '24px',
-          position: 'relative',
-          animation: 'dialogFadeIn 0.2s ease-out',
-        }}
-      >
+      <div className="bg-white rounded-2xl shadow-2xl max-w-[420px] w-full p-6 relative animate-[dialogFadeIn_0.2s_ease-out]">
         {/* Close button */}
         {showCloseButton && (
           <button
             onClick={onCancel}
-            style={{
-              position: 'absolute',
-              top: '12px',
-              right: '12px',
-              padding: '8px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              color: COLORS.slate[400],
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className="absolute top-3 right-3 p-2 bg-transparent border-none rounded-lg cursor-pointer text-slate-400 flex items-center justify-center hover:bg-slate-100 transition-colors"
           >
-            <X style={{ width: '20px', height: '20px' }} />
+            <X className="w-5 h-5" />
           </button>
         )}
 
         {/* Icon */}
         {IconComponent && (
           <div
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '12px',
-              backgroundColor: iconBg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-            }}
+            className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: iconBg }}
           >
             <IconComponent style={{ width: '28px', height: '28px', color: iconColor }} />
           </div>
         )}
 
         {/* Title */}
-        <h3
-          style={{
-            fontSize: '18px',
-            fontWeight: 600,
-            color: COLORS.slate[900],
-            textAlign: 'center',
-            margin: '0 0 8px 0',
-          }}
-        >
+        <h3 className="text-lg font-semibold text-slate-900 text-center m-0 mb-2">
           {title}
         </h3>
 
         {/* Message */}
-        <div
-          style={{
-            fontSize: '14px',
-            color: COLORS.slate[600],
-            textAlign: 'center',
-            lineHeight: 1.6,
-            marginBottom: '24px',
-          }}
-        >
+        <div className="text-sm text-slate-600 text-center leading-relaxed mb-6">
           {message}
         </div>
 
         {/* Actions */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '12px',
-          }}
-        >
+        <div className="flex gap-3">
           {/* Cancel Button */}
           <button
             onClick={onCancel}
             disabled={isLoading}
-            style={{
-              flex: 1,
-              padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: 600,
-              borderRadius: '10px',
-              border: `1px solid ${COLORS.slate[200]}`,
-              backgroundColor: 'white',
-              color: COLORS.slate[700],
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              opacity: isLoading ? 0.5 : 1,
-              transition: 'all 0.2s',
-            }}
+            className={`flex-1 px-5 py-3 text-sm font-semibold rounded-[10px] border border-slate-200 bg-white text-slate-700 transition-all hover:bg-slate-50 ${
+              isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+            }`}
           >
             {cancelText}
           </button>
@@ -245,36 +172,17 @@ const ConfirmationDialog = ({
           <button
             onClick={onConfirm}
             disabled={isLoading}
+            className={`flex-1 px-5 py-3 text-sm font-semibold rounded-[10px] border-none transition-all flex items-center justify-center gap-2 ${
+              isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:opacity-90'
+            }`}
             style={{
-              flex: 1,
-              padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: 600,
-              borderRadius: '10px',
-              border: 'none',
               backgroundColor: confirmBg,
               color: variantConfig.confirmText,
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              opacity: isLoading ? 0.7 : 1,
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
             }}
           >
             {isLoading ? (
               <>
-                <div
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid rgba(255,255,255,0.3)',
-                    borderTopColor: 'white',
-                    borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite',
-                  }}
-                />
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 {loadingText}
               </>
             ) : (
@@ -294,10 +202,6 @@ const ConfirmationDialog = ({
               opacity: 1;
               transform: scale(1) translateY(0);
             }
-          }
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
           }
         `}</style>
       </div>

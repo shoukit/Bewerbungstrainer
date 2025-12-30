@@ -21,17 +21,9 @@ import { COLORS } from '@/config/colors';
 const DynamicFormField = ({ field, value, onChange, error, focusColor, branding }) => {
   const theFocusColor = focusColor || '#4a9ec9';
 
-  const baseInputStyle = {
-    width: '100%',
-    padding: `${branding.space[3]} ${branding.space[4]}`,
-    borderRadius: branding.radius.lg,
-    border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
-    fontSize: branding.fontSize.base, // Minimum 16px to prevent iOS zoom
-    color: COLORS.slate[900],
-    backgroundColor: 'white',
-    outline: 'none',
-    transition: branding.transition.normal,
-  };
+  const baseInputClasses = "w-full rounded-lg text-base outline-none transition-all";
+  const paddingClasses = "px-4 py-3";
+  const borderClasses = error ? "border-2 border-red-500" : "border-2 border-slate-200";
 
   const focusStyle = {
     borderColor: theFocusColor,
@@ -62,6 +54,8 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor, branding 
   };
 
   const renderInput = () => {
+    const inputClasses = `${baseInputClasses} ${paddingClasses} ${borderClasses} text-slate-900 bg-white`;
+
     switch (field.type) {
       case 'text':
         return (
@@ -70,7 +64,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor, branding 
             value={value || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder || ''}
-            style={baseInputStyle}
+            className={inputClasses}
             onFocus={handleFocus}
             onBlur={handleBlur}
           />
@@ -83,11 +77,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor, branding 
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder || ''}
             rows={4}
-            style={{
-              ...baseInputStyle,
-              resize: 'vertical',
-              minHeight: '100px',
-            }}
+            className={`${inputClasses} resize-vertical min-h-[100px]`}
             onFocus={handleFocus}
             onBlur={handleBlur}
           />
@@ -98,15 +88,12 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor, branding 
           <select
             value={value || field.default || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
+            className={`${inputClasses} cursor-pointer appearance-none pr-11`}
             style={{
-              ...baseInputStyle,
-              cursor: 'pointer',
-              appearance: 'none',
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
               backgroundPosition: 'right 12px center',
               backgroundRepeat: 'no-repeat',
               backgroundSize: '20px',
-              paddingRight: '44px',
             }}
             onFocus={handleFocus}
             onBlur={handleBlur}
@@ -129,7 +116,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor, branding 
             placeholder={field.placeholder || ''}
             min={field.validation?.min}
             max={field.validation?.max}
-            style={baseInputStyle}
+            className={inputClasses}
             onFocus={handleFocus}
             onBlur={handleBlur}
           />
@@ -142,7 +129,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor, branding 
             value={value || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder || ''}
-            style={baseInputStyle}
+            className={inputClasses}
             onFocus={handleFocus}
             onBlur={handleBlur}
           />
@@ -151,43 +138,23 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor, branding 
   };
 
   return (
-    <div style={{ marginBottom: branding.space[5] }}>
-      <label style={{
-        display: 'block',
-        marginBottom: branding.space[2],
-        fontSize: branding.fontSize.sm,
-        fontWeight: 600,
-        color: COLORS.slate[700],
-      }}>
+    <div className="mb-5">
+      <label className="block mb-2 text-sm font-semibold text-slate-700">
         {field.label}
         {field.required && (
-          <span style={{ color: COLORS.red[500], marginLeft: branding.space[1] }}>*</span>
+          <span className="text-red-500 ml-1">*</span>
         )}
       </label>
       {renderInput()}
       {error && (
-        <p style={{
-          marginTop: branding.space[1.5],
-          fontSize: branding.fontSize.xs,
-          color: COLORS.red[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: branding.space[1],
-        }}>
-          <AlertCircle style={{ width: '14px', height: '14px' }} />
+        <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+          <AlertCircle className="w-3.5 h-3.5" />
           {error}
         </p>
       )}
       {field.hint && !error && (
-        <p style={{
-          marginTop: branding.space[1.5],
-          fontSize: branding.fontSize.xs,
-          color: COLORS.slate[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: branding.space[1],
-        }}>
-          <Info style={{ width: '14px', height: '14px' }} />
+        <p className="mt-1.5 text-xs text-slate-500 flex items-center gap-1">
+          <Info className="w-3.5 h-3.5" />
           {field.hint}
         </p>
       )}
@@ -344,58 +311,29 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
   }
 
   return (
-    <div style={{ padding: b.space[6], paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
+    <div className="p-6 pb-[200px] max-w-[640px] mx-auto">
       {/* Header */}
-      <div style={{ marginBottom: b.space[8] }}>
+      <div className="mb-8">
         <button
           onClick={onBack}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: b.space[2],
-            padding: `${b.space[2]} ${b.space[3]}`,
-            marginBottom: b.space[4],
-            border: 'none',
-            background: 'transparent',
-            color: COLORS.slate[600],
-            fontSize: b.fontSize.sm,
-            cursor: 'pointer',
-            borderRadius: b.radius.md,
-            transition: b.transition.normal,
-          }}
-          onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
-          onMouseLeave={(e) => e.target.style.background = 'transparent'}
+          className="inline-flex items-center gap-2 px-3 py-2 mb-4 border-none bg-transparent text-slate-600 text-sm cursor-pointer rounded-lg transition-colors hover:bg-slate-100"
         >
-          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          <ArrowLeft className="w-[18px] h-[18px]" />
           Zurück zur Übersicht
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[4] }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: b.radius.xl,
-            background: b.headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Sparkles style={{ width: '28px', height: '28px', color: 'white' }} />
+        <div className="flex items-center gap-4">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: b.headerGradient }}
+          >
+            <Sparkles className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 style={{
-              fontSize: b.fontSize['2xl'],
-              fontWeight: 700,
-              color: COLORS.slate[900],
-              margin: 0,
-            }}>
+            <h1 className="text-2xl font-bold text-slate-900 m-0">
               {scenario.title}
             </h1>
-            <p style={{
-              fontSize: b.fontSize.sm,
-              color: COLORS.slate[600],
-              margin: `${b.space[1]} 0 0 0`,
-            }}>
+            <p className="text-sm text-slate-600 m-0 mt-1">
               Personalisiere dein Training
             </p>
           </div>
@@ -403,18 +341,8 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
       </div>
 
       {/* Description Card */}
-      <div style={{
-        padding: `${b.space[4]} ${b.space[5]}`,
-        borderRadius: b.radius.lg,
-        backgroundColor: COLORS.slate[100],
-        marginBottom: b.space[6],
-      }}>
-        <p style={{
-          fontSize: b.fontSize.sm,
-          color: COLORS.slate[700],
-          margin: 0,
-          lineHeight: 1.6,
-        }}>
+      <div className="py-4 px-5 rounded-lg bg-slate-100 mb-6">
+        <p className="text-sm text-slate-700 m-0 leading-relaxed">
           {scenario.description}
         </p>
       </div>
@@ -435,96 +363,42 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
 
         {/* Custom Variables Section - only shown if scenario allows */}
         {scenario?.allow_custom_variables && (
-          <div style={{
-            marginTop: b.space[5],
-            marginBottom: b.space[5],
-            paddingTop: b.space[5],
-            borderTop: `1px solid ${COLORS.slate[200]}`,
-          }}>
+          <div className="mt-5 mb-5 pt-5 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setShowCustomVariables(!showCustomVariables)}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: b.space[2],
-                padding: '0',
-                border: 'none',
-                background: 'none',
-                color: COLORS.slate[500],
-                fontSize: b.fontSize.sm,
-                fontWeight: 500,
-                cursor: 'pointer',
-                marginBottom: showCustomVariables ? b.space[4] : '0',
-                textAlign: 'left',
-              }}
+              className="flex items-start gap-2 p-0 border-none bg-transparent text-slate-500 text-sm font-medium cursor-pointer text-left"
+              style={{ marginBottom: showCustomVariables ? b.space[4] : '0' }}
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: b.space[2], flexShrink: 0 }}>
+              <span className="flex items-center gap-2 flex-shrink-0">
                 {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                 <Plus size={16} />
               </span>
-              <span style={{ lineHeight: '1.4' }}>Zusätzliche Variablen hinzufügen (optional)</span>
+              <span className="leading-snug">Zusätzliche Variablen hinzufügen (optional)</span>
             </button>
 
             {showCustomVariables && (
-              <div style={{
-                backgroundColor: COLORS.slate[50],
-                borderRadius: b.radius.lg,
-                padding: b.space[4],
-              }}>
-                <p style={{
-                  fontSize: b.fontSize.sm,
-                  color: COLORS.slate[500],
-                  margin: `0 0 ${b.space[3]} 0`,
-                }}>
+              <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-sm text-slate-500 m-0 mb-3">
                   Füge eigene Variablen hinzu, die in das Training einfließen sollen.
                 </p>
 
                 {customVariables.length > 0 && (
-                  <div style={{ marginBottom: b.space[3] }}>
+                  <div className="mb-3">
                     {customVariables.map((cv, index) => (
-                      <div key={index} style={{
-                        backgroundColor: 'white',
-                        border: `1px solid ${COLORS.slate[200]}`,
-                        borderRadius: b.radius.md,
-                        padding: b.space[3],
-                        marginBottom: b.space[3],
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: b.space[2],
-                        }}>
+                      <div key={index} className="bg-white border border-slate-200 rounded-lg p-3 mb-3">
+                        <div className="flex items-center justify-between mb-2">
                           <input
                             type="text"
                             value={cv.key || ''}
                             onChange={(e) => updateCustomVariable(index, 'key', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
                             placeholder="variable_name"
-                            style={{
-                              padding: `${b.space[2]} ${b.space[3]}`,
-                              borderRadius: b.radius.md,
-                              border: `1px solid ${COLORS.slate[200]}`,
-                              fontSize: b.fontSize.sm,
-                              fontFamily: 'monospace',
-                              backgroundColor: COLORS.slate[50],
-                              flex: 1,
-                              marginRight: b.space[2],
-                            }}
+                            className="p-2 px-3 rounded-lg border border-slate-200 text-sm font-mono bg-slate-50 flex-1 mr-2"
                           />
                           <button
                             type="button"
                             onClick={() => deleteCustomVariable(index)}
-                            style={{
-                              padding: b.space[2],
-                              border: 'none',
-                              backgroundColor: 'transparent',
-                              cursor: 'pointer',
-                              color: COLORS.red[500],
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
+                            className="p-2 border-none bg-transparent cursor-pointer text-red-500 flex items-center justify-center"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -534,14 +408,7 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
                           onChange={(e) => updateCustomVariable(index, 'value', e.target.value)}
                           placeholder="Wert der Variable..."
                           rows={2}
-                          style={{
-                            width: '100%',
-                            padding: `${b.space[2]} ${b.space[3]}`,
-                            borderRadius: b.radius.md,
-                            border: `1px solid ${COLORS.slate[200]}`,
-                            fontSize: b.fontSize.sm,
-                            resize: 'vertical',
-                          }}
+                          className="w-full p-2 px-3 rounded-lg border border-slate-200 text-sm resize-vertical"
                         />
                       </div>
                     ))}
@@ -551,20 +418,7 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
                 <button
                   type="button"
                   onClick={addCustomVariable}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: b.space[2],
-                    padding: `${b.space[2]} ${b.space[3]}`,
-                    border: `1px dashed ${COLORS.slate[300]}`,
-                    borderRadius: b.radius.md,
-                    backgroundColor: 'white',
-                    color: COLORS.slate[600],
-                    fontSize: b.fontSize.sm,
-                    cursor: 'pointer',
-                    width: '100%',
-                    justifyContent: 'center',
-                  }}
+                  className="flex items-center gap-2 py-2 px-3 border border-dashed border-slate-300 rounded-lg bg-white text-slate-600 text-sm cursor-pointer w-full justify-center"
                 >
                   <Plus size={16} />
                   Variable hinzufügen
@@ -575,31 +429,22 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
         )}
 
         {/* Session Info */}
-        <div style={{
-          padding: `${b.space[4]} ${b.space[5]}`,
-          borderRadius: b.radius.lg,
-          backgroundColor: b.primaryAccentLight,
-          marginTop: b.space[6],
-          marginBottom: b.space[6],
-          display: 'flex',
-          gap: b.space[5],
-          flexWrap: 'wrap',
-        }}>
+        <div className="py-4 px-5 rounded-lg mt-6 mb-6 flex gap-5 flex-wrap" style={{ backgroundColor: b.primaryAccentLight }}>
           <div>
-            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Fragen</span>
-            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
+            <span className="text-xs text-slate-500 block">Fragen</span>
+            <span className="text-base font-semibold text-slate-900">
               {scenario.question_count_min}-{scenario.question_count_max}
             </span>
           </div>
           <div>
-            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Zeit pro Frage</span>
-            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
+            <span className="text-xs text-slate-500 block">Zeit pro Frage</span>
+            <span className="text-base font-semibold text-slate-900">
               {Math.round(scenario.time_limit_per_question / 60)} Min
             </span>
           </div>
           <div>
-            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Wiederholen</span>
-            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
+            <span className="text-xs text-slate-500 block">Wiederholen</span>
+            <span className="text-base font-semibold text-slate-900">
               {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
             </span>
           </div>
@@ -608,34 +453,14 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
         {/* Submit Button */}
         <button
           type="submit"
+          className="w-full py-4 px-6 rounded-2xl border-none text-white text-base font-semibold cursor-pointer flex items-center justify-center gap-2.5 transition-all hover:-translate-y-0.5"
           style={{
-            width: '100%',
-            padding: `${b.space[4]} ${b.space[6]}`,
-            borderRadius: b.radius.xl,
-            border: 'none',
             background: b.buttonGradient,
-            color: 'white',
-            fontSize: b.fontSize.base,
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: b.space[2.5],
-            transition: b.transition.normal,
             boxShadow: `0 4px 12px ${b.primaryAccent}4d`,
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'none';
-            e.target.style.boxShadow = `0 4px 12px ${b.primaryAccent}4d`;
           }}
         >
           Weiter
-          <ArrowRight style={{ width: '20px', height: '20px' }} />
+          <ArrowRight className="w-5 h-5" />
         </button>
       </form>
     </div>

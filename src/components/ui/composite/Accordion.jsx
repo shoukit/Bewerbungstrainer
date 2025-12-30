@@ -21,7 +21,6 @@ import React, { useState, useCallback, createContext, useContext } from 'react';
 import { ChevronDown, ChevronRight, Lightbulb, Info, HelpCircle, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { COLORS } from '@/config/colors';
-import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Context for AccordionGroup
@@ -113,7 +112,6 @@ const Accordion = ({
   headerStyle = {},
   contentStyle = {},
 }) => {
-  const b = useBranding();
   const groupContext = useContext(AccordionGroupContext);
 
   // Determine if we're in group mode
@@ -157,30 +155,28 @@ const Accordion = ({
   const IconComponent = CustomIcon || variantConfig.icon;
   const ToggleIcon = showPlusMinus ? (isOpen ? Minus : Plus) : IconComponent;
 
+  // Get transition classes for icon rotation
+  const getIconTransform = () => {
+    if (showPlusMinus) return 'rotate-0';
+    if (isOpen && IconComponent === ChevronDown) return 'rotate-180';
+    if (isOpen && IconComponent === ChevronRight) return 'rotate-90';
+    return 'rotate-0';
+  };
+
   return (
     <div
-      className={className}
+      className={`rounded-xl overflow-hidden ${className}`}
       style={{
-        borderRadius: '12px',
         border: `1px solid ${variantConfig.borderColor}`,
-        overflow: 'hidden',
         ...style,
       }}
     >
       {/* Header */}
       <button
         onClick={handleToggle}
+        className="w-full flex items-center gap-3 py-3.5 px-4 border-none cursor-pointer text-left transition-colors duration-200"
         style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '14px 16px',
           backgroundColor: variantConfig.headerBg,
-          border: 'none',
-          cursor: 'pointer',
-          textAlign: 'left',
-          transition: 'background-color 0.2s',
           ...headerStyle,
         }}
         onMouseEnter={(e) => {
@@ -192,58 +188,28 @@ const Accordion = ({
       >
         {/* Left icon */}
         {iconPosition === 'left' && ToggleIcon && (
-          <span
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'transform 0.2s',
-              transform: !showPlusMinus && isOpen && IconComponent === ChevronDown
-                ? 'rotate(180deg)'
-                : !showPlusMinus && isOpen && IconComponent === ChevronRight
-                  ? 'rotate(90deg)'
-                  : 'rotate(0deg)',
-            }}
-          >
+          <span className={`flex items-center justify-center transition-transform duration-200 ${getIconTransform()}`}>
             <ToggleIcon
-              style={{
-                width: '18px',
-                height: '18px',
-                color: variantConfig.headerText,
-              }}
+              className="w-[18px] h-[18px]"
+              style={{ color: variantConfig.headerText }}
             />
           </span>
         )}
 
         {/* Title */}
         <span
-          style={{
-            flex: 1,
-            fontSize: '14px',
-            fontWeight: 600,
-            color: variantConfig.headerText,
-          }}
+          className="flex-1 text-sm font-semibold"
+          style={{ color: variantConfig.headerText }}
         >
           {title}
         </span>
 
         {/* Right icon */}
         {iconPosition === 'right' && ToggleIcon && (
-          <span
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'transform 0.2s',
-              transform: !showPlusMinus && isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}
-          >
+          <span className={`flex items-center justify-center transition-transform duration-200 ${!showPlusMinus && isOpen ? 'rotate-180' : 'rotate-0'}`}>
             <ToggleIcon
-              style={{
-                width: '18px',
-                height: '18px',
-                color: variantConfig.headerText,
-              }}
+              className="w-[18px] h-[18px]"
+              style={{ color: variantConfig.headerText }}
             />
           </span>
         )}
@@ -257,11 +223,11 @@ const Accordion = ({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
+            className="overflow-hidden"
           >
             <div
+              className="p-4"
               style={{
-                padding: '16px',
                 backgroundColor: variantConfig.contentBg,
                 borderTop: `1px solid ${variantConfig.borderColor}`,
                 ...contentStyle,
@@ -300,7 +266,7 @@ export const AccordionGroup = ({
 
   return (
     <AccordionGroupContext.Provider value={{ activeId, setActiveId: handleSetActiveId }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className="flex flex-col gap-2">
         {children}
       </div>
     </AccordionGroupContext.Provider>
@@ -318,15 +284,15 @@ export const TipsAccordion = ({
 }) => {
   // Handle both string and array tips
   const tipsContent = Array.isArray(tips) ? (
-    <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <ul className="m-0 pl-5 flex flex-col gap-2">
       {tips.map((tip, index) => (
-        <li key={index} style={{ color: COLORS.amber[800], fontSize: '14px', lineHeight: 1.6 }}>
+        <li key={index} className="text-amber-800 text-sm leading-relaxed">
           {tip}
         </li>
       ))}
     </ul>
   ) : (
-    <p style={{ margin: 0, color: COLORS.amber[800], fontSize: '14px', lineHeight: 1.6 }}>
+    <p className="m-0 text-amber-800 text-sm leading-relaxed">
       {tips}
     </p>
   );

@@ -138,12 +138,8 @@ const ErrorState = ({
 
   return (
     <div
+      className="flex flex-col items-center justify-center text-center"
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
         padding: sizeConfig.padding,
         minHeight: fullHeight ? '60vh' : 'auto',
         gap: sizeConfig.gap,
@@ -152,14 +148,10 @@ const ErrorState = ({
     >
       {/* Icon */}
       <div
+        className="w-fit rounded-2xl flex items-center justify-center"
         style={{
-          width: 'fit-content',
           padding: sizeConfig.iconPadding,
-          borderRadius: '16px',
           backgroundColor: typeConfig.iconBg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
         <IconComponent
@@ -173,12 +165,8 @@ const ErrorState = ({
 
       {/* Title */}
       <h3
-        style={{
-          fontSize: sizeConfig.titleSize,
-          fontWeight: 600,
-          color: COLORS.slate[800],
-          margin: 0,
-        }}
+        className="font-semibold text-slate-800 m-0"
+        style={{ fontSize: sizeConfig.titleSize }}
       >
         {title}
       </h3>
@@ -186,13 +174,8 @@ const ErrorState = ({
       {/* Message */}
       {errorMessage && (
         <p
-          style={{
-            fontSize: sizeConfig.messageSize,
-            color: COLORS.slate[600],
-            margin: 0,
-            maxWidth: '400px',
-            lineHeight: 1.6,
-          }}
+          className="text-slate-600 m-0 max-w-[400px] leading-relaxed"
+          style={{ fontSize: sizeConfig.messageSize }}
         >
           {errorMessage}
         </p>
@@ -200,36 +183,11 @@ const ErrorState = ({
 
       {/* Details (for debugging) */}
       {showDetails && errorStack && (
-        <details
-          style={{
-            marginTop: '8px',
-            maxWidth: '100%',
-            textAlign: 'left',
-          }}
-        >
-          <summary
-            style={{
-              fontSize: '12px',
-              color: COLORS.slate[500],
-              cursor: 'pointer',
-            }}
-          >
+        <details className="mt-2 max-w-full text-left">
+          <summary className="text-xs text-slate-500 cursor-pointer">
             Technische Details
           </summary>
-          <pre
-            style={{
-              marginTop: '8px',
-              padding: '12px',
-              backgroundColor: COLORS.slate[100],
-              borderRadius: '8px',
-              fontSize: '11px',
-              color: COLORS.slate[700],
-              overflow: 'auto',
-              maxHeight: '200px',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}
-          >
+          <pre className="mt-2 p-3 bg-slate-100 rounded-lg text-[11px] text-slate-700 overflow-auto max-h-[200px] whitespace-pre-wrap break-words">
             {errorStack}
           </pre>
         </details>
@@ -240,34 +198,17 @@ const ErrorState = ({
 
       {/* Actions */}
       {(onRetry || onBack) && (
-        <div
-          style={{
-            display: 'flex',
-            gap: '12px',
-            marginTop: '8px',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-          }}
-        >
+        <div className="flex gap-3 mt-2 flex-wrap justify-center">
           {onBack && (
             <button
               onClick={onBack}
+              className="flex items-center gap-2 font-semibold rounded-[10px] border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 transition-all"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
                 padding: sizeConfig.buttonPadding,
                 fontSize: sizeConfig.buttonSize,
-                fontWeight: 600,
-                borderRadius: '10px',
-                border: `1px solid ${COLORS.slate[200]}`,
-                backgroundColor: 'white',
-                color: COLORS.slate[700],
-                cursor: 'pointer',
-                transition: 'all 0.2s',
               }}
             >
-              <Home style={{ width: '16px', height: '16px' }} />
+              <Home className="w-4 h-4" />
               {backText}
             </button>
           )}
@@ -275,22 +216,13 @@ const ErrorState = ({
           {onRetry && (
             <button
               onClick={onRetry}
+              className="flex items-center gap-2 font-semibold rounded-[10px] border-none bg-primary text-white cursor-pointer hover:opacity-90 transition-all"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
                 padding: sizeConfig.buttonPadding,
                 fontSize: sizeConfig.buttonSize,
-                fontWeight: 600,
-                borderRadius: '10px',
-                border: 'none',
-                backgroundColor: b.primaryAccent,
-                color: 'white',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
               }}
             >
-              <RefreshCw style={{ width: '16px', height: '16px' }} />
+              <RefreshCw className="w-4 h-4" />
               {retryText}
             </button>
           )}

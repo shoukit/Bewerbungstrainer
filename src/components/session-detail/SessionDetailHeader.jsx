@@ -25,10 +25,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, Clock, Trash2, Download, Compass, Scale, Sparkles, Target, Video, MessageSquare } from 'lucide-react';
-import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
 import { getScoreColor } from '@/config/colors';
 
 // =============================================================================
@@ -90,15 +87,15 @@ const TYPE_CONFIG = {
 /**
  * Score Gauge - Circular progress indicator
  */
-const ScoreGauge = ({ score, size = 80, primaryAccent }) => {
+const ScoreGauge = ({ score, size = 80 }) => {
   const percentage = Math.min(100, Math.max(0, score || 0));
   const radius = (size - 10) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div style={{ position: 'relative', width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -121,24 +118,13 @@ const ScoreGauge = ({ score, size = 80, primaryAccent }) => {
           transition={{ duration: 1.2, ease: 'easeOut' }}
         />
       </svg>
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.4 }}
-          style={{
-            fontSize: size / 3,
-            fontWeight: 700,
-            color: '#fff',
-            lineHeight: 1,
-          }}
+          className="font-bold text-white leading-none"
+          style={{ fontSize: size / 3 }}
         >
           {Math.round(score)}
         </motion.span>
@@ -183,11 +169,7 @@ const SessionDetailHeader = ({
   isDownloading = false,
   extraActions,
 }) => {
-  const b = useBranding();
   const isMobile = useMobile(768);
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
   const typeConfig = TYPE_CONFIG[type] || TYPE_CONFIG.simulator;
   const TypeIcon = typeConfig.icon;
@@ -195,31 +177,13 @@ const SessionDetailHeader = ({
   const showScore = score !== undefined && score !== null && score > 0;
 
   return (
-    <div style={{
-      background: headerGradient,
-      padding: isMobile ? '20px 16px' : '24px 32px',
-      position: 'sticky',
-      top: 0,
-      zIndex: 40,
-    }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="sticky top-0 z-40 bg-brand-gradient" style={{ padding: isMobile ? '20px 16px' : '24px 32px' }}>
+      <div className="max-w-[1400px] mx-auto">
         {/* Back Button */}
         {onBack && (
           <button
             onClick={onBack}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(255,255,255,0.15)',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              cursor: 'pointer',
-              color: '#fff',
-              fontSize: '13px',
-              marginBottom: '16px',
-            }}
+            className="flex items-center gap-1.5 bg-white/15 border-none rounded-lg px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 transition-colors"
           >
             <ArrowLeft size={16} />
             Zurück zur Übersicht
@@ -227,102 +191,67 @@ const SessionDetailHeader = ({
         )}
 
         {/* Header Content */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '24px',
-        }}>
+        <div className="flex items-center gap-6">
           {/* Score Gauge - Hidden on mobile if no score */}
           {!isMobile && showScore && (
-            <ScoreGauge score={score} size={80} primaryAccent={primaryAccent} />
+            <ScoreGauge score={score} size={80} />
           )}
 
           {/* Title & Meta */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap mb-2">
               {/* Type Badge */}
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '11px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                background: 'rgba(255,255,255,0.2)',
-                color: '#fff',
-              }}>
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/20 text-white">
                 <TypeIcon size={14} />
                 {typeConfig.label}
               </span>
 
               {/* Status Badge */}
               {showScore && (
-                <span style={{
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: 'rgba(255,255,255,0.9)',
-                  color: getScoreColor(score, primaryAccent),
-                }}>
+                <span
+                  className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90"
+                  style={{ color: getScoreColor(score) }}
+                >
                   {getGradeLabel(score)}
                 </span>
               )}
 
               {/* In Progress Badge */}
               {status === 'in_progress' && (
-                <span style={{
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: 'rgba(255,255,255,0.9)',
-                  color: '#f59e0b',
-                }}>
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-amber-600">
                   In Bearbeitung
                 </span>
               )}
             </div>
 
             {/* Title */}
-            <h1 style={{
-              fontSize: isMobile ? '20px' : '24px',
-              fontWeight: 700,
-              color: '#fff',
-              margin: 0,
-              marginBottom: subtitle ? '4px' : '8px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}>
+            <h1
+              className="font-bold text-white m-0 truncate"
+              style={{
+                fontSize: isMobile ? '20px' : '24px',
+                marginBottom: subtitle ? '4px' : '8px'
+              }}
+            >
               {title}
             </h1>
 
             {/* Subtitle */}
             {subtitle && (
-              <p style={{
-                fontSize: '14px',
-                color: 'rgba(255,255,255,0.8)',
-                margin: 0,
-                marginBottom: '8px',
-              }}>
+              <p className="text-sm text-white/80 m-0 mb-2">
                 {subtitle}
               </p>
             )}
 
             {/* Meta Information */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div className="flex items-center gap-4 flex-wrap">
               {createdAt && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                <span className="flex items-center gap-1.5 text-[13px] text-white/80">
                   <Calendar size={14} />
                   {formatDate(createdAt)}
                 </span>
               )}
               {duration && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                <span className="flex items-center gap-1.5 text-[13px] text-white/80">
                   <Clock size={14} />
                   {Math.floor(duration / 60)}:{String(duration % 60).padStart(2, '0')} Min.
                 </span>
@@ -331,27 +260,17 @@ const SessionDetailHeader = ({
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '12px', flexShrink: 0 }}>
+          <div className="flex gap-3 flex-shrink-0">
             {/* Download Button */}
             {onDownload && (
               <button
                 onClick={onDownload}
                 disabled={isDownloading}
                 title="Als PDF herunterladen"
+                className="flex items-center justify-center gap-1.5 bg-white/15 border-none rounded-lg text-white text-[13px] font-medium hover:bg-white/25 transition-colors disabled:opacity-70"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
                   padding: isMobile ? '10px' : '10px 16px',
-                  background: 'rgba(255,255,255,0.15)',
-                  border: 'none',
-                  borderRadius: '8px',
                   cursor: isDownloading ? 'wait' : 'pointer',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  opacity: isDownloading ? 0.7 : 1,
                 }}
               >
                 <Download size={16} />
@@ -368,20 +287,10 @@ const SessionDetailHeader = ({
                 onClick={onDelete}
                 disabled={isDeleting}
                 title="Löschen"
+                className="flex items-center justify-center gap-1.5 bg-red-500/20 border border-red-500/40 rounded-lg text-white text-[13px] font-medium hover:bg-red-500/30 transition-colors disabled:opacity-70"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
                   padding: isMobile ? '10px' : '10px 16px',
-                  background: 'rgba(239, 68, 68, 0.2)',
-                  border: '1px solid rgba(239, 68, 68, 0.4)',
-                  borderRadius: '8px',
                   cursor: isDeleting ? 'wait' : 'pointer',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  opacity: isDeleting ? 0.7 : 1,
                 }}
               >
                 <Trash2 size={16} />

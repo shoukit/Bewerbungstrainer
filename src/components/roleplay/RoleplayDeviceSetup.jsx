@@ -4,7 +4,6 @@ import { MessageSquare, Loader2, CheckCircle2, Info, RefreshCw, Server, Globe, A
 import DeviceSetupPage from '@/components/device-setup/DeviceSetupPage';
 import { testWebSocketConnectivity, testProxyConnectivity, detectBestConnectionMode } from '@/services/websocket-test';
 import wordpressAPI from '@/services/wordpress-api';
-import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 
 /**
@@ -12,20 +11,12 @@ import { COLORS } from '@/config/colors';
  * Shows the current connection mode and allows switching
  * Only supports: websocket (direct) and proxy modes
  */
-const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, onSwitchMode, onRetry, directAvailable, proxyAvailable, b }) => {
+const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, onSwitchMode, onRetry, directAvailable, proxyAvailable }) => {
   if (isChecking) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: b.space[2.5],
-        padding: `${b.space[3.5]} ${b.space[4]}`,
-        backgroundColor: COLORS.blue[50],
-        border: `1px solid ${COLORS.blue[200]}`,
-        borderRadius: b.radius.lg,
-      }}>
-        <Loader2 style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} className="animate-spin" />
-        <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: COLORS.blue[700] }}>
+      <div className="flex items-center gap-2.5 p-3.5 px-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+        <span className="text-base font-medium text-blue-700">
           Prüfe Verbindung...
         </span>
       </div>
@@ -35,39 +26,23 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
   // Error state - neither mode works
   if (error && !directAvailable && !proxyAvailable) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: b.space[2.5],
-          padding: `${b.space[3.5]} ${b.space[4]}`,
-          backgroundColor: COLORS.red[50],
-          border: `1px solid ${COLORS.red[200]}`,
-          borderRadius: b.radius.lg,
-        }}>
-          <AlertTriangle style={{ width: '20px', height: '20px', color: COLORS.red[600] }} />
-          <div style={{ flex: 1 }}>
-            <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: COLORS.red[800] }}>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2.5 p-3.5 px-4 bg-red-50 border border-red-200 rounded-lg">
+          <AlertTriangle className="w-5 h-5 text-red-600" />
+          <div className="flex-1">
+            <span className="text-base font-medium text-red-800">
               Keine Verbindung möglich
             </span>
           </div>
         </div>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: b.space[2.5],
-          padding: `${b.space[3.5]} ${b.space[4]}`,
-          backgroundColor: COLORS.slate[50],
-          border: `1px solid ${COLORS.slate[200]}`,
-          borderRadius: b.radius.lg,
-        }}>
-          <Info style={{ width: '16px', height: '16px', color: COLORS.slate[500], flexShrink: 0, marginTop: '2px' }} />
-          <div style={{ fontSize: b.fontSize.xs, color: COLORS.slate[600] }}>
-            <p style={{ margin: 0, fontWeight: b.fontWeight.medium, marginBottom: b.space[1] }}>
+        <div className="flex items-start gap-2.5 p-3.5 px-4 bg-slate-50 border border-slate-200 rounded-lg">
+          <Info className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-600">
+            <p className="m-0 font-medium mb-1">
               WebSocket-Verbindungen blockiert
             </p>
-            <p style={{ margin: 0 }}>
+            <p className="m-0">
               {error}
             </p>
           </div>
@@ -75,20 +50,9 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
 
         <button
           onClick={onRetry}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: b.space[1.5],
-            fontSize: b.fontSize.xs,
-            color: COLORS.slate[500],
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            textDecoration: 'underline',
-            padding: 0,
-          }}
+          className="flex items-center gap-1.5 text-xs text-slate-500 bg-transparent border-none cursor-pointer underline p-0"
         >
-          <RefreshCw style={{ width: '12px', height: '12px' }} />
+          <RefreshCw className="w-3 h-3" />
           Verbindung erneut prüfen
         </button>
       </div>
@@ -98,41 +62,24 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
   // Direct WebSocket mode
   if (mode === 'websocket') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[2] }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: b.space[2.5],
-          padding: `${b.space[3.5]} ${b.space[4]}`,
-          backgroundColor: COLORS.green[50],
-          border: `1px solid ${COLORS.green[200]}`,
-          borderRadius: b.radius.lg,
-        }}>
-          <Globe style={{ width: '20px', height: '20px', color: COLORS.green[500] }} />
-          <div style={{ flex: 1 }}>
-            <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: COLORS.green[700] }}>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2.5 p-3.5 px-4 bg-green-50 border border-green-200 rounded-lg">
+          <Globe className="w-5 h-5 text-green-500" />
+          <div className="flex-1">
+            <span className="text-base font-medium text-green-700">
               Direkte Echtzeit-Verbindung
             </span>
             {latency && (
-              <span style={{ fontSize: b.fontSize.xs, color: COLORS.green[600], marginLeft: b.space[2] }}>
+              <span className="text-xs text-green-600 ml-2">
                 ({latency}ms)
               </span>
             )}
           </div>
-          <CheckCircle2 style={{ width: '20px', height: '20px', color: COLORS.green[500] }} />
+          <CheckCircle2 className="w-5 h-5 text-green-500" />
         </div>
         <button
           onClick={() => onSwitchMode('proxy')}
-          style={{
-            fontSize: b.fontSize.xs,
-            color: COLORS.slate[500],
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            textDecoration: 'underline',
-            textAlign: 'left',
-            padding: 0,
-          }}
+          className="text-xs text-slate-500 bg-transparent border-none cursor-pointer underline text-left p-0"
         >
           Proxy-Modus testen
         </button>
@@ -142,43 +89,27 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
 
   // Proxy mode
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[2] }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: b.space[2.5],
-        padding: `${b.space[3.5]} ${b.space[4]}`,
-        backgroundColor: COLORS.blue[50],
-        border: `1px solid ${COLORS.blue[200]}`,
-        borderRadius: b.radius.lg,
-      }}>
-        <Server style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} />
-        <div style={{ flex: 1 }}>
-          <span style={{ fontSize: b.fontSize.base, fontWeight: b.fontWeight.medium, color: COLORS.blue[700] }}>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2.5 p-3.5 px-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <Server className="w-5 h-5 text-blue-500" />
+        <div className="flex-1">
+          <span className="text-base font-medium text-blue-700">
             Proxy-Modus (Echtzeit via Server)
           </span>
           {proxyLatency && (
-            <span style={{ fontSize: b.fontSize.xs, color: COLORS.blue[500], marginLeft: b.space[2] }}>
+            <span className="text-xs text-blue-500 ml-2">
               ({proxyLatency}ms)
             </span>
           )}
         </div>
-        <CheckCircle2 style={{ width: '20px', height: '20px', color: COLORS.blue[500] }} />
+        <CheckCircle2 className="w-5 h-5 text-blue-500" />
       </div>
 
       {!directAvailable && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: b.space[2.5],
-          padding: `${b.space[3]} ${b.space[4]}`,
-          backgroundColor: COLORS.slate[50],
-          border: `1px solid ${COLORS.slate[200]}`,
-          borderRadius: b.radius.lg,
-        }}>
-          <Info style={{ width: '14px', height: '14px', color: COLORS.slate[500], flexShrink: 0, marginTop: '2px' }} />
-          <div style={{ fontSize: b.fontSize.xs, color: COLORS.slate[600] }}>
-            <p style={{ margin: 0 }}>
+        <div className="flex items-start gap-2.5 p-3 px-4 bg-slate-50 border border-slate-200 rounded-lg">
+          <Info className="w-3.5 h-3.5 text-slate-500 flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-600">
+            <p className="m-0">
               Direkte Verbindung blockiert. Der Proxy-Server ermöglicht Echtzeit-Gespräche trotz Firewall.
             </p>
           </div>
@@ -188,16 +119,7 @@ const ConnectionModeBadge = ({ mode, isChecking, latency, proxyLatency, error, o
       {directAvailable && (
         <button
           onClick={() => onSwitchMode('websocket')}
-          style={{
-            fontSize: b.fontSize.xs,
-            color: COLORS.slate[500],
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            textDecoration: 'underline',
-            textAlign: 'left',
-            padding: 0,
-          }}
+          className="text-xs text-slate-500 bg-transparent border-none cursor-pointer underline text-left p-0"
         >
           Direkte Verbindung nutzen
         </button>
@@ -217,8 +139,8 @@ const RoleplayDeviceSetup = ({
   scenario,
   onBack,
   onStart,
+  primaryAccent,
 }) => {
-  const b = useBranding();
 
   // Connection mode state
   const [connectionMode, setConnectionMode] = useState('websocket');
@@ -320,33 +242,18 @@ const RoleplayDeviceSetup = ({
   // Get icon for current mode
   const getModeIcon = () => {
     if (connectionMode === 'proxy') {
-      return <Server style={{ width: '20px', height: '20px', color: b.primaryAccent }} />;
+      return <Server className="w-5 h-5 text-primary" />;
     } else {
-      return <Globe style={{ width: '20px', height: '20px', color: b.primaryAccent }} />;
+      return <Globe className="w-5 h-5 text-primary" />;
     }
   };
 
   // Extra content for connection mode display
   const connectionModeContent = (
-    <div style={{
-      padding: b.space[5],
-      backgroundColor: 'white',
-      borderRadius: b.radius.xl,
-      border: `1px solid ${COLORS.slate[200]}`,
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: b.space[2.5],
-        marginBottom: b.space[4],
-      }}>
+    <div className="p-5 bg-white rounded-xl border border-slate-200">
+      <div className="flex items-center gap-2.5 mb-4">
         {getModeIcon()}
-        <h3 style={{
-          fontSize: b.fontSize.lg,
-          fontWeight: b.fontWeight.semibold,
-          color: COLORS.slate[900],
-          margin: 0,
-        }}>
+        <h3 className="text-lg font-semibold text-slate-900 m-0">
           Verbindungsmodus
         </h3>
       </div>
@@ -361,7 +268,6 @@ const RoleplayDeviceSetup = ({
         onRetry={handleRetry}
         directAvailable={directAvailable}
         proxyAvailable={proxyAvailable}
-        b={b}
       />
     </div>
   );

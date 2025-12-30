@@ -19,121 +19,58 @@ const SetupCard = ({ setup, isSelected, onSelect }) => {
       onMouseLeave={() => setIsHovered(false)}
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
+      className="relative w-full text-left rounded-2xl overflow-hidden bg-white transition-all duration-200 outline-none cursor-pointer"
       style={{
-        position: 'relative',
-        width: '100%',
-        textAlign: 'left',
-        borderRadius: '16px',
-        overflow: 'hidden',
         border: isSelected ? `2px solid ${safeColor}` : '2px solid #e5e7eb',
-        backgroundColor: 'white',
         boxShadow: isHovered || isSelected
           ? `0 12px 24px -8px ${safeColor}30, 0 4px 8px -2px rgba(0,0,0,0.08)`
           : '0 2px 8px -2px rgba(0,0,0,0.06)',
-        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-        outline: 'none',
-        cursor: 'pointer',
-        WebkitAppearance: 'none',
       }}
     >
       {/* Colored Header Banner - Fixed height for consistency */}
       <div
+        className="h-[100px] flex items-center justify-center relative"
         style={{
           background: `linear-gradient(135deg, ${safeColor} 0%, ${safeColor}dd 100%)`,
-          height: '100px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
         }}
       >
         {/* Selected checkmark - top right */}
         {isSelected && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '12px',
-              right: '12px',
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              backgroundColor: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            }}
-          >
+          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-md">
             <Check size={14} style={{ color: safeColor }} strokeWidth={3} />
           </div>
         )}
 
         {/* Large Icon */}
-        <span style={{
-          fontSize: '48px',
-          lineHeight: 1,
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
-        }}>
+        <span className="text-5xl leading-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))' }}>
           {setup.icon}
         </span>
       </div>
 
       {/* Card Content - Fixed height for consistency */}
-      <div style={{ padding: '20px', height: '140px', display: 'flex', flexDirection: 'column' }}>
+      <div className="p-5 h-[140px] flex flex-col">
         {/* Title */}
-        <h3 style={{
-          fontSize: '16px',
-          fontWeight: 700,
-          color: '#1e293b',
-          marginBottom: '6px',
-          lineHeight: 1.3,
-        }}>
+        <h3 className="text-base font-bold text-slate-800 mb-1.5 leading-tight">
           {setup.name}
         </h3>
 
         {/* Description */}
-        <p style={{
-          fontSize: '13px',
-          color: '#64748b',
-          lineHeight: 1.5,
-          marginBottom: '16px',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          flex: 1,
-        }}>
+        <p className="text-[13px] text-slate-500 leading-relaxed mb-4 line-clamp-2 flex-1">
           {setup.description}
         </p>
 
         {/* Tags */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: 'auto' }}>
+        <div className="flex flex-wrap gap-2 mt-auto">
           <span
+            className="inline-flex items-center text-[11px] px-2.5 py-1 rounded-full font-semibold"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              fontSize: '11px',
-              padding: '5px 10px',
-              borderRadius: '20px',
-              fontWeight: 600,
               backgroundColor: `${safeColor}15`,
               color: safeColor,
             }}
           >
             {setup.focus}
           </span>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              fontSize: '11px',
-              padding: '5px 10px',
-              borderRadius: '20px',
-              fontWeight: 500,
-              backgroundColor: '#f1f5f9',
-              color: '#64748b',
-            }}
-          >
+          <span className="inline-flex items-center text-[11px] px-2.5 py-1 rounded-full font-medium bg-slate-100 text-slate-500">
             {setup.targetGroup}
           </span>
         </div>
@@ -205,79 +142,33 @@ const SetupSelector = () => {
         className="w-full"
       >
         {/* Description text above the selector */}
-        <p style={{
-          fontSize: '14px',
-          color: '#64748b',
-          marginBottom: '8px',
-          paddingLeft: '4px',
-        }}>
+        <p className="text-sm text-slate-500 mb-2 pl-1">
           Filtere Trainingsszenarien nach deinem Fokus
         </p>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            padding: '14px 18px',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            backgroundColor: 'white',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            outline: 'none',
-            WebkitAppearance: 'none',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#cbd5e1';
-            e.currentTarget.style.boxShadow = '0 4px 12px -2px rgba(0,0,0,0.08)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#e2e8f0';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer transition-all duration-200 outline-none hover:border-slate-300 hover:shadow-md"
         >
           {/* Left side - Current setup info */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
+          <div className="flex items-center gap-3.5 min-w-0">
             <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
                 backgroundColor: currentSetupColor ? `${currentSetupColor}15` : '#f1f5f9',
               }}
             >
               {currentSetup ? (
-                <span style={{ fontSize: '24px' }}>{currentSetup.icon}</span>
+                <span className="text-2xl">{currentSetup.icon}</span>
               ) : (
-                <Sparkles size={22} style={{ color: '#94a3b8' }} />
+                <Sparkles size={22} className="text-slate-400" />
               )}
             </div>
-            <div style={{ textAlign: 'left', minWidth: 0 }}>
-              <div style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#1e293b',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}>
+            <div className="text-left min-w-0">
+              <div className="text-[15px] font-semibold text-slate-800 truncate">
                 {currentSetup ? currentSetup.name : 'Alle Szenarien'}
               </div>
-              <div style={{
-                fontSize: '13px',
-                color: '#64748b',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}>
+              <div className="text-[13px] text-slate-500 truncate">
                 {currentSetup
                   ? `${currentSetup.focus} • ${currentSetup.targetGroup}`
                   : 'Trainings-Setup wählen'
@@ -287,15 +178,11 @@ const SetupSelector = () => {
           </div>
 
           {/* Right side - Change indicator */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <span style={{
-              fontSize: '13px',
-              fontWeight: 500,
-              color: '#94a3b8',
-            }}>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-[13px] font-medium text-slate-400">
               Ändern
             </span>
-            <ChevronDown size={18} style={{ color: '#94a3b8' }} />
+            <ChevronDown size={18} className="text-slate-400" />
           </div>
         </button>
       </motion.div>
@@ -311,110 +198,41 @@ const SetupSelector = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsModalOpen(false)}
-                style={{
-                  position: 'fixed',
-                  inset: 0,
-                  backgroundColor: 'rgba(15, 23, 42, 0.5)',
-                  backdropFilter: 'blur(4px)',
-                  zIndex: 9999,
-                }}
+                className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999]"
               />
 
               {/* Modal - Full screen on mobile, centered on desktop */}
               <div
-                style={{
-                  position: 'fixed',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: isMobile ? 'flex-end' : 'center',
-                  justifyContent: 'center',
-                  padding: isMobile ? 0 : '16px',
-                  zIndex: 10000,
-                }}
+                className={`fixed inset-0 flex ${isMobile ? 'items-end' : 'items-center'} justify-center ${isMobile ? 'p-0' : 'p-4'} z-[10000]`}
               >
                 <motion.div
                   initial={{ opacity: 0, y: isMobile ? 100 : 20, scale: isMobile ? 1 : 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: isMobile ? 100 : 20, scale: isMobile ? 1 : 0.95 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                  style={{
-                    width: '100%',
-                    maxWidth: isMobile ? '100%' : '720px',
-                    backgroundColor: '#f8fafc',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    maxHeight: isMobile ? 'calc(100vh - 60px)' : 'calc(100vh - 2rem)',
-                    borderRadius: isMobile ? '24px 24px 0 0' : '20px',
-                    overflow: 'hidden',
-                  }}
+                  className={`w-full ${isMobile ? 'max-w-full' : 'max-w-[720px]'} bg-slate-50 shadow-2xl flex flex-col ${isMobile ? 'max-h-[calc(100vh-60px)]' : 'max-h-[calc(100vh-2rem)]'} ${isMobile ? 'rounded-t-3xl' : 'rounded-2xl'} overflow-hidden`}
                 >
                   {/* Header */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: isMobile ? '20px' : '24px 28px',
-                    backgroundColor: 'white',
-                    borderBottom: '1px solid #e2e8f0',
-                    flexShrink: 0,
-                  }}>
+                  <div className={`flex items-center justify-between ${isMobile ? 'p-5' : 'px-7 py-6'} bg-white border-b border-slate-200 flex-shrink-0`}>
                     <div>
-                      <h2 style={{
-                        fontSize: isMobile ? '18px' : '22px',
-                        fontWeight: 700,
-                        color: '#0f172a',
-                        marginBottom: '4px',
-                      }}>
+                      <h2 className={`${isMobile ? 'text-lg' : 'text-[22px]'} font-bold text-slate-900 mb-1`}>
                         Trainings-Setup wählen
                       </h2>
-                      <p style={{
-                        fontSize: '14px',
-                        color: '#64748b',
-                        margin: 0,
-                        display: isMobile ? 'none' : 'block',
-                      }}>
+                      <p className={`text-sm text-slate-500 m-0 ${isMobile ? 'hidden' : 'block'}`}>
                         Wähle deinen Schwerpunkt für passende Trainingsszenarien
                       </p>
                     </div>
                     <button
                       onClick={() => setIsModalOpen(false)}
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        backgroundColor: '#f1f5f9',
-                        border: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s ease',
-                        outline: 'none',
-                        WebkitAppearance: 'none',
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                      className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 border-0 flex items-center justify-center cursor-pointer transition-colors outline-none flex-shrink-0"
                     >
-                      <X size={20} style={{ color: '#64748b' }} />
+                      <X size={20} className="text-slate-500" />
                     </button>
                   </div>
 
                   {/* Body - Scrollable */}
-                  <div
-                    style={{
-                      flex: 1,
-                      overflowY: 'auto',
-                      padding: isMobile ? '20px' : '24px 28px',
-                      WebkitOverflowScrolling: 'touch',
-                    }}
-                  >
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                      gap: '16px',
-                    }}>
+                  <div className={`flex-1 overflow-y-auto ${isMobile ? 'p-5' : 'px-7 py-6'}`}>
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                       {availableSetups.map((setup) => (
                         <SetupCard
                           key={setup.id}
@@ -428,66 +246,21 @@ const SetupSelector = () => {
 
                   {/* Footer - Fixed at bottom */}
                   <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: isMobile ? '16px 20px' : '20px 28px',
-                      paddingBottom: isMobile ? 'max(20px, env(safe-area-inset-bottom))' : '20px',
-                      backgroundColor: 'white',
-                      borderTop: '1px solid #e2e8f0',
-                      flexShrink: 0,
-                    }}
+                    className={`flex items-center justify-between ${isMobile ? 'px-5 py-4' : 'px-7 py-5'} bg-white border-t border-slate-200 flex-shrink-0`}
+                    style={{ paddingBottom: isMobile ? 'max(20px, env(safe-area-inset-bottom))' : '20px' }}
                   >
                     <button
                       onClick={handleShowAll}
-                      style={{
-                        padding: '10px 18px',
-                        borderRadius: '10px',
-                        border: '1px solid #e2e8f0',
-                        backgroundColor: 'white',
-                        color: '#475569',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        outline: 'none',
-                        WebkitAppearance: 'none',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f8fafc';
-                        e.currentTarget.style.borderColor = '#cbd5e1';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'white';
-                        e.currentTarget.style.borderColor = '#e2e8f0';
-                      }}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-600 text-sm font-medium cursor-pointer transition-all outline-none"
                     >
                       Alle anzeigen
                     </button>
                     <button
                       onClick={() => setIsModalOpen(false)}
+                      className="px-6 py-2.5 rounded-xl border-0 bg-primary text-white text-sm font-semibold cursor-pointer transition-all outline-none hover:-translate-y-0.5"
                       style={{
-                        padding: '10px 24px',
-                        borderRadius: '10px',
-                        border: 'none',
-                        background: primaryAccent,
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        outline: 'none',
-                        WebkitAppearance: 'none',
+                        backgroundColor: primaryAccent,
                         boxShadow: `0 4px 12px -2px ${primaryAccent}50`,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                        e.currentTarget.style.boxShadow = `0 6px 16px -2px ${primaryAccent}60`;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = `0 4px 12px -2px ${primaryAccent}50`;
                       }}
                     >
                       Fertig

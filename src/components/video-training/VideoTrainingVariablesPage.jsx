@@ -6,35 +6,15 @@ import {
   Video,
   Info,
 } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { Button } from '@/components/ui/base/button';
+import { Input } from '@/components/ui/base/input';
+import { Textarea } from '@/components/ui/base/textarea';
 
 /**
  * Dynamic Form Field Component
  */
 const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
-  const theFocusColor = focusColor || '#4a9ec9';
-
-  const baseInputStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    borderRadius: '12px',
-    border: `2px solid ${error ? COLORS.red[500] : COLORS.slate[200]}`,
-    fontSize: '16px',
-    color: COLORS.slate[900],
-    backgroundColor: 'white',
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-  };
-
-  const focusStyle = {
-    borderColor: theFocusColor,
-    boxShadow: `0 0 0 3px ${theFocusColor}1a`,
-  };
-
   const handleFocus = (e) => {
-    Object.assign(e.target.style, focusStyle);
     setTimeout(() => {
       const element = e.target;
       if (element) {
@@ -49,40 +29,31 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
     }, 300);
   };
 
-  const handleBlur = (e) => {
-    e.target.style.borderColor = error ? COLORS.red[500] : COLORS.slate[200];
-    e.target.style.boxShadow = 'none';
-  };
-
   const renderInput = () => {
+    const baseClassName = error ? "border-red-500" : "";
+
     switch (field.type) {
       case 'text':
         return (
-          <input
+          <Input
             type="text"
             value={value || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder || ''}
-            style={baseInputStyle}
+            className={baseClassName}
             onFocus={handleFocus}
-            onBlur={handleBlur}
           />
         );
 
       case 'textarea':
         return (
-          <textarea
+          <Textarea
             value={value || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder || ''}
             rows={4}
-            style={{
-              ...baseInputStyle,
-              resize: 'vertical',
-              minHeight: '100px',
-            }}
+            className={`${baseClassName} min-h-[100px] resize-y`}
             onFocus={handleFocus}
-            onBlur={handleBlur}
           />
         );
 
@@ -91,18 +62,8 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
           <select
             value={value || field.default || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
-            style={{
-              ...baseInputStyle,
-              cursor: 'pointer',
-              appearance: 'none',
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: 'right 12px center',
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: '20px',
-              paddingRight: '44px',
-            }}
+            className={`w-full px-4 py-3 rounded-xl border-2 text-base text-slate-900 bg-white outline-none transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3e%3cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27M6 8l4 4 4-4%27/%3e%3c/svg%3e')] bg-[position:right_12px_center] bg-no-repeat bg-[length:20px] pr-11 focus:border-primary focus:ring-2 focus:ring-primary/20 ${error ? 'border-red-500' : 'border-slate-200'}`}
             onFocus={handleFocus}
-            onBlur={handleBlur}
           >
             {!field.default && <option value="">Bitte wählen...</option>}
             {field.options?.map((option) => (
@@ -115,72 +76,50 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
 
       case 'number':
         return (
-          <input
+          <Input
             type="number"
             value={value || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder || ''}
             min={field.validation?.min}
             max={field.validation?.max}
-            style={baseInputStyle}
+            className={baseClassName}
             onFocus={handleFocus}
-            onBlur={handleBlur}
           />
         );
 
       default:
         return (
-          <input
+          <Input
             type="text"
             value={value || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder || ''}
-            style={baseInputStyle}
+            className={baseClassName}
             onFocus={handleFocus}
-            onBlur={handleBlur}
           />
         );
     }
   };
 
   return (
-    <div style={{ marginBottom: '20px' }}>
-      <label style={{
-        display: 'block',
-        marginBottom: '8px',
-        fontSize: '14px',
-        fontWeight: 600,
-        color: COLORS.slate[700],
-      }}>
+    <div className="mb-5">
+      <label className="block mb-2 text-sm font-semibold text-slate-700">
         {field.label}
         {field.required && (
-          <span style={{ color: COLORS.red[500], marginLeft: '4px' }}>*</span>
+          <span className="text-red-500 ml-1">*</span>
         )}
       </label>
       {renderInput()}
       {error && (
-        <p style={{
-          marginTop: '6px',
-          fontSize: '13px',
-          color: COLORS.red[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}>
-          <AlertCircle style={{ width: '14px', height: '14px' }} />
+        <p className="mt-1.5 text-[13px] text-red-500 flex items-center gap-1">
+          <AlertCircle className="w-3.5 h-3.5" />
           {error}
         </p>
       )}
       {field.hint && !error && (
-        <p style={{
-          marginTop: '6px',
-          fontSize: '13px',
-          color: COLORS.slate[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}>
-          <Info style={{ width: '14px', height: '14px' }} />
+        <p className="mt-1.5 text-[13px] text-slate-500 flex items-center gap-1">
+          <Info className="w-3.5 h-3.5" />
           {field.hint}
         </p>
       )}
@@ -196,13 +135,6 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
 const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
   const [formValues, setFormValues] = useState({});
   const [errors, setErrors] = useState({});
-
-  // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   // Parse input configuration
   const inputConfig = useMemo(() => {
@@ -303,58 +235,27 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
   }
 
   return (
-    <div style={{ padding: '24px', paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
+    <div className="p-6 pb-52 max-w-2xl mx-auto">
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <button
+      <div className="mb-8">
+        <Button
           onClick={onBack}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            marginBottom: '16px',
-            border: 'none',
-            background: 'transparent',
-            color: COLORS.slate[600],
-            fontSize: '14px',
-            cursor: 'pointer',
-            borderRadius: '8px',
-            transition: 'background 0.2s',
-          }}
-          onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
-          onMouseLeave={(e) => e.target.style.background = 'transparent'}
+          variant="ghost"
+          className="inline-flex items-center gap-2 px-3 py-2 mb-4 text-sm"
         >
-          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          <ArrowLeft className="w-4 h-4" />
           Zurück zur Übersicht
-        </button>
+        </Button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '14px',
-            background: headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Video style={{ width: '28px', height: '28px', color: 'white' }} />
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-brand-gradient flex items-center justify-center">
+            <Video className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 style={{
-              fontSize: '24px',
-              fontWeight: 700,
-              color: COLORS.slate[900],
-              margin: 0,
-            }}>
+            <h1 className="text-2xl font-bold text-slate-900 m-0">
               {scenario.title}
             </h1>
-            <p style={{
-              fontSize: '14px',
-              color: COLORS.slate[600],
-              margin: '4px 0 0 0',
-            }}>
+            <p className="text-sm text-slate-600 mt-1 mb-0">
               Personalisiere dein Training
             </p>
           </div>
@@ -363,49 +264,21 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
 
       {/* Description Card */}
       {scenario.description && (
-        <div style={{
-          padding: '16px 20px',
-          borderRadius: '12px',
-          backgroundColor: COLORS.slate[100],
-          marginBottom: '24px',
-        }}>
-          <p style={{
-            fontSize: '14px',
-            color: COLORS.slate[700],
-            margin: 0,
-            lineHeight: 1.6,
-          }}>
+        <div className="p-4 px-5 rounded-xl bg-slate-100 mb-6">
+          <p className="text-sm text-slate-700 m-0 leading-relaxed">
             {scenario.description}
           </p>
         </div>
       )}
 
       {/* Info Box */}
-      <div style={{
-        padding: '16px 20px',
-        borderRadius: '12px',
-        backgroundColor: primaryAccentLight,
-        marginBottom: '24px',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '12px',
-      }}>
-        <Info style={{ width: '20px', height: '20px', color: primaryAccent, flexShrink: 0, marginTop: '2px' }} />
+      <div className="p-4 px-5 rounded-xl bg-primary/10 mb-6 flex items-start gap-3">
+        <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
         <div>
-          <p style={{
-            fontSize: '14px',
-            fontWeight: 600,
-            color: COLORS.slate[900],
-            margin: '0 0 4px 0',
-          }}>
+          <p className="text-sm font-semibold text-slate-900 m-0 mb-1">
             So funktioniert es
           </p>
-          <p style={{
-            fontSize: '13px',
-            color: COLORS.slate[600],
-            margin: 0,
-            lineHeight: 1.5,
-          }}>
+          <p className="text-[13px] text-slate-600 m-0 leading-normal">
             Die KI generiert {scenario.question_count || 5} personalisierte Fragen basierend auf deinen Angaben.
             Beantworte jede Frage vor der Kamera und erhalte anschließend detailliertes Feedback.
           </p>
@@ -421,43 +294,18 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
             value={formValues[field.key]}
             onChange={handleChange}
             error={errors[field.key]}
-            focusColor={primaryAccent}
           />
         ))}
 
         {/* Submit Button */}
-        <button
+        <Button
           type="submit"
-          style={{
-            width: '100%',
-            padding: '16px 24px',
-            borderRadius: '14px',
-            border: 'none',
-            background: buttonGradient,
-            color: 'white',
-            fontSize: '16px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            boxShadow: `0 4px 12px ${primaryAccent}4d`,
-            marginTop: '24px',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'none';
-            e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
-          }}
+          size="lg"
+          className="w-full mt-6 gap-2.5"
         >
           Weiter
-          <ArrowRight style={{ width: '20px', height: '20px' }} />
-        </button>
+          <ArrowRight className="w-5 h-5" />
+        </Button>
       </form>
     </div>
   );

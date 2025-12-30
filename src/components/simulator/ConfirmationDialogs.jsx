@@ -17,90 +17,45 @@ export const CompleteConfirmDialog = ({
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]"
       onClick={onClose}
     >
       <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          padding: '24px',
-          maxWidth: '420px',
-          width: '90%',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
-        }}
+        className="bg-white rounded-2xl p-6 max-w-[420px] w-[90%] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '12px',
-            backgroundColor: '#dcfce7',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Check size={24} color="#22c55e" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+            <Check size={24} className="text-green-500" />
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+          <h3 className="text-lg font-semibold text-slate-900 m-0">
             Training beenden?
           </h3>
         </div>
         {answeredCount > 0 ? (
           <>
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '8px' }}>
+            <p className="text-sm text-slate-600 leading-relaxed mb-2">
               Du hast <strong>{labels.answeredCount(answeredCount, totalCount)}</strong> beantwortet.
             </p>
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
+            <p className="text-sm text-slate-600 leading-relaxed mb-6">
               Möchtest du das Training jetzt mit den bisherigen Antworten abschließen oder weitere {labels.questionsLabel} beantworten?
             </p>
           </>
         ) : (
-          <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
+          <p className="text-sm text-slate-600 leading-relaxed mb-6">
             Du hast noch keine {labels.questionsLabel} beantwortet. Möchtest du das Training wirklich beenden?
           </p>
         )}
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+        <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '10px',
-              border: '1px solid #e2e8f0',
-              background: 'white',
-              color: '#64748b',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
+            className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors"
           >
             Weiter trainieren
           </button>
           <button
             onClick={onConfirm}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '10px',
-              border: 'none',
-              background: '#22c55e',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
-            }}
+            className="px-5 py-2.5 rounded-xl border-none bg-green-500 text-white text-sm font-semibold cursor-pointer shadow-md shadow-green-500/30 hover:bg-green-600 transition-colors"
           >
             Training beenden
           </button>
@@ -125,80 +80,35 @@ export const CancelConfirmDialog = ({
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]"
       onClick={onClose}
     >
       <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          padding: '24px',
-          maxWidth: '420px',
-          width: '90%',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
-        }}
+        className="bg-white rounded-2xl p-6 max-w-[420px] w-[90%] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '12px',
-            backgroundColor: '#fee2e2',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <AlertCircle size={24} color="#ef4444" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+            <AlertCircle size={24} className="text-red-500" />
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+          <h3 className="text-lg font-semibold text-slate-900 m-0">
             Training abbrechen?
           </h3>
         </div>
-        <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '24px' }}>
+        <p className="text-sm text-slate-600 leading-relaxed mb-6">
           <strong>Achtung:</strong> Wenn du das Training abbrichst, werden alle deine bisherigen Antworten
           {answeredCount > 0 ? ` (${answeredCount} ${labels.questionsLabel})` : ''} <strong>nicht gespeichert</strong> und gehen verloren.
         </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+        <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '10px',
-              border: '1px solid #e2e8f0',
-              background: 'white',
-              color: '#64748b',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
+            className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors"
           >
             Zurück
           </button>
           <button
             onClick={onConfirm}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '10px',
-              border: 'none',
-              background: '#ef4444',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
-            }}
+            className="px-5 py-2.5 rounded-xl border-none bg-red-500 text-white text-sm font-semibold cursor-pointer shadow-md shadow-red-500/30 hover:bg-red-600 transition-colors"
           >
             Abbrechen
           </button>

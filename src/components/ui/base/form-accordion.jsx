@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 /**
  * FormAccordion Component
@@ -9,8 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion';
  * - Icon on the left with white background
  * - Title and optional subtitle
  * - Smooth expand/collapse animation
- *
- * Uses 100% inline styles to avoid CSS conflicts
  */
 export function FormAccordion({
   title,
@@ -24,174 +23,83 @@ export function FormAccordion({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Color schemes - solid colors for reliability
+  // Color schemes mapped to Tailwind classes
   const colorSchemes = {
     blue: {
-      headerBg: '#e0f2fe',
-      headerBgHover: '#bae6fd',
-      iconBg: '#ffffff',
-      iconText: '#0284c7',
-      titleText: '#075985',
+      headerBg: 'bg-sky-100',
+      headerBgHover: 'bg-sky-200',
+      iconText: 'text-sky-600',
+      titleText: 'text-sky-900',
     },
     green: {
-      headerBg: '#d1fae5',
-      headerBgHover: '#a7f3d0',
-      iconBg: '#ffffff',
-      iconText: '#059669',
-      titleText: '#065f46',
+      headerBg: 'bg-emerald-100',
+      headerBgHover: 'bg-emerald-200',
+      iconText: 'text-emerald-600',
+      titleText: 'text-emerald-900',
     },
     purple: {
-      headerBg: '#ede9fe',
-      headerBgHover: '#ddd6fe',
-      iconBg: '#ffffff',
-      iconText: '#7c3aed',
-      titleText: '#5b21b6',
+      headerBg: 'bg-purple-100',
+      headerBgHover: 'bg-purple-200',
+      iconText: 'text-purple-600',
+      titleText: 'text-purple-900',
     },
     orange: {
-      headerBg: '#fef3c7',
-      headerBgHover: '#fde68a',
-      iconBg: '#ffffff',
-      iconText: '#d97706',
-      titleText: '#92400e',
+      headerBg: 'bg-amber-100',
+      headerBgHover: 'bg-amber-200',
+      iconText: 'text-amber-600',
+      titleText: 'text-amber-900',
     },
     teal: {
-      headerBg: '#ccfbf1',
-      headerBgHover: '#99f6e4',
-      iconBg: '#ffffff',
-      iconText: '#0d9488',
-      titleText: '#115e59',
+      headerBg: 'bg-teal-100',
+      headerBgHover: 'bg-teal-200',
+      iconText: 'text-teal-600',
+      titleText: 'text-teal-900',
     },
   };
 
   const colors = colorSchemes[accentColor] || colorSchemes.blue;
 
-  // All styles as inline to avoid any CSS conflicts
-  const containerStyle = {
-    width: '100%',
-    display: 'block',
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    border: 'none',
-    marginBottom: '0',
-  };
-
-  const headerStyle = {
-    width: '100%',
-    display: 'block',
-    backgroundColor: isHovered ? colors.headerBgHover : colors.headerBg,
-    transition: 'background-color 0.2s ease',
-    border: 'none',
-    margin: 0,
-    padding: 0,
-  };
-
-  const buttonStyle = {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '12px 16px',
-    textAlign: 'left',
-    cursor: 'pointer',
-    border: 'none',
-    background: 'none',
-    backgroundColor: 'transparent',
-    margin: 0,
-    outline: 'none',
-    fontFamily: 'inherit',
-  };
-
-  const iconContainerStyle = {
-    width: '36px',
-    height: '36px',
-    minWidth: '36px',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.iconBg,
-    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-    flexShrink: 0,
-  };
-
-  const titleContainerStyle = {
-    flex: 1,
-    minWidth: 0,
-    overflow: 'hidden',
-  };
-
-  const titleStyle = {
-    fontWeight: 600,
-    fontSize: '14px',
-    lineHeight: '1.4',
-    display: 'block',
-    color: colors.titleText,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    margin: 0,
-    padding: 0,
-  };
-
-  const subtitleStyle = {
-    fontSize: '12px',
-    lineHeight: '1.4',
-    color: '#64748b',
-    display: 'block',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    marginTop: '2px',
-    padding: 0,
-  };
-
-  const badgeStyle = {
-    fontSize: '12px',
-    fontWeight: 500,
-    color: '#64748b',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    padding: '4px 10px',
-    borderRadius: '9999px',
-    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-    flexShrink: 0,
-  };
-
-  const contentStyle = {
-    padding: '12px 16px 16px 16px',
-    borderTop: '1px solid #f1f5f9',
-    backgroundColor: 'rgba(248, 250, 252, 0.5)',
-  };
-
   return (
     <motion.div
-      style={containerStyle}
+      className="w-full block bg-white rounded-xl overflow-hidden shadow-sm border-none mb-0"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
       {/* Full-width header */}
-      <div style={headerStyle}>
+      <div className={cn(
+        'w-full block border-none m-0 p-0 transition-colors duration-200',
+        isHovered ? colors.headerBgHover : colors.headerBg
+      )}>
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          style={buttonStyle}
+          className="w-full flex items-center gap-3 p-3 text-left cursor-pointer border-none bg-transparent m-0 outline-none font-inherit"
         >
           {Icon && (
-            <div style={iconContainerStyle}>
-              <Icon style={{ width: '20px', height: '20px', color: colors.iconText }} />
+            <div className="w-9 h-9 min-w-[36px] rounded-lg flex items-center justify-center bg-white shadow-sm shrink-0">
+              <Icon className={cn('w-5 h-5', colors.iconText)} />
             </div>
           )}
 
-          <div style={titleContainerStyle}>
-            <span style={titleStyle}>{title}</span>
-            {subtitle && <span style={subtitleStyle}>{subtitle}</span>}
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <span className={cn('font-semibold text-sm leading-[1.4] block overflow-hidden text-ellipsis whitespace-nowrap m-0 p-0', colors.titleText)}>
+              {title}
+            </span>
+            {subtitle && (
+              <span className="text-xs leading-[1.4] text-slate-500 block overflow-hidden text-ellipsis whitespace-nowrap mt-0.5 p-0">
+                {subtitle}
+              </span>
+            )}
           </div>
 
-          {badge && <span style={badgeStyle}>{badge}</span>}
+          {badge && (
+            <span className="text-xs font-medium text-slate-500 bg-white/90 px-2.5 py-1 rounded-full shadow-sm shrink-0">
+              {badge}
+            </span>
+          )}
         </button>
       </div>
 
@@ -203,9 +111,9 @@ export function FormAccordion({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
+            className="overflow-hidden"
           >
-            <div style={contentStyle}>
+            <div className="p-3 pb-4 border-t border-slate-100 bg-slate-50/50">
               {children}
             </div>
           </motion.div>
@@ -221,15 +129,8 @@ export function FormAccordion({
  * A container for multiple FormAccordion items with consistent spacing
  */
 export function FormAccordionGroup({ children, className }) {
-  const groupStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    width: '100%',
-  };
-
   return (
-    <div style={groupStyle} className={className}>
+    <div className={cn('flex flex-col gap-3 w-full', className)}>
       {children}
     </div>
   );

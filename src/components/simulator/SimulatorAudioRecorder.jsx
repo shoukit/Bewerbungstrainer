@@ -216,48 +216,95 @@ const SimulatorAudioRecorder = ({
 
   if (permissionDenied) {
     return (
-      <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: branding.errorLight, textAlign: 'center' }}>
-        <MicOff style={{ width: '48px', height: '48px', color: branding.error, marginBottom: '12px' }} />
-        <p style={{ color: branding.error, fontWeight: 600, margin: 0 }}>Mikrofonzugriff verweigert</p>
-        <p style={{ color: branding.textSecondary, fontSize: '14px', marginTop: '8px' }}>
+      <div
+        className="p-6 rounded-2xl text-center"
+        style={{ backgroundColor: branding.errorLight }}
+      >
+        <MicOff className="w-12 h-12 mb-3 mx-auto" style={{ color: branding.error }} />
+        <p className="font-semibold m-0" style={{ color: branding.error }}>Mikrofonzugriff verweigert</p>
+        <p className="text-sm mt-2" style={{ color: branding.textSecondary }}>
           Bitte erlaube den Zugriff auf dein Mikrofon in den Browser-Einstellungen.
         </p>
       </div>
     );
   }
 
+  // Dynamic button styles based on recording state
+  const getMainButtonStyle = () => {
+    const baseStyle = {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '12px',
+      padding: isMobile ? '14px 20px' : '14px 28px',
+      borderRadius: '12px',
+      border: 'none',
+      color: 'white',
+      fontSize: isMobile ? '15px' : '16px',
+      fontWeight: 600,
+      cursor: (disabled || isSubmitting) ? 'not-allowed' : 'pointer',
+      flex: isMobile ? 1 : 'none',
+    };
+
+    if (disabled || isSubmitting) {
+      return {
+        ...baseStyle,
+        background: branding.borderColor,
+        boxShadow: 'none',
+      };
+    }
+
+    if (recordingState === 'idle') {
+      return {
+        ...baseStyle,
+        background: branding.error,
+        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
+      };
+    } else if (recordingState === 'recording') {
+      return {
+        ...baseStyle,
+        background: branding.warning,
+        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
+      };
+    } else {
+      return {
+        ...baseStyle,
+        background: branding.success,
+        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
+      };
+    }
+  };
+
   return (
-    <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: branding.cardBg, border: `1px solid ${branding.borderColor}`, position: 'relative' }}>
+    <div
+      className="p-6 rounded-2xl relative"
+      style={{
+        backgroundColor: branding.cardBg,
+        border: `1px solid ${branding.borderColor}`,
+      }}
+    >
       {/* Settings Button - Mobile: Top right corner */}
       {isMobile && (
         <button
           onClick={onOpenSettings}
+          className="absolute top-3 right-3 p-2.5 rounded-xl flex items-center justify-center"
           style={{
-            position: 'absolute',
-            top: '12px',
-            right: '12px',
-            padding: '10px',
-            borderRadius: '10px',
             background: branding.cardBgHover,
             border: `1px solid ${branding.borderColor}`,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
-          <Settings size={18} color={branding.textMuted} />
+          <Settings size={18} style={{ color: branding.textMuted }} />
         </button>
       )}
 
       {/* Timer */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+      <div className="flex justify-center mb-6">
         <SessionTimer seconds={seconds} maxSeconds={timeLimit} isRecording={recordingState === 'recording'} branding={branding} />
       </div>
 
       {/* Audio Level Visualization */}
       {recordingState === 'recording' && (
-        <div style={{ marginBottom: '24px' }}>
+        <div className="mb-6">
           <AudioVisualizer
             audioLevel={audioLevel}
             isActive={true}
@@ -270,30 +317,25 @@ const SimulatorAudioRecorder = ({
 
       {/* Paused State Indicator */}
       {recordingState === 'paused' && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', height: '60px', marginBottom: '24px', color: branding.warning }}>
+        <div className="flex justify-center items-center gap-2 h-[60px] mb-6" style={{ color: branding.warning }}>
           <Mic size={24} />
-          <span style={{ fontSize: '16px', fontWeight: 600 }}>Aufnahme pausiert</span>
+          <span className="text-base font-semibold">Aufnahme pausiert</span>
         </div>
       )}
 
       {/* Recording Buttons */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+      <div className="flex justify-center gap-3">
         {/* Settings Button - Desktop only (mobile has it in corner) */}
         {!isMobile && (
           <button
             onClick={onOpenSettings}
+            className="p-3.5 rounded-xl flex items-center justify-center"
             style={{
-              padding: '14px',
-              borderRadius: '12px',
               background: branding.cardBgHover,
               border: `1px solid ${branding.borderColor}`,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
             }}
           >
-            <Settings size={20} color={branding.textMuted} />
+            <Settings size={20} style={{ color: branding.textMuted }} />
           </button>
         )}
 
@@ -301,38 +343,27 @@ const SimulatorAudioRecorder = ({
         <button
           onClick={handleMainButtonClick}
           disabled={disabled || isSubmitting}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-            padding: isMobile ? '14px 20px' : '14px 28px', borderRadius: '12px', border: 'none',
-            flex: isMobile ? 1 : 'none',
-            background: recordingState === 'idle'
-              ? ((disabled || isSubmitting) ? branding.borderColor : branding.error)
-              : recordingState === 'recording'
-                ? branding.warning
-                : branding.success,
-            color: 'white', fontSize: isMobile ? '15px' : '16px', fontWeight: 600,
-            cursor: (disabled || isSubmitting) ? 'not-allowed' : 'pointer',
-            boxShadow: (disabled || isSubmitting) ? 'none' : '0 4px 14px rgba(0, 0, 0, 0.2)',
-          }}
+          style={getMainButtonStyle()}
         >
-          {recordingState === 'idle' && <><Mic style={{ width: '20px', height: '20px' }} />Aufnahme starten</>}
-          {recordingState === 'recording' && <><Square style={{ width: '18px', height: '18px' }} />Pausieren</>}
-          {recordingState === 'paused' && <><Play style={{ width: '18px', height: '18px' }} />Fortsetzen</>}
+          {recordingState === 'idle' && <><Mic className="w-5 h-5" />Aufnahme starten</>}
+          {recordingState === 'recording' && <><Square className="w-[18px] h-[18px]" />Pausieren</>}
+          {recordingState === 'paused' && <><Play className="w-[18px] h-[18px]" />Fortsetzen</>}
         </button>
 
         {/* Finish Button - Only when recording or paused */}
         {(recordingState === 'recording' || recordingState === 'paused') && (
           <button
             onClick={finishRecording}
+            className="flex items-center justify-center gap-2 rounded-xl border-none font-semibold cursor-pointer"
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              padding: isMobile ? '14px 16px' : '14px 24px', borderRadius: '12px', border: 'none',
+              padding: isMobile ? '14px 16px' : '14px 24px',
               flex: isMobile ? 1 : 'none',
-              backgroundColor: branding.cardBgHover, color: branding.textMain,
-              fontSize: isMobile ? '15px' : '16px', fontWeight: 600, cursor: 'pointer',
+              backgroundColor: branding.cardBgHover,
+              color: branding.textMain,
+              fontSize: isMobile ? '15px' : '16px',
             }}
           >
-            <CheckCircle style={{ width: '18px', height: '18px', color: branding.success }} />
+            <CheckCircle className="w-[18px] h-[18px]" style={{ color: branding.success }} />
             {labels?.submitButton || 'Antwort abgeben'}
           </button>
         )}
@@ -340,23 +371,20 @@ const SimulatorAudioRecorder = ({
 
       {/* Recording Hint */}
       {recordingState === 'idle' && !isSubmitting && (
-        <p style={{ textAlign: 'center', marginTop: '16px', color: branding.textMuted, fontSize: '14px' }}>
+        <p className="text-center mt-4 text-sm" style={{ color: branding.textMuted }}>
           {labels?.submitHint || 'Klicke auf den Button, um deine Antwort aufzunehmen'}
         </p>
       )}
 
       {/* Submitting State */}
       {isSubmitting && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '24px' }}>
-          <Loader2 style={{ width: '32px', height: '32px', color: primaryAccent, animation: 'spin 1s linear infinite' }} />
-          <p style={{ marginTop: '12px', color: branding.textSecondary, fontSize: '14px' }}>{labels?.analyzing || 'Antwort wird analysiert...'}</p>
+        <div className="flex flex-col items-center mt-6">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: primaryAccent }} />
+          <p className="mt-3 text-sm" style={{ color: branding.textSecondary }}>
+            {labels?.analyzing || 'Antwort wird analysiert...'}
+          </p>
         </div>
       )}
-
-      <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 };

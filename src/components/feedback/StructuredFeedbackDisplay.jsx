@@ -99,37 +99,38 @@ const ScoreRing = ({ score, size = 'large', maxScore = 100 }) => {
 };
 
 /**
- * Rating Bar Component - Using inline styles to avoid CSS conflicts
+ * Rating Bar Component
  */
 const RatingBar = ({ rating, maxRating = 10, showLabel = true }) => {
   const percentage = (rating / maxRating) * 100;
 
   const getBarColor = (pct) => {
-    if (pct >= 80) return '#22c55e'; // green-500
-    if (pct >= 60) return '#3b82f6'; // blue-500
-    if (pct >= 40) return '#f59e0b'; // amber-500
-    return '#ef4444'; // red-500
+    if (pct >= 80) return '#22c55e';
+    if (pct >= 60) return '#3b82f6';
+    if (pct >= 40) return '#f59e0b';
+    return '#ef4444';
   };
 
   const getTextColor = (pct) => {
-    if (pct >= 80) return '#16a34a'; // green-600
-    if (pct >= 60) return '#2563eb'; // blue-600
-    if (pct >= 40) return '#d97706'; // amber-600
-    return '#dc2626'; // red-600
+    if (pct >= 80) return '#16a34a';
+    if (pct >= 60) return '#2563eb';
+    if (pct >= 40) return '#d97706';
+    return '#dc2626';
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <div style={{ flex: 1, height: '8px', backgroundColor: '#e2e8f0', borderRadius: '9999px', overflow: 'hidden' }}>
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
         <motion.div
-          style={{ height: '100%', borderRadius: '9999px', backgroundColor: getBarColor(percentage) }}
+          className="h-full rounded-full"
+          style={{ backgroundColor: getBarColor(percentage) }}
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         />
       </div>
       {showLabel && (
-        <span style={{ fontSize: '14px', fontWeight: 600, minWidth: '2.5rem', textAlign: 'right', color: getTextColor(percentage) }}>
+        <span className="text-sm font-semibold min-w-10 text-right" style={{ color: getTextColor(percentage) }}>
           {rating}/{maxRating}
         </span>
       )}
@@ -324,17 +325,16 @@ const TonalityCard = ({ rating, feedback }) => {
 };
 
 /**
- * Rating Criterion Card (Accordion style) - Using inline styles to avoid CSS conflicts
+ * Rating Criterion Card (Accordion style)
  */
 const CriterionCard = ({ label, rating, maxRating = 10, description, index }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const percentage = (rating / maxRating) * 100;
 
   const getStatusIcon = (pct) => {
-    if (pct >= 80) return { icon: CheckCircle2, color: '#22c55e' }; // green-500
-    if (pct >= 40) return { icon: TrendingUp, color: '#f59e0b' }; // amber-500
-    return { icon: AlertTriangle, color: '#ef4444' }; // red-500
+    if (pct >= 80) return { icon: CheckCircle2, color: '#22c55e' };
+    if (pct >= 40) return { icon: TrendingUp, color: '#f59e0b' };
+    return { icon: AlertTriangle, color: '#ef4444' };
   };
 
   const status = getStatusIcon(percentage);
@@ -342,45 +342,27 @@ const CriterionCard = ({ label, rating, maxRating = 10, description, index }) =>
 
   return (
     <motion.div
-      style={{
-        backgroundColor: 'white',
-        border: '1px solid #e2e8f0',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-      }}
+      className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
     >
       <button
         onClick={() => description && setIsExpanded(!isExpanded)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
         disabled={!description}
-        style={{
-          width: '100%',
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-          transition: 'background-color 0.2s',
-          backgroundColor: isHovered && description ? '#f8fafc' : 'transparent',
-          cursor: description ? 'pointer' : 'default',
-          border: 'none',
-          textAlign: 'left',
-        }}
+        className={`w-full px-4 py-3 flex items-center justify-between gap-3 transition-colors border-none text-left ${
+          description ? 'cursor-pointer hover:bg-slate-50' : 'cursor-default'
+        }`}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-          <StatusIcon style={{ width: '20px', height: '20px', flexShrink: 0, color: status.color }} />
-          <span style={{ fontWeight: 500, color: '#1e293b', fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <StatusIcon className="w-5 h-5 flex-shrink-0" style={{ color: status.color }} />
+          <span className="font-medium text-slate-800 text-sm truncate">
             {label}
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '80px' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-20">
             <RatingBar rating={rating} maxRating={maxRating} />
           </div>
           {description && (
@@ -388,7 +370,7 @@ const CriterionCard = ({ label, rating, maxRating = 10, description, index }) =>
               animate={{ rotate: isExpanded ? 180 : 0 }}
               transition={{ duration: 0.2 }}
             >
-              <ChevronDown style={{ width: '16px', height: '16px', color: '#94a3b8' }} />
+              <ChevronDown className="w-4 h-4 text-slate-400" />
             </motion.div>
           )}
         </div>
@@ -401,10 +383,10 @@ const CriterionCard = ({ label, rating, maxRating = 10, description, index }) =>
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
+            className="overflow-hidden"
           >
-            <div style={{ padding: '4px 16px 16px 16px', borderTop: '1px solid #f1f5f9' }}>
-              <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, margin: 0 }}>
+            <div className="px-4 pb-4 pt-1 border-t border-slate-100">
+              <p className="text-sm text-slate-600 leading-relaxed m-0">
                 {description}
               </p>
             </div>

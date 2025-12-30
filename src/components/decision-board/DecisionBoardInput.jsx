@@ -289,8 +289,8 @@ const BrainstormPopover = ({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="relative mt-4 p-5 bg-white rounded-xl shadow-lg"
-      style={{ border: `2px solid ${persona?.color || '#6366f1'}` }}
+      className="relative mt-4 p-5 bg-white rounded-xl shadow-lg border-2"
+      style={{ borderColor: persona?.color || '#6366f1' }}
     >
       {/* Close button */}
       <button
@@ -951,7 +951,7 @@ const DecisionBoardInput = ({
       >
         <div className="deep-dive-card-content flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 flex-[1_1_auto] min-w-[200px]">
-            <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0" style={{ background: 'var(--header-gradient)' }}>
+            <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand-gradient">
               <Wand2 size={20} color="white" />
             </div>
             <div className="min-w-0">
@@ -971,8 +971,7 @@ const DecisionBoardInput = ({
               e.stopPropagation();
               if (topic.trim()) setIsWizardOpen(true);
             }}
-            className="shrink-0"
-            style={{ background: topic.trim() ? 'var(--header-gradient)' : undefined }}
+            className={`shrink-0 ${topic.trim() ? 'bg-brand-gradient' : ''}`}
           >
             <Sparkles size={18} className="mr-1.5" />
             Starten
@@ -1085,10 +1084,7 @@ const DecisionBoardInput = ({
           disabled={!canAnalyze || isAnalyzing}
           variant="solid"
           size="lg"
-          className="px-8 py-4 text-xl"
-          style={{
-            background: canAnalyze ? 'var(--header-gradient)' : undefined,
-          }}
+          className={`px-8 py-4 text-xl ${canAnalyze ? 'bg-brand-gradient' : ''}`}
         >
           {isAnalyzing ? (
             <>

@@ -90,15 +90,9 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpT
 
   if (!audioAnalysis || !hasData) {
     return (
-      <div style={{
-        background: '#fff',
-        borderRadius: '12px',
-        padding: '40px 20px',
-        border: `1px solid ${branding.borderColor}`,
-        textAlign: 'center',
-      }}>
-        <Gauge size={32} color={branding.textMuted} style={{ marginBottom: '12px' }} />
-        <p style={{ color: branding.textMuted, fontSize: '14px' }}>Keine Audio-Analyse verfügbar</p>
+      <div className="bg-white rounded-xl p-10 py-10 text-center" style={{ border: `1px solid ${branding.borderColor}` }}>
+        <Gauge size={32} color={branding.textMuted} className="mb-3 inline-block" />
+        <p className="text-sm m-0" style={{ color: branding.textMuted }}>Keine Audio-Analyse verfügbar</p>
       </div>
     );
   }
@@ -115,24 +109,19 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpT
   const fillerFeedback = speechCleanliness?.feedback;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="flex flex-col gap-4">
       {/* Confidence Gauge */}
       {confidenceScore !== undefined && (
-        <div style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          border: `1px solid ${branding.borderColor}`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+        <div className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${branding.borderColor}` }}>
+          <div className="flex items-center gap-2 mb-4">
             <Gauge size={18} color={primaryAccent} />
-            <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+            <span className="text-sm font-semibold" style={{ color: branding.textMain }}>
               Selbstsicherheit
             </span>
           </div>
 
           {/* Semicircle Gauge */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+          <div className="flex justify-center mb-4">
             {(() => {
               const score = confidenceScore;
               const colorScheme = getConfidenceColorScheme(score);
@@ -142,14 +131,10 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpT
               const offset = circumference - (score / 100) * circumference;
 
               return (
-                <div style={{
-                  background: colorScheme.bg,
-                  borderRadius: '16px',
-                  padding: '20px 30px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                }}>
+                <div
+                  className="rounded-2xl p-5 px-7.5 flex flex-col items-center"
+                  style={{ background: colorScheme.bg }}
+                >
                   <div style={{ position: 'relative', width: size, height: size / 2 + 20 }}>
                     <svg width={size} height={size / 2 + 20} style={{ overflow: 'visible' }}>
                       <path
@@ -212,57 +197,39 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpT
 
       {/* Filler Words */}
       {speechCleanliness && (
-        <div style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          border: `1px solid ${branding.borderColor}`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${branding.borderColor}` }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
               <MessageSquare size={18} color="#f97316" />
-              <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+              <span className="text-sm font-semibold" style={{ color: branding.textMain }}>
                 Füllwörter
               </span>
             </div>
-            <span style={{
-              fontSize: '13px',
-              fontWeight: 600,
-              padding: '4px 10px',
-              borderRadius: '20px',
-              background: fillerCount <= 2 ? '#dcfce7' : fillerCount <= 5 ? '#fef3c7' : '#fee2e2',
-              color: fillerCount <= 2 ? '#166534' : fillerCount <= 5 ? '#92400e' : '#991b1b',
-            }}>
+            <span
+              className="text-[13px] font-semibold px-2.5 py-1 rounded-full"
+              style={{
+                background: fillerCount <= 2 ? '#dcfce7' : fillerCount <= 5 ? '#fef3c7' : '#fee2e2',
+                color: fillerCount <= 2 ? '#166534' : fillerCount <= 5 ? '#92400e' : '#991b1b',
+              }}
+            >
               {fillerCount}x gesamt
             </span>
           </div>
 
           {fillerWordAnalysis.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+            <div className="flex flex-col gap-2 mb-3">
               {fillerWordAnalysis.map((item, idx) => (
-                <div key={idx} style={{ borderRadius: '8px', background: '#fef3c7', overflow: 'hidden' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                  }}>
-                    <span style={{ fontSize: '13px', color: '#92400e', fontWeight: 500 }}>
+                <div key={idx} className="rounded-lg bg-amber-100 overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <span className="text-[13px] text-amber-900 font-medium">
                       "{item.word}"
                     </span>
-                    <span style={{ fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
+                    <span className="text-xs text-amber-900 font-semibold">
                       {item.count}x
                     </span>
                   </div>
                   {item.examples?.length > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '6px',
-                      padding: '8px 12px',
-                      background: '#fef9e7',
-                      borderTop: '1px solid #fde68a',
-                    }}>
+                    <div className="flex flex-wrap gap-1.5 px-3 py-2 bg-amber-50 border-t border-amber-200">
                       {item.examples.map((example, exIdx) => (
                         <button
                           key={exIdx}
@@ -309,28 +276,22 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpT
 
       {/* Pacing */}
       {pacing && (
-        <div style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          border: `1px solid ${branding.borderColor}`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${branding.borderColor}` }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
               <Timer size={18} color="#3b82f6" />
-              <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+              <span className="text-sm font-semibold" style={{ color: branding.textMain }}>
                 Sprechtempo
               </span>
             </div>
             {pacing.estimated_wpm && (
-              <span style={{
-                fontSize: '12px',
-                fontFamily: 'monospace',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                background: branding.cardBgHover,
-                color: branding.textSecondary,
-              }}>
+              <span
+                className="text-xs font-mono px-2.5 py-1 rounded-md"
+                style={{
+                  background: branding.cardBgHover,
+                  color: branding.textSecondary,
+                }}
+              >
                 ~{pacing.estimated_wpm} WPM
               </span>
             )}
@@ -401,27 +362,15 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpT
 
       {/* Tonality */}
       {tonality && (
-        <div style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          border: `1px solid ${branding.borderColor}`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${branding.borderColor}` }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
               <Music2 size={18} color="#14b8a6" />
-              <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+              <span className="text-sm font-semibold" style={{ color: branding.textMain }}>
                 Betonung & Melodie
               </span>
             </div>
-            <span style={{
-              fontSize: '12px',
-              fontWeight: 500,
-              padding: '4px 10px',
-              borderRadius: '6px',
-              background: '#f0fdfa',
-              color: '#0d9488',
-            }}>
+            <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-teal-50 text-teal-700">
               {getTonalityLabel(tonality.rating)}
             </span>
           </div>

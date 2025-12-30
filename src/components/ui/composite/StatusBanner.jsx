@@ -66,54 +66,26 @@ const StatusBanner = ({
   const IconComponent = config.icon;
   const isLoading = variant === 'loading';
 
-  const baseStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '12px 16px',
-    borderRadius: '12px',
-    backgroundColor: config.bg,
-    border: `1px solid ${config.border}`,
-    color: config.text,
-    fontSize: '14px',
-    fontWeight: 500,
-    ...(isToast && {
-      position: 'fixed',
-      bottom: '24px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-      zIndex: 1000,
-      maxWidth: '90%',
-    }),
-    ...style,
-  };
-
   return (
-    <div style={baseStyle} className={className}>
+    <div
+      className={`flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium ${isToast ? 'fixed bottom-6 left-1/2 -translate-x-1/2 shadow-lg z-[1000] max-w-[90%]' : ''} ${className}`}
+      style={{
+        backgroundColor: config.bg,
+        border: `1px solid ${config.border}`,
+        color: config.text,
+        ...style,
+      }}
+    >
       <IconComponent
         size={20}
-        style={{
-          flexShrink: 0,
-          ...(isLoading && { animation: 'spin 1s linear infinite' }),
-        }}
-        className={isLoading ? 'animate-spin' : ''}
+        className={`flex-shrink-0 ${isLoading ? 'animate-spin' : ''}`}
       />
-      <span style={{ flex: 1 }}>{children || message}</span>
+      <span className="flex-1">{children || message}</span>
       {onDismiss && (
         <button
           onClick={onDismiss}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: '4px',
-            cursor: 'pointer',
-            color: config.text,
-            opacity: 0.7,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="bg-transparent border-none p-1 cursor-pointer flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity"
+          style={{ color: config.text }}
           aria-label="Schließen"
         >
           <X size={16} />

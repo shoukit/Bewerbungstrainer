@@ -57,45 +57,29 @@ const FeatureAppHeader = ({
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
   return (
-    <div style={{ padding: '24px', maxWidth, margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '16px'
-        }}>
+    <div className="p-6 mx-auto" style={{ maxWidth }}>
+      <div className="mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           {/* Left side: Icon + Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: gradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Icon style={{ width: '24px', height: '24px', color: 'white' }} />
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center"
+              style={{ background: gradient }}
+            >
+              <Icon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 style={{
-                fontSize: '28px',
-                fontWeight: 700,
-                color: COLORS.slate[900],
-                margin: 0
-              }}>
+              <h1 className="text-[28px] font-bold text-slate-900 m-0">
                 {title}
               </h1>
-              <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
+              <p className="text-sm text-slate-600 m-0">
                 {subtitle}
               </p>
             </div>
           </div>
 
           {/* Right side: Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="flex items-center gap-3">
             {/* Feature Info Button */}
             {featureId && (
               <FeatureInfoButton featureId={featureId} size="sm" />
@@ -108,19 +92,10 @@ const FeatureAppHeader = ({
             {onNavigateToHistory && historyLabel && (
               <button
                 onClick={onNavigateToHistory}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl border-2 bg-white text-sm font-semibold cursor-pointer transition-all hover:bg-slate-50"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 20px',
-                  borderRadius: '12px',
-                  border: `2px solid ${primaryAccent}`,
-                  backgroundColor: 'white',
+                  borderColor: primaryAccent,
                   color: primaryAccent,
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
                 }}
               >
                 <FolderOpen size={18} />

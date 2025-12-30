@@ -8,7 +8,6 @@ import {
   User,
   Info,
 } from 'lucide-react';
-import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 import DynamicFormField from '@/components/ui/composite/DynamicFormField';
 
@@ -18,12 +17,9 @@ import DynamicFormField from '@/components/ui/composite/DynamicFormField';
  * Collects variable inputs for the roleplay scenario.
  * Replaces the popup dialog with a full page.
  */
-const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
+const RoleplayVariablesPage = ({ scenario, onBack, onNext, primaryAccent, headerGradient, buttonGradient }) => {
   const [formValues, setFormValues] = useState({});
   const [errors, setErrors] = useState({});
-
-  // Partner theming
-  const b = useBranding();
 
   // Helper function to replace {{variable}} placeholders with current form values
   const replaceVariables = (text) => {
@@ -114,58 +110,29 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
   }
 
   return (
-    <div style={{ padding: b.space[6], paddingBottom: '200px', maxWidth: '640px', margin: '0 auto' }}>
+    <div className="p-6 pb-[200px] max-w-[640px] mx-auto">
       {/* Header */}
-      <div style={{ marginBottom: b.space[8] }}>
+      <div className="mb-8">
         <button
           onClick={onBack}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: b.space[2],
-            padding: `${b.space[2]} ${b.space[3]}`,
-            marginBottom: b.space[4],
-            border: 'none',
-            background: 'transparent',
-            color: COLORS.slate[600],
-            fontSize: b.fontSize.sm,
-            cursor: 'pointer',
-            borderRadius: b.radius.md,
-            transition: `background ${b.transition.normal}`,
-          }}
-          onMouseEnter={(e) => e.target.style.background = COLORS.slate[100]}
-          onMouseLeave={(e) => e.target.style.background = 'transparent'}
+          className="inline-flex items-center gap-2 px-3 py-2 mb-4 border-none bg-transparent text-slate-600 text-sm cursor-pointer rounded-md transition-colors hover:bg-slate-100"
         >
-          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          <ArrowLeft className="w-[18px] h-[18px]" />
           Zurück zur Übersicht
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[4] }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: b.radius.xl,
-            background: b.headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Sparkles style={{ width: '28px', height: '28px', color: b.headerText }} />
+        <div className="flex items-center gap-4">
+          <div
+            className="w-14 h-14 rounded-xl flex items-center justify-center"
+            style={{ background: headerGradient }}
+          >
+            <Sparkles className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 style={{
-              fontSize: b.fontSize.xl,
-              fontWeight: 700,
-              color: COLORS.slate[900],
-              margin: 0,
-            }}>
+            <h1 className="text-xl font-bold text-slate-900 m-0">
               {scenario.title}
             </h1>
-            <p style={{
-              fontSize: b.fontSize.sm,
-              color: COLORS.slate[600],
-              margin: `${b.space[1]} 0 0 0`,
-            }}>
+            <p className="text-sm text-slate-600 mt-1 mb-0">
               Personalisiere dein Rollenspiel
             </p>
           </div>
@@ -174,46 +141,19 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
 
       {/* Long Description - Detailed task description */}
       {scenario.long_description && (
-        <div style={{
-          padding: `${b.space[5]} ${b.space[6]}`,
-          borderRadius: b.radius.xl,
-          backgroundColor: 'white',
-          border: `1px solid ${COLORS.slate[200]}`,
-          marginBottom: b.space[6],
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: b.space[3.5],
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: b.radius.lg,
-              background: b.headerGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Info style={{ width: '20px', height: '20px', color: 'white' }} />
+        <div className="p-5 px-6 rounded-xl bg-white border border-slate-200 mb-6">
+          <div className="flex items-start gap-3.5">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: headerGradient }}
+            >
+              <Info className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 style={{
-                fontSize: b.fontSize.base,
-                fontWeight: 600,
-                color: COLORS.slate[900],
-                margin: `0 0 ${b.space[2]} 0`,
-              }}>
+              <h3 className="text-base font-semibold text-slate-900 m-0 mb-2">
                 Deine Aufgabe
               </h3>
-              <p style={{
-                fontSize: b.fontSize.sm,
-                lineHeight: '1.6',
-                color: COLORS.slate[700],
-                margin: 0,
-                whiteSpace: 'pre-wrap',
-              }}>
+              <p className="text-sm leading-relaxed text-slate-700 m-0 whitespace-pre-wrap">
                 {scenario.long_description?.replace(/\/n/g, '\n')}
               </p>
             </div>
@@ -223,18 +163,8 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
 
       {/* Short Description - Only show if no long_description */}
       {!scenario.long_description && scenario.description && (
-        <div style={{
-          padding: `${b.space[4]} ${b.space[5]}`,
-          borderRadius: b.radius.lg,
-          backgroundColor: COLORS.slate[100],
-          marginBottom: b.space[6],
-        }}>
-          <p style={{
-            fontSize: b.fontSize.sm,
-            color: COLORS.slate[700],
-            margin: 0,
-            lineHeight: 1.6,
-          }}>
+        <div className="p-4 px-5 rounded-lg bg-slate-100 mb-6">
+          <p className="text-sm text-slate-700 m-0 leading-relaxed">
             {scenario.description}
           </p>
         </div>
@@ -242,45 +172,26 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
 
       {/* Interviewer Profile Preview */}
       {scenario.interviewer_profile && (
-        <div style={{
-          padding: `${b.space[4]} ${b.space[5]}`,
-          borderRadius: b.radius.lg,
-          border: `1px solid ${COLORS.slate[200]}`,
-          marginBottom: b.space[6],
-          display: 'flex',
-          alignItems: 'center',
-          gap: b.space[4],
-        }}>
+        <div className="p-4 px-5 rounded-lg border border-slate-200 mb-6 flex items-center gap-4">
           {scenario.interviewer_profile.image_url ? (
             <img
               src={scenario.interviewer_profile.image_url}
               alt={replaceVariables(scenario.interviewer_profile.name)}
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: b.radius.full,
-                objectFit: 'cover',
-              }}
+              className="w-12 h-12 rounded-full object-cover"
             />
           ) : (
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: b.radius.full,
-              background: b.primaryAccentLight,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <User style={{ width: '24px', height: '24px', color: b.primaryAccent }} />
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center bg-primary/10"
+            >
+              <User className="w-6 h-6 text-primary" />
             </div>
           )}
           <div>
-            <p style={{ fontSize: b.fontSize.sm, fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
+            <p className="text-sm font-semibold text-slate-900 m-0">
               Dein Gesprächspartner: {replaceVariables(scenario.interviewer_profile.name)}
             </p>
             {scenario.interviewer_profile.role && (
-              <p style={{ fontSize: b.fontSize.sm, color: COLORS.slate[600], margin: `${b.space[0.5]} 0 0 0` }}>
+              <p className="text-sm text-slate-600 mt-0.5 mb-0">
                 {replaceVariables(scenario.interviewer_profile.role)}
               </p>
             )}
@@ -297,33 +208,24 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
             value={formValues[field.key]}
             onChange={handleChange}
             error={errors[field.key]}
-            focusColor={b.primaryAccent}
+            focusColor={primaryAccent}
           />
         ))}
 
         {/* Session Info */}
-        <div style={{
-          padding: `${b.space[4]} ${b.space[5]}`,
-          borderRadius: b.radius.lg,
-          backgroundColor: b.primaryAccentLight,
-          marginTop: b.space[6],
-          marginBottom: b.space[6],
-          display: 'flex',
-          gap: b.space[5],
-          flexWrap: 'wrap',
-        }}>
+        <div className="p-4 px-5 rounded-lg bg-primary/10 mt-6 mb-6 flex gap-5 flex-wrap">
           <div>
-            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>
-              <Clock style={{ width: '12px', height: '12px', display: 'inline', marginRight: b.space[1] }} />
+            <span className="text-xs text-slate-500 block">
+              <Clock className="w-3 h-3 inline mr-1" />
               Dauer
             </span>
-            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
+            <span className="text-base font-semibold text-slate-900">
               ca. 10 Min
             </span>
           </div>
           <div>
-            <span style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500], display: 'block' }}>Typ</span>
-            <span style={{ fontSize: b.fontSize.base, fontWeight: 600, color: COLORS.slate[900] }}>
+            <span className="text-xs text-slate-500 block">Typ</span>
+            <span className="text-base font-semibold text-slate-900">
               Live-Gespräch
             </span>
           </div>
@@ -332,34 +234,20 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext }) => {
         {/* Submit Button */}
         <button
           type="submit"
+          className="w-full px-6 py-4 rounded-xl border-none text-white text-base font-semibold cursor-pointer flex items-center justify-center gap-2.5 transition-all hover:-translate-y-0.5"
           style={{
-            width: '100%',
-            padding: `${b.space[4]} ${b.space[6]}`,
-            borderRadius: b.radius.xl,
-            border: 'none',
-            background: b.buttonGradient,
-            color: 'white',
-            fontSize: b.fontSize.base,
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: b.space[2.5],
-            transition: `transform ${b.transition.normal}, box-shadow ${b.transition.normal}`,
-            boxShadow: `0 4px 12px ${b.primaryAccent}4d`,
+            background: buttonGradient,
+            boxShadow: `0 4px 12px ${primaryAccent}4d`,
           }}
           onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
+            e.currentTarget.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
           }}
           onMouseLeave={(e) => {
-            e.target.style.transform = 'none';
-            e.target.style.boxShadow = `0 4px 12px ${b.primaryAccent}4d`;
+            e.currentTarget.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
           }}
         >
           Weiter
-          <ArrowRight style={{ width: '20px', height: '20px' }} />
+          <ArrowRight className="w-5 h-5" />
         </button>
       </form>
     </div>

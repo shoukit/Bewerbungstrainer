@@ -164,47 +164,33 @@ export const TimerDisplay = ({
 
   return (
     <div
-      className={className}
+      className={`inline-flex items-center rounded-lg font-mono ${className || ''}`}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
         gap: sizeConfig.gap,
         padding: sizeConfig.padding,
-        borderRadius: '8px',
         backgroundColor,
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
         ...style,
       }}
     >
       {IconComponent && showIcon && (
         <IconComponent
+          className={variant === 'recording' ? 'animate-pulse' : ''}
           style={{
             width: sizeConfig.iconSize,
             height: sizeConfig.iconSize,
             color,
-            ...(variant === 'recording' ? { animation: 'pulse 1.5s ease-in-out infinite' } : {}),
           }}
         />
       )}
       <span
+        className="font-semibold leading-none"
         style={{
           fontSize: sizeConfig.fontSize,
-          fontWeight: 600,
           color,
-          lineHeight: 1,
         }}
       >
         {formatTime(seconds, format)}
       </span>
-
-      {variant === 'recording' && (
-        <style>{`
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-          }
-        `}</style>
-      )}
     </div>
   );
 };

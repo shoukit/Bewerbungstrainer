@@ -196,26 +196,9 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         onClick={handleClose}
+        className="fixed inset-0 w-full h-full backdrop-blur-lg z-[999999] flex items-center justify-center p-4 pt-[calc(16px+env(safe-area-inset-top,0px))] pb-[calc(16px+env(safe-area-inset-bottom,0px))] box-border"
         style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100%',
-          height: '100%',
           backgroundColor: hexToRgba(COLORS.slate[900], 0.7),
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          zIndex: 999999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-          paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))',
-          paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
-          boxSizing: 'border-box',
-          // Prevent any parent transforms from affecting positioning
           contain: 'layout',
         }}
       >
@@ -227,173 +210,60 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
           exit={{ opacity: 0, scale: 0.9, y: 30 }}
           transition={{ type: 'spring', damping: 25, stiffness: 350 }}
           onClick={(e) => e.stopPropagation()}
-          style={{
-            backgroundColor: COLORS.white,
-            borderRadius: RADIUS['2xl'],
-            maxWidth: '500px',
-            width: '100%',
-            // Use vh as fallback, with max constraint for mobile
-            maxHeight: 'min(calc(100vh - 100px), 700px)',
-            overflow: 'hidden',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
-            border: `1px solid ${COLORS.slate[200]}`,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
+          className="bg-white rounded-2xl max-w-[500px] w-full max-h-[min(calc(100vh-100px),700px)] overflow-hidden shadow-2xl border border-slate-200 flex flex-col"
         >
           {/* Header with gradient */}
           <div
-            style={{
-              background: feature.gradient,
-              padding: '24px 24px 32px',
-              position: 'relative',
-              overflow: 'hidden',
-              flexShrink: 0,
-            }}
+            className="px-6 pt-6 pb-8 relative overflow-hidden flex-shrink-0"
+            style={{ background: feature.gradient }}
           >
             {/* Decorative circles */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '-40px',
-                right: '-40px',
-                width: '120px',
-                height: '120px',
-                borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.1)',
-                pointerEvents: 'none',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '-20px',
-                left: '25%',
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.08)',
-                pointerEvents: 'none',
-              }}
-            />
+            <div className="absolute -top-10 -right-10 w-[120px] h-[120px] rounded-full bg-white/10 pointer-events-none" />
+            <div className="absolute -bottom-5 left-1/4 w-[60px] h-[60px] rounded-full bg-white/[0.08] pointer-events-none" />
 
             {/* Close button - LARGE and prominent */}
             <button
               onClick={handleClose}
-              style={{
-                position: 'absolute',
-                top: '12px',
-                right: '12px',
-                width: '44px',
-                height: '44px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(255, 255, 255, 0.25)',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: COLORS.white,
-                transition: TRANSITIONS.normal,
-                zIndex: 10,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.4)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)')}
+              className="absolute top-3 right-3 w-11 h-11 rounded-full bg-white/25 border-none cursor-pointer flex items-center justify-center text-white transition-all z-10 hover:bg-white/40"
             >
               <X size={CLOSE_ICON_SIZE} strokeWidth={2.5} />
             </button>
 
             {/* Icon and Title */}
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <div
-                style={{
-                  fontSize: '44px',
-                  marginBottom: '12px',
-                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))',
-                }}
-              >
+            <div className="relative z-[1]">
+              <div className="text-[44px] mb-3 drop-shadow-md">
                 {feature.icon}
               </div>
-              <h2
-                style={{
-                  color: COLORS.white,
-                  fontSize: '24px',
-                  fontWeight: 700,
-                  margin: 0,
-                  textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                }}
-              >
+              <h2 className="text-white text-2xl font-bold m-0 drop-shadow-sm">
                 {feature.title}
               </h2>
-              <p
-                style={{
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  fontSize: '14px',
-                  margin: '4px 0 0 0',
-                  fontWeight: 500,
-                }}
-              >
+              <p className="text-white/90 text-sm mt-1 mb-0 font-medium">
                 {feature.subtitle}
               </p>
             </div>
           </div>
 
           {/* Content - scrollable */}
-          <div
-            style={{
-              padding: '20px 24px',
-              flex: 1,
-              overflowY: 'auto',
-              minHeight: 0,
-              WebkitOverflowScrolling: 'touch',
-            }}
-          >
+          <div className="p-5 px-6 flex-1 overflow-y-auto min-h-0 overflow-touch">
             {/* Description */}
-            <p
-              style={{
-                color: COLORS.slate[600],
-                fontSize: '14px',
-                lineHeight: 1.7,
-                margin: '0 0 20px 0',
-              }}
-            >
+            <p className="text-slate-600 text-sm leading-relaxed m-0 mb-5">
               {feature.description}
             </p>
 
             {/* Benefits */}
-            <div style={{ marginBottom: '20px' }}>
-              <h3
-                style={{
-                  color: COLORS.slate[900],
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  margin: '0 0 10px 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
+            <div className="mb-5">
+              <h3 className="text-slate-900 text-[11px] font-semibold uppercase tracking-wide m-0 mb-2.5 flex items-center gap-2">
                 <Sparkles size={14} style={{ color: feature.color }} />
                 Vorteile
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="flex flex-col gap-2">
                 {feature.benefits.map((benefit, index) => (
                   <div
                     key={index}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
-                      backgroundColor: COLORS.slate[50],
-                      borderRadius: '8px',
-                      border: `1px solid ${COLORS.slate[200]}`,
-                    }}
+                    className="flex items-center gap-2.5 px-3 py-2.5 bg-slate-50 rounded-lg border border-slate-200"
                   >
-                    <span style={{ fontSize: '18px', flexShrink: 0 }}>{benefit.icon}</span>
-                    <span style={{ color: COLORS.slate[700], fontSize: '13px' }}>
+                    <span className="text-lg flex-shrink-0">{benefit.icon}</span>
+                    <span className="text-slate-700 text-[13px]">
                       {benefit.text}
                     </span>
                   </div>
@@ -402,46 +272,20 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
             </div>
 
             {/* Learning Goals */}
-            <div style={{ marginBottom: '16px' }}>
-              <h3
-                style={{
-                  color: COLORS.slate[900],
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  margin: '0 0 10px 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
+            <div className="mb-4">
+              <h3 className="text-slate-900 text-[11px] font-semibold uppercase tracking-wide m-0 mb-2.5 flex items-center gap-2">
                 <Target size={14} style={{ color: feature.color }} />
                 Lernziele
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="flex flex-col gap-2">
                 {feature.learningGoals.map((goal, index) => (
                   <div
                     key={index}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      color: COLORS.slate[600],
-                      fontSize: '13px',
-                    }}
+                    className="flex items-center gap-2.5 text-slate-600 text-[13px]"
                   >
                     <div
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        backgroundColor: hexToRgba(feature.color, 0.15),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
+                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: hexToRgba(feature.color, 0.15) }}
                     >
                       <Check size={12} style={{ color: feature.color }} />
                     </div>
@@ -452,42 +296,18 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
             </div>
 
             {/* Meta info badges */}
-            <div
-              style={{
-                display: 'flex',
-                gap: '8px',
-                flexWrap: 'wrap',
-              }}
-            >
+            <div className="flex gap-2 flex-wrap">
               <div
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
                   backgroundColor: hexToRgba(feature.color, 0.1),
-                  borderRadius: '20px',
                   color: feature.color,
-                  fontSize: '12px',
-                  fontWeight: 500,
                 }}
               >
                 <Clock size={14} />
                 {feature.duration}
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  backgroundColor: COLORS.slate[100],
-                  borderRadius: '20px',
-                  color: COLORS.slate[600],
-                  fontSize: '12px',
-                  fontWeight: 500,
-                }}
-              >
+              <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 rounded-full text-slate-600 text-xs font-medium">
                 <Target size={14} />
                 {feature.idealFor}
               </div>
@@ -495,60 +315,24 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
           </div>
 
           {/* Sticky Footer */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px 24px',
-              borderTop: `1px solid ${COLORS.slate[200]}`,
-              gap: '16px',
-              flexWrap: 'wrap',
-              backgroundColor: COLORS.white,
-              flexShrink: 0,
-            }}
-          >
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                color: COLORS.slate[500],
-                fontSize: '13px',
-              }}
-            >
+          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 gap-4 flex-wrap bg-white flex-shrink-0">
+            <label className="flex items-center gap-2.5 cursor-pointer text-slate-500 text-[13px]">
               <input
                 type="checkbox"
                 checked={dontShowAgain}
                 onChange={(e) => setDontShowAgain(e.target.checked)}
-                style={{
-                  width: '18px',
-                  height: '18px',
-                  accentColor: feature.color,
-                  cursor: 'pointer',
-                }}
+                className="w-[18px] h-[18px] cursor-pointer"
+                style={{ accentColor: feature.color }}
               />
               Nicht mehr automatisch anzeigen
             </label>
 
             <button
               onClick={handleClose}
+              className="text-white border-none rounded-xl px-6 py-3 text-[15px] font-semibold cursor-pointer flex items-center gap-1.5 transition-all flex-shrink-0"
               style={{
                 background: feature.gradient,
-                color: COLORS.white,
-                border: 'none',
-                borderRadius: '10px',
-                padding: '12px 24px',
-                fontSize: '15px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
                 boxShadow: coloredShadow(feature.color, 'md'),
-                transition: TRANSITIONS.normal,
-                flexShrink: 0,
               }}
             >
               Los geht's

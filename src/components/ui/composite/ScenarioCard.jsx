@@ -33,8 +33,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, LayoutGrid, List } from 'lucide-react';
-import { COLORS } from '@/config/colors';
-import { useBranding } from '@/hooks/useBranding';
 
 // =============================================================================
 // DIFFICULTY CONFIGURATION
@@ -86,11 +84,8 @@ const getDifficultyConfig = (difficulty) => {
 /**
  * Badge Component - Used for difficulty, category, and tags
  */
-const Badge = ({ children, className = '', style = {} }) => (
-  <span
-    className={`px-3 py-1 rounded-full text-xs font-semibold border ${className}`}
-    style={style}
-  >
+const Badge = ({ children, className = '' }) => (
+  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${className}`}>
     {children}
   </span>
 );
@@ -99,28 +94,27 @@ const Badge = ({ children, className = '', style = {} }) => (
  * Icon Container - Themed icon wrapper with gradient background
  */
 const IconContainer = ({ icon: Icon, gradient, textColor, size = 'md' }) => {
-  const sizes = {
-    sm: { container: '40px', icon: '20px', radius: '10px' },
-    md: { container: '48px', icon: '24px', radius: '12px' },
-    lg: { container: '56px', icon: '28px', radius: '14px' },
+  const sizeClasses = {
+    sm: 'w-10 h-10 rounded-[10px]',
+    md: 'w-12 h-12 rounded-xl',
+    lg: 'w-14 h-14 rounded-[14px]',
   };
 
-  const s = sizes[size] || sizes.md;
+  const iconSizes = {
+    sm: { width: '20px', height: '20px' },
+    md: { width: '24px', height: '24px' },
+    lg: { width: '28px', height: '28px' },
+  };
+
+  const sizeClass = sizeClasses[size] || sizeClasses.md;
+  const iconSize = iconSizes[size] || iconSizes.md;
 
   return (
     <div
-      style={{
-        width: s.container,
-        height: s.container,
-        borderRadius: s.radius,
-        background: gradient,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-      }}
+      className={`flex items-center justify-center flex-shrink-0 ${sizeClass}`}
+      style={{ background: gradient }}
     >
-      <Icon style={{ width: s.icon, height: s.icon, color: textColor }} />
+      <Icon style={{ width: iconSize.width, height: iconSize.height, color: textColor }} />
     </div>
   );
 };
@@ -139,10 +133,7 @@ const MetaItem = ({ icon: Icon, text }) => (
  * Action Button - Call-to-action link in footer
  */
 const ActionButton = ({ label, icon: Icon, color }) => (
-  <div
-    className="flex items-center gap-1 text-sm font-semibold"
-    style={{ color }}
-  >
+  <div className="flex items-center gap-1 text-sm font-semibold" style={{ color }}>
     <span>{label}</span>
     {Icon && <Icon className="w-4 h-4" />}
   </div>
@@ -160,52 +151,25 @@ const ActionButton = ({ label, icon: Icon, color }) => (
  * @param {function} props.onViewChange - Callback when view changes
  */
 export const ViewToggle = ({ viewMode, onViewChange }) => {
-  const b = useBranding();
-
-  // Use inline styles with higher specificity to override Elementor defaults
-  const getButtonStyles = (isActive) => ({
-    padding: b.space[2],
-    borderRadius: b.radius.md,
-    border: 'none',
-    cursor: 'pointer',
-    transition: b.transition.normal,
-    backgroundColor: isActive ? '#ffffff' : 'transparent',
-    boxShadow: isActive ? b.shadow.sm : 'none',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  });
-
-  const getIconStyles = (isActive) => ({
-    width: '16px',
-    height: '16px',
-    color: isActive ? b.primaryAccent : COLORS.slate[500],
-  });
-
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: b.space[1],
-        padding: b.space[1],
-        backgroundColor: COLORS.slate[100],
-        borderRadius: b.radius.lg,
-      }}
-    >
+    <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
       <button
         onClick={() => onViewChange('grid')}
-        style={getButtonStyles(viewMode === 'grid')}
+        className={`p-2 rounded-md border-none cursor-pointer transition-all flex items-center justify-center ${
+          viewMode === 'grid' ? 'bg-white shadow-sm' : 'bg-transparent'
+        }`}
         title="Kachelansicht"
       >
-        <LayoutGrid style={getIconStyles(viewMode === 'grid')} />
+        <LayoutGrid className={`w-4 h-4 ${viewMode === 'grid' ? 'text-primary' : 'text-slate-500'}`} />
       </button>
       <button
         onClick={() => onViewChange('list')}
-        style={getButtonStyles(viewMode === 'list')}
+        className={`p-2 rounded-md border-none cursor-pointer transition-all flex items-center justify-center ${
+          viewMode === 'list' ? 'bg-white shadow-sm' : 'bg-transparent'
+        }`}
         title="Listenansicht"
       >
-        <List style={getIconStyles(viewMode === 'list')} />
+        <List className={`w-4 h-4 ${viewMode === 'list' ? 'text-primary' : 'text-slate-500'}`} />
       </button>
     </div>
   );
@@ -306,10 +270,7 @@ const ScenarioCardGridView = ({
 
       {/* Subtitle (optional - used by RhetorikGym) */}
       {subtitle && (
-        <div
-          className="text-sm font-semibold mb-2"
-          style={{ color: primaryAccent }}
-        >
+        <div className="text-sm font-semibold mb-2 text-primary">
           {subtitle}
         </div>
       )}
@@ -349,7 +310,6 @@ const ScenarioCardGridView = ({
 
 /**
  * ScenarioCardListView - List/row view of the card
- * Uses inline styles for better compatibility with WordPress/Elementor
  * Responsive: stacks vertically on mobile, horizontal on desktop
  */
 const ScenarioCardListView = ({
@@ -371,11 +331,6 @@ const ScenarioCardListView = ({
   primaryAccent,
   difficultyConfig,
 }) => {
-  // Check if we're on mobile
-  // Note: Using useMobile hook would cause re-renders; for initial SSR-safe check, use static value
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-  const b = useBranding();
-
   return (
     <motion.div
       variants={{
@@ -387,20 +342,11 @@ const ScenarioCardListView = ({
     >
       <div
         onClick={onClick}
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: b.radius.xl,
-          boxShadow: b.shadow.md,
-          padding: b.space[4],
-          cursor: 'pointer',
-          border: '1px solid #f1f5f9',
-          transition: b.transition.normal,
-          ...style,
-        }}
-        className={className}
+        className={`bg-white rounded-xl shadow-md p-4 cursor-pointer border border-slate-100 transition-all ${className}`}
+        style={style}
       >
         {/* Row 1: Icon + Title + Difficulty Badge + Custom Actions */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: b.space[3], marginBottom: b.space[2] }}>
+        <div className="flex items-start gap-3 mb-2">
           {/* Icon */}
           {icon && (
             <IconContainer
@@ -412,18 +358,12 @@ const ScenarioCardListView = ({
           )}
 
           {/* Title & Subtitle */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{
-              fontSize: b.fontSize.sm,
-              fontWeight: 700,
-              color: '#0f172a',
-              margin: 0,
-              lineHeight: 1.3,
-            }}>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-slate-900 m-0 leading-tight">
               {title}
             </h3>
             {subtitle && (
-              <span style={{ fontSize: b.fontSize.xs, fontWeight: 600, color: primaryAccent }}>
+              <span className="text-xs font-semibold text-primary">
                 {subtitle}
               </span>
             )}
@@ -446,51 +386,28 @@ const ScenarioCardListView = ({
 
         {/* Row 2: Description (if exists) */}
         {description && (
-          <p style={{
-            color: '#475569',
-            fontSize: b.fontSize.xs,
-            margin: 0,
-            marginBottom: b.space[2],
-            lineHeight: 1.4,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}>
+          <p className="text-slate-600 text-xs m-0 mb-2 leading-snug line-clamp-2">
             {description}
           </p>
         )}
 
         {/* Row 3: Meta + Category + Action */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: b.space[2],
-        }}>
+        <div className="flex items-center justify-between flex-wrap gap-2">
           {/* Meta information */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], fontSize: b.fontSize.xs, color: '#64748b' }}>
+          <div className="flex items-center gap-3 text-xs text-slate-500">
             {meta.slice(0, 2).map((item, idx) => (
               <MetaItem key={idx} icon={item.icon} text={item.text} />
             ))}
           </div>
 
           {/* Category + Action */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2] }}>
+          <div className="flex items-center gap-2">
             {/* Category badge */}
             {categoryBadge}
 
             {/* Action button */}
             {action && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: b.space[1],
-                fontSize: b.fontSize.sm,
-                fontWeight: 600,
-                color: primaryAccent,
-              }}>
+              <div className="flex items-center gap-1 text-sm font-semibold text-primary">
                 <span>{action.label}</span>
                 {action.icon && <action.icon style={{ width: '16px', height: '16px' }} />}
               </div>

@@ -242,7 +242,7 @@ const DecisionBoardApp = ({
       {/* Feature Info Modal - shows on first visit */}
       <FeatureInfoModal featureId="decisionboard" showOnMount />
 
-      <div style={{ minHeight: '100%' }}>
+      <div className="min-h-full">
         {/* Header - using reusable component */}
         <FeatureAppHeader
           featureId="decisionboard"

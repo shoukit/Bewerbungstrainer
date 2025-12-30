@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Play, Square, Volume2, CheckCircle, AlertCircle, RefreshCw, X } from 'lucide-react';
-import { useBranding } from '@/hooks/useBranding';
-import { COLORS } from '@/config/colors';
 import AudioVisualizer from '@/components/ui/composite/AudioVisualizer';
 
 /**
@@ -17,9 +15,6 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
   const [recordedUrl, setRecordedUrl] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState(null);
-
-  // Partner theming
-  const b = useBranding();
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -211,16 +206,7 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.6)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: b.space[5],
-        }}
+        className="fixed inset-0 bg-slate-900/60 z-[1000] flex items-center justify-center p-5"
       >
         {/* Dialog */}
         <motion.div
@@ -228,132 +214,65 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           onClick={(e) => e.stopPropagation()}
-          style={{
-            backgroundColor: COLORS.white,
-            borderRadius: b.radius['2xl'],
-            width: '100%',
-            maxWidth: '400px',
-            boxShadow: b.shadow.xl,
-            overflow: 'hidden',
-          }}
+          className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden"
         >
           {/* Header */}
-          <div style={{
-            padding: `${b.space[5]} ${b.space[6]}`,
-            borderBottom: `1px solid ${COLORS.slate[200]}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3] }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: b.radius.md,
-                background: b.headerGradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <Mic style={{ width: '20px', height: '20px', color: COLORS.white }} />
+          <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-md bg-brand-gradient flex items-center justify-center">
+                <Mic className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 style={{ fontSize: b.fontSize.xl, fontWeight: 600, color: COLORS.slate[900], margin: 0 }}>
+                <h2 className="text-xl font-semibold text-slate-900 m-0">
                   Mikrofon testen
                 </h2>
-                <p style={{ fontSize: b.fontSize.sm, color: COLORS.slate[500], margin: 0 }}>
+                <p className="text-sm text-slate-500 m-0">
                   Prüfe deine Audioqualität
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: b.radius.lg,
-                border: 'none',
-                backgroundColor: COLORS.slate[100],
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: b.transition.normal,
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[200]}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.slate[100]}
+              className="w-11 h-11 rounded-lg border-0 bg-slate-100 hover:bg-slate-200 cursor-pointer flex items-center justify-center transition-colors duration-300"
             >
-              <X style={{ width: '24px', height: '24px', color: COLORS.slate[600] }} />
+              <X className="w-6 h-6 text-slate-600" />
             </button>
           </div>
 
           {/* Content */}
-          <div style={{ padding: `${b.space[8]} ${b.space[6]}` }}>
+          <div className="px-6 py-8">
             {/* Error */}
             {error && (
-              <div style={{
-                marginBottom: b.space[6],
-                padding: b.space[4],
-                backgroundColor: COLORS.red[50],
-                border: `1px solid ${COLORS.red[100]}`,
-                borderRadius: b.radius.lg,
-                display: 'flex',
-                alignItems: 'center',
-                gap: b.space[3],
-              }}>
-                <AlertCircle style={{ width: '20px', height: '20px', color: COLORS.red[500] }} />
-                <p style={{ fontSize: b.fontSize.base, color: COLORS.red[600], margin: 0 }}>{error}</p>
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-lg flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                <p className="text-base text-red-600 m-0">{error}</p>
               </div>
             )}
 
             {/* Visual indicator */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: b.space[6] }}>
-              <div style={{ position: 'relative' }}>
+            <div className="flex justify-center mb-6">
+              <div className="relative">
                 <motion.div
-                  style={{
-                    width: '120px',
-                    height: '120px',
-                    borderRadius: '50%',
-                    backgroundColor: status === 'recording' ? COLORS.red[50] :
-                                     status === 'playing' ? COLORS.green[50] :
-                                     status === 'recorded' ? COLORS.green[50] : COLORS.slate[100],
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                  className={`w-[120px] h-[120px] rounded-full flex items-center justify-center ${
+                    status === 'recording' ? 'bg-red-50' :
+                    status === 'playing' || status === 'recorded' ? 'bg-green-50' : 'bg-slate-100'
+                  }`}
                 >
                   {status === 'recording' && (
                     <motion.div
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: '50%',
-                        border: `3px solid ${COLORS.red[500]}`,
-                      }}
+                      className="absolute inset-0 rounded-full border-[3px] border-red-500"
                       animate={{ scale: [1, 1 + audioLevel * 0.3], opacity: [1, 0.3] }}
                       transition={{ duration: 0.3, repeat: Infinity }}
                     />
                   )}
-                  {status === 'idle' && <Mic style={{ width: '48px', height: '48px', color: COLORS.slate[400] }} />}
-                  {status === 'recording' && <Mic style={{ width: '48px', height: '48px', color: COLORS.red[500] }} />}
-                  {status === 'recorded' && <CheckCircle style={{ width: '48px', height: '48px', color: COLORS.green[500] }} />}
-                  {status === 'playing' && <Volume2 style={{ width: '48px', height: '48px', color: COLORS.green[600] }} />}
+                  {status === 'idle' && <Mic className="w-12 h-12 text-slate-400" />}
+                  {status === 'recording' && <Mic className="w-12 h-12 text-red-500" />}
+                  {status === 'recorded' && <CheckCircle className="w-12 h-12 text-green-500" />}
+                  {status === 'playing' && <Volume2 className="w-12 h-12 text-green-600" />}
                 </motion.div>
 
                 {status === 'recording' && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '-8px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    padding: `${b.space[1]} ${b.space[3]}`,
-                    backgroundColor: COLORS.red[500],
-                    color: COLORS.white,
-                    borderRadius: b.radius['2xl'],
-                    fontSize: b.fontSize.sm,
-                    fontWeight: 600,
-                    fontFamily: 'monospace',
-                  }}>
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-red-500 text-white rounded-2xl text-sm font-semibold font-mono">
                     {recordingTime}s / {MAX_RECORDING_TIME}s
                   </div>
                 )}
@@ -362,7 +281,7 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
 
             {/* Audio level bars during recording */}
             {status === 'recording' && (
-              <div style={{ marginBottom: b.space[6] }}>
+              <div className="mb-6">
                 <AudioVisualizer
                   audioLevel={audioLevel}
                   isActive={true}
@@ -373,12 +292,7 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
             )}
 
             {/* Status text */}
-            <p style={{
-              textAlign: 'center',
-              fontSize: b.fontSize.md,
-              color: COLORS.slate[600],
-              marginBottom: b.space[6],
-            }}>
+            <p className="text-center text-base text-slate-600 mb-6">
               {status === 'idle' && 'Klicke auf "Aufnahme starten" um dein Mikrofon zu testen.'}
               {status === 'recording' && 'Sprich jetzt in dein Mikrofon...'}
               {status === 'recorded' && 'Aufnahme fertig! Höre dir das Ergebnis an.'}
@@ -386,25 +300,13 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
             </p>
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: b.space[3] }}>
+            <div className="flex justify-center gap-3">
               {status === 'idle' && (
                 <button
                   onClick={startRecording}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: b.space[2],
-                    padding: `${b.space['3.5']} ${b.space[7]}`,
-                    borderRadius: b.radius.lg,
-                    border: 'none',
-                    background: b.buttonGradient,
-                    color: COLORS.white,
-                    fontSize: b.fontSize.md,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-lg border-0 bg-brand-gradient text-white text-base font-semibold cursor-pointer"
                 >
-                  <Mic style={{ width: '18px', height: '18px' }} />
+                  <Mic className="w-[18px] h-[18px]" />
                   Aufnahme starten
                 </button>
               )}
@@ -412,21 +314,9 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
               {status === 'recording' && (
                 <button
                   onClick={stopRecording}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: b.space[2],
-                    padding: `${b.space['3.5']} ${b.space[7]}`,
-                    borderRadius: b.radius.lg,
-                    border: 'none',
-                    backgroundColor: COLORS.red[500],
-                    color: COLORS.white,
-                    fontSize: b.fontSize.md,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-lg border-0 bg-red-500 text-white text-base font-semibold cursor-pointer"
                 >
-                  <Square style={{ width: '18px', height: '18px' }} />
+                  <Square className="w-[18px] h-[18px]" />
                   Stoppen
                 </button>
               )}
@@ -435,40 +325,16 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                 <>
                   <button
                     onClick={playRecording}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: b.space[2],
-                      padding: `${b.space['3.5']} ${b.space[7]}`,
-                      borderRadius: b.radius.lg,
-                      border: 'none',
-                      background: b.buttonGradient,
-                      color: COLORS.white,
-                      fontSize: b.fontSize.md,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
+                    className="flex items-center gap-2 px-7 py-3.5 rounded-lg border-0 bg-brand-gradient text-white text-base font-semibold cursor-pointer"
                   >
-                    <Play style={{ width: '18px', height: '18px' }} />
+                    <Play className="w-[18px] h-[18px]" />
                     Anhören
                   </button>
                   <button
                     onClick={recordAgain}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: b.space[2],
-                      padding: `${b.space['3.5']} ${b.space[5]}`,
-                      borderRadius: b.radius.lg,
-                      border: `2px solid ${COLORS.slate[200]}`,
-                      backgroundColor: COLORS.white,
-                      color: COLORS.slate[700],
-                      fontSize: b.fontSize.md,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
+                    className="flex items-center gap-2 px-5 py-3.5 rounded-lg border-2 border-slate-200 bg-white text-slate-700 text-base font-semibold cursor-pointer"
                   >
-                    <RefreshCw style={{ width: '18px', height: '18px' }} />
+                    <RefreshCw className="w-[18px] h-[18px]" />
                     Nochmal
                   </button>
                 </>
@@ -478,40 +344,16 @@ const MicrophoneTestDialog = ({ isOpen, onClose, deviceId }) => {
                 <>
                   <button
                     onClick={stopPlayback}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: b.space[2],
-                      padding: `${b.space['3.5']} ${b.space[5]}`,
-                      borderRadius: b.radius.lg,
-                      border: `2px solid ${COLORS.slate[200]}`,
-                      backgroundColor: COLORS.white,
-                      color: COLORS.slate[700],
-                      fontSize: b.fontSize.md,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
+                    className="flex items-center gap-2 px-5 py-3.5 rounded-lg border-2 border-slate-200 bg-white text-slate-700 text-base font-semibold cursor-pointer"
                   >
-                    <Square style={{ width: '18px', height: '18px' }} />
+                    <Square className="w-[18px] h-[18px]" />
                     Stoppen
                   </button>
                   <button
                     onClick={recordAgain}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: b.space[2],
-                      padding: `${b.space['3.5']} ${b.space[5]}`,
-                      borderRadius: b.radius.lg,
-                      border: `2px solid ${COLORS.slate[200]}`,
-                      backgroundColor: COLORS.white,
-                      color: COLORS.slate[700],
-                      fontSize: b.fontSize.md,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
+                    className="flex items-center gap-2 px-5 py-3.5 rounded-lg border-2 border-slate-200 bg-white text-slate-700 text-base font-semibold cursor-pointer"
                   >
-                    <RefreshCw style={{ width: '18px', height: '18px' }} />
+                    <RefreshCw className="w-[18px] h-[18px]" />
                     Nochmal
                   </button>
                 </>

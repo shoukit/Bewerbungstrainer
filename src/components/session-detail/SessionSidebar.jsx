@@ -23,7 +23,6 @@ import { Button } from '@/components/ui/base/button';
 import { cn } from '@/lib/utils';
 import StructuredFeedbackDisplay from './StructuredFeedbackDisplay';
 import AudioAnalysisDisplay from './AudioAnalysisDisplay';
-import { useBranding } from '@/hooks/useBranding';
 
 const SessionSidebar = ({
   session,
@@ -38,10 +37,6 @@ const SessionSidebar = ({
   className,
 }) => {
   const [activeTab, setActiveTab] = useState('coaching');
-  const [hoveredTab, setHoveredTab] = useState(null);
-
-  // Partner theming via useBranding hook
-  const b = useBranding();
 
   // Calculate score from feedback
   const score = useMemo(() => {
@@ -51,77 +46,17 @@ const SessionSidebar = ({
     return null;
   }, [feedback]);
 
-  // Generate unique ID for scoped styles
-  const styleId = useMemo(() => `session-sidebar-${Math.random().toString(36).substr(2, 9)}`, []);
-
-  // Dynamic CSS to override Elementor's !important rules
-  // Use highest possible specificity with #bewerbungstrainer-app prefix
-  const dynamicStyles = useMemo(() => `
-    /* Override ALL Elementor/WordPress button styles for this sidebar's tabs */
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"],
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:link,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:visited,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:hover,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:focus,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:active {
-      background-color: transparent !important;
-      background-image: none !important;
-      color: ${b.textMuted} !important;
-      border: none !important;
-      border-bottom: 2px solid transparent !important;
-      border-color: transparent !important;
-      outline: none !important;
-      box-shadow: none !important;
-      text-decoration: none !important;
-    }
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:hover,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:focus {
-      background-color: ${b.cardBgHover} !important;
-      color: ${b.textSecondary} !important;
-      border-bottom: 2px solid transparent !important;
-    }
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"],
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:link,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:visited,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:hover,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:focus,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"][data-active="true"]:active {
-      background-color: ${b.primaryAccentLight} !important;
-      color: ${b.primaryAccent} !important;
-      border: none !important;
-      border-bottom: 2px solid ${b.primaryAccent} !important;
-    }
-    /* Also override icon colors inside buttons */
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"] svg,
-    #bewerbungstrainer-app [data-sidebar-id="${styleId}"] button[data-tab-button="true"]:hover svg {
-      color: inherit !important;
-      fill: currentColor !important;
-    }
-  `, [styleId, b]);
-
   if (isCollapsed) {
     return (
       <motion.div
         initial={{ width: 0, opacity: 0 }}
         animate={{ width: 48, opacity: 1 }}
-        style={{
-          backgroundColor: b.cardBgColor,
-          borderLeft: `1px solid ${b.borderColor}`,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '16px 0',
-        }}
+        className="bg-white border-l border-slate-200 flex flex-col items-center py-4"
       >
-        <Button variant="ghost" size="icon" onClick={onCollapse} style={{ marginBottom: '16px' }}>
-          <ChevronRight style={{ width: '16px', height: '16px' }} />
+        <Button variant="ghost" size="icon" onClick={onCollapse} className="mb-4">
+          <ChevronRight className="w-4 h-4" />
         </Button>
-        <div style={{
-          writingMode: 'vertical-rl',
-          fontSize: '12px',
-          color: b.textMuted,
-          fontWeight: 500,
-        }}>
+        <div className="text-xs text-slate-500 font-medium" style={{ writingMode: 'vertical-rl' }}>
           Feedback Panel
         </div>
       </motion.div>
@@ -129,149 +64,76 @@ const SessionSidebar = ({
   }
 
   return (
-    <>
-      {/* Dynamic styles to override Elementor's !important rules */}
-      <style>{dynamicStyles}</style>
-      <motion.div
-        data-sidebar-id={styleId}
-        initial={{ width: 0, opacity: 0 }}
-        animate={{ width: '100%', opacity: 1 }}
-        style={{
-          backgroundColor: b.cardBgColor,
-          borderLeft: `1px solid ${b.borderColor}`,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          height: 'calc(100vh - 120px)',
-          maxHeight: '800px',
-        }}
-      >
-      {/* Header - Partner Theme Gradient with inline styles */}
-      <div style={{
-        background: b.headerGradient,
-        padding: '16px',
-        flexShrink: 0,
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '8px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Trophy style={{ width: '20px', height: '20px', color: b.warning }} />
-            <span style={{ color: b.headerText, fontWeight: 600, fontSize: '14px' }}>Rollenspiel abgeschlossen</span>
+    <motion.div
+      initial={{ width: 0, opacity: 0 }}
+      animate={{ width: '100%', opacity: 1 }}
+      className="bg-white border-l border-slate-200 flex flex-col overflow-hidden"
+      style={{ height: 'calc(100vh - 120px)', maxHeight: '800px' }}
+    >
+      {/* Header - Partner Theme Gradient */}
+      <div className="bg-brand-gradient p-4 flex-shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-400" />
+            <span className="text-white font-semibold text-sm">Rollenspiel abgeschlossen</span>
           </div>
           <Button
             size="sm"
             onClick={onRetry}
-            style={{
-              backgroundColor: b.overlayLight,
-              color: b.headerText,
-              border: 'none',
-              fontSize: '12px',
-            }}
+            className="bg-white/20 hover:bg-white/30 text-white border-none text-xs"
           >
             Erneut üben
           </Button>
         </div>
         {score !== null && (
-          <p style={{ color: `${b.headerText}CC`, fontSize: '12px', margin: 0 }}>
-            Ihre Punktzahl war <span style={{ color: b.headerText, fontWeight: 700 }}>{score}%</span>
+          <p className="text-white/80 text-xs m-0">
+            Ihre Punktzahl war <span className="text-white font-bold">{score}%</span>
           </p>
         )}
       </div>
 
-      {/* Tab Navigation - Ocean Theme with inline styles */}
-      <div style={{
-        display: 'flex',
-        borderBottom: `1px solid ${b.borderColor}`,
-        flexShrink: 0,
-      }}>
+      {/* Tab Navigation */}
+      <div className="flex border-b border-slate-200 flex-shrink-0">
         {/* Collapse Button */}
         <button
           onClick={onCollapse}
-          style={{
-            padding: '12px',
-            borderRight: `1px solid ${b.borderColor}`,
-            color: b.textMuted,
-            backgroundColor: b.transparent,
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = b.cardBgHover;
-            e.currentTarget.style.color = b.textSecondary;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = b.transparent;
-            e.currentTarget.style.color = b.textMuted;
-          }}
+          className="p-3 border-r border-slate-200 text-slate-500 bg-transparent border-none cursor-pointer transition-all hover:bg-slate-50 hover:text-slate-700"
           title="Panel einklappen"
         >
-          <PanelRightClose style={{ width: '16px', height: '16px' }} />
+          <PanelRightClose className="w-4 h-4" />
         </button>
 
         {/* Coaching Tab */}
         <button
-          data-tab-button="true"
-          data-active={activeTab === 'coaching' ? 'true' : undefined}
           onClick={() => setActiveTab('coaching')}
-          onMouseEnter={() => setHoveredTab('coaching')}
-          onMouseLeave={() => setHoveredTab(null)}
-          style={{
-            flex: 1,
-            padding: '12px 16px',
-            fontSize: '14px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            backgroundColor: activeTab === 'coaching' ? b.primaryAccentLight : (hoveredTab === 'coaching' ? b.cardBgHover : b.transparent),
-            color: activeTab === 'coaching' ? b.primaryAccent : (hoveredTab === 'coaching' ? b.textMain : b.textMuted),
-            borderBottom: activeTab === 'coaching' ? `2px solid ${b.primaryAccent}` : '2px solid transparent',
-          }}
+          className={cn(
+            'flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 border-none cursor-pointer transition-all',
+            activeTab === 'coaching'
+              ? 'bg-primary/10 text-primary border-b-2 border-primary'
+              : 'bg-transparent text-slate-500 border-b-2 border-transparent hover:bg-slate-50 hover:text-slate-900'
+          )}
         >
-          <MessageSquare style={{ width: '16px', height: '16px' }} />
+          <MessageSquare className="w-4 h-4" />
           Coaching
         </button>
 
         {/* Analysen Tab */}
         <button
-          data-tab-button="true"
-          data-active={activeTab === 'analysen' ? 'true' : undefined}
           onClick={() => setActiveTab('analysen')}
-          onMouseEnter={() => setHoveredTab('analysen')}
-          onMouseLeave={() => setHoveredTab(null)}
-          style={{
-            flex: 1,
-            padding: '12px 16px',
-            fontSize: '14px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            backgroundColor: activeTab === 'analysen' ? b.primaryAccentLight : (hoveredTab === 'analysen' ? b.cardBgHover : b.transparent),
-            color: activeTab === 'analysen' ? b.primaryAccent : (hoveredTab === 'analysen' ? b.textMain : b.textMuted),
-            borderBottom: activeTab === 'analysen' ? `2px solid ${b.primaryAccent}` : '2px solid transparent',
-          }}
+          className={cn(
+            'flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 border-none cursor-pointer transition-all',
+            activeTab === 'analysen'
+              ? 'bg-primary/10 text-primary border-b-2 border-primary'
+              : 'bg-transparent text-slate-500 border-b-2 border-transparent hover:bg-slate-50 hover:text-slate-900'
+          )}
         >
-          <BarChart3 style={{ width: '16px', height: '16px' }} />
+          <BarChart3 className="w-4 h-4" />
           Analysen
         </button>
       </div>
 
       {/* Tab Content */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           {activeTab === 'coaching' && (
             <motion.div
@@ -280,7 +142,7 @@ const SessionSidebar = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              style={{ padding: '16px' }}
+              className="p-4"
             >
               <StructuredFeedbackDisplay feedback={feedback} isLoading={false} />
             </motion.div>
@@ -293,7 +155,7 @@ const SessionSidebar = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              style={{ padding: '16px' }}
+              className="p-4"
             >
               <AudioAnalysisDisplay
                 audioAnalysis={audioAnalysis}
@@ -306,7 +168,6 @@ const SessionSidebar = ({
       </div>
 
     </motion.div>
-    </>
   );
 };
 

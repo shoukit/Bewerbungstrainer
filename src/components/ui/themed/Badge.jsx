@@ -65,12 +65,10 @@ const Badge = React.forwardRef(({
       {/* Dot indicator */}
       {dot && (
         <span
-          className="w-1.5 h-1.5 rounded-full"
-          style={{
-            backgroundColor: variant === 'default'
-              ? 'var(--text-muted)'
-              : 'currentColor',
-          }}
+          className={cn(
+            'w-1.5 h-1.5 rounded-full',
+            variant === 'default' ? 'bg-slate-400' : 'bg-current'
+          )}
         />
       )}
 

@@ -24,24 +24,11 @@ const SummaryScore = ({ score, label, primaryAccent, b }) => {
   const color = getScoreColor(score100, primaryAccent);
 
   return (
-    <div style={{
-      textAlign: 'center',
-      padding: b.space[4],
-      backgroundColor: COLORS.slate[100],
-      borderRadius: b.radius.lg,
-    }}>
-      <div style={{
-        fontSize: b.fontSize['4xl'],
-        fontWeight: 700,
-        color: color,
-        marginBottom: '4px',
-      }}>
+    <div className="text-center p-4 bg-slate-100 rounded-lg">
+      <div className="text-4xl font-bold mb-1" style={{ color }}>
         {score100 != null ? Math.round(score100) : '-'}
       </div>
-      <div style={{
-        fontSize: b.fontSize.sm,
-        color: COLORS.slate[600],
-      }}>
+      <div className="text-sm text-slate-600">
         {label}
       </div>
     </div>
@@ -52,18 +39,11 @@ const SummaryScore = ({ score, label, primaryAccent, b }) => {
  * Stat Item
  */
 const StatItem = ({ icon: Icon, value, label, primaryAccent, b }) => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: b.space[3],
-    padding: `${b.space[3]} ${b.space[4]}`,
-    backgroundColor: COLORS.slate[100],
-    borderRadius: b.radius.md,
-  }}>
-    <Icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
+  <div className="flex items-center gap-3 p-3 bg-slate-100 rounded-lg">
+    <Icon className="w-5 h-5" style={{ color: primaryAccent }} />
     <div>
-      <div style={{ fontSize: b.fontSize.xl, fontWeight: 600, color: COLORS.slate[900] }}>{value}</div>
-      <div style={{ fontSize: b.fontSize.xs, color: COLORS.slate[500] }}>{label}</div>
+      <div className="text-xl font-semibold text-slate-900">{value}</div>
+      <div className="text-xs text-slate-500">{label}</div>
     </div>
   </div>
 );
@@ -102,86 +82,46 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
   const grade = getGradeLabel(overallScore);
 
   return (
-    <div style={{ padding: b.space[6], maxWidth: '640px', margin: '0 auto' }}>
+    <div className="p-6 max-w-[640px] mx-auto">
       {/* Success Header */}
-      <div style={{
-        textAlign: 'center',
-        marginBottom: '32px',
-      }}>
-        <div style={{
-          width: '80px',
-          height: '80px',
-          borderRadius: '50%',
-          background: b.headerGradient,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 16px',
-          boxShadow: `0 8px 24px ${b.primaryAccent}4d`,
-        }}>
-          <Trophy style={{ width: '40px', height: '40px', color: 'white' }} />
+      <div className="text-center mb-8">
+        <div
+          className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+          style={{
+            background: b.headerGradient,
+            boxShadow: `0 8px 24px ${b.primaryAccent}4d`,
+          }}
+        >
+          <Trophy className="w-10 h-10 text-white" />
         </div>
-        <h1 style={{
-          fontSize: b.fontSize['5xl'],
-          fontWeight: 700,
-          color: COLORS.slate[900],
-          margin: '0 0 8px 0',
-        }}>
+        <h1 className="text-5xl font-bold text-slate-900 m-0 mb-2">
           Training abgeschlossen! {grade.emoji}
         </h1>
-        <p style={{
-          fontSize: b.fontSize.lg,
-          color: COLORS.slate[600],
-          margin: 0,
-        }}>
+        <p className="text-lg text-slate-600 m-0">
           {scenario?.title || 'Skill Training'} - {grade.text}
         </p>
       </div>
 
       {/* Overall Score Card */}
-      <div style={{
-        padding: b.space[6],
-        borderRadius: b.radius.xl,
-        backgroundColor: 'white',
-        border: `1px solid ${COLORS.slate[200]}`,
-        textAlign: 'center',
-        marginBottom: b.space[6],
-      }}>
-        <div style={{
-          width: '120px',
-          height: '120px',
-          borderRadius: '50%',
-          border: `6px solid ${b.primaryAccent}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 16px',
-          backgroundColor: b.primaryAccentLight,
-        }}>
-          <span style={{
-            fontSize: b.fontSize['5xl'],
-            fontWeight: 700,
-            color: b.primaryAccent,
-          }}>
+      <div className="p-6 rounded-2xl bg-white border border-slate-200 text-center mb-6">
+        <div
+          className="w-[120px] h-[120px] rounded-full flex items-center justify-center mx-auto mb-4"
+          style={{
+            border: `6px solid ${b.primaryAccent}`,
+            backgroundColor: b.primaryAccentLight,
+          }}
+        >
+          <span className="text-5xl font-bold" style={{ color: b.primaryAccent }}>
             {overallScore ? Math.round(overallScore) : '-'}
           </span>
         </div>
-        <p style={{
-          fontSize: b.fontSize.base,
-          color: COLORS.slate[500],
-          margin: 0,
-        }}>
+        <p className="text-base text-slate-500 m-0">
           {overallScore ? 'Gesamtbewertung (von 100)' : 'Keine Fragen beantwortet'}
         </p>
       </div>
 
       {/* Stats */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: b.space[3],
-        marginBottom: b.space[6],
-      }}>
+      <div className="grid grid-cols-3 gap-3 mb-6">
         <StatItem
           icon={CheckCircle}
           value={`${session.completed_questions ?? 0}/${session.total_questions || '-'}`}
@@ -207,12 +147,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
 
       {/* Score Breakdown */}
       {summaryFeedback?.scores && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: b.space[3],
-          marginBottom: b.space[6],
-        }}>
+        <div className="grid grid-cols-4 gap-3 mb-6">
           <SummaryScore score={summaryFeedback.scores.content} label="Inhalt" primaryAccent={b.primaryAccent} b={b} />
           <SummaryScore score={summaryFeedback.scores.structure} label="Struktur" primaryAccent={b.primaryAccent} b={b} />
           <SummaryScore score={summaryFeedback.scores.relevance} label="Relevanz" primaryAccent={b.primaryAccent} b={b} />
@@ -222,26 +157,11 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
 
       {/* Summary Feedback */}
       {summaryFeedback?.summary && (
-        <div style={{
-          padding: b.space[5],
-          borderRadius: b.radius.lg,
-          backgroundColor: COLORS.slate[100],
-          marginBottom: b.space[6],
-        }}>
-          <h3 style={{
-            fontSize: b.fontSize.base,
-            fontWeight: 600,
-            color: COLORS.slate[700],
-            margin: '0 0 8px 0',
-          }}>
+        <div className="p-5 rounded-lg bg-slate-100 mb-6">
+          <h3 className="text-base font-semibold text-slate-700 m-0 mb-2">
             Zusammenfassung
           </h3>
-          <p style={{
-            fontSize: b.fontSize.base,
-            color: COLORS.slate[600],
-            margin: 0,
-            lineHeight: 1.6,
-          }}>
+          <p className="text-base text-slate-600 m-0 leading-relaxed">
             {summaryFeedback.summary}
           </p>
         </div>
@@ -249,99 +169,36 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
 
       {/* Key Takeaways */}
       {summaryFeedback?.key_takeaways?.length > 0 && (
-        <div style={{
-          padding: b.space[5],
-          borderRadius: b.radius.lg,
-          backgroundColor: COLORS.green[100],
-          marginBottom: b.space[6],
-        }}>
-          <h3 style={{
-            fontSize: b.fontSize.base,
-            fontWeight: 600,
-            color: COLORS.green[500],
-            margin: '0 0 12px 0',
-          }}>
+        <div className="p-5 rounded-lg bg-green-100 mb-6">
+          <h3 className="text-base font-semibold text-green-500 m-0 mb-3">
             💡 Die wichtigsten Erkenntnisse
           </h3>
-          <ul style={{
-            margin: 0,
-            paddingLeft: b.space[5],
-            color: COLORS.slate[700],
-            fontSize: b.fontSize.base,
-            lineHeight: 1.6,
-          }}>
+          <ul className="m-0 pl-5 text-slate-700 text-base leading-relaxed">
             {summaryFeedback.key_takeaways.map((takeaway, i) => (
-              <li key={i} style={{ marginBottom: '8px' }}>{takeaway}</li>
+              <li key={i} className="mb-2">{takeaway}</li>
             ))}
           </ul>
         </div>
       )}
 
       {/* Action Buttons */}
-      <div style={{
-        display: 'flex',
-        gap: b.space[3],
-        marginTop: '32px',
-      }}>
+      <div className="flex gap-3 mt-8">
         <button
           onClick={onBackToDashboard}
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: b.space[2],
-            padding: `${b.space[3.5]} ${b.space[6]}`,
-            borderRadius: b.radius.lg,
-            border: `2px solid ${COLORS.slate[300]}`,
-            backgroundColor: 'white',
-            color: COLORS.slate[700],
-            fontSize: b.fontSize.base,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.borderColor = b.primaryAccent;
-            e.target.style.color = b.primaryAccent;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.borderColor = COLORS.slate[300];
-            e.target.style.color = COLORS.slate[700];
-          }}
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 px-6 rounded-lg border-2 border-slate-300 bg-white text-slate-700 text-base font-semibold cursor-pointer transition-all hover:border-primary hover:text-primary"
         >
-          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          <ArrowLeft className="w-[18px] h-[18px]" />
           Zur Übersicht
         </button>
         <button
           onClick={onStartNew}
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 px-6 rounded-lg border-none text-white text-base font-semibold cursor-pointer transition-all hover:-translate-y-0.5"
           style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: b.space[2],
-            padding: `${b.space[3.5]} ${b.space[6]}`,
-            borderRadius: b.radius.lg,
-            border: 'none',
             background: b.buttonGradient,
-            color: 'white',
-            fontSize: b.fontSize.base,
-            fontWeight: 600,
-            cursor: 'pointer',
             boxShadow: `0 4px 12px ${b.primaryAccent}4d`,
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'none';
-            e.target.style.boxShadow = `0 4px 12px ${b.primaryAccent}4d`;
           }}
         >
-          <RotateCcw style={{ width: '18px', height: '18px' }} />
+          <RotateCcw className="w-[18px] h-[18px]" />
           Nochmal üben
         </button>
       </div>

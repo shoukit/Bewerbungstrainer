@@ -60,79 +60,49 @@ const DeviceSelector = ({
   };
 
   return (
-    <div style={{ position: 'relative', marginBottom: '16px' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+    <div className="relative mb-4">
+      <div className="flex flex-wrap gap-3">
         {/* Dropdown button */}
         <button
           type="button"
           onClick={() => !isLoading && setIsOpen(!isOpen)}
           disabled={isLoading}
-          style={{
-            flex: '1 1 100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            padding: '14px 18px',
-            borderRadius: '14px',
-            border: `2px solid ${error ? branding.error : branding.borderColor}`,
-            backgroundColor: error ? branding.errorLight : branding.cardBgColor,
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.6 : 1,
-            transition: 'all 0.2s',
-          }}
+          className={`flex-1 flex items-center justify-between gap-3 px-[18px] py-3.5 rounded-[14px] border-2 transition-all duration-200 ${
+            error ? 'border-red-500 bg-red-50' : 'border-slate-200 bg-white'
+          } ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: error ? branding.errorLight : branding.headerGradient,
-            }}>
+          <div className="flex items-center gap-3.5">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              error ? 'bg-red-50' : 'bg-brand-gradient'
+            }`}>
               {error ? (
-                <AlertCircle style={{ width: '24px', height: '24px', color: branding.error }} />
+                <AlertCircle className="w-6 h-6 text-red-500" />
               ) : (
-                <Icon style={{ width: '24px', height: '24px', color: branding.white }} />
+                <Icon className="w-6 h-6 text-white" />
               )}
             </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '13px', color: branding.textMuted, fontWeight: 500, marginBottom: '2px' }}>
+            <div className="text-left">
+              <div className="text-[13px] text-slate-500 font-medium mb-0.5">
                 {label}
               </div>
-              <div style={{ fontSize: '15px', fontWeight: 600, color: error ? branding.errorDark : branding.textMain }}>
+              <div className={`text-[15px] font-semibold ${error ? 'text-red-700' : 'text-slate-900'}`}>
                 {isLoading ? 'Lade...' : error ? error : selectedDevice ? getDeviceLabel(selectedDevice) : 'Bitte wählen'}
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             {error && onRefresh && (
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onRefresh(); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '8px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: branding.cardBgHover,
-                  cursor: 'pointer',
-                }}
+                className="flex items-center justify-center p-2 rounded-lg border-0 bg-slate-50 cursor-pointer"
               >
-                <RefreshCw style={{ width: '18px', height: '18px', color: branding.textSecondary }} />
+                <RefreshCw className="w-[18px] h-[18px] text-slate-600" />
               </button>
             )}
-            <ChevronDown style={{
-              width: '22px',
-              height: '22px',
-              color: branding.textMuted,
-              transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
-              transition: 'transform 0.2s',
-            }} />
+            <ChevronDown className={`w-[22px] h-[22px] text-slate-400 transition-transform duration-200 ${
+              isOpen ? 'rotate-180' : 'rotate-0'
+            }`} />
           </div>
         </button>
       </div>
@@ -143,86 +113,39 @@ const DeviceSelector = ({
           {/* Backdrop */}
           <div
             onClick={() => setIsOpen(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 40,
-            }}
+            className="fixed inset-0 z-40"
           />
 
           {/* Dropdown */}
-          <div style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            left: 0,
-            right: 0,
-            backgroundColor: branding.cardBgColor,
-            borderRadius: '14px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-            border: `1px solid ${branding.borderColor}`,
-            zIndex: 50,
-            overflow: 'hidden',
-            maxHeight: '300px',
-            overflowY: 'auto',
-          }}>
+          <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white rounded-[14px] shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-slate-200 z-50 overflow-hidden max-h-[300px] overflow-y-auto">
             {devices.map((device, index) => (
               <button
                 key={device.deviceId || index}
                 type="button"
                 onClick={() => handleSelect(device.deviceId)}
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  textAlign: 'left',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  border: 'none',
-                  backgroundColor: selectedDeviceId === device.deviceId ? branding.primaryAccentLight : branding.transparent,
-                  cursor: 'pointer',
-                  transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedDeviceId !== device.deviceId) {
-                    e.currentTarget.style.backgroundColor = branding.cardBgHover;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = selectedDeviceId === device.deviceId ? branding.primaryAccentLight : branding.transparent;
-                }}
+                className={`w-full py-3.5 px-4 text-left flex items-center gap-3 border-0 cursor-pointer transition-colors duration-150 ${
+                  selectedDeviceId === device.deviceId ? 'bg-primary/10' : 'bg-transparent hover:bg-slate-50'
+                }`}
               >
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: selectedDeviceId === device.deviceId ? branding.primaryAccent : branding.cardBgHover,
-                }}>
-                  <Icon style={{
-                    width: '20px',
-                    height: '20px',
-                    color: selectedDeviceId === device.deviceId ? branding.white : branding.textMuted,
-                  }} />
+                <div className={`w-10 h-10 rounded-[10px] flex items-center justify-center ${
+                  selectedDeviceId === device.deviceId ? 'bg-primary' : 'bg-slate-50'
+                }`}>
+                  <Icon className={`w-5 h-5 ${
+                    selectedDeviceId === device.deviceId ? 'text-white' : 'text-slate-400'
+                  }`} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: selectedDeviceId === device.deviceId ? branding.primaryAccent : branding.textMain,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}>
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-medium overflow-hidden text-ellipsis whitespace-nowrap ${
+                    selectedDeviceId === device.deviceId ? 'text-primary' : 'text-slate-900'
+                  }`}>
                     {getDeviceLabel(device)}
                   </div>
                   {device.deviceId === 'default' && (
-                    <div style={{ fontSize: '12px', color: branding.textMuted }}>Systemstandard</div>
+                    <div className="text-xs text-slate-400">Systemstandard</div>
                   )}
                 </div>
                 {selectedDeviceId === device.deviceId && (
-                  <CheckCircle style={{ width: '20px', height: '20px', color: branding.primaryAccent }} />
+                  <CheckCircle className="w-5 h-5 text-primary" />
                 )}
               </button>
             ))}
@@ -236,7 +159,7 @@ const DeviceSelector = ({
 /**
  * MicrophoneTest - Component to test microphone with audio visualization and recording playback
  */
-const MicrophoneTest = ({ deviceId, branding }) => {
+const MicrophoneTest = ({ deviceId }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -399,42 +322,25 @@ const MicrophoneTest = ({ deviceId, branding }) => {
 
 
   return (
-    <div style={{
-      padding: '16px',
-      backgroundColor: branding.cardBgHover,
-      borderRadius: '12px',
-      marginTop: '8px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+    <div className="p-4 bg-slate-50 rounded-xl mt-2">
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
         {/* Record/Stop Button */}
         <button
           type="button"
           onClick={isRecording ? stopRecording : startRecording}
           disabled={isPlaying}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 16px',
-            borderRadius: '10px',
-            border: 'none',
-            backgroundColor: isRecording ? branding.error : branding.primaryAccent,
-            color: branding.white,
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: isPlaying ? 'not-allowed' : 'pointer',
-            opacity: isPlaying ? 0.6 : 1,
-            transition: 'all 0.2s',
-          }}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] border-0 text-white text-sm font-semibold transition-all duration-200 ${
+            isRecording ? 'bg-red-500' : 'bg-primary'
+          } ${isPlaying ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
         >
           {isRecording ? (
             <>
-              <Square style={{ width: '16px', height: '16px' }} />
+              <Square className="w-4 h-4" />
               Stoppen ({formatDuration(recordingDuration)})
             </>
           ) : (
             <>
-              <Mic style={{ width: '16px', height: '16px' }} />
+              <Mic className="w-4 h-4" />
               Aufnehmen
             </>
           )}
@@ -445,29 +351,18 @@ const MicrophoneTest = ({ deviceId, branding }) => {
           <button
             type="button"
             onClick={isPlaying ? stopPlayback : playRecording}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 16px',
-              borderRadius: '10px',
-              border: `2px solid ${branding.primaryAccent}`,
-              backgroundColor: isPlaying ? branding.primaryAccentLight : branding.cardBgColor,
-              color: branding.primaryAccent,
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] border-2 border-primary text-primary text-sm font-semibold cursor-pointer transition-all duration-200 ${
+              isPlaying ? 'bg-primary/10' : 'bg-white'
+            }`}
           >
             {isPlaying ? (
               <>
-                <Square style={{ width: '16px', height: '16px' }} />
+                <Square className="w-4 h-4" />
                 Stoppen
               </>
             ) : (
               <>
-                <Play style={{ width: '16px', height: '16px' }} />
+                <Play className="w-4 h-4" />
                 Abspielen
               </>
             )}
@@ -476,28 +371,22 @@ const MicrophoneTest = ({ deviceId, branding }) => {
 
         {/* Status text */}
         {isRecording && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: branding.error, fontSize: '13px' }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: branding.error,
-              animation: 'pulse 1s infinite',
-            }} />
+          <div className="flex items-center gap-2 text-red-500 text-[13px]">
+            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             Aufnahme läuft...
           </div>
         )}
 
         {isPlaying && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: branding.successDark, fontSize: '13px' }}>
-            <Volume2 style={{ width: '16px', height: '16px' }} />
+          <div className="flex items-center gap-2 text-green-700 text-[13px]">
+            <Volume2 className="w-4 h-4" />
             Wiedergabe...
           </div>
         )}
 
         {recordedBlob && !isRecording && !isPlaying && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: branding.textMuted, fontSize: '13px' }}>
-            <CheckCircle style={{ width: '16px', height: '16px', color: branding.success }} />
+          <div className="flex items-center gap-2 text-slate-500 text-[13px]">
+            <CheckCircle className="w-4 h-4 text-green-500" />
             Aufnahme bereit ({formatDuration(recordingDuration)})
           </div>
         )}
@@ -515,26 +404,11 @@ const MicrophoneTest = ({ deviceId, branding }) => {
 
       {/* Instructions */}
       {!isRecording && !recordedBlob && (
-        <p style={{
-          margin: 0,
-          fontSize: '13px',
-          color: branding.textMuted,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}>
-          <Volume2 style={{ width: '14px', height: '14px' }} />
+        <p className="m-0 text-[13px] text-slate-500 flex items-center gap-1.5">
+          <Volume2 className="w-3.5 h-3.5" />
           Nimm etwas auf und spiele es ab, um dein Mikrofon zu testen.
         </p>
       )}
-
-      {/* CSS for pulse animation */}
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
     </div>
   );
 };
@@ -542,7 +416,7 @@ const MicrophoneTest = ({ deviceId, branding }) => {
 /**
  * CameraPreview - Component to preview camera feed
  */
-const CameraPreview = ({ deviceId, branding }) => {
+const CameraPreview = ({ deviceId }) => {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [error, setError] = useState(null);
@@ -583,39 +457,20 @@ const CameraPreview = ({ deviceId, branding }) => {
 
   if (error) {
     return (
-      <div style={{
-        aspectRatio: '16/9',
-        backgroundColor: branding.cardBgHover,
-        borderRadius: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: branding.textMuted,
-        fontSize: '14px',
-      }}>
+      <div className="aspect-video bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 text-sm">
         {error}
       </div>
     );
   }
 
   return (
-    <div style={{
-      aspectRatio: '16/9',
-      backgroundColor: branding.textMain,
-      borderRadius: '12px',
-      overflow: 'hidden',
-    }}>
+    <div className="aspect-video bg-slate-900 rounded-xl overflow-hidden">
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          transform: 'scaleX(-1)', // Mirror effect
-        }}
+        className="w-full h-full object-cover scale-x-[-1]"
       />
     </div>
   );
@@ -804,62 +659,30 @@ const DeviceSetupPage = ({
   const canStart = selectedMicrophoneId && !micError && (!includeVideo || (selectedCameraId && !cameraError)) && !disabled;
 
   return (
-    <div style={{ padding: '24px', paddingBottom: isMobile ? '120px' : '40px', maxWidth: '640px', margin: '0 auto' }}>
+    <div className={`p-6 max-w-[640px] mx-auto ${isMobile ? 'pb-[120px]' : 'pb-10'}`}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
+      <div className="mb-8">
         <button
           onClick={onBack}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            marginBottom: '16px',
-            border: 'none',
-            background: b.transparent,
-            color: b.textSecondary,
-            fontSize: '14px',
-            cursor: 'pointer',
-            borderRadius: '8px',
-            transition: 'background 0.2s',
-          }}
-          onMouseEnter={(e) => e.target.style.background = b.cardBgHover}
-          onMouseLeave={(e) => e.target.style.background = b.transparent}
+          className="inline-flex items-center gap-2 px-3 py-2 mb-4 border-0 bg-transparent text-slate-600 text-sm cursor-pointer rounded-lg hover:bg-slate-50 transition-colors duration-200"
         >
-          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          <ArrowLeft className="w-[18px] h-[18px]" />
           Zurück
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '14px',
-            background: b.headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-[14px] bg-brand-gradient flex items-center justify-center">
             {HeaderIcon ? (
-              <HeaderIcon style={{ width: '28px', height: '28px', color: b.headerText }} />
+              <HeaderIcon className="w-7 h-7 text-white" />
             ) : (
-              <Mic style={{ width: '28px', height: '28px', color: b.headerText }} />
+              <Mic className="w-7 h-7 text-white" />
             )}
           </div>
           <div>
-            <h1 style={{
-              fontSize: '24px',
-              fontWeight: 700,
-              color: b.textMain,
-              margin: 0,
-            }}>
+            <h1 className="text-2xl font-bold text-slate-900 m-0">
               {title || scenario?.title || 'Geräte einrichten'}
             </h1>
-            <p style={{
-              fontSize: '14px',
-              color: b.textSecondary,
-              margin: '4px 0 0 0',
-            }}>
+            <p className="text-sm text-slate-600 mt-1 mb-0">
               {includeVideo ? 'Kamera und Mikrofon auswählen' : 'Mikrofon auswählen und testen'}
             </p>
           </div>
@@ -868,17 +691,9 @@ const DeviceSetupPage = ({
 
       {/* Loading State */}
       {devicesLoading && (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '48px 24px',
-          backgroundColor: b.cardBgHover,
-          borderRadius: '16px',
-        }}>
-          <Loader2 style={{ width: '32px', height: '32px', color: b.primaryAccent, marginBottom: '16px' }} className="animate-spin" />
-          <p style={{ color: b.textSecondary, margin: 0 }}>Geräte werden geladen...</p>
+        <div className="flex flex-col items-center justify-center py-12 px-6 bg-slate-50 rounded-2xl">
+          <Loader2 className="w-8 h-8 text-primary mb-4 animate-spin" />
+          <p className="text-slate-600 m-0">Geräte werden geladen...</p>
         </div>
       )}
 
@@ -891,26 +706,10 @@ const DeviceSetupPage = ({
         >
           {/* Camera Section (if video mode) */}
           {includeVideo && (
-            <div style={{
-              padding: '24px',
-              backgroundColor: b.cardBgColor,
-              borderRadius: '16px',
-              border: `1px solid ${b.borderColor}`,
-              marginBottom: '20px',
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                marginBottom: '16px',
-              }}>
-                <Camera style={{ width: '22px', height: '22px', color: b.primaryAccent }} />
-                <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  color: b.textMain,
-                  margin: 0,
-                }}>
+            <div className="p-6 bg-white rounded-2xl border border-slate-200 mb-5">
+              <div className="flex items-center gap-2.5 mb-4">
+                <Camera className="w-[22px] h-[22px] text-primary" />
+                <h3 className="text-base font-semibold text-slate-900 m-0">
                   Kamera auswählen
                 </h3>
               </div>
@@ -923,37 +722,20 @@ const DeviceSetupPage = ({
                 isLoading={devicesLoading}
                 error={cameraError}
                 onRefresh={loadDevices}
-                branding={b}
               />
 
               {/* Camera Preview */}
               {selectedCameraId && !cameraError && (
-                <CameraPreview deviceId={selectedCameraId} branding={b} />
+                <CameraPreview deviceId={selectedCameraId} />
               )}
             </div>
           )}
 
           {/* Microphone Section */}
-          <div style={{
-            padding: '24px',
-            backgroundColor: b.cardBgColor,
-            borderRadius: '16px',
-            border: `1px solid ${b.borderColor}`,
-            marginBottom: '24px',
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              marginBottom: '16px',
-            }}>
-              <Mic style={{ width: '22px', height: '22px', color: b.primaryAccent }} />
-              <h3 style={{
-                fontSize: '16px',
-                fontWeight: 600,
-                color: b.textMain,
-                margin: 0,
-              }}>
+          <div className="p-6 bg-white rounded-2xl border border-slate-200 mb-6">
+            <div className="flex items-center gap-2.5 mb-4">
+              <Mic className="w-[22px] h-[22px] text-primary" />
+              <h3 className="text-base font-semibold text-slate-900 m-0">
                 Mikrofon testen
               </h3>
             </div>
@@ -967,57 +749,26 @@ const DeviceSetupPage = ({
 
           {/* Extra Content (e.g., connection mode selector) */}
           {extraContent && (
-            <div style={{ marginBottom: '24px' }}>
+            <div className="mb-6">
               {extraContent}
             </div>
           )}
 
           {/* Start Button - Fixed on mobile for visibility */}
           <div
-            style={isMobile ? {
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              padding: '16px',
-              background: `linear-gradient(to top, ${b.pageBg} 80%, transparent)`,
-              zIndex: 100,
-            } : {}}
+            className={isMobile ? 'fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white/95 to-transparent z-[100]' : ''}
           >
             <button
               onClick={handleStart}
               disabled={!canStart}
-              style={{
-                width: '100%',
-                maxWidth: isMobile ? '100%' : undefined,
-                padding: '16px 24px',
-                borderRadius: '14px',
-                border: 'none',
-                background: canStart ? b.buttonGradient : b.disabledBg,
-                color: b.white,
-                fontSize: '16px',
-                fontWeight: 600,
-                cursor: canStart ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                boxShadow: canStart ? `0 4px 12px ${b.primaryAccent}4d` : 'none',
-              }}
-              onMouseEnter={(e) => {
-                if (canStart) {
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = `0 6px 16px ${b.primaryAccent}66`;
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'none';
-                e.target.style.boxShadow = canStart ? `0 4px 12px ${b.primaryAccent}4d` : 'none';
-              }}
+              className={`w-full px-6 py-4 rounded-[14px] border-0 text-white text-base font-semibold flex items-center justify-center gap-2.5 transition-all duration-200 ${
+                canStart
+                  ? 'bg-brand-gradient cursor-pointer shadow-[0_4px_12px_rgba(var(--primary-rgb),0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(var(--primary-rgb),0.4)]'
+                  : 'bg-slate-300 cursor-not-allowed shadow-none'
+              }`}
             >
               {startButtonLabel}
-              <ArrowRight style={{ width: '20px', height: '20px' }} />
+              <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         </motion.div>

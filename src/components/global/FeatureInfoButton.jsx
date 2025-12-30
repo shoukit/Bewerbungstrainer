@@ -98,22 +98,13 @@ const FeatureInfoButton = ({
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={className}
+        className={`${className} border-none cursor-pointer flex items-center justify-center transition-all flex-shrink-0 shadow-md rounded-full`}
         title={`Info über ${feature.title}`}
         style={{
           width: `${sizeConfig.button}px`,
           height: `${sizeConfig.button}px`,
-          borderRadius: RADIUS.full,
           backgroundColor: isHovered ? variantConfig.hoverBackground : variantConfig.background,
           color: variantConfig.color,
-          border: 'none',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: TRANSITIONS.normal,
-          flexShrink: 0,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           transform: isHovered ? 'scale(1.08)' : 'scale(1)',
           ...style,
         }}

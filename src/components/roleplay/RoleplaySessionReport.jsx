@@ -24,7 +24,6 @@ import {
   Trash2,
   Download,
 } from 'lucide-react';
-import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
 import { getScoreColor } from '@/config/colors';
 import { formatDuration } from '@/utils/formatting';
@@ -86,8 +85,16 @@ const RoleplaySessionReport = ({
   onRepeat,
   onDelete,
   isLoading: isLoadingProp = false,
+  primaryAccent,
+  headerGradient,
+  pageBg = '#f8fafc',
+  textMain = '#0f172a',
+  textSecondary = '#64748b',
+  textMuted = '#94a3b8',
+  cardBg = '#ffffff',
+  borderColor = '#e2e8f0',
+  cardBgHover = '#f1f5f9',
 }) => {
-  const b = useBranding();
   const isMobile = useMobile(768);
   const audioSeekRef = useRef(null);
   const [activeTab, setActiveTab] = useState(TABS.COACHING);
@@ -163,9 +170,6 @@ const RoleplaySessionReport = ({
     return 0;
   }, [feedback]);
 
-  const primaryAccent = b.primaryAccent;
-  const headerGradient = b.headerGradient;
-
   const handleSeekToTime = (time) => {
     if (audioSeekRef.current) {
       audioSeekRef.current(time);
@@ -227,30 +231,20 @@ const RoleplaySessionReport = ({
 
   if (isLoading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        gap: '16px',
-      }}>
-        <Loader2 size={40} color={primaryAccent} style={{ animation: 'spin 1s linear infinite' }} />
-        <p style={{ color: b.textSecondary, fontSize: '14px' }}>Lade Report...</p>
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4">
+        <Loader2 size={40} color={primaryAccent} className="animate-spin" />
+        <p className="text-sm" style={{ color: textSecondary }}>Lade Report...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: b.pageBg }}>
+    <div className="min-h-screen" style={{ background: pageBg }}>
       {/* Header */}
-      <div style={{
-        background: headerGradient,
-        padding: isMobile ? '20px 16px' : '24px 32px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-      }}>
+      <div
+        className={`sticky top-0 z-40 ${isMobile ? 'p-5 px-4' : 'p-6 px-8'}`}
+        style={{ background: headerGradient }}
+      >
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
           {/* Back Button */}
           {onBack && (

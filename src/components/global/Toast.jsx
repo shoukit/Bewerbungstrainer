@@ -65,39 +65,14 @@ function Toast({ id, message, type = 'success', duration = 3000, onDismiss }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -20, scale: 0.95 }}
       transition={{ duration: 0.2 }}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '14px 20px',
-        backgroundColor: toastStyle.bgColor,
-        color: '#ffffff',
-        borderRadius: '12px',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
-        fontSize: '15px',
-        fontWeight: 500,
-        minWidth: '280px',
-        maxWidth: '400px',
-      }}
+      className="flex items-center gap-3 px-5 py-3.5 text-white rounded-xl shadow-2xl text-[15px] font-medium min-w-[280px] max-w-[400px]"
+      style={{ backgroundColor: toastStyle.bgColor }}
     >
-      <span style={{ flexShrink: 0 }}>{toastStyle.icon}</span>
-      <span style={{ flex: 1 }}>{message}</span>
+      <span className="flex-shrink-0">{toastStyle.icon}</span>
+      <span className="flex-1">{message}</span>
       <button
         onClick={() => onDismiss(id)}
-        style={{
-          background: 'rgba(255, 255, 255, 0.2)',
-          border: 'none',
-          borderRadius: '6px',
-          padding: '4px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#ffffff',
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
-        onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
+        className="bg-white/20 border-none rounded-md p-1 cursor-pointer flex items-center justify-center text-white flex-shrink-0 hover:bg-white/30 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -112,19 +87,7 @@ function Toast({ id, message, type = 'success', duration = 3000, onDismiss }) {
  */
 function ToastContainer({ toasts, onDismiss }) {
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        alignItems: 'center',
-      }}
-    >
+    <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2.5 items-center">
       <AnimatePresence>
         {toasts.map((toast) => (
           <Toast

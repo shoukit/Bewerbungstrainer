@@ -23,37 +23,21 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className="flex flex-col gap-3">
       {/* Summary Section */}
       {feedback?.summary && (
-        <div style={{
-          background: `${primaryAccent}08`,
-          borderRadius: '12px',
-          border: `1px solid ${primaryAccent}20`,
-          overflow: 'hidden',
-        }}>
+        <div className="bg-primary/5 rounded-xl border border-primary/20 overflow-hidden">
           <button
             onClick={() => toggleSection('summary')}
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
+            className="w-full px-4 py-3.5 flex items-center gap-2.5 bg-transparent border-none cursor-pointer text-left"
           >
-            <Award size={18} color={primaryAccent} />
-            <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+            <Award size={18} className="text-primary" />
+            <span className="flex-1 text-sm font-semibold text-slate-900">
               Gesamtbewertung
             </span>
             <ChevronDown
               size={18}
-              color={branding.textMuted}
-              style={{ transform: expandedSection === 'summary' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+              className={`text-slate-500 transition-transform ${expandedSection === 'summary' ? 'rotate-180' : ''}`}
             />
           </button>
           <AnimatePresence>
@@ -62,10 +46,10 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                style={{ overflow: 'hidden' }}
+                className="overflow-hidden"
               >
-                <div style={{ padding: '0 16px 16px' }}>
-                  <p style={{ fontSize: '13px', lineHeight: 1.7, color: branding.textSecondary }}>
+                <div className="px-4 pb-4">
+                  <p className="text-[13px] leading-relaxed text-slate-700">
                     {feedback.summary}
                   </p>
                 </div>
@@ -77,37 +61,21 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
 
       {/* Strengths Section */}
       {feedback?.strengths?.length > 0 && (
-        <div style={{
-          background: '#f0fdf4',
-          borderRadius: '12px',
-          border: '1px solid #bbf7d0',
-          overflow: 'hidden',
-        }}>
+        <div className="bg-green-50 rounded-xl border border-green-200 overflow-hidden">
           <button
             onClick={() => toggleSection('strengths')}
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
+            className="w-full px-4 py-3.5 flex items-center gap-2.5 bg-transparent border-none cursor-pointer text-left"
           >
-            <CheckCircle2 size={18} color="#22c55e" />
-            <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: '#166534' }}>
+            <CheckCircle2 size={18} className="text-green-500" />
+            <span className="flex-1 text-sm font-semibold text-green-800">
               Deine Superkräfte
             </span>
-            <span style={{ fontSize: '12px', color: '#22c55e', fontWeight: 500 }}>
+            <span className="text-xs text-green-500 font-medium">
               {feedback.strengths.length} Stärken
             </span>
             <ChevronDown
               size={18}
-              color="#22c55e"
-              style={{ transform: expandedSection === 'strengths' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+              className={`text-green-500 transition-transform ${expandedSection === 'strengths' ? 'rotate-180' : ''}`}
             />
           </button>
           <AnimatePresence>
@@ -116,25 +84,15 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                style={{ overflow: 'hidden' }}
+                className="overflow-hidden"
               >
-                <div style={{ padding: '0 16px 16px' }}>
+                <div className="px-4 pb-4">
                   {feedback.strengths.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                      <div style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        background: '#dcfce7',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        marginTop: '2px',
-                      }}>
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#22c55e' }}>✓</span>
+                    <div key={idx} className="flex gap-2.5 mb-2.5">
+                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-[11px] font-semibold text-green-500">✓</span>
                       </div>
-                      <p style={{ fontSize: '13px', lineHeight: 1.6, color: '#166534', margin: 0 }}>{item}</p>
+                      <p className="text-[13px] leading-relaxed text-green-800 m-0">{item}</p>
                     </div>
                   ))}
                 </div>
@@ -146,37 +104,21 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
 
       {/* Improvements Section */}
       {feedback?.improvements?.length > 0 && (
-        <div style={{
-          background: '#fffbeb',
-          borderRadius: '12px',
-          border: '1px solid #fde68a',
-          overflow: 'hidden',
-        }}>
+        <div className="bg-amber-50 rounded-xl border border-amber-200 overflow-hidden">
           <button
             onClick={() => toggleSection('improvements')}
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
+            className="w-full px-4 py-3.5 flex items-center gap-2.5 bg-transparent border-none cursor-pointer text-left"
           >
-            <TrendingUp size={18} color="#f59e0b" />
-            <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: '#92400e' }}>
+            <TrendingUp size={18} className="text-amber-500" />
+            <span className="flex-1 text-sm font-semibold text-amber-900">
               Dein Trainingsfeld
             </span>
-            <span style={{ fontSize: '12px', color: '#f59e0b', fontWeight: 500 }}>
+            <span className="text-xs text-amber-500 font-medium">
               {feedback.improvements.length} Punkte
             </span>
             <ChevronDown
               size={18}
-              color="#f59e0b"
-              style={{ transform: expandedSection === 'improvements' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+              className={`text-amber-500 transition-transform ${expandedSection === 'improvements' ? 'rotate-180' : ''}`}
             />
           </button>
           <AnimatePresence>
@@ -185,25 +127,15 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                style={{ overflow: 'hidden' }}
+                className="overflow-hidden"
               >
-                <div style={{ padding: '0 16px 16px' }}>
+                <div className="px-4 pb-4">
                   {feedback.improvements.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                      <div style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        background: '#fef3c7',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        marginTop: '2px',
-                      }}>
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#f59e0b' }}>{idx + 1}</span>
+                    <div key={idx} className="flex gap-2.5 mb-2.5">
+                      <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-[11px] font-semibold text-amber-500">{idx + 1}</span>
                       </div>
-                      <p style={{ fontSize: '13px', lineHeight: 1.6, color: '#92400e', margin: 0 }}>{item}</p>
+                      <p className="text-[13px] leading-relaxed text-amber-900 m-0">{item}</p>
                     </div>
                   ))}
                 </div>
@@ -215,37 +147,21 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
 
       {/* Tips Section */}
       {feedback?.tips?.length > 0 && (
-        <div style={{
-          background: '#eff6ff',
-          borderRadius: '12px',
-          border: '1px solid #bfdbfe',
-          overflow: 'hidden',
-        }}>
+        <div className="bg-blue-50 rounded-xl border border-blue-200 overflow-hidden">
           <button
             onClick={() => toggleSection('tips')}
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
+            className="w-full px-4 py-3.5 flex items-center gap-2.5 bg-transparent border-none cursor-pointer text-left"
           >
-            <Lightbulb size={18} color="#3b82f6" />
-            <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: '#1e40af' }}>
+            <Lightbulb size={18} className="text-blue-500" />
+            <span className="flex-1 text-sm font-semibold text-blue-900">
               Praktische Tipps
             </span>
-            <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 500 }}>
+            <span className="text-xs text-blue-500 font-medium">
               {feedback.tips.length} Tipps
             </span>
             <ChevronDown
               size={18}
-              color="#3b82f6"
-              style={{ transform: expandedSection === 'tips' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+              className={`text-blue-500 transition-transform ${expandedSection === 'tips' ? 'rotate-180' : ''}`}
             />
           </button>
           <AnimatePresence>
@@ -254,13 +170,13 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                style={{ overflow: 'hidden' }}
+                className="overflow-hidden"
               >
-                <div style={{ padding: '0 16px 16px' }}>
+                <div className="px-4 pb-4">
                   {feedback.tips.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                      <Target size={16} color="#3b82f6" style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <p style={{ fontSize: '13px', lineHeight: 1.6, color: '#1e40af', margin: 0 }}>{item}</p>
+                    <div key={idx} className="flex gap-2.5 mb-2.5">
+                      <Target size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-[13px] leading-relaxed text-blue-900 m-0">{item}</p>
                     </div>
                   ))}
                 </div>
@@ -272,15 +188,10 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
 
       {/* Rating Bars */}
       {feedback?.rating && (
-        <div style={{
-          background: '#fff',
-          borderRadius: '12px',
-          padding: '16px',
-          border: `1px solid ${branding.borderColor}`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <Star size={18} color={primaryAccent} />
-            <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+        <div className="bg-white rounded-xl p-4 border border-slate-200">
+          <div className="flex items-center gap-2 mb-4">
+            <Star size={18} className="text-primary" />
+            <span className="text-sm font-semibold text-slate-900">
               Bewertungskriterien
             </span>
           </div>

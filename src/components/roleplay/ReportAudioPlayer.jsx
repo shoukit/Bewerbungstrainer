@@ -171,29 +171,15 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
   // Show placeholder if no audio URL
   if (!audioUrl) {
     return (
-      <div style={{
-        background: '#fff',
-        borderRadius: '16px',
-        padding: '20px',
-        border: `1px solid ${branding.borderColor}`,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <Volume2 size={18} color={branding.textMuted} />
-          <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+      <div className="bg-white rounded-2xl p-5 border border-slate-200">
+        <div className="flex items-center gap-2 mb-4">
+          <Volume2 size={18} className="text-slate-400" />
+          <span className="text-sm font-semibold text-slate-900">
             Gesprächsaufnahme
           </span>
         </div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '80px',
-          background: branding.cardBgHover,
-          borderRadius: '12px',
-          color: branding.textMuted,
-          fontSize: '13px',
-        }}>
-          <VolumeX size={20} style={{ marginRight: '8px' }} />
+        <div className="flex items-center justify-center h-20 bg-slate-50 rounded-xl text-slate-500 text-sm">
+          <VolumeX size={20} className="mr-2" />
           Keine Audioaufnahme verfügbar
         </div>
       </div>
@@ -201,15 +187,10 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
   }
 
   return (
-    <div style={{
-      background: '#fff',
-      borderRadius: '16px',
-      padding: '20px',
-      border: `1px solid ${branding.borderColor}`,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-        <Volume2 size={18} color={primaryAccent} />
-        <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textMain }}>
+    <div className="bg-white rounded-2xl p-5 border border-slate-200">
+      <div className="flex items-center gap-2 mb-4">
+        <Volume2 size={18} className="text-primary" />
+        <span className="text-sm font-semibold text-slate-900">
           Gesprächsaufnahme
         </span>
       </div>
@@ -218,137 +199,76 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
       <div
         ref={progressRef}
         onClick={handleProgressClick}
-        style={{
-          position: 'relative',
-          height: '48px',
-          background: branding.cardBgHover,
-          borderRadius: '12px',
-          cursor: 'pointer',
-          overflow: 'hidden',
-          marginBottom: '16px',
-        }}
+        className="relative h-12 bg-slate-50 rounded-xl cursor-pointer overflow-hidden mb-4"
       >
         {isLoading ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <Loader2 size={24} color={primaryAccent} style={{ animation: 'spin 1s linear infinite' }} />
+          <div className="flex items-center justify-center h-full">
+            <Loader2 size={24} className="text-primary animate-spin" />
           </div>
         ) : error ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '8px' }}>
-            <AlertCircle size={18} color={branding.warning} />
-            <span style={{ fontSize: '13px', color: branding.textMuted }}>{error}</span>
+          <div className="flex items-center justify-center h-full gap-2">
+            <AlertCircle size={18} className="text-red-500" />
+            <span className="text-sm text-slate-500">{error}</span>
           </div>
         ) : (
           <>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: `linear-gradient(90deg, ${primaryAccent}40, ${primaryAccent}60)`,
-                borderRadius: '12px',
-              }}
+              className="absolute inset-0 bg-primary/25 rounded-xl"
             />
-            <div style={{
-              position: 'absolute',
-              left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-              top: 0,
-              bottom: 0,
-              width: '3px',
-              background: primaryAccent,
-              transform: 'translateX(-50%)',
-            }} />
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-primary -translate-x-1/2"
+              style={{ left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+            />
           </>
         )}
       </div>
 
       {/* Controls */}
       {!error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => skip(-10)}
               disabled={isLoading}
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
-                border: 'none',
-                background: branding.cardBgHover,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: isLoading ? 0.5 : 1,
-              }}
+              className="w-9 h-9 rounded-lg border-none bg-slate-50 cursor-pointer flex items-center justify-center disabled:opacity-50"
             >
-              <SkipBack size={20} color={branding.textSecondary} />
+              <SkipBack size={20} className="text-slate-600" />
             </button>
             <button
               onClick={togglePlay}
               disabled={isLoading}
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                border: 'none',
-                background: primaryAccent,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: isLoading ? 0.5 : 1,
-              }}
+              className="w-12 h-12 rounded-full border-none bg-primary cursor-pointer flex items-center justify-center disabled:opacity-50"
             >
               {isPlaying ? (
-                <Pause size={20} color="#fff" />
+                <Pause size={20} className="text-white" />
               ) : (
-                <Play size={20} color="#fff" style={{ marginLeft: '2px' }} />
+                <Play size={20} className="text-white ml-0.5" />
               )}
             </button>
             <button
               onClick={() => skip(10)}
               disabled={isLoading}
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
-                border: 'none',
-                background: branding.cardBgHover,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: isLoading ? 0.5 : 1,
-              }}
+              className="w-9 h-9 rounded-lg border-none bg-slate-50 cursor-pointer flex items-center justify-center disabled:opacity-50"
             >
-              <SkipForward size={20} color={branding.textSecondary} />
+              <SkipForward size={20} className="text-slate-600" />
             </button>
           </div>
 
-          <div style={{ flex: 1, textAlign: 'center', fontSize: '14px', color: branding.textSecondary, fontFamily: 'monospace' }}>
+          <div className="flex-1 text-center text-sm text-slate-600 font-mono">
             {formatDuration(currentTime)} / {formatDuration(duration)}
           </div>
 
           <button
             onClick={toggleMute}
             disabled={isLoading}
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              border: 'none',
-              background: branding.cardBgHover,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className="w-9 h-9 rounded-lg border-none bg-slate-50 cursor-pointer flex items-center justify-center"
           >
             {isMuted ? (
-              <VolumeX size={20} color={branding.textSecondary} />
+              <VolumeX size={20} className="text-slate-600" />
             ) : (
-              <Volume2 size={20} color={branding.textSecondary} />
+              <Volume2 size={20} className="text-slate-600" />
             )}
           </button>
         </div>

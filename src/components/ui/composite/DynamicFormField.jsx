@@ -189,46 +189,26 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
   };
 
   return (
-    <div style={{ marginBottom: b.space[5] }}>
-      <label style={{
-        display: 'block',
-        marginBottom: b.space[2],
-        fontSize: b.fontSize.sm,
-        fontWeight: 600,
-        color: COLORS.slate[700],
-      }}>
+    <div className="mb-5">
+      <label className="block mb-2 text-sm font-semibold text-slate-700">
         {field.label}
         {field.required && (
-          <span style={{ color: COLORS.red[500], marginLeft: b.space[1] }}>*</span>
+          <span className="text-red-500 ml-1">*</span>
         )}
       </label>
 
       {renderInput()}
 
       {error && (
-        <p style={{
-          marginTop: b.space[1.5],
-          fontSize: b.fontSize.sm,
-          color: COLORS.red[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: b.space[1],
-        }}>
-          <AlertCircle style={{ width: '14px', height: '14px', flexShrink: 0 }} />
+        <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
           {error}
         </p>
       )}
 
       {field.hint && !error && (
-        <p style={{
-          marginTop: b.space[1.5],
-          fontSize: b.fontSize.sm,
-          color: COLORS.slate[500],
-          display: 'flex',
-          alignItems: 'center',
-          gap: b.space[1],
-        }}>
-          <Info style={{ width: '14px', height: '14px', flexShrink: 0 }} />
+        <p className="mt-1.5 text-sm text-slate-500 flex items-center gap-1">
+          <Info className="w-3.5 h-3.5 flex-shrink-0" />
           {field.hint}
         </p>
       )}

@@ -166,24 +166,6 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     return null;
   }
 
-  // Input field styles
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    fontSize: '15px',
-    border: '1px solid #e2e8f0',
-    borderRadius: '12px',
-    outline: 'none',
-    transition: 'all 0.2s ease',
-    backgroundColor: '#ffffff',
-  };
-
-  const inputFocusStyle = {
-    borderColor: primaryAccent,
-    boxShadow: `0 0 0 3px ${focusRing}`,
-    backgroundColor: '#ffffff',
-  };
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -204,13 +186,8 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             </h2>
             <button
               onClick={handleClose}
-              className="p-2 rounded-xl transition-colors"
-              style={{
-                color: headerText,
-                backgroundColor: 'transparent',
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              className="p-2 rounded-xl transition-colors hover:bg-white/20"
+              style={{ color: headerText }}
               aria-label="Schließen"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -225,16 +202,12 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               <img
                 src={logoUrl}
                 alt={`${partnerName} Logo`}
-                style={{
-                  height: '8.5rem',
-                  maxWidth: '100%',
-                  objectFit: 'contain',
-                }}
+                className="h-[8.5rem] max-w-full object-contain"
               />
             </div>
           )}
 
-          <p className="text-sm mt-1" style={{ color: headerText, opacity: 0.8 }}>
+          <p className="text-sm mt-1 opacity-80" style={{ color: headerText }}>
             Bei {partnerName} anmelden
           </p>
         </div>
@@ -261,13 +234,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               id="login-username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              style={inputStyle}
-              onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-                e.target.style.boxShadow = 'none';
-                e.target.style.backgroundColor = '#ffffff';
-              }}
+              className="w-full px-4 py-3 text-[15px] border border-slate-200 rounded-xl outline-none transition-all bg-white focus:border-primary focus:ring-3 focus:ring-primary/30"
               placeholder="Ihr Benutzername"
               disabled={isLoading}
               autoComplete="username"
@@ -285,13 +252,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               id="login-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={inputStyle}
-              onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-                e.target.style.boxShadow = 'none';
-                e.target.style.backgroundColor = '#ffffff';
-              }}
+              className="w-full px-4 py-3 text-[15px] border border-slate-200 rounded-xl outline-none transition-all bg-white focus:border-primary focus:ring-3 focus:ring-primary/30"
               placeholder="Ihr Passwort"
               disabled={isLoading}
               autoComplete="current-password"
@@ -302,33 +263,10 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           <button
             type="submit"
             disabled={isLoading}
+            className="w-full px-6 py-3.5 text-base font-semibold rounded-xl border-none cursor-pointer flex items-center justify-center gap-2.5 transition-all shadow-lg disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none hover:enabled:-translate-y-0.5 hover:enabled:shadow-xl"
             style={{
-              width: '100%',
-              padding: '14px 24px',
-              fontSize: '16px',
-              fontWeight: 600,
               color: sidebarTextColor,
               background: isLoading ? '#94a3b8' : buttonGradient,
-              border: 'none',
-              borderRadius: '12px',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              transition: 'all 0.2s ease',
-              opacity: isLoading ? 0.7 : 1,
-              boxShadow: isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)',
-            }}
-            onMouseEnter={(e) => {
-              if (!isLoading) {
-                e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = '0 6px 20px rgba(58, 127, 167, 0.4)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)';
             }}
           >
             {isLoading ? (
@@ -336,17 +274,13 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                 <svg
                   fill="none"
                   viewBox="0 0 24 24"
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    color: sidebarTextColor,
-                    animation: 'spin 1s linear infinite',
-                  }}
+                  className="w-5 h-5 animate-spin"
+                  style={{ color: sidebarTextColor }}
                 >
-                  <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span style={{ color: sidebarTextColor, fontSize: '16px', fontWeight: 600 }}>Wird angemeldet...</span>
+                <span style={{ color: sidebarTextColor }}>Wird angemeldet...</span>
               </>
             ) : (
               <>
@@ -354,14 +288,11 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke={sidebarTextColor}
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                  }}
+                  className="w-5 h-5"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <span style={{ color: sidebarTextColor, fontSize: '16px', fontWeight: 600 }}>Anmelden</span>
+                <span style={{ color: sidebarTextColor }}>Anmelden</span>
               </>
             )}
           </button>

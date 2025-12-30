@@ -7,7 +7,6 @@
  * @param {number} total - Total number of questions
  * @param {number[]} answeredQuestions - Array of answered question indices (optional)
  * @param {string} primaryAccent - Primary accent color for the bar
- * @param {object} b - Branding object with design tokens
  * @param {object} labels - Custom labels object { questionFallback, questionCounter(current, total) }
  * @param {boolean} showCompleted - Show "abgeschlossen" text (default: true)
  */
@@ -20,7 +19,6 @@ const ProgressBar = ({
   total,
   answeredQuestions = [],
   primaryAccent,
-  b,
   labels,
   showCompleted = true,
 }) => {
@@ -59,53 +57,38 @@ const ProgressBar = ({
   };
 
   return (
-    <div style={{ marginBottom: b.space[6] }}>
+    <div className="mb-6">
       {/* Header row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: b.space[2] }}>
-        <span style={{ fontSize: b.fontSize.sm, fontWeight: 600, color: COLORS.slate[700] }}>
+      <div className="flex justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-700">
           {getQuestionCounterText()}
         </span>
-        <span style={{
-          fontSize: b.fontSize.sm,
-          fontWeight: showCompleted ? 400 : 600,
-          color: showCompleted ? COLORS.slate[500] : primaryAccent
-        }}>
+        <span
+          className={`text-sm ${showCompleted ? 'font-normal' : 'font-semibold'}`}
+          style={{ color: showCompleted ? COLORS.slate[500] : primaryAccent }}
+        >
           {Math.round(percentage)}%{showCompleted ? ' abgeschlossen' : ''}
         </span>
       </div>
 
       {/* Progress bar */}
-      <div style={{
-        height: '8px',
-        backgroundColor: COLORS.slate[200],
-        borderRadius: b.radius.sm,
-        overflow: 'hidden',
-        marginBottom: b.space[3],
-      }}>
+      <div className="h-2 bg-slate-200 rounded-sm overflow-hidden mb-3">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: parseFloat(b.transition.normal.replace('s', '')) }}
-          style={{
-            height: '100%',
-            background: primaryAccent,
-            borderRadius: b.radius.sm,
-          }}
+          transition={{ duration: 0.4 }}
+          className="h-full rounded-sm"
+          style={{ background: primaryAccent }}
         />
       </div>
 
       {/* Dots */}
-      <div style={{ display: 'flex', gap: b.space[1.5], justifyContent: 'center' }}>
+      <div className="flex gap-1.5 justify-center">
         {Array.from({ length: total }, (_, i) => (
           <div
             key={i}
-            style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              backgroundColor: getDotStyle(i),
-              transition: `all ${b.transition.normal}`,
-            }}
+            className="w-2.5 h-2.5 rounded-full transition-all duration-400"
+            style={{ backgroundColor: getDotStyle(i) }}
             title={getDotTitle(i)}
           />
         ))}

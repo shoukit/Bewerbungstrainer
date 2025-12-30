@@ -330,10 +330,9 @@ const PulseVisualizer = ({ level, isActive, size, className, accentColor }) => {
       {isActive && (
         <>
           <motion.div
-            className={cn("absolute rounded-full", config.ring)}
+            className={cn("absolute rounded-full border-2 opacity-30", config.ring)}
             style={{
-              border: `2px solid ${baseColor}`,
-              opacity: 0.3,
+              borderColor: baseColor,
             }}
             animate={{
               scale: [1, 1.3 + level * 0.4],
@@ -346,10 +345,9 @@ const PulseVisualizer = ({ level, isActive, size, className, accentColor }) => {
             }}
           />
           <motion.div
-            className={cn("absolute rounded-full", config.ring)}
+            className={cn("absolute rounded-full border-2 opacity-30", config.ring)}
             style={{
-              border: `2px solid ${baseColor}`,
-              opacity: 0.3,
+              borderColor: baseColor,
             }}
             animate={{
               scale: [1, 1.2 + level * 0.3],

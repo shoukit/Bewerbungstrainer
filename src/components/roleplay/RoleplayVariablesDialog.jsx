@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/base/dialog';
 import { Sparkles, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
-import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';
 
 /**
@@ -25,9 +24,8 @@ const scrollIntoViewOnFocus = (e) => {
 /**
  * Styled Input Component
  */
-const StyledInput = ({ id, type, value, onChange, placeholder, hasError, focusColor, b }) => {
+const StyledInput = ({ id, type, value, onChange, placeholder, hasError, focusColor }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const theFocusColor = focusColor || COLORS.blue[500];
 
   const handleFocus = (e) => {
     setIsFocused(true);
@@ -41,18 +39,10 @@ const StyledInput = ({ id, type, value, onChange, placeholder, hasError, focusCo
       value={value}
       onChange={onChange}
       placeholder={placeholder}
+      className="w-full h-11 px-4 py-2 rounded-lg bg-white text-slate-900 text-base outline-none transition-all shadow-sm"
       style={{
-        width: '100%',
-        height: '44px',
-        padding: `${b.space[2]} ${b.space[4]}`,
-        borderRadius: b.radius.lg,
-        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? theFocusColor : COLORS.slate[200]}`,
-        backgroundColor: 'white',
-        color: COLORS.slate[900],
-        fontSize: b.fontSize.lg, // Minimum 16px to prevent iOS zoom
-        boxShadow: isFocused ? `0 0 0 3px ${theFocusColor}26` : b.shadow.sm,
-        outline: 'none',
-        transition: b.transition.normal,
+        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? (focusColor || COLORS.blue[500]) : COLORS.slate[200]}`,
+        boxShadow: isFocused ? `0 0 0 3px ${(focusColor || COLORS.blue[500])}26` : undefined,
       }}
       onFocus={handleFocus}
       onBlur={() => setIsFocused(false)}
@@ -63,9 +53,8 @@ const StyledInput = ({ id, type, value, onChange, placeholder, hasError, focusCo
 /**
  * Styled Textarea Component
  */
-const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3, focusColor, b }) => {
+const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3, focusColor }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const theFocusColor = focusColor || COLORS.blue[500];
 
   const handleFocus = (e) => {
     setIsFocused(true);
@@ -79,19 +68,10 @@ const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3, 
       onChange={onChange}
       placeholder={placeholder}
       rows={rows}
+      className="w-full min-h-[100px] px-4 py-3 rounded-lg bg-white text-slate-900 text-base outline-none transition-all shadow-sm resize-none"
       style={{
-        width: '100%',
-        minHeight: '100px',
-        padding: `${b.space[3]} ${b.space[4]}`,
-        borderRadius: b.radius.lg,
-        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? theFocusColor : COLORS.slate[200]}`,
-        backgroundColor: 'white',
-        color: COLORS.slate[900],
-        fontSize: b.fontSize.lg, // Minimum 16px to prevent iOS zoom
-        boxShadow: isFocused ? `0 0 0 3px ${theFocusColor}26` : b.shadow.sm,
-        outline: 'none',
-        transition: b.transition.normal,
-        resize: 'none',
+        border: `2px solid ${hasError ? COLORS.red[500] : isFocused ? (focusColor || COLORS.blue[500]) : COLORS.slate[200]}`,
+        boxShadow: isFocused ? `0 0 0 3px ${(focusColor || COLORS.blue[500])}26` : undefined,
       }}
       onFocus={handleFocus}
       onBlur={() => setIsFocused(false)}
@@ -102,45 +82,22 @@ const StyledTextarea = ({ id, value, onChange, placeholder, hasError, rows = 3, 
 /**
  * Styled Button Component
  */
-const StyledButton = ({ onClick, variant = 'primary', children, className, themedGradient, themedGradientHover, b }) => {
+const StyledButton = ({ onClick, variant = 'primary', children, className, themedGradient, themedGradientHover }) => {
   const [isHovered, setIsHovered] = useState(false);
-
-  const baseStyle = {
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: b.space[2],
-    padding: `${b.space[3]} ${b.space[6]}`,
-    borderRadius: b.radius.lg,
-    fontSize: b.fontSize.base,
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: b.transition.normal,
-    border: 'none',
-  };
-
-  const variantStyles = {
-    primary: {
-      background: isHovered ? (themedGradientHover || themedGradient) : themedGradient,
-      color: 'white',
-      boxShadow: b.shadow.md,
-    },
-    outline: {
-      backgroundColor: isHovered ? '#f8fafc' : 'white',
-      color: COLORS.slate[700],
-      border: `2px solid ${COLORS.slate[200]}`,
-      boxShadow: b.shadow.sm,
-    },
-  };
 
   return (
     <button
       onClick={onClick}
-      style={{ ...baseStyle, ...variantStyles[variant] }}
+      className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold cursor-pointer transition-all border-none ${
+        variant === 'primary'
+          ? 'text-white shadow-md'
+          : 'bg-white text-slate-700 border-2 border-slate-200 shadow-sm hover:bg-slate-50'
+      } ${className || ''}`}
+      style={variant === 'primary' ? {
+        background: isHovered ? (themedGradientHover || themedGradient) : themedGradient,
+      } : undefined}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={className}
     >
       {children}
     </button>
@@ -150,16 +107,13 @@ const StyledButton = ({ onClick, variant = 'primary', children, className, theme
 /**
  * Dialog to collect variable values from the user before starting roleplay
  */
-const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
+const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel, primaryAccent, headerGradient, buttonGradient, buttonGradientHover }) => {
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
 
   // Custom variables state (only used if scenario.allow_custom_variables is true)
   const [customVariables, setCustomVariables] = useState([]);
   const [showCustomVariables, setShowCustomVariables] = useState(false);
-
-  // Design tokens
-  const b = useBranding();
 
   // Initialize values with defaults when scenario changes
   useEffect(() => {
@@ -267,55 +221,33 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle style={{ fontSize: b.fontSize['2xl'], display: 'flex', alignItems: 'center', gap: b.space[3] }}>
+          <DialogTitle className="text-2xl flex items-center gap-3">
             <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: b.radius.lg,
-                background: b.headerGradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ background: headerGradient }}
             >
-              <Sparkles style={{ width: '20px', height: '20px', color: b.headerText }} />
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <span style={{ color: COLORS.slate[900] }}>{scenario.title}</span>
+            <span className="text-slate-900">{scenario.title}</span>
           </DialogTitle>
-          <DialogDescription style={{ fontSize: b.fontSize.lg, paddingTop: b.space[2], color: COLORS.slate[600] }}>
+          <DialogDescription className="text-lg pt-2 text-slate-600">
             Bitte fülle die folgenden Informationen aus, um das Rollenspiel zu starten.
           </DialogDescription>
         </DialogHeader>
 
-        <div
-          style={{
-            padding: `${b.space[6]} 0`,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: b.space[4],
-          }}
-        >
+        <div className="py-6 grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
           {userInputVariables.map((varDef) => (
             <div
               key={varDef.key}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: b.space[2],
-                gridColumn: varDef.type === 'textarea' ? '1 / -1' : 'auto',
-              }}
+              className="flex flex-col gap-2"
+              style={{ gridColumn: varDef.type === 'textarea' ? '1 / -1' : 'auto' }}
             >
               <label
                 htmlFor={varDef.key}
-                style={{
-                  fontSize: b.fontSize.base,
-                  fontWeight: 600,
-                  color: COLORS.slate[700],
-                }}
+                className="text-base font-semibold text-slate-700"
               >
                 {varDef.label}
-                {varDef.required && <span style={{ color: COLORS.red[500], marginLeft: '4px' }}>*</span>}
+                {varDef.required && <span className="text-red-500 ml-1">*</span>}
               </label>
 
               {varDef.type === 'textarea' ? (
@@ -326,8 +258,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
                   hasError={!!errors[varDef.key]}
                   rows={3}
-                  focusColor={b.primaryAccent}
-                  b={b}
+                  focusColor={primaryAccent}
                 />
               ) : (
                 <StyledInput
@@ -337,13 +268,12 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                   onChange={(e) => handleChange(varDef.key, e.target.value)}
                   placeholder={varDef.default || `${varDef.label} eingeben...`}
                   hasError={!!errors[varDef.key]}
-                  focusColor={b.primaryAccent}
-                  b={b}
+                  focusColor={primaryAccent}
                 />
               )}
 
               {errors[varDef.key] && (
-                <p style={{ fontSize: b.fontSize.base, color: COLORS.red[500], margin: 0 }}>
+                <p className="text-base text-red-500 m-0">
                   {errors[varDef.key]}
                 </p>
               )}
@@ -353,95 +283,42 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
 
         {/* Custom Variables Section - only shown if scenario allows */}
         {scenario?.allow_custom_variables && (
-          <div style={{
-            marginTop: b.space[4],
-            paddingTop: b.space[4],
-            borderTop: `1px solid ${COLORS.slate[200]}`,
-          }}>
+          <div className="mt-4 pt-4 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setShowCustomVariables(!showCustomVariables)}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: b.space[2],
-                padding: '0',
-                border: 'none',
-                background: 'none',
-                color: COLORS.slate[500],
-                fontSize: b.fontSize.sm,
-                fontWeight: 500,
-                cursor: 'pointer',
-                marginBottom: showCustomVariables ? b.space[4] : '0',
-                textAlign: 'left',
-              }}
+              className="flex items-start gap-2 p-0 border-none bg-transparent text-slate-500 text-sm font-medium cursor-pointer text-left"
+              style={{ marginBottom: showCustomVariables ? '1rem' : '0' }}
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: b.space[2], flexShrink: 0 }}>
+              <span className="flex items-center gap-2 flex-shrink-0">
                 {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                 <Plus size={16} />
               </span>
-              <span style={{ lineHeight: '1.4' }}>Zusätzliche Variablen hinzufügen (optional)</span>
+              <span className="leading-snug">Zusätzliche Variablen hinzufügen (optional)</span>
             </button>
 
             {showCustomVariables && (
-              <div style={{
-                backgroundColor: COLORS.slate[50],
-                borderRadius: b.radius.lg,
-                padding: b.space[4],
-              }}>
-                <p style={{
-                  fontSize: b.fontSize.sm,
-                  color: COLORS.slate[500],
-                  margin: `0 0 ${b.space[3]} 0`,
-                }}>
+              <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-sm text-slate-500 m-0 mb-3">
                   Füge eigene Variablen hinzu, die in das Gespräch einfließen sollen.
                 </p>
 
                 {customVariables.length > 0 && (
-                  <div style={{ marginBottom: b.space[3] }}>
+                  <div className="mb-3">
                     {customVariables.map((cv, index) => (
-                      <div key={index} style={{
-                        backgroundColor: 'white',
-                        border: `1px solid ${COLORS.slate[200]}`,
-                        borderRadius: b.radius.md,
-                        padding: b.space[3],
-                        marginBottom: b.space[3],
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: b.space[2],
-                        }}>
+                      <div key={index} className="bg-white border border-slate-200 rounded-md p-3 mb-3">
+                        <div className="flex items-center justify-between mb-2">
                           <input
                             type="text"
                             value={cv.key || ''}
                             onChange={(e) => updateCustomVariable(index, 'key', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
                             placeholder="variable_name"
-                            style={{
-                              padding: `${b.space[2]} ${b.space[3]}`,
-                              borderRadius: b.radius.md,
-                              border: `1px solid ${COLORS.slate[200]}`,
-                              fontSize: b.fontSize.sm,
-                              fontFamily: 'monospace',
-                              backgroundColor: COLORS.slate[50],
-                              flex: 1,
-                              marginRight: b.space[2],
-                            }}
+                            className="px-3 py-2 rounded-md border border-slate-200 text-sm font-mono bg-slate-50 flex-1 mr-2"
                           />
                           <button
                             type="button"
                             onClick={() => deleteCustomVariable(index)}
-                            style={{
-                              padding: b.space[2],
-                              border: 'none',
-                              backgroundColor: 'transparent',
-                              cursor: 'pointer',
-                              color: '#ef4444',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
+                            className="p-2 border-none bg-transparent cursor-pointer text-red-500 flex items-center justify-center"
                           >
                             <Trash2 size={18} />
                           </button>
@@ -451,16 +328,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                           onChange={(e) => updateCustomVariable(index, 'value', e.target.value)}
                           placeholder="Wert eingeben... (mehrzeilig möglich)"
                           rows={3}
-                          style={{
-                            width: '100%',
-                            padding: `${b.space[2]} ${b.space[3]}`,
-                            borderRadius: b.radius.md,
-                            border: `1px solid ${COLORS.slate[200]}`,
-                            fontSize: b.fontSize.sm,
-                            resize: 'vertical',
-                            minHeight: '80px',
-                            boxSizing: 'border-box',
-                          }}
+                          className="w-full px-3 py-2 rounded-md border border-slate-200 text-sm resize-y min-h-[80px] box-border"
                         />
                       </div>
                     ))}
@@ -470,20 +338,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
                 <button
                   type="button"
                   onClick={addCustomVariable}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: b.space[1.5],
-                    padding: `${b.space[2]} ${b.space[3]}`,
-                    border: `1px dashed ${COLORS.slate[300]}`,
-                    borderRadius: b.radius.md,
-                    background: 'transparent',
-                    color: COLORS.slate[600],
-                    fontSize: b.fontSize.sm,
-                    cursor: 'pointer',
-                    width: '100%',
-                    justifyContent: 'center',
-                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 border border-dashed border-slate-300 rounded-md bg-transparent text-slate-600 text-sm cursor-pointer w-full justify-center"
                 >
                   <Plus size={16} />
                   Variable hinzufügen
@@ -493,18 +348,17 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel }) => {
           </div>
         )}
 
-        <DialogFooter style={{ display: 'flex', flexDirection: 'row', gap: b.space[3], paddingTop: b.space[4] }}>
-          <StyledButton onClick={onCancel} variant="outline" b={b}>
+        <DialogFooter className="flex flex-row gap-3 pt-4">
+          <StyledButton onClick={onCancel} variant="outline">
             Abbrechen
           </StyledButton>
           <StyledButton
             onClick={handleSubmit}
             variant="primary"
-            themedGradient={b.headerGradient}
-            themedGradientHover={b.buttonGradientHover}
-            b={b}
+            themedGradient={buttonGradient || headerGradient}
+            themedGradientHover={buttonGradientHover}
           >
-            <Sparkles style={{ width: '16px', height: '16px' }} />
+            <Sparkles className="w-4 h-4" />
             Rollenspiel starten
           </StyledButton>
         </DialogFooter>

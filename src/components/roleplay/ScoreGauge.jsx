@@ -14,8 +14,8 @@ const ScoreGauge = ({ score, size = 100, primaryAccent, isHeader = false }) => {
   const color = getScoreColor(score, primaryAccent);
 
   return (
-    <div style={{ position: 'relative', width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -38,23 +38,15 @@ const ScoreGauge = ({ score, size = 100, primaryAccent, isHeader = false }) => {
           transition={{ duration: 1.2, ease: 'easeOut' }}
         />
       </svg>
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.4 }}
+          className="font-bold leading-none"
           style={{
             fontSize: size / 3,
-            fontWeight: 700,
             color: isHeader ? '#fff' : color,
-            lineHeight: 1,
           }}
         >
           {Math.round(score)}

@@ -12,17 +12,18 @@ const RatingBar = ({ label, value, maxValue = 10, primaryAccent, branding }) => 
   const color = getScoreColor(displayValue, primaryAccent);
 
   return (
-    <div style={{ marginBottom: '12px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <span style={{ fontSize: '13px', color: branding.textSecondary }}>{label}</span>
-        <span style={{ fontSize: '13px', fontWeight: 600, color }}>{displayValue}</span>
+    <div className="mb-3">
+      <div className="flex justify-between mb-1.5">
+        <span className="text-[13px] text-slate-600">{label}</span>
+        <span className="text-[13px] font-semibold" style={{ color }}>{displayValue}</span>
       </div>
-      <div style={{ height: '6px', background: branding.cardBgHover, borderRadius: '3px', overflow: 'hidden' }}>
+      <div className="h-1.5 rounded overflow-hidden" style={{ background: branding.cardBgHover }}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          style={{ height: '100%', background: color, borderRadius: '3px' }}
+          className="h-full rounded"
+          style={{ background: color }}
         />
       </div>
     </div>

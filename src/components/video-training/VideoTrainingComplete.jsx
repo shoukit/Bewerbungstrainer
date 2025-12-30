@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/base/button';
 
 // Category icons
 const CATEGORY_ICONS = {
@@ -33,8 +34,8 @@ const ScoreGauge = ({ score, size = 120, strokeWidth = 10, primaryAccent }) => {
   };
 
   return (
-    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+    <div className="relative mx-auto" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
         {/* Background circle */}
         <circle
           cx={size / 2}
@@ -60,20 +61,11 @@ const ScoreGauge = ({ score, size = 120, strokeWidth = 10, primaryAccent }) => {
         />
       </svg>
       {/* Score text */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <span style={{ fontSize: size / 3, fontWeight: 700, color: getColor() }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-bold text-slate-600" style={{ fontSize: size / 3, color: getColor() }}>
           {Math.round(score)}
         </span>
-        <span style={{ fontSize: size / 10, color: '#64748b' }}>von 100</span>
+        <span className="text-slate-500" style={{ fontSize: size / 10 }}>von 100</span>
       </div>
     </div>
   );
@@ -99,79 +91,38 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{
-        background: '#fff',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
-        overflow: 'hidden',
-        marginBottom: '12px',
-      }}
+      className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-3"
     >
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        style={{
-          width: '100%',
-          padding: '16px',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-        }}
+        className="w-full p-4 bg-transparent border-none cursor-pointer flex items-center gap-3"
       >
         <div
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: `${getScoreColor(category.score)}15`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="w-10 h-10 rounded-lg flex items-center justify-center"
+          style={{ background: `${getScoreColor(category.score)}15` }}
         >
           <IconComponent size={20} color={getScoreColor(category.score)} />
         </div>
-        <div style={{ flex: 1, textAlign: 'left', minWidth: 0, overflow: 'hidden' }}>
-          <h4 style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', marginBottom: '2px' }}>
+        <div className="flex-1 text-left min-w-0 overflow-hidden">
+          <h4 className="text-[15px] font-semibold text-slate-900 mb-0.5">
             {category.label}
           </h4>
-          <p style={{
-            fontSize: '13px',
-            color: '#64748b',
-            margin: 0,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
+          <p className="text-[13px] text-slate-600 m-0 overflow-hidden text-ellipsis whitespace-nowrap">
             {category.feedback?.substring(0, 60)}...
           </p>
         </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
+        <div className="flex items-center gap-3">
           <span
-            style={{
-              fontSize: '20px',
-              fontWeight: 700,
-              color: getScoreColor(category.score),
-            }}
+            className="text-xl font-bold"
+            style={{ color: getScoreColor(category.score) }}
           >
             {Math.round(category.score)}
           </span>
           <ChevronDown
             size={20}
-            color="#64748b"
-            style={{
-              transform: isExpanded ? 'rotate(180deg)' : 'none',
-              transition: 'transform 0.2s',
-            }}
+            className="text-slate-500 transition-transform duration-200"
+            style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
           />
         </div>
       </button>
@@ -183,24 +134,24 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            style={{ overflow: 'hidden' }}
+            className="overflow-hidden"
           >
-            <div style={{ padding: '0 16px 16px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+            <div className="px-4 pb-4 border-t border-slate-200 pt-4">
               {/* Full feedback */}
-              <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '16px' }}>
+              <p className="text-sm text-slate-600 leading-relaxed mb-4">
                 {category.feedback}
               </p>
 
               {/* Strengths */}
               {category.strengths && category.strengths.length > 0 && (
-                <div style={{ marginBottom: '12px' }}>
-                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: '#22c55e', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div className="mb-3">
+                  <h5 className="text-[13px] font-semibold text-green-600 mb-2 flex items-center gap-1.5">
                     <CheckCircle size={14} />
                     Stärken
                   </h5>
-                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                  <ul className="m-0 pl-5">
                     {category.strengths.map((item, i) => (
-                      <li key={i} style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>
+                      <li key={i} className="text-[13px] text-slate-600 mb-1">
                         {item}
                       </li>
                     ))}
@@ -211,13 +162,13 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
               {/* Improvements */}
               {category.improvements && category.improvements.length > 0 && (
                 <div>
-                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: '#f59e0b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <h5 className="text-[13px] font-semibold text-amber-600 mb-2 flex items-center gap-1.5">
                     <AlertCircle size={14} />
                     Verbesserungspotenzial
                   </h5>
-                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                  <ul className="m-0 pl-5">
                     {category.improvements.map((item, i) => (
-                      <li key={i} style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>
+                      <li key={i} className="text-[13px] text-slate-600 mb-1">
                         {item}
                       </li>
                     ))}
@@ -238,7 +189,6 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
 const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNew }) => {
   const { branding } = usePartner();
   const primaryAccent = branding?.primaryAccent || '#3A7FA7';
-  const themedGradient = branding?.headerGradient || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
 
   const overallScore = session?.overall_score || 0;
   const categoryScores = session?.category_scores || [];
@@ -256,35 +206,20 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
   };
 
   return (
-    <div style={{ padding: '32px', maxWidth: '900px', margin: '0 auto' }}>
+    <div className="p-8 max-w-4xl mx-auto">
       {/* Success Header */}
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        style={{
-          textAlign: 'center',
-          marginBottom: '40px',
-        }}
+        className="text-center mb-10"
       >
-        <div
-          style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            background: themedGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
-          }}
-        >
+        <div className="w-20 h-20 rounded-full bg-brand-gradient flex items-center justify-center mx-auto mb-5 shadow-xl">
           <Trophy size={40} color="#fff" />
         </div>
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">
           Training abgeschlossen!
         </h1>
-        <p style={{ fontSize: '16px', color: '#64748b' }}>
+        <p className="text-base text-slate-600">
           {scenario?.title} - Deine Auswertung ist bereit
         </p>
       </motion.div>
@@ -294,21 +229,13 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        style={{
-          background: '#fff',
-          borderRadius: '20px',
-          padding: '32px',
-          textAlign: 'center',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-          marginBottom: '24px',
-        }}
+        className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-md mb-6"
       >
         <ScoreGauge score={overallScore} size={160} primaryAccent={primaryAccent} />
-        <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginTop: '20px', marginBottom: '8px' }}>
+        <h2 className="text-2xl font-bold text-slate-900 mt-5 mb-2">
           {getGradeLabel(overallScore)}
         </h2>
-        <p style={{ fontSize: '15px', color: '#64748b', maxWidth: '500px', margin: '0 auto', lineHeight: 1.6 }}>
+        <p className="text-[15px] text-slate-600 max-w-lg mx-auto leading-relaxed">
           {summary || 'Deine Video-Analyse wurde erfolgreich abgeschlossen.'}
         </p>
       </motion.div>
@@ -319,9 +246,9 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          style={{ marginBottom: '24px' }}
+          className="mb-6"
         >
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
             <Star size={20} color={primaryAccent} />
             Detaillierte Bewertung
           </h3>
@@ -341,24 +268,18 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
-          style={{
-            background: '#fff',
-            borderRadius: '16px',
-            padding: '24px',
-            border: '1px solid #e2e8f0',
-            marginBottom: '24px',
-          }}
+          className="bg-white rounded-2xl p-6 border border-slate-200 mb-6"
         >
           {/* Key Strengths */}
           {analysis.key_strengths && analysis.key_strengths.length > 0 && (
-            <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: 600, color: '#22c55e', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="mb-5">
+              <h4 className="text-base font-semibold text-green-600 mb-3 flex items-center gap-2">
                 <CheckCircle size={18} />
                 Deine Stärken
               </h4>
-              <ul style={{ margin: 0, paddingLeft: '24px' }}>
+              <ul className="m-0 pl-6">
                 {analysis.key_strengths.map((item, i) => (
-                  <li key={i} style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px', lineHeight: 1.5 }}>
+                  <li key={i} className="text-sm text-slate-600 mb-2 leading-normal">
                     {item}
                   </li>
                 ))}
@@ -369,13 +290,13 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
           {/* Actionable Tips */}
           {analysis.actionable_tips && analysis.actionable_tips.length > 0 && (
             <div>
-              <h4 style={{ fontSize: '16px', fontWeight: 600, color: primaryAccent, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h4 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: primaryAccent }}>
                 <Lightbulb size={18} />
                 Tipps zur Verbesserung
               </h4>
-              <ul style={{ margin: 0, paddingLeft: '24px' }}>
+              <ul className="m-0 pl-6">
                 {analysis.actionable_tips.map((item, i) => (
-                  <li key={i} style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px', lineHeight: 1.5 }}>
+                  <li key={i} className="text-sm text-slate-600 mb-2 leading-normal">
                     {item}
                   </li>
                 ))}
@@ -391,29 +312,16 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          style={{
-            background: '#fff',
-            borderRadius: '16px',
-            padding: '24px',
-            border: '1px solid #e2e8f0',
-            marginBottom: '24px',
-          }}
+          className="bg-white rounded-2xl p-6 border border-slate-200 mb-6"
         >
-          <h4 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h4 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
             <Video size={18} color={primaryAccent} />
             Deine Aufnahme
           </h4>
           <video
             src={session.video_url}
             controls
-            style={{
-              width: '100%',
-              maxWidth: '640px',
-              maxHeight: '360px',
-              borderRadius: '12px',
-              background: '#000',
-              objectFit: 'contain',
-            }}
+            className="w-full max-w-[640px] max-h-[360px] rounded-xl bg-black object-contain"
           />
         </motion.div>
       )}
@@ -423,51 +331,25 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.6 }}
-        style={{
-          display: 'flex',
-          gap: '16px',
-          justifyContent: 'center',
-        }}
+        className="flex gap-4 justify-center"
       >
-        <button
+        <Button
           onClick={onBackToDashboard}
-          style={{
-            padding: '14px 28px',
-            borderRadius: '12px',
-            background: '#f1f5f9',
-            color: '#0f172a',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '15px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
+          variant="outline"
+          size="lg"
+          className="gap-2"
         >
           <ArrowLeft size={18} />
           Zur Übersicht
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onStartNew}
-          style={{
-            padding: '14px 28px',
-            borderRadius: '12px',
-            background: themedGradient,
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '15px',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
-          }}
+          size="lg"
+          className="gap-2 shadow-lg"
         >
           <RefreshCw size={18} />
           Nochmal üben
-        </button>
+        </Button>
       </motion.div>
     </div>
   );

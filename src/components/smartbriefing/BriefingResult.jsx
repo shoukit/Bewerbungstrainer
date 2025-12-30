@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
 import {
   ArrowLeft,
@@ -53,7 +52,7 @@ const ICON_MAP = {
  * Simple Markdown Renderer
  * Renders basic markdown elements
  */
-const MarkdownContent = ({ content, primaryAccent }) => {
+const MarkdownContent = ({ content }) => {
   if (!content) return null;
 
   // Process markdown content
@@ -69,33 +68,15 @@ const MarkdownContent = ({ content, primaryAccent }) => {
         elements.push(
           <ul
             key={`list-${elements.length}`}
-            style={{
-              margin: '12px 0',
-              paddingLeft: '24px',
-              listStyle: 'none',
-            }}
+            className="my-3 pl-6 list-none"
           >
             {currentList.map((item, idx) => (
               <li
                 key={idx}
-                style={{
-                  marginBottom: '8px',
-                  fontSize: '15px',
-                  lineHeight: 1.6,
-                  color: '#374151',
-                  position: 'relative',
-                  paddingLeft: '20px',
-                }}
+                className="mb-2 text-[15px] leading-relaxed text-gray-700 relative pl-5"
               >
-                <span
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    color: primaryAccent,
-                    fontWeight: 'bold',
-                  }}
-                >
-                  {listType === 'number' ? `${idx + 1}.` : ''}
+                <span className="absolute left-0 text-primary font-bold">
+                  {listType === 'number' ? `${idx + 1}.` : '•'}
                 </span>
                 {renderInlineMarkdown(item)}
               </li>
@@ -122,17 +103,9 @@ const MarkdownContent = ({ content, primaryAccent }) => {
         elements.push(
           <h3
             key={`h3-${index}`}
-            style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#0f172a',
-              margin: '24px 0 12px 0',
-              paddingTop: '16px',
-              borderTop: index > 0 ? '1px solid #f1f5f9' : 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
+            className={`text-lg font-bold text-slate-900 my-6 mb-3 pt-4 flex items-center gap-2 ${
+              index > 0 ? 'border-t border-slate-100' : ''
+            }`}
           >
             {renderInlineMarkdown(trimmedLine.substring(4))}
           </h3>
@@ -145,12 +118,7 @@ const MarkdownContent = ({ content, primaryAccent }) => {
         elements.push(
           <h2
             key={`h2-${index}`}
-            style={{
-              fontSize: '20px',
-              fontWeight: 700,
-              color: '#0f172a',
-              margin: '28px 0 14px 0',
-            }}
+            className="text-xl font-bold text-slate-900 my-7 mb-3.5"
           >
             {renderInlineMarkdown(trimmedLine.substring(3))}
           </h2>
@@ -163,12 +131,7 @@ const MarkdownContent = ({ content, primaryAccent }) => {
         elements.push(
           <h1
             key={`h1-${index}`}
-            style={{
-              fontSize: '24px',
-              fontWeight: 700,
-              color: '#0f172a',
-              margin: '32px 0 16px 0',
-            }}
+            className="text-2xl font-bold text-slate-900 my-8 mb-4"
           >
             {renderInlineMarkdown(trimmedLine.substring(2))}
           </h1>
@@ -202,12 +165,7 @@ const MarkdownContent = ({ content, primaryAccent }) => {
       elements.push(
         <p
           key={`p-${index}`}
-          style={{
-            margin: '12px 0',
-            fontSize: '15px',
-            lineHeight: 1.7,
-            color: '#374151',
-          }}
+          className="my-3 text-[15px] leading-relaxed text-gray-700"
         >
           {renderInlineMarkdown(trimmedLine)}
         </p>
@@ -257,14 +215,14 @@ const MarkdownContent = ({ content, primaryAccent }) => {
       switch (earliest.type) {
         case 'bold':
           parts.push(
-            <strong key={key++} style={{ fontWeight: 600, color: '#0f172a' }}>
+            <strong key={key++} className="font-semibold text-slate-900">
               {earliest.match[1]}
             </strong>
           );
           break;
         case 'italic':
           parts.push(
-            <em key={key++} style={{ fontStyle: 'italic' }}>
+            <em key={key++} className="italic">
               {earliest.match[1] || earliest.match[2]}
             </em>
           );
@@ -273,14 +231,7 @@ const MarkdownContent = ({ content, primaryAccent }) => {
           parts.push(
             <code
               key={key++}
-              style={{
-                backgroundColor: '#f1f5f9',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '13px',
-                fontFamily: 'monospace',
-                color: primaryAccent,
-              }}
+              className="bg-slate-100 px-1.5 py-0.5 rounded text-[13px] font-mono text-primary"
             >
               {earliest.match[1]}
             </code>
@@ -309,14 +260,10 @@ const BriefingResult = ({
   onCreateNew,
   onGenerateAnother,
 }) => {
-  const b = useBranding();
   const isMobile = useMobile();
   const [copied, setCopied] = useState(false);
   const contentRef = useRef(null);
 
-  // Get primary accent color from branding
-  const primaryAccent = b.primaryAccent;
-  const headerGradient = b.headerGradient;
   const IconComponent = ICON_MAP[template?.icon || briefing?.template_icon] || FileText;
 
   // Format date
@@ -362,33 +309,17 @@ const BriefingResult = ({
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: b.pageBg }}>
+    <div className="min-h-screen bg-slate-50">
       {/* Header - Full width sticky */}
-      <div style={{
-        background: headerGradient,
-        padding: isMobile ? '20px 16px' : '24px 32px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-      }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div
+        className={`bg-brand-gradient sticky top-0 z-40 ${isMobile ? 'px-4 py-5' : 'px-8 py-6'}`}
+      >
+        <div className="max-w-[1400px] mx-auto">
           {/* Back Button */}
           {onBack && (
             <button
               onClick={onBack}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(255,255,255,0.15)',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                cursor: 'pointer',
-                color: '#fff',
-                fontSize: '13px',
-                marginBottom: '16px',
-              }}
+              className="flex items-center gap-1.5 bg-white/15 border-none rounded-lg px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 transition-colors"
             >
               <ArrowLeft size={16} />
               Zurück zur Übersicht
@@ -396,67 +327,32 @@ const BriefingResult = ({
           )}
 
           {/* Header Content */}
-          <div style={{
-            display: 'flex',
-            alignItems: isMobile ? 'flex-start' : 'center',
-            gap: isMobile ? '16px' : '24px',
-            flexDirection: isMobile ? 'column' : 'row',
-          }}>
+          <div className={`flex items-center gap-6 ${isMobile ? 'flex-col items-start gap-4' : ''}`}>
             {/* Icon instead of Score Gauge */}
-            <div style={{
-              width: isMobile ? 70 : 90,
-              height: isMobile ? 70 : 90,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
+            <div
+              className={`rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 ${
+                isMobile ? 'w-[70px] h-[70px]' : 'w-[90px] h-[90px]'
+              }`}
+            >
               <IconComponent size={isMobile ? 32 : 40} color="#fff" />
             </div>
 
             {/* Title & Meta */}
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: 'rgba(255,255,255,0.2)',
-                  color: '#fff',
-                }}>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 flex-wrap mb-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
                   Smart Briefing
                 </span>
-                <span style={{
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: 'rgba(255,255,255,0.9)',
-                  color: primaryAccent,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}>
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-primary flex items-center gap-1">
                   <Sparkles size={12} />
                   Fertig!
                 </span>
               </div>
-              <h1 style={{
-                fontSize: isMobile ? '20px' : '24px',
-                fontWeight: 700,
-                color: '#fff',
-                margin: 0,
-                marginBottom: '8px',
-              }}>
+              <h1 className={`font-bold text-white m-0 mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                 {template?.title || briefing?.template_title}
               </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="flex items-center gap-1.5 text-[13px] text-white/80">
                   <Calendar size={14} />
                   {formatDate(briefing.created_at)}
                 </span>
@@ -465,41 +361,19 @@ const BriefingResult = ({
 
             {/* Action Buttons - Desktop only */}
             {!isMobile && (
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div className="flex gap-3">
                 <button
                   onClick={handleCopy}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: copied ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.2)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    borderRadius: '10px',
-                    padding: '10px 20px',
-                    cursor: 'pointer',
-                    color: '#fff',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                  }}
+                  className={`flex items-center gap-2 rounded-xl px-5 py-2.5 cursor-pointer text-white text-sm font-medium border border-white/30 transition-colors ${
+                    copied ? 'bg-green-500/30' : 'bg-white/20 hover:bg-white/30'
+                  }`}
                 >
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                   {copied ? 'Kopiert!' : 'Kopieren'}
                 </button>
                 <button
                   onClick={handleDownload}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: 'rgba(255,255,255,0.2)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    borderRadius: '10px',
-                    padding: '10px 20px',
-                    cursor: 'pointer',
-                    color: '#fff',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                  }}
+                  className="flex items-center gap-2 bg-white/20 border border-white/30 rounded-xl px-5 py-2.5 cursor-pointer text-white text-sm font-medium hover:bg-white/30 transition-colors"
                 >
                   <Download size={16} />
                   Speichern
@@ -511,52 +385,24 @@ const BriefingResult = ({
       </div>
 
       {/* Main Content */}
-      <div style={{
-        maxWidth: '900px',
-        margin: '0 auto',
-        padding: isMobile ? '16px' : '24px 32px',
-      }}>
+      <div className={`max-w-[900px] mx-auto ${isMobile ? 'p-4' : 'px-8 py-6'}`}>
         {/* Mobile Action Buttons */}
         {isMobile && (
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          <div className="flex gap-2 mb-4">
             <button
               onClick={handleCopy}
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                padding: '12px',
-                borderRadius: '10px',
-                border: `1px solid ${b.borderColor}`,
-                backgroundColor: copied ? '#dcfce7' : 'white',
-                color: copied ? '#16a34a' : b.textSecondary,
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: 'pointer',
-              }}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border text-[13px] font-medium cursor-pointer transition-colors ${
+                copied
+                  ? 'bg-green-50 border-green-200 text-green-700'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
               {copied ? 'Kopiert!' : 'Kopieren'}
             </button>
             <button
               onClick={handleDownload}
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                padding: '12px',
-                borderRadius: '10px',
-                border: `1px solid ${b.borderColor}`,
-                backgroundColor: 'white',
-                color: b.textSecondary,
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: 'pointer',
-              }}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 text-[13px] font-medium cursor-pointer hover:bg-slate-50 transition-colors"
             >
               <Download size={16} />
               Speichern
@@ -567,75 +413,26 @@ const BriefingResult = ({
         {/* Briefing Content Card */}
         <div
           ref={contentRef}
-          style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            overflow: 'hidden',
-            border: `1px solid ${b.borderColor}`,
-          }}
+          className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200"
         >
           {/* Briefing Content */}
-          <div style={{ padding: isMobile ? '20px' : '32px' }}>
-            <MarkdownContent
-              content={briefing.content_markdown}
-              primaryAccent={primaryAccent}
-            />
+          <div className={isMobile ? 'p-5' : 'p-8'}>
+            <MarkdownContent content={briefing.content_markdown} />
           </div>
         </div>
 
         {/* Bottom Action Buttons */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '12px',
-            marginTop: '24px',
-            flexWrap: 'wrap',
-          }}
-        >
+        <div className="flex gap-3 mt-6 flex-wrap">
           <button
             onClick={onGenerateAnother}
-            style={{
-              flex: 1,
-              minWidth: '200px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '14px 24px',
-              borderRadius: '12px',
-              border: `2px solid ${primaryAccent}`,
-              backgroundColor: 'white',
-              color: primaryAccent,
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
+            className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border-2 border-primary bg-white text-primary text-[15px] font-semibold cursor-pointer transition-all hover:bg-primary/5"
           >
             <RefreshCw size={18} />
             Mit anderen Angaben neu generieren
           </button>
           <button
             onClick={onCreateNew}
-            style={{
-              flex: 1,
-              minWidth: '200px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '14px 24px',
-              borderRadius: '12px',
-              border: 'none',
-              background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
-              color: 'white',
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: `0 4px 14px ${primaryAccent}40`,
-            }}
+            className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border-none bg-brand-gradient text-white text-[15px] font-semibold cursor-pointer transition-all shadow-primary/40 shadow-lg hover:shadow-xl"
           >
             <Plus size={18} />
             Neues Briefing erstellen

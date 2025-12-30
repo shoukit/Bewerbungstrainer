@@ -148,59 +148,30 @@ const PreSessionView = ({
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
+    <div className="p-6 max-w-[800px] mx-auto">
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
+      <div className="mb-8">
         <button
           onClick={onBack}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            marginBottom: '16px',
-            border: 'none',
-            background: 'transparent',
-            color: branding.textSecondary,
-            fontSize: '14px',
-            cursor: 'pointer',
-            borderRadius: '8px',
-          }}
+          className="inline-flex items-center gap-2 px-3 py-2 mb-4 border-none bg-transparent cursor-pointer rounded-lg hover:bg-slate-100 transition-colors"
+          style={{ color: branding.textSecondary }}
         >
-          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+          <ArrowLeft className="w-[18px] h-[18px]" />
           Zurück
         </button>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-        }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
-            background: themedGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Lightbulb style={{ width: '32px', height: '32px', color: 'white' }} />
+        <div className="flex items-center gap-4">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{ background: themedGradient }}
+          >
+            <Lightbulb className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 style={{
-              fontSize: '28px',
-              fontWeight: 700,
-              color: branding.textMain,
-              margin: 0,
-            }}>
+            <h1 className="text-[28px] font-bold m-0" style={{ color: branding.textMain }}>
               Vorbereitung
             </h1>
-            <p style={{
-              fontSize: '16px',
-              color: branding.textSecondary,
-              margin: '4px 0 0 0',
-            }}>
+            <p className="text-base m-0 mt-1" style={{ color: branding.textSecondary }}>
               {scenario.title}{questions.length > 0 ? ` • ${questions.length} ${questionsLabel}` : ''}
             </p>
           </div>
@@ -209,46 +180,25 @@ const PreSessionView = ({
 
       {/* Long Description - Scenario Task Description */}
       {scenario.long_description && (
-        <div style={{
-          padding: '20px 24px',
-          borderRadius: '16px',
-          backgroundColor: branding.cardBg,
-          border: `1px solid ${branding.borderColor}`,
-          marginBottom: '24px',
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '14px',
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: themedGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Info style={{ width: '20px', height: '20px', color: 'white' }} />
+        <div
+          className="p-5 px-6 rounded-2xl mb-6"
+          style={{
+            backgroundColor: branding.cardBg,
+            border: `1px solid ${branding.borderColor}`,
+          }}
+        >
+          <div className="flex items-start gap-3.5">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: themedGradient }}
+            >
+              <Info className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 style={{
-                fontSize: '16px',
-                fontWeight: 600,
-                color: branding.textMain,
-                margin: '0 0 8px 0',
-              }}>
+              <h3 className="text-base font-semibold m-0 mb-2" style={{ color: branding.textMain }}>
                 Deine Aufgabe
               </h3>
-              <p style={{
-                fontSize: '15px',
-                lineHeight: '1.6',
-                color: branding.textSecondary,
-                margin: 0,
-                whiteSpace: 'pre-wrap',
-              }}>
+              <p className="text-[15px] leading-relaxed m-0 whitespace-pre-wrap" style={{ color: branding.textSecondary }}>
                 {interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n'))}
               </p>
             </div>
@@ -258,29 +208,23 @@ const PreSessionView = ({
 
       {/* Context Info */}
       {contextInfo.length > 0 && (
-        <div style={{
-          padding: '20px',
-          borderRadius: '16px',
-          backgroundColor: primaryAccentLight,
-          marginBottom: '24px',
-        }}>
-          <h3 style={{
-            fontSize: '14px',
-            fontWeight: 600,
-            color: primaryAccent,
-            margin: '0 0 12px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}>
+        <div
+          className="p-5 rounded-2xl mb-6"
+          style={{ backgroundColor: primaryAccentLight }}
+        >
+          <h3
+            className="text-sm font-semibold m-0 mb-3 uppercase tracking-wide"
+            style={{ color: primaryAccent }}
+          >
             Dein Profil
           </h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+          <div className="flex flex-wrap gap-4">
             {contextInfo.map((item, index) => (
               <div key={index}>
-                <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block' }}>
+                <span className="text-xs block" style={{ color: branding.textMuted }}>
                   {item.label}
                 </span>
-                <span style={{ fontSize: '15px', fontWeight: 500, color: branding.textMain }}>
+                <span className="text-[15px] font-medium" style={{ color: branding.textMain }}>
                   {item.value}
                 </span>
               </div>
@@ -290,26 +234,16 @@ const PreSessionView = ({
       )}
 
       {/* Microphone Selection - FIRST */}
-      <div style={{
-        padding: '24px',
-        borderRadius: '16px',
-        backgroundColor: branding.cardBg,
-        border: `1px solid ${branding.borderColor}`,
-        marginBottom: '24px',
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          marginBottom: '16px',
-        }}>
-          <Mic style={{ width: '22px', height: '22px', color: primaryAccent }} />
-          <h2 style={{
-            fontSize: '18px',
-            fontWeight: 600,
-            color: branding.textMain,
-            margin: 0,
-          }}>
+      <div
+        className="p-6 rounded-2xl mb-6"
+        style={{
+          backgroundColor: branding.cardBg,
+          border: `1px solid ${branding.borderColor}`,
+        }}
+      >
+        <div className="flex items-center gap-2.5 mb-4">
+          <Mic className="w-[22px] h-[22px]" style={{ color: primaryAccent }} />
+          <h2 className="text-lg font-semibold m-0" style={{ color: branding.textMain }}>
             Mikrofon testen
           </h2>
         </div>
@@ -324,93 +258,50 @@ const PreSessionView = ({
       <button
         onClick={onStart}
         disabled={isLoading}
+        className="w-full py-[18px] px-7 rounded-[14px] border-none text-white text-lg font-semibold flex items-center justify-center gap-3 mb-6 disabled:cursor-not-allowed disabled:opacity-70 transition-all"
         style={{
-          width: '100%',
-          padding: '18px 28px',
-          borderRadius: '14px',
-          border: 'none',
           background: isLoading ? branding.borderColor : themedGradient,
-          color: 'white',
-          fontSize: '18px',
-          fontWeight: 600,
-          cursor: isLoading ? 'not-allowed' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
           boxShadow: isLoading ? 'none' : `0 4px 12px ${primaryAccent}4d`,
-          marginBottom: '24px',
-          opacity: isLoading ? 0.7 : 1,
+          cursor: isLoading ? 'not-allowed' : 'pointer',
         }}
       >
-        <Play style={{ width: '24px', height: '24px' }} />
+        <Play className="w-6 h-6" />
         Gespräch starten
       </button>
 
       {/* Tips Section - THIRD */}
-      <div style={{
-        padding: '24px',
-        borderRadius: '16px',
-        backgroundColor: branding.cardBg,
-        border: `1px solid ${branding.borderColor}`,
-        marginBottom: '24px',
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          marginBottom: '20px',
-        }}>
-          <Lightbulb style={{ width: '22px', height: '22px', color: branding.warning }} />
-          <h2 style={{
-            fontSize: '18px',
-            fontWeight: 600,
-            color: branding.textMain,
-            margin: 0,
-          }}>
+      <div
+        className="p-6 rounded-2xl mb-6"
+        style={{
+          backgroundColor: branding.cardBg,
+          border: `1px solid ${branding.borderColor}`,
+        }}
+      >
+        <div className="flex items-center gap-2.5 mb-5">
+          <Lightbulb className="w-[22px] h-[22px]" style={{ color: branding.warning }} />
+          <h2 className="text-lg font-semibold m-0" style={{ color: branding.textMain }}>
             Tipps für dein Gespräch
           </h2>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="flex flex-col gap-4">
           {generalTips.map((tip, index) => (
             <div
               key={index}
-              style={{
-                display: 'flex',
-                gap: '16px',
-                padding: '16px',
-                borderRadius: '12px',
-                backgroundColor: branding.cardBgHover,
-              }}
+              className="flex gap-4 p-4 rounded-xl"
+              style={{ backgroundColor: branding.cardBgHover }}
             >
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                backgroundColor: primaryAccentLight,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <tip.icon style={{ width: '22px', height: '22px', color: primaryAccent }} />
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: primaryAccentLight }}
+              >
+                <tip.icon className="w-[22px] h-[22px]" style={{ color: primaryAccent }} />
               </div>
               <div>
-                <h4 style={{
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  color: branding.textMain,
-                  margin: '0 0 4px 0',
-                }}>
+                <h4 className="text-[15px] font-semibold m-0 mb-1" style={{ color: branding.textMain }}>
                   {tip.title}
                 </h4>
-                <p style={{
-                  fontSize: '14px',
-                  color: branding.textSecondary,
-                  margin: 0,
-                  lineHeight: 1.5,
-                }}>
+                <p className="text-sm m-0 leading-normal" style={{ color: branding.textSecondary }}>
                   {tip.description}
                 </p>
               </div>
@@ -420,31 +311,27 @@ const PreSessionView = ({
       </div>
 
       {/* Session Info */}
-      <div style={{
-        padding: '16px 20px',
-        borderRadius: '12px',
-        backgroundColor: branding.cardBgHover,
-        display: 'flex',
-        gap: '24px',
-        flexWrap: 'wrap',
-      }}>
+      <div
+        className="py-4 px-5 rounded-xl flex gap-6 flex-wrap"
+        style={{ backgroundColor: branding.cardBgHover }}
+      >
         {questions.length > 0 && (
           <div>
-            <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block' }}>{questionsLabel}</span>
-            <span style={{ fontSize: '18px', fontWeight: 600, color: branding.textMain }}>
+            <span className="text-xs block" style={{ color: branding.textMuted }}>{questionsLabel}</span>
+            <span className="text-lg font-semibold" style={{ color: branding.textMain }}>
               {questions.length}
             </span>
           </div>
         )}
         <div>
-          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block' }}>{timePerQuestionLabel}</span>
-          <span style={{ fontSize: '18px', fontWeight: 600, color: branding.textMain }}>
+          <span className="text-xs block" style={{ color: branding.textMuted }}>{timePerQuestionLabel}</span>
+          <span className="text-lg font-semibold" style={{ color: branding.textMain }}>
             {Math.round((scenario.time_limit_per_question || 120) / 60)} Min
           </span>
         </div>
         <div>
-          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block' }}>Wiederholen</span>
-          <span style={{ fontSize: '18px', fontWeight: 600, color: branding.textMain }}>
+          <span className="text-xs block" style={{ color: branding.textMuted }}>Wiederholen</span>
+          <span className="text-lg font-semibold" style={{ color: branding.textMain }}>
             {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
           </span>
         </div>

@@ -38,14 +38,8 @@ const SingleCategoryBadge = ({ category, getCategoryConfig }) => {
 
   return (
     <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-2xl text-[11px] font-semibold"
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '4px 10px',
-        borderRadius: '16px',
-        fontSize: '11px',
-        fontWeight: 600,
         backgroundColor: config.bgColor,
         color: config.color,
       }}
@@ -65,7 +59,7 @@ const DefaultCategoryBadge = ({ category, getCategoryConfig }) => {
   // Handle array of categories
   if (Array.isArray(category)) {
     return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+      <div className="flex flex-wrap gap-1">
         {category.map((cat, index) => (
           <SingleCategoryBadge key={index} category={cat} getCategoryConfig={getCategoryConfig} />
         ))}
@@ -348,14 +342,8 @@ const ScenarioDashboard = ({
       const config = customCategoryConfig[categoryValue];
       return (
         <span
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-2xl text-[11px] font-semibold"
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 10px',
-            borderRadius: '16px',
-            fontSize: '11px',
-            fontWeight: 600,
             backgroundColor: config.bgColor,
             color: config.color,
           }}
@@ -372,32 +360,11 @@ const ScenarioDashboard = ({
   // Loading state
   if (loading) {
     return (
-      <div style={{
-        minHeight: '60vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '60px 20px',
-        gap: '16px'
-      }}>
-        <Loader2
-          style={{
-            width: '48px',
-            height: '48px',
-            color: primaryAccent,
-            animation: 'spin 1s linear infinite'
-          }}
-        />
-        <p style={{ color: COLORS.slate[600], fontSize: '16px' }}>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-[60px_20px] gap-4">
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        <p className="text-slate-600 text-base">
           {loadingMessage}
         </p>
-        <style>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
       </div>
     );
   }
@@ -405,31 +372,14 @@ const ScenarioDashboard = ({
   // Error state
   if (error) {
     return (
-      <div style={{
-        minHeight: '60vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '60px 20px',
-        gap: '16px'
-      }}>
-        <AlertCircle style={{ width: '48px', height: '48px', color: COLORS.red[500] }} />
-        <p style={{ color: COLORS.red[500], fontSize: '16px', textAlign: 'center' }}>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-[60px_20px] gap-4">
+        <AlertCircle className="w-12 h-12 text-red-500" />
+        <p className="text-red-500 text-base text-center">
           {error}
         </p>
         <button
           onClick={loadScenarios}
-          style={{
-            padding: '12px 24px',
-            borderRadius: '12px',
-            border: 'none',
-            background: primaryAccent,
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
+          className="px-6 py-3 rounded-xl border-none bg-primary text-white text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity"
         >
           {errorRetryLabel}
         </button>
@@ -438,59 +388,36 @@ const ScenarioDashboard = ({
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="p-6 max-w-[1200px] mx-auto">
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: headerGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
+      <div className="mb-8">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center"
+              style={{ background: headerGradient }}
+            >
               {HeaderIcon && <HeaderIcon style={{ width: '24px', height: '24px', color: headerText }} />}
             </div>
             <div>
-              <h1 style={{
-                fontSize: '28px',
-                fontWeight: 700,
-                color: COLORS.slate[900],
-                margin: 0
-              }}>
+              <h1 className="text-[28px] font-bold text-slate-900 m-0">
                 {title}
               </h1>
-              <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
+              <p className="text-sm text-slate-600 m-0">
                 {subtitle}
               </p>
             </div>
           </div>
 
           {/* Right side: History button + custom header actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="flex items-center gap-3">
             {headerActions}
 
             {/* My Sessions Button - Always visible when onNavigateToHistory is provided */}
             {showHistoryButton && onNavigateToHistory && (
               <button
                 onClick={onNavigateToHistory}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 20px',
-                  borderRadius: '12px',
-                  border: `2px solid ${primaryAccent}`,
-                  backgroundColor: 'white',
-                  color: primaryAccent,
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-primary bg-white text-primary text-sm font-semibold cursor-pointer hover:bg-primary/5 transition-all"
               >
                 <FolderOpen size={18} />
                 {historyButtonLabel}
@@ -500,7 +427,7 @@ const ScenarioDashboard = ({
         </div>
 
         {/* Search, Filters and Categories */}
-        <div style={{ marginTop: '24px' }}>
+        <div className="mt-6">
           <MobileFilterSheet
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -550,26 +477,18 @@ const ScenarioDashboard = ({
         </ScenarioCardGrid>
       ) : (
         /* Empty State */
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '48px 24px',
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            border: `1px solid ${COLORS.slate[200]}`,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+        <div className="text-center p-12 px-6 bg-white rounded-2xl border border-slate-200">
+          <div className="flex justify-center mb-4">
             {EmptyStateIcon ? (
-              <EmptyStateIcon style={{ width: '48px', height: '48px', color: COLORS.slate[300] }} />
+              <EmptyStateIcon className="w-12 h-12 text-slate-300" />
             ) : (
-              <Folder style={{ width: '48px', height: '48px', color: COLORS.slate[300] }} />
+              <Folder className="w-12 h-12 text-slate-300" />
             )}
           </div>
-          <h3 style={{ color: COLORS.slate[500], margin: '0 0 8px 0', fontWeight: 500 }}>
+          <h3 className="text-slate-500 m-0 mb-2 font-medium">
             {emptyStateTitle}
           </h3>
-          <p style={{ color: COLORS.slate[400], margin: 0, fontSize: '14px' }}>
+          <p className="text-slate-400 m-0 text-sm">
             {selectedCategory
               ? 'In der ausgewählten Kategorie sind keine Szenarien verfügbar.'
               : emptyStateMessage}
@@ -577,17 +496,7 @@ const ScenarioDashboard = ({
           {selectedCategory && baseFilteredScenarios.length > 0 && (
             <button
               onClick={() => setSelectedCategory(null)}
-              style={{
-                marginTop: '16px',
-                padding: '10px 20px',
-                borderRadius: '20px',
-                border: `2px solid ${primaryAccent}`,
-                backgroundColor: 'white',
-                color: primaryAccent,
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              className="mt-4 px-5 py-2.5 rounded-[20px] border-2 border-primary bg-white text-primary text-sm font-semibold cursor-pointer hover:bg-primary/5 transition-colors"
             >
               Alle Szenarien anzeigen
             </button>

@@ -224,32 +224,6 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
     return null;
   }
 
-  // Input field styles
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 14px',
-    fontSize: '14px',
-    border: '1px solid #e2e8f0',
-    borderRadius: '10px',
-    outline: 'none',
-    transition: 'all 0.2s ease',
-    backgroundColor: '#ffffff',
-  };
-
-  const inputFocusStyle = {
-    borderColor: primaryAccent,
-    boxShadow: `0 0 0 3px ${focusRing}`,
-    backgroundColor: '#ffffff',
-  };
-
-  const labelStyle = {
-    display: 'block',
-    fontSize: '13px',
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: '6px',
-  };
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -354,7 +328,7 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
 
             {/* Demo Code field */}
             <div>
-              <label htmlFor="demo-code" style={labelStyle}>
+              <label htmlFor="demo-code" className="block text-[13px] font-medium text-gray-700 mb-1.5">
                 Demo-Code <span className="text-red-500">*</span>
               </label>
               <input
@@ -362,20 +336,7 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
                 id="demo-code"
                 value={demoCode}
                 onChange={(e) => setDemoCode(e.target.value.toUpperCase())}
-                style={{
-                  ...inputStyle,
-                  fontFamily: 'monospace',
-                  fontSize: '24px',
-                  fontWeight: '600',
-                  letterSpacing: '4px',
-                  textAlign: 'center',
-                  padding: '16px 14px',
-                }}
-                onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className="w-full px-3.5 py-4 text-2xl font-semibold font-mono tracking-[4px] text-center border border-slate-200 rounded-xl outline-none transition-all bg-white focus:border-primary focus:ring-3 focus:ring-primary/30"
                 placeholder="XXXXX"
                 maxLength={5}
                 disabled={isLoading}
