@@ -284,8 +284,8 @@ const DecisionBoardApp = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <FeatureInfoButton featureId="decisionboard" size="sm" />
 
-                {/* Meine Entscheidungen Button - Only for authenticated users */}
-                {isAuthenticated && onNavigateToHistory && (
+                {/* Meine Entscheidungen Button - Always visible */}
+                {onNavigateToHistory && (
                   <button
                     onClick={onNavigateToHistory}
                     style={{

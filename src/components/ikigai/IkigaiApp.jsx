@@ -324,8 +324,8 @@ const IkigaiApp = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <FeatureInfoButton featureId="ikigai" size="sm" />
 
-                {/* Meine Ikigai Button - Only for authenticated users */}
-                {isAuthenticated && onNavigateToHistory && (
+                {/* Meine Ikigai Button - Always visible */}
+                {onNavigateToHistory && (
                   <button
                     onClick={onNavigateToHistory}
                     style={{

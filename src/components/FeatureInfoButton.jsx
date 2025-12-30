@@ -44,11 +44,11 @@ const FeatureInfoButton = ({
     return null;
   }
 
-  // Size configurations - LARGE buttons, icon is 65% of button size
+  // Size configurations - 3x larger icons as requested
   const sizes = {
-    sm: { button: 40, icon: 26 },
-    md: { button: 48, icon: 32 },
-    lg: { button: 56, icon: 38 },
+    sm: { button: 96, icon: 78 },   // 3x icon size (was 26)
+    md: { button: 116, icon: 96 },  // 3x icon size (was 32)
+    lg: { button: 140, icon: 114 }, // 3x icon size (was 38)
   };
 
   const sizeConfig = sizes[size] || sizes.md;
