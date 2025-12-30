@@ -1,12 +1,11 @@
 /**
  * FeatureInfoButton - Info icon button to show feature information modal
  *
- * Use this button on dashboard cards and feature headers to allow users
- * to view the feature description and learning goals.
+ * Large, prominent info buttons that are always visible on cards.
  */
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Info } from 'lucide-react';
 import { COLORS, hexToRgba } from '@/config/colors';
 import { RADIUS, TRANSITIONS } from '@/config/designTokens';
@@ -18,7 +17,7 @@ import { FEATURE_DESCRIPTIONS } from '@/config/featureDescriptions';
  *
  * @param {string} featureId - ID of the feature (e.g., 'simulator', 'roleplay')
  * @param {string} size - 'sm' | 'md' | 'lg' (default: 'md')
- * @param {string} variant - 'default' | 'light' | 'dark' (default: 'default')
+ * @param {string} variant - 'default' | 'subtle' | 'light' | 'dark' (default: 'default')
  * @param {string} className - Additional CSS classes
  * @param {object} style - Additional inline styles
  */
@@ -30,19 +29,26 @@ const FeatureInfoButton = ({
   style = {},
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [portalContainer, setPortalContainer] = useState(null);
 
   const feature = FEATURE_DESCRIPTIONS[featureId];
+
+  // Create portal container on mount
+  useEffect(() => {
+    setPortalContainer(document.body);
+  }, []);
 
   if (!feature) {
     console.warn(`FeatureInfoButton: Unknown feature ID "${featureId}"`);
     return null;
   }
 
-  // Size configurations - icon is 70% of button size
+  // Size configurations - LARGE buttons, icon is 65% of button size
   const sizes = {
-    sm: { button: 36, icon: 25 },
-    md: { button: 44, icon: 31 },
-    lg: { button: 52, icon: 36 },
+    sm: { button: 40, icon: 26 },
+    md: { button: 48, icon: 32 },
+    lg: { button: 56, icon: 38 },
   };
 
   const sizeConfig = sizes[size] || sizes.md;
@@ -56,20 +62,20 @@ const FeatureInfoButton = ({
       hoverBackground: hexToRgba(feature.color, 0.85),
     },
     subtle: {
-      // Subtle version with low opacity background
-      background: hexToRgba(feature.color, 0.15),
+      // Subtle version with higher opacity background for visibility
+      background: hexToRgba(feature.color, 0.2),
       color: feature.color,
-      hoverBackground: hexToRgba(feature.color, 0.25),
+      hoverBackground: hexToRgba(feature.color, 0.35),
     },
     light: {
-      background: 'rgba(255, 255, 255, 0.2)',
+      background: 'rgba(255, 255, 255, 0.3)',
       color: COLORS.white,
-      hoverBackground: 'rgba(255, 255, 255, 0.3)',
+      hoverBackground: 'rgba(255, 255, 255, 0.5)',
     },
     dark: {
-      background: COLORS.slate[500],
+      background: COLORS.slate[600],
       color: COLORS.white,
-      hoverBackground: COLORS.slate[600],
+      hoverBackground: COLORS.slate[700],
     },
   };
 
@@ -81,20 +87,24 @@ const FeatureInfoButton = ({
     setIsModalOpen(true);
   };
 
+  const handleClose = () => {
+    setIsModalOpen(false);
+  };
+
   return (
     <>
-      <motion.button
+      <button
         type="button"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
         onClick={handleClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         className={className}
         title={`Info über ${feature.title}`}
         style={{
           width: `${sizeConfig.button}px`,
           height: `${sizeConfig.button}px`,
           borderRadius: RADIUS.full,
-          backgroundColor: variantConfig.background,
+          backgroundColor: isHovered ? variantConfig.hoverBackground : variantConfig.background,
           color: variantConfig.color,
           border: 'none',
           cursor: 'pointer',
@@ -103,24 +113,23 @@ const FeatureInfoButton = ({
           justifyContent: 'center',
           transition: TRANSITIONS.normal,
           flexShrink: 0,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+          transform: isHovered ? 'scale(1.08)' : 'scale(1)',
           ...style,
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = variantConfig.hoverBackground;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = variantConfig.background;
-        }}
       >
-        <Info size={sizeConfig.icon} />
-      </motion.button>
+        <Info size={sizeConfig.icon} strokeWidth={2.5} />
+      </button>
 
-      <FeatureInfoModal
-        featureId={featureId}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      {/* Render modal via portal to ensure it's always at body level */}
+      {portalContainer && isModalOpen && createPortal(
+        <FeatureInfoModal
+          featureId={featureId}
+          isOpen={isModalOpen}
+          onClose={handleClose}
+        />,
+        portalContainer
+      )}
     </>
   );
 };
