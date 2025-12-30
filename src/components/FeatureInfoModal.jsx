@@ -20,6 +20,28 @@ import {
 
 const CLOSE_ICON_SIZE = 24;
 
+// Session-based tracking to prevent double auto-show (survives StrictMode remounts)
+const AUTO_SHOW_SESSION_KEY = 'karriereheld_feature_info_session_shown';
+
+const isAutoShownThisSession = (featureId) => {
+  try {
+    const shown = JSON.parse(sessionStorage.getItem(AUTO_SHOW_SESSION_KEY) || '{}');
+    return shown[featureId] === true;
+  } catch {
+    return false;
+  }
+};
+
+const setAutoShownThisSession = (featureId) => {
+  try {
+    const shown = JSON.parse(sessionStorage.getItem(AUTO_SHOW_SESSION_KEY) || '{}');
+    shown[featureId] = true;
+    sessionStorage.setItem(AUTO_SHOW_SESSION_KEY, JSON.stringify(shown));
+  } catch {
+    // Ignore storage errors
+  }
+};
+
 /**
  * FeatureInfoModal Component
  */
@@ -31,9 +53,11 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
   const feature = FEATURE_DESCRIPTIONS[featureId];
 
   // Handle auto-show on mount
+  // Uses both ref (for within-render protection) and sessionStorage (for StrictMode/remount protection)
   useEffect(() => {
-    if (showOnMount && feature && !isFeatureInfoDismissed(featureId) && !hasAutoShownRef.current) {
+    if (showOnMount && feature && !isFeatureInfoDismissed(featureId) && !hasAutoShownRef.current && !isAutoShownThisSession(featureId)) {
       hasAutoShownRef.current = true;
+      setAutoShownThisSession(featureId);
       const timer = setTimeout(() => setInternalOpen(true), 400);
       return () => clearTimeout(timer);
     }
