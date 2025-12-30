@@ -428,7 +428,7 @@ class Bewerbungstrainer_Roleplay_Admin {
         // UTF-8 BOM for Excel
         fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-        // CSV Header
+        // CSV Header - all fields including new ones
         fputcsv($output, array(
             'id',
             'title',
@@ -441,11 +441,20 @@ class Bewerbungstrainer_Roleplay_Admin {
             'role_type',
             'user_role_label',
             'agent_id',
+            'voice_id',
+            'initial_message',
             'system_prompt',
             'feedback_prompt',
             'ai_instructions',
             'tips',
             'input_configuration',
+            'interviewer_name',
+            'interviewer_role',
+            'interviewer_image',
+            'interviewer_properties',
+            'interviewer_objections',
+            'interviewer_questions',
+            'coaching_hints',
             'is_active',
             'sort_order'
         ), ';');
@@ -473,11 +482,20 @@ class Bewerbungstrainer_Roleplay_Admin {
                 $scenario->role_type ?? 'interview',
                 $clean_text($scenario->user_role_label ?? 'Bewerber'),
                 $scenario->agent_id ?? '',
+                $scenario->voice_id ?? '',
+                $clean_text($scenario->initial_message ?? ''),
                 $clean_text($scenario->system_prompt ?? ''),
                 $clean_text($scenario->feedback_prompt ?? ''),
                 $clean_text($scenario->ai_instructions ?? ''),
                 $scenario->tips ?? '[]',
                 $scenario->input_configuration ?? '[]',
+                $clean_text($scenario->interviewer_name ?? ''),
+                $clean_text($scenario->interviewer_role ?? ''),
+                $scenario->interviewer_image ?? '',
+                $clean_text($scenario->interviewer_properties ?? ''),
+                $clean_text($scenario->interviewer_objections ?? ''),
+                $clean_text($scenario->interviewer_questions ?? ''),
+                $clean_text($scenario->coaching_hints ?? ''),
                 $scenario->is_active,
                 $scenario->sort_order
             ), ';');
