@@ -38,11 +38,11 @@ const FeatureInfoButton = ({
     return null;
   }
 
-  // Size configurations
+  // Size configurations - icon is 70% of button size
   const sizes = {
-    sm: { button: 36, icon: 20 },
-    md: { button: 44, icon: 24 },
-    lg: { button: 52, icon: 28 },
+    sm: { button: 36, icon: 25 },
+    md: { button: 44, icon: 31 },
+    lg: { button: 52, icon: 36 },
   };
 
   const sizeConfig = sizes[size] || sizes.md;
