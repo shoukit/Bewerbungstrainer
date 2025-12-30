@@ -1,43 +1,29 @@
+/**
+ * SessionHistory Component
+ *
+ * Central hub for viewing all saved sessions, briefings, decisions, and ikigais.
+ * Migrated to Tailwind CSS for consistent styling.
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { useMobile } from '@/hooks/useMobile';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   History,
-  Calendar,
-  Clock,
-  Award,
-  ChevronLeft,
-  ChevronRight,
   MessageSquare,
   Loader2,
   AlertCircle,
   Play,
-  Star,
-  TrendingUp,
   RefreshCw,
   LogIn,
   Target,
   Video,
-  CheckCircle,
-  XCircle,
   Sparkles,
   Trash2,
   Plus,
-  ArrowLeft,
 } from 'lucide-react';
-import { Button } from '@/components/ui/base/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/base/dialog';
+import { Button, Card } from '@/components/ui';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
-import { useBranding } from '@/hooks/useBranding';
 import TrainingSessionDetailView from '@/components/session-detail/TrainingSessionDetailView';
 import RoleplaySessionReport from '@/components/roleplay/RoleplaySessionReport';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
@@ -45,9 +31,6 @@ import wordpressAPI from '@/services/wordpress-api';
 import BriefingWorkbook from '@/components/smartbriefing/BriefingWorkbook';
 import DecisionBoardInput from '@/components/decision-board/DecisionBoardInput';
 import DecisionBoardResult from '@/components/decision-board/DecisionBoardResult';
-import { formatDateTime, formatDuration } from '@/utils/formatting';
-import { BRIEFING_ICON_MAP, getBriefingIcon } from '@/utils/iconMaps';
-import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
 import { BriefingCard, SessionCard, DecisionCard, IkigaiCard } from '@/components/session-history';
 import IkigaiCompass from '@/components/ikigai/IkigaiCompass';
 import IkigaiResults from '@/components/ikigai/IkigaiResults';
@@ -123,11 +106,7 @@ export const SESSION_TABS = TABS;
 
 const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession, initialTab, onNavigateToModule }) => {
   // Partner branding
-  const { branding, demoCode, isDemoUser } = usePartner();
-  const b = useBranding();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+  const { branding, demoCode } = usePartner();
 
   // Active tab - use initialTab prop if provided, otherwise default to Smart Briefings
   const [activeTab, setActiveTab] = useState(initialTab || TABS.BRIEFINGS);
@@ -244,8 +223,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       ]);
 
       // Extract sessions from API responses - each API has different structure
-      // Simulator & Video: { success: true, data: { sessions: [...] } }
-      // Roleplay: { data: [...] }
       const extractSessions = (response, key = 'sessions') => {
         if (Array.isArray(response?.data)) return response.data;
         if (Array.isArray(response?.data?.[key])) return response.data[key];
@@ -648,7 +625,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     };
 
     return (
-      <div style={{ minHeight: '100vh', background: b.pageBg }}>
+      <div className="min-h-screen bg-slate-50">
         {/* Unified Header */}
         <SessionDetailHeader
           type="decision"
@@ -665,7 +642,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         />
 
         {/* Content */}
-        <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
+        <div className="p-6 max-w-[900px] mx-auto">
           {/* Show Result if analysis is complete, otherwise show Input */}
           {decisionAnalysisResult ? (
           <DecisionBoardResult
@@ -698,7 +675,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Show ikigai edit view if an ikigai is selected
   if (selectedIkigai) {
     return (
-      <div style={{ minHeight: '100vh', background: b.pageBg }}>
+      <div className="min-h-screen bg-slate-50">
         {/* Unified Header */}
         <SessionDetailHeader
           type="ikigai"
@@ -716,7 +693,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         />
 
         {/* Content */}
-        <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
+        <div className="p-6 max-w-[900px] mx-auto">
           {/* Show Results if synthesis is complete, otherwise show Compass */}
           {ikigaiSynthesisResult ? (
             <IkigaiResults
@@ -760,7 +737,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     }
 
     // Use TrainingSessionDetailView for Simulator and Video
-    // Map tab types to session type strings
     const typeMap = {
       [TABS.SIMULATOR]: 'simulator',
       [TABS.VIDEO]: 'video',
@@ -783,127 +759,63 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Show login required screen if not authenticated
   if (!isAuthenticated) {
     return (
-      <div style={{ padding: b.space[6] }}>
+      <div className="p-6">
         {/* Header */}
-        <div style={{ marginBottom: b.space[8], textAlign: 'center' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: b.space[3],
-            marginBottom: b.space[3],
-          }}>
-            <div style={{
-              width: b.space[12],
-              height: b.space[12],
-              borderRadius: b.radius.lg,
-              background: headerGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <History style={{ width: b.iconSize['2xl'], height: b.iconSize['2xl'], color: headerText }} />
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-lg bg-brand-gradient flex items-center justify-center">
+              <History className="w-7 h-7 text-white" />
             </div>
-            <h1 style={{
-              fontSize: b.fontSize['5xl'],
-              fontWeight: b.fontWeight.bold,
-              color: b.textMain,
-              margin: 0,
-            }}>
+            <h1 className="text-4xl font-bold text-slate-900">
               Meine Sessions
             </h1>
           </div>
-          <p style={{
-            fontSize: b.fontSize.lg,
-            color: b.textSecondary,
-            maxWidth: '600px',
-            margin: '0 auto',
-          }}>
+          <p className="text-lg text-slate-500 max-w-[600px] mx-auto">
             Hier findest du deine gespeicherten Übungen und Fortschritte
           </p>
         </div>
 
         {/* Login required message */}
-        <div style={{
-          maxWidth: '500px',
-          margin: `${b.space[15]} auto`,
-          textAlign: 'center',
-          padding: b.space[10],
-          backgroundColor: b.cardBg,
-          borderRadius: b.radius['2xl'],
-          boxShadow: b.shadow.md,
-        }}>
-          <div style={{
-            width: b.space[16],
-            height: b.space[16],
-            borderRadius: b.radius.xl,
-            background: headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: `0 auto ${b.space[5]}`,
-          }}>
-            <LogIn style={{ width: b.iconSize['3xl'], height: b.iconSize['3xl'], color: headerText }} />
+        <Card className="max-w-[500px] mx-auto mt-16 p-10 text-center">
+          <div className="w-16 h-16 rounded-xl bg-brand-gradient flex items-center justify-center mx-auto mb-5">
+            <LogIn className="w-8 h-8 text-white" />
           </div>
-          <h2 style={{
-            fontSize: b.fontSize['3xl'],
-            fontWeight: b.fontWeight.bold,
-            color: b.textMain,
-            marginBottom: b.space[3],
-          }}>
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">
             Anmeldung erforderlich
           </h2>
-          <p style={{
-            fontSize: b.fontSize.md,
-            color: b.textMuted,
-            marginBottom: b.space[6],
-            lineHeight: 1.6,
-          }}>
+          <p className="text-slate-500 mb-6 leading-relaxed">
             Um deine gespeicherten Sessions zu sehen, musst du dich zuerst anmelden.
           </p>
-          <button
+          <Button
             onClick={onLoginClick}
-            style={{
-              padding: `${b.space[3.5]} ${b.space[8]}`,
-              borderRadius: b.radius.lg,
-              border: 'none',
-              background: headerGradient,
-              color: headerText,
-              fontSize: b.fontSize.lg,
-              fontWeight: b.fontWeight.semibold,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: b.space[2.5],
-              boxShadow: b.coloredShadow(primaryAccent, 'md'),
-            }}
+            size="lg"
+            icon={<LogIn className="w-5 h-5" />}
           >
-            <LogIn style={{ width: b.iconSize.lg, height: b.iconSize.lg }} />
             Jetzt anmelden
-          </button>
-        </div>
+          </Button>
+        </Card>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: b.space[10] }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: primaryAccent, animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-          <p style={{ color: b.textMuted, marginTop: b.space[4] }}>Sessions werden geladen...</p>
+      <div className="min-h-[60vh] flex items-center justify-center p-10">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+          <p className="text-slate-500 mt-4">Sessions werden geladen...</p>
         </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', maxWidth: '400px', padding: b.space[6] }}>
-          <AlertCircle style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.error, margin: `0 auto ${b.space[4]}` }} />
-          <h2 style={{ fontSize: b.fontSize['2xl'], fontWeight: b.fontWeight.bold, color: b.textMain, marginBottom: b.space[2] }}>Fehler beim Laden</h2>
-          <p style={{ color: b.textMuted, marginBottom: b.space[6] }}>{error}</p>
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="text-center max-w-[400px] p-6">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Fehler beim Laden</h2>
+          <p className="text-slate-500 mb-6">{error}</p>
           <Button onClick={loadAllData}>Erneut versuchen</Button>
         </div>
       </div>
@@ -914,173 +826,33 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const activeScenarioMap = getActiveScenarioMap();
 
   return (
-    <div style={{ padding: b.space[6] }}>
+    <div className="p-6">
       {/* Header */}
-      <div style={{ marginBottom: b.space[8], textAlign: 'center', position: 'relative' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: b.space[3],
-          marginBottom: b.space[3],
-        }}>
-          <div style={{
-            width: b.space[12],
-            height: b.space[12],
-            borderRadius: b.radius.lg,
-            background: headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <History style={{ width: b.iconSize['2xl'], height: b.iconSize['2xl'], color: headerText }} />
+      <div className="mb-8 text-center relative">
+        <div className="inline-flex items-center gap-3 mb-3">
+          <div className="w-12 h-12 rounded-lg bg-brand-gradient flex items-center justify-center">
+            <History className="w-7 h-7 text-white" />
           </div>
-          <h1 style={{
-            fontSize: b.fontSize['5xl'],
-            fontWeight: b.fontWeight.bold,
-            color: b.textMain,
-            margin: 0,
-          }}>
+          <h1 className="text-4xl font-bold text-slate-900">
             Meine Sessions
           </h1>
         </div>
-        <p style={{
-          fontSize: b.fontSize.lg,
-          color: b.textSecondary,
-          maxWidth: '600px',
-          margin: '0 auto',
-        }}>
+        <p className="text-lg text-slate-500 max-w-[600px] mx-auto">
           {totalSessions} {totalSessions === 1 ? 'Übung' : 'Übungen'} gespeichert
         </p>
+
+        {/* Mobile: Refresh button in header area */}
+        <button
+          onClick={loadAllData}
+          disabled={isLoading}
+          className="absolute top-0 right-0 p-2.5 rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm flex items-center justify-center md:hidden disabled:opacity-50"
+        >
+          <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
-      {/* Tabs - Responsive: icons on mobile, full tabs on desktop */}
-      <style>{`
-        .session-tabs-desktop {
-          margin: 0 24px 24px;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          background: #f1f5f9;
-          padding: 6px;
-          border-radius: 14px;
-        }
-        .session-tab-btn-desktop {
-          flex: 1 1 auto;
-          min-width: fit-content;
-          padding: 12px 16px;
-          border-radius: 10px;
-          border: none;
-          font-size: 14px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          transition: all 0.2s;
-        }
-        .session-tabs-mobile {
-          margin: 0 16px 16px;
-        }
-        .session-tabs-mobile-icons {
-          display: flex;
-          gap: 8px;
-          justify-content: center;
-          margin-bottom: 12px;
-        }
-        .session-tab-btn-mobile {
-          flex: 1;
-          max-width: 80px;
-          padding: 12px 8px;
-          border-radius: 12px;
-          border: none;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          transition: all 0.2s;
-        }
-        .session-tab-mobile-label {
-          text-align: center;
-          font-size: 15px;
-          font-weight: 600;
-          color: #0f172a;
-          padding: 8px 16px;
-          background: #fff;
-          border-radius: 10px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-        .mobile-refresh-btn {
-          display: none;
-        }
-        .desktop-actions {
-          margin: 0 24px 24px;
-          display: flex;
-          justify-content: center;
-          flex-wrap: wrap;
-          gap: 12px;
-        }
-        .sessions-list-container {
-          margin: 0 24px;
-        }
-        @media (min-width: 1025px) {
-          .session-tabs-mobile { display: none; }
-        }
-        @media (min-width: 641px) and (max-width: 1023px) {
-          .desktop-actions {
-            flex-direction: column;
-          }
-          .desktop-actions button {
-            width: 100%;
-            justify-content: center;
-          }
-        }
-        @media (min-width: 1024px) {
-          .desktop-actions {
-            justify-content: flex-end;
-          }
-        }
-        @media (max-width: 1024px) {
-          .session-tabs-desktop { display: none; }
-        }
-        @media (max-width: 640px) {
-          .desktop-actions { display: none; }
-          .mobile-refresh-btn {
-            display: flex !important;
-            position: absolute;
-            top: 0;
-            right: 0;
-          }
-          .sessions-list-container {
-            margin: 0 16px;
-          }
-        }
-      `}</style>
-
-      {/* Mobile: Refresh button in header area */}
-      <button
-        onClick={loadAllData}
-        disabled={isLoading}
-        className="mobile-refresh-btn"
-        style={{
-          padding: b.space[2.5],
-          borderRadius: b.radius.md,
-          border: `1px solid ${b.borderColor}`,
-          background: b.cardBgColor,
-          color: b.textSecondary,
-          cursor: isLoading ? 'not-allowed' : 'pointer',
-          opacity: isLoading ? 0.5 : 1,
-          boxShadow: b.shadow.sm,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <RefreshCw style={{ width: b.iconSize.md, height: b.iconSize.md }} className={isLoading ? 'animate-spin' : ''} />
-      </button>
-
       {/* Desktop Tabs */}
-      <div className="session-tabs-desktop">
+      <div className="hidden lg:flex flex-wrap gap-2 mx-6 mb-6 bg-slate-100 p-1.5 rounded-[14px]">
         {TAB_CONFIG.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1095,26 +867,17 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="session-tab-btn-desktop"
-              style={{
-                background: isActive ? '#fff' : 'transparent',
-                color: isActive ? '#0f172a' : '#64748b',
-                fontWeight: isActive ? 600 : 500,
-                boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
-              }}
+              className={`flex-1 min-w-fit py-3 px-4 rounded-[10px] border-none text-sm cursor-pointer flex items-center justify-center gap-2 transition-all ${
+                isActive
+                  ? 'bg-white text-slate-900 font-semibold shadow-md'
+                  : 'bg-transparent text-slate-500 font-medium hover:bg-white/50'
+              }`}
             >
               <Icon size={18} />
               <span>{tab.label}</span>
-              <span style={{
-                padding: '2px 8px',
-                borderRadius: '10px',
-                background: isActive ? primaryAccent : '#e2e8f0',
-                color: isActive ? 'white' : '#64748b',
-                fontSize: '12px',
-                fontWeight: 600,
-                minWidth: '24px',
-                textAlign: 'center',
-              }}>
+              <span className={`py-0.5 px-2 rounded-[10px] text-xs font-semibold min-w-[24px] text-center ${
+                isActive ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'
+              }`}>
                 {count}
               </span>
             </button>
@@ -1123,8 +886,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       </div>
 
       {/* Mobile Tabs - Icons with counts + active label below */}
-      <div className="session-tabs-mobile">
-        <div className="session-tabs-mobile-icons">
+      <div className="lg:hidden mx-4 mb-4">
+        <div className="flex gap-2 justify-center mb-3">
           {TAB_CONFIG.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1132,30 +895,23 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                          tab.id === TABS.VIDEO ? videoSessions.length :
                          tab.id === TABS.BRIEFINGS ? briefings.length :
                          tab.id === TABS.DECISIONS ? decisions.length :
+                         tab.id === TABS.IKIGAI ? ikigais.length :
                          roleplaySessions.length;
 
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="session-tab-btn-mobile"
-                style={{
-                  background: isActive ? '#fff' : '#f1f5f9',
-                  boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none',
-                  border: isActive ? `2px solid ${primaryAccent}` : '2px solid transparent',
-                }}
+                className={`flex-1 max-w-[80px] py-3 px-2 rounded-xl border-2 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all ${
+                  isActive
+                    ? 'bg-white shadow-md border-primary'
+                    : 'bg-slate-100 border-transparent'
+                }`}
               >
-                <Icon size={20} style={{ color: isActive ? primaryAccent : '#64748b' }} />
-                <span style={{
-                  padding: '2px 6px',
-                  borderRadius: '8px',
-                  background: isActive ? primaryAccent : '#e2e8f0',
-                  color: isActive ? 'white' : '#64748b',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  minWidth: '20px',
-                  textAlign: 'center',
-                }}>
+                <Icon size={20} className={isActive ? 'text-primary' : 'text-slate-500'} />
+                <span className={`py-0.5 px-1.5 rounded-lg text-[11px] font-semibold min-w-[20px] text-center ${
+                  isActive ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'
+                }`}>
                   {count}
                 </span>
               </button>
@@ -1163,15 +919,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           })}
         </div>
         {/* Active tab label */}
-        <div className="session-tab-mobile-label">
+        <div className="text-center text-[15px] font-semibold text-slate-900 py-2 px-4 bg-white rounded-[10px] shadow-sm">
           {TAB_CONFIG.find(t => t.id === activeTab)?.label}
         </div>
       </div>
 
       {/* Desktop Action buttons */}
-      <div className="desktop-actions">
+      <div className="hidden sm:flex justify-center lg:justify-end flex-wrap gap-3 mx-6 mb-6">
         <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
-          <RefreshCw style={{ width: '16px', height: '16px', marginRight: '8px' }} className={isLoading ? 'animate-spin' : ''} />
+          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Aktualisieren
         </Button>
         {onNavigateToModule && (
@@ -1188,12 +944,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
               };
               onNavigateToModule(moduleMap[activeTab] || 'overview');
             }}
-            style={{
-              background: headerGradient,
-              color: headerText,
-            }}
           >
-            <Plus style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+            <Plus className="w-4 h-4 mr-2" />
             {activeTab === TABS.BRIEFINGS ? 'Neues Briefing' :
              activeTab === TABS.DECISIONS ? 'Neue Entscheidungs-Analyse' :
              activeTab === TABS.IKIGAI ? 'Neue Ikigai-Analyse' :
@@ -1205,25 +957,19 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       </div>
 
       {/* Sessions List */}
-      <div className="sessions-list-container">
+      <div className="mx-4 sm:mx-6">
         {activeSessions.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: `${b.space[15]} ${b.space[6]}`,
-            background: b.cardBg,
-            borderRadius: b.radius['2xl'],
-            boxShadow: b.shadow.sm,
-          }}>
-            {activeTab === TABS.SIMULATOR && <Target style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
-            {activeTab === TABS.ROLEPLAY && <MessageSquare style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
-            {activeTab === TABS.VIDEO && <Video style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
-            {activeTab === TABS.BRIEFINGS && <Sparkles style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
-            {activeTab === TABS.DECISIONS && <Scale style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
-            {activeTab === TABS.IKIGAI && <Compass style={{ width: b.iconSize['4xl'], height: b.iconSize['4xl'], color: b.textMuted, margin: `0 auto ${b.space[4]}`, display: 'block' }} />}
-            <h3 style={{ fontSize: b.fontSize['2xl'], fontWeight: b.fontWeight.semibold, color: b.textSecondary, marginBottom: b.space[2] }}>
+          <Card className="text-center py-16 px-6">
+            {activeTab === TABS.SIMULATOR && <Target className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
+            {activeTab === TABS.ROLEPLAY && <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
+            {activeTab === TABS.VIDEO && <Video className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
+            {activeTab === TABS.BRIEFINGS && <Sparkles className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
+            {activeTab === TABS.DECISIONS && <Scale className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
+            {activeTab === TABS.IKIGAI && <Compass className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
+            <h3 className="text-xl font-semibold text-slate-600 mb-2">
               Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : activeTab === TABS.DECISIONS ? 'Entscheidungs-Analysen' : activeTab === TABS.IKIGAI ? 'Ikigai-Analysen' : 'Live-Simulationen'}
             </h3>
-            <p style={{ color: b.textMuted, fontSize: b.fontSize.base, marginBottom: b.space[6] }}>
+            <p className="text-slate-500 mb-6">
               {activeTab === TABS.BRIEFINGS
                 ? 'Erstelle dein erstes Briefing, um dich optimal vorzubereiten.'
                 : activeTab === TABS.DECISIONS
@@ -1233,13 +979,13 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                 : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
             </p>
             <Button onClick={onBack}>
-              <Play style={{ width: b.iconSize.sm, height: b.iconSize.sm, marginRight: b.space[2] }} />
+              <Play className="w-4 h-4 mr-2" />
               {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : activeTab === TABS.DECISIONS ? 'Entscheidung analysieren' : activeTab === TABS.IKIGAI ? 'Ikigai entdecken' : 'Training starten'}
             </Button>
-          </div>
+          </Card>
         ) : (
           <motion.div
-            style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}
+            className="flex flex-col gap-3"
             initial="hidden"
             animate="visible"
             variants={{
@@ -1258,9 +1004,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   briefing={briefing}
                   onClick={() => handleBriefingClick(briefing)}
                   onDelete={handleDeleteBriefing}
-                  headerGradient={headerGradient}
-                  headerText={headerText}
-                  primaryAccent={primaryAccent}
                 />
               ))
             ) : activeTab === TABS.DECISIONS ? (
@@ -1271,9 +1014,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   decision={decision}
                   onClick={() => handleDecisionClick(decision)}
                   onDelete={handleDeleteDecision}
-                  headerGradient={headerGradient}
-                  headerText={headerText}
-                  primaryAccent={primaryAccent}
                 />
               ))
             ) : activeTab === TABS.IKIGAI ? (
@@ -1284,9 +1024,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   ikigai={ikigai}
                   onDelete={handleDeleteIkigai}
                   onNavigate={() => handleIkigaiClick(ikigai)}
-                  headerGradient={headerGradient}
-                  headerText={headerText}
-                  primaryAccent={primaryAccent}
                 />
               ))
             ) : (
@@ -1302,9 +1039,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                     onClick={() => handleSessionClick(session)}
                     onContinueSession={onContinueSession}
                     onDeleteSession={handleDeleteSession}
-                    headerGradient={headerGradient}
-                    headerText={headerText}
-                    primaryAccent={primaryAccent}
                   />
                 );
               })
@@ -1312,10 +1046,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           </motion.div>
         )}
       </div>
-
-      <style>
-        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
-      </style>
     </div>
   );
 };
