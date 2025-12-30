@@ -1367,8 +1367,8 @@ console.log('[WARN] Potential issue');
 | `onNavigateToHistory` nicht übergeben | Immer in App.jsx bei Route prüfen |
 | History-Button fehlt | `showHistoryButton` und `onNavigateToHistory` Props setzen |
 | Feature-Info fehlt | `FeatureInfoModal` + `FeatureInfoButton` + Eintrag in config |
-| Inkonsistentes Styling | Inline Styles verwenden, nicht Tailwind |
-| Hardcoded Farben | `COLORS` aus config verwenden |
+| Inkonsistentes Styling | Tailwind für neue Komponenten, Legacy-Styles belassen |
+| Hardcoded Farben | Tailwind-Klassen oder `COLORS` aus config verwenden |
 
 ---
 
