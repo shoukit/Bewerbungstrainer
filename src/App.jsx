@@ -8,6 +8,10 @@ import { ToastProvider } from './components/Toast';
 import { Loader2 } from 'lucide-react';
 import { ROUTES, VIEW_TO_ROUTE, getViewFromPath } from './routes';
 
+// Debug logging
+const DEBUG_PREFIX = '[APP.JSX]';
+console.log(`${DEBUG_PREFIX} 🚀 Module loaded`);
+
 // ============================================================================
 // CRITICAL PATH COMPONENTS (loaded immediately)
 // These are needed for the initial render / homepage
@@ -133,7 +137,11 @@ let initialSplashShown = false;
 const BrandingLoadingSpinner = () => {
   // Mark splash as shown on first render
   React.useEffect(() => {
+    console.log(`${DEBUG_PREFIX} 🔄 BrandingLoadingSpinner MOUNT - marking initialSplashShown=true`);
     initialSplashShown = true;
+    return () => {
+      console.log(`${DEBUG_PREFIX} 🔄 BrandingLoadingSpinner UNMOUNT`);
+    };
   }, []);
 
   return (
@@ -790,7 +798,9 @@ function AppContent() {
   // ===== CONDITIONAL RETURNS AFTER ALL HOOKS =====
   // Show loading spinner ONLY on initial app load, not on navigation
   // Once the splash has been shown, never show it again
+  console.log(`${DEBUG_PREFIX} 🔍 Loading check: isLoading=${isLoading}, initialSplashShown=${initialSplashShown}, showSpinner=${isLoading && !initialSplashShown}`);
   if (isLoading && !initialSplashShown) {
+    console.log(`${DEBUG_PREFIX} ⏳ Showing BrandingLoadingSpinner`);
     return <BrandingLoadingSpinner />;
   }
 

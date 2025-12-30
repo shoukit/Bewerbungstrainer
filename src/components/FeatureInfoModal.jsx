@@ -20,6 +20,9 @@ import {
 
 const CLOSE_ICON_SIZE = 24;
 
+// Debug logging prefix
+const DEBUG_PREFIX = '[FEATURE_INFO_MODAL]';
+
 // Session-based tracking to prevent double auto-show (survives StrictMode remounts)
 const AUTO_SHOW_SESSION_KEY = 'karriereheld_feature_info_session_shown';
 
@@ -49,17 +52,45 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const hasAutoShownRef = useRef(false);
+  const mountIdRef = useRef(Math.random().toString(36).substr(2, 9));
 
   const feature = FEATURE_DESCRIPTIONS[featureId];
+
+  // Log on mount/unmount
+  useEffect(() => {
+    console.log(`${DEBUG_PREFIX} 🔵 MOUNT featureId="${featureId}" mountId=${mountIdRef.current} showOnMount=${showOnMount}`);
+    return () => {
+      console.log(`${DEBUG_PREFIX} 🔴 UNMOUNT featureId="${featureId}" mountId=${mountIdRef.current}`);
+    };
+  }, [featureId, showOnMount]);
 
   // Handle auto-show on mount
   // Uses both ref (for within-render protection) and sessionStorage (for StrictMode/remount protection)
   useEffect(() => {
-    if (showOnMount && feature && !isFeatureInfoDismissed(featureId) && !hasAutoShownRef.current && !isAutoShownThisSession(featureId)) {
+    const isDismissed = isFeatureInfoDismissed(featureId);
+    const isSessionShown = isAutoShownThisSession(featureId);
+
+    console.log(`${DEBUG_PREFIX} 🔄 Auto-show effect for "${featureId}":`, {
+      showOnMount,
+      hasFeature: !!feature,
+      isDismissed,
+      hasAutoShownRef: hasAutoShownRef.current,
+      isSessionShown,
+      willShow: showOnMount && feature && !isDismissed && !hasAutoShownRef.current && !isSessionShown,
+    });
+
+    if (showOnMount && feature && !isDismissed && !hasAutoShownRef.current && !isSessionShown) {
+      console.log(`${DEBUG_PREFIX} ✅ Will auto-show "${featureId}" in 400ms`);
       hasAutoShownRef.current = true;
       setAutoShownThisSession(featureId);
-      const timer = setTimeout(() => setInternalOpen(true), 400);
-      return () => clearTimeout(timer);
+      const timer = setTimeout(() => {
+        console.log(`${DEBUG_PREFIX} 🎉 Opening modal "${featureId}" now!`);
+        setInternalOpen(true);
+      }, 400);
+      return () => {
+        console.log(`${DEBUG_PREFIX} 🧹 Cleanup: clearing timer for "${featureId}"`);
+        clearTimeout(timer);
+      };
     }
   }, [showOnMount, featureId, feature]);
 
