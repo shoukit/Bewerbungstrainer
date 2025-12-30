@@ -1159,35 +1159,13 @@ const DecisionBoardInput = ({
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ marginBottom: b.space[6], textAlign: 'center' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: b.space[15],
-          height: b.space[15],
-          borderRadius: b.radius.lg,
-          background: b.headerGradient,
-          marginBottom: b.space[3],
-          boxShadow: b.coloredShadow(b.primaryAccent, 'lg'),
-        }}>
-          <Scale size={b.iconSize['2xl']} color={b.white} />
-        </div>
-        <h1 style={{
-          fontSize: b.fontSize['4xl'],
-          fontWeight: b.fontWeight.bold,
-          color: b.textMain,
-          marginBottom: b.space[1.5],
-        }}>
-          Der Entscheidungs-Kompass
-        </h1>
+      {/* Instructions */}
+      <div style={{ marginBottom: b.space[4], textAlign: 'center' }}>
         <p style={{
-          fontSize: b.fontSize.base,
-          color: b.textSecondary,
+          fontSize: b.fontSize.sm,
+          color: b.textMuted,
           maxWidth: '600px',
           margin: '0 auto',
-          padding: `0 ${b.space[2]}`,
         }}>
           Analysiere deine Entscheidung objektiv. Gewichte Pro und Contra,
           und erhalte KI-gestützte Impulse für blinde Flecken.

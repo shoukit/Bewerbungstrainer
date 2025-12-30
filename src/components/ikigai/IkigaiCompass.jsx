@@ -318,15 +318,9 @@ const IkigaiCompass = ({
 
   return (
     <div style={{ padding: isMobile ? b.space[4] : b.space[8], maxWidth: '900px', margin: '0 auto' }}>
-      {/* Header */}
+      {/* Instructions */}
       <div style={{ textAlign: 'center', marginBottom: b.space[6] }}>
-        <h1 style={{ fontSize: isMobile ? b.fontSize['2xl'] : b.fontSize['3xl'], fontWeight: b.fontWeight.bold, color: b.textMain, marginBottom: b.space[2] }}>
-          Dein Ikigai-Kompass
-        </h1>
-        <p style={{ fontSize: b.fontSize.base, color: b.textSecondary }}>
-          Finde den Job, der dich wirklich erfüllt.
-        </p>
-        <p style={{ fontSize: b.fontSize.sm, color: b.textMuted, marginTop: b.space[2] }}>
+        <p style={{ fontSize: b.fontSize.sm, color: b.textMuted }}>
           Fülle die 4 Kreise mit deinen Gedanken. Dein KI-Coach extrahiert daraus automatisch deine Stärken und Ziele.
         </p>
       </div>
