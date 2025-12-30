@@ -50,9 +50,16 @@ const FeatureInfoButton = ({
   // Variant configurations
   const variants = {
     default: {
-      background: hexToRgba(feature.color, 0.1),
+      // Solid feature color background with white icon for maximum visibility
+      background: feature.color,
+      color: COLORS.white,
+      hoverBackground: hexToRgba(feature.color, 0.85),
+    },
+    subtle: {
+      // Subtle version with low opacity background
+      background: hexToRgba(feature.color, 0.15),
       color: feature.color,
-      hoverBackground: hexToRgba(feature.color, 0.2),
+      hoverBackground: hexToRgba(feature.color, 0.25),
     },
     light: {
       background: 'rgba(255, 255, 255, 0.2)',
