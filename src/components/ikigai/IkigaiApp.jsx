@@ -1,8 +1,13 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { Compass, FolderOpen } from 'lucide-react';
 import IkigaiCompass from './IkigaiCompass';
 import IkigaiResults from './IkigaiResults';
 import wordpressAPI from '@/services/wordpress-api';
 import FeatureInfoModal from '@/components/FeatureInfoModal';
+import FeatureInfoButton from '@/components/FeatureInfoButton';
+import { usePartner } from '@/context/PartnerContext';
+import { DEFAULT_BRANDING } from '@/config/partners';
+import { COLORS, createGradient } from '@/config/colors';
 
 /**
  * View states for the Ikigai flow
@@ -78,6 +83,13 @@ const IkigaiApp = ({
   const [currentView, setCurrentView] = useState(VIEWS.COMPASS);
   const [savedIkigaiId, setSavedIkigaiId] = useState(null);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+
+  // Partner context for theming
+  const { branding } = usePartner();
+  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
+
+  // Ikigai feature gradient (purple)
+  const ikigaiGradient = createGradient(COLORS.purple[500], COLORS.purple[400]);
 
   // State for each dimension
   const [dimensions, setDimensions] = useState({
@@ -277,6 +289,69 @@ const IkigaiApp = ({
       <FeatureInfoModal featureId="ikigai" showOnMount />
 
       <div style={{ minHeight: '100%' }}>
+        {/* Header */}
+        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: ikigaiGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Compass style={{ width: '24px', height: '24px', color: 'white' }} />
+                </div>
+                <div>
+                  <h1 style={{
+                    fontSize: '28px',
+                    fontWeight: 700,
+                    color: COLORS.slate[900],
+                    margin: 0
+                  }}>
+                    Ikigai-Kompass
+                  </h1>
+                  <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
+                    Finde deine berufliche Bestimmung
+                  </p>
+                </div>
+              </div>
+
+              {/* Right side: Info button + History button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <FeatureInfoButton featureId="ikigai" size="sm" />
+
+                {/* Meine Ikigai Button - Only for authenticated users */}
+                {isAuthenticated && onNavigateToHistory && (
+                  <button
+                    onClick={onNavigateToHistory}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '12px 20px',
+                      borderRadius: '12px',
+                      border: `2px solid ${primaryAccent}`,
+                      backgroundColor: 'white',
+                      color: primaryAccent,
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <FolderOpen size={18} />
+                    Meine Ikigai
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {renderContent()}
       </div>
     </>
