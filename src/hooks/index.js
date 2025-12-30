@@ -20,3 +20,9 @@ export { useAudioRecorder, RECORDING_STATES } from './useAudioRecorder';
 
 // Pending action hook (auth-gated actions)
 export { usePendingAction, PENDING_ACTION_TYPES, createPendingAction } from './usePendingAction';
+
+// Authentication hooks
+export { useRequireAuth } from './useRequireAuth';
+
+// Navigation/UI hooks
+export { useScrollToTop } from './useScrollToTop';
