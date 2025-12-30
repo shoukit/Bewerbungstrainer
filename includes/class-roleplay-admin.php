@@ -286,8 +286,18 @@ class Bewerbungstrainer_Roleplay_Admin {
      * Sanitize scenario data from form
      */
     private function sanitize_scenario_data($post) {
-        // Build input_configuration from visual builder data
-        $input_configuration = $this->build_input_configuration_from_post($post);
+        // Build input_configuration - either from visual builder or JSON textarea
+        $input_configuration = array();
+        if (!empty($post['input_configuration'])) {
+            // JSON textarea input
+            $decoded = json_decode(stripslashes($post['input_configuration']), true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $input_configuration = $decoded;
+            }
+        } elseif (isset($post['var_key']) && is_array($post['var_key'])) {
+            // Visual builder input
+            $input_configuration = $this->build_input_configuration_from_post($post);
+        }
 
         // Handle target_audience (checkboxes array to semicolon-separated string)
         $target_audience = '';
@@ -597,16 +607,8 @@ class Bewerbungstrainer_Roleplay_Admin {
                 'sort_order' => intval($data['sort_order'] ?? 0),
             );
 
-            // Check if updating existing - first by ID, then by title
-            $existing = null;
-            if (!empty($data['id']) && is_numeric($data['id'])) {
-                $existing = $this->db->get_scenario(intval($data['id']));
-            }
-
-            // If no ID match, try to find by title
-            if (!$existing) {
-                $existing = $this->db->get_scenario_by_title($scenario_data['title']);
-            }
+            // Match by title only (IDs may have changed)
+            $existing = $this->db->get_scenario_by_title($scenario_data['title']);
 
             if ($existing) {
                 // Update existing
@@ -1151,6 +1153,25 @@ class Bewerbungstrainer_Roleplay_Admin {
                     <tr>
                         <th><label for="tips">Tipps (JSON)</label></th>
                         <td><textarea name="tips" id="tips" rows="4" class="large-text code"><?php echo esc_textarea(json_encode($tips, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></textarea></td>
+                    </tr>
+                    <tr>
+                        <th><label for="input_configuration">Variablen-Konfiguration (JSON)</label></th>
+                        <td>
+                            <?php
+                            $input_config = $scenario->input_configuration ?? '[]';
+                            if (!is_string($input_config)) {
+                                $input_config = json_encode($input_config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                            } else {
+                                $decoded = json_decode($input_config, true);
+                                if ($decoded !== null) {
+                                    $input_config = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                                }
+                            }
+                            ?>
+                            <textarea name="input_configuration" id="input_configuration" rows="8" class="large-text code"><?php echo esc_textarea($input_config); ?></textarea>
+                            <p class="description">JSON-Array mit Variablen, die der Nutzer vor dem Gespräch eingibt. Beispiel:<br>
+                            <code>[{"key":"user_name","label":"Dein Name","type":"text","required":true}]</code></p>
+                        </td>
                     </tr>
                 </table>
 
