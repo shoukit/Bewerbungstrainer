@@ -11,17 +11,13 @@ import {
   Menu,
   X,
   Dumbbell,
-  Zap,
-  Shuffle,
   Rocket,
-  User,
   LogIn,
   LogOut,
   Video,
   LayoutDashboard,
   Shield,
   Users,
-  Settings,
   Sparkles,
   Clock,
   Scale,
@@ -84,16 +80,16 @@ const getThemedColors = (branding) => {
 const NAV_ITEMS = [
   {
     id: 'overview',
-    moduleId: 'overview', // Always visible
+    moduleId: 'overview',
     label: 'Übersicht',
     shortLabel: 'Übersicht',
     icon: LayoutDashboard,
     description: 'Alle Trainingsmöglichkeiten',
-    alwaysVisible: true, // This item is always shown regardless of partner config
+    alwaysVisible: true,
   },
   {
     id: 'ikigai',
-    moduleId: 'ikigai', // Maps to WordPress module
+    moduleId: 'ikigai',
     label: 'Ikigai-Kompass',
     shortLabel: 'Ikigai',
     icon: Compass,
@@ -101,7 +97,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'decision_board',
-    moduleId: 'decision_board', // Maps to WordPress module
+    moduleId: 'decision_board',
     label: 'Entscheidungs-Kompass',
     shortLabel: 'Entscheidung',
     icon: Scale,
@@ -109,7 +105,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'smart_briefing',
-    moduleId: 'smart_briefing', // Maps to WordPress module
+    moduleId: 'smart_briefing',
     label: 'Smart Briefing',
     shortLabel: 'Briefing',
     icon: Sparkles,
@@ -117,7 +113,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'simulator',
-    moduleId: 'simulator', // Maps to WordPress module
+    moduleId: 'simulator',
     label: 'Szenario-Training',
     shortLabel: 'Szenario',
     icon: Target,
@@ -125,7 +121,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'video_training',
-    moduleId: 'video_training', // Maps to WordPress module
+    moduleId: 'video_training',
     label: 'Wirkungs-Analyse',
     shortLabel: 'Wirkung',
     icon: Video,
@@ -133,7 +129,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'dashboard',
-    moduleId: 'roleplay', // Maps to WordPress module (Live-Simulationen = roleplay)
+    moduleId: 'roleplay',
     label: 'Live-Simulationen',
     shortLabel: 'Live',
     icon: MessageSquare,
@@ -141,7 +137,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'gym',
-    moduleId: 'gym', // Maps to WordPress module
+    moduleId: 'gym',
     label: 'Rhetorik-Gym',
     shortLabel: 'Gym',
     icon: Dumbbell,
@@ -158,7 +154,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'history',
-    moduleId: 'history', // Maps to WordPress module
+    moduleId: 'history',
     label: 'Meine Sessions',
     shortLabel: 'Sessions',
     icon: History,
@@ -166,7 +162,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'usage_limits',
-    moduleId: 'roleplay', // Show when roleplay module is enabled
+    moduleId: 'roleplay',
     label: 'Mein Kontingent',
     shortLabel: 'Kontingent',
     icon: Clock,
@@ -222,8 +218,7 @@ const ADMIN_NAV_ITEMS = [
  * AppSidebar Component
  *
  * A collapsible sidebar navigation for the application.
- * Uses inline styles for colors to avoid WordPress/Elementor CSS conflicts.
- * Supports white-label partner theming via PartnerContext.
+ * Uses Tailwind classes with dynamic theming for partner branding.
  */
 const AppSidebar = ({
   isCollapsed,
@@ -233,7 +228,7 @@ const AppSidebar = ({
   headerOffset = 0,
   onLoginClick,
 }) => {
-  const [expandedItems, setExpandedItems] = React.useState([]); // All collapsed by default
+  const [expandedItems, setExpandedItems] = React.useState([]);
 
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
@@ -244,14 +239,11 @@ const AppSidebar = ({
   // Filter nav items based on partner module configuration
   const filteredNavItems = React.useMemo(() => {
     const regularItems = NAV_ITEMS.filter(item => {
-      // Always show items marked as alwaysVisible
       if (item.alwaysVisible) return true;
-      // Use moduleId if available, otherwise fall back to item id
       const moduleToCheck = item.moduleId || item.id;
       return checkModuleAllowed(moduleToCheck);
     });
 
-    // Add admin items if user is admin
     if (isAdmin) {
       return [...regularItems, ...ADMIN_NAV_ITEMS];
     }
@@ -280,7 +272,6 @@ const AppSidebar = ({
         borderColorLight: themedColors.borderColorLight,
       };
     }
-    // Default colors (no partner)
     return {
       sidebarBg: '#ffffff',
       sidebarText: OCEAN_COLORS.slate[900],
@@ -315,29 +306,17 @@ const AppSidebar = ({
       initial={false}
       animate={{ width: isCollapsed ? 72 : 280 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      className="fixed left-0 bottom-0 z-40 flex flex-col shadow-lg"
       style={{
-        position: 'fixed',
-        left: 0,
         top: headerOffset,
-        bottom: 0,
-        zIndex: 40,
         backgroundColor: colors.sidebarBg,
         borderRight: `1px solid ${colors.borderColor}`,
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
       }}
     >
       {/* Header / Logo */}
       <div
-        style={{
-          height: '64px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          borderBottom: `1px solid ${colors.borderColorLight}`,
-        }}
+        className="h-16 flex items-center justify-between px-4"
+        style={{ borderBottom: `1px solid ${colors.borderColorLight}` }}
       >
         <AnimatePresence mode="wait">
           {!isCollapsed ? (
@@ -347,49 +326,37 @@ const AppSidebar = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2 }}
-              style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
+              className="flex items-center gap-3"
             >
-              {/* Partner logo or default gradient logo */}
               {logoUrl ? (
                 <img
                   src={logoUrl}
                   alt={partnerName}
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '12px',
-                    objectFit: 'contain',
-                  }}
+                  className="w-10 h-10 rounded-xl object-contain"
                 />
               ) : (
                 <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shadow"
                   style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '12px',
                     background: isWhiteLabel
                       ? colors.primaryAccent
                       : `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                   }}
                 >
-                  <GraduationCap style={{ width: '20px', height: '20px', color: 'white' }} />
+                  <GraduationCap className="w-5 h-5 text-white" />
                 </div>
               )}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="flex flex-col">
                 {isWhiteLabel ? (
-                  <span style={{ fontWeight: 700, color: colors.sidebarText, fontSize: '14px', lineHeight: '1.4' }}>
+                  <span className="font-bold text-sm leading-snug" style={{ color: colors.sidebarText }}>
                     {partnerName}
                   </span>
                 ) : (
                   <>
-                    <span style={{ fontWeight: 700, color: colors.sidebarText, fontSize: '14px', lineHeight: '1.2' }}>
+                    <span className="font-bold text-sm leading-tight" style={{ color: colors.sidebarText }}>
                       Karriere
                     </span>
-                    <span style={{ fontWeight: 700, color: colors.primaryAccent, fontSize: '14px', lineHeight: '1.2' }}>
+                    <span className="font-bold text-sm leading-tight" style={{ color: colors.primaryAccent }}>
                       Navigation
                     </span>
                   </>
@@ -403,29 +370,17 @@ const AppSidebar = ({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.2 }}
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow mx-auto overflow-hidden"
               style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '12px',
                 background: isWhiteLabel
                   ? colors.primaryAccent
                   : `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                margin: '0 auto',
-                overflow: 'hidden',
               }}
             >
               {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={partnerName}
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
+                <img src={logoUrl} alt={partnerName} className="w-full h-full object-contain" />
               ) : (
-                <GraduationCap style={{ width: '20px', height: '20px', color: 'white' }} />
+                <GraduationCap className="w-5 h-5 text-white" />
               )}
             </motion.div>
           )}
@@ -433,8 +388,8 @@ const AppSidebar = ({
       </div>
 
       {/* Navigation Items */}
-      <nav style={{ flex: 1, padding: '8px 12px', overflowY: 'auto' }}>
-        {filteredNavItems.map((item, index) => {
+      <nav className="flex-1 py-2 px-3 overflow-y-auto">
+        {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id ||
             (item.id === 'dashboard' && activeView === 'roleplay') ||
@@ -448,26 +403,11 @@ const AppSidebar = ({
             <div key={item.id}>
               {/* Separator before admin section */}
               {isAdminItem && (
-                <div
-                  style={{
-                    margin: '12px 0',
-                    padding: isCollapsed ? '0' : '0 4px',
-                    borderTop: `1px solid ${colors.borderColor}`,
-                  }}
-                >
+                <div className="my-3" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
                   {!isCollapsed && (
                     <span
-                      style={{
-                        display: 'block',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        color: colors.sidebarTextMuted,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        marginTop: '12px',
-                        marginBottom: '8px',
-                        paddingLeft: '12px',
-                      }}
+                      className="block text-xs font-semibold uppercase tracking-wide mt-3 mb-2 pl-3"
+                      style={{ color: colors.sidebarTextMuted }}
                     >
                       Admin
                     </span>
@@ -476,79 +416,52 @@ const AppSidebar = ({
               )}
               <button
                 onClick={() => handleNavClick(item)}
+                className="w-full rounded-xl flex items-center gap-3 relative mb-1 transition-all duration-200 text-left border-none cursor-pointer"
                 style={{
-                  width: '100%',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  position: 'relative',
                   padding: isCollapsed ? '12px' : '12px 16px',
                   justifyContent: isCollapsed ? 'center' : 'flex-start',
                   backgroundColor: isActive ? colors.activeBg : 'transparent',
                   color: isActive ? colors.activeText : colors.sidebarText,
                   fontWeight: isActive ? 600 : 400,
                   fontSize: '14px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  marginBottom: '4px',
-                  transition: 'all 0.2s',
-                  textAlign: 'left',
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
                     e.currentTarget.style.backgroundColor = colors.hoverBg;
-                    e.currentTarget.style.color = colors.sidebarText;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
                     e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = colors.sidebarText;
                   }
                 }}
               >
                 {/* Active indicator bar */}
                 {isActive && (
                   <div
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: '4px',
-                      height: '32px',
-                      backgroundColor: colors.primaryAccent,
-                      borderTopRightRadius: '9999px',
-                      borderBottomRightRadius: '9999px',
-                    }}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
+                    style={{ backgroundColor: colors.primaryAccent }}
                   />
                 )}
 
                 <Icon
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    flexShrink: 0,
-                    color: isActive ? colors.primaryAccent : colors.sidebarTextMuted,
-                  }}
+                  className="w-5 h-5 shrink-0"
+                  style={{ color: isActive ? colors.primaryAccent : colors.sidebarTextMuted }}
                 />
 
                 {!isCollapsed && (
                   <>
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, minWidth: 0 }}>
-                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
-                      <span style={{ fontSize: '12px', color: colors.sidebarTextMuted, whiteSpace: 'normal', lineHeight: 1.3 }}>
+                    <div className="flex flex-col overflow-hidden flex-1 min-w-0">
+                      <span className="whitespace-nowrap overflow-hidden text-ellipsis">{item.label}</span>
+                      <span className="text-xs leading-snug" style={{ color: colors.sidebarTextMuted }}>
                         {item.description}
                       </span>
                     </div>
                     {hasSubItems && (
                       <ChevronDown
+                        className="w-4 h-4 transition-transform duration-200"
                         style={{
-                          width: '16px',
-                          height: '16px',
                           color: colors.sidebarTextMuted,
-                          transition: 'transform 0.2s',
                           transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                         }}
                       />
@@ -566,7 +479,7 @@ const AppSidebar = ({
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
-                      style={{ overflow: 'hidden', marginLeft: '16px' }}
+                      className="overflow-hidden ml-4"
                     >
                       {item.subItems.map((subItem) => {
                         const SubIcon = subItem.icon;
@@ -576,45 +489,30 @@ const AppSidebar = ({
                           <button
                             key={subItem.id}
                             onClick={() => onNavigate(subItem.id)}
+                            className="w-full rounded-lg flex items-center gap-2.5 mb-0.5 transition-all duration-200 text-left border-none cursor-pointer"
                             style={{
-                              width: '100%',
-                              borderRadius: '10px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
                               padding: '10px 14px',
                               backgroundColor: isSubActive ? colors.activeBg : 'transparent',
                               color: isSubActive ? colors.activeText : colors.sidebarText,
                               fontWeight: isSubActive ? 600 : 400,
                               fontSize: '13px',
-                              border: 'none',
-                              cursor: 'pointer',
-                              marginBottom: '2px',
-                              transition: 'all 0.2s',
-                              textAlign: 'left',
                             }}
                             onMouseEnter={(e) => {
                               if (!isSubActive) {
                                 e.currentTarget.style.backgroundColor = colors.hoverBg;
-                                e.currentTarget.style.color = colors.sidebarText;
                               }
                             }}
                             onMouseLeave={(e) => {
                               if (!isSubActive) {
                                 e.currentTarget.style.backgroundColor = 'transparent';
-                                e.currentTarget.style.color = colors.sidebarText;
                               }
                             }}
                           >
                             <SubIcon
-                              style={{
-                                width: '16px',
-                                height: '16px',
-                                flexShrink: 0,
-                                color: isSubActive ? colors.primaryAccent : colors.sidebarTextMuted,
-                              }}
+                              className="w-4 h-4 shrink-0"
+                              style={{ color: isSubActive ? colors.primaryAccent : colors.sidebarTextMuted }}
                             />
-                            <span style={{ whiteSpace: 'nowrap' }}>{subItem.label}</span>
+                            <span className="whitespace-nowrap">{subItem.label}</span>
                           </button>
                         );
                       })}
@@ -628,46 +526,32 @@ const AppSidebar = ({
       </nav>
 
       {/* User Section */}
-      <div style={{ padding: '12px', borderTop: `1px solid ${colors.borderColorLight}` }}>
+      <div className="p-3" style={{ borderTop: `1px solid ${colors.borderColorLight}` }}>
         {isAuthenticated && user ? (
-          // Logged in user
-          <div style={{ marginBottom: '8px' }}>
+          <div className="mb-2">
             {!isCollapsed && (
               <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '10px',
-                  borderRadius: '12px',
-                  backgroundColor: 'transparent',
-                  border: `1px solid ${colors.borderColor}`,
-                  marginBottom: '8px',
-                }}
+                className="flex items-center gap-2.5 p-2.5 rounded-xl mb-2"
+                style={{ border: `1px solid ${colors.borderColor}` }}
               >
                 <div
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    backgroundColor: colors.primaryAccent,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontWeight: 600,
-                    fontSize: '14px',
-                    flexShrink: 0,
-                  }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
+                  style={{ backgroundColor: colors.primaryAccent }}
                 >
                   {(user.firstName || user.displayName || 'U').charAt(0).toUpperCase()}
                 </div>
-                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <div style={{ fontWeight: 600, fontSize: '14px', color: colors.sidebarText, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <div
+                    className="font-semibold text-sm whitespace-nowrap overflow-hidden text-ellipsis"
+                    style={{ color: colors.sidebarText }}
+                  >
                     {user.displayName || user.firstName || 'Benutzer'}
                   </div>
                   {user.email && (
-                    <div style={{ fontSize: '12px', color: colors.sidebarText, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div
+                      className="text-xs opacity-70 whitespace-nowrap overflow-hidden text-ellipsis"
+                      style={{ color: colors.sidebarText }}
+                    >
                       {user.email}
                     </div>
                   )}
@@ -676,20 +560,12 @@ const AppSidebar = ({
             )}
             <button
               onClick={handleLogout}
+              className="w-full rounded-xl flex items-center gap-2.5 transition-all duration-200 border-none cursor-pointer text-sm"
               style={{
-                width: '100%',
-                borderRadius: '12px',
                 padding: '10px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
                 justifyContent: isCollapsed ? 'center' : 'flex-start',
                 color: colors.sidebarText,
                 backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '13px',
-                transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = colors.hoverBg;
@@ -699,30 +575,20 @@ const AppSidebar = ({
               }}
               title="Abmelden"
             >
-              <LogOut style={{ width: '18px', height: '18px', flexShrink: 0 }} />
+              <LogOut className="w-[18px] h-[18px] shrink-0" />
               {!isCollapsed && <span>Abmelden</span>}
             </button>
           </div>
         ) : (
-          // Not logged in
           <button
             onClick={onLoginClick}
+            className="w-full rounded-xl flex items-center gap-2.5 transition-all duration-200 cursor-pointer text-sm font-medium mb-2"
             style={{
-              width: '100%',
-              borderRadius: '12px',
               padding: '10px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
               justifyContent: isCollapsed ? 'center' : 'flex-start',
               color: colors.sidebarText,
               backgroundColor: 'transparent',
               border: `1px solid ${colors.borderColor}`,
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 500,
-              transition: 'all 0.2s',
-              marginBottom: '8px',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = colors.hoverBg;
@@ -732,30 +598,22 @@ const AppSidebar = ({
             }}
             title="Anmelden"
           >
-            <LogIn style={{ width: '18px', height: '18px', flexShrink: 0 }} />
+            <LogIn className="w-[18px] h-[18px] shrink-0" />
             {!isCollapsed && <span>Anmelden</span>}
           </button>
         )}
       </div>
 
       {/* Collapse Toggle Button */}
-      <div style={{ padding: '0 12px 12px 12px' }}>
+      <div className="px-3 pb-3">
         <button
           onClick={onToggleCollapse}
+          className="w-full rounded-xl flex items-center gap-3 transition-all duration-200 border-none cursor-pointer text-sm"
           style={{
-            width: '100%',
-            borderRadius: '12px',
             padding: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
             justifyContent: isCollapsed ? 'center' : 'flex-start',
             color: colors.sidebarTextMuted,
             backgroundColor: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '14px',
-            transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = colors.hoverBg;
@@ -767,10 +625,10 @@ const AppSidebar = ({
           }}
         >
           {isCollapsed ? (
-            <ChevronRight style={{ width: '20px', height: '20px' }} />
+            <ChevronRight className="w-5 h-5" />
           ) : (
             <>
-              <ChevronLeft style={{ width: '20px', height: '20px' }} />
+              <ChevronLeft className="w-5 h-5" />
               <span>Einklappen</span>
             </>
           )}
@@ -783,26 +641,22 @@ const AppSidebar = ({
 /**
  * Mobile Navigation Component
  * Shows a burger menu that opens a slide-out menu on mobile
- * Supports white-label partner theming via PartnerContext.
  */
 const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginClick }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [expandedItems, setExpandedItems] = React.useState([]);
 
-  // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { showSuccess } = useToast();
   const themedColors = getThemedColors(branding);
 
-  // Filter nav items based on partner module configuration
   const filteredNavItems = React.useMemo(() => {
     const regularItems = NAV_ITEMS.filter(item => {
       const moduleToCheck = item.moduleId || item.id;
       return checkModuleAllowed(moduleToCheck);
     });
 
-    // Add admin items if user is admin
     if (isAdmin) {
       return [...regularItems, ...ADMIN_NAV_ITEMS];
     }
@@ -810,20 +664,18 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
     return regularItems;
   }, [checkModuleAllowed, isAdmin]);
 
-  // Handle logout with toast notification
   const handleLogout = async () => {
     await logout();
     showSuccess('Sie wurden erfolgreich abgemeldet', 3000);
   };
 
-  // Determine colors based on whether we have partner branding
   const colors = React.useMemo(() => {
     if (themedColors) {
       return {
         headerBg: themedColors.sidebarBg,
         headerText: themedColors.sidebarText,
         headerTextMuted: themedColors.sidebarTextMuted,
-        menuBg: '#ffffff', // Menu panel stays white for readability
+        menuBg: '#ffffff',
         activeBg: themedColors.sidebarActiveBg,
         activeText: themedColors.sidebarActiveText,
         hoverBg: themedColors.sidebarHoverBg,
@@ -833,7 +685,6 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
         textMuted: OCEAN_COLORS.slate[400],
       };
     }
-    // Default colors (no partner)
     return {
       headerBg: '#ffffff',
       headerText: OCEAN_COLORS.slate[900],
@@ -866,54 +717,30 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
     <>
       {/* Mobile Header Bar */}
       <div
+        className="fixed left-0 right-0 h-14 flex items-center justify-between px-4 z-50 shadow-sm transition-[top] duration-150"
         style={{
-          position: 'fixed',
           top: headerOffset,
-          left: 0,
-          right: 0,
-          height: '56px',
           backgroundColor: colors.headerBg,
           borderBottom: `1px solid ${colors.borderColor}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          zIndex: 50,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-          transition: 'top 0.15s ease-out',
         }}
       >
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="flex items-center gap-2.5">
           {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={partnerName}
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                objectFit: 'contain',
-              }}
-            />
+            <img src={logoUrl} alt={partnerName} className="w-9 h-9 rounded-lg object-contain" />
           ) : (
             <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center"
               style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
                 background: isWhiteLabel
                   ? colors.primaryAccent
                   : `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
               }}
             >
-              <GraduationCap style={{ width: '18px', height: '18px', color: 'white' }} />
+              <GraduationCap className="w-[18px] h-[18px] text-white" />
             </div>
           )}
-          <span style={{ fontWeight: 700, color: colors.headerText, fontSize: '15px' }}>
+          <span className="font-bold text-[15px]" style={{ color: colors.headerText }}>
             {isWhiteLabel ? partnerName : 'Karriere Navigation'}
           </span>
         </div>
@@ -921,22 +748,13 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
         {/* Burger Menu Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '12px',
-            border: 'none',
-            backgroundColor: isOpen ? colors.hoverBg : 'transparent',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
+          className="w-14 h-14 rounded-xl border-none flex items-center justify-center cursor-pointer"
+          style={{ backgroundColor: isOpen ? colors.hoverBg : 'transparent' }}
         >
           {isOpen ? (
-            <X style={{ width: '40px', height: '40px', color: colors.headerText }} />
+            <X className="w-10 h-10" style={{ color: colors.headerText }} />
           ) : (
-            <Menu style={{ width: '40px', height: '40px', color: colors.headerText }} />
+            <Menu className="w-10 h-10" style={{ color: colors.headerText }} />
           )}
         </button>
       </div>
@@ -951,15 +769,8 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              style={{
-                position: 'fixed',
-                top: headerOffset + 56,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                zIndex: 40,
-              }}
+              className="fixed left-0 right-0 bottom-0 z-40 bg-black/30"
+              style={{ top: headerOffset + 56 }}
             />
 
             {/* Menu Panel */}
@@ -968,19 +779,10 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
+              className="fixed left-0 right-0 z-[45] p-2 shadow-lg rounded-b-2xl max-h-[70vh] overflow-y-auto"
               style={{
-                position: 'fixed',
                 top: headerOffset + 56,
-                left: 0,
-                right: 0,
                 backgroundColor: colors.menuBg,
-                zIndex: 45,
-                padding: '8px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                borderBottomLeftRadius: '16px',
-                borderBottomRightRadius: '16px',
-                maxHeight: '70vh',
-                overflowY: 'auto',
               }}
             >
               {filteredNavItems.map((item) => {
@@ -995,26 +797,11 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
 
                 return (
                   <div key={item.id}>
-                    {/* Separator before admin section */}
                     {isAdminItem && (
-                      <div
-                        style={{
-                          margin: '12px 8px',
-                          borderTop: `1px solid ${colors.borderColor}`,
-                        }}
-                      >
+                      <div className="mx-2 my-3" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
                         <span
-                          style={{
-                            display: 'block',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            color: colors.textMuted,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            marginTop: '12px',
-                            marginBottom: '8px',
-                            paddingLeft: '8px',
-                          }}
+                          className="block text-xs font-semibold uppercase tracking-wide mt-3 mb-2 pl-2"
+                          style={{ color: colors.textMuted }}
                         >
                           Admin
                         </span>
@@ -1022,52 +809,38 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                     )}
                     <button
                       onClick={() => hasSubItems ? toggleExpanded(item.id) : handleNavigate(item.id)}
+                      className="w-full flex items-center gap-3 rounded-xl mb-1 text-left border-none cursor-pointer"
                       style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
                         padding: '14px 16px',
-                        borderRadius: '12px',
-                        border: 'none',
                         backgroundColor: isActive ? colors.activeBg : 'transparent',
                         color: isActive ? colors.activeText : colors.textMain,
                         fontSize: '15px',
                         fontWeight: isActive ? 600 : 500,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        marginBottom: '4px',
                       }}
                     >
                       <Icon
-                        style={{
-                          width: '22px',
-                          height: '22px',
-                          color: isActive ? colors.primaryAccent : colors.textMuted,
-                        }}
+                        className="w-[22px] h-[22px]"
+                        style={{ color: isActive ? colors.primaryAccent : colors.textMuted }}
                       />
-                      <div style={{ flex: 1 }}>
+                      <div className="flex-1">
                         <div>{item.label}</div>
-                        <div style={{ fontSize: '12px', color: colors.textMuted, fontWeight: 400 }}>
+                        <div className="text-xs font-normal" style={{ color: colors.textMuted }}>
                           {item.description}
                         </div>
                       </div>
                       {hasSubItems && (
                         <ChevronDown
+                          className="w-[18px] h-[18px] transition-transform duration-200"
                           style={{
-                            width: '18px',
-                            height: '18px',
                             color: colors.textMuted,
-                            transition: 'transform 0.2s',
                             transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                           }}
                         />
                       )}
                     </button>
 
-                    {/* Sub-items for mobile */}
                     {hasSubItems && isExpanded && (
-                      <div style={{ marginLeft: '20px', marginBottom: '8px' }}>
+                      <div className="ml-5 mb-2">
                         {item.subItems.map((subItem) => {
                           const SubIcon = subItem.icon;
                           const isSubActive = activeView === subItem.id;
@@ -1076,29 +849,18 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                             <button
                               key={subItem.id}
                               onClick={() => handleNavigate(subItem.id)}
+                              className="w-full flex items-center gap-2.5 rounded-lg mb-1 text-left border-none cursor-pointer"
                               style={{
-                                width: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
                                 padding: '12px 14px',
-                                borderRadius: '10px',
-                                border: 'none',
                                 backgroundColor: isSubActive ? colors.activeBg : 'transparent',
                                 color: isSubActive ? colors.activeText : colors.textMain,
                                 fontSize: '14px',
                                 fontWeight: isSubActive ? 600 : 400,
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                marginBottom: '4px',
                               }}
                             >
                               <SubIcon
-                                style={{
-                                  width: '18px',
-                                  height: '18px',
-                                  color: isSubActive ? colors.primaryAccent : colors.textMuted,
-                                }}
+                                className="w-[18px] h-[18px]"
+                                style={{ color: isSubActive ? colors.primaryAccent : colors.textMuted }}
                               />
                               <span>{subItem.label}</span>
                             </button>
@@ -1111,45 +873,25 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
               })}
 
               {/* User Section in Mobile Menu */}
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: `1px solid ${colors.borderColor}` }}>
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
                 {isAuthenticated && user ? (
-                  // Logged in user
                   <>
                     <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px 16px',
-                        borderRadius: '12px',
-                        backgroundColor: 'transparent',
-                        border: `1px solid ${colors.borderColor}`,
-                        marginBottom: '8px',
-                      }}
+                      className="flex items-center gap-3 p-3 rounded-xl mb-2"
+                      style={{ border: `1px solid ${colors.borderColor}` }}
                     >
                       <div
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          backgroundColor: colors.primaryAccent,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#fff',
-                          fontWeight: 600,
-                          fontSize: '16px',
-                          flexShrink: 0,
-                        }}
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-base shrink-0"
+                        style={{ backgroundColor: colors.primaryAccent }}
                       >
                         {(user.firstName || user.displayName || 'U').charAt(0).toUpperCase()}
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: '15px', color: colors.textMain }}>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-[15px]" style={{ color: colors.textMain }}>
                           {user.displayName || user.firstName || 'Benutzer'}
                         </div>
                         {user.email && (
-                          <div style={{ fontSize: '13px', color: colors.textMain, opacity: 0.7 }}>
+                          <div className="text-[13px] opacity-70" style={{ color: colors.textMain }}>
                             {user.email}
                           </div>
                         )}
@@ -1160,52 +902,36 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                         handleLogout();
                         setIsOpen(false);
                       }}
+                      className="w-full flex items-center gap-3 rounded-xl border-none cursor-pointer text-left"
                       style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
                         padding: '12px 16px',
-                        borderRadius: '12px',
-                        border: 'none',
                         backgroundColor: 'transparent',
                         color: colors.textMain,
                         fontSize: '15px',
                         fontWeight: 500,
-                        cursor: 'pointer',
-                        textAlign: 'left',
                       }}
                     >
-                      <LogOut style={{ width: '20px', height: '20px' }} />
+                      <LogOut className="w-5 h-5" />
                       <span>Abmelden</span>
                     </button>
                   </>
                 ) : (
-                  // Not logged in
                   <button
                     onClick={() => {
-                      if (onLoginClick) {
-                        onLoginClick();
-                      }
+                      if (onLoginClick) onLoginClick();
                       setIsOpen(false);
                     }}
+                    className="w-full flex items-center gap-3 rounded-xl cursor-pointer text-left"
                     style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
                       padding: '14px 16px',
-                      borderRadius: '12px',
                       border: `1px solid ${colors.borderColor}`,
                       backgroundColor: 'transparent',
                       color: colors.textMain,
                       fontSize: '15px',
                       fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'left',
                     }}
                   >
-                    <LogIn style={{ width: '20px', height: '20px' }} />
+                    <LogIn className="w-5 h-5" />
                     <span>Anmelden</span>
                   </button>
                 )}
@@ -1223,16 +949,13 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
  *
  * Layout wrapper that includes the sidebar and main content area.
  * Responsive: Shows sidebar on desktop, burger menu on mobile.
- * Supports white-label partner theming via PartnerContext.
  */
 const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onLoginClick }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
 
-  // Get partner branding for background
   const { branding } = usePartner();
 
-  // Build background gradient from branding variables
   const appBackground = React.useMemo(() => {
     if (branding) {
       const bgStart = branding['--app-bg-start'] || '#f8fafc';
@@ -1243,7 +966,6 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
     return 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)';
   }, [branding]);
 
-  // Check for mobile and saved preference
   React.useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -1271,36 +993,18 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
     return (
       <>
         {/* Fixed full-page background */}
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: appBackground,
-            zIndex: -1,
-          }}
-        />
-        <div
-          style={{
-            minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
-          }}
-        >
+        <div className="fixed inset-0 -z-10" style={{ background: appBackground }} />
+        <div style={{ minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh' }}>
           <MobileNavigation
             activeView={activeView}
             onNavigate={onNavigate}
             headerOffset={headerOffset}
             onLoginClick={onLoginClick}
           />
-
-          {/* Main Content with top padding for mobile header */}
           <main
             data-main-content
-            style={{
-              paddingTop: '56px',
-              minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
-            }}
+            className="pt-14"
+            style={{ minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh' }}
           >
             {children}
           </main>
@@ -1313,22 +1017,8 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
   return (
     <>
       {/* Fixed full-page background */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: appBackground,
-          zIndex: -1,
-        }}
-      />
-      <div
-        style={{
-          minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
-        }}
-      >
+      <div className="fixed inset-0 -z-10" style={{ background: appBackground }} />
+      <div style={{ minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh' }}>
         <AppSidebar
           isCollapsed={isCollapsed}
           onToggleCollapse={handleToggleCollapse}
@@ -1337,21 +1027,17 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
           headerOffset={headerOffset}
           onLoginClick={onLoginClick}
         />
-
-        {/* Main Content */}
         <motion.main
           data-main-content
           initial={false}
           animate={{ marginLeft: isCollapsed ? 72 : 280 }}
           transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-          style={{
-            minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh',
-          }}
+          style={{ minHeight: headerOffset > 0 ? `calc(100vh - ${headerOffset}px)` : '100vh' }}
         >
-        {children}
-      </motion.main>
-    </div>
-  </>
+          {children}
+        </motion.main>
+      </div>
+    </>
   );
 };
 
