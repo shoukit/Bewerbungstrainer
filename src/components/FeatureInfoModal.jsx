@@ -39,12 +39,16 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
     }
   }, [showOnMount, featureId, feature]);
 
-  // Sync external isOpen with internal state
+  // Sync external isOpen with internal state and load saved checkbox state
   useEffect(() => {
     if (isOpen !== undefined) {
       setInternalOpen(isOpen);
+      // When opening, load the saved preference
+      if (isOpen && featureId) {
+        setDontShowAgain(isFeatureInfoDismissed(featureId));
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, featureId]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -57,11 +61,11 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
   }, [internalOpen]);
 
   const handleClose = () => {
-    if (dontShowAgain && feature) {
-      setFeatureInfoDismissed(featureId, true);
+    // Always save the checkbox state (true or false)
+    if (feature) {
+      setFeatureInfoDismissed(featureId, dontShowAgain);
     }
     setInternalOpen(false);
-    setDontShowAgain(false);
     onClose?.();
   };
 
