@@ -106,6 +106,9 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
           alignItems: 'center',
           justifyContent: 'center',
           padding: '16px',
+          paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
+          paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
+          boxSizing: 'border-box',
         }}
       >
         {/* Modal */}
@@ -121,7 +124,7 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
             borderRadius: RADIUS['2xl'],
             maxWidth: '560px',
             width: '100%',
-            maxHeight: 'calc(100vh - 32px)',
+            maxHeight: 'calc(100dvh - 32px)',
             overflow: 'hidden',
             boxShadow: SHADOWS.xl,
             border: `1px solid ${COLORS.slate[200]}`,
