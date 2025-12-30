@@ -15,9 +15,9 @@ import {
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
-import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
-import FeatureInfoModal from '@/components/FeatureInfoModal';
-import FeatureInfoButton from '@/components/FeatureInfoButton';
+import ScenarioDashboard from '@/components/ui/composite/ScenarioDashboard';
+import FeatureInfoModal from '@/components/global/FeatureInfoModal';
+import FeatureInfoButton from '@/components/global/FeatureInfoButton';
 
 // Icon mapping for scenarios
 const ICON_MAP = {

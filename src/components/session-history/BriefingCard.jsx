@@ -11,7 +11,7 @@ import { Calendar, ChevronRight, Loader2, Trash2 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime } from '@/utils/formatting';
 import { getBriefingIcon } from '@/utils/iconMaps';
-import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
 
 const BriefingCard = ({
   briefing,

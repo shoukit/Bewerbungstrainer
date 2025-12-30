@@ -17,8 +17,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/base/button';
+import { Card, CardHeader, CardTitle } from '@/components/ui/base/card';
 import { AUDIO_CONFIG, INTERACTIVE_STATES } from '@/config/constants';
 import { formatDuration } from '@/utils/formatting';
 

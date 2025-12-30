@@ -26,12 +26,12 @@ import {
 } from 'lucide-react';
 import { GAME_MODES, getRandomTopic, getRandomStressQuestion } from '@/config/prompts/gamePrompts';
 import wordpressAPI from '@/services/wordpress-api';
-import MicrophoneSelector from '@/components/MicrophoneSelector';
-import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
+import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
+import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog';
 import { useBranding } from '@/hooks/useBranding';
 import { COLORS, GAME_MODE_COLORS } from '@/config/colors';
-import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
-import FeatureInfoModal from '@/components/FeatureInfoModal';
+import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/composite/ScenarioCard';
+import FeatureInfoModal from '@/components/global/FeatureInfoModal';
 
 /**
  * Icon mapping for game modes

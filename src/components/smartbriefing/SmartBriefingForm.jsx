@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePartner } from '../../context/PartnerContext';
 import { DEFAULT_BRANDING } from '../../config/partners';
 import wordpressAPI from '../../services/wordpress-api';
-import FullscreenLoader from '@/components/ui/fullscreen-loader';
+import FullscreenLoader from '@/components/ui/composite/fullscreen-loader';
 import { getIcon } from '../../utils/iconMaps';
 import {
   ArrowLeft,

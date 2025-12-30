@@ -11,9 +11,9 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
-import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
-import FeatureInfoModal from '@/components/FeatureInfoModal';
-import FeatureInfoButton from '@/components/FeatureInfoButton';
+import ScenarioDashboard from '@/components/ui/composite/ScenarioDashboard';
+import FeatureInfoModal from '@/components/global/FeatureInfoModal';
+import FeatureInfoButton from '@/components/global/FeatureInfoButton';
 
 // Debug logging
 const DEBUG_PREFIX = '[SIMULATOR_DASHBOARD]';

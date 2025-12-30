@@ -9,8 +9,8 @@ import { motion } from 'framer-motion';
 import { Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PACING_CONFIG } from '@/config/constants';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle } from '@/components/ui/base/card';
+import { Badge } from '@/components/ui/base/badge';
 
 export function PacingSlider({ rating, wpm, feedback }) {
   const config = PACING_CONFIG[rating] || PACING_CONFIG.optimal;

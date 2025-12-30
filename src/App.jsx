@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
-import { LoginModal } from './components/LoginModal';
-import { DisclaimerModal, useDisclaimerModal } from './components/DisclaimerModal';
-import { ToastProvider } from './components/Toast';
+import { LoginModal } from './components/global/LoginModal';
+import { DisclaimerModal, useDisclaimerModal } from './components/global/DisclaimerModal';
+import { ToastProvider } from './components/global/Toast';
 import { Loader2 } from 'lucide-react';
 import { ROUTES, VIEW_TO_ROUTE, getViewFromPath } from './routes';
 
@@ -16,7 +16,7 @@ console.log(`${DEBUG_PREFIX} 🚀 Module loaded`);
 // CRITICAL PATH COMPONENTS (loaded immediately)
 // These are needed for the initial render / homepage
 // ============================================================================
-import QuadDashboard from './components/QuadDashboard';
+import QuadDashboard from './components/global/QuadDashboard';
 
 // ============================================================================
 // LAZY-LOADED COMPONENTS
@@ -24,14 +24,14 @@ import QuadDashboard from './components/QuadDashboard';
 // ============================================================================
 
 // Live Training (Roleplay) - includes ElevenLabs SDK (~100KB+)
-const RoleplayDashboard = lazy(() => import('./components/RoleplayDashboard'));
-const RoleplayDeviceSetup = lazy(() => import('./components/RoleplayDeviceSetup'));
-const RoleplayVariablesPage = lazy(() => import('./components/RoleplayVariablesPage'));
-const RoleplaySessionUnified = lazy(() => import('./components/RoleplaySessionUnified'));
+const RoleplayDashboard = lazy(() => import('./components/roleplay/RoleplayDashboard'));
+const RoleplayDeviceSetup = lazy(() => import('./components/roleplay/RoleplayDeviceSetup'));
+const RoleplayVariablesPage = lazy(() => import('./components/roleplay/RoleplayVariablesPage'));
+const RoleplaySessionUnified = lazy(() => import('./components/roleplay/RoleplaySessionUnified'));
 
 // Session History
-const SessionHistory = lazy(() => import('./components/SessionHistory').then(m => ({ default: m.default })));
-const SessionDetailView = lazy(() => import('./components/SessionDetailView'));
+const SessionHistory = lazy(() => import('./components/global/SessionHistory').then(m => ({ default: m.default })));
+const SessionDetailView = lazy(() => import('./components/session-detail/SessionDetailView'));
 
 // Simulator (Scenario Training)
 const SimulatorApp = lazy(() => import('./components/simulator').then(m => ({ default: m.SimulatorApp })));
@@ -53,7 +53,7 @@ const DecisionBoardApp = lazy(() => import('./components/decision-board').then(m
 const IkigaiApp = lazy(() => import('./components/ikigai/IkigaiApp'));
 
 // Usage Limits
-const UsageLimitsDisplay = lazy(() => import('./components/UsageLimitsDisplay'));
+const UsageLimitsDisplay = lazy(() => import('./components/global/UsageLimitsDisplay'));
 
 // Admin components (only loaded for admins)
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));

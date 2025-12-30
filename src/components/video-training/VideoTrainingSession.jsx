@@ -7,10 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
-import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
-import AudioVisualizer from '@/components/AudioVisualizer';
+import DeviceSettingsDialog from '@/components/device-setup/DeviceSettingsDialog';
+import AudioVisualizer from '@/components/ui/composite/AudioVisualizer';
 import { formatDuration } from '@/utils/formatting';
-import ProgressBar from '@/components/ui/progress-bar';
+import ProgressBar from '@/components/ui/composite/progress-bar';
 
 /**
  * QuestionTips - Collapsible tips for current question

@@ -19,10 +19,10 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import wordpressAPI from '@/services/wordpress-api';
-import MicrophoneSelector from '@/components/MicrophoneSelector';
-import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
-import FullscreenLoader from '@/components/ui/fullscreen-loader';
-import DynamicFormField from '@/components/ui/DynamicFormField';
+import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
+import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog';
+import FullscreenLoader from '@/components/ui/composite/fullscreen-loader';
+import DynamicFormField from '@/components/ui/composite/DynamicFormField';
 import { usePartner } from '@/context/PartnerContext';
 import { useBranding } from '@/hooks/useBranding';
 import { COLORS } from '@/config/colors';

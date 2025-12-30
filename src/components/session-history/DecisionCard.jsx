@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import { Calendar, ChevronRight, Loader2, Trash2, Scale, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime } from '@/utils/formatting';
-import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
 
 /**
  * Mini Score Bar for cards

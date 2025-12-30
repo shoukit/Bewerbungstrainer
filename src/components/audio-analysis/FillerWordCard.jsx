@@ -10,9 +10,9 @@ import { MessageSquare, ChevronRight, CheckCircle2, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FILLER_WORD_THRESHOLDS, INTERACTIVE_STATES } from '@/config/constants';
 import { getScoreTextClass } from '@/config/colors';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { FeedbackTip } from '@/components/ui/feedback-tip';
+import { Card, CardHeader, CardTitle } from '@/components/ui/base/card';
+import { Badge } from '@/components/ui/base/badge';
+import { FeedbackTip } from '@/components/ui/composite/feedback-tip';
 
 /**
  * Get color class for filler word count

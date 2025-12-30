@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { MessageSquare, User, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TRANSCRIPT_CONFIG, SPEAKER_STYLES } from '@/config/constants';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/base/card';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { formatDuration } from '@/utils/formatting';

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime, formatDuration } from '@/utils/formatting';
-import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
 
 /**
  * Session type constants (must match parent component)

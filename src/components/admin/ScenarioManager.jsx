@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/base/card';
+import { Button } from '@/components/ui/base/button';
+import { Input } from '@/components/ui/base/input';
+import { Textarea } from '@/components/ui/base/textarea';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from '@/components/ui/base/dialog';
 import {
   MessageSquare,
   Plus,
@@ -26,7 +26,7 @@ import {
   User,
   Settings,
 } from 'lucide-react';
-import { FormAccordion, FormAccordionGroup } from '@/components/ui/form-accordion';
+import { FormAccordion, FormAccordionGroup } from '@/components/ui/base/form-accordion';
 import wordpressAPI from '@/services/wordpress-api';
 
 /**

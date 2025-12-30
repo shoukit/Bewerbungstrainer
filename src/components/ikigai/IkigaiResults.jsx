@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/base/card';
+import { Button } from '@/components/ui/base/button';
 import wordpressAPI from '@/services/wordpress-api';
 
 /**

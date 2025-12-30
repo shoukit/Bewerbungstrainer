@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import { Calendar, ChevronRight, Loader2, Trash2, Compass, Heart, Star, Globe, Coins } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime } from '@/utils/formatting';
-import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
 
 /**
  * Dimension icons and colors

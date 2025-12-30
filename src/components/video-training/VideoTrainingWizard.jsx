@@ -3,7 +3,7 @@ import { ArrowLeft, Video, Info, Loader2, AlertCircle, ChevronRight, Settings, S
 import { usePartner } from '../../context/PartnerContext';
 import { motion } from 'framer-motion';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
-import FullscreenLoader from '@/components/ui/fullscreen-loader';
+import FullscreenLoader from '@/components/ui/composite/fullscreen-loader';
 
 /**
  * Icon mapping for dynamic tip icons from backend

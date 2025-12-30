@@ -24,7 +24,7 @@ import {
   Brain,
   Info
 } from 'lucide-react';
-import AudioVisualizer from '../AudioVisualizer';
+import AudioVisualizer from '@/components/ui/composite/AudioVisualizer';
 import { formatDuration } from '@/utils/formatting';
 
 // Icon mapping for dynamic tips from database
@@ -49,11 +49,11 @@ const iconMap = {
 import { motion, AnimatePresence } from 'framer-motion';
 import wordpressAPI from '@/services/wordpress-api';
 import ImmediateFeedback from './ImmediateFeedback';
-import ProgressBar from '@/components/ui/progress-bar';
-import MicrophoneSelector from '@/components/MicrophoneSelector';
-import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
-import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
-import FullscreenLoader from '@/components/ui/fullscreen-loader';
+import ProgressBar from '@/components/ui/composite/progress-bar';
+import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
+import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog';
+import DeviceSettingsDialog from '@/components/device-setup/DeviceSettingsDialog';
+import FullscreenLoader from '@/components/ui/composite/fullscreen-loader';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { useBranding } from '@/hooks/useBranding';

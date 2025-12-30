@@ -3,8 +3,8 @@ import { Scale } from 'lucide-react';
 import DecisionBoardInput from './DecisionBoardInput';
 import DecisionBoardResult from './DecisionBoardResult';
 import wordpressAPI from '@/services/wordpress-api';
-import FeatureInfoModal from '@/components/FeatureInfoModal';
-import FeatureAppHeader from '@/components/FeatureAppHeader';
+import FeatureInfoModal from '@/components/global/FeatureInfoModal';
+import FeatureAppHeader from '@/components/global/FeatureAppHeader';
 import { COLORS, createGradient } from '@/config/colors';
 import { useRequireAuth, useScrollToTop } from '@/hooks';
 

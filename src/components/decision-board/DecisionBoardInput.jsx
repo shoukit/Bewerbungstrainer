@@ -16,10 +16,10 @@ import {
   ChevronUp,
   Wand2,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/base/card';
+import { Button } from '@/components/ui/base/button';
+import { Input } from '@/components/ui/base/input';
+import { Textarea } from '@/components/ui/base/textarea';
 import { useBranding } from '@/hooks/useBranding';
 import { analyzeDecision, brainstormArguments } from '@/services/gemini';
 import AudioRecorder from './AudioRecorder';

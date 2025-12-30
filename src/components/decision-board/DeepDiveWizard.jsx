@@ -13,8 +13,8 @@ import {
   Quote,
   SkipForward,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/base/button';
+import { Textarea } from '@/components/ui/base/textarea';
 import { useBranding } from '@/hooks/useBranding';
 import { generateWizardQuestion, extractWizardArguments } from '@/services/gemini';
 

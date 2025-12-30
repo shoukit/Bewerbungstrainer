@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, Sparkles, ArrowRight, Heart, Star, Globe, Coins } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/base/card';
+import { Button } from '@/components/ui/base/button';
 import AudioRecorder from '@/components/decision-board/AudioRecorder';
 
 /**
