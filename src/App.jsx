@@ -945,6 +945,7 @@ function AppContent() {
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+            onNavigateToHistory={() => navigate(ROUTES.HISTORY)}
           />
         }
       />
