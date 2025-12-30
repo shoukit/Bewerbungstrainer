@@ -545,23 +545,56 @@ class Bewerbungstrainer_Roleplay_Admin {
                 'role_type' => sanitize_text_field($data['role_type'] ?? 'interview'),
                 'user_role_label' => sanitize_text_field($restore_newlines($data['user_role_label'] ?? 'Bewerber')),
                 'agent_id' => sanitize_text_field($data['agent_id'] ?? ''),
-                'system_prompt' => $restore_newlines($data['system_prompt'] ?? ''),
+                'voice_id' => sanitize_text_field($data['voice_id'] ?? ''),
+                'initial_message' => $restore_newlines($data['initial_message'] ?? ''),
+                // Support both 'system_prompt' and 'content' column names
+                'system_prompt' => $restore_newlines($data['system_prompt'] ?? $data['content'] ?? ''),
                 'feedback_prompt' => $restore_newlines($data['feedback_prompt'] ?? ''),
                 'ai_instructions' => $restore_newlines($data['ai_instructions'] ?? ''),
                 'tips' => $data['tips'] ?? '[]',
-                'input_configuration' => $data['input_configuration'] ?? '[]',
-                'is_active' => intval($data['is_active'] ?? 1),
+                // Support both 'input_configuration' and 'variables_schema' column names
+                'input_configuration' => $data['input_configuration'] ?? $data['variables_schema'] ?? '[]',
+                'interviewer_name' => sanitize_text_field($restore_newlines($data['interviewer_name'] ?? '')),
+                'interviewer_role' => sanitize_text_field($restore_newlines($data['interviewer_role'] ?? '')),
+                'interviewer_image' => esc_url_raw($data['interviewer_image'] ?? ''),
+                'interviewer_properties' => sanitize_textarea_field($restore_newlines($data['interviewer_properties'] ?? '')),
+                'interviewer_objections' => sanitize_textarea_field($restore_newlines($data['interviewer_objections'] ?? '')),
+                'interviewer_questions' => sanitize_textarea_field($restore_newlines($data['interviewer_questions'] ?? '')),
+                'coaching_hints' => sanitize_textarea_field($restore_newlines($data['coaching_hints'] ?? '')),
+                // Support both 'is_active' (0/1) and 'status' (publish/draft) column names
+                'is_active' => isset($data['status'])
+                    ? ($data['status'] === 'publish' ? 1 : 0)
+                    : intval($data['is_active'] ?? 1),
                 'sort_order' => intval($data['sort_order'] ?? 0),
             );
 
-            // Check if updating existing
+            // Check if updating existing - first by ID, then by title
+            $existing = null;
             if (!empty($data['id']) && is_numeric($data['id'])) {
                 $existing = $this->db->get_scenario(intval($data['id']));
-                if ($existing) {
-                    $this->db->update_scenario(intval($data['id']), $scenario_data);
-                    $updated++;
-                    continue;
+            }
+
+            // If no ID match, try to find by title
+            if (!$existing) {
+                $existing = $this->db->get_scenario_by_title($scenario_data['title']);
+            }
+
+            if ($existing) {
+                // Update existing - fill empty fields only (like migration)
+                $update_data = array();
+                foreach ($scenario_data as $field => $value) {
+                    if ($field === 'title') continue; // Don't update title
+                    $existing_value = $existing->$field ?? '';
+                    if (empty($existing_value) && !empty($value)) {
+                        $update_data[$field] = $value;
+                    }
                 }
+
+                if (!empty($update_data)) {
+                    $this->db->update_scenario($existing->id, $update_data);
+                    $updated++;
+                }
+                continue;
             }
 
             // Create new
