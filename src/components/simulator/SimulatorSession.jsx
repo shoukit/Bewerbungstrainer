@@ -1,3 +1,14 @@
+/**
+ * SimulatorSession - Training Session Component
+ *
+ * Handles the interview/simulation training flow with:
+ * - Question display and navigation
+ * - Audio recording
+ * - Immediate feedback display
+ *
+ * Migrated to Tailwind CSS + themed components.
+ */
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useMobile } from '@/hooks/useMobile';
 import {
@@ -18,14 +29,69 @@ import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog
 import DeviceSettingsDialog from '@/components/device-setup/DeviceSettingsDialog';
 import FullscreenLoader from '@/components/ui/composite/fullscreen-loader';
 import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
-import { useBranding } from '@/hooks/useBranding';
+import { Button, Card } from '@/components/ui';
 
 // Extracted components
 import QuestionTips from './QuestionTips';
 import SimulatorAudioRecorder from './SimulatorAudioRecorder';
 import PreSessionView from './PreSessionView';
 import { CompleteConfirmDialog, CancelConfirmDialog } from './ConfirmationDialogs';
+
+/**
+ * Question Number Badge - Tailwind styled
+ */
+const QuestionBadge = ({ number, size = 'md' }) => {
+  const sizes = {
+    sm: 'w-[26px] h-[26px] text-xs',
+    md: 'w-7 h-7 text-[13px]',
+  };
+
+  return (
+    <div className={`${sizes[size]} rounded-full bg-brand-gradient flex-center text-white font-semibold flex-shrink-0`}>
+      {number}
+    </div>
+  );
+};
+
+/**
+ * Question Card Component - Tailwind styled
+ */
+const QuestionCard = ({ question, index, labels, isMobile }) => (
+  <Card className={isMobile ? 'p-4' : 'p-6'}>
+    <div className="flex items-center gap-2 mb-3 md:mb-4">
+      <QuestionBadge number={index + 1} size={isMobile ? 'sm' : 'md'} />
+      <span className="text-[13px] md:text-sm text-slate-500">
+        {question?.category || labels.questionFallback}
+      </span>
+    </div>
+
+    <h2 className={`font-semibold text-slate-900 leading-relaxed ${isMobile ? 'text-[15px]' : 'text-lg'} mb-0`}>
+      {question?.question || labels.questionLoading}
+    </h2>
+
+    {question?.estimated_answer_time && (
+      <div className="flex items-center gap-1.5 text-slate-500 text-[13px] md:text-sm mt-3 md:mt-4">
+        <Clock size={isMobile ? 14 : 16} />
+        {labels.recommendedTime}: ca. {Math.round(question.estimated_answer_time / 60)} Min
+      </div>
+    )}
+  </Card>
+);
+
+/**
+ * Error State Component - Tailwind styled
+ */
+const ErrorState = ({ error, onRetry, isMobile }) => (
+  <div className={`flex flex-col items-center ${isMobile ? 'p-4' : 'p-5 mt-4'} rounded-xl bg-red-50`}>
+    <AlertCircle className="w-6 h-6 text-red-500" />
+    <p className="mt-2 text-red-500 font-medium text-sm text-center">
+      {error}
+    </p>
+    <Button variant="danger" size="sm" onClick={onRetry} className="mt-3">
+      Erneut versuchen
+    </Button>
+  </div>
+);
 
 /**
  * Simulator Session Component
@@ -52,7 +118,7 @@ const SimulatorSession = ({
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [sessionCreateError, setSessionCreateError] = useState(null);
 
-  const { demoCode } = usePartner();
+  const { demoCode, branding } = usePartner();
 
   // Mode-based labels (INTERVIEW vs SIMULATION)
   const isSimulation = scenario?.mode === 'SIMULATION';
@@ -78,7 +144,6 @@ const SimulatorSession = ({
 
   // Determine if this is a continuation (skip preparation) or repeat (has preloaded questions)
   const isContinuation = startFromQuestion > 0;
-  const isRepeat = preloadedQuestions && preloadedQuestions.length > 0;
 
   // Initialize with previously answered questions when continuing
   const initialAnsweredQuestions = isContinuation
@@ -98,7 +163,6 @@ const SimulatorSession = ({
   const MICROPHONE_STORAGE_KEY = 'karriereheld_selected_microphone';
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(() => {
     if (initialMicrophoneId) return initialMicrophoneId;
-    // Try to restore from localStorage for session continuation
     try {
       return localStorage.getItem(MICROPHONE_STORAGE_KEY) || null;
     } catch {
@@ -150,13 +214,6 @@ const SimulatorSession = ({
   const [isLoadingNextTurn, setIsLoadingNextTurn] = useState(false);
   const [preloadedNextQuestion, setPreloadedNextQuestion] = useState(null);
   const [isConversationFinished, setIsConversationFinished] = useState(false);
-
-  const { branding } = usePartner();
-  const b = useBranding();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -220,14 +277,12 @@ const SimulatorSession = ({
             const nextQuestion = nextTurnResponse.data.next_question;
 
             if (nextTurnResponse.data.is_finished) {
-              // Conversation is ending - but we still have a final response to show
               setPreloadedNextQuestion(nextQuestion);
               if (isRetryAttempt) {
-                // Replace the next question instead of appending
                 setQuestions(prev => {
                   const updated = [...prev];
                   updated[currentIndex + 1] = nextQuestion;
-                  return updated.slice(0, currentIndex + 2); // Remove any questions after
+                  return updated.slice(0, currentIndex + 2);
                 });
               } else {
                 setQuestions(prev => [...prev, nextQuestion]);
@@ -236,23 +291,19 @@ const SimulatorSession = ({
             } else {
               setPreloadedNextQuestion(nextQuestion);
               if (isRetryAttempt) {
-                // Replace the next question instead of appending
                 setQuestions(prev => {
                   const updated = [...prev];
                   updated[currentIndex + 1] = nextQuestion;
-                  return updated.slice(0, currentIndex + 2); // Remove any questions after
+                  return updated.slice(0, currentIndex + 2);
                 });
-                // Also reset conversation finished state if it was set
                 setIsConversationFinished(false);
               } else {
-                // First attempt - append new question
                 setQuestions(prev => [...prev, nextQuestion]);
               }
             }
           }
         } catch (nextTurnErr) {
           console.error('Error generating next turn:', nextTurnErr);
-          // Don't show error to user, just log it - they can still see feedback
         } finally {
           setIsLoadingNextTurn(false);
         }
@@ -278,22 +329,17 @@ const SimulatorSession = ({
     setSubmitError(null);
 
     if (isSimulation) {
-      // SIMULATION mode: Move to the next dynamically generated question
       if (preloadedNextQuestion) {
-        // There's a next question to show - move to it
         setCurrentIndex(prev => prev + 1);
         setPreloadedNextQuestion(null);
-        // Don't complete yet - let user respond to this question first
         return;
       }
 
-      // If conversation is finished AND no more questions to show, complete
       if (isConversationFinished) {
         handleCompleteSession();
         return;
       }
     } else {
-      // INTERVIEW mode: Standard navigation
       if (!isLastQuestion) {
         setCurrentIndex(prev => prev + 1);
       }
@@ -309,18 +355,14 @@ const SimulatorSession = ({
     }
   };
 
-  // Show confirmation dialog for completing session
   const handleCompleteClick = () => {
     setShowCompleteConfirm(true);
   };
 
-  // Actually complete the session after confirmation
   const handleCompleteSession = async () => {
     setShowCompleteConfirm(false);
-    // Close any open dialogs to trigger their cleanup
     setShowDeviceSettings(false);
     setShowMicrophoneTest(false);
-    // Explicitly cleanup any active media stream
     cleanupMediaStream();
     try {
       const response = await wordpressAPI.completeSimulatorSession(session.id);
@@ -335,35 +377,28 @@ const SimulatorSession = ({
     }
   };
 
-  // Show confirmation dialog for canceling session
   const handleCancelClick = () => {
     setShowCancelConfirm(true);
   };
 
-  // Actually cancel the session after confirmation
   const handleCancelSession = () => {
     setShowCancelConfirm(false);
-    // Close any open dialogs to trigger their cleanup
     setShowDeviceSettings(false);
     setShowMicrophoneTest(false);
-    // Explicitly cleanup any active media stream
     cleanupMediaStream();
     onExit();
   };
 
   const handleStartInterview = async () => {
-    // If we already have a session and questions (continuation or repeat), just start
     if (session && questions.length > 0) {
       setPhase('interview');
       return;
     }
 
-    // Otherwise, create session and generate questions
     setIsCreatingSession(true);
     setSessionCreateError(null);
 
     try {
-      // 1. Create session with variables
       const sessionResponse = await wordpressAPI.createSimulatorSession({
         scenario_id: scenario.id,
         variables: variables,
@@ -377,7 +412,6 @@ const SimulatorSession = ({
 
       const newSession = sessionResponse.data.session;
 
-      // 2. Generate or use preloaded questions
       let newQuestions;
       if (preloadedQuestions && preloadedQuestions.length > 0) {
         newQuestions = preloadedQuestions;
@@ -390,11 +424,9 @@ const SimulatorSession = ({
         newQuestions = questionsResponse.data.questions;
       }
 
-      // 3. Update internal state
       setSession({ ...newSession, questions_json: newQuestions });
       setQuestions(newQuestions);
 
-      // 4. Notify parent
       if (onSessionCreated) {
         onSessionCreated({
           session: { ...newSession, questions_json: newQuestions },
@@ -403,7 +435,6 @@ const SimulatorSession = ({
         });
       }
 
-      // 5. Start interview
       setPhase('interview');
 
     } catch (err) {
@@ -427,11 +458,10 @@ const SimulatorSession = ({
           selectedMicrophoneId={selectedMicrophoneId}
           onMicrophoneChange={setSelectedMicrophoneId}
           onMicrophoneTest={() => setShowMicrophoneTest(true)}
-          themedGradient={buttonGradient}
-          primaryAccent={primaryAccent}
-          primaryAccentLight={primaryAccentLight}
+          themedGradient={branding?.['--button-gradient'] || branding?.['--header-gradient']}
+          primaryAccent={branding?.['--primary-accent']}
+          primaryAccentLight={branding?.['--primary-accent-light']}
           isLoading={isCreatingSession}
-          branding={b}
         />
         <MicrophoneTestDialog
           isOpen={showMicrophoneTest}
@@ -441,21 +471,7 @@ const SimulatorSession = ({
 
         {/* Error Display */}
         {sessionCreateError && (
-          <div style={{
-            position: 'fixed',
-            bottom: '24px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '12px 24px',
-            borderRadius: '12px',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#dc2626',
-            fontSize: '14px',
-            fontWeight: 500,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-            zIndex: 100,
-          }}>
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm font-medium shadow-lg z-[100]">
             {sessionCreateError}
           </div>
         )}
@@ -470,54 +486,25 @@ const SimulatorSession = ({
     );
   }
 
+  // Check if training is complete (for hiding "Beenden" button)
+  const isTrainingComplete = showFeedback && (
+    (isSimulation && isConversationFinished && !preloadedNextQuestion) ||
+    (!isSimulation && isLastQuestion)
+  );
+
   return (
-    <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: '1000px', margin: '0 auto' }}>
-      {/* Header - Mobile responsive */}
-      <div style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        justifyContent: 'space-between',
-        alignItems: isMobile ? 'stretch' : 'center',
-        gap: isMobile ? '12px' : '0',
-        marginBottom: '24px',
-      }}>
-        <h1 style={{
-          fontSize: isMobile ? '18px' : '20px',
-          fontWeight: 600,
-          color: '#0f172a',
-          margin: 0,
-        }}>
+    <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-[1000px] mx-auto`}>
+      {/* Header */}
+      <div className={`flex ${isMobile ? 'flex-col gap-3' : 'flex-row justify-between items-center'} mb-6`}>
+        <h1 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-slate-900`}>
           {scenario?.title}
         </h1>
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          alignItems: 'center',
-          justifyContent: isMobile ? 'space-between' : 'flex-end',
-        }}>
+        <div className={`flex gap-2 items-center ${isMobile ? 'justify-between' : 'justify-end'}`}>
           {/* Training beenden - hide when training is truly complete */}
-          {!(showFeedback && (
-            (isSimulation && isConversationFinished && !preloadedNextQuestion) ||
-            (!isSimulation && isLastQuestion)
-          )) && (
+          {!isTrainingComplete && (
             <button
               onClick={handleCompleteClick}
-              style={{
-                padding: isMobile ? '10px 14px' : '8px 16px',
-                borderRadius: '8px',
-                background: '#22c55e',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: 600,
-                boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
-                flex: isMobile ? 1 : 'none',
-                justifyContent: 'center',
-              }}
+              className={`${isMobile ? 'flex-1 py-2.5 px-3.5' : 'py-2 px-4'} rounded-lg bg-green-500 text-white text-sm font-semibold flex items-center justify-center gap-1.5 shadow-md hover:bg-green-600 transition-colors`}
             >
               <Check size={16} />
               {isMobile ? 'Beenden' : 'Training beenden'}
@@ -525,20 +512,7 @@ const SimulatorSession = ({
           )}
           <button
             onClick={handleCancelClick}
-            style={{
-              padding: isMobile ? '10px 14px' : '8px 16px',
-              borderRadius: '8px',
-              background: '#f1f5f9',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              color: '#64748b',
-              fontSize: '14px',
-              flex: isMobile ? 1 : 'none',
-              justifyContent: 'center',
-            }}
+            className={`${isMobile ? 'flex-1 py-2.5 px-3.5' : 'py-2 px-4'} rounded-lg bg-slate-100 text-slate-500 text-sm flex items-center justify-center gap-1.5 hover:bg-slate-200 transition-colors`}
           >
             <X size={16} />
             Abbrechen
@@ -565,58 +539,28 @@ const SimulatorSession = ({
 
       {/* Navigation Buttons - only show during recording (not feedback) and NOT in SIMULATION mode */}
       {!showFeedback && !isSimulation && (
-        <div style={{
-          display: 'flex',
-          gap: isMobile ? '8px' : '12px',
-          justifyContent: 'center',
-          marginBottom: '16px',
-        }}>
-          <button
+        <div className={`flex ${isMobile ? 'gap-2' : 'gap-3'} justify-center mb-4`}>
+          <Button
+            variant="secondary"
+            size={isMobile ? 'sm' : 'md'}
+            icon={<ChevronLeft size={16} />}
             onClick={handlePrev}
             disabled={isFirstQuestion}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: isMobile ? '10px 14px' : '12px 20px',
-              borderRadius: '10px',
-              border: `2px solid ${b.borderColor}`,
-              backgroundColor: b.cardBg,
-              color: isFirstQuestion ? b.textMuted : b.textSecondary,
-              fontSize: isMobile ? '13px' : '14px',
-              fontWeight: 600,
-              cursor: isFirstQuestion ? 'not-allowed' : 'pointer',
-              opacity: isFirstQuestion ? 0.5 : 1,
-              flex: isMobile ? 1 : 'none',
-              justifyContent: 'center',
-            }}
+            className={isMobile ? 'flex-1' : ''}
           >
-            <ChevronLeft size={16} />
             Zurück
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
+            size={isMobile ? 'sm' : 'md'}
+            iconPosition="right"
+            icon={<ChevronRight size={16} />}
             onClick={handleNext}
             disabled={isLastQuestion}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: isMobile ? '10px 14px' : '12px 20px',
-              borderRadius: '10px',
-              border: `2px solid ${b.borderColor}`,
-              backgroundColor: b.cardBg,
-              color: isLastQuestion ? b.textMuted : b.textSecondary,
-              fontSize: isMobile ? '13px' : '14px',
-              fontWeight: 600,
-              cursor: isLastQuestion ? 'not-allowed' : 'pointer',
-              opacity: isLastQuestion ? 0.5 : 1,
-              flex: isMobile ? 1 : 'none',
-              justifyContent: 'center',
-            }}
+            className={isMobile ? 'flex-1' : ''}
           >
             {isMobile ? 'Überspringen' : 'Frage überspringen'}
-            <ChevronRight size={16} />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -625,186 +569,77 @@ const SimulatorSession = ({
         current={currentIndex}
         total={questions.length}
         answeredQuestions={answeredQuestions}
-        primaryAccent={primaryAccent}
-        b={b}
+        primaryAccent={branding?.['--primary-accent']}
         labels={labels}
       />
 
       {/* Main Content */}
       {showFeedback ? (
         /* Single Column Layout for Feedback View */
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div className="max-w-[800px] mx-auto">
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', justifyContent: 'flex-end' }}>
+          <div className="flex gap-3 mb-4 justify-end">
             {/* Retry button */}
             {scenario.allow_retry && (
-              <button
-                onClick={handleRetry}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 20px',
-                  borderRadius: '10px',
-                  border: `2px solid ${b.borderColor}`,
-                  backgroundColor: b.cardBg,
-                  color: b.textSecondary,
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                <RotateCcw size={16} />
+              <Button variant="secondary" icon={<RotateCcw size={16} />} onClick={handleRetry}>
                 Nochmal versuchen
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               onClick={
                 isSimulation
                   ? ((isConversationFinished && !preloadedNextQuestion) ? handleCompleteSession : handleNext)
                   : (isLastQuestion ? handleCompleteSession : handleNext)
               }
               disabled={isSimulation && isLoadingNextTurn && !isConversationFinished}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                borderRadius: '10px',
-                border: 'none',
-                background: (isSimulation && isLoadingNextTurn && !isConversationFinished)
-                  ? b.textMuted
-                  : buttonGradient,
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: (isSimulation && isLoadingNextTurn && !isConversationFinished)
-                  ? 'wait'
-                  : 'pointer',
-                boxShadow: (isSimulation && isLoadingNextTurn && !isConversationFinished)
-                  ? 'none'
-                  : `0 4px 12px ${primaryAccent}4d`,
-                opacity: (isSimulation && isLoadingNextTurn && !isConversationFinished) ? 0.7 : 1,
-              }}
+              icon={isLoadingNextTurn ? <Loader2 size={16} className="animate-spin" /> : null}
+              iconPosition="left"
             >
               {isSimulation && isLoadingNextTurn && !isConversationFinished ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-                  Gesprächspartner tippt...
-                </>
+                'Gesprächspartner tippt...'
               ) : (isSimulation ? (
-                // Show "abschließen" only when finished AND no more questions to show
                 (isConversationFinished && !preloadedNextQuestion) ? 'Training abschließen' : labels.nextButton
               ) : (
                 isLastQuestion ? 'Training abschließen' : labels.nextButton
               ))}
-              {!isLoadingNextTurn && !(isSimulation ? (isConversationFinished && !preloadedNextQuestion) : isLastQuestion) && <ChevronRight size={16} />}
-            </button>
+              {!isLoadingNextTurn && !(isSimulation ? (isConversationFinished && !preloadedNextQuestion) : isLastQuestion) && (
+                <ChevronRight size={16} className="ml-1" />
+              )}
+            </Button>
           </div>
 
           {/* Question Card */}
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: '16px',
-              padding: '20px',
-              border: '1px solid #e2e8f0',
-              marginBottom: '16px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: buttonGradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                }}
-              >
-                {currentIndex + 1}
-              </div>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>
-                {currentQuestion?.category || labels.questionFallback}
-              </span>
-            </div>
-            <p style={{ fontSize: '16px', fontWeight: 500, color: '#0f172a', margin: 0, lineHeight: 1.5 }}>
-              {currentQuestion?.question || labels.questionLoading}
-            </p>
-          </div>
+          <QuestionCard
+            question={currentQuestion}
+            index={currentIndex}
+            labels={labels}
+            isMobile={isMobile}
+          />
 
           {/* Feedback Content */}
-          <ImmediateFeedback
-            transcript={feedback.transcript}
-            feedback={feedback.feedback}
-            audioMetrics={feedback.audio_analysis}
-            audioUrl={feedback.audio_url}
-            hideButtons={true}
-          />
+          <div className="mt-4">
+            <ImmediateFeedback
+              transcript={feedback.transcript}
+              feedback={feedback.feedback}
+              audioMetrics={feedback.audio_analysis}
+              audioUrl={feedback.audio_url}
+              hideButtons={true}
+            />
+          </div>
         </div>
       ) : (
         /* Recording View Layout */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px' }}>
-          {/* Mobile: Question First, then Recording. Desktop: Two columns */}
+        <div className={`flex flex-col ${isMobile ? 'gap-4' : 'gap-6'}`}>
           {isMobile ? (
             /* Mobile Layout - Stacked vertically */
             <>
               {/* Question Card - Mobile */}
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  border: '1px solid #e2e8f0',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <div
-                    style={{
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '50%',
-                      background: buttonGradient,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {currentIndex + 1}
-                  </div>
-                  <span style={{ fontSize: '13px', color: '#64748b' }}>
-                    {currentQuestion?.category || labels.questionFallback}
-                  </span>
-                </div>
-
-                <p
-                  style={{
-                    fontSize: '15px',
-                    fontWeight: 600,
-                    color: '#0f172a',
-                    lineHeight: 1.5,
-                    margin: 0,
-                  }}
-                >
-                  {currentQuestion?.question || labels.questionLoading}
-                </p>
-
-                {currentQuestion?.estimated_answer_time && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginTop: '12px' }}>
-                    <Clock size={14} />
-                    {labels.recommendedTime}: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
-                  </div>
-                )}
-              </div>
+              <QuestionCard
+                question={currentQuestion}
+                index={currentIndex}
+                labels={labels}
+                isMobile={true}
+              />
 
               {/* Recording Area - Mobile */}
               <SimulatorAudioRecorder
@@ -812,58 +647,23 @@ const SimulatorSession = ({
                 timeLimit={scenario.time_limit_per_question || 120}
                 disabled={false}
                 deviceId={selectedMicrophoneId}
-                themedGradient={buttonGradient}
-                primaryAccent={primaryAccent}
+                themedGradient={branding?.['--button-gradient'] || branding?.['--header-gradient']}
+                primaryAccent={branding?.['--primary-accent']}
                 isSubmitting={isSubmitting}
                 labels={labels}
                 onOpenSettings={() => setShowDeviceSettings(true)}
-                branding={b}
                 isMobile={true}
                 onStreamChange={handleStreamChange}
               />
 
               {/* Error State - Mobile */}
               {submitError && (
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: b.errorLight,
-                }}>
-                  <AlertCircle style={{ width: '24px', height: '24px', color: b.error }} />
-                  <p style={{
-                    marginTop: '8px',
-                    color: b.error,
-                    fontWeight: 500,
-                    fontSize: '14px',
-                    textAlign: 'center',
-                  }}>
-                    {submitError}
-                  </p>
-                  <button
-                    onClick={handleRetry}
-                    style={{
-                      marginTop: '12px',
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: b.error,
-                      color: 'white',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Erneut versuchen
-                  </button>
-                </div>
+                <ErrorState error={submitError} onRetry={handleRetry} isMobile={true} />
               )}
             </>
           ) : (
             /* Desktop Layout - Two Column Grid */
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div className="grid grid-cols-2 gap-6">
               {/* Left Column - Recording */}
               <div>
                 <SimulatorAudioRecorder
@@ -871,113 +671,38 @@ const SimulatorSession = ({
                   timeLimit={scenario.time_limit_per_question || 120}
                   disabled={false}
                   deviceId={selectedMicrophoneId}
-                  themedGradient={buttonGradient}
-                  primaryAccent={primaryAccent}
+                  themedGradient={branding?.['--button-gradient'] || branding?.['--header-gradient']}
+                  primaryAccent={branding?.['--primary-accent']}
                   isSubmitting={isSubmitting}
                   labels={labels}
                   onOpenSettings={() => setShowDeviceSettings(true)}
-                  branding={b}
                   isMobile={false}
                   onStreamChange={handleStreamChange}
                 />
 
                 {/* Error State */}
                 {submitError && (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: '20px',
-                    marginTop: '16px',
-                    borderRadius: '12px',
-                    backgroundColor: b.errorLight,
-                  }}>
-                    <AlertCircle style={{ width: '24px', height: '24px', color: b.error }} />
-                    <p style={{
-                      marginTop: '8px',
-                      color: b.error,
-                      fontWeight: 500,
-                      fontSize: '14px',
-                      textAlign: 'center',
-                    }}>
-                      {submitError}
-                    </p>
-                    <button
-                      onClick={handleRetry}
-                      style={{
-                        marginTop: '12px',
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        backgroundColor: b.error,
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Erneut versuchen
-                    </button>
-                  </div>
+                  <ErrorState error={submitError} onRetry={handleRetry} isMobile={false} />
                 )}
               </div>
 
               {/* Right Column - Question */}
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  border: '1px solid #e2e8f0',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <div
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: buttonGradient,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {currentIndex + 1}
-                  </div>
-                  <span style={{ fontSize: '14px', color: '#64748b' }}>
-                    {currentQuestion?.category || labels.questionFallback}
-                  </span>
-                </div>
-
-                <h2
-                  style={{
-                    fontSize: '18px',
-                    fontWeight: 600,
-                    color: '#0f172a',
-                    lineHeight: 1.5,
-                    marginBottom: '16px',
-                  }}
-                >
-                  {currentQuestion?.question || labels.questionLoading}
-                </h2>
-
-                {currentQuestion?.estimated_answer_time && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px' }}>
-                    <Clock size={16} />
-                    {labels.recommendedTime}: ca. {Math.round(currentQuestion.estimated_answer_time / 60)} Min
-                  </div>
-                )}
-              </div>
+              <QuestionCard
+                question={currentQuestion}
+                index={currentIndex}
+                labels={labels}
+                isMobile={false}
+              />
             </div>
           )}
 
           {/* Full Width Tips Section */}
           {currentQuestion?.tips && currentQuestion.tips.length > 0 && (
-            <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} tipsLabel={labels.tipsLabel} branding={b} />
+            <QuestionTips
+              tips={currentQuestion.tips}
+              primaryAccent={branding?.['--primary-accent']}
+              tipsLabel={labels.tipsLabel}
+            />
           )}
         </div>
       )}

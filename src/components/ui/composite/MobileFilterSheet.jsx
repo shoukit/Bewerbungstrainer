@@ -4,106 +4,117 @@
  * A responsive filter component that shows:
  * - Inline filters on desktop
  * - A filter icon button that opens a bottom sheet on mobile
+ *
+ * Migrated to Tailwind CSS for consistent styling.
  */
 
 import React, { useState } from 'react';
-import { Filter, X, Search, LayoutGrid, List, ChevronDown } from 'lucide-react';
+import { Filter, Search, LayoutGrid, List } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/base/dialog';
-import { useBranding } from '@/hooks/useBranding';
-import { COLORS } from '@/config/colors';
+import { useMobile } from '@/hooks/useMobile';
+import { Button } from '@/components/ui';
 
-/**
- * Mobile breakpoint (matches Tailwind's md)
- */
-const MOBILE_BREAKPOINT = 768;
-
-/**
- * Hook to detect mobile viewport
- */
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < MOBILE_BREAKPOINT : false
-  );
-
-  React.useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return isMobile;
-};
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
 
 /**
  * Category chip for filter selection
  */
-const CategoryChip = ({ label, icon: Icon, isSelected, onClick, color, bgColor }) => {
-  const b = useBranding();
-  const chipColor = color || b.primaryAccent;
-  const chipBgColor = bgColor || `${b.primaryAccent}15`;
-
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: b.space[2],
-        padding: `${b.space[2]} ${b.space[3]}`,
-        borderRadius: b.radius.full,
-        fontSize: b.fontSize.sm,
-        fontWeight: 600,
-        border: `2px solid ${isSelected ? chipColor : COLORS.slate[200]}`,
-        backgroundColor: isSelected ? chipBgColor : 'white',
-        color: isSelected ? chipColor : COLORS.slate[600],
-        cursor: 'pointer',
-        transition: b.transition.normal,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {Icon && <Icon style={{ width: '14px', height: '14px' }} />}
-      {label}
-    </button>
-  );
-};
+const CategoryChip = ({ label, icon: Icon, isSelected, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-semibold
+      border-2 cursor-pointer transition-all whitespace-nowrap
+      ${isSelected
+        ? 'border-primary bg-primary/10 text-primary'
+        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+      }`}
+  >
+    {Icon && <Icon className="w-3.5 h-3.5" />}
+    {label}
+  </button>
+);
 
 /**
  * Filter count badge
  */
 const FilterBadge = ({ count }) => {
-  const b = useBranding();
   if (count === 0) return null;
 
   return (
-    <span
-      style={{
-        position: 'absolute',
-        top: '-4px',
-        right: '-4px',
-        minWidth: '18px',
-        height: '18px',
-        padding: `0 ${b.space[1]}`,
-        borderRadius: b.radius.md,
-        backgroundColor: '#ef4444',
-        color: 'white',
-        fontSize: b.fontSize.xs,
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
+    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-md bg-red-500 text-white text-xs font-semibold flex items-center justify-center">
       {count}
     </span>
   );
 };
 
 /**
- * MobileFilterSheet - Main component
+ * Search Input Component
  */
+const SearchInput = ({ value, onChange, placeholder, className = '' }) => (
+  <div className={`relative ${className}`}>
+    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 pointer-events-none" />
+    <input
+      type="text"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full py-3 pl-11 pr-4 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+    />
+  </div>
+);
+
+/**
+ * Difficulty Select Component
+ */
+const DifficultySelect = ({ value, onChange, options, className = '' }) => (
+  <div className={`relative ${className}`}>
+    <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full py-3 pl-10 pr-10 rounded-lg border border-slate-200 text-base text-slate-900 bg-white cursor-pointer outline-none appearance-none bg-no-repeat"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+        backgroundPosition: 'right 12px center',
+      }}
+    >
+      {options.map(opt => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  </div>
+);
+
+/**
+ * View Toggle Component
+ */
+const ViewToggle = ({ viewMode, onViewModeChange, compact = false }) => (
+  <div className={`flex items-center gap-1 ${compact ? 'p-[3px]' : 'p-1'} bg-slate-100 rounded-lg`}>
+    <button
+      onClick={() => onViewModeChange('grid')}
+      className={`${compact ? 'p-1' : 'p-2'} rounded-md border-none cursor-pointer flex items-center justify-center transition-all
+        ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'bg-transparent'}`}
+      title="Kachelansicht"
+    >
+      <LayoutGrid className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${viewMode === 'grid' ? 'text-primary' : 'text-slate-500'}`} />
+    </button>
+    <button
+      onClick={() => onViewModeChange('list')}
+      className={`${compact ? 'p-1' : 'p-2'} rounded-md border-none cursor-pointer flex items-center justify-center transition-all
+        ${viewMode === 'list' ? 'bg-white shadow-sm' : 'bg-transparent'}`}
+      title="Listenansicht"
+    >
+      <List className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${viewMode === 'list' ? 'text-primary' : 'text-slate-500'}`} />
+    </button>
+  </div>
+);
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 const MobileFilterSheet = ({
   // Search
   searchQuery,
@@ -137,8 +148,7 @@ const MobileFilterSheet = ({
   children,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const isMobile = useIsMobile();
-  const b = useBranding();
+  const isMobile = useMobile();
 
   // Count active filters
   const activeFilterCount = [
@@ -150,92 +160,27 @@ const MobileFilterSheet = ({
   // Desktop view - inline filters
   if (!isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[4] }}>
+      <div className="flex flex-col gap-4">
         {/* Search and controls row */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: b.space[3], alignItems: 'center' }}>
+        <div className="flex flex-wrap gap-3 items-center">
           {/* Search Input */}
           {showSearch && (
-            <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
-              <Search
-                style={{
-                  position: 'absolute',
-                  left: '14px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '18px',
-                  height: '18px',
-                  color: COLORS.slate[400],
-                  pointerEvents: 'none',
-                }}
-              />
-              <input
-                type="text"
-                placeholder={searchPlaceholder}
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: `${b.space[3]} 14px ${b.space[3]} 44px`,
-                  borderRadius: b.radius.lg,
-                  border: `1px solid ${COLORS.slate[200]}`,
-                  fontSize: b.fontSize.base,
-                  color: COLORS.slate[900],
-                  backgroundColor: '#fff',
-                  outline: 'none',
-                  transition: b.transition.normal,
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = b.primaryAccent;
-                  e.target.style.boxShadow = `0 0 0 3px ${b.primaryAccent}20`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = COLORS.slate[200];
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-            </div>
+            <SearchInput
+              value={searchQuery}
+              onChange={onSearchChange}
+              placeholder={searchPlaceholder}
+              className="flex-1 min-w-[200px]"
+            />
           )}
 
           {/* Difficulty Filter */}
           {showDifficulty && difficultyOptions.length > 0 && (
-            <div style={{ position: 'relative', minWidth: '180px' }}>
-              <Filter
-                style={{
-                  position: 'absolute',
-                  left: '14px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '16px',
-                  height: '16px',
-                  color: COLORS.slate[400],
-                  pointerEvents: 'none',
-                }}
-              />
-              <select
-                value={selectedDifficulty}
-                onChange={(e) => onDifficultyChange(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: `${b.space[3]} 14px ${b.space[3]} 40px`,
-                  borderRadius: b.radius.lg,
-                  border: `1px solid ${COLORS.slate[200]}`,
-                  fontSize: b.fontSize.base,
-                  color: COLORS.slate[900],
-                  backgroundColor: '#fff',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  appearance: 'none',
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: `right ${b.space[3]} center`,
-                  paddingRight: '40px',
-                }}
-              >
-                {difficultyOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
+            <DifficultySelect
+              value={selectedDifficulty}
+              onChange={onDifficultyChange}
+              options={difficultyOptions}
+              className="min-w-[180px]"
+            />
           )}
 
           {/* Custom filters */}
@@ -246,57 +191,13 @@ const MobileFilterSheet = ({
 
           {/* View Toggle */}
           {showViewToggle && viewMode && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: b.space[1],
-                padding: b.space[1],
-                backgroundColor: COLORS.slate[100],
-                borderRadius: b.radius.md,
-              }}
-            >
-              <button
-                onClick={() => onViewModeChange('grid')}
-                style={{
-                  padding: b.space[2],
-                  borderRadius: b.radius.sm,
-                  border: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: viewMode === 'grid' ? '#ffffff' : 'transparent',
-                  boxShadow: viewMode === 'grid' ? b.shadow.sm : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                title="Kachelansicht"
-              >
-                <LayoutGrid style={{ width: '16px', height: '16px', color: viewMode === 'grid' ? b.primaryAccent : COLORS.slate[500] }} />
-              </button>
-              <button
-                onClick={() => onViewModeChange('list')}
-                style={{
-                  padding: b.space[2],
-                  borderRadius: b.radius.sm,
-                  border: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: viewMode === 'list' ? '#ffffff' : 'transparent',
-                  boxShadow: viewMode === 'list' ? b.shadow.sm : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                title="Listenansicht"
-              >
-                <List style={{ width: '16px', height: '16px', color: viewMode === 'list' ? b.primaryAccent : COLORS.slate[500] }} />
-              </button>
-            </div>
+            <ViewToggle viewMode={viewMode} onViewModeChange={onViewModeChange} />
           )}
         </div>
 
         {/* Category chips row */}
         {showCategories && categories.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: b.space[2] }}>
+          <div className="flex flex-wrap gap-2">
             <CategoryChip
               label="Alle"
               icon={LayoutGrid}
@@ -310,8 +211,6 @@ const MobileFilterSheet = ({
                 icon={cat.icon}
                 isSelected={selectedCategory === cat.key}
                 onClick={() => onCategoryChange(cat.key)}
-                color={cat.color}
-                bgColor={cat.bgColor}
               />
             ))}
           </div>
@@ -324,39 +223,19 @@ const MobileFilterSheet = ({
 
   // Mobile view - filter button + sheet
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}>
+    <div className="flex flex-col gap-3">
       {/* Mobile search + filter button row */}
-      <div style={{ display: 'flex', gap: b.space[2], alignItems: 'center' }}>
+      <div className="flex gap-2 items-center">
         {/* Search Input */}
         {showSearch && (
-          <div style={{ position: 'relative', flex: '1' }}>
-            <Search
-              style={{
-                position: 'absolute',
-                left: b.space[3],
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '16px',
-                height: '16px',
-                color: COLORS.slate[400],
-                pointerEvents: 'none',
-              }}
-            />
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              style={{
-                width: '100%',
-                padding: `${b.space[2]} ${b.space[3]} ${b.space[2]} 38px`,
-                borderRadius: b.radius.md,
-                border: `1px solid ${COLORS.slate[200]}`,
-                fontSize: b.fontSize.base,
-                color: COLORS.slate[900],
-                backgroundColor: '#fff',
-                outline: 'none',
-              }}
+              className="w-full py-2 pl-9 pr-3 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none"
             />
           </div>
         )}
@@ -364,99 +243,36 @@ const MobileFilterSheet = ({
         {/* Filter Button */}
         <button
           onClick={() => setIsOpen(true)}
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '44px',
-            height: '44px',
-            borderRadius: b.radius.md,
-            border: `1px solid ${activeFilterCount > 0 ? b.primaryAccent : COLORS.slate[200]}`,
-            backgroundColor: activeFilterCount > 0 ? `${b.primaryAccent}10` : 'white',
-            cursor: 'pointer',
-            flexShrink: 0,
-          }}
+          className={`relative flex items-center justify-center w-11 h-11 rounded-lg border flex-shrink-0 cursor-pointer
+            ${activeFilterCount > 0
+              ? 'border-primary bg-primary/10'
+              : 'border-slate-200 bg-white'
+            }`}
         >
-          <Filter style={{ width: '18px', height: '18px', color: activeFilterCount > 0 ? b.primaryAccent : COLORS.slate[500] }} />
+          <Filter className={`w-[18px] h-[18px] ${activeFilterCount > 0 ? 'text-primary' : 'text-slate-500'}`} />
           <FilterBadge count={activeFilterCount} />
         </button>
 
         {/* View Toggle (compact on mobile) */}
         {showViewToggle && viewMode && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2px',
-              padding: '3px',
-              backgroundColor: COLORS.slate[100],
-              borderRadius: b.radius.md,
-              flexShrink: 0,
-            }}
-          >
-            <button
-              onClick={() => onViewModeChange('grid')}
-              style={{
-                padding: b.space[1],
-                borderRadius: b.radius.sm,
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: viewMode === 'grid' ? '#ffffff' : 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <LayoutGrid style={{ width: '14px', height: '14px', color: viewMode === 'grid' ? b.primaryAccent : COLORS.slate[500] }} />
-            </button>
-            <button
-              onClick={() => onViewModeChange('list')}
-              style={{
-                padding: b.space[1],
-                borderRadius: b.radius.sm,
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: viewMode === 'list' ? '#ffffff' : 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <List style={{ width: '14px', height: '14px', color: viewMode === 'list' ? b.primaryAccent : COLORS.slate[500] }} />
-            </button>
-          </div>
+          <ViewToggle viewMode={viewMode} onViewModeChange={onViewModeChange} compact />
         )}
       </div>
 
       {/* Custom actions on mobile (separate row) */}
       {customActions && (
-        <div style={{ marginTop: b.space[2] }}>
+        <div className="mt-2">
           {customActions}
         </div>
       )}
 
       {/* Filter Sheet Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            top: 'auto',
-            transform: 'none',
-            maxWidth: '100%',
-            width: '100%',
-            borderRadius: `${b.radius.xl} ${b.radius.xl} 0 0`,
-            maxHeight: '80vh',
-            overflow: 'auto',
-          }}
-        >
+        <DialogContent className="fixed bottom-0 left-0 right-0 top-auto transform-none max-w-full w-full rounded-t-2xl max-h-[80vh] overflow-auto">
           <DialogHeader>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <DialogTitle style={{ display: 'flex', alignItems: 'center', gap: b.space[2] }}>
-                <Filter style={{ width: '20px', height: '20px', color: b.primaryAccent }} />
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-primary" />
                 Filter
               </DialogTitle>
               {activeFilterCount > 0 && (
@@ -466,16 +282,7 @@ const MobileFilterSheet = ({
                     onDifficultyChange?.('all');
                     onSearchChange?.('');
                   }}
-                  style={{
-                    padding: `${b.space[1]} ${b.space[3]}`,
-                    borderRadius: b.radius.sm,
-                    border: 'none',
-                    backgroundColor: COLORS.slate[100],
-                    color: COLORS.slate[600],
-                    fontSize: b.fontSize.sm,
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}
+                  className="px-3 py-1 rounded-md border-none bg-slate-100 text-slate-600 text-sm font-medium cursor-pointer hover:bg-slate-200 transition-colors"
                 >
                   Zurücksetzen
                 </button>
@@ -483,47 +290,28 @@ const MobileFilterSheet = ({
             </div>
           </DialogHeader>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[5], padding: `${b.space[2]} 0` }}>
+          <div className="flex flex-col gap-5 py-2">
             {/* Difficulty Filter */}
             {showDifficulty && difficultyOptions.length > 0 && (
               <div>
-                <label style={{ display: 'block', fontSize: b.fontSize.sm, fontWeight: 600, color: COLORS.slate[700], marginBottom: b.space[2] }}>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Schwierigkeit
                 </label>
-                <select
+                <DifficultySelect
                   value={selectedDifficulty}
-                  onChange={(e) => onDifficultyChange(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: `${b.space[3]} 14px`,
-                    borderRadius: b.radius.md,
-                    border: `1px solid ${COLORS.slate[200]}`,
-                    fontSize: b.fontSize.base,
-                    color: COLORS.slate[900],
-                    backgroundColor: '#fff',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    appearance: 'none',
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: `right ${b.space[3]} center`,
-                    paddingRight: '40px',
-                  }}
-                >
-                  {difficultyOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                  onChange={onDifficultyChange}
+                  options={difficultyOptions}
+                />
               </div>
             )}
 
             {/* Categories */}
             {showCategories && categories.length > 0 && (
               <div>
-                <label style={{ display: 'block', fontSize: b.fontSize.sm, fontWeight: 600, color: COLORS.slate[700], marginBottom: b.space[2] }}>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Kategorie
                 </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: b.space[2] }}>
+                <div className="flex flex-wrap gap-2">
                   <CategoryChip
                     label="Alle"
                     icon={LayoutGrid}
@@ -537,8 +325,6 @@ const MobileFilterSheet = ({
                       icon={cat.icon}
                       isSelected={selectedCategory === cat.key}
                       onClick={() => onCategoryChange(cat.key)}
-                      color={cat.color}
-                      bgColor={cat.bgColor}
                     />
                   ))}
                 </div>
@@ -554,23 +340,15 @@ const MobileFilterSheet = ({
           </div>
 
           {/* Apply button */}
-          <button
+          <Button
+            variant="primary"
+            size="lg"
             onClick={() => setIsOpen(false)}
-            style={{
-              width: '100%',
-              padding: b.space[3],
-              marginTop: b.space[3],
-              borderRadius: b.radius.lg,
-              border: 'none',
-              background: `linear-gradient(135deg, ${b.primaryAccent} 0%, ${b.primaryAccent}dd 100%)`,
-              color: 'white',
-              fontSize: b.fontSize.md,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
+            fullWidth
+            className="mt-3"
           >
             Filter anwenden
-          </button>
+          </Button>
         </DialogContent>
       </Dialog>
 
@@ -580,4 +358,4 @@ const MobileFilterSheet = ({
 };
 
 export default MobileFilterSheet;
-export { useIsMobile, CategoryChip };
+export { CategoryChip, ViewToggle };

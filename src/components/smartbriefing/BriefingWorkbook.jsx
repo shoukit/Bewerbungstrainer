@@ -1,11 +1,17 @@
+/**
+ * BriefingWorkbook - Interactive briefing display with editable notes
+ *
+ * Migrated to Tailwind CSS for consistent styling.
+ */
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePartner } from '../../context/PartnerContext';
-import { useBranding } from '../../hooks/useBranding';
-import { useMobile } from '../../hooks/useMobile';
-import wordpressAPI from '../../services/wordpress-api';
-import { formatDateTime } from '../../utils/formatting';
-import { TEMPLATE_ICON_MAP, getIcon } from '../../utils/iconMaps';
+import { usePartner } from '@/context/PartnerContext';
+import { useMobile } from '@/hooks/useMobile';
+import wordpressAPI from '@/services/wordpress-api';
+import { formatDateTime } from '@/utils/formatting';
+import { getIcon } from '@/utils/iconMaps';
+import { Button, Card } from '@/components/ui';
 import {
   ArrowLeft,
   Calendar,
@@ -24,11 +30,11 @@ import {
   Download,
 } from 'lucide-react';
 
-/**
- * Variable name mapping - technical keys to display names
- */
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
 const VARIABLE_DISPLAY_NAMES = {
-  // Common variables
   role_name: 'Position',
   position: 'Position',
   target_company: 'Unternehmen',
@@ -37,35 +43,30 @@ const VARIABLE_DISPLAY_NAMES = {
   karrierelevel: 'Karrierelevel',
   experience_years: 'Berufserfahrung',
   industry: 'Branche',
-
-  // Salary negotiation
   current_salary: 'Aktuelles Gehalt',
   target_salary: 'Zielgehalt',
   negotiation_context: 'Verhandlungskontext',
-
-  // Customer meeting
   customer_name: 'Kunde',
   meeting_goal: 'Gesprächsziel',
   product_service: 'Produkt/Service',
-
-  // General
   user_name: 'Name',
   skills: 'Fähigkeiten',
   strengths: 'Stärken',
   challenges: 'Herausforderungen',
 };
 
-/**
- * Get display name for a variable key
- */
 const getVariableDisplayName = (key) => {
   return VARIABLE_DISPLAY_NAMES[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 };
 
+// ============================================================================
+// MARKDOWN HELPERS
+// ============================================================================
+
 /**
  * Render inline markdown (bold, italic, code)
  */
-const renderInlineMarkdown = (text, primaryAccent) => {
+const renderInlineMarkdown = (text) => {
   if (!text) return null;
 
   const parts = [];
@@ -99,31 +100,21 @@ const renderInlineMarkdown = (text, primaryAccent) => {
     switch (earliest.type) {
       case 'bold':
         parts.push(
-          <strong key={key++} style={{ fontWeight: 600, color: '#0f172a' }}>
+          <strong key={key++} className="font-semibold text-slate-900">
             {earliest.match[1]}
           </strong>
         );
         break;
       case 'italic':
         parts.push(
-          <em key={key++} style={{ fontStyle: 'italic' }}>
+          <em key={key++} className="italic">
             {earliest.match[1] || earliest.match[2]}
           </em>
         );
         break;
       case 'code':
         parts.push(
-          <code
-            key={key++}
-            style={{
-              backgroundColor: '#f1f5f9',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              fontSize: '13px',
-              fontFamily: 'monospace',
-              color: primaryAccent,
-            }}
-          >
+          <code key={key++} className="bg-slate-100 px-1.5 py-0.5 rounded text-[13px] font-mono text-primary">
             {earliest.match[1]}
           </code>
         );
@@ -139,7 +130,7 @@ const renderInlineMarkdown = (text, primaryAccent) => {
 /**
  * Simple Markdown Renderer (for legacy content)
  */
-const MarkdownContent = ({ content, primaryAccent }) => {
+const MarkdownContent = ({ content }) => {
   if (!content) return null;
 
   const renderMarkdown = (text) => {
@@ -151,37 +142,13 @@ const MarkdownContent = ({ content, primaryAccent }) => {
     const flushList = () => {
       if (currentList.length > 0) {
         elements.push(
-          <ul
-            key={`list-${elements.length}`}
-            style={{
-              margin: '8px 0',
-              paddingLeft: '20px',
-              listStyle: 'none',
-            }}
-          >
+          <ul key={`list-${elements.length}`} className="my-2 pl-5 list-none">
             {currentList.map((item, idx) => (
-              <li
-                key={idx}
-                style={{
-                  marginBottom: '6px',
-                  fontSize: '14px',
-                  lineHeight: 1.6,
-                  color: '#374151',
-                  position: 'relative',
-                  paddingLeft: '16px',
-                }}
-              >
-                <span
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    color: primaryAccent,
-                    fontWeight: 'bold',
-                  }}
-                >
+              <li key={idx} className="mb-1.5 text-sm leading-relaxed text-slate-700 relative pl-4">
+                <span className="absolute left-0 text-primary font-bold">
                   {listType === 'number' ? `${idx + 1}.` : '•'}
                 </span>
-                {renderInlineMarkdown(item, primaryAccent)}
+                {renderInlineMarkdown(item)}
               </li>
             ))}
           </ul>
@@ -199,7 +166,6 @@ const MarkdownContent = ({ content, primaryAccent }) => {
         return;
       }
 
-      // Bullet points
       if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
         if (listType !== 'bullet') {
           flushList();
@@ -209,7 +175,6 @@ const MarkdownContent = ({ content, primaryAccent }) => {
         return;
       }
 
-      // Numbered list
       const numberMatch = trimmedLine.match(/^(\d+)\.\s/);
       if (numberMatch) {
         if (listType !== 'number') {
@@ -220,19 +185,10 @@ const MarkdownContent = ({ content, primaryAccent }) => {
         return;
       }
 
-      // Regular paragraph
       flushList();
       elements.push(
-        <p
-          key={`p-${index}`}
-          style={{
-            margin: '8px 0',
-            fontSize: '14px',
-            lineHeight: 1.6,
-            color: '#374151',
-          }}
-        >
-          {renderInlineMarkdown(trimmedLine, primaryAccent)}
+        <p key={`p-${index}`} className="my-2 text-sm leading-relaxed text-slate-700">
+          {renderInlineMarkdown(trimmedLine)}
         </p>
       );
     });
@@ -244,22 +200,42 @@ const MarkdownContent = ({ content, primaryAccent }) => {
   return <div>{renderMarkdown(content)}</div>;
 };
 
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
+
+/**
+ * Deleted Item Row - Compact display for deleted items with restore option
+ */
+const DeletedItemRow = ({ item, onRestore }) => (
+  <div className="px-3 py-2.5 bg-slate-50 rounded-lg mb-2 flex items-center justify-between opacity-60">
+    <span className="text-sm text-slate-500 italic">
+      <s>{item.label}</s> - gelöscht
+    </span>
+    <button
+      onClick={onRestore}
+      className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border-none bg-slate-200 text-slate-500 text-xs cursor-pointer hover:bg-slate-300 transition-colors"
+    >
+      <RotateCcw size={12} />
+      Wiederherstellen
+    </button>
+  </div>
+);
+
 /**
  * Item Card Component - Individual briefing item with note and delete
  */
-const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem, branding }) => {
+const ItemCard = ({ item, sectionId, onUpdateItem }) => {
   const [note, setNote] = useState(item.user_note || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showNoteField, setShowNoteField] = useState(!!item.user_note);
 
-  // Track changes
   useEffect(() => {
     setHasChanges(note !== (item.user_note || ''));
   }, [note, item.user_note]);
 
-  // Handle save note
   const handleSaveNote = async () => {
     setIsSaving(true);
     try {
@@ -274,7 +250,6 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem, branding }) =>
     }
   };
 
-  // Handle delete item
   const handleDelete = async () => {
     try {
       await onUpdateItem(sectionId, item.id, { deleted: true });
@@ -283,7 +258,6 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem, branding }) =>
     }
   };
 
-  // Handle restore item
   const handleRestore = async () => {
     try {
       await onUpdateItem(sectionId, item.id, { deleted: false });
@@ -293,146 +267,50 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem, branding }) =>
   };
 
   if (item.deleted) {
-    return (
-      <div
-        style={{
-          padding: '12px 16px',
-          backgroundColor: branding.cardBgHover,
-          borderRadius: '10px',
-          marginBottom: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          opacity: 0.6,
-        }}
-      >
-        <span style={{ fontSize: '14px', color: branding.textMuted, fontStyle: 'italic' }}>
-          <s>{item.label}</s> - gelöscht
-        </span>
-        <button
-          onClick={handleRestore}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '6px 10px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: branding.borderColor,
-            color: branding.textMuted,
-            fontSize: '12px',
-            cursor: 'pointer',
-          }}
-        >
-          <RotateCcw size={12} />
-          Wiederherstellen
-        </button>
-      </div>
-    );
+    return <DeletedItemRow item={item} onRestore={handleRestore} />;
   }
 
   return (
-    <div
-      style={{
-        backgroundColor: branding.cardBg,
-        borderRadius: '12px',
-        border: `1px solid ${branding.borderColor}`,
-        marginBottom: '10px',
-        overflow: 'hidden',
-      }}
-    >
+    <Card className="mb-2.5 overflow-hidden p-0">
       {/* Item Header */}
-      <div
-        style={{
-          padding: '14px 16px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-        }}
-      >
+      <div className="p-3.5 flex items-start gap-3">
         {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor: primaryAccent,
-                flexShrink: 0,
-              }}
-            />
-            <h4
-              style={{
-                fontSize: '14px',
-                fontWeight: 600,
-                color: branding.textMain,
-                margin: 0,
-              }}
-            >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+            <h4 className="text-sm font-semibold text-slate-900 m-0">
               {item.label}
             </h4>
           </div>
           {item.content && (
-            <p
-              style={{
-                fontSize: '13px',
-                color: branding.textMuted,
-                margin: '0 0 0 14px',
-                lineHeight: 1.5,
-              }}
-            >
-              {renderInlineMarkdown(item.content, primaryAccent)}
+            <p className="text-[13px] text-slate-500 m-0 ml-3.5 leading-snug">
+              {renderInlineMarkdown(item.content)}
             </p>
           )}
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+        <div className="flex items-center gap-1 flex-shrink-0">
           {item.user_note && !showNoteField && (
-            <span
-              style={{
-                fontSize: '11px',
-                color: primaryAccent,
-                backgroundColor: `${primaryAccent}15`,
-                padding: '2px 6px',
-                borderRadius: '4px',
-              }}
-            >
+            <span className="text-[11px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
               Notiz
             </span>
           )}
           <button
             onClick={() => setShowNoteField(!showNoteField)}
             title="Notiz hinzufügen"
-            style={{
-              padding: '6px',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: showNoteField ? `${primaryAccent}15` : 'transparent',
-              color: showNoteField ? primaryAccent : branding.textMuted,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className={`p-1.5 rounded-md border-none cursor-pointer flex items-center justify-center transition-colors ${
+              showNoteField
+                ? 'bg-primary/10 text-primary'
+                : 'bg-transparent text-slate-400 hover:text-primary hover:bg-primary/5'
+            }`}
           >
             <PenLine size={16} />
           </button>
           <button
             onClick={handleDelete}
             title="Löschen"
-            style={{
-              padding: '6px',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              color: branding.textMuted,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className="p-1.5 rounded-md border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center hover:text-red-500 hover:bg-red-50 transition-colors"
           >
             <Trash2 size={16} />
           </button>
@@ -441,107 +319,74 @@ const ItemCard = ({ item, sectionId, primaryAccent, onUpdateItem, branding }) =>
 
       {/* Note Field (collapsible) */}
       {showNoteField && (
-        <div
-          style={{
-            padding: '12px 16px',
-            backgroundColor: branding.cardBgHover,
-            borderTop: `1px solid ${branding.borderColor}`,
-          }}
-        >
+        <div className="px-3.5 py-3 bg-slate-50 border-t border-slate-100">
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Deine Notiz zu diesem Punkt..."
-            style={{
-              width: '100%',
-              minHeight: '60px',
-              padding: '10px',
-              borderRadius: '8px',
-              border: `1px solid ${branding.borderColor}`,
-              fontSize: '13px',
-              color: branding.textSecondary,
-              resize: 'vertical',
-              outline: 'none',
-              boxSizing: 'border-box',
-              transition: 'border-color 0.2s',
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = primaryAccent;
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = branding.borderColor;
-            }}
+            className="w-full min-h-[60px] p-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-700 resize-y outline-none transition-colors focus:border-primary"
           />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', gap: '8px' }}>
-            <button
+          <div className="flex justify-end mt-2 gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => {
                 setShowNoteField(false);
                 setNote(item.user_note || '');
               }}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: `1px solid ${branding.borderColor}`,
-                backgroundColor: branding.cardBg,
-                color: branding.textMuted,
-                fontSize: '12px',
-                cursor: 'pointer',
-              }}
             >
               Abbrechen
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={saveSuccess ? 'secondary' : 'primary'}
+              size="sm"
               onClick={handleSaveNote}
               disabled={isSaving || !hasChanges}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: 'none',
-                backgroundColor: saveSuccess
-                  ? branding.successLight
-                  : hasChanges
-                    ? primaryAccent
-                    : branding.cardBgHover,
-                color: saveSuccess
-                  ? branding.success
-                  : hasChanges
-                    ? 'white'
-                    : branding.textMuted,
-                fontSize: '12px',
-                fontWeight: 500,
-                cursor: hasChanges && !isSaving ? 'pointer' : 'default',
-              }}
+              icon={isSaving ? <Loader2 size={12} className="animate-spin" /> : saveSuccess ? <Check size={12} /> : <Save size={12} />}
+              className={saveSuccess ? 'bg-green-100 text-green-700 border-green-200' : ''}
             >
-              {isSaving ? (
-                <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
-              ) : saveSuccess ? (
-                <Check size={12} />
-              ) : (
-                <Save size={12} />
-              )}
               {saveSuccess ? 'Gespeichert!' : 'Speichern'}
-            </button>
+            </Button>
           </div>
         </div>
       )}
-
-      <style>
-        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
-      </style>
-    </div>
+    </Card>
   );
 };
 
 /**
+ * Generate More Button - Dashed button to generate additional items
+ */
+const GenerateMoreButton = ({ onClick, isGenerating }) => (
+  <button
+    onClick={onClick}
+    disabled={isGenerating}
+    className={`flex items-center justify-center gap-2 w-full py-3 px-4 mt-3 mb-2 rounded-xl
+      border border-dashed border-primary/40 bg-primary/5 text-primary text-[13px] font-medium
+      cursor-pointer transition-all
+      hover:bg-primary/10 hover:border-primary/60
+      disabled:cursor-wait disabled:opacity-60`}
+  >
+    {isGenerating ? (
+      <>
+        <Loader2 size={16} className="animate-spin" />
+        Generiere 5 weitere Punkte...
+      </>
+    ) : (
+      <>
+        <Sparkles size={16} />
+        5 weitere Punkte generieren
+      </>
+    )}
+  </button>
+);
+
+/**
  * Section Card Component - Handles both item-based and legacy markdown content
  */
-const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isExpanded, onToggle, branding }) => {
+const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onToggle }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Handle generate more click
   const handleGenerateMore = async () => {
     setIsGenerating(true);
     try {
@@ -575,88 +420,40 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
   const hasNotes = items.some(item => item.user_note && !item.deleted);
 
   return (
-    <div
-      style={{
-        backgroundColor: branding.cardBgColor,
-        borderRadius: branding.radius.xl,
-        boxShadow: branding.shadow.xs,
-        overflow: 'hidden',
-        marginBottom: branding.space[4],
-      }}
-    >
+    <Card className="mb-4 overflow-hidden p-0">
       {/* Section Header */}
       <button
         onClick={onToggle}
-        style={{
-          width: '100%',
-          padding: `${branding.space[4]} ${branding.space[5]}`,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: branding.space[2],
-          border: 'none',
-          background: 'none',
-          cursor: 'pointer',
-          borderBottom: isExpanded ? `1px solid ${branding.borderColorLight}` : 'none',
-        }}
+        className={`w-full px-5 py-4 flex items-start justify-between gap-2 border-none bg-transparent cursor-pointer ${
+          isExpanded ? 'border-b border-slate-100' : ''
+        }`}
       >
-        <h3
-          style={{
-            fontSize: branding.fontSize.lg,
-            fontWeight: branding.fontWeight.semibold,
-            color: branding.textMain,
-            margin: 0,
-            textAlign: 'left',
-            flex: 1,
-            minWidth: 0,
-            wordBreak: 'break-word',
-            lineHeight: 1.3,
-          }}
-        >
+        <h3 className="text-lg font-semibold text-slate-900 m-0 text-left flex-1 min-w-0 break-words leading-snug">
           {section.section_title}
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: branding.space[2], flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
           {type === 'items' && (
-            <span
-              style={{
-                fontSize: branding.fontSize.xs,
-                color: branding.textMuted,
-                backgroundColor: branding.borderColorLight,
-                padding: `${branding.space[1]} ${branding.space[2]}`,
-                borderRadius: branding.radius.lg,
-              }}
-            >
+            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
               {visibleItems.length} Punkte
             </span>
           )}
           {hasNotes && (
-            <span
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: branding.space[1],
-                fontSize: branding.fontSize.xs,
-                color: primaryAccent,
-                backgroundColor: `${primaryAccent}15`,
-                padding: `${branding.space[1]} ${branding.space[2]}`,
-                borderRadius: branding.radius.lg,
-              }}
-            >
-              <PenLine size={branding.iconSize.xs} />
+            <span className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded-lg">
+              <PenLine size={12} />
               Notizen
             </span>
           )}
           {isExpanded ? (
-            <ChevronUp size={branding.iconSize.lg} style={{ color: branding.textMuted }} />
+            <ChevronUp size={20} className="text-slate-400" />
           ) : (
-            <ChevronDown size={branding.iconSize.lg} style={{ color: branding.textMuted }} />
+            <ChevronDown size={20} className="text-slate-400" />
           )}
         </div>
       </button>
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div style={{ padding: `${branding.space[4]} ${branding.space[5]}` }}>
+        <div className="px-5 py-4">
           {type === 'items' ? (
             <>
               {/* Items list */}
@@ -665,73 +462,19 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
                   key={item.id}
                   item={item}
                   sectionId={section.id}
-                  primaryAccent={primaryAccent}
                   onUpdateItem={onUpdateItem}
-                  branding={branding}
                 />
               ))}
 
               {/* Generate more button */}
               {onGenerateMore && (
-                <button
-                  onClick={handleGenerateMore}
-                  disabled={isGenerating}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    marginTop: '12px',
-                    marginBottom: '8px',
-                    borderRadius: '10px',
-                    border: `1px dashed ${primaryAccent}40`,
-                    backgroundColor: `${primaryAccent}08`,
-                    color: primaryAccent,
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    cursor: isGenerating ? 'wait' : 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isGenerating) {
-                      e.currentTarget.style.backgroundColor = `${primaryAccent}15`;
-                      e.currentTarget.style.borderColor = `${primaryAccent}60`;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = `${primaryAccent}08`;
-                    e.currentTarget.style.borderColor = `${primaryAccent}40`;
-                  }}
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                      Generiere 5 weitere Punkte...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={16} />
-                      5 weitere Punkte generieren
-                    </>
-                  )}
-                </button>
+                <GenerateMoreButton onClick={handleGenerateMore} isGenerating={isGenerating} />
               )}
 
-              {/* Deleted items (collapsed) */}
+              {/* Deleted items */}
               {deletedItems.length > 0 && (
-                <div style={{ marginTop: '16px' }}>
-                  <div
-                    style={{
-                      fontSize: '12px',
-                      color: '#94a3b8',
-                      marginBottom: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}
-                  >
+                <div className="mt-4">
+                  <div className="text-xs text-slate-400 mb-2 flex items-center gap-1.5">
                     <Trash2 size={12} />
                     {deletedItems.length} gelöschte {deletedItems.length === 1 ? 'Punkt' : 'Punkte'}
                   </div>
@@ -740,9 +483,7 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
                       key={item.id}
                       item={item}
                       sectionId={section.id}
-                      primaryAccent={primaryAccent}
                       onUpdateItem={onUpdateItem}
-                      branding={branding}
                     />
                   ))}
                 </div>
@@ -750,42 +491,152 @@ const SectionCard = ({ section, primaryAccent, onUpdateItem, onGenerateMore, isE
             </>
           ) : type === 'markdown' ? (
             /* Legacy markdown content */
-            <div
-              style={{
-                backgroundColor: '#f8fafc',
-                padding: '16px',
-                borderRadius: '10px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <Bot size={16} style={{ color: primaryAccent }} />
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <div className="bg-slate-50 p-4 rounded-xl">
+              <div className="flex items-center gap-2 mb-3">
+                <Bot size={16} className="text-primary" />
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                   KI-Empfehlung
                 </span>
               </div>
-              <MarkdownContent content={content} primaryAccent={primaryAccent} />
+              <MarkdownContent content={content} />
             </div>
           ) : (
-            <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>Kein Inhalt verfügbar</p>
+            <p className="text-slate-400 italic">Kein Inhalt verfügbar</p>
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 };
 
 /**
- * BriefingWorkbook Component
- *
- * Displays a briefing with all sections and editable user notes per item
+ * Header Action Button - Icon button for header actions
  */
+const HeaderActionButton = ({ onClick, disabled, loading, icon: Icon, danger, title }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={`flex items-center justify-center rounded-lg px-3 py-2.5 border cursor-pointer outline-none transition-all
+      ${danger
+        ? 'bg-red-500/20 border-red-500/40 text-white hover:bg-red-500/30'
+        : 'bg-white/20 border-white/30 text-white hover:bg-white/30'
+      }
+      disabled:opacity-60 disabled:cursor-not-allowed`}
+  >
+    {loading ? (
+      <Loader2 size={16} className="animate-spin" />
+    ) : (
+      <Icon size={16} />
+    )}
+  </button>
+);
+
+/**
+ * Variables Panel - Collapsible display of briefing variables
+ */
+const VariablesPanel = ({ variables, isExpanded, onToggle }) => {
+  if (!variables || Object.keys(variables).length === 0) return null;
+
+  return (
+    <Card className="mb-5 p-4">
+      <button
+        onClick={onToggle}
+        className="flex items-center justify-between w-full p-0 border-none bg-transparent cursor-pointer"
+      >
+        <span className="text-sm font-semibold text-slate-900">
+          Deine Angaben ({Object.keys(variables).length})
+        </span>
+        <div className="flex items-center gap-1.5 text-slate-500">
+          <span className="text-xs">{isExpanded ? 'Einklappen' : 'Ausklappen'}</span>
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </div>
+      </button>
+
+      {isExpanded && (
+        <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+          {Object.entries(variables).map(([key, value]) => (
+            <span
+              key={key}
+              className="bg-slate-100 px-3 py-1.5 rounded-full text-xs text-slate-600"
+            >
+              <strong className="text-slate-900">{getVariableDisplayName(key)}:</strong> {value}
+            </span>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+};
+
+/**
+ * Delete Confirmation Dialog
+ */
+const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting }) => (
+  <AnimatePresence>
+    {isOpen && (
+      <>
+        {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/50 z-[1000]"
+        />
+        {/* Dialog */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 max-w-[400px] w-[90%] z-[1001] shadow-2xl"
+        >
+          <div className="text-center">
+            <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={24} className="text-red-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              Briefing löschen?
+            </h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Diese Aktion kann nicht rückgängig gemacht werden. Dein Briefing und alle Notizen werden dauerhaft gelöscht.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                onClick={onClose}
+                disabled={isDeleting}
+                fullWidth
+              >
+                Abbrechen
+              </Button>
+              <Button
+                variant="danger"
+                onClick={onConfirm}
+                disabled={isDeleting}
+                icon={isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                fullWidth
+              >
+                {isDeleting ? 'Löschen...' : 'Löschen'}
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </>
+    )}
+  </AnimatePresence>
+);
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 const BriefingWorkbook = ({
   briefing: initialBriefing,
   onBack,
   onDelete,
 }) => {
   const { config } = usePartner();
-  const b = useBranding();
   const isMobile = useMobile();
   const [briefing, setBriefing] = useState(initialBriefing);
   const [loading, setLoading] = useState(!initialBriefing?.sections);
@@ -796,16 +647,12 @@ const BriefingWorkbook = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
-  // Get primary accent color from branding
-  const primaryAccent = b.primaryAccent;
-  const headerGradient = b.headerGradient;
   const IconComponent = getIcon(briefing?.template_icon) || FileText;
 
   // Fetch full briefing with sections if needed
   useEffect(() => {
     const fetchBriefing = async () => {
       if (briefing?.sections) {
-        // Already have sections, expand all by default
         const expanded = {};
         briefing.sections.forEach((s) => {
           expanded[s.id] = true;
@@ -823,7 +670,6 @@ const BriefingWorkbook = ({
 
         if (response.success && response.data?.briefing) {
           setBriefing(response.data.briefing);
-          // Expand all sections by default
           const expanded = {};
           response.data.briefing.sections?.forEach((s) => {
             expanded[s.id] = true;
@@ -845,7 +691,6 @@ const BriefingWorkbook = ({
     }
   }, [briefing?.id]);
 
-  // Toggle section expansion
   const toggleSection = useCallback((sectionId) => {
     setExpandedSections((prev) => ({
       ...prev,
@@ -853,7 +698,6 @@ const BriefingWorkbook = ({
     }));
   }, []);
 
-  // Update item within a section
   const handleUpdateItem = useCallback(async (sectionId, itemId, data) => {
     const response = await wordpressAPI.request(
       `/smartbriefing/sections/${sectionId}/items/${itemId}`,
@@ -867,7 +711,6 @@ const BriefingWorkbook = ({
       throw new Error('Fehler beim Speichern');
     }
 
-    // Update local state with the updated section
     setBriefing((prev) => ({
       ...prev,
       sections: prev.sections.map((s) =>
@@ -876,7 +719,6 @@ const BriefingWorkbook = ({
     }));
   }, []);
 
-  // Generate more items for a section
   const handleGenerateMore = useCallback(async (sectionId) => {
     const response = await wordpressAPI.request(
       `/smartbriefing/sections/${sectionId}/generate-more`,
@@ -889,7 +731,6 @@ const BriefingWorkbook = ({
       throw new Error(response.message || 'Fehler beim Generieren');
     }
 
-    // Update local state with the updated section
     setBriefing((prev) => ({
       ...prev,
       sections: prev.sections.map((s) =>
@@ -900,7 +741,6 @@ const BriefingWorkbook = ({
     return response.data.new_items_count;
   }, []);
 
-  // Handle PDF download
   const handleDownloadPdf = useCallback(async () => {
     if (isDownloadingPdf || !briefing?.id) return;
 
@@ -915,7 +755,6 @@ const BriefingWorkbook = ({
         throw new Error(response.message || 'PDF-Export fehlgeschlagen');
       }
 
-      // Convert base64 to blob and download
       const byteCharacters = atob(response.data.pdf_base64);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -924,7 +763,6 @@ const BriefingWorkbook = ({
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: 'application/pdf' });
 
-      // Create download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -935,44 +773,41 @@ const BriefingWorkbook = ({
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('[SmartBriefing] PDF download error:', err);
-      // Could show a toast here
     } finally {
       setIsDownloadingPdf(false);
     }
   }, [briefing?.id, isDownloadingPdf]);
+
+  const handleDelete = async () => {
+    if (!onDelete || !briefing?.id) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(briefing);
+    } catch (err) {
+      console.error('Failed to delete briefing:', err);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   if (!briefing) {
     return null;
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: b.pageBg }}>
+    <div className="min-h-screen bg-slate-50">
       {/* Header - Full width sticky */}
-      <div style={{
-        background: headerGradient,
-        padding: isMobile ? '20px 16px' : '24px 32px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-      }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div
+        className="sticky top-0 z-40 px-4 py-5 md:px-8 md:py-6"
+        style={{ background: 'var(--header-gradient, linear-gradient(135deg, #3A7FA7 0%, #4A9BC7 100%))' }}
+      >
+        <div className="max-w-[1400px] mx-auto">
           {/* Back Button */}
           {onBack && (
             <button
               onClick={onBack}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(255,255,255,0.15)',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                cursor: 'pointer',
-                color: '#fff',
-                fontSize: '13px',
-                marginBottom: '16px',
-              }}
+              className="flex items-center gap-1.5 bg-white/15 border-none rounded-lg px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 transition-colors"
             >
               <ArrowLeft size={16} />
               Zurück zur Übersicht
@@ -980,64 +815,29 @@ const BriefingWorkbook = ({
           )}
 
           {/* Header Content */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '24px',
-          }}>
+          <div className="flex items-center gap-6">
             {/* Icon - Hidden on mobile */}
             {!isMobile && (
-              <div style={{
-                width: 90,
-                height: 90,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <IconComponent size={40} color="#fff" />
+              <div className="w-[90px] h-[90px] rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                <IconComponent size={40} className="text-white" />
               </div>
             )}
 
             {/* Title & Meta */}
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: 'rgba(255,255,255,0.2)',
-                  color: '#fff',
-                }}>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 flex-wrap mb-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
                   Smart Briefing
                 </span>
-                <span style={{
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: 'rgba(255,255,255,0.9)',
-                  color: primaryAccent,
-                }}>
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-primary">
                   {briefing.template_title}
                 </span>
               </div>
-              <h1 style={{
-                fontSize: isMobile ? '20px' : '24px',
-                fontWeight: 700,
-                color: '#fff',
-                margin: 0,
-                marginBottom: '8px',
-              }}>
+              <h1 className={`font-bold text-white m-0 mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                 {briefing.title || 'Briefing'}
               </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="flex items-center gap-1.5 text-[13px] text-white/80">
                   <Calendar size={14} />
                   {formatDateTime(briefing.created_at)}
                 </span>
@@ -1045,55 +845,21 @@ const BriefingWorkbook = ({
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
-              {/* PDF Download Button */}
-              <button
+            <div className="flex gap-2.5 flex-shrink-0">
+              <HeaderActionButton
                 onClick={handleDownloadPdf}
                 disabled={isDownloadingPdf}
+                loading={isDownloadingPdf}
+                icon={Download}
                 title="Als PDF herunterladen"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'rgba(255,255,255,0.2)',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '10px',
-                  padding: '10px 12px',
-                  cursor: isDownloadingPdf ? 'not-allowed' : 'pointer',
-                  color: '#fff',
-                  opacity: isDownloadingPdf ? 0.6 : 1,
-                  outline: 'none',
-                  WebkitAppearance: 'none',
-                }}
-              >
-                {isDownloadingPdf ? (
-                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                ) : (
-                  <Download size={16} />
-                )}
-              </button>
-
-              {/* Delete Button */}
+              />
               {onDelete && (
-                <button
+                <HeaderActionButton
                   onClick={() => setShowDeleteConfirm(true)}
-                  title="Briefing loschen"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(239,68,68,0.2)',
-                    border: '1px solid rgba(239,68,68,0.4)',
-                    borderRadius: '10px',
-                    padding: '10px 12px',
-                    cursor: 'pointer',
-                    color: '#fff',
-                    outline: 'none',
-                    WebkitAppearance: 'none',
-                  }}
-                >
-                  <Trash2 size={16} />
-                </button>
+                  icon={Trash2}
+                  danger
+                  title="Briefing löschen"
+                />
               )}
             </div>
           </div>
@@ -1101,312 +867,86 @@ const BriefingWorkbook = ({
       </div>
 
       {/* Main Content */}
-      <div style={{
-        maxWidth: '900px',
-        margin: '0 auto',
-        padding: isMobile ? '16px' : '24px 32px',
-      }}>
+      <div className={`max-w-[900px] mx-auto ${isMobile ? 'p-4' : 'px-8 py-6'}`}>
         {/* Collapsible Variables display */}
-        {briefing.variables && Object.keys(briefing.variables).length > 0 && (
-          <div
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '16px',
-              padding: '16px 20px',
-              marginBottom: '20px',
-              border: `1px solid ${b.borderColor}`,
-            }}
-          >
-            <button
-              onClick={() => setIsVariablesExpanded(!isVariablesExpanded)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                padding: '0',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: '14px', fontWeight: 600, color: b.textMain }}>
-                Deine Angaben ({Object.keys(briefing.variables).length})
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: b.textMuted }}>
-                <span style={{ fontSize: '12px' }}>{isVariablesExpanded ? 'Einklappen' : 'Ausklappen'}</span>
-                {isVariablesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </div>
-            </button>
+        <VariablesPanel
+          variables={briefing.variables}
+          isExpanded={isVariablesExpanded}
+          onToggle={() => setIsVariablesExpanded(!isVariablesExpanded)}
+        />
 
-            {isVariablesExpanded && (
-              <div
-                style={{
-                  marginTop: '12px',
-                  paddingTop: '12px',
-                  borderTop: `1px solid ${b.borderColor}`,
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px',
-                }}
-              >
-                {Object.entries(briefing.variables).map(([key, value]) => (
-                  <span
-                    key={key}
-                    style={{
-                      backgroundColor: b.cardBgHover,
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      color: b.textSecondary,
-                    }}
-                  >
-                    <strong style={{ color: b.textMain }}>{getVariableDisplayName(key)}:</strong> {value}
-                  </span>
-                ))}
-              </div>
-            )}
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 size={40} className="text-primary animate-spin" />
+            <p className="mt-4 text-slate-500">Briefing wird geladen...</p>
           </div>
         )}
 
-      {/* Loading State */}
-      {loading && (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '64px 24px',
-          }}
-        >
-          <Loader2
-            size={40}
-            style={{
-              color: primaryAccent,
-              animation: 'spin 1s linear infinite',
-            }}
-          />
-          <p style={{ marginTop: '16px', color: '#64748b' }}>
-            Briefing wird geladen...
-          </p>
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && !loading && (
-        <div
-          style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '12px',
-            padding: '24px',
-            textAlign: 'center',
-          }}
-        >
-          <p style={{ color: '#dc2626', margin: 0 }}>{error}</p>
-        </div>
-      )}
-
-      {/* Sections */}
-      {!loading && !error && briefing.sections && (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <Sparkles size={18} style={{ color: primaryAccent }} />
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', margin: 0 }}>
-              Briefing-Inhalte
-            </h2>
-            <span style={{ fontSize: '13px', color: '#94a3b8' }}>
-              ({briefing.sections.length} Abschnitte)
-            </span>
+        {/* Error State */}
+        {error && !loading && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <p className="text-red-600 m-0">{error}</p>
           </div>
+        )}
 
-          {briefing.sections.map((section) => (
-            <SectionCard
-              key={section.id}
-              section={section}
-              primaryAccent={primaryAccent}
-              onUpdateItem={handleUpdateItem}
-              onGenerateMore={handleGenerateMore}
-              isExpanded={expandedSections[section.id]}
-              onToggle={() => toggleSection(section.id)}
-              branding={b}
-            />
-          ))}
-        </div>
-      )}
+        {/* Sections */}
+        {!loading && !error && briefing.sections && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles size={18} className="text-primary" />
+              <h2 className="text-base font-semibold text-slate-900 m-0">
+                Briefing-Inhalte
+              </h2>
+              <span className="text-[13px] text-slate-400">
+                ({briefing.sections.length} Abschnitte)
+              </span>
+            </div>
 
-      {/* Fallback: Show markdown if no sections */}
-      {!loading && !error && (!briefing.sections || briefing.sections.length === 0) && briefing.content_markdown && (
-        <div
-          style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}
-        >
-          <MarkdownContent content={briefing.content_markdown} primaryAccent={primaryAccent} />
-        </div>
-      )}
+            {briefing.sections.map((section) => (
+              <SectionCard
+                key={section.id}
+                section={section}
+                onUpdateItem={handleUpdateItem}
+                onGenerateMore={handleGenerateMore}
+                isExpanded={expandedSections[section.id]}
+                onToggle={() => toggleSection(section.id)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Fallback: Show markdown if no sections */}
+        {!loading && !error && (!briefing.sections || briefing.sections.length === 0) && briefing.content_markdown && (
+          <Card className="p-6">
+            <MarkdownContent content={briefing.content_markdown} />
+          </Card>
+        )}
 
         {/* Info box */}
-        <div
-          style={{
-            marginTop: '24px',
-            padding: '16px 20px',
-            backgroundColor: `${primaryAccent}08`,
-            borderRadius: '12px',
-            border: `1px solid ${primaryAccent}20`,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            <Lightbulb size={18} style={{ color: primaryAccent, flexShrink: 0, marginTop: '2px' }} />
+        <div className="mt-6 px-5 py-4 bg-primary/5 rounded-xl border border-primary/20">
+          <div className="flex items-start gap-3">
+            <Lightbulb size={18} className="text-primary flex-shrink-0 mt-0.5" />
             <div>
-              <h4 style={{ margin: '0 0 4px 0', color: '#0f172a', fontSize: '14px', fontWeight: 600 }}>
+              <h4 className="m-0 mb-1 text-slate-900 text-sm font-semibold">
                 Tipp: Personalisiere dein Briefing
               </h4>
-              <p style={{ margin: 0, color: '#64748b', fontSize: '13px', lineHeight: 1.5 }}>
+              <p className="m-0 text-slate-500 text-[13px] leading-relaxed">
                 Klicke auf das Stift-Icon bei jedem Punkt, um deine eigenen Notizen hinzuzufügen.
                 Nicht relevante Punkte kannst du mit dem Papierkorb-Icon ausblenden.
               </p>
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Delete Confirmation Dialog */}
-      <AnimatePresence>
-        {showDeleteConfirm && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowDeleteConfirm(false)}
-              style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0,0,0,0.5)',
-                zIndex: 1000,
-              }}
-            />
-            {/* Dialog */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              style={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                background: '#fff',
-                borderRadius: '16px',
-                padding: '24px',
-                maxWidth: '400px',
-                width: '90%',
-                zIndex: 1001,
-                boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-              }}
-            >
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  background: 'rgba(239,68,68,0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 16px',
-                }}>
-                  <Trash2 size={24} color="#ef4444" />
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 600, color: b.textMain, marginBottom: '8px' }}>
-                  Briefing löschen?
-                </h3>
-                <p style={{ fontSize: '14px', color: b.textSecondary, marginBottom: '24px' }}>
-                  Diese Aktion kann nicht rückgängig gemacht werden. Dein Briefing und alle Notizen werden dauerhaft gelöscht.
-                </p>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={isDeleting}
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      borderRadius: '10px',
-                      border: `1px solid ${b.borderColor}`,
-                      background: '#fff',
-                      color: b.textMain,
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: isDeleting ? 'not-allowed' : 'pointer',
-                      opacity: isDeleting ? 0.5 : 1,
-                      outline: 'none',
-                      WebkitAppearance: 'none',
-                    }}
-                  >
-                    Abbrechen
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!onDelete || !briefing?.id) return;
-                      setIsDeleting(true);
-                      try {
-                        await onDelete(briefing);
-                      } catch (err) {
-                        console.error('Failed to delete briefing:', err);
-                      } finally {
-                        setIsDeleting(false);
-                        setShowDeleteConfirm(false);
-                      }
-                    }}
-                    disabled={isDeleting}
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      borderRadius: '10px',
-                      border: 'none',
-                      background: '#ef4444',
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: isDeleting ? 'not-allowed' : 'pointer',
-                      opacity: isDeleting ? 0.7 : 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      outline: 'none',
-                      WebkitAppearance: 'none',
-                    }}
-                  >
-                    {isDeleting ? (
-                      <>
-                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                        Löschen...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 size={16} />
-                        Löschen
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      <style>
-        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
-      </style>
+      <DeleteConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };
