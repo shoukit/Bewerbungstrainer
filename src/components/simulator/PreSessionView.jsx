@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
+import { useBranding } from '@/hooks/useBranding';
 
 // Icon mapping for dynamic tips from database
 const iconMap = {
@@ -52,8 +53,13 @@ const PreSessionView = ({
   primaryAccent,
   primaryAccentLight,
   isLoading,
-  branding
+  branding: brandingProp
 }) => {
+  // Get branding from hook (self-contained)
+  const b = useBranding();
+  // Use prop if provided, otherwise use hook values
+  const branding = brandingProp || b;
+
   // Mode-based labels
   const isSimulation = scenario?.mode === 'SIMULATION';
   const questionsLabel = isSimulation ? 'Situationen' : 'Fragen';

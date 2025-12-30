@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import AudioVisualizer from '@/components/ui/composite/AudioVisualizer';
 import SessionTimer from './SessionTimer';
+import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Audio Recorder Component - With Pause functionality
@@ -25,10 +26,13 @@ const SimulatorAudioRecorder = ({
   isSubmitting,
   labels,
   onOpenSettings,
-  branding,
+  branding: brandingProp,
   isMobile,
   onStreamChange
 }) => {
+  // Get branding from hook (self-contained)
+  const b = useBranding();
+  const branding = brandingProp || b;
   const [recordingState, setRecordingState] = useState('idle'); // 'idle' | 'recording' | 'paused'
   const [seconds, setSeconds] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);

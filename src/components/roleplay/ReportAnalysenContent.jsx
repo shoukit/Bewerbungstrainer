@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Play,
 } from 'lucide-react';
+import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Helper function to get confidence color scheme
@@ -76,7 +77,11 @@ const getTonalityVariance = (rating) => {
  * Analysen Tab Content for Session Reports
  * Displays confidence gauge, filler words, pacing, and tonality analysis
  */
-const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding, onJumpToTimestamp }) => {
+const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandingProp, onJumpToTimestamp }) => {
+  // Get branding from hook (self-contained)
+  const b = useBranding();
+  const branding = brandingProp || b;
+
   // Extract audio_metrics from the data (new format has it nested)
   const metrics = audioAnalysis?.audio_metrics || audioAnalysis;
 

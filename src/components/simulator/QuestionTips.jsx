@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { ChevronDown, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Question Tips Accordion Component
  * Displays collapsible tips for the current question/situation
  */
-const QuestionTips = ({ tips, primaryAccent, tipsLabel, branding }) => {
+const QuestionTips = ({ tips, primaryAccent, tipsLabel, branding: brandingProp }) => {
+  // Get branding from hook (self-contained)
+  const b = useBranding();
+  const branding = brandingProp || b;
   const [isOpen, setIsOpen] = useState(true); // Default: expanded
 
   if (!tips || tips.length === 0) return null;

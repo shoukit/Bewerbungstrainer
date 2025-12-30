@@ -1,12 +1,16 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
 import { formatDuration } from '@/utils/formatting';
+import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Session Timer Component
  * Displays recording time with warning states based on progress
  */
-const SessionTimer = ({ seconds, maxSeconds, isRecording, branding }) => {
+const SessionTimer = ({ seconds, maxSeconds, isRecording, branding: brandingProp }) => {
+  // Get branding from hook (self-contained)
+  const b = useBranding();
+  const branding = brandingProp || b;
   const progress = maxSeconds > 0 ? (seconds / maxSeconds) * 100 : 0;
   const isWarning = progress > 75;
   const isDanger = progress > 90;

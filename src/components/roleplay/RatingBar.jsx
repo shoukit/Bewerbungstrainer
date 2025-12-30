@@ -1,12 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { getScoreColor } from '@/config/colors';
+import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Rating Bar Component
  * Displays a horizontal progress bar with label and value
  */
-const RatingBar = ({ label, value, maxValue = 10, primaryAccent, branding }) => {
+const RatingBar = ({ label, value, maxValue = 10, primaryAccent, branding: brandingProp }) => {
+  // Get branding from hook (self-contained)
+  const b = useBranding();
+  const branding = brandingProp || b;
   const percentage = (value / maxValue) * 100;
   const displayValue = maxValue === 10 ? value * 10 : value;
   const color = getScoreColor(displayValue, primaryAccent);
