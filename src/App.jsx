@@ -138,6 +138,7 @@ const BrandingLoadingSpinner = () => {
 
   return (
     <div
+      className="fullscreen-loader"
       style={{
         position: 'fixed',
         top: 0,
