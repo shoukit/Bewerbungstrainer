@@ -52,3 +52,14 @@ export {
   StatusBadge,
   ScoreBadge,
 } from './Badge';
+
+// Dialog components
+export {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+  ConfirmDialog,
+} from './Dialog';
