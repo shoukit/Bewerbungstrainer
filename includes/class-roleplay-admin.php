@@ -184,7 +184,9 @@ class Bewerbungstrainer_Roleplay_Admin {
             $results = $this->db->migrate_from_posts();
             $query_args = array(
                 'page' => 'roleplay-scenarios',
-                'migrated' => $results['migrated'],
+                'migration_created' => $results['created'],
+                'migration_updated' => $results['updated'],
+                'migration_skipped' => $results['skipped'],
                 'migration_failed' => $results['failed'],
             );
             wp_redirect(add_query_arg($query_args, admin_url('admin.php')));
@@ -620,7 +622,7 @@ class Bewerbungstrainer_Roleplay_Admin {
             <a href="<?php echo admin_url('admin.php?page=roleplay-scenario-edit'); ?>" class="page-title-action">Neu hinzufügen</a>
             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=roleplay-scenarios&action=export_csv'), 'export_roleplay_scenarios'); ?>" class="page-title-action">CSV Export</a>
             <?php if ($cpt_total > 0): ?>
-                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=roleplay-scenarios&action=migrate_from_cpt'), 'migrate_roleplay_from_cpt'); ?>" class="page-title-action" style="background: #2271b1; color: white; border-color: #2271b1;" onclick="return confirm('<?php echo esc_js(sprintf('%d Szenario(s) aus Custom Post Types migrieren? Bestehende Szenarien werden NICHT überschrieben.', $cpt_total)); ?>')">
+                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=roleplay-scenarios&action=migrate_from_cpt'), 'migrate_roleplay_from_cpt'); ?>" class="page-title-action" style="background: #2271b1; color: white; border-color: #2271b1;" onclick="return confirm('<?php echo esc_js(sprintf('%d Szenario(s) aus Custom Post Types migrieren?\n\n• Neue Szenarien werden erstellt\n• Bestehende Szenarien: Nur LEERE Felder werden mit CPT-Daten gefüllt\n• Bereits gefüllte Felder bleiben unverändert', $cpt_total)); ?>')">
                     ⬆️ <?php echo $cpt_total; ?> CPT-Szenarien migrieren
                 </a>
             <?php endif; ?>
@@ -852,13 +854,24 @@ class Bewerbungstrainer_Roleplay_Admin {
             $count = intval($_GET['bulk_updated']);
             echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Szenario(s) aktualisiert.', $count) . '</p></div>';
         }
-        if (isset($_GET['migrated'])) {
-            $migrated = intval($_GET['migrated']);
-            $failed = isset($_GET['migration_failed']) ? intval($_GET['migration_failed']) : 0;
+        if (isset($_GET['migration_created']) || isset($_GET['migration_updated'])) {
+            $created = intval($_GET['migration_created'] ?? 0);
+            $updated = intval($_GET['migration_updated'] ?? 0);
+            $skipped = intval($_GET['migration_skipped'] ?? 0);
+            $failed = intval($_GET['migration_failed'] ?? 0);
+
+            $parts = array();
+            if ($created > 0) $parts[] = sprintf('%d neu erstellt', $created);
+            if ($updated > 0) $parts[] = sprintf('%d aktualisiert (leere Felder gefüllt)', $updated);
+            if ($skipped > 0) $parts[] = sprintf('%d übersprungen (alle Felder bereits gefüllt)', $skipped);
+            if ($failed > 0) $parts[] = sprintf('%d fehlgeschlagen', $failed);
+
+            $message = 'CPT-Migration abgeschlossen: ' . implode(', ', $parts);
+
             if ($failed > 0) {
-                echo '<div class="notice notice-warning is-dismissible"><p>' . sprintf('%d Szenario(s) aus CPT migriert, %d fehlgeschlagen.', $migrated, $failed) . '</p></div>';
+                echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html($message) . '</p></div>';
             } else {
-                echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Szenario(s) erfolgreich aus Custom Post Types migriert!', $migrated) . '</p></div>';
+                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
             }
         }
         if (isset($_GET['error']) && $_GET['error'] === 'no_selection') {

@@ -478,7 +478,25 @@ class Bewerbungstrainer_Roleplay_Database {
     }
 
     /**
+     * Find scenario by title
+     *
+     * @param string $title Scenario title
+     * @return object|null Scenario object or null
+     */
+    public function get_scenario_by_title($title) {
+        global $wpdb;
+
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_scenarios} WHERE title = %s LIMIT 1",
+                $title
+            )
+        );
+    }
+
+    /**
      * Migrate from WordPress Custom Post Type to new table
+     * Updates empty fields in existing scenarios, creates new ones if not found
      *
      * @return array Migration result with counts
      */
@@ -487,7 +505,9 @@ class Bewerbungstrainer_Roleplay_Database {
 
         $results = array(
             'total' => 0,
-            'migrated' => 0,
+            'created' => 0,
+            'updated' => 0,
+            'skipped' => 0,
             'failed' => 0,
             'errors' => array(),
         );
@@ -550,7 +570,8 @@ class Bewerbungstrainer_Roleplay_Database {
                 $input_configuration = get_post_meta($post->ID, '_roleplay_variables_schema', true) ?: '[]';
             }
 
-            $data = array(
+            // Collect CPT data
+            $cpt_data = array(
                 'title' => $post->post_title,
                 'description' => get_post_meta($post->ID, '_roleplay_description', true),
                 'long_description' => get_post_meta($post->ID, '_roleplay_long_description', true),
@@ -579,23 +600,68 @@ class Bewerbungstrainer_Roleplay_Database {
                 'sort_order' => $post->menu_order,
             );
 
-            error_log('[ROLEPLAY MIGRATION] Migrating: ' . $post->post_title);
+            // Check if scenario with same title exists
+            $existing = $this->get_scenario_by_title($post->post_title);
 
-            $scenario_id = $this->create_scenario($data);
+            if ($existing) {
+                // Update only empty fields in existing scenario
+                $update_data = array();
+                $fields_to_check = array(
+                    'description', 'long_description', 'target_audience',
+                    'agent_id', 'voice_id', 'initial_message', 'system_prompt',
+                    'feedback_prompt', 'ai_instructions',
+                    'interviewer_name', 'interviewer_role', 'interviewer_image',
+                    'interviewer_properties', 'interviewer_objections', 'interviewer_questions',
+                    'coaching_hints'
+                );
 
-            if ($scenario_id) {
-                $results['migrated']++;
-                // Store mapping for reference
-                update_post_meta($post->ID, '_migrated_to_scenario_id', $scenario_id);
-                error_log('[ROLEPLAY MIGRATION] Migrated post ' . $post->ID . ' to scenario ' . $scenario_id);
+                foreach ($fields_to_check as $field) {
+                    // Check if existing field is empty and CPT has data
+                    $existing_value = $existing->$field ?? '';
+                    $cpt_value = $cpt_data[$field] ?? '';
+
+                    if (empty($existing_value) && !empty($cpt_value)) {
+                        $update_data[$field] = $cpt_value;
+                    }
+                }
+
+                if (!empty($update_data)) {
+                    $update_result = $this->update_scenario($existing->id, $update_data);
+                    if ($update_result) {
+                        $results['updated']++;
+                        $updated_fields = implode(', ', array_keys($update_data));
+                        error_log('[ROLEPLAY MIGRATION] Updated scenario ' . $existing->id . ' (' . $post->post_title . ') - Fields: ' . $updated_fields);
+                        update_post_meta($post->ID, '_migrated_to_scenario_id', $existing->id);
+                    } else {
+                        $results['failed']++;
+                        $results['errors'][] = "Failed to update scenario ID {$existing->id}: {$post->post_title}";
+                    }
+                } else {
+                    $results['skipped']++;
+                    error_log('[ROLEPLAY MIGRATION] Skipped (no empty fields to fill): ' . $post->post_title);
+                }
             } else {
-                $results['failed']++;
-                $results['errors'][] = "Failed to migrate post ID {$post->ID}: {$post->post_title}";
-                error_log('[ROLEPLAY MIGRATION] Failed to migrate post ' . $post->ID);
+                // Create new scenario
+                error_log('[ROLEPLAY MIGRATION] Creating new: ' . $post->post_title);
+
+                $scenario_id = $this->create_scenario($cpt_data);
+
+                if ($scenario_id) {
+                    $results['created']++;
+                    update_post_meta($post->ID, '_migrated_to_scenario_id', $scenario_id);
+                    error_log('[ROLEPLAY MIGRATION] Created scenario ' . $scenario_id . ' from post ' . $post->ID);
+                } else {
+                    $results['failed']++;
+                    $results['errors'][] = "Failed to create scenario from post ID {$post->ID}: {$post->post_title}";
+                    error_log('[ROLEPLAY MIGRATION] Failed to create from post ' . $post->ID);
+                }
             }
         }
 
-        error_log('[ROLEPLAY MIGRATION] Complete. Migrated: ' . $results['migrated'] . ', Failed: ' . $results['failed']);
+        // For backwards compatibility, set migrated = created + updated
+        $results['migrated'] = $results['created'] + $results['updated'];
+
+        error_log('[ROLEPLAY MIGRATION] Complete. Created: ' . $results['created'] . ', Updated: ' . $results['updated'] . ', Skipped: ' . $results['skipped'] . ', Failed: ' . $results['failed']);
 
         return $results;
     }
