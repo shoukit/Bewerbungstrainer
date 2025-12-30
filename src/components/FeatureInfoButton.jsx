@@ -44,11 +44,11 @@ const FeatureInfoButton = ({
     return null;
   }
 
-  // Size configurations - compact sizes for dashboard cards
+  // Size configurations - balanced sizes for visibility
   const sizes = {
-    sm: { button: 28, icon: 16 },
-    md: { button: 32, icon: 18 },
-    lg: { button: 40, icon: 22 },
+    sm: { button: 32, icon: 18 },
+    md: { button: 38, icon: 22 },
+    lg: { button: 46, icon: 26 },
   };
 
   const sizeConfig = sizes[size] || sizes.md;
