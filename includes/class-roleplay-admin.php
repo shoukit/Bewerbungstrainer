@@ -547,13 +547,17 @@ class Bewerbungstrainer_Roleplay_Admin {
                 'agent_id' => sanitize_text_field($data['agent_id'] ?? ''),
                 'voice_id' => sanitize_text_field($data['voice_id'] ?? ''),
                 'initial_message' => $restore_newlines($data['initial_message'] ?? ''),
-                // Support both 'system_prompt' and 'content' column names
-                'system_prompt' => $restore_newlines($data['system_prompt'] ?? $data['content'] ?? ''),
+                // Support both 'system_prompt' and 'content' column names (use empty() not ??)
+                'system_prompt' => $restore_newlines(
+                    !empty($data['system_prompt']) ? $data['system_prompt'] :
+                    (!empty($data['content']) ? $data['content'] : '')
+                ),
                 'feedback_prompt' => $restore_newlines($data['feedback_prompt'] ?? ''),
                 'ai_instructions' => $restore_newlines($data['ai_instructions'] ?? ''),
-                'tips' => $data['tips'] ?? '[]',
-                // Support both 'input_configuration' and 'variables_schema' column names
-                'input_configuration' => $data['input_configuration'] ?? $data['variables_schema'] ?? '[]',
+                'tips' => !empty($data['tips']) ? $data['tips'] : '[]',
+                // Support both 'input_configuration' and 'variables_schema' column names (use empty() not ??)
+                'input_configuration' => !empty($data['input_configuration']) ? $data['input_configuration'] :
+                    (!empty($data['variables_schema']) ? $data['variables_schema'] : '[]'),
                 'interviewer_name' => sanitize_text_field($restore_newlines($data['interviewer_name'] ?? '')),
                 'interviewer_role' => sanitize_text_field($restore_newlines($data['interviewer_role'] ?? '')),
                 'interviewer_image' => esc_url_raw($data['interviewer_image'] ?? ''),
@@ -561,8 +565,8 @@ class Bewerbungstrainer_Roleplay_Admin {
                 'interviewer_objections' => sanitize_textarea_field($restore_newlines($data['interviewer_objections'] ?? '')),
                 'interviewer_questions' => sanitize_textarea_field($restore_newlines($data['interviewer_questions'] ?? '')),
                 'coaching_hints' => sanitize_textarea_field($restore_newlines($data['coaching_hints'] ?? '')),
-                // Support both 'is_active' (0/1) and 'status' (publish/draft) column names
-                'is_active' => isset($data['status'])
+                // Support both 'is_active' (0/1) and 'status' (publish/draft) column names (use !empty() not isset())
+                'is_active' => !empty($data['status'])
                     ? ($data['status'] === 'publish' ? 1 : 0)
                     : intval($data['is_active'] ?? 1),
                 'sort_order' => intval($data['sort_order'] ?? 0),
