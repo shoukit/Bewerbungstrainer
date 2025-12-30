@@ -175,6 +175,22 @@ class Bewerbungstrainer_Roleplay_Admin {
             $this->handle_bulk_action();
         }
 
+        // Handle migration from CPT
+        if (isset($_GET['action']) && $_GET['action'] === 'migrate_from_cpt') {
+            if (!wp_verify_nonce($_GET['_wpnonce'], 'migrate_roleplay_from_cpt')) {
+                wp_die('Security check failed');
+            }
+
+            $results = $this->db->migrate_from_posts();
+            $query_args = array(
+                'page' => 'roleplay-scenarios',
+                'migrated' => $results['migrated'],
+                'migration_failed' => $results['failed'],
+            );
+            wp_redirect(add_query_arg($query_args, admin_url('admin.php')));
+            exit;
+        }
+
         // Handle form submission
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['roleplay_scenario_nonce'])) {
             if (!wp_verify_nonce($_POST['roleplay_scenario_nonce'], 'save_roleplay_scenario')) {
@@ -592,11 +608,22 @@ class Bewerbungstrainer_Roleplay_Admin {
         // Show notices
         $this->render_admin_notices();
 
+        // Check for CPT scenarios that can be migrated
+        $cpt_count = wp_count_posts('roleplay_scenario');
+        $cpt_total = isset($cpt_count->publish) ? $cpt_count->publish : 0;
+        $cpt_total += isset($cpt_count->draft) ? $cpt_count->draft : 0;
+        $cpt_total += isset($cpt_count->private) ? $cpt_count->private : 0;
+
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline">Live-Simulationen</h1>
             <a href="<?php echo admin_url('admin.php?page=roleplay-scenario-edit'); ?>" class="page-title-action">Neu hinzufügen</a>
             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=roleplay-scenarios&action=export_csv'), 'export_roleplay_scenarios'); ?>" class="page-title-action">CSV Export</a>
+            <?php if ($cpt_total > 0): ?>
+                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=roleplay-scenarios&action=migrate_from_cpt'), 'migrate_roleplay_from_cpt'); ?>" class="page-title-action" style="background: #2271b1; color: white; border-color: #2271b1;" onclick="return confirm('<?php echo esc_js(sprintf('%d Szenario(s) aus Custom Post Types migrieren? Bestehende Szenarien werden NICHT überschrieben.', $cpt_total)); ?>')">
+                    ⬆️ <?php echo $cpt_total; ?> CPT-Szenarien migrieren
+                </a>
+            <?php endif; ?>
             <hr class="wp-header-end">
 
             <!-- Filter Bar -->
@@ -824,6 +851,15 @@ class Bewerbungstrainer_Roleplay_Admin {
         if (isset($_GET['bulk_updated'])) {
             $count = intval($_GET['bulk_updated']);
             echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Szenario(s) aktualisiert.', $count) . '</p></div>';
+        }
+        if (isset($_GET['migrated'])) {
+            $migrated = intval($_GET['migrated']);
+            $failed = isset($_GET['migration_failed']) ? intval($_GET['migration_failed']) : 0;
+            if ($failed > 0) {
+                echo '<div class="notice notice-warning is-dismissible"><p>' . sprintf('%d Szenario(s) aus CPT migriert, %d fehlgeschlagen.', $migrated, $failed) . '</p></div>';
+            } else {
+                echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Szenario(s) erfolgreich aus Custom Post Types migriert!', $migrated) . '</p></div>';
+            }
         }
         if (isset($_GET['error']) && $_GET['error'] === 'no_selection') {
             echo '<div class="notice notice-warning is-dismissible"><p>Bitte wähle mindestens ein Szenario aus.</p></div>';
