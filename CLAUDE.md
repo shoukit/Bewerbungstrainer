@@ -1179,24 +1179,35 @@ UI_TIMING.ANIMATION_DURATION_NORMAL = 0.4
 
 ## Code-Konventionen
 
-### ⚠️ WICHTIG: Styling-Entscheidung
+### ⚠️ WICHTIG: Styling-Standard (Tailwind CSS)
 
-**Dieses Projekt verwendet primär INLINE STYLES**, nicht Tailwind-Klassen. Das ist eine bewusste Entscheidung für Konsistenz.
+**Tailwind CSS** ist der Standard für dieses Projekt.
 
 ```jsx
-// ✅ RICHTIG: Inline Styles (Standard in diesem Projekt)
-<div style={{
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  padding: '24px',
-}}>
+// ✅ RICHTIG: Tailwind (für neue Komponenten und Migrationen)
+<button className="flex items-center gap-2 px-4 py-3
+                   bg-primary text-white rounded-xl
+                   hover:bg-primary/90 transition-all">
 
-// ❌ VERMEIDEN: Tailwind-Klassen (nur in ui/ Komponenten)
-<div className="flex items-center gap-3 p-6">
+// ⚠️ LEGACY: Inline Styles (nicht aktiv ändern, nur bei Bedarf migrieren)
+<button style={{ padding: '12px 16px', backgroundColor: '#3A7FA7' }}>
 ```
 
-**Ausnahme**: Die Basis-UI-Komponenten in `src/components/ui/` dürfen Tailwind verwenden.
+**Regeln:**
+1. **Neue Komponenten** → Immer Tailwind verwenden
+2. **Bestehende Komponenten bearbeiten** → Schrittweise auf Tailwind migrieren
+3. **Nur lesen/kleine Fixes** → Bestehenden Stil belassen
+
+**Warum Tailwind?**
+- Hover/Focus: `hover:bg-blue-600` statt JS-State
+- Responsive: `md:flex lg:grid` eingebaut
+- Kleinere Bundle-Size (Klassen wiederverwendet)
+- Konsistenz durch feste Utility-Klassen
+
+**IST-Zustand (historisch gewachsen):**
+- ~64% Inline Styles (Legacy)
+- ~36% Tailwind Classes
+- Migration erfolgt schrittweise bei Bedarf
 
 ---
 
@@ -1306,23 +1317,34 @@ export default MyComponent;
 | Konstanten | camelCase | `constants.js` |
 | PHP-Klassen | kebab-case mit `class-` | `class-database.php` |
 
-### Design Tokens
+### Design Tokens & Tailwind
 
-**Verwende die zentralen Design-Tokens** aus `src/config/`:
+**Bei Tailwind:** Nutze die Standard-Klassen oder erweitere `tailwind.config.js`:
 
 ```jsx
+// ✅ Tailwind Standard-Klassen
+<div className="text-slate-600 rounded-xl p-6 transition-all">
+
+// ✅ Custom Tailwind (in tailwind.config.js definiert)
+<button className="bg-primary text-white rounded-card">
+
+// ⚠️ Legacy: Design Tokens aus config (nur bei Inline Styles)
 import { COLORS } from '@/config/colors';
-import { RADIUS, SPACING, TRANSITIONS } from '@/config/designTokens';
+style={{ color: COLORS.slate[600] }}
+```
 
-// ✅ Richtig
-style={{
-  color: COLORS.slate[600],
-  borderRadius: RADIUS.lg,
-  transition: TRANSITIONS.normal,
-}}
-
-// ❌ Vermeiden: Hardcoded Werte
-style={{ color: '#64748b', borderRadius: '12px' }}
+**Tailwind Config erweitern** (`tailwind.config.js`):
+```js
+theme: {
+  extend: {
+    colors: {
+      primary: 'var(--primary-accent)', // Partner-Theming
+    },
+    borderRadius: {
+      'card': '16px',
+    }
+  }
+}
 ```
 
 ### Console Logging
