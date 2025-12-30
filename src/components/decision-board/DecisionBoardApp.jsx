@@ -53,6 +53,13 @@ const DecisionBoardApp = ({
     window.scrollTo(0, 0);
   }, [currentView]);
 
+  // Require authentication to use this feature
+  useEffect(() => {
+    if (!isAuthenticated && requireAuth) {
+      requireAuth();
+    }
+  }, [isAuthenticated, requireAuth]);
+
   /**
    * Save session immediately (called when topic changes)
    */

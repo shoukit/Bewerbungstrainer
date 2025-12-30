@@ -110,6 +110,13 @@ const IkigaiApp = ({
     window.scrollTo(0, 0);
   }, [currentView]);
 
+  // Require authentication to use this feature
+  useEffect(() => {
+    if (!isAuthenticated && requireAuth) {
+      requireAuth();
+    }
+  }, [isAuthenticated, requireAuth]);
+
   // Check if all dimensions have tags
   const allDimensionsFilled = Object.values(dimensions).every(
     (dim) => dim.tags && dim.tags.length > 0
