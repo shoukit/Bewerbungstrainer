@@ -33,6 +33,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, LayoutGrid, List } from 'lucide-react';
+import { useBranding } from '@/hooks/useBranding';
 
 // =============================================================================
 // DIFFICULTY CONFIGURATION
