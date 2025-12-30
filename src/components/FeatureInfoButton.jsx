@@ -44,11 +44,11 @@ const FeatureInfoButton = ({
     return null;
   }
 
-  // Size configurations - moderately larger icons (about 1.4x original)
+  // Size configurations - compact sizes for dashboard cards
   const sizes = {
-    sm: { button: 52, icon: 36 },   // Was 40/26, now ~1.4x
-    md: { button: 60, icon: 44 },   // Was 48/32, now ~1.4x
-    lg: { button: 72, icon: 52 },   // Was 56/38, now ~1.4x
+    sm: { button: 28, icon: 16 },
+    md: { button: 32, icon: 18 },
+    lg: { button: 40, icon: 22 },
   };
 
   const sizeConfig = sizes[size] || sizes.md;
@@ -113,12 +113,12 @@ const FeatureInfoButton = ({
           justifyContent: 'center',
           transition: TRANSITIONS.normal,
           flexShrink: 0,
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           transform: isHovered ? 'scale(1.08)' : 'scale(1)',
           ...style,
         }}
       >
-        <Info size={sizeConfig.icon} strokeWidth={2.5} />
+        <Info size={sizeConfig.icon} strokeWidth={2} />
       </button>
 
       {/* Render modal via portal to ensure it's always at body level */}
