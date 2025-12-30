@@ -7,12 +7,34 @@ export default {
   ],
   theme: {
     extend: {
+      // ===========================================
+      // BORDER RADIUS (from designTokens.js)
+      // ===========================================
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        // Custom radius values
+        'card': '16px',      // RADIUS.xl - für Cards
+        'card-sm': '12px',   // RADIUS.lg - für kleine Cards
+        'button': '10px',    // RADIUS.md - für Buttons
+        'input': '8px',      // RADIUS.sm - für Inputs
       },
+      // ===========================================
+      // BOX SHADOWS (from designTokens.js)
+      // ===========================================
+      boxShadow: {
+        'card': '0 4px 12px rgba(0, 0, 0, 0.08)',      // SHADOWS.md
+        'card-hover': '0 10px 25px rgba(0, 0, 0, 0.12)', // SHADOWS.lg
+        'dialog': '0 20px 40px rgba(0, 0, 0, 0.15)',   // SHADOWS.xl
+        'subtle': '0 2px 8px rgba(0, 0, 0, 0.06)',     // SHADOWS.sm
+      },
+      // ===========================================
+      // COLORS
+      // ===========================================
       colors: {
+        // Partner-Theming (CSS Variable from branding)
+        'brand': 'var(--primary-accent, #3A7FA7)',
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

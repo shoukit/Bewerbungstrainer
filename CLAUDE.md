@@ -1179,6 +1179,101 @@ UI_TIMING.ANIMATION_DURATION_NORMAL = 0.4
 
 ## Code-Konventionen
 
+### ⚠️ WICHTIG: Styling-Standard (Tailwind CSS)
+
+**Tailwind CSS** ist der Standard für dieses Projekt.
+
+```jsx
+// ✅ RICHTIG: Tailwind (für neue Komponenten und Migrationen)
+<button className="flex items-center gap-2 px-4 py-3
+                   bg-primary text-white rounded-xl
+                   hover:bg-primary/90 transition-all">
+
+// ⚠️ LEGACY: Inline Styles (nicht aktiv ändern, nur bei Bedarf migrieren)
+<button style={{ padding: '12px 16px', backgroundColor: '#3A7FA7' }}>
+```
+
+**Regeln:**
+1. **Neue Komponenten** → Immer Tailwind verwenden
+2. **Bestehende Komponenten bearbeiten** → Schrittweise auf Tailwind migrieren
+3. **Nur lesen/kleine Fixes** → Bestehenden Stil belassen
+
+**Warum Tailwind?**
+- Hover/Focus: `hover:bg-blue-600` statt JS-State
+- Responsive: `md:flex lg:grid` eingebaut
+- Kleinere Bundle-Size (Klassen wiederverwendet)
+- Konsistenz durch feste Utility-Klassen
+
+**IST-Zustand (historisch gewachsen):**
+- ~64% Inline Styles (Legacy)
+- ~36% Tailwind Classes
+- Migration erfolgt schrittweise bei Bedarf
+
+---
+
+### Komponenten-Patterns
+
+#### 1. Dashboard-Komponenten
+
+**Für Szenarien-basierte Features** → `ScenarioDashboard` verwenden:
+```jsx
+// ✅ SimulatorDashboard, RoleplayDashboard, SmartBriefingDashboard, VideoTrainingDashboard
+<ScenarioDashboard
+  title="Feature-Name"
+  subtitle="Beschreibung"
+  headerIcon={Icon}
+  headerActions={<FeatureInfoButton featureId="xxx" size="sm" />}
+  fetchScenarios={fetchFunction}
+  moduleKey="module_key"
+  historyButtonLabel="Meine Sessions"
+  onNavigateToHistory={navigateFunction}  // ⚠️ NICHT VERGESSEN!
+  // ... weitere Props
+/>
+```
+
+**Für spezielle Features** (IkigaiApp, DecisionBoardApp) → Eigene Struktur, aber gleiche Header-Logik.
+
+#### 2. Feature-Info System
+
+Jedes Feature braucht:
+```jsx
+// 1. Modal beim ersten Besuch (auto-show)
+<FeatureInfoModal featureId="featurename" showOnMount />
+
+// 2. Info-Button im Header (manuell öffnen)
+headerActions={<FeatureInfoButton featureId="featurename" size="sm" />}
+
+// 3. Eintrag in featureDescriptions.js
+```
+
+#### 3. Auth-geschützte Features
+
+```jsx
+// Für Features die Login erfordern (Ikigai, DecisionBoard):
+useEffect(() => {
+  if (!isAuthenticated && requireAuth) {
+    requireAuth();
+  }
+}, [isAuthenticated, requireAuth]);
+```
+
+---
+
+### Props-Checkliste
+
+Beim Hinzufügen neuer Features in `App.jsx`, IMMER prüfen:
+
+```jsx
+<FeatureApp
+  isAuthenticated={isAuthenticated}      // ✅ Auth-Status
+  requireAuth={requireAuth}              // ✅ Login-Funktion
+  setPendingAction={setPendingAction}    // ✅ Für Post-Login-Actions
+  onNavigateToHistory={() => navigate(ROUTES.HISTORY)}  // ⚠️ OFT VERGESSEN!
+/>
+```
+
+---
+
 ### JavaScript/React
 
 ```javascript
@@ -1203,7 +1298,7 @@ function MyComponent({ prop1, prop2, onAction }) {
 
   // Render
   return (
-    <div className="tailwind-classes">
+    <div style={{ padding: '24px' }}>
       {/* JSX */}
     </div>
   );
@@ -1222,35 +1317,58 @@ export default MyComponent;
 | Konstanten | camelCase | `constants.js` |
 | PHP-Klassen | kebab-case mit `class-` | `class-database.php` |
 
-### CSS mit Tailwind
+### Design Tokens & Tailwind
+
+**Bei Tailwind:** Nutze die Standard-Klassen oder erweitere `tailwind.config.js`:
 
 ```jsx
-// Utility-Klassen direkt im JSX
-<button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-  Button
-</button>
+// ✅ Tailwind Standard-Klassen
+<div className="text-slate-600 rounded-xl p-6 transition-all">
 
-// Mit cn() für bedingte Klassen
-import { cn } from '@/lib/utils';
+// ✅ Custom Tailwind (in tailwind.config.js definiert)
+<button className="bg-primary text-white rounded-card">
 
-<div className={cn(
-  "base-classes",
-  isActive && "active-classes",
-  variant === 'primary' && "primary-classes"
-)}>
+// ⚠️ Legacy: Design Tokens aus config (nur bei Inline Styles)
+import { COLORS } from '@/config/colors';
+style={{ color: COLORS.slate[600] }}
+```
+
+**Tailwind Config erweitern** (`tailwind.config.js`):
+```js
+theme: {
+  extend: {
+    colors: {
+      primary: 'var(--primary-accent)', // Partner-Theming
+    },
+    borderRadius: {
+      'card': '16px',
+    }
+  }
+}
 ```
 
 ### Console Logging
 
 ```javascript
-// Einheitliches Format mit Emoji-Präfixen
+// Einheitliches Format mit Präfixen
 console.log('[APP] Module loaded');
 console.log('[GEMINI] Starting request...');
 console.log('[SUCCESS] Operation completed');
 console.log('[ERROR] Something failed:', error);
 console.log('[WARN] Potential issue');
-console.log('[RETRY] Trying again...');
 ```
+
+---
+
+### Häufige Fehler vermeiden
+
+| Fehler | Lösung |
+|--------|--------|
+| `onNavigateToHistory` nicht übergeben | Immer in App.jsx bei Route prüfen |
+| History-Button fehlt | `showHistoryButton` und `onNavigateToHistory` Props setzen |
+| Feature-Info fehlt | `FeatureInfoModal` + `FeatureInfoButton` + Eintrag in config |
+| Inkonsistentes Styling | Inline Styles verwenden, nicht Tailwind |
+| Hardcoded Farben | `COLORS` aus config verwenden |
 
 ---
 
