@@ -417,6 +417,9 @@ class Bewerbungstrainer_Roleplay_Admin {
      * Export scenarios to CSV
      */
     private function export_scenarios_csv() {
+        // Ensure schema is up to date before export
+        $this->db->maybe_create_tables();
+
         $scenarios = $this->db->get_scenarios(array('is_active' => null));
 
         $filename = 'roleplay-scenarios-' . date('Y-m-d-His') . '.csv';
