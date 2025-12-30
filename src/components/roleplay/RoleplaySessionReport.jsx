@@ -25,6 +25,7 @@ import {
   Download,
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
+import { useBranding } from '@/hooks/useBranding';
 import { getScoreColor } from '@/config/colors';
 import { formatDuration } from '@/utils/formatting';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
@@ -85,16 +86,24 @@ const RoleplaySessionReport = ({
   onRepeat,
   onDelete,
   isLoading: isLoadingProp = false,
-  primaryAccent,
-  headerGradient,
-  pageBg = '#f8fafc',
-  textMain = '#0f172a',
-  textSecondary = '#64748b',
-  textMuted = '#94a3b8',
-  cardBg = '#ffffff',
-  borderColor = '#e2e8f0',
-  cardBgHover = '#f1f5f9',
+  // Optional branding overrides - defaults come from useBranding hook
+  primaryAccent: primaryAccentProp,
+  headerGradient: headerGradientProp,
 }) => {
+  // Get branding from hook (self-contained - works without props)
+  const b = useBranding();
+
+  // Use props if provided, otherwise use branding from hook
+  const primaryAccent = primaryAccentProp || b.primaryAccent;
+  const headerGradient = headerGradientProp || b.headerGradient;
+  const pageBg = b.pageBg;
+  const textMain = b.textMain;
+  const textSecondary = b.textSecondary;
+  const textMuted = b.textMuted;
+  const cardBg = b.cardBg;
+  const borderColor = b.borderColor;
+  const cardBgHover = b.cardBgHover;
+
   const isMobile = useMobile(768);
   const audioSeekRef = useRef(null);
   const [activeTab, setActiveTab] = useState(TABS.COACHING);
