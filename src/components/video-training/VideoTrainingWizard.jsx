@@ -1,9 +1,16 @@
+/**
+ * VideoTrainingWizard - Configuration view before starting video training
+ *
+ * Migrated to Tailwind CSS for consistent styling.
+ */
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft, Video, Info, Loader2, AlertCircle, ChevronRight, Settings, Sparkles, Mic, Camera, ChevronDown, RefreshCw, Target, Lightbulb, Brain, MessageSquare, CheckCircle, Clock } from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { motion } from 'framer-motion';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import FullscreenLoader from '@/components/ui/composite/fullscreen-loader';
+import { Button, Card } from '@/components/ui';
 
 /**
  * Icon mapping for dynamic tip icons from backend
@@ -60,8 +67,6 @@ const DeviceSelector = ({
   isLoading,
   error,
   onRefresh,
-  primaryAccent,
-  themedGradient
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -90,61 +95,37 @@ const DeviceSelector = ({
   };
 
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+    <div className="relative">
+      <div className="flex flex-wrap gap-3">
         {/* Dropdown button */}
         <button
           type="button"
           onClick={() => !isLoading && setIsOpen(!isOpen)}
           disabled={isLoading}
-          style={{
-            flex: '1 1 250px',
-            minWidth: '200px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            border: `2px solid ${error ? '#ef4444' : '#e2e8f0'}`,
-            backgroundColor: error ? '#fef2f2' : '#fff',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.6 : 1,
-            transition: 'all 0.2s',
-          }}
+          className={`flex-1 min-w-[200px] flex items-center justify-between gap-3 p-3 rounded-xl border-2 transition-all
+            ${error ? 'border-red-500 bg-red-50' : 'border-slate-200 bg-white'}
+            ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: error ? '#fee2e2' : themedGradient,
-            }}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-[10px] flex items-center justify-center
+              ${error ? 'bg-red-100' : 'bg-brand-gradient'}`}
+            >
               {error ? (
-                <AlertCircle style={{ width: '22px', height: '22px', color: '#ef4444' }} />
+                <AlertCircle className="w-[22px] h-[22px] text-red-500" />
               ) : (
-                <Icon style={{ width: '22px', height: '22px', color: '#fff' }} />
+                <Icon className="w-[22px] h-[22px] text-white" />
               )}
             </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500, marginBottom: '2px' }}>
+            <div className="text-left">
+              <div className="text-xs text-slate-500 font-medium mb-0.5">
                 {label}
               </div>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: error ? '#dc2626' : '#1e293b' }}>
+              <div className={`text-sm font-semibold ${error ? 'text-red-600' : 'text-slate-900'}`}>
                 {isLoading ? 'Lade...' : error ? error : selectedDevice ? getDeviceLabel(selectedDevice) : 'Bitte wählen'}
               </div>
             </div>
           </div>
-          <ChevronDown style={{
-            width: '20px',
-            height: '20px',
-            color: '#94a3b8',
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
-            transition: 'transform 0.2s',
-          }} />
+          <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {/* Refresh button on error */}
@@ -152,19 +133,9 @@ const DeviceSelector = ({
           <button
             type="button"
             onClick={onRefresh}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '12px 16px',
-              borderRadius: '12px',
-              border: '2px solid #e2e8f0',
-              backgroundColor: '#fff',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
+            className="flex items-center justify-center px-4 py-3 rounded-xl border-2 border-slate-200 bg-white cursor-pointer hover:bg-slate-50 transition-colors"
           >
-            <RefreshCw style={{ width: '20px', height: '20px', color: '#475569' }} />
+            <RefreshCw className="w-5 h-5 text-slate-600" />
           </button>
         )}
       </div>
@@ -175,94 +146,40 @@ const DeviceSelector = ({
           {/* Backdrop */}
           <div
             onClick={() => setIsOpen(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 40,
-            }}
+            className="fixed inset-0 z-40"
           />
 
           {/* Dropdown */}
-          <div style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            left: 0,
-            right: 0,
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-            border: '1px solid #e2e8f0',
-            zIndex: 50,
-            overflow: 'hidden',
-            maxHeight: '280px',
-            overflowY: 'auto',
-          }}>
-            {devices.map((device, index) => (
-              <button
-                key={device.deviceId || index}
-                type="button"
-                onClick={() => handleSelect(device.deviceId)}
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  textAlign: 'left',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  border: 'none',
-                  backgroundColor: selectedDeviceId === device.deviceId ? `${primaryAccent}15` : 'transparent',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedDeviceId !== device.deviceId) {
-                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = selectedDeviceId === device.deviceId ? `${primaryAccent}15` : 'transparent';
-                }}
-              >
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: selectedDeviceId === device.deviceId ? primaryAccent : '#f1f5f9',
-                }}>
-                  <Icon style={{
-                    width: '18px',
-                    height: '18px',
-                    color: selectedDeviceId === device.deviceId ? '#fff' : '#64748b',
-                  }} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: selectedDeviceId === device.deviceId ? primaryAccent : '#1e293b',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {getDeviceLabel(device)}
+          <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden max-h-[280px] overflow-y-auto">
+            {devices.map((device, index) => {
+              const isSelected = selectedDeviceId === device.deviceId;
+              return (
+                <button
+                  key={device.deviceId || index}
+                  type="button"
+                  onClick={() => handleSelect(device.deviceId)}
+                  className={`w-full py-3.5 px-4 text-left flex items-center gap-3 border-none cursor-pointer transition-colors
+                    ${isSelected ? 'bg-primary/10' : 'bg-transparent hover:bg-slate-50'}`}
+                >
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center
+                    ${isSelected ? 'bg-primary' : 'bg-slate-100'}`}
+                  >
+                    <Icon className={`w-[18px] h-[18px] ${isSelected ? 'text-white' : 'text-slate-500'}`} />
                   </div>
-                  {device.deviceId === 'default' && (
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Systemstandard</div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-medium truncate ${isSelected ? 'text-primary' : 'text-slate-900'}`}>
+                      {getDeviceLabel(device)}
+                    </div>
+                    {device.deviceId === 'default' && (
+                      <div className="text-xs text-slate-400">Systemstandard</div>
+                    )}
+                  </div>
+                  {isSelected && (
+                    <div className="w-2 h-2 rounded-full bg-primary" />
                   )}
-                </div>
-                {selectedDeviceId === device.deviceId && (
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: primaryAccent,
-                  }} />
-                )}
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </>
       )}
@@ -273,27 +190,10 @@ const DeviceSelector = ({
 /**
  * DynamicFormField - Renders form fields based on configuration
  */
-const DynamicFormField = ({ field, value, onChange, error, primaryAccent }) => {
-  const commonStyles = {
-    width: '100%',
-    padding: '12px 16px',
-    borderRadius: '10px',
-    border: `2px solid ${error ? '#ef4444' : '#e2e8f0'}`,
-    fontSize: '16px',
-    transition: 'all 0.2s ease',
-    outline: 'none',
-    background: '#fff',
-  };
-
-  const handleFocus = (e) => {
-    e.target.style.borderColor = primaryAccent;
-    e.target.style.boxShadow = `0 0 0 3px ${primaryAccent}20`;
-  };
-
-  const handleBlur = (e) => {
-    e.target.style.borderColor = error ? '#ef4444' : '#e2e8f0';
-    e.target.style.boxShadow = 'none';
-  };
+const DynamicFormField = ({ field, value, onChange, error }) => {
+  const baseInputClasses = `w-full py-3 px-4 rounded-[10px] border-2 text-base transition-all outline-none bg-white
+    ${error ? 'border-red-500' : 'border-slate-200'}
+    focus:border-primary focus:ring-2 focus:ring-primary/20`;
 
   const renderField = () => {
     switch (field.type) {
@@ -302,9 +202,7 @@ const DynamicFormField = ({ field, value, onChange, error, primaryAccent }) => {
           <select
             value={value || field.default || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
-            style={{ ...commonStyles, cursor: 'pointer' }}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+            className={`${baseInputClasses} cursor-pointer`}
             required={field.required}
           >
             {!field.default && <option value="">Bitte auswählen...</option>}
@@ -322,9 +220,7 @@ const DynamicFormField = ({ field, value, onChange, error, primaryAccent }) => {
             value={value || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder}
-            style={{ ...commonStyles, minHeight: '100px', resize: 'vertical' }}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+            className={`${baseInputClasses} min-h-[100px] resize-y`}
             required={field.required}
           />
         );
@@ -336,9 +232,7 @@ const DynamicFormField = ({ field, value, onChange, error, primaryAccent }) => {
             value={value || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder}
-            style={commonStyles}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+            className={baseInputClasses}
             required={field.required}
             min={field.min}
             max={field.max}
@@ -352,9 +246,7 @@ const DynamicFormField = ({ field, value, onChange, error, primaryAccent }) => {
             value={value || ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder}
-            style={commonStyles}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+            className={baseInputClasses}
             required={field.required}
           />
         );
@@ -362,25 +254,17 @@ const DynamicFormField = ({ field, value, onChange, error, primaryAccent }) => {
   };
 
   return (
-    <div style={{ marginBottom: '20px' }}>
-      <label
-        style={{
-          display: 'block',
-          fontSize: '14px',
-          fontWeight: 600,
-          color: '#0f172a',
-          marginBottom: '8px',
-        }}
-      >
+    <div className="mb-5">
+      <label className="block text-sm font-semibold text-slate-900 mb-2">
         {field.label}
-        {field.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+        {field.required && <span className="text-red-500 ml-1">*</span>}
       </label>
       {renderField()}
       {field.hint && (
-        <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>{field.hint}</p>
+        <p className="text-[13px] text-slate-400 mt-1">{field.hint}</p>
       )}
       {error && (
-        <p style={{ fontSize: '13px', color: '#ef4444', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <p className="text-[13px] text-red-500 mt-1 flex items-center gap-1">
           <AlertCircle size={14} />
           {error}
         </p>
@@ -428,11 +312,7 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   const selectedMicRef = useRef(null);
   const selectedCamRef = useRef(null);
 
-  const { branding, demoCode } = usePartner();
-
-  // Get themed styles
-  const themedGradient = branding?.headerGradient || 'linear-gradient(135deg, #3A7FA7 0%, #2d6a8a 100%)';
-  const primaryAccent = branding?.primaryAccent || '#3A7FA7';
+  const { demoCode } = usePartner();
 
   // Keep refs in sync with state
   selectedMicRef.current = selectedMicrophoneId;
@@ -675,47 +555,26 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   const inputConfig = scenario?.input_configuration || [];
 
   return (
-    <div style={{ padding: '32px', maxWidth: '700px', margin: '0 auto' }}>
+    <div className="p-6 md:p-8 max-w-[700px] mx-auto">
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
+      <div className="mb-8">
         <button
           onClick={onBack}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'none',
-            border: 'none',
-            color: '#64748b',
-            cursor: 'pointer',
-            fontSize: '14px',
-            padding: '8px 0',
-            marginBottom: '16px',
-          }}
+          className="flex items-center gap-2 bg-transparent border-none text-slate-500 cursor-pointer text-sm py-2 mb-4 hover:text-slate-700 transition-colors"
         >
           <ArrowLeft size={18} />
           Zurück zur Übersicht
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '14px',
-              background: themedGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Video size={28} color="#fff" />
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-[14px] bg-brand-gradient flex items-center justify-center">
+            <Video size={28} className="text-white" />
           </div>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">
               {scenario?.title}
             </h1>
-            <p style={{ fontSize: '14px', color: '#64748b' }}>
+            <p className="text-sm text-slate-500">
               Konfiguriere deine Wirkungs-Analyse
             </p>
           </div>
@@ -726,23 +585,14 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{
-          padding: '16px 20px',
-          background: `linear-gradient(135deg, ${primaryAccent}10 0%, ${primaryAccent}05 100%)`,
-          borderRadius: '12px',
-          border: `1px solid ${primaryAccent}20`,
-          marginBottom: '32px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-        }}
+        className="py-4 px-5 bg-primary/5 rounded-xl border border-primary/20 mb-8 flex items-start gap-3"
       >
-        <Info size={20} color={primaryAccent} style={{ flexShrink: 0, marginTop: '2px' }} />
+        <Info size={20} className="text-primary flex-shrink-0 mt-0.5" />
         <div>
-          <h4 style={{ fontWeight: 600, color: '#0f172a', marginBottom: '4px', fontSize: '14px' }}>
+          <h4 className="font-semibold text-slate-900 mb-1 text-sm">
             So funktioniert es
           </h4>
-          <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>
+          <p className="text-[13px] text-slate-500 leading-relaxed">
             Die KI generiert {scenario?.question_count || 5} personalisierte Fragen basierend auf deinen Angaben.
             Beantworte jede Frage vor der Kamera und erhalte anschließend detailliertes Feedback.
           </p>
@@ -751,75 +601,45 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
 
       {/* Long Description - Detailed task description */}
       {scenario?.long_description && (
-        <motion.div
+        <Card
+          as={motion.div}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          style={{
-            padding: '20px 24px',
-            borderRadius: '14px',
-            backgroundColor: 'white',
-            border: '1px solid #e2e8f0',
-            marginBottom: '24px',
-          }}
+          className="p-5 md:p-6 mb-6"
         >
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: themedGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Info style={{ width: '20px', height: '20px', color: 'white' }} />
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-[10px] bg-brand-gradient flex items-center justify-center flex-shrink-0">
+              <Info className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#0f172a',
-                margin: '0 0 8px 0',
-              }}>
+              <h3 className="text-[15px] font-semibold text-slate-900 mb-2">
                 Deine Aufgabe
               </h3>
-              <p style={{
-                fontSize: '14px',
-                lineHeight: '1.6',
-                color: '#475569',
-                margin: 0,
-                whiteSpace: 'pre-wrap',
-              }}>
+              <p className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">
                 {scenario.long_description?.replace(/\/n/g, '\n')}
               </p>
             </div>
           </div>
-        </motion.div>
+        </Card>
       )}
 
       {/* Tips Section */}
-      <motion.div
+      <Card
+        as={motion.div}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid #e2e8f0',
-          marginBottom: '24px',
-        }}
+        className="p-6 mb-6"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-          <Lightbulb size={20} color={primaryAccent} />
-          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>
+        <div className="flex items-center gap-2.5 mb-5">
+          <Lightbulb size={20} className="text-primary" />
+          <h2 className="text-lg font-semibold text-slate-900">
             Tipps für dein Video-Training
           </h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {(scenario?.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
             ? scenario.tips.map((tip, idx) => {
                 // Handle legacy string format: ["Tip text 1", "Tip text 2"]
@@ -841,34 +661,15 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
           ).map((tip, index) => {
             const IconComponent = tip.icon;
             return (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: '#f8fafc',
-                }}
-              >
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: themedGradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <IconComponent style={{ width: '18px', height: '18px', color: '#fff' }} />
+              <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-slate-50">
+                <div className="w-9 h-9 rounded-[10px] bg-brand-gradient flex items-center justify-center flex-shrink-0">
+                  <IconComponent className="w-[18px] h-[18px] text-white" />
                 </div>
                 <div>
-                  <h4 style={{ fontWeight: 600, color: '#0f172a', fontSize: '14px', marginBottom: '4px' }}>
+                  <h4 className="font-semibold text-slate-900 text-sm mb-1">
                     {tip.title}
                   </h4>
-                  <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
+                  <p className="text-[13px] text-slate-500 leading-relaxed">
                     {tip.description}
                   </p>
                 </div>
@@ -876,25 +677,19 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
             );
           })}
         </div>
-      </motion.div>
+      </Card>
 
       {/* Form */}
-      <motion.div
+      <Card
+        as={motion.div}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '28px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-          marginBottom: '24px',
-        }}
+        className="p-6 md:p-7 mb-6 shadow-sm"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-          <Settings size={20} color={primaryAccent} />
-          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>
+        <div className="flex items-center gap-2.5 mb-6">
+          <Settings size={20} className="text-primary" />
+          <h2 className="text-lg font-semibold text-slate-900">
             Personalisiere dein Training
           </h2>
         </div>
@@ -906,39 +701,32 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
             value={variables[field.key]}
             onChange={handleFieldChange}
             error={errors[field.key]}
-            primaryAccent={primaryAccent}
           />
         ))}
 
         {inputConfig.length === 0 && (
-          <p style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>
+          <p className="text-slate-500 text-center py-5">
             Keine zusätzliche Konfiguration erforderlich.
           </p>
         )}
-      </motion.div>
+      </Card>
 
       {/* Device Selection */}
-      <motion.div
+      <Card
+        as={motion.div}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '28px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-          marginBottom: '24px',
-        }}
+        className="p-6 md:p-7 mb-6 shadow-sm"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-          <Camera size={20} color={primaryAccent} />
-          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>
+        <div className="flex items-center gap-2.5 mb-6">
+          <Camera size={20} className="text-primary" />
+          <h2 className="text-lg font-semibold text-slate-900">
             Kamera & Mikrofon
           </h2>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="flex flex-col gap-5">
           {/* Camera Selection */}
           <DeviceSelector
             type="video"
@@ -948,8 +736,6 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
             isLoading={devicesLoading}
             error={cameraError}
             onRefresh={loadDevices}
-            primaryAccent={primaryAccent}
-            themedGradient={themedGradient}
           />
 
           {/* Microphone Selection */}
@@ -961,45 +747,27 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
             isLoading={devicesLoading}
             error={micError}
             onRefresh={loadDevices}
-            primaryAccent={primaryAccent}
-            themedGradient={themedGradient}
           />
         </div>
 
         {/* Permission hint */}
         {(micError || cameraError) && (
-          <p style={{
-            fontSize: '13px',
-            color: '#94a3b8',
-            marginTop: '16px',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '8px',
-          }}>
-            <Info size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <p className="text-[13px] text-slate-400 mt-4 flex items-start gap-2">
+            <Info size={16} className="flex-shrink-0 mt-0.5" />
             Bitte erlaube den Zugriff auf Kamera und Mikrofon in deinen Browser-Einstellungen, um die Geräte nutzen zu können.
           </p>
         )}
-      </motion.div>
+      </Card>
 
       {/* Error display */}
       {apiError && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{
-            padding: '16px',
-            background: '#fef2f2',
-            borderRadius: '12px',
-            border: '1px solid #fecaca',
-            marginBottom: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
+          className="p-4 bg-red-50 rounded-xl border border-red-200 mb-6 flex items-center gap-3"
         >
-          <AlertCircle size={20} color="#ef4444" />
-          <p style={{ color: '#dc2626', fontSize: '14px' }}>{apiError}</p>
+          <AlertCircle size={20} className="text-red-500" />
+          <p className="text-red-600 text-sm">{apiError}</p>
         </motion.div>
       )}
 
@@ -1008,33 +776,28 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        style={{
-          background: '#f8fafc',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '32px',
-        }}
+        className="bg-slate-50 rounded-xl p-5 mb-8"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <Sparkles size={18} color={primaryAccent} />
-          <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '14px' }}>Training-Details</span>
+        <div className="flex items-center gap-2.5 mb-3">
+          <Sparkles size={18} className="text-primary" />
+          <span className="font-semibold text-slate-900 text-sm">Training-Details</span>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+        <div className="flex flex-wrap gap-5">
           <div>
-            <span style={{ fontSize: '12px', color: '#94a3b8', display: 'block' }}>Fragen</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a' }}>
+            <span className="text-xs text-slate-400 block">Fragen</span>
+            <span className="text-base font-semibold text-slate-900">
               {scenario?.question_count || 5}
             </span>
           </div>
           <div>
-            <span style={{ fontSize: '12px', color: '#94a3b8', display: 'block' }}>Zeit pro Frage</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a' }}>
+            <span className="text-xs text-slate-400 block">Zeit pro Frage</span>
+            <span className="text-base font-semibold text-slate-900">
               ~{Math.round((scenario?.time_limit_per_question || 120) / 60)} Min.
             </span>
           </div>
           <div>
-            <span style={{ fontSize: '12px', color: '#94a3b8', display: 'block' }}>Gesamtdauer</span>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a' }}>
+            <span className="text-xs text-slate-400 block">Gesamtdauer</span>
+            <span className="text-base font-semibold text-slate-900">
               ~{Math.round((scenario?.total_time_limit || 900) / 60)} Min.
             </span>
           </div>
@@ -1042,33 +805,20 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
       </motion.div>
 
       {/* Start Button */}
-      <motion.button
+      <Button
+        as={motion.button}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         onClick={handleStart}
         disabled={isLoading}
-        style={{
-          width: '100%',
-          padding: '16px 24px',
-          borderRadius: '12px',
-          background: isLoading ? '#94a3b8' : themedGradient,
-          color: '#fff',
-          border: 'none',
-          cursor: isLoading ? 'not-allowed' : 'pointer',
-          fontSize: '16px',
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '10px',
-          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
-          transition: 'all 0.2s ease',
-        }}
+        size="lg"
+        fullWidth
+        iconPosition="right"
+        icon={<ChevronRight size={20} />}
       >
         Video Training starten
-        <ChevronRight size={20} />
-      </motion.button>
+      </Button>
 
       {/* Fullscreen Loading Overlay */}
       <FullscreenLoader

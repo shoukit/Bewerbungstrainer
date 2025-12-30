@@ -1,3 +1,10 @@
+/**
+ * RoleplaySession - Live voice interview session with ElevenLabs
+ *
+ * Migrated to Tailwind CSS where possible. Dynamic partner theming
+ * via themedStyles is retained for brand customization.
+ */
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useMobile } from '@/hooks/useMobile';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -745,21 +752,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     const currentStepIndex = stepOrder.indexOf(analysisStep);
 
     return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 9999, // Above sidebar (z-50) and all other elements
-          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-        }}
-      >
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -1040,37 +1033,18 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
                   {/* Profile Toggle Button (Mobile only) */}
                   {isMobile && (
-                  <div style={{ backgroundColor: 'white', padding: '8px 16px' }}>
-                    <button
-                      onClick={() => setShowProfileOnMobile(!showProfileOnMobile)}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        color: themedStyles.primaryAccent,
-                        backgroundColor: `${themedStyles.primaryAccent}10`,
-                        border: `1px solid ${themedStyles.primaryAccent}30`,
-                        borderRadius: '10px',
-                        padding: '12px 16px',
-                        cursor: 'pointer',
-                        outline: 'none',
-                        WebkitAppearance: 'none',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      <span>Profil-Details</span>
-                      <ChevronDown
-                        size={16}
-                        style={{
-                          transform: showProfileOnMobile ? 'rotate(180deg)' : 'none',
-                          transition: 'transform 0.2s',
-                        }}
-                      />
-                    </button>
-                  </div>
+                    <div className="bg-white py-2 px-4">
+                      <button
+                        onClick={() => setShowProfileOnMobile(!showProfileOnMobile)}
+                        className="w-full flex items-center justify-between text-sm font-medium text-primary bg-primary/10 border border-primary/30 rounded-[10px] py-3 px-4 cursor-pointer outline-none transition-all"
+                      >
+                        <span>Profil-Details</span>
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform duration-200 ${showProfileOnMobile ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                    </div>
                   )}
 
                   {/* Scrollable Profile Content (Mobile: collapsible, Desktop: always visible) */}
