@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui';
 import { Video, Circle, ChevronLeft, ChevronRight, Check, Loader2, Upload } from 'lucide-react';
 import { formatDuration } from '@/utils/formatting';
 
