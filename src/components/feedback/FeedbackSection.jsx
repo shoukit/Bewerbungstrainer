@@ -19,7 +19,7 @@
  *       tips: ["...", "..."],
  *       rating: { communication: 8, motivation: 7, ... }
  *     }}
- *     primaryAccent="#3A7FA7"
+ *     primaryAccent="#4F46E5"
  *   />
  */
 

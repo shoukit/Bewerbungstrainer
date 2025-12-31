@@ -635,7 +635,7 @@ export default function PartnerManager({ onBack }) {
 function ColorInput({ label, value, defaultValue, onChange }) {
   // Handle rgba values - convert to hex for color picker
   const isRgba = value?.startsWith('rgba') || defaultValue?.startsWith('rgba');
-  const displayValue = isRgba ? '#3A7FA7' : (value || defaultValue || '#000000');
+  const displayValue = isRgba ? '#4F46E5' : (value || defaultValue || '#000000');
 
   return (
     <div>

@@ -904,7 +904,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
       {/* Header */}
       <div
         className={`sticky top-0 z-40 ${isMobile ? 'px-4 py-5' : 'px-8 py-6'}`}
-        style={{ background: 'var(--header-gradient, linear-gradient(135deg, #3A7FA7 0%, #4A9BC7 100%))' }}
+        style={{ background: 'var(--header-gradient, linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%))' }}
       >
         <div className="max-w-[1400px] mx-auto">
           {/* Back Button */}

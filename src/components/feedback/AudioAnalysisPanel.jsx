@@ -17,7 +17,7 @@
  *       pacing: { ... },
  *       tonality: { ... }
  *     }}
- *     primaryAccent="#3A7FA7"
+ *     primaryAccent="#4F46E5"
  *     onJumpToTimestamp={(seconds) => audioPlayer.seekTo(seconds)}
  *   />
  */

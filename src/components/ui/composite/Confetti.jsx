@@ -21,7 +21,7 @@ const generateParticles = (count = 50) => {
     '#f97316', // orange-500
     '#eab308', // yellow-500
     '#22c55e', // green-500
-    '#14b8a6', // teal-500
+    '#4F46E5', // indigo-600
     '#06b6d4', // cyan-500
   ];
 
