@@ -1262,6 +1262,80 @@ class WordPressAPI {
             return [];
         }
     }
+
+    // ===== User Preferences API Methods =====
+
+    /**
+     * Get a user preference
+     *
+     * @param {string} key - Preference key
+     * @param {string} demoCode - Optional demo code for demo users
+     * @returns {Promise<any>} Preference value or null
+     */
+    async getPreference(key, demoCode = null) {
+        try {
+            const queryParams = demoCode ? `?demo_code=${encodeURIComponent(demoCode)}` : '';
+            const response = await this.request(`/preferences/${key}${queryParams}`, {
+                method: 'GET'
+            });
+
+            if (response.success) {
+                return response.value;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to get preference:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Set a user preference
+     *
+     * @param {string} key - Preference key
+     * @param {any} value - Preference value
+     * @param {string} demoCode - Optional demo code for demo users
+     * @returns {Promise<boolean>} Success status
+     */
+    async setPreference(key, value, demoCode = null) {
+        try {
+            const queryParams = demoCode ? `?demo_code=${encodeURIComponent(demoCode)}` : '';
+            const response = await this.request(`/preferences/${key}${queryParams}`, {
+                method: 'POST',
+                body: JSON.stringify({ value })
+            });
+
+            return response.success === true;
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to set preference:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Get all user preferences
+     *
+     * @param {string} demoCode - Optional demo code for demo users
+     * @returns {Promise<object>} Object with all preferences
+     */
+    async getAllPreferences(demoCode = null) {
+        try {
+            const queryParams = demoCode ? `?demo_code=${encodeURIComponent(demoCode)}` : '';
+            const response = await this.request(`/preferences${queryParams}`, {
+                method: 'GET'
+            });
+
+            if (response.success && response.preferences) {
+                return response.preferences;
+            }
+
+            return {};
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to get all preferences:', error);
+            return {};
+        }
+    }
 }
 
 // Export singleton instance

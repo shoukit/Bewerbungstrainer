@@ -17,6 +17,7 @@ import {
   isFeatureInfoDismissed,
   setFeatureInfoDismissed,
 } from '@/config/featureDescriptions';
+import { usePartner } from '@/context/PartnerContext';
 
 const CLOSE_ICON_SIZE = 24;
 
@@ -58,6 +59,9 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
   const [internalOpen, setInternalOpen] = useState(false);
   const hasAutoShownRef = useRef(false);
   const mountIdRef = useRef(Math.random().toString(36).substr(2, 9));
+
+  // Get user context for API sync
+  const { isAuthenticated, demoCode } = usePartner();
 
   const feature = FEATURE_DESCRIPTIONS[featureId];
 
@@ -153,8 +157,9 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
   const handleClose = () => {
     console.log(`${DEBUG_PREFIX} 🚪 handleClose for "${featureId}"`);
     // Always save the checkbox state (true or false)
+    // Pass user context for API sync
     if (feature) {
-      setFeatureInfoDismissed(featureId, dontShowAgain);
+      setFeatureInfoDismissed(featureId, dontShowAgain, isAuthenticated, demoCode);
     }
     setInternalOpen(false);
     globalOpenModals.delete(featureId); // Remove from global tracking

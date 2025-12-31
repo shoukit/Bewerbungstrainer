@@ -302,6 +302,10 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-decision-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-decision-api.php';
 
+        // Load User Preferences classes
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-user-preferences-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-user-preferences-api.php';
+
         // Load Ikigai Career Pathfinder classes
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-ikigai-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-ikigai-api.php';
@@ -487,6 +491,9 @@ class Bewerbungstrainer_Plugin {
         // Create decision board database table
         Bewerbungstrainer_Decision_Database::get_instance()->create_table();
 
+        // Create user preferences table
+        Bewerbungstrainer_User_Preferences_Database::get_instance()->create_table();
+
         // Create categories database table (centralized for all modules)
         Bewerbungstrainer_Categories_Database::create_tables();
 
@@ -663,6 +670,12 @@ class Bewerbungstrainer_Plugin {
         // Ensure table exists (for updates without re-activation)
         $ikigai_db->create_table();
         Bewerbungstrainer_Ikigai_API::get_instance();
+
+        // Initialize User Preferences
+        $user_prefs_db = Bewerbungstrainer_User_Preferences_Database::get_instance();
+        // Ensure table exists (for updates without re-activation)
+        $user_prefs_db->create_table();
+        Bewerbungstrainer_User_Preferences_API::get_instance();
 
         // Initialize Categories (centralized for all modules)
         Bewerbungstrainer_Categories_Database::get_instance();

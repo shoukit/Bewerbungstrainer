@@ -7,6 +7,7 @@ import { DisclaimerModal, useDisclaimerModal } from './components/global/Disclai
 import { ToastProvider } from './components/global/Toast';
 import { Loader2 } from 'lucide-react';
 import { ROUTES, VIEW_TO_ROUTE, getViewFromPath } from './routes';
+import { syncPreferencesFromAPI } from './services/user-preferences';
 
 // Debug logging
 const DEBUG_PREFIX = '[APP.JSX]';
@@ -537,6 +538,13 @@ function AppContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading]);
+
+  // Sync user preferences from API when authenticated or demo user
+  useEffect(() => {
+    if (!authLoading && (isAuthenticated || demoCode)) {
+      syncPreferencesFromAPI(isAuthenticated, demoCode);
+    }
+  }, [isAuthenticated, authLoading, demoCode]);
 
   /**
    * Execute a pending action after successful login
