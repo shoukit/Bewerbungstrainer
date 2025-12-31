@@ -180,7 +180,7 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
  */
 const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNew }) => {
   const { branding } = usePartner();
-  const primaryAccent = branding?.primaryAccent || COLORS.indigo[500];
+  const primaryAccent = branding?.['--primary-accent'] || COLORS.indigo[500];
 
   // Confetti celebration for good scores
   const { triggerConfetti, ConfettiComponent } = useConfetti();

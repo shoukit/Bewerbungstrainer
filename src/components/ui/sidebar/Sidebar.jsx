@@ -980,12 +980,12 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
 
   const appBackground = React.useMemo(() => {
     if (branding) {
-      const bgStart = branding['--app-bg-start'] || THEME_COLORS.slate[50];
-      const bgMid = branding['--app-bg-mid'] || THEME_COLORS.blue[50];
-      const bgEnd = branding['--app-bg-end'] || THEME_COLORS.teal[50];
+      const bgStart = branding['--app-bg-start'] || COLORS.slate[50];
+      const bgMid = branding['--app-bg-mid'] || COLORS.blue[50];
+      const bgEnd = branding['--app-bg-end'] || COLORS.teal[50];
       return `linear-gradient(135deg, ${bgStart} 0%, ${bgMid} 50%, ${bgEnd} 100%)`;
     }
-    return `linear-gradient(135deg, ${THEME_COLORS.slate[50]} 0%, ${THEME_COLORS.blue[50]} 50%, ${THEME_COLORS.teal[50]} 100%)`;
+    return `linear-gradient(135deg, ${COLORS.slate[50]} 0%, ${COLORS.blue[50]} 50%, ${COLORS.teal[50]} 100%)`;
   }, [branding]);
 
   React.useEffect(() => {
