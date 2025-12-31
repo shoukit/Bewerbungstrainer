@@ -19,7 +19,7 @@ import { COLORS } from '@/config/colors';
  * Renders appropriate input based on field type from input_configuration
  */
 const DynamicFormField = ({ field, value, onChange, error, focusColor, branding }) => {
-  const theFocusColor = focusColor || '#4a9ec9';
+  const theFocusColor = focusColor || COLORS.blue[400];
 
   const baseInputClasses = "w-full rounded-lg text-base outline-none transition-all";
   const paddingClasses = "px-4 py-3";

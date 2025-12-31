@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getBestSupportedMimeType, fileToBase64 } from '@/utils/audio';
 import wordpressAPI from '@/services/wordpress-api';
+import { COLORS } from '@/config/colors';
 
 /**
  * Format duration to M:SS format (like Gemini: 0:16)
@@ -96,7 +97,7 @@ const SimpleWaveform = ({ isRecording, analyserNode }) => {
         const value = dataArray[dataIndex] || 0;
         const barHeight = Math.max(2, (value / 255) * (canvas.height * 0.8));
 
-        ctx.fillStyle = '#1e293b'; // slate-800
+        ctx.fillStyle = COLORS.slate[800];
         ctx.fillRect(
           i * (barWidth + gap),
           centerY - barHeight / 2,

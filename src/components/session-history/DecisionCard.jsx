@@ -11,6 +11,7 @@ import { Calendar, ChevronRight, Loader2, Trash2, Scale, ThumbsUp, ThumbsDown } 
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime } from '@/utils/formatting';
 import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
+import { COLORS } from '@/config/colors';
 
 /**
  * Mini Score Bar for cards
@@ -70,11 +71,11 @@ const DecisionCard = ({
 
   // Determine recommendation color based on analysis
   const getRecommendationColor = () => {
-    if (!decision.analysis?.recommendation) return '#64748b';
+    if (!decision.analysis?.recommendation) return COLORS.slate[500];
     const rec = decision.analysis.recommendation.toLowerCase();
-    if (rec.includes('dafür') || rec.includes('empfehl') || rec.includes('ja')) return '#16a34a';
-    if (rec.includes('dagegen') || rec.includes('nein') || rec.includes('abraten')) return '#dc2626';
-    return '#f59e0b';
+    if (rec.includes('dafür') || rec.includes('empfehl') || rec.includes('ja')) return COLORS.green[600];
+    if (rec.includes('dagegen') || rec.includes('nein') || rec.includes('abraten')) return COLORS.red[600];
+    return COLORS.amber[500];
   };
 
   // Mobile-optimized card layout

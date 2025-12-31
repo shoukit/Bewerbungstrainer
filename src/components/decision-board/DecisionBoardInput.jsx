@@ -105,7 +105,7 @@ const WeightSlider = ({ value, onChange, onChangeEnd, color }) => {
         onTouchEnd={onChangeEnd}
         className="w-[60px] h-1.5 rounded cursor-pointer appearance-none shrink-0"
         style={{
-          background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(value - 1) * 11.1}%, #e2e8f0 ${(value - 1) * 11.1}%, #e2e8f0 100%)`,
+          background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(value - 1) * 11.1}%, ${COLORS.slate[200]} ${(value - 1) * 11.1}%, ${COLORS.slate[200]} 100%)`,
         }}
       />
       <span className={`min-w-[20px] text-center font-semibold text-sm shrink-0 ${isGreen ? 'text-green-700' : 'text-red-700'}`}>
@@ -291,7 +291,7 @@ const BrainstormPopover = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       className="relative mt-4 p-5 bg-white rounded-xl shadow-lg border-2"
-      style={{ borderColor: persona?.color || '#6366f1' }}
+      style={{ borderColor: persona?.color || COLORS.indigo[500] }}
     >
       {/* Close button */}
       <button
@@ -369,8 +369,8 @@ const BrainstormPopover = ({
               disabled={isLoading}
               className="mt-4 py-3 px-4 bg-transparent border-2 border-dashed rounded-lg text-base font-medium cursor-pointer flex items-center justify-center gap-2 w-full transition-all disabled:cursor-not-allowed disabled:opacity-60 hover:bg-slate-50"
               style={{
-                borderColor: persona?.color || '#e2e8f0',
-                color: persona?.color || '#64748b',
+                borderColor: persona?.color || COLORS.slate[200],
+                color: persona?.color || COLORS.slate[500],
               }}
             >
               {isLoading ? (

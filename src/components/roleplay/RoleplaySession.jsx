@@ -51,6 +51,7 @@ import {
 import wordpressAPI from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { COLORS, GRADIENTS } from '@/config/colors';
 
 const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd, onNavigateToSession }) => {
   // Partner branding and demo code
@@ -117,7 +118,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       primaryAccent,
       primaryAccentLight,
       // User message bubble gradient (indigo for user distinction)
-      userBubbleGradient: 'linear-gradient(to bottom right, #6366f1, #4f46e5)',
+      userBubbleGradient: `linear-gradient(to bottom right, ${COLORS.indigo[500]}, ${COLORS.indigo[600]})`,
       // Agent avatar gradient
       agentAvatarGradient: headerGradient,
     };

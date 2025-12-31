@@ -199,7 +199,7 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
               <div
                 className="w-5 h-5 rounded border-2 transition-all flex items-center justify-center"
                 style={{
-                  borderColor: dontShowAgain ? primaryAccent : '#cbd5e1',
+                  borderColor: dontShowAgain ? primaryAccent : COLORS.slate[300],
                   backgroundColor: dontShowAgain ? primaryAccent : 'transparent',
                 }}
               >
@@ -222,7 +222,7 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
             className="w-full px-5 py-3 text-[15px] font-semibold border-none rounded-xl cursor-pointer flex items-center justify-center gap-2.5 transition-all shadow-lg disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none hover:enabled:-translate-y-0.5 hover:enabled:shadow-xl"
             style={{
               color: sidebarTextColor,
-              background: isLoading ? '#94a3b8' : buttonGradient,
+              background: isLoading ? COLORS.slate[400] : buttonGradient,
             }}
           >
             {isLoading ? (

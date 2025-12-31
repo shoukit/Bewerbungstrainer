@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
-import { COLORS } from '@/config/colors';
+import { COLORS, GRADIENTS } from '@/config/colors';
 import { getRecentActivities, getWPApiUrl, getWPNonce } from '@/services/wordpress-api';
 import { getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { formatRelativeTime } from '@/utils/formatting';
@@ -312,7 +312,7 @@ const QuadDashboard = ({ onNavigate }) => {
               <>
                 Hallo{' '}
                 <span style={{
-                  background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+                  background: GRADIENTS.header,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
@@ -325,7 +325,7 @@ const QuadDashboard = ({ onNavigate }) => {
               <>
                 Willkommen bei{' '}
                 <span style={{
-                  background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+                  background: GRADIENTS.header,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',

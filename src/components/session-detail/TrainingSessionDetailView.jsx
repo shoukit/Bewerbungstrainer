@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { useMobile } from '@/hooks/useMobile';
-import { getScoreColor } from '@/config/colors';
+import { COLORS, getScoreColor } from '@/config/colors';
 import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScenario } from '@/services/roleplay-feedback-adapter';
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
@@ -120,7 +120,7 @@ const ScoreGauge = ({ score, size = 120, isHeader = false }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={isHeader ? 'rgba(255,255,255,0.3)' : '#e2e8f0'}
+          stroke={isHeader ? 'rgba(255,255,255,0.3)' : COLORS.slate[200]}
           strokeWidth={10}
         />
         <motion.circle
@@ -432,7 +432,7 @@ const AnswerCard = ({ answer, index }) => {
             </h4>
           </div>
           {answer.overall_score != null && (
-            <span className="text-base font-bold" style={{ color: isNoSpeech ? '#94a3b8' : getScoreColor(answer.overall_score * 10) }}>
+            <span className="text-base font-bold" style={{ color: isNoSpeech ? COLORS.slate[400] : getScoreColor(answer.overall_score * 10) }}>
               {isNoSpeech ? '–' : `${Math.round(answer.overall_score * 10)}%`}
             </span>
           )}
@@ -494,7 +494,7 @@ const AnswerCard = ({ answer, index }) => {
                         const score = rawScore != null ? rawScore * 10 : null;
                         return (
                           <div key={key} className="p-2.5 bg-slate-50 rounded-lg text-center">
-                            <div className="text-base font-bold" style={{ color: score != null ? getScoreColor(score) : '#94a3b8' }}>
+                            <div className="text-base font-bold" style={{ color: score != null ? getScoreColor(score) : COLORS.slate[400] }}>
                               {score != null ? Math.round(score) : '-'}
                             </div>
                             <div className="text-[10px] text-slate-500 mt-0.5">{label}</div>
@@ -509,7 +509,7 @@ const AnswerCard = ({ answer, index }) => {
                       return (
                         <div className="p-3 bg-primary/10 rounded-lg text-center border border-primary/20 flex items-center justify-center gap-3">
                           <div className="text-[10px] text-slate-500">Gesamt</div>
-                          <div className="text-xl font-bold" style={{ color: score != null ? getScoreColor(score) : '#94a3b8' }}>
+                          <div className="text-xl font-bold" style={{ color: score != null ? getScoreColor(score) : COLORS.slate[400] }}>
                             {score != null ? Math.round(score) : '-'}
                           </div>
                         </div>

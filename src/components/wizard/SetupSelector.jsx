@@ -105,7 +105,7 @@ const SetupSelector = () => {
   }, []);
 
   // Get partner-branded colors
-  const primaryAccent = branding?.['--primary-accent'] || '#6366f1';
+  const primaryAccent = branding?.['--primary-accent'] || COLORS.indigo[500];
 
   const handleSelectSetup = (setupId) => {
     setSelectedSetup(setupId);
@@ -156,7 +156,7 @@ const SetupSelector = () => {
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{
-                backgroundColor: currentSetupColor ? `${currentSetupColor}15` : '#f1f5f9',
+                backgroundColor: currentSetupColor ? `${currentSetupColor}15` : COLORS.slate[100],
               }}
             >
               {currentSetup ? (

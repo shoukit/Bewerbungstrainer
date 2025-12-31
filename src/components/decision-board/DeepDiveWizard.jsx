@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/base/button';
 import { Textarea } from '@/components/ui/base/textarea';
 import { generateWizardQuestion, extractWizardArguments } from '@/services/gemini';
+import { COLORS } from '@/config/colors';
 
 /**
  * Generate unique ID for items
@@ -27,7 +28,7 @@ const generateId = () => `wizard_${Date.now()}_${Math.random().toString(36).subs
  */
 const ExtractedItemSlider = ({ value, onChange, type }) => {
   const isPro = type === 'pro';
-  const accentColor = isPro ? '#22c55e' : '#ef4444';
+  const accentColor = isPro ? COLORS.green[500] : COLORS.red[500];
 
   return (
     <div className="flex items-center gap-2 min-w-[100px]">
@@ -39,7 +40,7 @@ const ExtractedItemSlider = ({ value, onChange, type }) => {
         onChange={(e) => onChange(parseInt(e.target.value))}
         className="w-[70px] h-1.5 rounded cursor-pointer appearance-none"
         style={{
-          background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(value - 1) * 11.1}%, #e2e8f0 ${(value - 1) * 11.1}%, #e2e8f0 100%)`,
+          background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(value - 1) * 11.1}%, ${COLORS.slate[200]} ${(value - 1) * 11.1}%, ${COLORS.slate[200]} 100%)`,
         }}
       />
       <span className={`min-w-[24px] text-center font-semibold text-sm ${isPro ? 'text-green-600' : 'text-red-600'}`}>

@@ -357,7 +357,7 @@ const UsageLimitsDisplay = ({ onNavigateToRoleplay, compact = false }) => {
             disabled={!hasMinutes}
             className="w-full py-6 text-base font-semibold rounded-xl"
             style={{
-              background: hasMinutes ? themedStyles.headerGradient : '#94a3b8',
+              background: hasMinutes ? themedStyles.headerGradient : COLORS.slate[400],
               color: themedStyles.headerText,
             }}
           >

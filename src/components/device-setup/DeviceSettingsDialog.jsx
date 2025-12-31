@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, X, Mic, Video, RefreshCw, AlertCircle, Check } from 'lucide-react';
 import { MicrophoneTest } from './DeviceSetupPage';
+import { COLORS } from '@/config/colors';
 
 /**
  * DeviceSettingsDialog Component
@@ -133,7 +134,7 @@ const DeviceSettingsDialog = ({
             </div>
           ) : error ? (
             <div className="text-center py-6">
-              <AlertCircle size={40} color="#ef4444" className="mb-3 mx-auto" />
+              <AlertCircle size={40} color={COLORS.red[500]} className="mb-3 mx-auto" />
               <p className="text-red-600 font-medium">{error}</p>
               <button
                 onClick={loadDevices}
@@ -167,7 +168,7 @@ const DeviceSettingsDialog = ({
                       }`}>
                         <Mic
                           size={16}
-                          color={pendingMicId === device.deviceId ? 'white' : '#64748b'}
+                          color={pendingMicId === device.deviceId ? 'white' : COLORS.slate[500]}
                         />
                       </div>
                       <span className={`flex-1 text-sm ${
@@ -213,7 +214,7 @@ const DeviceSettingsDialog = ({
                         }`}>
                           <Video
                             size={16}
-                            color={pendingCameraId === device.deviceId ? 'white' : '#64748b'}
+                            color={pendingCameraId === device.deviceId ? 'white' : COLORS.slate[500]}
                           />
                         </div>
                         <span className={`flex-1 text-sm ${
