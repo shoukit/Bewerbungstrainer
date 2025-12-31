@@ -64,6 +64,20 @@ export const COLORS = {
     900: '#1E3A8A',
   },
 
+  // Sky (Loading animations, App background effects)
+  sky: {
+    50: '#F0F9FF',
+    100: '#E0F2FE',
+    200: '#BAE6FD',
+    300: '#7DD3FC',
+    400: '#38BDF8',
+    500: '#0EA5E9',
+    600: '#0284C7',
+    700: '#0369A1',
+    800: '#075985',
+    900: '#0C4A6E',
+  },
+
   // Teal (Decision Board accent)
   teal: {
     50: '#F0FDFA',
