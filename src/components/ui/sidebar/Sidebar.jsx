@@ -472,7 +472,7 @@ const AppSidebar = ({
                 {!isCollapsed && (
                   <>
                     <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                      <span className="whitespace-nowrap overflow-hidden text-ellipsis">{item.label}</span>
+                      <span className="whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: isActive ? colors.activeText : colors.sidebarText }}>{item.label}</span>
                       <span className="text-xs leading-snug" style={{ color: colors.sidebarTextMuted }}>
                         {item.description}
                       </span>
@@ -532,7 +532,7 @@ const AppSidebar = ({
                               className="w-4 h-4 shrink-0"
                               style={{ color: isSubActive ? colors.primaryAccent : colors.sidebarTextMuted }}
                             />
-                            <span className="whitespace-nowrap">{subItem.label}</span>
+                            <span className="whitespace-nowrap" style={{ color: isSubActive ? colors.activeText : colors.sidebarText }}>{subItem.label}</span>
                           </button>
                         );
                       })}
