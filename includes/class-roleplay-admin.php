@@ -331,6 +331,9 @@ class Bewerbungstrainer_Roleplay_Admin {
             'initial_message' => sanitize_textarea_field(wp_unslash($post['initial_message'] ?? '')),
             'system_prompt' => wp_kses_post(wp_unslash($post['system_prompt'] ?? '')),
             'feedback_prompt' => wp_kses_post(wp_unslash($post['feedback_prompt'] ?? '')),
+            'feedback_coach_type' => sanitize_text_field($post['feedback_coach_type'] ?? 'general'),
+            'feedback_custom_intro' => sanitize_textarea_field(wp_unslash($post['feedback_custom_intro'] ?? '')),
+            'feedback_extra_focus' => sanitize_textarea_field(wp_unslash($post['feedback_extra_focus'] ?? '')),
             'ai_instructions' => wp_kses_post(wp_unslash($post['ai_instructions'] ?? '')),
             'tips' => $tips,
             'input_configuration' => json_encode($input_configuration, JSON_UNESCAPED_UNICODE),
@@ -459,6 +462,9 @@ class Bewerbungstrainer_Roleplay_Admin {
             'initial_message',
             'system_prompt',
             'feedback_prompt',
+            'feedback_coach_type',
+            'feedback_custom_intro',
+            'feedback_extra_focus',
             'ai_instructions',
             'tips',
             'input_configuration',
@@ -500,6 +506,9 @@ class Bewerbungstrainer_Roleplay_Admin {
                 $clean_text($scenario->initial_message ?? ''),
                 $clean_text($scenario->system_prompt ?? ''),
                 $clean_text($scenario->feedback_prompt ?? ''),
+                $scenario->feedback_coach_type ?? 'general',
+                $clean_text($scenario->feedback_custom_intro ?? ''),
+                $clean_text($scenario->feedback_extra_focus ?? ''),
                 $clean_text($scenario->ai_instructions ?? ''),
                 $scenario->tips ?? '[]',
                 $scenario->input_configuration ?? '[]',
@@ -589,6 +598,9 @@ class Bewerbungstrainer_Roleplay_Admin {
                     (!empty($data['content']) ? $data['content'] : '')
                 ),
                 'feedback_prompt' => $restore_newlines($data['feedback_prompt'] ?? ''),
+                'feedback_coach_type' => sanitize_text_field($data['feedback_coach_type'] ?? 'general'),
+                'feedback_custom_intro' => $restore_newlines($data['feedback_custom_intro'] ?? ''),
+                'feedback_extra_focus' => $restore_newlines($data['feedback_extra_focus'] ?? ''),
                 'ai_instructions' => $restore_newlines($data['ai_instructions'] ?? ''),
                 'tips' => !empty($data['tips']) ? $data['tips'] : '[]',
                 // Support both 'input_configuration' and 'variables_schema' column names (use empty() not ??)
@@ -1174,8 +1186,49 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <td><textarea name="ai_instructions" id="ai_instructions" rows="6" class="large-text code"><?php echo esc_textarea($scenario->ai_instructions ?? ''); ?></textarea></td>
                     </tr>
                     <tr>
-                        <th><label for="feedback_prompt">Feedback Prompt</label></th>
-                        <td><textarea name="feedback_prompt" id="feedback_prompt" rows="6" class="large-text code"><?php echo esc_textarea($scenario->feedback_prompt ?? ''); ?></textarea></td>
+                        <th><label for="feedback_coach_type">Feedback Coach-Typ</label></th>
+                        <td>
+                            <?php
+                            $coach_types = array(
+                                'general' => '🎯 Allgemein (Kommunikations-Coach)',
+                                'interview' => '💼 Interview (Karriere-Coach)',
+                                'sales' => '💰 Sales (Vertriebs-Coach)',
+                                'leadership' => '👥 Führung (Leadership-Coach)',
+                                'conflict' => '🤝 Konflikt (Mediations-Coach)',
+                                'customer' => '🎧 Kundenservice (Service-Coach)',
+                            );
+                            $current_coach_type = $scenario->feedback_coach_type ?? 'general';
+                            ?>
+                            <select name="feedback_coach_type" id="feedback_coach_type" style="min-width: 300px;">
+                                <?php foreach ($coach_types as $value => $label): ?>
+                                    <option value="<?php echo esc_attr($value); ?>" <?php selected($current_coach_type, $value); ?>>
+                                        <?php echo esc_html($label); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description">Bestimmt die Rating-Dimensionen und den Analyse-Fokus im Feedback</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="feedback_custom_intro">Custom Intro</label></th>
+                        <td>
+                            <textarea name="feedback_custom_intro" id="feedback_custom_intro" rows="2" class="large-text"><?php echo esc_textarea($scenario->feedback_custom_intro ?? ''); ?></textarea>
+                            <p class="description">Optional: Zusätzlicher Kontext für die Feedback-KI, z.B. "Du analysierst ein B2B-Verkaufsgespräch im IT-Bereich."</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="feedback_extra_focus">Extra Fokus</label></th>
+                        <td>
+                            <textarea name="feedback_extra_focus" id="feedback_extra_focus" rows="2" class="large-text"><?php echo esc_textarea($scenario->feedback_extra_focus ?? ''); ?></textarea>
+                            <p class="description">Optional: Besondere Analyse-Schwerpunkte, z.B. "Achte besonders auf die Bedarfsanalyse und den Umgang mit Preiseinwänden."</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="feedback_prompt">Feedback Prompt (Legacy)</label></th>
+                        <td>
+                            <textarea name="feedback_prompt" id="feedback_prompt" rows="4" class="large-text code"><?php echo esc_textarea($scenario->feedback_prompt ?? ''); ?></textarea>
+                            <p class="description">Überschreibt den automatischen Prompt komplett. Leer lassen, um den Coach-Typ-basierten Prompt zu nutzen.</p>
+                        </td>
                     </tr>
                     <tr>
                         <th><label for="tips">Tipps (JSON)</label></th>

@@ -81,6 +81,9 @@ class Bewerbungstrainer_Roleplay_Database {
             `initial_message` text DEFAULT NULL,
             `system_prompt` longtext DEFAULT NULL,
             `feedback_prompt` longtext DEFAULT NULL,
+            `feedback_coach_type` varchar(50) DEFAULT 'general',
+            `feedback_custom_intro` text DEFAULT NULL,
+            `feedback_extra_focus` text DEFAULT NULL,
             `ai_instructions` longtext DEFAULT NULL,
             `tips` longtext DEFAULT NULL,
             `input_configuration` longtext DEFAULT NULL,
@@ -152,6 +155,9 @@ class Bewerbungstrainer_Roleplay_Database {
             'interviewer_objections' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_objections` text DEFAULT NULL AFTER `interviewer_properties`",
             'interviewer_questions' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_questions` text DEFAULT NULL AFTER `interviewer_objections`",
             'coaching_hints' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `coaching_hints` text DEFAULT NULL AFTER `interviewer_questions`",
+            'feedback_coach_type' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `feedback_coach_type` varchar(50) DEFAULT 'general' AFTER `feedback_prompt`",
+            'feedback_custom_intro' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `feedback_custom_intro` text DEFAULT NULL AFTER `feedback_coach_type`",
+            'feedback_extra_focus' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `feedback_extra_focus` text DEFAULT NULL AFTER `feedback_custom_intro`",
         );
 
         $columns_added = 0;
@@ -299,6 +305,9 @@ class Bewerbungstrainer_Roleplay_Database {
             'initial_message' => '',
             'system_prompt' => '',
             'feedback_prompt' => '',
+            'feedback_coach_type' => 'general',
+            'feedback_custom_intro' => '',
+            'feedback_extra_focus' => '',
             'ai_instructions' => '',
             'tips' => '[]',
             'input_configuration' => '[]',
@@ -332,6 +341,9 @@ class Bewerbungstrainer_Roleplay_Database {
                 'initial_message' => $data['initial_message'],
                 'system_prompt' => $data['system_prompt'],
                 'feedback_prompt' => $data['feedback_prompt'],
+                'feedback_coach_type' => $data['feedback_coach_type'],
+                'feedback_custom_intro' => $data['feedback_custom_intro'],
+                'feedback_extra_focus' => $data['feedback_extra_focus'],
                 'ai_instructions' => $data['ai_instructions'],
                 'tips' => $data['tips'],
                 'input_configuration' => $data['input_configuration'],
@@ -345,7 +357,7 @@ class Bewerbungstrainer_Roleplay_Database {
                 'is_active' => $data['is_active'],
                 'sort_order' => $data['sort_order'],
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d')
         );
 
         if ($result === false) {
@@ -370,7 +382,8 @@ class Bewerbungstrainer_Roleplay_Database {
             'title', 'description', 'long_description', 'icon', 'difficulty',
             'target_audience', 'category', 'role_type', 'user_role_label',
             'agent_id', 'voice_id', 'initial_message', 'system_prompt',
-            'feedback_prompt', 'ai_instructions', 'tips', 'input_configuration',
+            'feedback_prompt', 'feedback_coach_type', 'feedback_custom_intro', 'feedback_extra_focus',
+            'ai_instructions', 'tips', 'input_configuration',
             'interviewer_name', 'interviewer_role', 'interviewer_image',
             'interviewer_properties', 'interviewer_objections', 'interviewer_questions',
             'coaching_hints', 'is_active', 'sort_order'
@@ -698,6 +711,9 @@ class Bewerbungstrainer_Roleplay_Database {
                 'initial_message' => $scenario->initial_message,
                 'system_prompt' => $scenario->system_prompt,
                 'feedback_prompt' => $scenario->feedback_prompt,
+                'feedback_coach_type' => $scenario->feedback_coach_type,
+                'feedback_custom_intro' => $scenario->feedback_custom_intro,
+                'feedback_extra_focus' => $scenario->feedback_extra_focus,
                 'ai_instructions' => $scenario->ai_instructions,
                 'tips' => $scenario->tips,
                 'input_configuration' => $scenario->input_configuration,

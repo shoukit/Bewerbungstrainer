@@ -42,25 +42,27 @@ export async function analyzeRoleplayTranscript(transcript, scenarioContext = {}
   };
 
   // Build role options for dynamic feedback prompt (defined outside try blocks for shared access)
+  // Includes new coach type system fields for modular prompts
   const roleOptions = {
     roleType: scenarioContext.role_type || 'interview',
     userRoleLabel: scenarioContext.user_role_label || 'Bewerber',
     agentRoleLabel: scenarioContext.interviewer_profile?.role || 'Gesprächspartner',
+    // New coach type system fields
+    coachType: scenarioContext.feedback_coach_type || 'general',
+    customIntro: scenarioContext.feedback_custom_intro || '',
+    extraFocus: scenarioContext.feedback_extra_focus || '',
+    // Legacy: feedbackPrompt overrides everything if set
+    feedbackPrompt: scenarioContext.feedback_prompt || '',
   };
 
   try {
     // Generate feedback (transcript analysis)
-
-    // Use custom feedback prompt from scenario if available
-    const customPrompt = scenarioContext.feedback_prompt || null;
-    if (customPrompt) {
-    }
-
+    // The roleOptions now contain all feedback configuration including legacy feedbackPrompt
     results.feedbackContent = await generateInterviewFeedback(
       formattedTranscript,
       geminiApiKey,
       'gemini-1.5-flash', // modelName as 3rd parameter
-      customPrompt, // customPrompt as 4th parameter
+      null, // customPrompt deprecated - now in roleOptions.feedbackPrompt
       roleOptions // roleOptions as 5th parameter
     );
   } catch (error) {
