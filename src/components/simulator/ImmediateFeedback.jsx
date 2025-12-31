@@ -269,25 +269,37 @@ const CompactAudioPlayer = ({ audioUrl }) => {
     const audio = new Audio();
     audioRef.current = audio;
 
-    const handleLoadedMetadata = () => {
+    const updateDuration = () => {
       const dur = audio.duration;
       if (dur && isFinite(dur) && dur > 0) {
         setDuration(dur);
       }
+    };
+
+    const handleLoadedMetadata = () => {
+      updateDuration();
       setIsLoading(false);
     };
 
     const handleCanPlayThrough = () => {
       setIsLoading(false);
-      const dur = audio.duration;
-      if (dur && isFinite(dur) && dur > 0) {
-        setDuration(dur);
-      }
+      updateDuration();
+    };
+
+    const handleDurationChange = () => {
+      updateDuration();
+    };
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+      // Also check duration on timeupdate in case it wasn't available before
+      updateDuration();
     };
 
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('canplaythrough', handleCanPlayThrough);
-    audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
+    audio.addEventListener('durationchange', handleDurationChange);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('play', () => setIsPlaying(true));
     audio.addEventListener('pause', () => setIsPlaying(false));
     audio.addEventListener('ended', () => setIsPlaying(false));
