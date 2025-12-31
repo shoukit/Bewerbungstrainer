@@ -127,12 +127,12 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
       <div className="space-y-5">
         {/* Summary Section */}
         {parsedFeedback.summary && (
-          <div className="p-4 bg-ocean-blue-50 border-l-4 border-ocean-blue-500 rounded-r-xl">
+          <div className="p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-r-xl">
             <div className="flex items-start gap-3">
-              <MessageSquare className="w-5 h-5 text-ocean-blue-600 flex-shrink-0 mt-1" />
+              <MessageSquare className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-ocean-blue-900 mb-2">Gesamteindruck</h3>
-                <p className="text-sm text-ocean-blue-800 leading-relaxed">
+                <h3 className="text-sm font-semibold text-indigo-900 mb-2">Gesamteindruck</h3>
+                <p className="text-sm text-indigo-800 leading-relaxed">
                   {parsedFeedback.summary}
                 </p>
               </div>
@@ -140,35 +140,35 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
           </div>
         )}
 
-        {/* Rating Section - Ocean Theme */}
+        {/* Rating Section - Indigo Theme */}
         {parsedFeedback.rating && (
-          <div className="p-4 bg-gradient-to-br from-ocean-blue-50 to-ocean-teal-50 border border-ocean-blue-200 rounded-xl">
+          <div className="p-4 bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl">
             <div className="flex items-start gap-3">
-              <Award className="w-5 h-5 text-ocean-blue-600 flex-shrink-0 mt-1" />
+              <Award className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-ocean-blue-900 mb-3">Bewertung</h3>
+                <h3 className="text-sm font-semibold text-indigo-900 mb-3">Bewertung</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {parsedFeedback.rating.overall !== undefined && (
                     <div>
-                      <p className="text-xs text-ocean-blue-700 mb-1">Gesamt</p>
+                      <p className="text-xs text-indigo-700 mb-1">Gesamt</p>
                       {renderRatingStars(parsedFeedback.rating.overall)}
                     </div>
                   )}
                   {parsedFeedback.rating.communication !== undefined && (
                     <div>
-                      <p className="text-xs text-ocean-blue-700 mb-1">Kommunikation</p>
+                      <p className="text-xs text-indigo-700 mb-1">Kommunikation</p>
                       {renderRatingStars(parsedFeedback.rating.communication)}
                     </div>
                   )}
                   {parsedFeedback.rating.motivation !== undefined && (
                     <div>
-                      <p className="text-xs text-ocean-blue-700 mb-1">Motivation</p>
+                      <p className="text-xs text-indigo-700 mb-1">Motivation</p>
                       {renderRatingStars(parsedFeedback.rating.motivation)}
                     </div>
                   )}
                   {parsedFeedback.rating.professionalism !== undefined && (
                     <div>
-                      <p className="text-xs text-ocean-blue-700 mb-1">Professionalität</p>
+                      <p className="text-xs text-indigo-700 mb-1">Professionalität</p>
                       {renderRatingStars(parsedFeedback.rating.professionalism)}
                     </div>
                   )}
@@ -222,18 +222,18 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
 
         {/* Tips Section */}
         {parsedFeedback.tips && parsedFeedback.tips.length > 0 && (
-          <div className="p-4 bg-ocean-teal-50 border-l-4 border-ocean-teal-500 rounded-r-xl">
+          <div className="p-4 bg-violet-50 border-l-4 border-violet-500 rounded-r-xl">
             <div className="flex items-start gap-3">
-              <Lightbulb className="w-5 h-5 text-ocean-teal-600 flex-shrink-0 mt-1" />
+              <Lightbulb className="w-5 h-5 text-violet-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-ocean-teal-900 mb-3">
+                <h3 className="text-sm font-semibold text-violet-900 mb-3">
                   Praktische Tipps für dich
                 </h3>
                 <ul className="space-y-2">
                   {parsedFeedback.tips.map((tip, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <Target className="w-4 h-4 text-ocean-teal-600 flex-shrink-0 mt-1" />
-                      <span className="text-sm text-ocean-teal-800 leading-relaxed">{tip}</span>
+                      <Target className="w-4 h-4 text-violet-600 flex-shrink-0 mt-1" />
+                      <span className="text-sm text-violet-800 leading-relaxed">{tip}</span>
                     </li>
                   ))}
                 </ul>
@@ -311,19 +311,19 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
     return (
       <div className="space-y-5 mt-8">
         {/* Audio Analysis Header */}
-        <div className="flex items-center gap-2 pb-2 border-b-2 border-ocean-blue-300">
-          <Mic2 className="w-6 h-6 text-ocean-blue-600" />
-          <h2 className="text-xl font-bold text-ocean-blue-900">Audio-Analyse deiner Sprechweise</h2>
+        <div className="flex items-center gap-2 pb-2 border-b-2 border-indigo-300">
+          <Mic2 className="w-6 h-6 text-indigo-600" />
+          <h2 className="text-xl font-bold text-indigo-900">Audio-Analyse deiner Sprechweise</h2>
         </div>
 
         {/* Summary */}
         {parsedAudioAnalysis.summary && (
-          <div className="p-4 bg-ocean-blue-50 border-l-4 border-ocean-blue-500 rounded-r-xl">
+          <div className="p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-r-xl">
             <div className="flex items-start gap-3">
-              <Music2 className="w-5 h-5 text-ocean-blue-600 flex-shrink-0 mt-1" />
+              <Music2 className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-ocean-blue-900 mb-2">Gesamteindruck</h3>
-                <p className="text-sm text-ocean-blue-800 leading-relaxed">
+                <h3 className="text-sm font-semibold text-indigo-900 mb-2">Gesamteindruck</h3>
+                <p className="text-sm text-indigo-800 leading-relaxed">
                   {parsedAudioAnalysis.summary}
                 </p>
               </div>
@@ -435,15 +435,15 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
             </div>
           )}
 
-          {/* Tonal Modulation - Ocean Teal instead of Purple */}
+          {/* Tonal Modulation - Violet instead of Ocean Teal */}
           {parsedAudioAnalysis.tonalModulation && (
-            <div className="p-4 bg-ocean-teal-50 border border-ocean-teal-200 rounded-xl">
+            <div className="p-4 bg-violet-50 border border-violet-200 rounded-xl">
               <div className="flex items-start gap-3">
-                <BarChart3 className="w-5 h-5 text-ocean-teal-600 flex-shrink-0 mt-1" />
+                <BarChart3 className="w-5 h-5 text-violet-600 flex-shrink-0 mt-1" />
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-ocean-teal-900 mb-2">Tonmodulation</h4>
+                  <h4 className="text-sm font-semibold text-violet-900 mb-2">Tonmodulation</h4>
                   {renderRatingStars(parsedAudioAnalysis.tonalModulation.rating)}
-                  <p className="text-xs text-ocean-teal-700 mt-2">
+                  <p className="text-xs text-violet-700 mt-2">
                     {parsedAudioAnalysis.tonalModulation.feedback}
                   </p>
                 </div>
@@ -477,18 +477,18 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
         {/* Overall Improvement */}
         {parsedAudioAnalysis.overallImprovement &&
           parsedAudioAnalysis.overallImprovement.length > 0 && (
-            <div className="p-4 bg-ocean-teal-50 border-l-4 border-ocean-teal-500 rounded-r-xl">
+            <div className="p-4 bg-violet-50 border-l-4 border-violet-500 rounded-r-xl">
               <div className="flex items-start gap-3">
-                <Lightbulb className="w-5 h-5 text-ocean-teal-600 flex-shrink-0 mt-1" />
+                <Lightbulb className="w-5 h-5 text-violet-600 flex-shrink-0 mt-1" />
                 <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-ocean-teal-900 mb-3">
+                  <h3 className="text-sm font-semibold text-violet-900 mb-3">
                     Verbesserungsvorschläge
                   </h3>
                   <ul className="space-y-2">
                     {parsedAudioAnalysis.overallImprovement.map((tip, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <Target className="w-4 h-4 text-ocean-teal-600 flex-shrink-0 mt-1" />
-                        <span className="text-sm text-ocean-teal-800 leading-relaxed">{tip}</span>
+                        <Target className="w-4 h-4 text-violet-600 flex-shrink-0 mt-1" />
+                        <span className="text-sm text-violet-800 leading-relaxed">{tip}</span>
                       </li>
                     ))}
                   </ul>
@@ -504,7 +504,7 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
     if (isLoading) {
       return (
         <div className="flex flex-col items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           <p className="mt-4 text-slate-600">Feedback wird generiert...</p>
           <p className="mt-2 text-sm text-slate-500">Das kann einen Moment dauern</p>
         </div>
@@ -533,7 +533,7 @@ const FeedbackModal = ({ isOpen, onClose, feedbackContent, audioAnalysisContent,
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl flex items-center gap-2">
-            <Award className="w-6 h-6 text-ocean-blue-600" />
+            <Award className="w-6 h-6 text-indigo-600" />
             Dein Bewerbungsgespräch-Feedback
           </DialogTitle>
           <DialogDescription>

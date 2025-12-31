@@ -33,7 +33,7 @@ export function TonalityCard({ rating, highlights, feedback, onJumpToTimestamp }
   return (
     <Card>
       <CardHeader>
-        <CardTitle icon={Music2} iconColor="text-ocean-teal-600">
+        <CardTitle icon={Music2} iconColor="text-violet-600">
           Betonung & Melodie
         </CardTitle>
         <Badge variant="default" className={cn(config.bg, config.color)}>

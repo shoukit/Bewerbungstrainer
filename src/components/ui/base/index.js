@@ -11,3 +11,15 @@ export { Label } from './label';
 export { Badge, badgeVariants } from './badge';
 export { default as FormAccordion } from './form-accordion';
 export { default as SelectNative } from './select-native';
+export {
+  Skeleton,
+  SkeletonText,
+  SkeletonCard,
+  SkeletonGrid,
+  SkeletonListItem,
+  SkeletonList,
+  SkeletonHeader,
+  SkeletonStats,
+  SkeletonAudioPlayer,
+  SkeletonPage
+} from './skeleton';

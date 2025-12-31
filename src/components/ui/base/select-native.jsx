@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-react';
 /**
  * SelectNative Component
  *
- * A styled native select element with ocean-theme styling.
+ * A styled native select element with indigo-theme styling.
  * Uses native browser select for maximum compatibility.
  */
 const SelectNative = React.forwardRef(({ className, children, ...props }, ref) => {
@@ -18,8 +18,8 @@ const SelectNative = React.forwardRef(({ className, children, ...props }, ref) =
           'flex h-11 w-full appearance-none rounded-xl border-2 bg-white pl-4 pr-10 py-2 text-sm text-slate-900',
           // Border & shadow
           'border-slate-200 shadow-sm',
-          // Focus state - explicit ocean colors
-          'focus:outline-none focus:border-ocean-blue-400 focus:ring-2 focus:ring-ocean-blue-100',
+          // Focus state - explicit indigo colors
+          'focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100',
           // Disabled state
           'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50',
           // Hover state

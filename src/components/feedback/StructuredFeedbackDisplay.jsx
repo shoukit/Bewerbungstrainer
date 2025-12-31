@@ -221,8 +221,8 @@ const PacingCard = ({ rating, feedback }) => {
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-7 h-7 rounded-lg bg-ocean-blue-100 flex items-center justify-center">
-          <Gauge className="w-4 h-4 text-ocean-blue-600" />
+        <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
+          <Gauge className="w-4 h-4 text-indigo-600" />
         </div>
         <span className="text-xs font-semibold text-slate-700">Sprechtempo</span>
       </div>

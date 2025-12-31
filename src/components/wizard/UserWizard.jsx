@@ -110,17 +110,17 @@ function UserWizard({ onComplete, initialData = null }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ocean-blue-100 via-ocean-blue-200 to-ocean-blue-300 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-indigo-200 to-indigo-300 flex items-center justify-center p-4">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-ocean-deep-300/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-ocean-blue-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-indigo-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-violet-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
 
       <div className="w-full max-w-2xl relative z-10">
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-white/60">
           {/* Header */}
-          <div className="relative bg-gradient-to-br from-ocean-blue-600 via-ocean-deep-600 to-ocean-teal-500 text-white px-6 py-10 overflow-hidden">
+          <div className="relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-600 text-white px-6 py-10 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
@@ -130,7 +130,7 @@ function UserWizard({ onComplete, initialData = null }) {
               </div>
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-1">Willkommen!</h1>
-                <p className="text-ocean-blue-100 flex items-center gap-2">
+                <p className="text-indigo-200 flex items-center gap-2">
                   <Target className="w-4 h-4" />
                   {initialData ? 'Möchtest du deine Daten aktualisieren?' : 'Erzähl uns ein bisschen über dich'}
                 </p>
@@ -155,21 +155,21 @@ function UserWizard({ onComplete, initialData = null }) {
           </div>
 
           {/* Progress Bar */}
-          <div className="bg-gradient-to-r from-ocean-blue-50/50 to-ocean-teal-50/50 px-6 py-5 border-b border-ocean-blue-100/50">
+          <div className="bg-gradient-to-r from-indigo-50/50 to-violet-50/50 px-6 py-5 border-b border-indigo-100/50">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-ocean-deep-900 flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-ocean-blue-100 flex items-center justify-center text-xs font-bold text-ocean-blue-600">
+              <span className="text-sm font-semibold text-indigo-900 flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600">
                   {step}
                 </div>
                 Schritt {step} von {totalSteps}
               </span>
-              <span className="text-sm font-medium text-ocean-deep-600 bg-ocean-blue-100 px-3 py-1 rounded-full">
+              <span className="text-sm font-medium text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full">
                 {Math.round((step / totalSteps) * 100)}%
               </span>
             </div>
-            <div className="relative w-full bg-ocean-blue-200/50 rounded-full h-3 overflow-hidden">
+            <div className="relative w-full bg-indigo-200/50 rounded-full h-3 overflow-hidden">
               <div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-ocean-blue-500 via-ocean-deep-500 to-ocean-teal-500 rounded-full transition-all duration-500 ease-out shadow-lg"
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-500 rounded-full transition-all duration-500 ease-out shadow-lg"
                 style={{ width: `${(step / totalSteps) * 100}%` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent"></div>
@@ -184,16 +184,16 @@ function UserWizard({ onComplete, initialData = null }) {
               <div className="space-y-6 animate-fade-in">
                 <div className="flex items-center justify-center mb-6">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-ocean-blue-500 to-ocean-deep-600 flex items-center justify-center shadow-xl">
+                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-xl">
                       <User className="w-12 h-12 text-white" strokeWidth={2} />
                     </div>
-                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-ocean-teal-400 to-ocean-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
                       <span className="text-white font-bold text-sm">1</span>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-800 text-center mb-2 bg-gradient-to-r from-ocean-blue-600 to-ocean-deep-600 bg-clip-text text-transparent">
+                  <h2 className="text-3xl font-bold text-slate-800 text-center mb-2 bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent">
                     Wie heißt du?
                   </h2>
                   <p className="text-slate-600 text-center mb-8">
@@ -212,7 +212,7 @@ function UserWizard({ onComplete, initialData = null }) {
                       className={`w-full px-5 py-4 border-2 rounded-xl text-lg focus:outline-none focus:ring-4 transition-all duration-200 ${
                         errors.user_name
                           ? 'border-red-400 bg-red-50 focus:ring-red-200'
-                          : 'border-ocean-blue-200 bg-white hover:border-ocean-blue-300 focus:border-ocean-blue-500 focus:ring-ocean-blue-100'
+                          : 'border-indigo-200 bg-white hover:border-indigo-300 focus:border-indigo-500 focus:ring-indigo-100'
                       }`}
                       autoFocus
                     />
@@ -231,16 +231,16 @@ function UserWizard({ onComplete, initialData = null }) {
               <div className="space-y-6 animate-fade-in">
                 <div className="flex items-center justify-center mb-6">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-ocean-teal-400 to-ocean-teal-600 flex items-center justify-center shadow-xl">
+                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center shadow-xl">
                       <Briefcase className="w-12 h-12 text-white" strokeWidth={2} />
                     </div>
-                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-ocean-deep-400 to-ocean-deep-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
                       <span className="text-white font-bold text-sm">2</span>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-800 text-center mb-2 bg-gradient-to-r from-ocean-teal-600 to-ocean-teal-700 bg-clip-text text-transparent">
+                  <h2 className="text-3xl font-bold text-slate-800 text-center mb-2 bg-gradient-to-r from-violet-600 to-violet-700 bg-clip-text text-transparent">
                     Für welche Position?
                   </h2>
                   <p className="text-slate-600 text-center mb-8">
@@ -259,7 +259,7 @@ function UserWizard({ onComplete, initialData = null }) {
                       className={`w-full px-5 py-4 border-2 rounded-xl text-lg focus:outline-none focus:ring-4 transition-all duration-200 ${
                         errors.position
                           ? 'border-red-400 bg-red-50 focus:ring-red-200'
-                          : 'border-ocean-teal-200 bg-white hover:border-ocean-teal-300 focus:border-ocean-teal-500 focus:ring-ocean-teal-100'
+                          : 'border-violet-200 bg-white hover:border-violet-300 focus:border-violet-500 focus:ring-violet-100'
                       }`}
                       autoFocus
                     />
@@ -277,7 +277,7 @@ function UserWizard({ onComplete, initialData = null }) {
                           key={suggestion}
                           type="button"
                           onClick={() => handleInputChange('position', suggestion)}
-                          className="text-xs px-2.5 py-1 bg-ocean-teal-50 text-ocean-teal-700 rounded-full hover:bg-ocean-teal-100 transition-colors border border-ocean-teal-200"
+                          className="text-xs px-2.5 py-1 bg-violet-50 text-violet-700 rounded-full hover:bg-violet-100 transition-colors border border-violet-200"
                         >
                           {suggestion}
                         </button>
@@ -293,16 +293,16 @@ function UserWizard({ onComplete, initialData = null }) {
               <div className="space-y-6 animate-fade-in">
                 <div className="flex items-center justify-center mb-6">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-ocean-deep-500 to-ocean-deep-600 flex items-center justify-center shadow-xl">
+                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-xl">
                       <Building className="w-12 h-12 text-white" strokeWidth={2} />
                     </div>
-                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-ocean-teal-400 to-ocean-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
                       <span className="text-white font-bold text-sm">3</span>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-800 text-center mb-2 bg-gradient-to-r from-ocean-deep-600 to-ocean-blue-600 bg-clip-text text-transparent">
+                  <h2 className="text-3xl font-bold text-slate-800 text-center mb-2 bg-gradient-to-r from-indigo-700 to-indigo-600 bg-clip-text text-transparent">
                     Bei welchem Unternehmen?
                   </h2>
                   <p className="text-slate-600 text-center mb-8">
@@ -321,7 +321,7 @@ function UserWizard({ onComplete, initialData = null }) {
                       className={`w-full px-5 py-4 border-2 rounded-xl text-lg focus:outline-none focus:ring-4 transition-all duration-200 ${
                         errors.company
                           ? 'border-red-400 bg-red-50 focus:ring-red-200'
-                          : 'border-ocean-blue-200 bg-white hover:border-ocean-blue-300 focus:border-ocean-blue-500 focus:ring-ocean-blue-100'
+                          : 'border-indigo-200 bg-white hover:border-indigo-300 focus:border-indigo-500 focus:ring-indigo-100'
                       }`}
                       autoFocus
                     />
@@ -364,15 +364,15 @@ function UserWizard({ onComplete, initialData = null }) {
                   />
 
                   {/* Info box */}
-                  <div className="mt-6 relative overflow-hidden rounded-2xl border-2 border-ocean-blue-200/60">
-                    <div className="absolute inset-0 bg-gradient-to-br from-ocean-blue-50 to-ocean-teal-50"></div>
+                  <div className="mt-6 relative overflow-hidden rounded-2xl border-2 border-indigo-200/60">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-violet-50"></div>
                     <div className="relative p-4 flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean-blue-500 to-ocean-deep-600 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
                         <Sparkles className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-ocean-deep-800 mb-1">💡 Tipp</p>
-                        <p className="text-sm text-ocean-deep-700">
+                        <p className="font-semibold text-indigo-800 mb-1">💡 Tipp</p>
+                        <p className="text-sm text-indigo-700">
                           Du kannst den Gesprächsstil auch während des Interviews anpassen, falls du mehr Herausforderung oder Unterstützung brauchst.
                         </p>
                       </div>
@@ -382,31 +382,31 @@ function UserWizard({ onComplete, initialData = null }) {
 
                 {/* Final Summary Card */}
                 <div className="mt-8 relative overflow-hidden rounded-2xl border-2 border-gradient">
-                  <div className="absolute inset-0 bg-gradient-to-br from-ocean-blue-50 via-ocean-blue-100 to-ocean-teal-50"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-indigo-100 to-violet-50"></div>
                   <div className="relative p-6">
                     <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-ocean-teal-400 to-ocean-teal-500 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-violet-500 flex items-center justify-center">
                         <CheckCircle className="w-5 h-5 text-white" />
                       </div>
                       Zusammenfassung
                     </h3>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-white/60">
-                        <User className="w-5 h-5 text-ocean-blue-600" />
+                        <User className="w-5 h-5 text-indigo-600" />
                         <div className="flex-1">
                           <span className="text-xs text-slate-500 block">Name</span>
                           <span className="font-semibold text-slate-800">{formData.user_name}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-white/60">
-                        <Briefcase className="w-5 h-5 text-ocean-teal-600" />
+                        <Briefcase className="w-5 h-5 text-violet-600" />
                         <div className="flex-1">
                           <span className="text-xs text-slate-500 block">Position</span>
                           <span className="font-semibold text-slate-800">{formData.position}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-white/60">
-                        <Building className="w-5 h-5 text-ocean-deep-600" />
+                        <Building className="w-5 h-5 text-indigo-700" />
                         <div className="flex-1">
                           <span className="text-xs text-slate-500 block">Unternehmen</span>
                           <span className="font-semibold text-slate-800">{formData.company}</span>
@@ -427,12 +427,12 @@ function UserWizard({ onComplete, initialData = null }) {
           </div>
 
           {/* Navigation Buttons */}
-          <div className="px-6 py-6 bg-gradient-to-r from-ocean-blue-50 to-ocean-teal-50/30 border-t border-ocean-blue-100/50 flex justify-between gap-4">
+          <div className="px-6 py-6 bg-gradient-to-r from-indigo-50 to-violet-50/30 border-t border-indigo-100/50 flex justify-between gap-4">
             <Button
               onClick={handleBack}
               disabled={step === initialStep}
               variant="outline"
-              className="min-w-[120px] border-2 border-slate-300 hover:border-ocean-blue-400 hover:bg-ocean-blue-50 transition-all duration-200 disabled:opacity-40"
+              className="min-w-[120px] border-2 border-slate-300 hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200 disabled:opacity-40"
             >
               <ChevronRight className="w-4 h-4 mr-2 rotate-180" />
               Zurück
@@ -440,7 +440,7 @@ function UserWizard({ onComplete, initialData = null }) {
 
             <Button
               onClick={handleNext}
-              className="min-w-[120px] bg-gradient-to-r from-ocean-blue-600 via-ocean-deep-600 to-ocean-teal-500 hover:from-ocean-blue-700 hover:via-ocean-deep-700 hover:to-ocean-teal-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              className="min-w-[120px] bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-600 hover:from-indigo-700 hover:via-indigo-800 hover:to-violet-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
             >
               {step === totalSteps ? (
                 <>

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 /**
  * Textarea Component
  *
- * Professional multi-line text input with ocean-theme styling.
+ * Professional multi-line text input with indigo-theme styling.
  * Uses explicit colors to avoid CSS variable conflicts.
  */
 const Textarea = React.forwardRef(({ className, ...props }, ref) => {
@@ -17,8 +17,8 @@ const Textarea = React.forwardRef(({ className, ...props }, ref) => {
         'border-slate-200 shadow-sm',
         // Placeholder
         'placeholder:text-slate-400',
-        // Focus state - explicit ocean colors
-        'focus:outline-none focus:border-ocean-blue-400 focus:ring-2 focus:ring-ocean-blue-100',
+        // Focus state - explicit indigo colors
+        'focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100',
         // Disabled state
         'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50',
         // Hover state

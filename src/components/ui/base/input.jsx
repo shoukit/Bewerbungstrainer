@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 /**
  * Input Component
  *
- * Professional text input with ocean-theme styling.
+ * Professional text input with indigo-theme styling.
  * Uses explicit colors to avoid CSS variable conflicts.
  */
 const Input = React.forwardRef(({ className, type, ...props }, ref) => {
@@ -18,12 +18,12 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
         'border-slate-200 shadow-sm',
         // Placeholder
         'placeholder:text-slate-400',
-        // Focus state - explicit ocean colors
-        'focus:outline-none focus:border-ocean-blue-400 focus:ring-2 focus:ring-ocean-blue-100',
+        // Focus state - explicit indigo colors
+        'focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100',
         // Disabled state
         'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50',
         // File input
-        'file:border-0 file:bg-ocean-blue-50 file:text-ocean-blue-700 file:text-sm file:font-medium file:mr-4 file:px-4 file:py-2 file:rounded-lg',
+        'file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-sm file:font-medium file:mr-4 file:px-4 file:py-2 file:rounded-lg',
         // Hover state
         'hover:border-slate-300',
         // Transition

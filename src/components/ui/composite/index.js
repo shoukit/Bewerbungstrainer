@@ -4,9 +4,12 @@
 
 export { default as Accordion } from './Accordion';
 export { default as AudioVisualizer } from './AudioVisualizer';
+export { default as AuthRequiredCard } from './AuthRequiredCard';
+export { Confetti, useConfetti } from './Confetti';
 export { default as ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 export { default as ConfirmationDialog } from './ConfirmationDialog';
 export { default as DynamicFormField } from './DynamicFormField';
+export { default as ErrorFallback } from './ErrorFallback';
 export { default as ErrorState } from './ErrorState';
 export { default as FeedbackTip } from './feedback-tip';
 export { default as FullscreenLoader } from './fullscreen-loader';
