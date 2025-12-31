@@ -73,12 +73,35 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
         const audio = new Audio(audioSrc);
         audioRef.current = audio;
 
+        // Enable preloading for better duration detection
+        audio.preload = 'auto';
+
+        const updateDuration = () => {
+          const dur = audio.duration;
+          if (dur && isFinite(dur) && dur > 0 && isMounted) {
+            setDuration(dur);
+          }
+        };
+
         audio.addEventListener('loadedmetadata', () => {
           if (isMounted) {
-            setDuration(audio.duration);
+            updateDuration();
             setIsLoading(false);
+
+            // For WebM/Opus files, duration might be Infinity initially
+            // Try seeking to end to force browser to calculate duration
+            if (!isFinite(audio.duration) || audio.duration === 0) {
+              const savedTime = audio.currentTime;
+              audio.currentTime = Number.MAX_SAFE_INTEGER;
+              setTimeout(() => {
+                updateDuration();
+                audio.currentTime = savedTime;
+              }, 100);
+            }
           }
         });
+
+        audio.addEventListener('durationchange', updateDuration);
 
         audio.addEventListener('timeupdate', () => {
           if (isMounted) {
