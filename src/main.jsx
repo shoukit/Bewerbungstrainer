@@ -9,6 +9,66 @@ import App from './App.jsx'
 const DEBUG_PREFIX = '[MAIN.JSX]';
 console.log(`${DEBUG_PREFIX} 🚀 Script loaded at ${new Date().toISOString()}`);
 
+// ============================================================================
+// CSS LOADING CHECK - Wait for stylesheets to load before mounting
+// ============================================================================
+function waitForCSS() {
+  return new Promise((resolve) => {
+    // Get all stylesheets from the document
+    const styleSheets = document.querySelectorAll('link[rel="stylesheet"]');
+    const bewerbungstrainerCSS = Array.from(styleSheets).filter(
+      link => link.href && link.href.includes('bewerbungstrainer')
+    );
+
+    console.log(`${DEBUG_PREFIX} 🎨 Found ${bewerbungstrainerCSS.length} Bewerbungstrainer stylesheets`);
+
+    if (bewerbungstrainerCSS.length === 0) {
+      // No external CSS found, resolve immediately
+      console.log(`${DEBUG_PREFIX} 🎨 No external CSS, resolving immediately`);
+      resolve();
+      return;
+    }
+
+    let loadedCount = 0;
+    const totalCount = bewerbungstrainerCSS.length;
+
+    const checkAllLoaded = () => {
+      loadedCount++;
+      console.log(`${DEBUG_PREFIX} 🎨 CSS loaded: ${loadedCount}/${totalCount}`);
+      if (loadedCount >= totalCount) {
+        console.log(`${DEBUG_PREFIX} ✅ All CSS loaded!`);
+        resolve();
+      }
+    };
+
+    bewerbungstrainerCSS.forEach((link) => {
+      // Check if already loaded
+      if (link.sheet) {
+        console.log(`${DEBUG_PREFIX} 🎨 CSS already loaded: ${link.href}`);
+        checkAllLoaded();
+      } else {
+        // Wait for load event
+        link.addEventListener('load', () => {
+          console.log(`${DEBUG_PREFIX} 🎨 CSS load event: ${link.href}`);
+          checkAllLoaded();
+        });
+        link.addEventListener('error', () => {
+          console.warn(`${DEBUG_PREFIX} ⚠️ CSS failed to load: ${link.href}`);
+          checkAllLoaded(); // Still continue even if one fails
+        });
+      }
+    });
+
+    // Fallback timeout - don't wait forever (3 seconds max)
+    setTimeout(() => {
+      if (loadedCount < totalCount) {
+        console.warn(`${DEBUG_PREFIX} ⚠️ CSS loading timeout, proceeding anyway`);
+        resolve();
+      }
+    }, 3000);
+  });
+}
+
 // Keep track of whether we've already mounted to prevent double mounting
 let hasAlreadyMounted = false;
 let reactRoot = null;
@@ -75,13 +135,19 @@ function initReactApp() {
 }
 
 // WordPress compatibility: Use multiple strategies to ensure DOM is ready
-function waitForDOMAndMount() {
+async function waitForDOMAndMount() {
   console.log(`${DEBUG_PREFIX} 🕐 waitForDOMAndMount() called, readyState=${document.readyState}`);
 
   // Use requestAnimationFrame to ensure we're not blocking the main thread
   // and give other scripts time to initialize
-  const safeMount = (strategy) => {
+  const safeMount = async (strategy) => {
     console.log(`${DEBUG_PREFIX} 🎬 safeMount() via ${strategy}`);
+
+    // Wait for CSS to load before mounting React
+    console.log(`${DEBUG_PREFIX} ⏳ Waiting for CSS to load...`);
+    await waitForCSS();
+    console.log(`${DEBUG_PREFIX} 🎨 CSS ready, mounting React...`);
+
     requestAnimationFrame(() => {
       try {
         initReactApp();
