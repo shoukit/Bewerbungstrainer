@@ -8,6 +8,7 @@ import {
   Target,
   Star,
   ChevronDown,
+  MessageSquare,
 } from 'lucide-react';
 import RatingBar from './RatingBar';
 
@@ -29,11 +30,109 @@ const getItemText = (item) => {
 };
 
 /**
+ * Helper to convert camelCase/snake_case to readable German labels
+ */
+const formatLabel = (key) => {
+  const labelMap = {
+    'selbstkundgabe': 'Selbstkundgabe',
+    'beziehung': 'Beziehungsebene',
+    'sachinhalt': 'Sachinhalt',
+    'appell': 'Appell',
+    'bewertung': 'Bewertung',
+    'begruendung': 'Begründung',
+    'nachricht': 'Nachricht',
+    'analyse_nachricht': 'Nachricht-Analyse',
+    'overall_assessment': 'Gesamtbewertung',
+    'deescalation_score': 'Deeskalations-Score',
+    'score_explanation': 'Score-Erklärung',
+  };
+
+  // Check direct match first
+  const lowerKey = key.toLowerCase();
+  if (labelMap[lowerKey]) return labelMap[lowerKey];
+
+  // Convert snake_case/camelCase to readable format
+  return key
+    .replace(/_/g, ' ')
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, str => str.toUpperCase())
+    .trim();
+};
+
+/**
+ * Recursively render any JSON value in a readable format
+ */
+const renderValue = (value, depth = 0) => {
+  if (value === null || value === undefined) return null;
+
+  if (typeof value === 'string') {
+    return <p className="text-[13px] leading-relaxed text-slate-700 m-0 whitespace-pre-wrap">{value}</p>;
+  }
+
+  if (typeof value === 'number') {
+    return <span className="text-[13px] font-semibold text-primary">{value}</span>;
+  }
+
+  if (typeof value === 'boolean') {
+    return <span className={`text-[13px] font-semibold ${value ? 'text-green-600' : 'text-red-600'}`}>{value ? 'Ja' : 'Nein'}</span>;
+  }
+
+  if (Array.isArray(value)) {
+    return (
+      <div className="space-y-2">
+        {value.map((item, idx) => (
+          <div key={idx} className="flex gap-2">
+            <span className="text-slate-400 text-[13px]">•</span>
+            <div className="flex-1">{renderValue(item, depth + 1)}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (typeof value === 'object') {
+    return (
+      <div className={`space-y-3 ${depth > 0 ? 'pl-3 border-l-2 border-slate-200' : ''}`}>
+        {Object.entries(value).map(([key, val]) => (
+          <div key={key}>
+            <span className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide">
+              {formatLabel(key)}
+            </span>
+            <div className="mt-1">{renderValue(val, depth + 1)}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return <span className="text-[13px] text-slate-700">{String(value)}</span>;
+};
+
+/**
+ * Check if feedback has any of the standard fields
+ */
+const hasStandardFormat = (feedback) => {
+  if (!feedback) return false;
+  return !!(
+    feedback.summary ||
+    feedback.overall_assessment ||
+    feedback.strengths?.length > 0 ||
+    feedback.improvements?.length > 0 ||
+    feedback.areas_for_improvement?.length > 0 ||
+    feedback.tips?.length > 0 ||
+    feedback.suggestions?.length > 0 ||
+    feedback.rating
+  );
+};
+
+/**
  * Coaching Tab Content for Session Reports
  * Displays summary, strengths, improvements, tips, and rating bars
  */
 const ReportCoachingContent = ({ feedback: rawFeedback, audioAnalysis, primaryAccent, branding }) => {
-  const [expandedSection, setExpandedSection] = useState('summary');
+  // Determine initial expanded section based on feedback format
+  const initialSection = hasStandardFormat(rawFeedback) ? 'summary' : 'custom-feedback';
+  const [expandedSection, setExpandedSection] = useState(initialSection);
 
   // Normalize feedback to handle both old and new Gemini response formats
   const feedback = rawFeedback ? {
@@ -233,6 +332,39 @@ const ReportCoachingContent = ({ feedback: rawFeedback, audioAnalysis, primaryAc
           {feedback.rating.preparation !== undefined && (
             <RatingBar label="Vorbereitung" value={feedback.rating.preparation} primaryAccent={primaryAccent} branding={branding} />
           )}
+        </div>
+      )}
+
+      {/* Fallback: Generic JSON display for custom feedback formats */}
+      {!hasStandardFormat(rawFeedback) && rawFeedback && (
+        <div className="bg-primary/5 rounded-xl border border-primary/20 overflow-hidden">
+          <button
+            onClick={() => toggleSection('custom-feedback')}
+            className="w-full px-4 py-3.5 flex items-center gap-2.5 bg-transparent border-none cursor-pointer text-left"
+          >
+            <MessageSquare size={18} className="text-primary" />
+            <span className="flex-1 text-sm font-semibold text-slate-900">
+              Feedback-Analyse
+            </span>
+            <ChevronDown
+              size={18}
+              className={`text-slate-500 transition-transform ${expandedSection === 'custom-feedback' ? 'rotate-180' : ''}`}
+            />
+          </button>
+          <AnimatePresence>
+            {expandedSection === 'custom-feedback' && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="px-4 pb-4">
+                  {renderValue(rawFeedback)}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>
