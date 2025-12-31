@@ -54,13 +54,13 @@ const FilterBadge = ({ count }) => {
  */
 const SearchInput = ({ value, onChange, placeholder, className = '' }) => (
   <div className={`relative ${className}`}>
-    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 pointer-events-none z-10" />
+    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 pointer-events-none z-10" />
     <input
       type="text"
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full py-3 pl-12 pr-4 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-slate-400"
+      className="w-full py-3 pl-14 pr-4 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-slate-400"
     />
   </div>
 );
