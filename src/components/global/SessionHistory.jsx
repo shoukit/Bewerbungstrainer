@@ -926,9 +926,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
       {/* Desktop Action buttons */}
       <div className="hidden sm:flex justify-center lg:justify-end flex-wrap gap-3 mx-6 mb-6">
-        <Button variant="outline" onClick={loadAllData} disabled={isLoading}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Aktualisieren
+        <Button variant="outline" onClick={loadAllData} disabled={isLoading} title="Aktualisieren">
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
         {onNavigateToModule && (
           <Button
