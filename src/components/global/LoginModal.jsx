@@ -263,11 +263,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full px-6 py-3.5 text-base font-semibold rounded-xl border-none cursor-pointer flex items-center justify-center gap-2.5 transition-all shadow-lg disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none hover:enabled:-translate-y-0.5 hover:enabled:shadow-xl"
-            style={{
-              color: sidebarTextColor,
-              background: isLoading ? '#94a3b8' : buttonGradient,
-            }}
+            className="w-full px-6 py-3.5 text-base font-semibold rounded-xl border-none cursor-pointer flex items-center justify-center gap-2.5 transition-all duration-200 shadow-primary disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none disabled:bg-slate-400 hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
           >
             {isLoading ? (
               <>

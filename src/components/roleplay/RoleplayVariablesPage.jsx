@@ -234,17 +234,7 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext, primaryAccent, header
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full px-6 py-4 rounded-xl border-none text-white text-base font-semibold cursor-pointer flex items-center justify-center gap-2.5 transition-all hover:-translate-y-0.5"
-          style={{
-            background: buttonGradient,
-            boxShadow: `0 4px 12px ${primaryAccent}4d`,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
-          }}
+          className="w-full px-6 py-4 rounded-xl border-none text-white text-base font-semibold cursor-pointer flex items-center justify-center gap-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-primary"
         >
           Weiter
           <ArrowRight className="w-5 h-5" />
