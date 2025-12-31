@@ -188,7 +188,7 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
  */
 const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNew }) => {
   const { branding } = usePartner();
-  const primaryAccent = branding?.primaryAccent || '#3A7FA7';
+  const primaryAccent = branding?.primaryAccent || '#6366f1';
 
   const overallScore = session?.overall_score || 0;
   const categoryScores = session?.category_scores || [];

@@ -800,7 +800,7 @@ const BriefingWorkbook = ({
       {/* Header - Full width sticky */}
       <div
         className="sticky top-0 z-40 px-4 py-5 md:px-8 md:py-6"
-        style={{ background: 'var(--header-gradient, linear-gradient(135deg, #3A7FA7 0%, #4A9BC7 100%))' }}
+        style={{ background: 'var(--header-gradient, linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%))' }}
       >
         <div className="max-w-[1400px] mx-auto">
           {/* Back Button */}

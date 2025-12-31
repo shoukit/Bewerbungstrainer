@@ -61,21 +61,21 @@ const DEFAULT_BRANDING = {
   '--sidebar-bg-color': '#ffffff',
   '--sidebar-text-color': '#0f172a',
   '--sidebar-text-muted': '#64748b',
-  '--sidebar-active-bg': '#E8F4F8',
-  '--sidebar-active-text': '#2D6485',
+  '--sidebar-active-bg': '#eef2ff',
+  '--sidebar-active-text': '#4f46e5',
   // Akzentfarben
-  '--primary-accent': '#3A7FA7',
-  '--primary-accent-hover': '#2D6485',
+  '--primary-accent': '#6366f1',
+  '--primary-accent-hover': '#4f46e5',
   // Buttons
-  '--button-solid': '#3A7FA7',
+  '--button-solid': '#6366f1',
   '--button-text': '#ffffff',
   // Header
-  '--header-gradient-start': '#3A7FA7',
-  '--header-gradient-end': '#3DA389',
+  '--header-gradient-start': '#6366f1',
+  '--header-gradient-end': '#8b5cf6',
   '--header-text': '#ffffff',
   // Icons
-  '--icon-primary': '#3A7FA7',
-  '--icon-secondary': '#3DA389',
+  '--icon-primary': '#6366f1',
+  '--icon-secondary': '#8b5cf6',
   '--icon-muted': '#94a3b8',
   // Text
   '--text-main': '#0f172a',
@@ -84,7 +84,7 @@ const DEFAULT_BRANDING = {
   // Rahmen & Focus
   '--border-color': '#e2e8f0',
   '--border-color-light': '#f1f5f9',
-  '--focus-ring': 'rgba(58, 127, 167, 0.3)',
+  '--focus-ring': 'rgba(99, 102, 241, 0.3)',
 };
 
 // Branding field sections for the form - icons will be added in component

@@ -104,7 +104,7 @@ const SetupSelector = () => {
   }, []);
 
   // Get partner-branded colors
-  const primaryAccent = branding?.['--primary-accent'] || '#3A7FA7';
+  const primaryAccent = branding?.['--primary-accent'] || '#6366f1';
 
   const handleSelectSetup = (setupId) => {
     setSelectedSetup(setupId);

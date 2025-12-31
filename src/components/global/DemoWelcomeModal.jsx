@@ -29,10 +29,10 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Get brand colors from partner branding
-  const primaryAccent = branding?.['--primary-accent'] || '#3A7FA7';
-  const buttonGradient = branding?.['--button-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)';
-  const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)';
-  const focusRing = branding?.['--focus-ring'] || 'rgba(58, 127, 167, 0.3)';
+  const primaryAccent = branding?.['--primary-accent'] || '#6366f1';
+  const buttonGradient = branding?.['--button-gradient'] || 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+  const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+  const focusRing = branding?.['--focus-ring'] || 'rgba(99, 102, 241, 0.3)';
   const headerText = branding?.['--header-text'] || '#ffffff';
   const sidebarTextColor = branding?.['--sidebar-text-color'] || '#ffffff';
 

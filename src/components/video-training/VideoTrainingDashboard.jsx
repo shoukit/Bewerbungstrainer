@@ -34,8 +34,8 @@ const SCENARIO_TYPE_CONFIG = {
   self_presentation: {
     label: 'Selbstpräsentation',
     icon: User,
-    color: '#3A7FA7',
-    bgColor: '#E8F4F8',
+    color: '#6366f1',
+    bgColor: '#eef2ff',
   },
   interview: {
     label: 'Bewerbungsgespräch',
