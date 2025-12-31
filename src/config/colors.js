@@ -190,6 +190,48 @@ export const COLORS = {
     900: '#7C2D12',
   },
 
+  // Accent: Pink (Confetti, celebrations)
+  pink: {
+    50: '#FDF2F8',
+    100: '#FCE7F3',
+    200: '#FBCFE8',
+    300: '#F9A8D4',
+    400: '#F472B6',
+    500: '#EC4899',
+    600: '#DB2777',
+    700: '#BE185D',
+    800: '#9D174D',
+    900: '#831843',
+  },
+
+  // Accent: Rose (Confetti, celebrations)
+  rose: {
+    50: '#FFF1F2',
+    100: '#FFE4E6',
+    200: '#FECDD3',
+    300: '#FDA4AF',
+    400: '#FB7185',
+    500: '#F43F5E',
+    600: '#E11D48',
+    700: '#BE123C',
+    800: '#9F1239',
+    900: '#881337',
+  },
+
+  // Accent: Yellow (Confetti, highlights)
+  yellow: {
+    50: '#FEFCE8',
+    100: '#FEF9C3',
+    200: '#FEF08A',
+    300: '#FDE047',
+    400: '#FACC15',
+    500: '#EAB308',
+    600: '#CA8A04',
+    700: '#A16207',
+    800: '#854D0E',
+    900: '#713F12',
+  },
+
   // Pure colors
   white: '#FFFFFF',
   black: '#000000',
