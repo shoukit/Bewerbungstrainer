@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { getBestSupportedMimeType, fileToBase64 } from '@/utils/audio';
 import wordpressAPI from '@/services/wordpress-api';
-import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Format duration to M:SS format (like Gemini: 0:16)
@@ -60,7 +59,7 @@ const isHallucination = (transcript) => {
 /**
  * Simple bar waveform visualization (like Gemini)
  */
-const SimpleWaveform = ({ isRecording, analyserNode, b }) => {
+const SimpleWaveform = ({ isRecording, analyserNode }) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
 
@@ -97,7 +96,7 @@ const SimpleWaveform = ({ isRecording, analyserNode, b }) => {
         const value = dataArray[dataIndex] || 0;
         const barHeight = Math.max(2, (value / 255) * (canvas.height * 0.8));
 
-        ctx.fillStyle = b.textMain;
+        ctx.fillStyle = '#1e293b'; // slate-800
         ctx.fillRect(
           i * (barWidth + gap),
           centerY - barHeight / 2,
@@ -116,18 +115,14 @@ const SimpleWaveform = ({ isRecording, analyserNode, b }) => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isRecording, analyserNode, b]);
+  }, [isRecording, analyserNode]);
 
   return (
     <canvas
       ref={canvasRef}
       width={200}
       height={32}
-      style={{
-        flex: 1,
-        maxWidth: '300px',
-        minWidth: '100px',
-      }}
+      className="flex-1 max-w-[300px] min-w-[80px] sm:min-w-[100px]"
     />
   );
 };
@@ -141,8 +136,6 @@ const SimpleWaveform = ({ isRecording, analyserNode, b }) => {
  * 3. Transcribing: Loading state
  */
 const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
-  const b = useBranding();
-
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -362,25 +355,14 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
   // Transcribing state
   if (isTranscribing) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: b.space[2],
-        padding: `${b.space[3]} ${b.space[4]}`,
-        backgroundColor: b.cardBgHover,
-        borderRadius: b.radius.full,
-        border: `1px solid ${b.borderColor}`,
-      }}>
+      <div className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 rounded-full border border-slate-200">
         <Loader2
-          size={b.iconSize['2xl']}
-          color={b.textSecondary}
-          style={{ animation: 'spin 1s linear infinite' }}
+          size={24}
+          className="text-slate-500 animate-spin"
         />
-        <span style={{ fontSize: b.fontSize.base, color: b.textSecondary }}>
+        <span className="text-base text-slate-500 hidden sm:inline">
           Wird transkribiert...
         </span>
-        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -388,81 +370,27 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
   // Recording state
   if (isRecording) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: b.space[3],
-        padding: `${b.space[2]} ${b.space[3]}`,
-        backgroundColor: b.cardBgHover,
-        borderRadius: b.radius.full,
-        border: `1px solid ${b.borderColor}`,
-      }}>
+      <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 bg-slate-100 rounded-full border border-slate-200">
         {/* Cancel button */}
         <button
           onClick={cancelRecording}
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: b.radius.full,
-            border: 'none',
-            backgroundColor: b.borderColorLight,
-            color: b.textSecondary,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: `all ${b.transition.fast}`,
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = b.borderColor;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = b.borderColorLight;
-          }}
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-none bg-slate-200 text-slate-500 cursor-pointer flex items-center justify-center transition-all shrink-0 hover:bg-slate-300"
         >
           <X size={20} strokeWidth={2.5} />
         </button>
 
         {/* Waveform */}
-        <SimpleWaveform isRecording={isRecording} analyserNode={analyserRef.current} b={b} />
+        <SimpleWaveform isRecording={isRecording} analyserNode={analyserRef.current} />
 
         {/* Timer */}
-        <span style={{
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: b.fontSize.lg,
-          fontWeight: b.fontWeight.medium,
-          color: b.textMain,
-          minWidth: '40px',
-          textAlign: 'right',
-          flexShrink: 0,
-        }}>
+        <span className="font-sans text-base sm:text-lg font-medium text-slate-800 min-w-[40px] text-right shrink-0">
           {formatDuration(duration)}
         </span>
 
         {/* Confirm button */}
         <button
           onClick={confirmRecording}
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: b.radius.full,
-            border: 'none',
-            backgroundColor: b.primaryAccent,
-            color: b.white,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: `all ${b.transition.fast}`,
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '0.9';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '1';
-          }}
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-none bg-primary text-white cursor-pointer flex items-center justify-center transition-all shrink-0 hover:opacity-90"
         >
           <Check size={20} strokeWidth={2.5} />
         </button>
@@ -472,36 +400,19 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
 
   // Idle state - just the mic button
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2] }}>
+    <div className="flex items-center gap-2">
       {error && (
-        <span style={{ fontSize: b.fontSize.sm, color: b.error }}>{error}</span>
+        <span className="text-sm text-red-500 hidden sm:inline">{error}</span>
       )}
       <button
         onClick={startRecording}
         disabled={disabled}
         title="Spracheingabe"
-        style={{
-          width: '52px',
-          height: '52px',
-          borderRadius: b.radius.full,
-          border: 'none',
-          backgroundColor: b.textMain,
-          color: b.white,
-          cursor: disabled ? 'not-allowed' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: `all ${b.transition.fast}`,
-          opacity: disabled ? 0.5 : 1,
-        }}
-        onMouseEnter={(e) => {
-          if (!disabled) e.currentTarget.style.opacity = '0.9';
-        }}
-        onMouseLeave={(e) => {
-          if (!disabled) e.currentTarget.style.opacity = '1';
-        }}
+        className={`w-11 h-11 sm:w-[52px] sm:h-[52px] rounded-full border-none bg-slate-800 text-white flex items-center justify-center transition-all ${
+          disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:opacity-90'
+        }`}
       >
-        <Mic size={24} />
+        <Mic size={22} className="sm:w-6 sm:h-6" />
       </button>
     </div>
   );

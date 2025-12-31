@@ -293,7 +293,7 @@ const DecisionBoardResult = ({
           KI-Coaching Impulse
         </h2>
 
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] gap-5">
           {isLoading ? (
             // Skeleton loaders
             <>
@@ -318,7 +318,7 @@ const DecisionBoardResult = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-6">
             {/* Pro Arguments */}
             <div>
               <h4 className="text-lg font-semibold text-green-600 mb-3 flex items-center gap-2">
