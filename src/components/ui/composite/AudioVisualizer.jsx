@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { COLORS } from '@/config/colors';
 
 /**
  * Unified Audio Visualizer Component
@@ -65,8 +66,8 @@ const SpectrumVisualizer = ({ level, isActive, config, className, accentColor })
   const animationRef = useRef(null);
   const lastUpdateRef = useRef(0);
 
-  const baseColor = accentColor || '#3b82f6';
-  const glowColor = accentColor ? `${accentColor}60` : 'rgba(59, 130, 246, 0.4)';
+  const baseColor = accentColor || COLORS.blue[500];
+  const glowColor = accentColor ? `${accentColor}60` : `${COLORS.blue[500]}60`;
 
   // Generate dynamic bar heights
   useEffect(() => {
@@ -166,7 +167,7 @@ const WaveformVisualizer = ({ level, isActive, config, className, accentColor })
   const animationRef = useRef(null);
   const phaseRef = useRef(0);
 
-  const baseColor = accentColor || '#3b82f6';
+  const baseColor = accentColor || COLORS.blue[500];
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -261,7 +262,7 @@ const WaveformVisualizer = ({ level, isActive, config, className, accentColor })
  */
 const BarsVisualizer = ({ level, isActive, config, className, accentColor }) => {
   const bars = config.barCount;
-  const baseColor = accentColor || '#3b82f6';
+  const baseColor = accentColor || COLORS.blue[500];
 
   // Generate bar heights - evenly distributed, all responsive
   const generateBarHeights = () => {
@@ -322,7 +323,7 @@ const PulseVisualizer = ({ level, isActive, size, className, accentColor }) => {
   };
 
   const config = sizeMap[size] || sizeMap.md;
-  const baseColor = accentColor || '#3b82f6';
+  const baseColor = accentColor || COLORS.blue[500];
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>
@@ -390,13 +391,13 @@ const PulseVisualizer = ({ level, isActive, size, className, accentColor }) => {
  * Minimal horizontal progress bar
  */
 const MinimalVisualizer = ({ level, isActive, className, accentColor }) => {
-  const baseColor = accentColor || '#3b82f6';
+  const baseColor = accentColor || COLORS.blue[500];
 
   const getColor = () => {
-    if (!isActive) return 'rgb(148, 163, 184)';
-    if (level > 0.7) return 'rgb(34, 197, 94)';
+    if (!isActive) return COLORS.slate[400];
+    if (level > 0.7) return COLORS.green[500];
     if (level > 0.3) return baseColor;
-    return 'rgb(148, 163, 184)';
+    return COLORS.slate[400];
   };
 
   return (

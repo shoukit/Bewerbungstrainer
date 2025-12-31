@@ -30,12 +30,12 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Get brand colors from partner branding
-  const primaryAccent = branding?.['--primary-accent'] || '#6366f1';
-  const buttonGradient = branding?.['--button-gradient'] || 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-  const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-  const focusRing = branding?.['--focus-ring'] || 'rgba(99, 102, 241, 0.3)';
-  const headerText = branding?.['--header-text'] || '#ffffff';
-  const sidebarTextColor = branding?.['--sidebar-text-color'] || '#ffffff';
+  const primaryAccent = branding?.['--primary-accent'] || COLORS.indigo[500];
+  const buttonGradient = branding?.['--button-gradient'] || GRADIENTS.button;
+  const headerGradient = branding?.['--header-gradient'] || GRADIENTS.header;
+  const focusRing = branding?.['--focus-ring'] || hexToRgba(COLORS.indigo[500], 0.3);
+  const headerText = branding?.['--header-text'] || COLORS.white;
+  const sidebarTextColor = branding?.['--sidebar-text-color'] || COLORS.white;
 
   // Step 1: Validate demo code
   const handleValidateCode = async (e) => {
@@ -455,7 +455,7 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
                 style={inputStyle}
                 onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.borderColor = COLORS.slate[200];
                   e.target.style.boxShadow = 'none';
                 }}
                 placeholder="Ihre Firma"
@@ -478,7 +478,7 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
                 style={inputStyle}
                 onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.borderColor = COLORS.slate[200];
                   e.target.style.boxShadow = 'none';
                 }}
                 placeholder="Ihr Name"
@@ -500,7 +500,7 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
                 style={inputStyle}
                 onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.borderColor = COLORS.slate[200];
                   e.target.style.boxShadow = 'none';
                 }}
                 placeholder="email@firma.de"
@@ -522,7 +522,7 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
                 style={inputStyle}
                 onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.borderColor = COLORS.slate[200];
                   e.target.style.boxShadow = 'none';
                 }}
                 placeholder="https://www.ihre-firma.de"
@@ -544,7 +544,7 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
                 style={inputStyle}
                 onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.borderColor = COLORS.slate[200];
                   e.target.style.boxShadow = 'none';
                 }}
                 placeholder="+49 123 456789"

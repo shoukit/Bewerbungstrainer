@@ -14,6 +14,7 @@ import {
   Handshake,
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
+import { COLORS } from '@/config/colors';
 import ScenarioDashboard from '@/components/ui/composite/ScenarioDashboard';
 import FeatureInfoModal from '@/components/global/FeatureInfoModal';
 import FeatureInfoButton from '@/components/global/FeatureInfoButton';
@@ -34,32 +35,32 @@ const SCENARIO_TYPE_CONFIG = {
   self_presentation: {
     label: 'Selbstpräsentation',
     icon: User,
-    color: '#6366f1',
-    bgColor: '#eef2ff',
+    color: COLORS.indigo[500],
+    bgColor: COLORS.indigo[50],
   },
   interview: {
     label: 'Bewerbungsgespräch',
     icon: Briefcase,
-    color: '#059669',
-    bgColor: '#d1fae5',
+    color: COLORS.emerald[600],
+    bgColor: COLORS.emerald[100],
   },
   pitch: {
     label: 'Elevator Pitch',
     icon: Rocket,
-    color: '#7c3aed',
-    bgColor: '#ede9fe',
+    color: COLORS.violet[600],
+    bgColor: COLORS.violet[100],
   },
   negotiation: {
     label: 'Verhandlung',
     icon: Handshake,
-    color: '#d97706',
-    bgColor: '#fef3c7',
+    color: COLORS.amber[600],
+    bgColor: COLORS.amber[100],
   },
   custom: {
     label: 'Training',
     icon: Target,
-    color: '#64748b',
-    bgColor: '#f1f5f9',
+    color: COLORS.slate[500],
+    bgColor: COLORS.slate[100],
   },
 };
 

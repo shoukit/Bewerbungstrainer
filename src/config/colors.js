@@ -651,6 +651,26 @@ export const SVG_COLORS = {
 };
 
 // =============================================================================
+// CONFETTI COLORS (Celebration animations)
+// =============================================================================
+
+/**
+ * Colors for confetti celebration animations
+ */
+export const CONFETTI_COLORS = [
+  COLORS.indigo[500],
+  COLORS.violet[500],
+  COLORS.purple[500],
+  COLORS.pink[500],
+  COLORS.rose[500],
+  COLORS.orange[500],
+  COLORS.yellow[500],
+  COLORS.green[500],
+  COLORS.indigo[600],
+  COLORS.cyan[500],
+];
+
+// =============================================================================
 // DEFAULT BRANDING (fallback values)
 // =============================================================================
 

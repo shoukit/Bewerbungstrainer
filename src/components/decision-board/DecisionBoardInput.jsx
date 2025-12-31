@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/base/textarea';
 import { analyzeDecision, brainstormArguments } from '@/services/gemini';
 import AudioRecorder from './AudioRecorder';
 import DeepDiveWizard from './DeepDiveWizard';
+import { COLORS } from '@/config/colors';
 
 /**
  * Generate unique ID for items
@@ -37,7 +38,7 @@ const PERSONAS = [
     id: 'strategist',
     name: 'Der Stratege',
     icon: '♟️',
-    color: '#6366f1',
+    color: COLORS.indigo[500],
     bgColor: 'bg-indigo-50',
     borderColor: 'border-indigo-500',
     textColor: 'text-indigo-600',
@@ -47,7 +48,7 @@ const PERSONAS = [
     id: 'security',
     name: 'Der Sicherheits-Beauftragte',
     icon: '🛡️',
-    color: '#0891b2',
+    color: COLORS.cyan[600],
     bgColor: 'bg-cyan-50',
     borderColor: 'border-cyan-600',
     textColor: 'text-cyan-700',
@@ -57,7 +58,7 @@ const PERSONAS = [
     id: 'feelgood',
     name: 'Der Feel-Good Manager',
     icon: '🧘',
-    color: '#10b981',
+    color: COLORS.emerald[500],
     bgColor: 'bg-emerald-50',
     borderColor: 'border-emerald-500',
     textColor: 'text-emerald-600',
@@ -67,7 +68,7 @@ const PERSONAS = [
     id: 'growth',
     name: 'Der Gründer',
     icon: '🚀',
-    color: '#f59e0b',
+    color: COLORS.amber[500],
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-500',
     textColor: 'text-amber-600',
@@ -77,7 +78,7 @@ const PERSONAS = [
     id: 'future',
     name: 'Dein Zukunfts-Ich',
     icon: '🔮',
-    color: '#8b5cf6',
+    color: COLORS.violet[500],
     bgColor: 'bg-violet-50',
     borderColor: 'border-violet-500',
     textColor: 'text-violet-600',
@@ -90,7 +91,7 @@ const PERSONAS = [
  */
 const WeightSlider = ({ value, onChange, onChangeEnd, color }) => {
   const isGreen = color === 'green';
-  const accentColor = isGreen ? '#22c55e' : '#ef4444';
+  const accentColor = isGreen ? COLORS.green[500] : COLORS.red[500];
 
   return (
     <div className="flex items-center gap-2 min-w-[90px] shrink-0">

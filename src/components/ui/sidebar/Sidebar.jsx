@@ -696,7 +696,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
         headerBg: themedColors.sidebarBg,
         headerText: themedColors.sidebarText,
         headerTextMuted: themedColors.sidebarTextMuted,
-        menuBg: '#ffffff',
+        menuBg: THEME_COLORS.white,
         activeBg: themedColors.sidebarActiveBg,
         activeText: themedColors.sidebarActiveText,
         hoverBg: themedColors.sidebarHoverBg,
@@ -711,7 +711,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
       headerBg: DEFAULT_SIDEBAR_COLORS.sidebarBg,
       headerText: DEFAULT_SIDEBAR_COLORS.sidebarText,
       headerTextMuted: DEFAULT_SIDEBAR_COLORS.sidebarTextMuted,
-      menuBg: '#ffffff',
+      menuBg: THEME_COLORS.white,
       activeBg: DEFAULT_SIDEBAR_COLORS.sidebarActiveBg,
       activeText: DEFAULT_SIDEBAR_COLORS.sidebarActiveText,
       hoverBg: THEME_COLORS.slate[50],
@@ -980,12 +980,12 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
 
   const appBackground = React.useMemo(() => {
     if (branding) {
-      const bgStart = branding['--app-bg-start'] || '#f8fafc';
-      const bgMid = branding['--app-bg-mid'] || '#eff6ff';
-      const bgEnd = branding['--app-bg-end'] || '#f0fdfa';
+      const bgStart = branding['--app-bg-start'] || THEME_COLORS.slate[50];
+      const bgMid = branding['--app-bg-mid'] || THEME_COLORS.blue[50];
+      const bgEnd = branding['--app-bg-end'] || THEME_COLORS.teal[50];
       return `linear-gradient(135deg, ${bgStart} 0%, ${bgMid} 50%, ${bgEnd} 100%)`;
     }
-    return 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)';
+    return `linear-gradient(135deg, ${THEME_COLORS.slate[50]} 0%, ${THEME_COLORS.blue[50]} 50%, ${THEME_COLORS.teal[50]} 100%)`;
   }, [branding]);
 
   React.useEffect(() => {

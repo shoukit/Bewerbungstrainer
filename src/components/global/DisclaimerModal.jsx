@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePartner } from '@/context/PartnerContext';
 import { Info, AlertTriangle, Shield } from 'lucide-react';
+import { COLORS, GRADIENTS } from '@/config/colors';
 
 /**
  * DisclaimerModal Component
@@ -16,11 +17,11 @@ export function DisclaimerModal({ isOpen, onClose, onAcknowledge }) {
   const [error, setError] = useState('');
 
   // Get brand colors from partner branding
-  const primaryAccent = branding?.['--primary-accent'] || '#6366f1';
-  const buttonGradient = branding?.['--button-gradient'] || 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-  const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-  const headerText = branding?.['--header-text'] || '#ffffff';
-  const sidebarTextColor = branding?.['--sidebar-text-color'] || '#ffffff';
+  const primaryAccent = branding?.['--primary-accent'] || COLORS.indigo[500];
+  const buttonGradient = branding?.['--button-gradient'] || GRADIENTS.button;
+  const headerGradient = branding?.['--header-gradient'] || GRADIENTS.header;
+  const headerText = branding?.['--header-text'] || COLORS.white;
+  const sidebarTextColor = branding?.['--sidebar-text-color'] || COLORS.white;
 
   // Fetch disclaimer status when modal opens
   useEffect(() => {

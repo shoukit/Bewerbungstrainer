@@ -31,6 +31,7 @@ import { FolderOpen } from 'lucide-react';
 import FeatureInfoButton from './FeatureInfoButton';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { GRADIENTS } from '@/config/colors';
 
 /**
  * FeatureAppHeader Component
@@ -50,7 +51,7 @@ const FeatureAppHeader = ({
   icon: Icon,
   title,
   subtitle,
-  gradient = 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)', // New default gradient
+  gradient = GRADIENTS.header, // New default gradient
   historyLabel,
   onNavigateToHistory,
   extraActions,

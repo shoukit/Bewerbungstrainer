@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePartner } from '@/context/PartnerContext';
 import DemoWelcomeModal from './DemoWelcomeModal';
+import { COLORS, GRADIENTS, hexToRgba } from '@/config/colors';
 
 // Demo user username constant
 const DEMO_USERNAME = 'demo';
@@ -22,12 +23,12 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const [demoUser, setDemoUser] = useState(null);
 
   // Get brand colors from partner branding
-  const primaryAccent = branding?.['--primary-accent'] || '#6366f1';
-  const buttonGradient = branding?.['--button-gradient'] || 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-  const headerGradient = branding?.['--header-gradient'] || 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-  const focusRing = branding?.['--focus-ring'] || 'rgba(99, 102, 241, 0.3)';
-  const headerText = branding?.['--header-text'] || '#ffffff';
-  const sidebarTextColor = branding?.['--sidebar-text-color'] || '#ffffff';
+  const primaryAccent = branding?.['--primary-accent'] || COLORS.indigo[500];
+  const buttonGradient = branding?.['--button-gradient'] || GRADIENTS.button;
+  const headerGradient = branding?.['--header-gradient'] || GRADIENTS.header;
+  const focusRing = branding?.['--focus-ring'] || hexToRgba(COLORS.indigo[500], 0.3);
+  const headerText = branding?.['--header-text'] || COLORS.white;
+  const sidebarTextColor = branding?.['--sidebar-text-color'] || COLORS.white;
 
   // Handle form submission
   const handleSubmit = async (e) => {

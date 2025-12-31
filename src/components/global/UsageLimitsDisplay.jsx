@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/base/button';
 import wordpressAPI from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
+import { COLORS } from '@/config/colors';
 
 /**
  * UsageLimitsDisplay Component
@@ -76,10 +77,10 @@ const UsageLimitsDisplay = ({ onNavigateToRoleplay, compact = false }) => {
   // Get status color
   const getStatusColor = (remaining, limit) => {
     const percentRemaining = (remaining / limit) * 100;
-    if (percentRemaining <= 0) return '#ef4444'; // Red
-    if (percentRemaining <= 20) return '#f59e0b'; // Orange
-    if (percentRemaining <= 50) return '#eab308'; // Yellow
-    return '#22c55e'; // Green
+    if (percentRemaining <= 0) return COLORS.red[500];
+    if (percentRemaining <= 20) return COLORS.amber[500];
+    if (percentRemaining <= 50) return COLORS.yellow[500];
+    return COLORS.green[500];
   };
 
   // Format date for display
@@ -220,7 +221,7 @@ const UsageLimitsDisplay = ({ onNavigateToRoleplay, compact = false }) => {
                 cy="50"
                 r="45"
                 fill="none"
-                stroke="#e5e7eb"
+                stroke={COLORS.slate[200]}
                 strokeWidth="8"
               />
               {/* Progress circle */}

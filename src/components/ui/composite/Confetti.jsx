@@ -7,23 +7,13 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CONFETTI_COLORS } from '@/config/colors';
 
 /**
  * Generate random confetti particles
  */
 const generateParticles = (count = 50) => {
-  const colors = [
-    '#6366f1', // indigo-500
-    '#8b5cf6', // violet-500
-    '#a855f7', // purple-500
-    '#ec4899', // pink-500
-    '#f43f5e', // rose-500
-    '#f97316', // orange-500
-    '#eab308', // yellow-500
-    '#22c55e', // green-500
-    '#4F46E5', // indigo-600
-    '#06b6d4', // cyan-500
-  ];
+  const colors = CONFETTI_COLORS;
 
   const shapes = ['square', 'circle', 'triangle'];
 

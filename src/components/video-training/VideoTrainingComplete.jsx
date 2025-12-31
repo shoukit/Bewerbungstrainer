@@ -7,6 +7,7 @@ import { usePartner } from '../../context/PartnerContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/base/button';
 import { useConfetti } from '@/components/ui/composite/Confetti';
+import { COLORS, getScoreColor } from '@/config/colors';
 
 // Category icons
 const CATEGORY_ICONS = {
@@ -26,13 +27,8 @@ const ScoreGauge = ({ score, size = 120, strokeWidth = 10, primaryAccent }) => {
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
 
-  // Color based on score
-  const getColor = () => {
-    if (score >= 80) return '#22c55e';
-    if (score >= 60) return primaryAccent;
-    if (score >= 40) return '#f59e0b';
-    return '#ef4444';
-  };
+  // Color based on score - using centralized color function
+  const color = getScoreColor(score, primaryAccent);
 
   return (
     <div className="relative mx-auto" style={{ width: size, height: size }}>
@@ -43,7 +39,7 @@ const ScoreGauge = ({ score, size = 120, strokeWidth = 10, primaryAccent }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#e2e8f0"
+          stroke={COLORS.slate[200]}
           strokeWidth={strokeWidth}
         />
         {/* Progress circle */}
@@ -52,7 +48,7 @@ const ScoreGauge = ({ score, size = 120, strokeWidth = 10, primaryAccent }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={getColor()}
+          stroke={color}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -63,7 +59,7 @@ const ScoreGauge = ({ score, size = 120, strokeWidth = 10, primaryAccent }) => {
       </svg>
       {/* Score text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-bold text-slate-600" style={{ fontSize: size / 3, color: getColor() }}>
+        <span className="font-bold text-slate-600" style={{ fontSize: size / 3, color }}>
           {Math.round(score)}
         </span>
         <span className="text-slate-500" style={{ fontSize: size / 10 }}>von 100</span>
@@ -80,13 +76,8 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
 
   const IconComponent = CATEGORY_ICONS[category.category] || Star;
 
-  // Color based on score
-  const getScoreColor = (score) => {
-    if (score >= 80) return '#22c55e';
-    if (score >= 60) return primaryAccent;
-    if (score >= 40) return '#f59e0b';
-    return '#ef4444';
-  };
+  // Color based on score - using centralized color function
+  const scoreColor = getScoreColor(category.score, primaryAccent);
 
   return (
     <motion.div
@@ -101,9 +92,9 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
       >
         <div
           className="w-10 h-10 rounded-lg flex items-center justify-center"
-          style={{ background: `${getScoreColor(category.score)}15` }}
+          style={{ background: `${scoreColor}15` }}
         >
-          <IconComponent size={20} color={getScoreColor(category.score)} />
+          <IconComponent size={20} color={scoreColor} />
         </div>
         <div className="flex-1 text-left min-w-0 overflow-hidden">
           <h4 className="text-[15px] font-semibold text-slate-900 mb-0.5">
@@ -116,7 +107,7 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
         <div className="flex items-center gap-3">
           <span
             className="text-xl font-bold"
-            style={{ color: getScoreColor(category.score) }}
+            style={{ color: scoreColor }}
           >
             {Math.round(category.score)}
           </span>
@@ -189,7 +180,7 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
  */
 const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNew }) => {
   const { branding } = usePartner();
-  const primaryAccent = branding?.primaryAccent || '#6366f1';
+  const primaryAccent = branding?.primaryAccent || COLORS.indigo[500];
 
   // Confetti celebration for good scores
   const { triggerConfetti, ConfettiComponent } = useConfetti();
