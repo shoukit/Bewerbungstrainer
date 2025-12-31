@@ -552,6 +552,7 @@ class Bewerbungstrainer_Roleplay_Admin {
 
         $imported = 0;
         $updated = 0;
+        $skipped = 0;
 
         $restore_newlines = function($text) {
             if (empty($text)) return '';
@@ -607,8 +608,18 @@ class Bewerbungstrainer_Roleplay_Admin {
                 'sort_order' => intval($data['sort_order'] ?? 0),
             );
 
-            // Match by title only (IDs may have changed)
-            $existing = $this->db->get_scenario_by_title($scenario_data['title']);
+            // Try to find existing scenario: first by ID, then by title
+            $existing = null;
+
+            // Match by ID first if available (more reliable for re-imports)
+            if (!empty($data['id']) && is_numeric($data['id'])) {
+                $existing = $this->db->get_scenario(intval($data['id']));
+            }
+
+            // Fall back to title matching if ID not found or not provided
+            if (!$existing) {
+                $existing = $this->db->get_scenario_by_title($scenario_data['title']);
+            }
 
             if ($existing) {
                 // Update existing
@@ -633,6 +644,9 @@ class Bewerbungstrainer_Roleplay_Admin {
                 if (!empty($update_data)) {
                     $this->db->update_scenario($existing->id, $update_data);
                     $updated++;
+                } else {
+                    // Scenario exists but nothing to update
+                    $skipped++;
                 }
                 continue;
             }
@@ -644,7 +658,7 @@ class Bewerbungstrainer_Roleplay_Admin {
 
         fclose($handle);
 
-        wp_redirect(admin_url('admin.php?page=roleplay-scenarios&imported=' . $imported . '&csv_updated=' . $updated));
+        wp_redirect(admin_url('admin.php?page=roleplay-scenarios&imported=' . $imported . '&csv_updated=' . $updated . '&csv_skipped=' . $skipped));
         exit;
     }
 
@@ -913,10 +927,23 @@ class Bewerbungstrainer_Roleplay_Admin {
         if (isset($_GET['created'])) {
             echo '<div class="notice notice-success is-dismissible"><p>Szenario erstellt.</p></div>';
         }
-        if (isset($_GET['imported'])) {
-            $imported = intval($_GET['imported']);
-            $csv_updated = isset($_GET['csv_updated']) ? intval($_GET['csv_updated']) : 0;
-            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Szenario(s) importiert, %d aktualisiert.', $imported, $csv_updated) . '</p></div>';
+        if (isset($_GET['imported']) || isset($_GET['csv_updated']) || isset($_GET['csv_skipped'])) {
+            $imported = intval($_GET['imported'] ?? 0);
+            $csv_updated = intval($_GET['csv_updated'] ?? 0);
+            $csv_skipped = intval($_GET['csv_skipped'] ?? 0);
+
+            $parts = array();
+            if ($imported > 0) $parts[] = sprintf('%d neu erstellt', $imported);
+            if ($csv_updated > 0) $parts[] = sprintf('%d aktualisiert', $csv_updated);
+            if ($csv_skipped > 0) $parts[] = sprintf('%d übersprungen (bereits vorhanden, keine Änderungen)', $csv_skipped);
+
+            if (empty($parts)) {
+                $message = 'CSV-Import abgeschlossen: Keine Änderungen vorgenommen.';
+            } else {
+                $message = 'CSV-Import: ' . implode(', ', $parts) . '.';
+            }
+
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
         }
         if (isset($_GET['import_error'])) {
             $errors = array(
