@@ -77,6 +77,44 @@ class WordPressAPI {
     }
 
     /**
+     * Make public API request (no authentication/nonce required)
+     * Use this for endpoints that have permission_callback: '__return_true'
+     */
+    async publicRequest(endpoint, options = {}) {
+        const url = `${this.apiUrl}${endpoint}`;
+
+        const defaultOptions = {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        const mergedOptions = {
+            ...defaultOptions,
+            ...options,
+            headers: {
+                ...defaultOptions.headers,
+                ...options.headers
+            }
+        };
+
+        try {
+            const response = await fetch(url, mergedOptions);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Public API Request Error:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Get current user info
      */
     async getUserInfo() {
@@ -736,11 +774,12 @@ class WordPressAPI {
     /**
      * Get all categories from centralized category system
      * Categories are used for filtering scenarios across all modules
+     * NOTE: Uses publicRequest as this endpoint is public (no auth required)
      * @returns {Promise<Array>} Array of category objects
      */
     async getCategories() {
         try {
-            const response = await this.request('/categories', {
+            const response = await this.publicRequest('/categories', {
                 method: 'GET'
             });
 
