@@ -152,6 +152,27 @@ JSON Feedback:`;
 }
 
 /**
+ * Standard JSON output format that should be used for all feedback
+ */
+const STANDARD_JSON_FORMAT = `
+WICHTIG: Antworte NUR mit einem JSON-Objekt in diesem Format:
+{
+  "summary": "Eine kurze Zusammenfassung des Gesamteindrucks (2-3 Sätze)",
+  "strengths": [
+    "Stärke 1: Konkrete positive Beobachtung",
+    "Stärke 2: Was gut gemacht wurde"
+  ],
+  "improvements": [
+    "Verbesserung 1: Konkreter Verbesserungsbereich",
+    "Verbesserung 2: Was besser gemacht werden könnte"
+  ],
+  "tips": [
+    "Tipp 1: Konkrete, umsetzbare Empfehlung",
+    "Tipp 2: Praktischer Ratschlag"
+  ]
+}`;
+
+/**
  * Apply custom prompt with transcript substitution
  * @param {string} customPrompt - Custom prompt template with ${transcript} placeholder
  * @param {string} transcript - The conversation transcript
@@ -159,11 +180,17 @@ JSON Feedback:`;
  */
 export function applyCustomPrompt(customPrompt, transcript) {
   // If the custom prompt contains ${transcript} placeholder, replace it
+  // and append the standard format if not already specified
   if (customPrompt.includes('${transcript}')) {
-    return customPrompt.replace('${transcript}', transcript);
+    const replaced = customPrompt.replace('${transcript}', transcript);
+    // Check if the prompt already specifies JSON format
+    if (replaced.toLowerCase().includes('"summary"') || replaced.toLowerCase().includes('"strengths"')) {
+      return replaced;
+    }
+    return `${replaced}\n${STANDARD_JSON_FORMAT}`;
   }
 
-  // Otherwise, append the transcript to the prompt
+  // Otherwise, append the transcript and standard format to the prompt
   // This ensures the transcript is always included even if the placeholder is missing
   return `${customPrompt}
 
@@ -171,7 +198,8 @@ export function applyCustomPrompt(customPrompt, transcript) {
 ${transcript}
 === ENDE TRANSKRIPT ===
 
-Analysiere das obige Transkript und gib dein Feedback als JSON zurück.`;
+Analysiere das obige Transkript und gib dein Feedback.
+${STANDARD_JSON_FORMAT}`;
 }
 
 export default {
