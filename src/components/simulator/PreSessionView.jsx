@@ -264,7 +264,7 @@ const PreSessionView = ({
       <button
         onClick={onStart}
         disabled={isLoading}
-        className="w-full py-[18px] px-7 rounded-xl border-none text-white text-lg font-semibold flex items-center justify-center gap-3 mb-6 disabled:cursor-not-allowed disabled:opacity-70 disabled:bg-slate-400 transition-all duration-200 hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-primary"
+        className="w-full py-[18px] px-7 rounded-xl border-none text-white text-lg font-semibold flex items-center justify-center gap-3 mb-6 disabled:cursor-not-allowed disabled:opacity-70 disabled:bg-slate-400 transition-all duration-200 hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg bg-gradient-to-r from-indigo-500 to-violet-500 shadow-primary"
       >
         <Play className="w-6 h-6" />
         Gespräch starten

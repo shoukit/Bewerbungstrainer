@@ -219,10 +219,10 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
-              className="absolute inset-0 bg-indigo-600/25 rounded-xl"
+              className="absolute inset-0 bg-indigo-500/25 rounded-xl"
             />
             <div
-              className="absolute top-0 bottom-0 w-0.5 bg-indigo-600 -translate-x-1/2"
+              className="absolute top-0 bottom-0 w-0.5 bg-indigo-500 -translate-x-1/2"
               style={{ left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
             />
           </>
@@ -243,7 +243,7 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
             <button
               onClick={togglePlay}
               disabled={isLoading}
-              className="w-12 h-12 rounded-full border-none bg-indigo-600 cursor-pointer flex items-center justify-center disabled:opacity-50 hover:bg-indigo-700 transition-colors shadow-md"
+              className="w-12 h-12 rounded-full border-none bg-indigo-500 cursor-pointer flex items-center justify-center disabled:opacity-50 hover:bg-indigo-600 transition-colors shadow-md"
             >
               {isPlaying ? (
                 <Pause size={20} className="text-white" />

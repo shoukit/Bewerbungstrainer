@@ -357,7 +357,7 @@ const CompactAudioPlayer = ({ audioUrl }) => {
         className="h-1.5 bg-slate-200 rounded-full cursor-pointer mb-3"
       >
         <div
-          className="h-full bg-blue-600 rounded-full transition-all"
+          className="h-full bg-blue-500 rounded-full transition-all"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -374,7 +374,7 @@ const CompactAudioPlayer = ({ audioUrl }) => {
         <button
           onClick={togglePlay}
           disabled={isLoading}
-          className={`w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 border-none flex items-center justify-center text-white shadow-md transition-all ${
+          className={`w-11 h-11 rounded-full bg-blue-500 hover:bg-blue-600 border-none flex items-center justify-center text-white shadow-md transition-all ${
             isLoading ? 'cursor-wait opacity-70' : 'cursor-pointer'
           }`}
         >
@@ -424,8 +424,8 @@ const ImmediateFeedback = ({
 
   return (
     <div className="bg-slate-50 rounded-2xl p-6 shadow-card">
-      {/* Summary Header with blue gradient background */}
-      <div className="flex items-start gap-5 mb-6 p-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
+      {/* Summary Header with softer blue gradient background */}
+      <div className="flex items-start gap-5 mb-6 p-6 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-2xl shadow-lg">
         <ScoreBadge
           score={parsedFeedback?.scores?.overall}
           label="Gesamt"
@@ -515,7 +515,7 @@ const ImmediateFeedback = ({
           {/* Nächste Frage / Training abschließen */}
           <button
             onClick={isLastQuestion ? onComplete : onNext}
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-none bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold cursor-pointer shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
+            className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-none bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold cursor-pointer shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
           >
             {isLastQuestion ? (
               <>

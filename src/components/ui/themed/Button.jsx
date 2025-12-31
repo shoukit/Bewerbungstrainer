@@ -42,13 +42,13 @@ const Button = React.forwardRef(({
   // Base styles - shared across all variants
   const baseStyles = 'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
 
-  // Variant classes with new Indigo color scheme
+  // Variant classes with softer Indigo color scheme
   const variants = {
-    primary: 'bg-indigo-600 text-white shadow-primary hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg focus:ring-indigo-500',
+    primary: 'bg-indigo-500 text-white shadow-primary hover:bg-indigo-600 hover:-translate-y-0.5 hover:shadow-lg focus:ring-indigo-400',
     secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 hover:-translate-y-0.5 focus:ring-slate-500',
-    outline: 'border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 hover:-translate-y-0.5 focus:ring-indigo-500',
+    outline: 'border-2 border-indigo-500 text-indigo-500 hover:bg-indigo-50 hover:-translate-y-0.5 focus:ring-indigo-400',
     ghost: 'text-slate-700 hover:bg-slate-100 hover:-translate-y-0.5 focus:ring-slate-500',
-    danger: 'bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.35)] hover:bg-red-700 hover:-translate-y-0.5 hover:shadow-lg focus:ring-red-500',
+    danger: 'bg-red-500 text-white shadow-[0_4px_14px_rgba(220,38,38,0.30)] hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-lg focus:ring-red-400',
   };
 
   // Size classes
@@ -121,12 +121,12 @@ const IconButton = React.forwardRef(({
   // Base styles for icon buttons
   const baseStyles = 'inline-flex items-center justify-center rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
 
-  // Variant classes matching the main Button component
+  // Variant classes matching the main Button component (softer colors)
   const variants = {
-    primary: 'bg-indigo-600 text-white shadow-primary hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg focus:ring-indigo-500',
+    primary: 'bg-indigo-500 text-white shadow-primary hover:bg-indigo-600 hover:-translate-y-0.5 hover:shadow-lg focus:ring-indigo-400',
     secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 hover:-translate-y-0.5 focus:ring-slate-500',
     ghost: 'text-slate-700 hover:bg-slate-100 hover:-translate-y-0.5 focus:ring-slate-500',
-    danger: 'bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.35)] hover:bg-red-700 hover:-translate-y-0.5 hover:shadow-lg focus:ring-red-500',
+    danger: 'bg-red-500 text-white shadow-[0_4px_14px_rgba(220,38,38,0.30)] hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-lg focus:ring-red-400',
   };
 
   // Square sizes

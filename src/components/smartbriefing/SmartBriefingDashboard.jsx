@@ -201,7 +201,7 @@ const SmartBriefingDashboard = ({
   const filterActions = (isAuthenticated || demoCode) && onCreateTemplate ? (
     <button
       onClick={handleCreateTemplate}
-      className="flex items-center gap-2 py-2.5 px-4 rounded-xl border-2 border-dashed border-indigo-200 bg-white text-indigo-600 text-sm font-medium cursor-pointer transition-all whitespace-nowrap hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-sm"
+      className="flex items-center gap-2 py-2.5 px-4 rounded-xl border-2 border-dashed border-indigo-200 bg-white text-indigo-500 text-sm font-medium cursor-pointer transition-all whitespace-nowrap hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-sm"
     >
       <Plus size={18} />
       <span className="hidden sm:inline">persönliches Template</span>
@@ -215,7 +215,7 @@ const SmartBriefingDashboard = ({
   const renderInfoBox = () => (
     <div className="mt-12 py-5 px-6 bg-indigo-50 rounded-2xl border border-indigo-100">
       <div className="flex items-start gap-3">
-        <Lightbulb size={20} className="text-indigo-600 flex-shrink-0 mt-0.5" />
+        <Lightbulb size={20} className="text-indigo-500 flex-shrink-0 mt-0.5" />
         <div>
           <h4 className="text-sm font-semibold text-slate-900 mb-1">
             So funktioniert Smart Briefing

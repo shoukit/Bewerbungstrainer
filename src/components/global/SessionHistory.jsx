@@ -763,7 +763,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         {/* Header */}
         <div className="mb-8 text-center">
           <div className="inline-flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
               <History className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-4xl font-bold text-slate-900">
@@ -777,7 +777,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
         {/* Login required message */}
         <Card className="max-w-[500px] mx-auto mt-16 p-10 text-center rounded-2xl shadow-card">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mx-auto mb-5">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-5">
             <LogIn className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-3">
@@ -830,7 +830,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       {/* Header */}
       <div className="mb-8 text-center relative">
         <div className="inline-flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
             <History className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-slate-900">
@@ -876,7 +876,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
               <Icon size={18} />
               <span>{tab.label}</span>
               <span className={`py-0.5 px-2 rounded-xl text-xs font-semibold min-w-[24px] text-center ${
-                isActive ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'
+                isActive ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
               }`}>
                 {count}
               </span>
@@ -904,13 +904,13 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 max-w-[80px] py-3 px-2 rounded-xl border-2 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all ${
                   isActive
-                    ? 'bg-white shadow-md border-indigo-600'
+                    ? 'bg-white shadow-md border-indigo-500'
                     : 'bg-slate-100 border-transparent hover:bg-white/60'
                 }`}
               >
-                <Icon size={20} className={isActive ? 'text-indigo-600' : 'text-slate-500'} />
+                <Icon size={20} className={isActive ? 'text-indigo-500' : 'text-slate-500'} />
                 <span className={`py-0.5 px-1.5 rounded-lg text-[11px] font-semibold min-w-[20px] text-center ${
-                  isActive ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'
+                  isActive ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
                 }`}>
                   {count}
                 </span>

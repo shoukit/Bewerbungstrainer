@@ -192,7 +192,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
         </button>
         <button
           onClick={onStartNew}
-          className="flex-1 flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl border-none text-white text-base font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg bg-gradient-to-r from-indigo-600 to-violet-600 shadow-primary"
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl border-none text-white text-base font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg bg-gradient-to-r from-indigo-500 to-violet-500 shadow-primary"
         >
           <RotateCcw className="w-[18px] h-[18px]" />
           Nochmal üben

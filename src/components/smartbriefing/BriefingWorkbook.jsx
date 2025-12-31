@@ -277,7 +277,7 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
             <h4 className="text-sm font-semibold text-slate-900 m-0">
               {item.label}
             </h4>
