@@ -218,7 +218,7 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
         className="text-center mb-10"
       >
         <div className="w-20 h-20 rounded-full bg-brand-gradient flex items-center justify-center mx-auto mb-5 shadow-xl">
-          <Trophy size={40} color="#fff" />
+          <Trophy size={40} color={COLORS.white} />
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
           Training abgeschlossen!

@@ -366,18 +366,18 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
                 gap: '10px',
                 transition: 'all 0.2s ease',
                 opacity: isLoading ? 0.7 : 1,
-                boxShadow: isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)',
+                boxShadow: isLoading ? 'none' : `0 4px 14px ${hexToRgba(COLORS.indigo[500], 0.3)}`,
                 marginTop: '16px',
               }}
               onMouseEnter={(e) => {
                 if (!isLoading) {
                   e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(58, 127, 167, 0.4)';
+                  e.target.style.boxShadow = `0 6px 20px ${hexToRgba(COLORS.indigo[500], 0.4)}`;
                 }
               }}
               onMouseLeave={(e) => {
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)';
+                e.target.style.boxShadow = isLoading ? 'none' : `0 4px 14px ${hexToRgba(COLORS.indigo[500], 0.3)}`;
               }}
             >
               {isLoading ? (
@@ -599,18 +599,18 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
                 gap: '10px',
                 transition: 'all 0.2s ease',
                 opacity: isLoading ? 0.7 : 1,
-                boxShadow: isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)',
+                boxShadow: isLoading ? 'none' : `0 4px 14px ${hexToRgba(COLORS.indigo[500], 0.3)}`,
                 marginTop: '16px',
               }}
               onMouseEnter={(e) => {
                 if (!isLoading) {
                   e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(58, 127, 167, 0.4)';
+                  e.target.style.boxShadow = `0 6px 20px ${hexToRgba(COLORS.indigo[500], 0.4)}`;
                 }
               }}
               onMouseLeave={(e) => {
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = isLoading ? 'none' : '0 4px 14px rgba(58, 127, 167, 0.3)';
+                e.target.style.boxShadow = isLoading ? 'none' : `0 4px 14px ${hexToRgba(COLORS.indigo[500], 0.3)}`;
               }}
             >
               {isLoading ? (

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useMobile } from '@/hooks/useMobile';
+import { COLORS } from '@/config/colors';
 import {
   ArrowLeft,
   Copy,
@@ -334,7 +335,7 @@ const BriefingResult = ({
                 isMobile ? 'w-[70px] h-[70px]' : 'w-[90px] h-[90px]'
               }`}
             >
-              <IconComponent size={isMobile ? 32 : 40} color="#fff" />
+              <IconComponent size={isMobile ? 32 : 40} color={COLORS.white} />
             </div>
 
             {/* Title & Meta */}
