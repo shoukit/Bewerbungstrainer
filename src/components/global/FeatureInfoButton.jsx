@@ -44,11 +44,11 @@ const FeatureInfoButton = ({
     return null;
   }
 
-  // Size configurations - larger for better visibility
+  // Size configurations - icon fills most of button for visibility
   const sizes = {
-    sm: { button: 44, icon: 32 },
-    md: { button: 52, icon: 38 },
-    lg: { button: 60, icon: 44 },
+    sm: { button: 44, icon: 28 },
+    md: { button: 52, icon: 32 },
+    lg: { button: 60, icon: 38 },
   };
 
   const sizeConfig = sizes[size] || sizes.md;
@@ -109,7 +109,7 @@ const FeatureInfoButton = ({
           ...style,
         }}
       >
-        <Info size={sizeConfig.icon} strokeWidth={2} />
+        <Info size={sizeConfig.icon} strokeWidth={2.5} />
       </button>
 
       {/* Render modal via portal to ensure it's always at body level */}

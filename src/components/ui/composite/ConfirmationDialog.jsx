@@ -157,11 +157,11 @@ const ConfirmationDialog = ({
 
         {/* Actions */}
         <div className="flex gap-3">
-          {/* Cancel Button */}
+          {/* Cancel Button - uses indigo theme */}
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className={`flex-1 px-5 py-3 text-sm font-semibold rounded-[10px] border border-slate-200 bg-white text-slate-700 transition-all hover:bg-slate-50 ${
+            className={`flex-1 px-5 py-3 text-sm font-semibold rounded-xl border-2 border-indigo-500 bg-white text-indigo-600 transition-all hover:bg-indigo-50 ${
               isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
             }`}
           >
@@ -172,7 +172,7 @@ const ConfirmationDialog = ({
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className={`flex-1 px-5 py-3 text-sm font-semibold rounded-[10px] border-none transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 px-5 py-3 text-sm font-semibold rounded-xl border-none transition-all flex items-center justify-center gap-2 ${
               isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:opacity-90'
             }`}
             style={{

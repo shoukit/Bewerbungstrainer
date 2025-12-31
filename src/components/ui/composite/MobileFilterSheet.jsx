@@ -20,6 +20,7 @@ import { Button } from '@/components/ui';
 
 /**
  * Category chip for filter selection
+ * Uses explicit indigo colors to avoid CSS variable conflicts
  */
 const CategoryChip = ({ label, icon: Icon, isSelected, onClick }) => (
   <button
@@ -27,7 +28,7 @@ const CategoryChip = ({ label, icon: Icon, isSelected, onClick }) => (
     className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-semibold
       border-2 cursor-pointer transition-all whitespace-nowrap
       ${isSelected
-        ? 'border-primary bg-primary text-white shadow-lg shadow-primary/40'
+        ? 'border-indigo-500 bg-indigo-500 text-white shadow-lg shadow-indigo-500/40'
         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
       }`}
   >
@@ -51,6 +52,7 @@ const FilterBadge = ({ count }) => {
 
 /**
  * Search Input Component
+ * Uses explicit indigo colors for focus states
  */
 const SearchInput = ({ value, onChange, placeholder, className = '' }) => (
   <div className={`relative ${className}`}>
@@ -60,7 +62,7 @@ const SearchInput = ({ value, onChange, placeholder, className = '' }) => (
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full py-3 pl-14 pr-4 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-slate-400"
+      className="w-full py-3 pl-14 pr-4 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 placeholder:text-slate-400"
     />
   </div>
 );
@@ -89,6 +91,7 @@ const DifficultySelect = ({ value, onChange, options, className = '' }) => (
 
 /**
  * View Toggle Component
+ * Uses explicit indigo colors to avoid CSS variable conflicts
  */
 const ViewToggle = ({ viewMode, onViewModeChange, compact = false }) => (
   <div className={`flex items-center gap-1 ${compact ? 'p-[3px]' : 'p-1'} bg-slate-100 rounded-lg`}>
@@ -98,7 +101,7 @@ const ViewToggle = ({ viewMode, onViewModeChange, compact = false }) => (
         ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'bg-transparent'}`}
       title="Kachelansicht"
     >
-      <LayoutGrid className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${viewMode === 'grid' ? 'text-primary' : 'text-slate-500'}`} />
+      <LayoutGrid className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${viewMode === 'grid' ? 'text-indigo-600' : 'text-slate-500'}`} />
     </button>
     <button
       onClick={() => onViewModeChange('list')}
@@ -106,7 +109,7 @@ const ViewToggle = ({ viewMode, onViewModeChange, compact = false }) => (
         ${viewMode === 'list' ? 'bg-white shadow-sm' : 'bg-transparent'}`}
       title="Listenansicht"
     >
-      <List className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${viewMode === 'list' ? 'text-primary' : 'text-slate-500'}`} />
+      <List className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${viewMode === 'list' ? 'text-indigo-600' : 'text-slate-500'}`} />
     </button>
   </div>
 );
@@ -226,30 +229,30 @@ const MobileFilterSheet = ({
     <div className="flex flex-col gap-3">
       {/* Mobile search + filter button row */}
       <div className="flex gap-2 items-center">
-        {/* Search Input */}
+        {/* Search Input - increased left padding to avoid icon overlap */}
         {showSearch && (
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full py-2 pl-9 pr-3 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none"
+              className="w-full py-2 pl-11 pr-3 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none"
             />
           </div>
         )}
 
-        {/* Filter Button */}
+        {/* Filter Button - uses explicit indigo colors */}
         <button
           onClick={() => setIsOpen(true)}
           className={`relative flex items-center justify-center w-11 h-11 rounded-lg border flex-shrink-0 cursor-pointer
             ${activeFilterCount > 0
-              ? 'border-primary bg-primary/10'
+              ? 'border-indigo-500 bg-indigo-50'
               : 'border-slate-200 bg-white'
             }`}
         >
-          <Filter className={`w-[18px] h-[18px] ${activeFilterCount > 0 ? 'text-primary' : 'text-slate-500'}`} />
+          <Filter className={`w-[18px] h-[18px] ${activeFilterCount > 0 ? 'text-indigo-600' : 'text-slate-500'}`} />
           <FilterBadge count={activeFilterCount} />
         </button>
 
@@ -272,7 +275,7 @@ const MobileFilterSheet = ({
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-primary" />
+                <Filter className="w-5 h-5 text-indigo-600" />
                 Filter
               </DialogTitle>
               {activeFilterCount > 0 && (
