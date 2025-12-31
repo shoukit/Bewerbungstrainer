@@ -696,14 +696,14 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
         headerBg: themedColors.sidebarBg,
         headerText: themedColors.sidebarText,
         headerTextMuted: themedColors.sidebarTextMuted,
-        menuBg: THEME_COLORS.white,
+        menuBg: COLORS.white,
         activeBg: themedColors.sidebarActiveBg,
         activeText: themedColors.sidebarActiveText,
         hoverBg: themedColors.sidebarHoverBg,
         primaryAccent: themedColors.primaryAccent,
         borderColor: themedColors.borderColor,
-        textMain: THEME_COLORS.slate[700],
-        textMuted: THEME_COLORS.slate[400],
+        textMain: COLORS.slate[700],
+        textMuted: COLORS.slate[400],
       };
     }
     // Default: Dark header matching desktop sidebar (Karriereheld standard)
@@ -711,14 +711,14 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
       headerBg: DEFAULT_SIDEBAR_COLORS.sidebarBg,
       headerText: DEFAULT_SIDEBAR_COLORS.sidebarText,
       headerTextMuted: DEFAULT_SIDEBAR_COLORS.sidebarTextMuted,
-      menuBg: THEME_COLORS.white,
+      menuBg: COLORS.white,
       activeBg: DEFAULT_SIDEBAR_COLORS.sidebarActiveBg,
       activeText: DEFAULT_SIDEBAR_COLORS.sidebarActiveText,
-      hoverBg: THEME_COLORS.slate[50],
+      hoverBg: COLORS.slate[50],
       primaryAccent: DEFAULT_SIDEBAR_COLORS.primaryAccent,
       borderColor: DEFAULT_SIDEBAR_COLORS.borderColor,
-      textMain: THEME_COLORS.slate[700],
-      textMuted: THEME_COLORS.slate[400],
+      textMain: COLORS.slate[700],
+      textMuted: COLORS.slate[400],
     };
   }, [themedColors]);
 
