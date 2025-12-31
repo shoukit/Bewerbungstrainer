@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Trophy, ArrowLeft, RefreshCw, Star, ChevronDown, ChevronRight, CheckCircle,
   AlertCircle, Lightbulb, Video, User, MessageSquare, Eye, Mic, Award
@@ -6,6 +6,7 @@ import {
 import { usePartner } from '../../context/PartnerContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/base/button';
+import { useConfetti } from '@/components/ui/composite/Confetti';
 
 // Category icons
 const CATEGORY_ICONS = {
@@ -190,6 +191,9 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
   const { branding } = usePartner();
   const primaryAccent = branding?.primaryAccent || '#6366f1';
 
+  // Confetti celebration for good scores
+  const { triggerConfetti, ConfettiComponent } = useConfetti();
+
   const overallScore = session?.overall_score || 0;
   const categoryScores = session?.category_scores || [];
   const analysis = session?.analysis || {};
@@ -205,7 +209,16 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
     return 'Weiter üben!';
   };
 
+  // Trigger confetti on mount for good scores (70+)
+  useEffect(() => {
+    if (overallScore >= 70) {
+      triggerConfetti();
+    }
+  }, [overallScore, triggerConfetti]);
+
   return (
+    <>
+      <ConfettiComponent />
     <div className="p-8 max-w-4xl mx-auto">
       {/* Success Header */}
       <motion.div
@@ -352,6 +365,7 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
         </Button>
       </motion.div>
     </div>
+    </>
   );
 };
 

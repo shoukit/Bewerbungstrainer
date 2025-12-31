@@ -105,7 +105,7 @@ export function AudioPlayerCard({
               {/* Hover indicator */}
               <div className="absolute inset-0 bg-blue-400 opacity-0 group-hover:opacity-10 transition-opacity" />
 
-              {/* Timeline Markers */}
+              {/* Timeline Markers - Larger touch targets on mobile */}
               {timelineMarkers.length > 0 &&
                 timelineMarkers.map((marker, idx) => (
                   <button
@@ -115,8 +115,9 @@ export function AudioPlayerCard({
                       onSeek?.(marker.timestamp);
                     }}
                     className={cn(
-                      'absolute top-1 w-3 h-3 rounded-full cursor-pointer transform -translate-x-1/2',
-                      'transition-transform hover:scale-150 z-10',
+                      'absolute top-1/2 -translate-y-1/2 w-5 h-5 sm:w-4 sm:h-4 rounded-full cursor-pointer transform -translate-x-1/2',
+                      'transition-all hover:scale-125 z-10 shadow-sm',
+                      'before:content-[""] before:absolute before:inset-[-8px] before:rounded-full',
                       getMarkerColor(marker.type)
                     )}
                     style={{ left: `${marker.position}%` }}
@@ -176,7 +177,7 @@ export function AudioPlayerCard({
           </div>
         )}
 
-        {/* Timeline Markers Legend */}
+        {/* Timeline Markers Legend - Touch-friendly buttons */}
         {timelineMarkers.length > 0 && (
           <div className="mt-4 pt-4 border-t border-slate-100">
             <p className="text-label mb-2">Feedback-Marker (klicken zum Springen):</p>
@@ -186,7 +187,7 @@ export function AudioPlayerCard({
                   key={idx}
                   onClick={() => onSeek?.(marker.timestamp)}
                   className={cn(
-                    'px-3 py-1.5 rounded-lg text-xs text-white transition-opacity hover:opacity-80',
+                    'px-3 py-2.5 min-h-[44px] rounded-xl text-xs text-white transition-opacity hover:opacity-80',
                     getMarkerColor(marker.type)
                   )}
                 >

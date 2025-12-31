@@ -198,7 +198,7 @@ const SessionCard = ({
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
-                className="p-2 rounded-lg border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center shrink-0 hover:text-slate-600"
+                className="p-3 rounded-xl border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center shrink-0 hover:text-slate-600 hover:bg-slate-100 transition-colors min-w-[44px] min-h-[44px]"
                 title="Löschen"
               >
                 {isDeleting ? (
@@ -353,12 +353,12 @@ const SessionCard = ({
               {scorePercent !== null ? `${Math.round(scorePercent)}%` : '-- %'}
             </span>
 
-            {/* Delete button */}
+            {/* Delete button - 44px touch target for accessibility */}
             {onDeleteSession && (
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
-                className="p-2 rounded-lg border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center hover:text-red-500 transition-colors"
+                className="p-3 rounded-xl border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center hover:text-red-500 hover:bg-red-50 transition-colors min-w-[44px] min-h-[44px]"
                 title="Löschen"
               >
                 {isDeleting ? (

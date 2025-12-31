@@ -108,6 +108,20 @@ export {
 // Label (noch nicht in themed/)
 export { Label } from './base/label';
 
+// Skeleton Loading Components
+export {
+  Skeleton,
+  SkeletonText,
+  SkeletonCard,
+  SkeletonGrid,
+  SkeletonListItem,
+  SkeletonList,
+  SkeletonHeader,
+  SkeletonStats,
+  SkeletonAudioPlayer,
+  SkeletonPage,
+} from './base/skeleton';
+
 // Form Accordion
 export { default as FormAccordion } from './base/form-accordion';
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Trophy,
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { COLORS, getScoreColor } from '@/config/colors';
+import { useConfetti } from '@/components/ui/composite/Confetti';
 
 /**
  * Score Badge for Summary
@@ -57,6 +58,9 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
   // Partner theming
   const b = useBranding();
 
+  // Confetti celebration for good scores
+  const { triggerConfetti, ConfettiComponent } = useConfetti();
+
   // Parse summary feedback if it's a string
   // Backend returns summary_feedback, not summary_feedback_json
   const rawSummary = session.summary_feedback || session.summary_feedback_json;
@@ -81,7 +85,16 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
 
   const grade = getGradeLabel(overallScore);
 
+  // Trigger confetti on mount for good scores (70+)
+  useEffect(() => {
+    if (overallScore >= 70) {
+      triggerConfetti();
+    }
+  }, [overallScore, triggerConfetti]);
+
   return (
+    <>
+      <ConfettiComponent />
     <div className="p-6 max-w-[640px] mx-auto">
       {/* Success Header */}
       <div className="text-center mb-8">
@@ -199,6 +212,7 @@ const SessionComplete = ({ session, scenario, onBackToDashboard, onStartNew }) =
         </button>
       </div>
     </div>
+    </>
   );
 };
 

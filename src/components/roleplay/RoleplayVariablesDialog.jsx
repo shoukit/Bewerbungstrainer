@@ -88,7 +88,7 @@ const StyledButton = ({ onClick, variant = 'primary', children, className, theme
   return (
     <button
       onClick={onClick}
-      className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold cursor-pointer transition-all border-none ${
+      className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-xl text-base font-semibold cursor-pointer transition-all border-none ${
         variant === 'primary'
           ? 'text-white shadow-md'
           : 'bg-white text-slate-700 border-2 border-slate-200 shadow-sm hover:bg-slate-50'
@@ -235,7 +235,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel, primaryAc
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-6 grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
+        <div className="py-6 grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
           {userInputVariables.map((varDef) => (
             <div
               key={varDef.key}
@@ -348,7 +348,7 @@ const RoleplayVariablesDialog = ({ open, scenario, onSubmit, onCancel, primaryAc
           </div>
         )}
 
-        <DialogFooter className="flex flex-row gap-3 pt-4">
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
           <StyledButton onClick={onCancel} variant="outline">
             Abbrechen
           </StyledButton>

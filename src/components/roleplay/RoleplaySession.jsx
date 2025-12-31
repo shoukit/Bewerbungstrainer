@@ -35,6 +35,7 @@ import InterviewerProfile from './InterviewerProfile';
 import CoachingPanel from './CoachingPanel';
 import FeedbackModal from '@/components/feedback/FeedbackModal';
 import DeviceSettingsDialog from '@/components/device-setup/DeviceSettingsDialog';
+import { useConfetti } from '@/components/ui/composite/Confetti';
 import {
   analyzeRoleplayTranscript,
   saveRoleplaySessionAnalysis,
@@ -54,6 +55,9 @@ import { DEFAULT_BRANDING } from '@/config/partners';
 const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd, onNavigateToSession }) => {
   // Partner branding and demo code
   const { branding, demoCode } = usePartner();
+
+  // Confetti celebration for successful completion
+  const { triggerConfetti, ConfettiComponent } = useConfetti();
 
   // Helper function to replace {{variable}} placeholders with actual values
   const replaceVariables = (text) => {
@@ -635,6 +639,9 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
         );
       }
 
+      // Trigger confetti celebration on successful completion
+      triggerConfetti();
+
       // Navigate to session detail view
       setIsAnalyzing(false);
       setAnalysisStep(null);
@@ -803,6 +810,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
   return (
     <>
+      <ConfettiComponent />
       <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4 overflow-hidden">
         {/* RESPONSIVE LAYOUT: Mobile stacked, Desktop 3-column */}
         <div

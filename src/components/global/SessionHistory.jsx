@@ -10,7 +10,6 @@ import { motion } from 'framer-motion';
 import {
   History,
   MessageSquare,
-  Loader2,
   AlertCircle,
   Play,
   RefreshCw,
@@ -21,7 +20,7 @@ import {
   Trash2,
   Plus,
 } from 'lucide-react';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, Skeleton, SkeletonListItem } from '@/components/ui';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
 import { usePartner } from '@/context/PartnerContext';
 import TrainingSessionDetailView from '@/components/session-detail/TrainingSessionDetailView';
@@ -800,10 +799,28 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   if (isLoading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center p-10">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
-          <p className="text-slate-500 mt-4">Sessions werden geladen...</p>
+      <div className="p-6">
+        {/* Skeleton Header */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-3 mb-3">
+            <Skeleton className="w-12 h-12 rounded-2xl" />
+            <Skeleton className="h-10 w-48" />
+          </div>
+          <Skeleton className="h-5 w-32 mx-auto" />
+        </div>
+
+        {/* Skeleton Tabs */}
+        <div className="flex justify-center gap-2 mb-8">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-12 w-28 rounded-xl" />
+          ))}
+        </div>
+
+        {/* Skeleton List */}
+        <div className="space-y-3 max-w-4xl mx-auto">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <SkeletonListItem key={i} />
+          ))}
         </div>
       </div>
     );

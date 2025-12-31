@@ -17,13 +17,14 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Loader2, AlertCircle, FolderOpen, Folder } from 'lucide-react';
+import { AlertCircle, FolderOpen, Folder } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { useCategories } from '@/hooks/useCategories';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS } from '@/config/colors';
 import { ScenarioCard, ScenarioCardGrid } from '@/components/ui/composite/ScenarioCard';
 import MobileFilterSheet from '@/components/ui/composite/MobileFilterSheet';
+import { Skeleton, SkeletonCard } from '@/components/ui/base/skeleton';
 
 /**
  * Single Category Badge Component
@@ -357,14 +358,32 @@ const ScenarioDashboard = ({
     return <DefaultCategoryBadge category={categoryValue} getCategoryConfig={getCategoryConfig} />;
   }, [categoryField, renderCategoryBadge, customCategoryConfig, getCategoryConfig]);
 
-  // Loading state
+  // Loading state with skeleton
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center p-[60px_20px] gap-4">
-        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="text-slate-600 text-base">
-          {loadingMessage}
-        </p>
+      <div className="p-6 max-w-[1200px] mx-auto">
+        {/* Skeleton Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Skeleton className="w-12 h-12 rounded-xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+          {/* Skeleton Filter Tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-10 w-24 rounded-full flex-shrink-0" />
+            ))}
+          </div>
+        </div>
+        {/* Skeleton Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       </div>
     );
   }

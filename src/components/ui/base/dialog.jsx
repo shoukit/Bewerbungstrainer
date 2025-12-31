@@ -60,24 +60,35 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        // Position & Layout
-        'fixed left-[50%] top-[50%] z-[99] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4',
+        // Position & Layout - Bottom sheet on mobile, centered on desktop
+        'fixed z-[99] grid w-full gap-4',
+        // Mobile: Bottom sheet
+        'bottom-0 left-0 right-0 max-h-[90vh] overflow-y-auto',
+        'rounded-t-2xl',
+        // Desktop: Centered modal
+        'sm:bottom-auto sm:left-[50%] sm:top-[50%] sm:right-auto sm:max-h-none',
+        'sm:translate-x-[-50%] sm:translate-y-[-50%] sm:max-w-lg sm:rounded-2xl',
         // Styling - Clean white card
-        'border border-slate-200 bg-white p-6 shadow-2xl rounded-2xl',
+        'border border-slate-200 bg-white p-6 shadow-2xl',
         // Animations
         'duration-200',
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-        'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-        'data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]',
-        'data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
+        // Mobile: slide up/down
+        'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
+        // Desktop: zoom and slide
+        'sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0',
+        'sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95',
+        'sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%]',
+        'sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]',
         className
       )}
       {...props}
     >
       {children}
+      {/* Close button - 44x44px touch target for accessibility */}
       <DialogPrimitive.Close
-        className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 bg-transparent border-none cursor-pointer transition-all flex items-center justify-center hover:text-slate-600 hover:bg-slate-100"
+        className="absolute right-3 top-3 rounded-xl w-10 h-10 text-slate-400 bg-transparent border-none cursor-pointer transition-all flex items-center justify-center hover:text-slate-600 hover:bg-slate-100"
       >
         <X className="w-5 h-5" />
         <span className="sr-only">Schließen</span>

@@ -33,6 +33,7 @@ import {
   getEmptyTranscriptResult,
 } from '@/config/prompts/transcriptionCore';
 import { Button, Card, Badge } from '@/components/ui';
+import { useConfetti } from '@/components/ui/composite/Confetti';
 
 // Game states
 const GAME_STATES = {
@@ -190,6 +191,16 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
   const isGoodScore = result.score >= 70;
   const isNoSpeech = result.pace_feedback === 'keine_sprache' || result.transcript === '[Keine Sprache erkannt]';
 
+  // Confetti celebration for good scores
+  const { triggerConfetti, ConfettiComponent } = useConfetti();
+
+  // Trigger confetti on mount for good scores (70+)
+  useEffect(() => {
+    if (isGoodScore && !isNoSpeech) {
+      triggerConfetti();
+    }
+  }, [isGoodScore, isNoSpeech, triggerConfetti]);
+
   // Score card gradient based on result
   const scoreGradient = isNoSpeech
     ? 'bg-gradient-to-br from-slate-500 to-slate-600'
@@ -198,7 +209,9 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
       : 'bg-gradient-to-br from-amber-500 to-orange-500';
 
   return (
-    <div className="max-w-[600px] mx-auto">
+    <>
+      <ConfettiComponent />
+      <div className="max-w-[600px] mx-auto">
       {/* Score Card */}
       <div className={`${scoreGradient} rounded-2xl p-10 mb-8 text-white text-center shadow-card`}>
         <div className="text-6xl mb-4">{isNoSpeech ? '🎤' : feedback.emoji}</div>
@@ -314,6 +327,7 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
         </Button>
       </div>
     </div>
+    </>
   );
 };
 
