@@ -151,7 +151,7 @@ const CameraError = ({ error, onRetry }) => (
  * Loading Overlay - Tailwind styled
  */
 const LoadingOverlay = ({ isUploading, isAnalyzing }) => (
-  <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+  <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 flex items-center justify-center p-4">
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}

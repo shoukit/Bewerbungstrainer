@@ -27,21 +27,22 @@ import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/global/Toast';
 
 /**
- * Ocean theme colors - defined as constants to avoid WordPress CSS conflicts
+ * Indigo theme colors - defined as constants to avoid WordPress CSS conflicts
  * These are the default colors used when no partner branding is active
+ * Updated for Design System v2.0 "Clean Professional"
  */
-const OCEAN_COLORS = {
-  blue: {
-    50: '#E8F4F8',
-    100: '#D1E9F1',
-    400: '#5FB3D8',
-    500: '#4A9EC9',
-    600: '#3A7FA7',
-    700: '#2D6485',
+const THEME_COLORS = {
+  indigo: {
+    50: '#EEF2FF',
+    100: '#E0E7FF',
+    400: '#818CF8',
+    500: '#6366F1',
+    600: '#4F46E5',
+    700: '#4338CA',
   },
-  teal: {
-    500: '#3DA389',
-    600: '#2E8A72',
+  violet: {
+    500: '#8B5CF6',
+    600: '#7C3AED',
   },
   slate: {
     50: '#f8fafc',
@@ -61,15 +62,15 @@ const getThemedColors = (branding) => {
   if (!branding) return null;
 
   return {
-    sidebarBg: branding['--sidebar-bg-color'] || OCEAN_COLORS.slate[50],
-    sidebarText: branding['--sidebar-text-color'] || OCEAN_COLORS.slate[900],
-    sidebarTextMuted: branding['--sidebar-text-muted'] || OCEAN_COLORS.slate[400],
-    sidebarActiveBg: branding['--sidebar-active-bg'] || OCEAN_COLORS.blue[50],
-    sidebarActiveText: branding['--sidebar-active-text'] || OCEAN_COLORS.blue[700],
-    sidebarHoverBg: branding['--sidebar-hover-bg'] || OCEAN_COLORS.slate[50],
-    primaryAccent: branding['--primary-accent'] || OCEAN_COLORS.blue[600],
-    borderColor: branding['--border-color'] || OCEAN_COLORS.slate[200],
-    borderColorLight: branding['--border-color-light'] || OCEAN_COLORS.slate[100],
+    sidebarBg: branding['--sidebar-bg-color'] || THEME_COLORS.slate[50],
+    sidebarText: branding['--sidebar-text-color'] || THEME_COLORS.slate[900],
+    sidebarTextMuted: branding['--sidebar-text-muted'] || THEME_COLORS.slate[400],
+    sidebarActiveBg: branding['--sidebar-active-bg'] || THEME_COLORS.indigo[50],
+    sidebarActiveText: branding['--sidebar-active-text'] || THEME_COLORS.indigo[700],
+    sidebarHoverBg: branding['--sidebar-hover-bg'] || THEME_COLORS.slate[50],
+    primaryAccent: branding['--primary-accent'] || THEME_COLORS.indigo[600],
+    borderColor: branding['--border-color'] || THEME_COLORS.slate[200],
+    borderColorLight: branding['--border-color-light'] || THEME_COLORS.slate[100],
   };
 };
 
@@ -274,14 +275,14 @@ const AppSidebar = ({
     }
     return {
       sidebarBg: '#ffffff',
-      sidebarText: OCEAN_COLORS.slate[900],
-      sidebarTextMuted: OCEAN_COLORS.slate[400],
-      activeBg: OCEAN_COLORS.blue[50],
-      activeText: OCEAN_COLORS.blue[700],
-      hoverBg: OCEAN_COLORS.slate[50],
-      primaryAccent: OCEAN_COLORS.blue[600],
-      borderColor: OCEAN_COLORS.slate[200],
-      borderColorLight: OCEAN_COLORS.slate[100],
+      sidebarText: THEME_COLORS.slate[900],
+      sidebarTextMuted: THEME_COLORS.slate[400],
+      activeBg: THEME_COLORS.indigo[50],
+      activeText: THEME_COLORS.indigo[700],
+      hoverBg: THEME_COLORS.slate[50],
+      primaryAccent: THEME_COLORS.indigo[600],
+      borderColor: THEME_COLORS.slate[200],
+      borderColorLight: THEME_COLORS.slate[100],
     };
   }, [themedColors]);
 
@@ -340,7 +341,7 @@ const AppSidebar = ({
                   style={{
                     background: isWhiteLabel
                       ? colors.primaryAccent
-                      : `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+                      : `linear-gradient(135deg, ${THEME_COLORS.indigo[600]} 0%, ${THEME_COLORS.violet[500]} 100%)`,
                   }}
                 >
                   <GraduationCap className="w-5 h-5 text-white" />
@@ -374,7 +375,7 @@ const AppSidebar = ({
               style={{
                 background: isWhiteLabel
                   ? colors.primaryAccent
-                  : `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+                  : `linear-gradient(135deg, ${THEME_COLORS.indigo[600]} 0%, ${THEME_COLORS.violet[500]} 100%)`,
               }}
             >
               {logoUrl ? (
@@ -681,22 +682,22 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
         hoverBg: themedColors.sidebarHoverBg,
         primaryAccent: themedColors.primaryAccent,
         borderColor: themedColors.borderColor,
-        textMain: OCEAN_COLORS.slate[700],
-        textMuted: OCEAN_COLORS.slate[400],
+        textMain: THEME_COLORS.slate[700],
+        textMuted: THEME_COLORS.slate[400],
       };
     }
     return {
       headerBg: '#ffffff',
-      headerText: OCEAN_COLORS.slate[900],
-      headerTextMuted: OCEAN_COLORS.slate[400],
+      headerText: THEME_COLORS.slate[900],
+      headerTextMuted: THEME_COLORS.slate[400],
       menuBg: '#ffffff',
-      activeBg: OCEAN_COLORS.blue[50],
-      activeText: OCEAN_COLORS.blue[700],
-      hoverBg: OCEAN_COLORS.slate[50],
-      primaryAccent: OCEAN_COLORS.blue[600],
-      borderColor: OCEAN_COLORS.slate[200],
-      textMain: OCEAN_COLORS.slate[700],
-      textMuted: OCEAN_COLORS.slate[400],
+      activeBg: THEME_COLORS.indigo[50],
+      activeText: THEME_COLORS.indigo[700],
+      hoverBg: THEME_COLORS.slate[50],
+      primaryAccent: THEME_COLORS.indigo[600],
+      borderColor: THEME_COLORS.slate[200],
+      textMain: THEME_COLORS.slate[700],
+      textMuted: THEME_COLORS.slate[400],
     };
   }, [themedColors]);
 
@@ -734,7 +735,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
               style={{
                 background: isWhiteLabel
                   ? colors.primaryAccent
-                  : `linear-gradient(135deg, ${OCEAN_COLORS.blue[600]} 0%, ${OCEAN_COLORS.teal[500]} 100%)`,
+                  : `linear-gradient(135deg, ${THEME_COLORS.indigo[600]} 0%, ${THEME_COLORS.violet[500]} 100%)`,
               }}
             >
               <GraduationCap className="w-[18px] h-[18px] text-white" />
@@ -1041,4 +1042,4 @@ const SidebarLayout = ({ children, activeView, onNavigate, headerOffset = 0, onL
   );
 };
 
-export { AppSidebar, SidebarLayout, NAV_ITEMS, OCEAN_COLORS };
+export { AppSidebar, SidebarLayout, NAV_ITEMS, THEME_COLORS };

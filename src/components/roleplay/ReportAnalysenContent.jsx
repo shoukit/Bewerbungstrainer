@@ -370,12 +370,12 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
         <div className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${branding.borderColor}` }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Music2 size={18} color="#14b8a6" />
+              <Music2 size={18} color="#6366f1" />
               <span className="text-sm font-semibold" style={{ color: branding.textMain }}>
                 Betonung & Melodie
               </span>
             </div>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-teal-50 text-teal-700">
+            <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700">
               {getTonalityLabel(tonality.rating)}
             </span>
           </div>
@@ -391,7 +391,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
                   initial={{ height: 0 }}
                   animate={{ height: `${Math.max(10, Math.min(100, height))}%` }}
                   transition={{ duration: 0.5, delay: i * 0.02 }}
-                  style={{ width: '4px', borderRadius: '2px', background: '#14b8a6' }}
+                  style={{ width: '4px', borderRadius: '2px', background: '#6366f1' }}
                 />
               );
             })}

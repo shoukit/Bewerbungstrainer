@@ -116,8 +116,8 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       appBgColor,
       primaryAccent,
       primaryAccentLight,
-      // User message bubble gradient (keep teal for user distinction)
-      userBubbleGradient: 'linear-gradient(to bottom right, #14b8a6, #0d9488)',
+      // User message bubble gradient (indigo for user distinction)
+      userBubbleGradient: 'linear-gradient(to bottom right, #6366f1, #4f46e5)',
       // Agent avatar gradient
       agentAvatarGradient: headerGradient,
     };
@@ -715,7 +715,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   // Missing scenario - user likely navigated directly to this URL
   if (!scenario) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -735,7 +735,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -759,7 +759,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     const currentStepIndex = stepOrder.indexOf(analysisStep);
 
     return (
-      <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -811,7 +811,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   return (
     <>
       <ConfettiComponent />
-      <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4 overflow-hidden">
+      <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px' }} className="bewerbungstrainer-session-layout bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 p-2 lg:p-4 overflow-hidden">
         {/* RESPONSIVE LAYOUT: Mobile stacked, Desktop 3-column */}
         <div
           className="w-full h-full gap-3 lg:gap-4 overflow-hidden"
@@ -1115,7 +1115,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                               )
                             ) : (
                               <>
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-indigo-500 to-indigo-600">
                                   <User className="w-4 h-4 text-white" />
                                 </div>
                                 {entry.timeLabel && (
@@ -1131,7 +1131,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                             className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
                               entry.role === 'agent'
                                 ? 'bg-slate-50 border border-slate-200'
-                                : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
+                                : 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white'
                             }`}
                           >
                             <p className="text-xs leading-relaxed">{entry.text}</p>
@@ -1416,7 +1416,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                                 )
                               ) : (
                                 <>
-                                  <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-indigo-500 to-indigo-600">
                                     <User className="w-4 h-4 text-white" />
                                   </div>
                                   {entry.timeLabel && (
@@ -1431,7 +1431,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                               className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
                                 entry.role === 'agent'
                                   ? 'bg-slate-50 border border-slate-200'
-                                  : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
+                                  : 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white'
                               }`}
                             >
                               <p className="text-xs leading-relaxed">{entry.text}</p>

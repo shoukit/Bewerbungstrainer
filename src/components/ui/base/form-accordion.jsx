@@ -49,11 +49,11 @@ export function FormAccordion({
       iconText: 'text-amber-600',
       titleText: 'text-amber-900',
     },
-    teal: {
-      headerBg: 'bg-teal-100',
-      headerBgHover: 'bg-teal-200',
-      iconText: 'text-teal-600',
-      titleText: 'text-teal-900',
+    indigo: {
+      headerBg: 'bg-indigo-100',
+      headerBgHover: 'bg-indigo-200',
+      iconText: 'text-indigo-600',
+      titleText: 'text-indigo-900',
     },
   };
 

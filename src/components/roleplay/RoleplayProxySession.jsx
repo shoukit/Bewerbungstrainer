@@ -789,7 +789,7 @@ const RoleplayProxySession = ({
     const currentStepIndex = stepOrder.indexOf(analysisStep);
 
     return (
-      <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -839,7 +839,7 @@ const RoleplayProxySession = ({
   // Error state
   if (error && status === 'disconnected') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -863,7 +863,7 @@ const RoleplayProxySession = ({
 
   return (
     <>
-      <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px' }} className="bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-2 lg:p-4 overflow-hidden">
+      <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px' }} className="bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 p-2 lg:p-4 overflow-hidden">
         <div
           className="w-full h-full gap-3 lg:gap-4 overflow-hidden"
           style={{
@@ -1034,7 +1034,7 @@ const RoleplayProxySession = ({
                                 <Bot className="w-4 h-4 text-white" />
                               </div>
                             ) : (
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-teal-500 to-teal-600">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-600">
                                 <User className="w-4 h-4 text-white" />
                               </div>
                             )}
@@ -1044,11 +1044,11 @@ const RoleplayProxySession = ({
                             className={`flex-1 px-3 py-2 rounded-xl shadow-sm ${
                               entry.role === 'agent'
                                 ? 'bg-slate-50 border border-slate-200'
-                                : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
+                                : 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white'
                             }`}
                           >
                             <p className="text-xs leading-relaxed">{entry.text}</p>
-                            <span className={`text-[10px] mt-1 block ${entry.role === 'agent' ? 'text-slate-400' : 'text-teal-100'}`}>
+                            <span className={`text-[10px] mt-1 block ${entry.role === 'agent' ? 'text-slate-400' : 'text-indigo-100'}`}>
                               {entry.timeLabel}
                             </span>
                           </div>

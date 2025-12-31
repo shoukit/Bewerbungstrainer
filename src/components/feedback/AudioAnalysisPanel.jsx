@@ -335,12 +335,12 @@ const AudioAnalysisPanel = ({
         <div className="bg-white rounded-2xl p-5 border border-slate-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Music2 size={18} className="text-teal-500" />
+              <Music2 size={18} className="text-indigo-500" />
               <span className="text-sm font-semibold text-slate-800">
                 Betonung & Melodie
               </span>
             </div>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-teal-50 text-teal-700">
+            <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700">
               {getTonalityLabel(tonality.rating)}
             </span>
           </div>
@@ -356,7 +356,7 @@ const AudioAnalysisPanel = ({
                   initial={{ height: 0 }}
                   animate={{ height: `${Math.max(10, Math.min(100, height))}%` }}
                   transition={{ duration: 0.5, delay: i * 0.02 }}
-                  className="w-1 rounded-sm bg-teal-500"
+                  className="w-1 rounded-sm bg-indigo-500"
                 />
               );
             })}

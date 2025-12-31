@@ -54,7 +54,7 @@ const ReportTranscriptView = ({ transcript, scenario, primaryAccent, branding, o
                     </div>
                   )
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center">
                     <User size={16} className="text-white" />
                   </div>
                 )}
@@ -73,7 +73,7 @@ const ReportTranscriptView = ({ transcript, scenario, primaryAccent, branding, o
                 className={`max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed border ${
                   isAgent
                     ? 'rounded-[4px_16px_16px_16px] bg-slate-50 text-slate-900 border-slate-200'
-                    : 'rounded-[16px_4px_16px_16px] bg-gradient-to-br from-teal-500 to-teal-600 text-white border-transparent'
+                    : 'rounded-[16px_4px_16px_16px] bg-gradient-to-br from-indigo-500 to-indigo-600 text-white border-transparent'
                 }`}
               >
                 {entry.text}
