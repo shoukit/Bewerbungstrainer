@@ -144,7 +144,11 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
   };
 
   const seekTo = (time) => {
-    if (!audioRef.current) return;
+    if (!audioRef.current) {
+      console.warn('[AudioPlayer] Cannot seek - audio not loaded');
+      return;
+    }
+    console.log('[AudioPlayer] Seeking to', time);
     audioRef.current.currentTime = time;
     setCurrentTime(time);
     // Auto-play after seeking to timestamp
@@ -154,12 +158,12 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
     }
   };
 
-  // Expose seek function to parent
+  // Expose seek function to parent - update when audio is ready
   useEffect(() => {
-    if (onSeek) {
+    if (onSeek && !isLoading && audioRef.current) {
       onSeek.current = seekTo;
     }
-  }, [onSeek]);
+  }, [onSeek, isLoading]);
 
   const handleProgressClick = (e) => {
     if (!progressRef.current || !duration) return;
@@ -189,7 +193,7 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-200">
       <div className="flex items-center gap-2 mb-4">
-        <Volume2 size={18} className="text-primary" />
+        <Volume2 size={18} className="text-indigo-600" />
         <span className="text-sm font-semibold text-slate-900">
           Gesprächsaufnahme
         </span>
@@ -203,7 +207,7 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
       >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <Loader2 size={24} className="text-primary animate-spin" />
+            <Loader2 size={24} className="text-indigo-600 animate-spin" />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full gap-2">
@@ -215,10 +219,10 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
-              className="absolute inset-0 bg-primary/25 rounded-xl"
+              className="absolute inset-0 bg-indigo-600/25 rounded-xl"
             />
             <div
-              className="absolute top-0 bottom-0 w-0.5 bg-primary -translate-x-1/2"
+              className="absolute top-0 bottom-0 w-0.5 bg-indigo-600 -translate-x-1/2"
               style={{ left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
             />
           </>
@@ -239,12 +243,12 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
             <button
               onClick={togglePlay}
               disabled={isLoading}
-              className="w-12 h-12 rounded-full border-none bg-primary cursor-pointer flex items-center justify-center disabled:opacity-50"
+              className="w-12 h-12 rounded-full border-none bg-indigo-600 cursor-pointer flex items-center justify-center disabled:opacity-50 hover:bg-indigo-700 transition-colors shadow-md"
             >
               {isPlaying ? (
                 <Pause size={20} className="text-white" />
               ) : (
-                <Play size={20} className="text-white ml-0.5" />
+                <Play size={20} className="text-white ml-0.5" fill="white" />
               )}
             </button>
             <button
