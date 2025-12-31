@@ -8,6 +8,7 @@ import { ToastProvider } from './components/global/Toast';
 import { Loader2 } from 'lucide-react';
 import { ROUTES, VIEW_TO_ROUTE, getViewFromPath } from './routes';
 import { syncPreferencesFromAPI } from './services/user-preferences';
+import { COLORS, GRADIENTS, hexToRgba } from './config/colors';
 
 // Debug logging
 const DEBUG_PREFIX = '[APP.JSX]';
@@ -97,7 +98,7 @@ const LazyLoadFallback = () => (
         width: '48px',
         height: '48px',
         borderRadius: '12px',
-        background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
+        background: `linear-gradient(135deg, ${COLORS.sky[400]} 0%, ${COLORS.indigo[400]} 100%)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -158,7 +159,7 @@ const BrandingLoadingSpinner = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+        background: `linear-gradient(135deg, ${COLORS.slate[900]} 0%, ${COLORS.slate[800]} 50%, ${COLORS.slate[900]} 100%)`,
         zIndex: 9999,
       }}
     >
@@ -170,7 +171,7 @@ const BrandingLoadingSpinner = () => {
         width: '300px',
         height: '300px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%)',
+        background: `radial-gradient(circle, ${hexToRgba(COLORS.sky[400], 0.1)} 0%, transparent 70%)`,
         animation: 'float 6s ease-in-out infinite',
       }} />
       <div style={{
@@ -180,7 +181,7 @@ const BrandingLoadingSpinner = () => {
         width: '400px',
         height: '400px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%)',
+        background: `radial-gradient(circle, ${hexToRgba(COLORS.violet[500], 0.1)} 0%, transparent 70%)`,
         animation: 'float 8s ease-in-out infinite reverse',
       }} />
 
@@ -200,11 +201,11 @@ const BrandingLoadingSpinner = () => {
             width: '80px',
             height: '80px',
             borderRadius: '24px',
-            background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
+            background: `linear-gradient(135deg, ${COLORS.sky[400]} 0%, ${COLORS.indigo[400]} 100%)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 20px 40px rgba(56, 189, 248, 0.3)',
+            boxShadow: `0 20px 40px ${hexToRgba(COLORS.sky[400], 0.3)}`,
             animation: 'pulse 2s ease-in-out infinite',
           }}
         >
@@ -262,7 +263,7 @@ const BrandingLoadingSpinner = () => {
             style={{
               width: '40%',
               height: '100%',
-              background: 'linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8)',
+              background: `linear-gradient(90deg, ${COLORS.sky[400]}, ${COLORS.indigo[400]}, ${COLORS.sky[400]})`,
               backgroundSize: '200% 100%',
               borderRadius: '2px',
               animation: 'loading 1.5s ease-in-out infinite',

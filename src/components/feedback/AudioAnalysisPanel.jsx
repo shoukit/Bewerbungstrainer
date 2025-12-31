@@ -33,6 +33,7 @@ import {
   AlertTriangle,
   Play,
 } from 'lucide-react';
+import { COLORS } from '@/config/colors';
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -42,10 +43,10 @@ import {
  * Get color scheme based on confidence score
  */
 const getConfidenceColorScheme = (score) => {
-  if (score >= 80) return { color: '#22c55e', bg: '#f0fdf4', label: 'Sehr selbstsicher' };
-  if (score >= 60) return { color: '#3b82f6', bg: '#eff6ff', label: 'Selbstsicher' };
-  if (score >= 40) return { color: '#f59e0b', bg: '#fffbeb', label: 'Ausbaufähig' };
-  return { color: '#ef4444', bg: '#fef2f2', label: 'Unsicher' };
+  if (score >= 80) return { color: COLORS.green[500], bg: COLORS.green[50], label: 'Sehr selbstsicher' };
+  if (score >= 60) return { color: COLORS.blue[500], bg: COLORS.blue[50], label: 'Selbstsicher' };
+  if (score >= 40) return { color: COLORS.amber[500], bg: COLORS.amber[50], label: 'Ausbaufähig' };
+  return { color: COLORS.red[500], bg: COLORS.red[50], label: 'Unsicher' };
 };
 
 /**
@@ -176,7 +177,7 @@ const AudioAnalysisPanel = ({
                       <path
                         d={`M 12 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 12} ${size / 2}`}
                         fill="none"
-                        stroke="#e2e8f0"
+                        stroke={COLORS.slate[200]}
                         strokeWidth="10"
                         strokeLinecap="round"
                       />
@@ -313,7 +314,7 @@ const AudioAnalysisPanel = ({
               animate={{ left: `${getPacingPosition(pacing.rating)}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
               className="absolute top-1/2 w-4 h-4 rounded-full border-2 border-white shadow-md -translate-x-1/2 -translate-y-1/2"
-              style={{ backgroundColor: pacing.rating === 'optimal' ? '#22c55e' : '#f59e0b' }}
+              style={{ backgroundColor: pacing.rating === 'optimal' ? COLORS.green[500] : COLORS.amber[500] }}
             />
             <div className="absolute -bottom-1 left-0 right-0 flex justify-between text-[10px] text-slate-400">
               <span>Langsam</span>

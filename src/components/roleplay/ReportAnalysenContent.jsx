@@ -10,15 +10,16 @@ import {
   Play,
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
+import { COLORS, hexToRgba } from '@/config/colors';
 
 /**
  * Helper function to get confidence color scheme
  */
 const getConfidenceColorScheme = (score) => {
-  if (score >= 80) return { color: '#22c55e', bg: '#f0fdf4', label: 'Sehr selbstsicher' };
-  if (score >= 60) return { color: '#3b82f6', bg: '#eff6ff', label: 'Selbstsicher' };
-  if (score >= 40) return { color: '#f59e0b', bg: '#fffbeb', label: 'Ausbaufähig' };
-  return { color: '#ef4444', bg: '#fef2f2', label: 'Unsicher' };
+  if (score >= 80) return { color: COLORS.green[500], bg: COLORS.green[50], label: 'Sehr selbstsicher' };
+  if (score >= 60) return { color: COLORS.blue[500], bg: COLORS.blue[50], label: 'Selbstsicher' };
+  if (score >= 40) return { color: COLORS.amber[500], bg: COLORS.amber[50], label: 'Ausbaufähig' };
+  return { color: COLORS.red[500], bg: COLORS.red[50], label: 'Unsicher' };
 };
 
 /**
@@ -145,7 +146,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
                       <path
                         d={`M 12 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 12} ${size / 2}`}
                         fill="none"
-                        stroke="#e2e8f0"
+                        stroke={COLORS.slate[200]}
                         strokeWidth="10"
                         strokeLinecap="round"
                       />
@@ -205,7 +206,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
         <div className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${branding.borderColor}` }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <MessageSquare size={18} color="#f97316" />
+              <MessageSquare size={18} color={COLORS.orange[500]} />
               <span className="text-sm font-semibold" style={{ color: branding.textMain }}>
                 Füllwörter
               </span>
@@ -213,8 +214,8 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
             <span
               className="text-[13px] font-semibold px-2.5 py-1 rounded-full"
               style={{
-                background: fillerCount <= 2 ? '#dcfce7' : fillerCount <= 5 ? '#fef3c7' : '#fee2e2',
-                color: fillerCount <= 2 ? '#166534' : fillerCount <= 5 ? '#92400e' : '#991b1b',
+                background: fillerCount <= 2 ? COLORS.green[100] : fillerCount <= 5 ? COLORS.amber[100] : COLORS.red[100],
+                color: fillerCount <= 2 ? COLORS.green[800] : fillerCount <= 5 ? COLORS.amber[800] : COLORS.red[800],
               }}
             >
               {fillerCount}x gesamt
@@ -246,14 +247,14 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
                             padding: '4px 8px',
                             borderRadius: '6px',
                             border: 'none',
-                            background: '#fef3c7',
+                            background: COLORS.amber[100],
                             cursor: 'pointer',
                             fontSize: '11px',
-                            color: '#92400e',
+                            color: COLORS.amber[800],
                             transition: 'all 0.15s',
                           }}
-                          onMouseOver={(e) => e.currentTarget.style.background = '#fde68a'}
-                          onMouseOut={(e) => e.currentTarget.style.background = '#fef3c7'}
+                          onMouseOver={(e) => e.currentTarget.style.background = COLORS.amber[200]}
+                          onMouseOut={(e) => e.currentTarget.style.background = COLORS.amber[100]}
                         >
                           <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{example.timestamp}</span>
                           <Play size={10} />
@@ -265,7 +266,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
               ))}
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#22c55e' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.green[500] }}>
               <CheckCircle2 size={16} />
               <span style={{ fontSize: '13px' }}>Keine Füllwörter erkannt!</span>
             </div>
@@ -284,7 +285,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
         <div className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${branding.borderColor}` }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Timer size={18} color="#3b82f6" />
+              <Timer size={18} color={COLORS.blue[500]} />
               <span className="text-sm font-semibold" style={{ color: branding.textMain }}>
                 Sprechtempo
               </span>
@@ -311,7 +312,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
               right: 0,
               height: '8px',
               borderRadius: '4px',
-              background: 'linear-gradient(90deg, #93c5fd, #86efac, #fca5a5)',
+              background: `linear-gradient(90deg, ${COLORS.blue[300]}, ${COLORS.green[300]}, ${COLORS.red[300]})`,
               transform: 'translateY(-50%)',
             }} />
             <div style={{
@@ -320,8 +321,8 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
               left: '50%',
               width: '60px',
               height: '16px',
-              background: 'rgba(34, 197, 94, 0.2)',
-              border: '1px solid #22c55e',
+              background: hexToRgba(COLORS.green[500], 0.2),
+              border: `1px solid ${COLORS.green[500]}`,
               borderRadius: '8px',
               transform: 'translate(-50%, -50%)',
             }} />
@@ -335,8 +336,8 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
                 width: '16px',
                 height: '16px',
                 borderRadius: '50%',
-                background: pacing.rating === 'optimal' ? '#22c55e' : '#f59e0b',
-                border: '2px solid #fff',
+                background: pacing.rating === 'optimal' ? COLORS.green[500] : COLORS.amber[500],
+                border: `2px solid ${COLORS.white}`,
                 boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                 transform: 'translate(-50%, -50%)',
               }}
@@ -352,7 +353,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
               color: branding.textMuted,
             }}>
               <span>Langsam</span>
-              <span style={{ color: '#22c55e', fontWeight: 500 }}>Optimal</span>
+              <span style={{ color: COLORS.green[500], fontWeight: 500 }}>Optimal</span>
               <span>Schnell</span>
             </div>
           </div>
@@ -370,7 +371,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
         <div className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${branding.borderColor}` }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Music2 size={18} color="#6366f1" />
+              <Music2 size={18} color={COLORS.indigo[500]} />
               <span className="text-sm font-semibold" style={{ color: branding.textMain }}>
                 Betonung & Melodie
               </span>
@@ -391,7 +392,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
                   initial={{ height: 0 }}
                   animate={{ height: `${Math.max(10, Math.min(100, height))}%` }}
                   transition={{ duration: 0.5, delay: i * 0.02 }}
-                  style={{ width: '4px', borderRadius: '2px', background: '#6366f1' }}
+                  style={{ width: '4px', borderRadius: '2px', background: COLORS.indigo[500] }}
                 />
               );
             })}
@@ -413,7 +414,7 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
                     marginBottom: '6px',
                     borderRadius: '8px',
                     border: 'none',
-                    background: highlight.type === 'positive' ? '#f0fdf4' : '#fef2f2',
+                    background: highlight.type === 'positive' ? COLORS.green[50] : COLORS.red[50],
                     cursor: 'pointer',
                     textAlign: 'left',
                   }}
@@ -423,17 +424,17 @@ const ReportAnalysenContent = ({ audioAnalysis, primaryAccent, branding: brandin
                     fontFamily: 'monospace',
                     padding: '2px 6px',
                     borderRadius: '4px',
-                    background: highlight.type === 'positive' ? '#dcfce7' : '#fee2e2',
-                    color: highlight.type === 'positive' ? '#166534' : '#991b1b',
+                    background: highlight.type === 'positive' ? COLORS.green[100] : COLORS.red[100],
+                    color: highlight.type === 'positive' ? COLORS.green[800] : COLORS.red[800],
                     flexShrink: 0,
                   }}>
                     {highlight.timestamp}
                   </span>
                   <span style={{ flexShrink: 0, marginTop: '1px' }}>
                     {highlight.type === 'positive' ? (
-                      <CheckCircle2 size={14} color="#22c55e" />
+                      <CheckCircle2 size={14} color={COLORS.green[500]} />
                     ) : (
-                      <AlertTriangle size={14} color="#ef4444" />
+                      <AlertTriangle size={14} color={COLORS.red[500]} />
                     )}
                   </span>
                   <span style={{

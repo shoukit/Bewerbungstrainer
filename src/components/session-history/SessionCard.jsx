@@ -22,6 +22,7 @@ import {
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime, formatDuration } from '@/utils/formatting';
 import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
+import { COLORS } from '@/config/colors';
 
 /**
  * Session type constants (must match parent component)
@@ -147,11 +148,11 @@ const SessionCard = ({
   const scorePercent = getScoreAsPercent();
 
   const getScoreBadgeStyle = (scoreVal) => {
-    if (!scoreVal && scoreVal !== 0) return { background: '#f1f5f9', color: '#64748b' };
+    if (!scoreVal && scoreVal !== 0) return { background: COLORS.slate[100], color: COLORS.slate[500] };
     const numScore = parseFloat(scoreVal);
-    if (numScore >= 80) return { background: '#dcfce7', color: '#166534' };
-    if (numScore >= 60) return { background: '#fef9c3', color: '#854d0e' };
-    return { background: '#fee2e2', color: '#991b1b' };
+    if (numScore >= 80) return { background: COLORS.green[100], color: COLORS.green[800] };
+    if (numScore >= 60) return { background: COLORS.amber[100], color: COLORS.amber[800] };
+    return { background: COLORS.red[100], color: COLORS.red[800] };
   };
 
   const getIcon = () => {

@@ -36,15 +36,18 @@ import IkigaiResults from '@/components/ikigai/IkigaiResults';
 import SessionDetailHeader from '@/components/session-detail/SessionDetailHeader';
 import { Scale, Compass } from 'lucide-react';
 
+import { IKIGAI_COLORS } from '@/config/colors';
+
 /**
  * Dimension configuration for Ikigai
+ * Uses centralized IKIGAI_COLORS from colors.js
  */
 const IKIGAI_DIMENSIONS = {
   love: {
     key: 'love',
     label: 'Liebe',
     icon: '❤️',
-    color: '#E11D48',
+    color: IKIGAI_COLORS.love.color,
     question: 'Vergiss mal Geld und Karriere. Bei welchen Tätigkeiten vergisst du die Zeit?',
     placeholder: 'Erzähle mir, was du wirklich liebst zu tun...',
     description: 'Was du liebst',
@@ -53,7 +56,7 @@ const IKIGAI_DIMENSIONS = {
     key: 'talent',
     label: 'Talent',
     icon: '⭐',
-    color: '#F59E0B',
+    color: IKIGAI_COLORS.talent.color,
     question: 'Worin bist du richtig gut? Was fällt dir leicht, während andere damit kämpfen?',
     placeholder: 'Beschreibe deine Stärken und Fähigkeiten...',
     description: 'Worin du gut bist',
@@ -62,7 +65,7 @@ const IKIGAI_DIMENSIONS = {
     key: 'need',
     label: 'Welt',
     icon: '🌍',
-    color: '#10B981',
+    color: IKIGAI_COLORS.need.color,
     question: 'Welche Probleme der Welt würdest du gerne lösen? Wo siehst du Bedarf?',
     placeholder: 'Welchen Beitrag möchtest du leisten...',
     description: 'Was die Welt braucht',
@@ -71,7 +74,7 @@ const IKIGAI_DIMENSIONS = {
     key: 'market',
     label: 'Markt',
     icon: '💰',
-    color: '#6366F1',
+    color: IKIGAI_COLORS.market.color,
     question: 'Wofür werden Menschen in deinem Bereich bezahlt? Was ist gefragt?',
     placeholder: 'Welche Berufe oder Märkte interessieren dich...',
     description: 'Wofür du bezahlt wirst',

@@ -19,7 +19,7 @@ import {
   Gauge,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getScoreTailwindClasses } from '@/config/colors';
+import { COLORS, getScoreTailwindClasses } from '@/config/colors';
 
 /**
  * StructuredFeedbackDisplay Component
@@ -47,10 +47,10 @@ const ScoreRing = ({ score, size = 'large', maxScore = 100 }) => {
 
   // Get colors using centralized function
   const colorMap = {
-    'text-green-600': { stroke: '#10b981', text: 'text-green-600' },
-    'text-blue-600': { stroke: '#3b82f6', text: 'text-blue-600' },
-    'text-amber-600': { stroke: '#f59e0b', text: 'text-amber-600' },
-    'text-red-600': { stroke: '#ef4444', text: 'text-red-600' },
+    'text-green-600': { stroke: COLORS.emerald[500], text: 'text-green-600' },
+    'text-blue-600': { stroke: COLORS.blue[500], text: 'text-blue-600' },
+    'text-amber-600': { stroke: COLORS.amber[500], text: 'text-amber-600' },
+    'text-red-600': { stroke: COLORS.red[500], text: 'text-red-600' },
   };
   const tailwindClasses = getScoreTailwindClasses(percentage);
   const colors = colorMap[tailwindClasses.text] || colorMap['text-red-600'];
@@ -66,7 +66,7 @@ const ScoreRing = ({ score, size = 'large', maxScore = 100 }) => {
           cy={center}
           r={radius}
           fill="none"
-          stroke="#e2e8f0"
+          stroke={COLORS.slate[200]}
           strokeWidth={strokeWidth}
         />
         <motion.circle
@@ -105,17 +105,17 @@ const RatingBar = ({ rating, maxRating = 10, showLabel = true }) => {
   const percentage = (rating / maxRating) * 100;
 
   const getBarColor = (pct) => {
-    if (pct >= 80) return '#22c55e';
-    if (pct >= 60) return '#3b82f6';
-    if (pct >= 40) return '#f59e0b';
-    return '#ef4444';
+    if (pct >= 80) return COLORS.green[500];
+    if (pct >= 60) return COLORS.blue[500];
+    if (pct >= 40) return COLORS.amber[500];
+    return COLORS.red[500];
   };
 
   const getTextColor = (pct) => {
-    if (pct >= 80) return '#16a34a';
-    if (pct >= 60) return '#2563eb';
-    if (pct >= 40) return '#d97706';
-    return '#dc2626';
+    if (pct >= 80) return COLORS.green[600];
+    if (pct >= 60) return COLORS.blue[600];
+    if (pct >= 40) return COLORS.amber[600];
+    return COLORS.red[600];
   };
 
   return (
@@ -332,9 +332,9 @@ const CriterionCard = ({ label, rating, maxRating = 10, description, index }) =>
   const percentage = (rating / maxRating) * 100;
 
   const getStatusIcon = (pct) => {
-    if (pct >= 80) return { icon: CheckCircle2, color: '#22c55e' };
-    if (pct >= 40) return { icon: TrendingUp, color: '#f59e0b' };
-    return { icon: AlertTriangle, color: '#ef4444' };
+    if (pct >= 80) return { icon: CheckCircle2, color: COLORS.green[500] };
+    if (pct >= 40) return { icon: TrendingUp, color: COLORS.amber[500] };
+    return { icon: AlertTriangle, color: COLORS.red[500] };
   };
 
   const status = getStatusIcon(percentage);
@@ -496,18 +496,18 @@ const CategoryItemCard = ({ item, index }) => {
  * Color map for inline styles (to avoid Elementor CSS conflicts)
  */
 const COLOR_MAP = {
-  'text-green-800': '#166534',
-  'text-green-700': '#15803d',
-  'text-green-600': '#16a34a',
-  'text-green-500': '#22c55e',
-  'text-amber-800': '#92400e',
-  'text-amber-700': '#b45309',
-  'text-amber-600': '#d97706',
-  'text-amber-500': '#f59e0b',
-  'text-blue-800': '#1e40af',
-  'text-blue-700': '#1d4ed8',
-  'text-blue-600': '#2563eb',
-  'text-blue-500': '#3b82f6',
+  'text-green-800': COLORS.green[800],
+  'text-green-700': COLORS.green[700],
+  'text-green-600': COLORS.green[600],
+  'text-green-500': COLORS.green[500],
+  'text-amber-800': COLORS.amber[800],
+  'text-amber-700': COLORS.amber[700],
+  'text-amber-600': COLORS.amber[600],
+  'text-amber-500': COLORS.amber[500],
+  'text-blue-800': COLORS.blue[800],
+  'text-blue-700': COLORS.blue[700],
+  'text-blue-600': COLORS.blue[600],
+  'text-blue-500': COLORS.blue[500],
 };
 
 const FeedbackAccordion = ({

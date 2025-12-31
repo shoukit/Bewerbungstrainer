@@ -11,15 +11,17 @@ import { Calendar, ChevronRight, Loader2, Trash2, Compass, Heart, Star, Globe, C
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime } from '@/utils/formatting';
 import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
+import { IKIGAI_COLORS, COLORS } from '@/config/colors';
 
 /**
  * Dimension icons and colors
+ * Uses centralized IKIGAI_COLORS from colors.js
  */
 const DIMENSION_CONFIG = {
-  love: { icon: Heart, color: '#E11D48', label: 'Liebe' },
-  talent: { icon: Star, color: '#F59E0B', label: 'Talent' },
-  need: { icon: Globe, color: '#10B981', label: 'Welt' },
-  market: { icon: Coins, color: '#6366F1', label: 'Markt' },
+  love: { icon: Heart, color: IKIGAI_COLORS.love.color, label: 'Liebe' },
+  talent: { icon: Star, color: IKIGAI_COLORS.talent.color, label: 'Talent' },
+  need: { icon: Globe, color: IKIGAI_COLORS.need.color, label: 'Welt' },
+  market: { icon: Coins, color: IKIGAI_COLORS.market.color, label: 'Markt' },
 };
 
 /**
@@ -38,9 +40,9 @@ const DimensionPills = ({ dimensions }) => {
             key={key}
             className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-medium"
             style={{
-              backgroundColor: hasData ? `${config.color}15` : '#f1f5f9',
-              color: hasData ? config.color : '#94a3b8',
-              border: hasData ? `1px solid ${config.color}30` : '1px solid #e2e8f0',
+              backgroundColor: hasData ? `${config.color}15` : COLORS.slate[100],
+              color: hasData ? config.color : COLORS.slate[400],
+              border: hasData ? `1px solid ${config.color}30` : `1px solid ${COLORS.slate[200]}`,
             }}
           >
             <Icon size={12} />
@@ -118,8 +120,8 @@ const IkigaiCard = ({
               className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
               style={{
                 background: isComplete
-                  ? 'linear-gradient(135deg, #E11D48, #F59E0B, #10B981, #6366F1)'
-                  : 'linear-gradient(135deg, #6366F115, #6366F130)',
+                  ? `linear-gradient(135deg, ${IKIGAI_COLORS.love.color}, ${IKIGAI_COLORS.talent.color}, ${IKIGAI_COLORS.need.color}, ${IKIGAI_COLORS.market.color})`
+                  : `linear-gradient(135deg, ${COLORS.indigo[500]}15, ${COLORS.indigo[500]}30)`,
               }}
             >
               <Compass className={`w-[22px] h-[22px] ${isComplete ? 'text-white' : 'text-indigo-500'}`} />
@@ -186,8 +188,8 @@ const IkigaiCard = ({
             className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
             style={{
               background: isComplete
-                ? 'linear-gradient(135deg, #E11D48, #F59E0B, #10B981, #6366F1)'
-                : 'linear-gradient(135deg, #6366F115, #6366F130)',
+                ? `linear-gradient(135deg, ${IKIGAI_COLORS.love.color}, ${IKIGAI_COLORS.talent.color}, ${IKIGAI_COLORS.need.color}, ${IKIGAI_COLORS.market.color})`
+                : `linear-gradient(135deg, ${COLORS.indigo[500]}15, ${COLORS.indigo[500]}30)`,
             }}
           >
             <Compass className={`w-6 h-6 ${isComplete ? 'text-white' : 'text-indigo-500'}`} />

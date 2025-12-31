@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check, X, Sparkles, Loader2 } from 'lucide-react';
 import { usePartner } from '@/context/PartnerContext';
 import { sanitizeColor } from '@/utils/colorUtils';
+import { COLORS } from '@/config/colors';
 
 /**
  * Individual Setup Card with premium styling
@@ -21,7 +22,7 @@ const SetupCard = ({ setup, isSelected, onSelect }) => {
       whileTap={{ scale: 0.98 }}
       className="relative w-full text-left rounded-2xl overflow-hidden bg-white transition-all duration-200 outline-none cursor-pointer"
       style={{
-        border: isSelected ? `2px solid ${safeColor}` : '2px solid #e5e7eb',
+        border: isSelected ? `2px solid ${safeColor}` : `2px solid ${COLORS.gray[200]}`,
         boxShadow: isHovered || isSelected
           ? `0 12px 24px -8px ${safeColor}30, 0 4px 8px -2px rgba(0,0,0,0.08)`
           : '0 2px 8px -2px rgba(0,0,0,0.06)',

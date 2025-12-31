@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePartner } from '@/context/PartnerContext';
 import { getWPApiUrl, getWPNonce } from '@/services/wordpress-api';
+import { COLORS, GRADIENTS, hexToRgba } from '@/config/colors';
 
 /**
  * DemoWelcomeModal Component

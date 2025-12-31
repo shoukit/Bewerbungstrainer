@@ -485,6 +485,192 @@ export const GAME_MODE_COLORS = {
 };
 
 // =============================================================================
+// FEATURE MODULE COLORS
+// =============================================================================
+
+/**
+ * Identity colors for each feature module
+ * Used in OverviewDashboard, feature headers, etc.
+ */
+export const FEATURE_COLORS = {
+  smart_briefing: {
+    primary: '#EC4899', // pink-500
+    secondary: '#DB2777', // pink-600
+    gradient: `linear-gradient(135deg, #EC4899 0%, #DB2777 100%)`,
+  },
+  simulator: {
+    primary: COLORS.emerald[500],
+    secondary: COLORS.emerald[600],
+    gradient: `linear-gradient(135deg, ${COLORS.emerald[500]} 0%, ${COLORS.emerald[600]} 100%)`,
+  },
+  video_training: {
+    primary: COLORS.violet[500],
+    secondary: COLORS.violet[600],
+    gradient: `linear-gradient(135deg, ${COLORS.violet[500]} 0%, ${COLORS.violet[600]} 100%)`,
+  },
+  dashboard: {
+    primary: COLORS.blue[500],
+    secondary: COLORS.blue[600],
+    gradient: `linear-gradient(135deg, ${COLORS.blue[500]} 0%, ${COLORS.blue[600]} 100%)`,
+  },
+  gym: {
+    primary: COLORS.amber[500],
+    secondary: COLORS.amber[600],
+    gradient: `linear-gradient(135deg, ${COLORS.amber[500]} 0%, ${COLORS.amber[600]} 100%)`,
+  },
+  decision_board: {
+    primary: COLORS.teal[500],
+    secondary: COLORS.teal[600],
+    gradient: `linear-gradient(135deg, ${COLORS.teal[500]} 0%, ${COLORS.teal[600]} 100%)`,
+  },
+  ikigai: {
+    primary: COLORS.purple[500],
+    secondary: COLORS.purple[600],
+    gradient: `linear-gradient(135deg, ${COLORS.purple[500]} 0%, ${COLORS.purple[600]} 100%)`,
+  },
+};
+
+// =============================================================================
+// TOAST NOTIFICATION COLORS
+// =============================================================================
+
+/**
+ * Colors for toast notifications
+ */
+export const TOAST_COLORS = {
+  success: {
+    bg: COLORS.emerald[500],
+    text: COLORS.white,
+  },
+  error: {
+    bg: COLORS.red[500],
+    text: COLORS.white,
+  },
+  info: {
+    bg: COLORS.blue[500],
+    text: COLORS.white,
+  },
+  warning: {
+    bg: COLORS.amber[500],
+    text: COLORS.white,
+  },
+};
+
+// =============================================================================
+// IKIGAI DIMENSION COLORS
+// =============================================================================
+
+/**
+ * Colors for Ikigai dimensions
+ */
+export const IKIGAI_COLORS = {
+  love: {
+    color: '#E11D48', // rose-600
+    bg: '#FEE2E2',
+  },
+  talent: {
+    color: COLORS.amber[500],
+    bg: COLORS.amber[100],
+  },
+  need: {
+    color: COLORS.emerald[500],
+    bg: COLORS.emerald[100],
+  },
+  market: {
+    color: COLORS.indigo[500],
+    bg: COLORS.indigo[100],
+  },
+};
+
+// =============================================================================
+// DIFFICULTY LEVEL COLORS
+// =============================================================================
+
+/**
+ * Colors for difficulty levels
+ */
+export const DIFFICULTY_COLORS = {
+  easy: {
+    color: COLORS.indigo[500],
+    bg: COLORS.indigo[50],
+  },
+  medium: {
+    color: COLORS.emerald[600],
+    bg: COLORS.emerald[100],
+  },
+  hard: {
+    color: COLORS.violet[600],
+    bg: COLORS.violet[100],
+  },
+  expert: {
+    color: COLORS.amber[600],
+    bg: COLORS.amber[100],
+  },
+  default: {
+    color: COLORS.slate[500],
+    bg: COLORS.slate[100],
+  },
+};
+
+// =============================================================================
+// DECISION BOARD PERSONA COLORS
+// =============================================================================
+
+/**
+ * Colors for Decision Board personas
+ */
+export const PERSONA_COLORS = {
+  analytisch: {
+    color: COLORS.indigo[500],
+  },
+  kreativ: {
+    color: '#0891b2', // cyan-600
+  },
+  praktisch: {
+    color: COLORS.emerald[500],
+  },
+  risikofreudig: {
+    color: COLORS.amber[500],
+  },
+  vorsichtig: {
+    color: COLORS.violet[500],
+  },
+};
+
+// =============================================================================
+// SVG STROKE COLORS (for gauges, rings, etc.)
+// =============================================================================
+
+/**
+ * SVG stroke colors for various score visualizations
+ */
+export const SVG_COLORS = {
+  trackLight: COLORS.slate[200],
+  trackLightRgba: 'rgba(255,255,255,0.25)',
+  trackDark: COLORS.slate[200],
+};
+
+// =============================================================================
+// DEFAULT BRANDING (fallback values)
+// =============================================================================
+
+/**
+ * Default branding values when no partner context is available
+ */
+export const DEFAULT_BRANDING_COLORS = {
+  primaryAccent: COLORS.indigo[500],
+  primaryAccentHover: COLORS.indigo[600],
+  headerGradient: GRADIENTS.header,
+  buttonGradient: GRADIENTS.button,
+  headerText: COLORS.white,
+  sidebarBg: COLORS.slate[800],
+  sidebarText: COLORS.slate[50],
+  sidebarTextMuted: COLORS.slate[400],
+  sidebarActiveBg: `rgba(79, 70, 229, 0.2)`,
+  sidebarActiveText: COLORS.indigo[300],
+};
+
+// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 

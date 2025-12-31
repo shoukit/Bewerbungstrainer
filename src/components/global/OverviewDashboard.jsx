@@ -15,6 +15,8 @@ import {
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import SetupSelector from '@/components/wizard/SetupSelector';
+import { COLORS, FEATURE_COLORS, hexToRgba } from '@/config/colors';
+import { SHADOWS, RADIUS } from '@/config/designTokens';
 
 /**
  * OverviewDashboard - Landing page with overview of all training modules
@@ -28,7 +30,7 @@ const OverviewDashboard = ({ onNavigate }) => {
   const headerText = branding?.['--header-text'] || DEFAULT_BRANDING['--header-text'];
   const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
-  // Feature cards data
+  // Feature cards data - uses centralized FEATURE_COLORS
   const features = [
     {
       id: 'smart_briefing',
@@ -41,8 +43,8 @@ const OverviewDashboard = ({ onNavigate }) => {
         'Branchenspezifisches Wissen',
         'Intelligente Rückfragen-Vorschläge',
       ],
-      gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
-      accentColor: '#EC4899',
+      gradient: FEATURE_COLORS.smart_briefing.gradient,
+      accentColor: FEATURE_COLORS.smart_briefing.primary,
     },
     {
       id: 'simulator',
@@ -55,8 +57,8 @@ const OverviewDashboard = ({ onNavigate }) => {
         'Sofortiges Feedback nach jeder Antwort',
         'Strukturierte Auswertung',
       ],
-      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-      accentColor: '#10B981',
+      gradient: FEATURE_COLORS.simulator.gradient,
+      accentColor: FEATURE_COLORS.simulator.primary,
     },
     {
       id: 'video_training',
@@ -69,8 +71,8 @@ const OverviewDashboard = ({ onNavigate }) => {
         'Analyse von Körpersprache & Charisma',
         'Konkrete Verbesserungsvorschläge',
       ],
-      gradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-      accentColor: '#8B5CF6',
+      gradient: FEATURE_COLORS.video_training.gradient,
+      accentColor: FEATURE_COLORS.video_training.primary,
     },
     {
       id: 'dashboard',
@@ -83,8 +85,8 @@ const OverviewDashboard = ({ onNavigate }) => {
         'Verschiedene Gesprächspartner-Persönlichkeiten',
         'Vollständiges Gesprächs-Feedback',
       ],
-      gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-      accentColor: '#3B82F6',
+      gradient: FEATURE_COLORS.dashboard.gradient,
+      accentColor: FEATURE_COLORS.dashboard.primary,
     },
     {
       id: 'gym_klassiker',
@@ -97,8 +99,8 @@ const OverviewDashboard = ({ onNavigate }) => {
         'Sprechtempo-Analyse',
         'Gamification & Highscores',
       ],
-      gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-      accentColor: '#F59E0B',
+      gradient: FEATURE_COLORS.gym.gradient,
+      accentColor: FEATURE_COLORS.gym.primary,
     },
   ];
 
@@ -142,7 +144,7 @@ const OverviewDashboard = ({ onNavigate }) => {
         <h1 style={{
           fontSize: 'clamp(28px, 5vw, 42px)',
           fontWeight: 800,
-          color: '#0f172a',
+          color: COLORS.slate[900],
           marginBottom: '16px',
           lineHeight: 1.2,
         }}>
@@ -166,9 +168,9 @@ const OverviewDashboard = ({ onNavigate }) => {
             style={{
               marginBottom: '24px',
               padding: '20px 24px',
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(147, 51, 234, 0.06) 100%)',
-              borderRadius: '16px',
-              border: '1px solid rgba(59, 130, 246, 0.15)',
+              background: `linear-gradient(135deg, ${hexToRgba(COLORS.blue[500], 0.08)} 0%, ${hexToRgba(COLORS.purple[600], 0.06)} 100%)`,
+              borderRadius: RADIUS.xl,
+              border: `1px solid ${hexToRgba(COLORS.blue[500], 0.15)}`,
               maxWidth: '700px',
               margin: '0 auto 24px',
             }}
@@ -177,7 +179,7 @@ const OverviewDashboard = ({ onNavigate }) => {
               <h2 style={{
                 fontSize: 'clamp(20px, 3vw, 26px)',
                 fontWeight: 700,
-                color: '#0f172a',
+                color: COLORS.slate[900],
                 marginBottom: dashboardHook ? '8px' : '0',
                 lineHeight: 1.3,
               }}>
@@ -187,7 +189,7 @@ const OverviewDashboard = ({ onNavigate }) => {
             {dashboardHook && (
               <p style={{
                 fontSize: 'clamp(15px, 2vw, 17px)',
-                color: '#475569',
+                color: COLORS.slate[600],
                 margin: 0,
                 lineHeight: 1.6,
               }}>
@@ -200,7 +202,7 @@ const OverviewDashboard = ({ onNavigate }) => {
         {/* Subtitle */}
         <p style={{
           fontSize: 'clamp(16px, 2.5vw, 20px)',
-          color: '#475569',
+          color: COLORS.slate[600],
           maxWidth: '700px',
           margin: '0 auto 32px',
           lineHeight: 1.6,
@@ -236,8 +238,8 @@ const OverviewDashboard = ({ onNavigate }) => {
               <div style={{
                 width: '40px',
                 height: '40px',
-                borderRadius: '10px',
-                background: 'rgba(59, 130, 246, 0.1)',
+                borderRadius: RADIUS.md,
+                background: hexToRgba(COLORS.blue[500], 0.1),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -245,8 +247,8 @@ const OverviewDashboard = ({ onNavigate }) => {
                 <stat.icon style={{ width: '20px', height: '20px', color: primaryAccent }} />
               </div>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>{stat.value}</div>
-                <div style={{ fontSize: '13px', color: '#64748b' }}>{stat.label}</div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: COLORS.slate[900] }}>{stat.value}</div>
+                <div style={{ fontSize: '13px', color: COLORS.slate[500] }}>{stat.label}</div>
               </div>
             </div>
           ))}
@@ -283,22 +285,22 @@ const OverviewDashboard = ({ onNavigate }) => {
             whileTap={{ scale: 0.98 }}
             onClick={() => handleFeatureClick(feature.id)}
             style={{
-              background: 'white',
-              borderRadius: '24px',
+              background: COLORS.white,
+              borderRadius: RADIUS['2xl'],
               padding: '28px',
               cursor: 'pointer',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
+              border: `1px solid ${COLORS.slate[200]}`,
+              boxShadow: SHADOWS.sm,
               transition: 'box-shadow 0.3s ease',
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 20px 40px -12px rgba(0, 0, 0, 0.15)';
+              e.currentTarget.style.boxShadow = SHADOWS.xl;
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)';
+              e.currentTarget.style.boxShadow = SHADOWS.sm;
             }}
           >
             {/* Header Row */}
@@ -321,14 +323,14 @@ const OverviewDashboard = ({ onNavigate }) => {
               <div style={{
                 width: '36px',
                 height: '36px',
-                borderRadius: '10px',
-                background: '#f1f5f9',
+                borderRadius: RADIUS.md,
+                background: COLORS.slate[100],
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.2s ease',
               }}>
-                <ArrowRight style={{ width: '18px', height: '18px', color: '#64748b' }} />
+                <ArrowRight style={{ width: '18px', height: '18px', color: COLORS.slate[500] }} />
               </div>
             </div>
 
@@ -337,7 +339,7 @@ const OverviewDashboard = ({ onNavigate }) => {
               <h3 style={{
                 fontSize: '22px',
                 fontWeight: 700,
-                color: '#0f172a',
+                color: COLORS.slate[900],
                 marginBottom: '4px',
               }}>
                 {feature.title}
@@ -354,7 +356,7 @@ const OverviewDashboard = ({ onNavigate }) => {
             {/* Description */}
             <p style={{
               fontSize: '15px',
-              color: '#475569',
+              color: COLORS.slate[600],
               lineHeight: 1.6,
               marginBottom: '20px',
               flex: 1,
@@ -368,7 +370,7 @@ const OverviewDashboard = ({ onNavigate }) => {
               flexDirection: 'column',
               gap: '8px',
               paddingTop: '16px',
-              borderTop: '1px solid #f1f5f9',
+              borderTop: `1px solid ${COLORS.slate[100]}`,
             }}>
               {feature.highlights.map((highlight, idx) => (
                 <div
@@ -387,7 +389,7 @@ const OverviewDashboard = ({ onNavigate }) => {
                   }} />
                   <span style={{
                     fontSize: '14px',
-                    color: '#334155',
+                    color: COLORS.slate[700],
                   }}>
                     {highlight}
                   </span>
@@ -408,22 +410,22 @@ const OverviewDashboard = ({ onNavigate }) => {
           margin: '48px auto 0',
           textAlign: 'center',
           padding: '32px',
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%)',
-          borderRadius: '20px',
-          border: '1px solid rgba(59, 130, 246, 0.1)',
+          background: `linear-gradient(135deg, ${hexToRgba(COLORS.blue[500], 0.05)} 0%, ${hexToRgba(COLORS.purple[600], 0.05)} 100%)`,
+          borderRadius: RADIUS['2xl'],
+          border: `1px solid ${hexToRgba(COLORS.blue[500], 0.1)}`,
         }}
       >
         <h3 style={{
           fontSize: '20px',
           fontWeight: 700,
-          color: '#0f172a',
+          color: COLORS.slate[900],
           marginBottom: '8px',
         }}>
           Bereit für dein Training?
         </h3>
         <p style={{
           fontSize: '15px',
-          color: '#64748b',
+          color: COLORS.slate[500],
           marginBottom: '0',
         }}>
           Wähle einen der Trainingsbereiche oben aus und starte sofort mit deinem persönlichen Coaching.

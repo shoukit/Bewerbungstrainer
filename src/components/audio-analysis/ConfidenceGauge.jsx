@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { Gauge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SCORE_THRESHOLDS } from '@/config/constants';
+import { COLORS } from '@/config/colors';
 
 /**
  * Get color scheme based on confidence score
@@ -16,7 +17,7 @@ import { SCORE_THRESHOLDS } from '@/config/constants';
 function getConfidenceColorScheme(score) {
   if (score >= SCORE_THRESHOLDS.EXCELLENT) {
     return {
-      stroke: '#22c55e',
+      stroke: COLORS.green[500],
       bg: 'from-green-50 to-green-100',
       text: 'text-green-600',
       label: 'Sehr selbstsicher',
@@ -24,7 +25,7 @@ function getConfidenceColorScheme(score) {
   }
   if (score >= SCORE_THRESHOLDS.GOOD) {
     return {
-      stroke: '#3b82f6',
+      stroke: COLORS.blue[500],
       bg: 'from-blue-50 to-blue-100',
       text: 'text-blue-600',
       label: 'Selbstsicher',
@@ -32,14 +33,14 @@ function getConfidenceColorScheme(score) {
   }
   if (score >= SCORE_THRESHOLDS.FAIR) {
     return {
-      stroke: '#f59e0b',
+      stroke: COLORS.amber[500],
       bg: 'from-amber-50 to-amber-100',
       text: 'text-amber-600',
       label: 'Ausbaufähig',
     };
   }
   return {
-    stroke: '#ef4444',
+    stroke: COLORS.red[500],
     bg: 'from-red-50 to-red-100',
     text: 'text-red-600',
     label: 'Unsicher',
@@ -66,7 +67,7 @@ export function ConfidenceGauge({ score, size = 160 }) {
           <path
             d={`M 15 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 15} ${size / 2}`}
             fill="none"
-            stroke="#e2e8f0"
+            stroke={COLORS.slate[200]}
             strokeWidth="12"
             strokeLinecap="round"
           />

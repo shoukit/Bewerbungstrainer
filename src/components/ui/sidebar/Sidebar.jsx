@@ -25,33 +25,34 @@ import {
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/global/Toast';
+import { COLORS, hexToRgba } from '@/config/colors';
 
 /**
- * Indigo theme colors - defined as constants to avoid WordPress CSS conflicts
+ * Indigo theme colors - using centralized COLORS for consistency
  * These are the default colors used when no partner branding is active
  * Updated for Design System v2.0 "Clean Professional"
  */
 const THEME_COLORS = {
   indigo: {
-    50: '#EEF2FF',
-    100: '#E0E7FF',
-    400: '#818CF8',
-    500: '#6366F1',
-    600: '#4F46E5',
-    700: '#4338CA',
+    50: COLORS.indigo[50],
+    100: COLORS.indigo[100],
+    400: COLORS.indigo[400],
+    500: COLORS.indigo[500],
+    600: COLORS.indigo[600],
+    700: COLORS.indigo[700],
   },
   violet: {
-    500: '#8B5CF6',
-    600: '#7C3AED',
+    500: COLORS.violet[500],
+    600: COLORS.violet[600],
   },
   slate: {
-    50: '#f8fafc',
-    100: '#f1f5f9',
-    200: '#e2e8f0',
-    400: '#94a3b8',
-    600: '#475569',
-    700: '#334155',
-    900: '#0f172a',
+    50: COLORS.slate[50],
+    100: COLORS.slate[100],
+    200: COLORS.slate[200],
+    400: COLORS.slate[400],
+    600: COLORS.slate[600],
+    700: COLORS.slate[700],
+    900: COLORS.slate[900],
   },
 };
 
@@ -60,15 +61,15 @@ const THEME_COLORS = {
  * These match the PHP default_branding and partners.js DEFAULT_BRANDING
  */
 const DEFAULT_SIDEBAR_COLORS = {
-  sidebarBg: '#1e293b',           // Dark slate
-  sidebarText: '#f8fafc',         // Light text for dark bg
-  sidebarTextMuted: '#94a3b8',    // Muted slate
-  sidebarActiveBg: 'rgba(99, 102, 241, 0.15)', // Indigo with opacity
-  sidebarActiveText: '#818cf8',   // Indigo light
-  sidebarHoverBg: 'rgba(255, 255, 255, 0.05)', // Subtle white
-  primaryAccent: '#6366f1',       // Indigo
-  borderColor: 'rgba(255, 255, 255, 0.1)',     // Subtle border for dark bg
-  borderColorLight: 'rgba(255, 255, 255, 0.05)', // Even subtler border
+  sidebarBg: COLORS.slate[800],
+  sidebarText: COLORS.slate[50],
+  sidebarTextMuted: COLORS.slate[400],
+  sidebarActiveBg: hexToRgba(COLORS.indigo[500], 0.15),
+  sidebarActiveText: COLORS.indigo[400],
+  sidebarHoverBg: 'rgba(255, 255, 255, 0.05)',
+  primaryAccent: COLORS.indigo[500],
+  borderColor: 'rgba(255, 255, 255, 0.1)',
+  borderColorLight: 'rgba(255, 255, 255, 0.05)',
 };
 
 /**

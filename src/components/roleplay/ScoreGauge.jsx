@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { getScoreColor } from '@/config/colors';
+import { COLORS, SVG_COLORS, getScoreColor } from '@/config/colors';
 
 /**
  * Score Gauge - Circular progress indicator
@@ -21,7 +21,7 @@ const ScoreGauge = ({ score, size = 100, primaryAccent, isHeader = false }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={isHeader ? 'rgba(255,255,255,0.25)' : '#e2e8f0'}
+          stroke={isHeader ? SVG_COLORS.trackLightRgba : COLORS.slate[200]}
           strokeWidth={8}
         />
         <motion.circle
@@ -29,7 +29,7 @@ const ScoreGauge = ({ score, size = 100, primaryAccent, isHeader = false }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={isHeader ? '#fff' : color}
+          stroke={isHeader ? COLORS.white : color}
           strokeWidth={8}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -46,7 +46,7 @@ const ScoreGauge = ({ score, size = 100, primaryAccent, isHeader = false }) => {
           className="font-bold leading-none"
           style={{
             fontSize: size / 3,
-            color: isHeader ? '#fff' : color,
+            color: isHeader ? COLORS.white : color,
           }}
         >
           {Math.round(score)}
