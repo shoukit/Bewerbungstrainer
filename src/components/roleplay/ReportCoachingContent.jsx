@@ -12,11 +12,37 @@ import {
 import RatingBar from './RatingBar';
 
 /**
+ * Helper to extract text from feedback items that can be either strings or objects
+ * Gemini may return: "string" OR {point: "...", detail: "..."} OR {point: "...", action: "..."}
+ */
+const getItemText = (item) => {
+  if (typeof item === 'string') return item;
+  if (typeof item === 'object' && item !== null) {
+    // Combine point and detail/action for full context
+    const parts = [];
+    if (item.point) parts.push(item.point);
+    if (item.detail) parts.push(item.detail);
+    if (item.action) parts.push(item.action);
+    return parts.join(': ') || JSON.stringify(item);
+  }
+  return String(item);
+};
+
+/**
  * Coaching Tab Content for Session Reports
  * Displays summary, strengths, improvements, tips, and rating bars
  */
-const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, branding }) => {
+const ReportCoachingContent = ({ feedback: rawFeedback, audioAnalysis, primaryAccent, branding }) => {
   const [expandedSection, setExpandedSection] = useState('summary');
+
+  // Normalize feedback to handle both old and new Gemini response formats
+  const feedback = rawFeedback ? {
+    summary: rawFeedback.summary || rawFeedback.overall_assessment || null,
+    strengths: rawFeedback.strengths || [],
+    improvements: rawFeedback.improvements || rawFeedback.areas_for_improvement || [],
+    tips: rawFeedback.tips || rawFeedback.suggestions || [],
+    rating: rawFeedback.rating || null,
+  } : null;
 
   const toggleSection = (id) => {
     setExpandedSection(expandedSection === id ? null : id);
@@ -92,7 +118,7 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
                       <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-[11px] font-semibold text-green-500">✓</span>
                       </div>
-                      <p className="text-[13px] leading-relaxed text-green-800 m-0">{item}</p>
+                      <p className="text-[13px] leading-relaxed text-green-800 m-0">{getItemText(item)}</p>
                     </div>
                   ))}
                 </div>
@@ -135,7 +161,7 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
                       <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-[11px] font-semibold text-amber-500">{idx + 1}</span>
                       </div>
-                      <p className="text-[13px] leading-relaxed text-amber-900 m-0">{item}</p>
+                      <p className="text-[13px] leading-relaxed text-amber-900 m-0">{getItemText(item)}</p>
                     </div>
                   ))}
                 </div>
@@ -176,7 +202,7 @@ const ReportCoachingContent = ({ feedback, audioAnalysis, primaryAccent, brandin
                   {feedback.tips.map((item, idx) => (
                     <div key={idx} className="flex gap-2.5 mb-2.5">
                       <Target size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-[13px] leading-relaxed text-blue-900 m-0">{item}</p>
+                      <p className="text-[13px] leading-relaxed text-blue-900 m-0">{getItemText(item)}</p>
                     </div>
                   ))}
                 </div>
