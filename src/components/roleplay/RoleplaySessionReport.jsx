@@ -24,7 +24,6 @@ import {
   Trash2,
   Download,
 } from 'lucide-react';
-import { useMobile } from '@/hooks/useMobile';
 import { useBranding } from '@/hooks/useBranding';
 import { getScoreColor } from '@/config/colors';
 import { formatDuration } from '@/utils/formatting';
@@ -96,15 +95,7 @@ const RoleplaySessionReport = ({
   // Use props if provided, otherwise use branding from hook
   const primaryAccent = primaryAccentProp || b.primaryAccent;
   const headerGradient = headerGradientProp || b.headerGradient;
-  const pageBg = b.pageBg;
-  const textMain = b.textMain;
-  const textSecondary = b.textSecondary;
-  const textMuted = b.textMuted;
-  const cardBg = b.cardBg;
-  const borderColor = b.borderColor;
-  const cardBgHover = b.cardBgHover;
 
-  const isMobile = useMobile(768);
   const audioSeekRef = useRef(null);
   const [activeTab, setActiveTab] = useState(TABS.COACHING);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -241,37 +232,25 @@ const RoleplaySessionReport = ({
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
-        <Loader2 size={40} color={primaryAccent} className="animate-spin" />
-        <p className="text-sm" style={{ color: textSecondary }}>Lade Report...</p>
+        <Loader2 size={40} className="animate-spin text-primary" />
+        <p className="text-sm text-slate-500">Lade Report...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ background: pageBg }}>
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div
-        className={`sticky top-0 z-40 ${isMobile ? 'p-5 px-4' : 'p-6 px-8'}`}
+        className="sticky top-0 z-40 p-5 px-4 md:p-6 md:px-8"
         style={{ background: headerGradient }}
       >
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        <div className="max-w-[1400px] mx-auto">
           {/* Back Button */}
           {onBack && (
             <button
               onClick={onBack}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(255,255,255,0.15)',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                cursor: 'pointer',
-                color: '#fff',
-                fontSize: '13px',
-                marginBottom: '16px',
-              }}
+              className="flex items-center gap-1.5 bg-white/15 border-none rounded-lg px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 transition-colors"
             >
               <ArrowLeft size={16} />
               Zurück zur Übersicht
@@ -279,58 +258,35 @@ const RoleplaySessionReport = ({
           )}
 
           {/* Header Content */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '24px',
-          }}>
+          <div className="flex items-center gap-6">
             {/* Score Gauge - Hidden on mobile */}
-            {!isMobile && (
+            <div className="hidden md:block">
               <ScoreGauge score={overallScore} size={100} primaryAccent={primaryAccent} isHeader />
-            )}
+            </div>
 
             {/* Title & Meta */}
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: 'rgba(255,255,255,0.2)',
-                  color: '#fff',
-                }}>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 flex-wrap mb-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
                   Live-Simulation
                 </span>
-                <span style={{
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: 'rgba(255,255,255,0.9)',
-                  color: getScoreColor(overallScore, primaryAccent),
-                }}>
+                <span
+                  className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90"
+                  style={{ color: getScoreColor(overallScore, primaryAccent) }}
+                >
                   {getGradeLabel(overallScore)}
                 </span>
               </div>
-              <h1 style={{
-                fontSize: isMobile ? '20px' : '24px',
-                fontWeight: 700,
-                color: '#fff',
-                margin: 0,
-                marginBottom: '8px',
-              }}>
+              <h1 className="text-xl md:text-2xl font-bold text-white m-0 mb-2">
                 {scenario?.title || session?.scenario_title || 'Übungssession'}
               </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="flex items-center gap-1.5 text-[13px] text-white/80">
                   <Calendar size={14} />
                   {formatDate(session?.created_at)}
                 </span>
                 {session?.duration && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                  <span className="flex items-center gap-1.5 text-[13px] text-white/80">
                     <Clock size={14} />
                     {formatDuration(session.duration)}
                   </span>
@@ -338,94 +294,46 @@ const RoleplaySessionReport = ({
               </div>
             </div>
 
-            {/* Action Buttons */}
-            {!isMobile && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {session?.id && (
-                  <button
-                    onClick={handleDownloadPdf}
-                    disabled={isDownloading}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: 'rgba(255,255,255,0.2)',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      borderRadius: '10px',
-                      padding: '10px 20px',
-                      cursor: isDownloading ? 'wait' : 'pointer',
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      opacity: isDownloading ? 0.7 : 1,
-                    }}
-                  >
-                    {isDownloading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={16} />}
-                    PDF Export
-                  </button>
-                )}
-                {onRepeat && (
-                  <button
-                    onClick={onRepeat}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: 'rgba(255,255,255,0.2)',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      borderRadius: '10px',
-                      padding: '10px 20px',
-                      cursor: 'pointer',
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                    }}
-                  >
-                    <Play size={16} />
-                    Erneut üben
-                  </button>
-                )}
-                {onDelete && (
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: 'rgba(239,68,68,0.2)',
-                      border: '1px solid rgba(239,68,68,0.4)',
-                      borderRadius: '10px',
-                      padding: '10px 16px',
-                      cursor: 'pointer',
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Action Buttons - Desktop */}
+            <div className="hidden md:flex items-center gap-2">
+              {session?.id && (
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={isDownloading}
+                  className="flex items-center gap-2 bg-white/20 border border-white/30 rounded-[10px] px-5 py-2.5 cursor-pointer text-white text-sm font-medium hover:bg-white/30 transition-colors disabled:opacity-70 disabled:cursor-wait"
+                >
+                  {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  PDF Export
+                </button>
+              )}
+              {onRepeat && (
+                <button
+                  onClick={onRepeat}
+                  className="flex items-center gap-2 bg-white/20 border border-white/30 rounded-[10px] px-5 py-2.5 cursor-pointer text-white text-sm font-medium hover:bg-white/30 transition-colors"
+                >
+                  <Play size={16} />
+                  Erneut üben
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 bg-red-500/20 border border-red-500/40 rounded-[10px] px-4 py-2.5 cursor-pointer text-white text-sm font-medium hover:bg-red-500/30 transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div style={{
-        maxWidth: '1400px',
-        margin: '0 auto',
-        padding: isMobile ? '16px' : '24px 32px',
-      }}>
+      <div className="max-w-[1400px] mx-auto p-4 md:px-8 md:py-6">
         {/* Two Column Layout - 30:70 split */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '30fr 70fr',
-          gap: '24px',
-          alignItems: 'start',
-        }}>
+        <div className="grid grid-cols-1 md:grid-cols-[30fr_70fr] gap-6 items-start">
           {/* Left Column: Transcript + Audio Player */}
-          <div style={{ order: isMobile ? 2 : 1 }}>
+          <div className="order-2 md:order-1">
             <ReportTranscriptView
               transcript={transcript}
               scenario={scenario}
@@ -434,7 +342,7 @@ const RoleplaySessionReport = ({
               onSeekToTime={handleSeekToTime}
             />
             {/* Audio Player under Transcript */}
-            <div style={{ marginTop: '16px' }}>
+            <div className="mt-4">
               <ReportAudioPlayer
                 audioUrl={audioUrl}
                 duration={session?.duration}
@@ -446,47 +354,28 @@ const RoleplaySessionReport = ({
           </div>
 
           {/* Right Column: Tabbed Feedback */}
-          <div style={{ order: isMobile ? 1 : 2 }}>
+          <div className="order-1 md:order-2">
             {/* Tabs */}
-            <div style={{
-              display: 'flex',
-              background: '#fff',
-              borderRadius: '12px',
-              padding: '4px',
-              marginBottom: '16px',
-              border: `1px solid ${b.borderColor}`,
-            }}>
+            <div className="flex bg-white rounded-xl p-1 mb-4 border border-slate-200">
               <button
                 onClick={() => setActiveTab(TABS.COACHING)}
-                style={{
-                  flex: 1,
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: activeTab === TABS.COACHING ? primaryAccent : 'transparent',
-                  color: activeTab === TABS.COACHING ? '#fff' : b.textSecondary,
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
+                className={`flex-1 py-2.5 px-4 rounded-lg border-none text-[13px] font-semibold cursor-pointer transition-all ${
+                  activeTab === TABS.COACHING
+                    ? 'text-white'
+                    : 'bg-transparent text-slate-500 hover:text-slate-700'
+                }`}
+                style={activeTab === TABS.COACHING ? { background: primaryAccent } : {}}
               >
                 Coaching
               </button>
               <button
                 onClick={() => setActiveTab(TABS.ANALYSEN)}
-                style={{
-                  flex: 1,
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: activeTab === TABS.ANALYSEN ? primaryAccent : 'transparent',
-                  color: activeTab === TABS.ANALYSEN ? '#fff' : b.textSecondary,
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
+                className={`flex-1 py-2.5 px-4 rounded-lg border-none text-[13px] font-semibold cursor-pointer transition-all ${
+                  activeTab === TABS.ANALYSEN
+                    ? 'text-white'
+                    : 'bg-transparent text-slate-500 hover:text-slate-700'
+                }`}
+                style={activeTab === TABS.ANALYSEN ? { background: primaryAccent } : {}}
               >
                 Analysen
               </button>
@@ -522,81 +411,37 @@ const RoleplaySessionReport = ({
         </div>
 
         {/* Mobile Action Buttons */}
-        {isMobile && (
-          <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {session?.id && (
-              <button
-                onClick={handleDownloadPdf}
-                disabled={isDownloading}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  background: primaryAccent,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '14px 24px',
-                  cursor: isDownloading ? 'wait' : 'pointer',
-                  color: '#fff',
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  opacity: isDownloading ? 0.7 : 1,
-                }}
-              >
-                {isDownloading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={18} />}
-                PDF Export
-              </button>
-            )}
-            {onRepeat && (
-              <button
-                onClick={onRepeat}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  background: b.cardBg,
-                  border: `1px solid ${b.borderColor}`,
-                  borderRadius: '12px',
-                  padding: '14px 24px',
-                  cursor: 'pointer',
-                  color: b.textMain,
-                  fontSize: '15px',
-                  fontWeight: 600,
-                }}
-              >
-                <Play size={18} />
-                Erneut üben
-              </button>
-            )}
-            {onDelete && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  background: 'transparent',
-                  border: '1px solid #ef4444',
-                  borderRadius: '12px',
-                  padding: '14px 24px',
-                  cursor: 'pointer',
-                  color: '#ef4444',
-                  fontSize: '15px',
-                  fontWeight: 600,
-                }}
-              >
-                <Trash2 size={18} />
-                Session löschen
-              </button>
-            )}
-          </div>
-        )}
+        <div className="mt-6 flex flex-col gap-3 md:hidden">
+          {session?.id && (
+            <button
+              onClick={handleDownloadPdf}
+              disabled={isDownloading}
+              className="w-full flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 cursor-pointer text-white text-[15px] font-semibold border-none disabled:opacity-70 disabled:cursor-wait"
+              style={{ background: primaryAccent }}
+            >
+              {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+              PDF Export
+            </button>
+          )}
+          {onRepeat && (
+            <button
+              onClick={onRepeat}
+              className="w-full flex items-center justify-center gap-2 bg-white border border-slate-200 rounded-xl px-6 py-3.5 cursor-pointer text-slate-900 text-[15px] font-semibold hover:bg-slate-50 transition-colors"
+            >
+              <Play size={18} />
+              Erneut üben
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full flex items-center justify-center gap-2 bg-transparent border border-red-500 rounded-xl px-6 py-3.5 cursor-pointer text-red-500 text-[15px] font-semibold hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={18} />
+              Session löschen
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -609,67 +454,30 @@ const RoleplaySessionReport = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDeleteConfirm(false)}
-              style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0,0,0,0.5)',
-                zIndex: 1000,
-              }}
+              className="fixed inset-0 bg-black/50 z-[1000]"
             />
             {/* Dialog */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              style={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                background: '#fff',
-                borderRadius: '16px',
-                padding: '24px',
-                maxWidth: '400px',
-                width: '90%',
-                zIndex: 1001,
-                boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-              }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 max-w-[400px] w-[90%] z-[1001] shadow-2xl"
             >
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  background: 'rgba(239,68,68,0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 16px',
-                }}>
-                  <Trash2 size={24} color="#ef4444" />
+              <div className="text-center">
+                <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                  <Trash2 size={24} className="text-red-500" />
                 </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 600, color: b.textMain, marginBottom: '8px' }}>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">
                   Session löschen?
                 </h3>
-                <p style={{ fontSize: '14px', color: b.textSecondary, marginBottom: '24px' }}>
+                <p className="text-sm text-slate-500 mb-6">
                   Diese Aktion kann nicht rückgängig gemacht werden. Dein Transkript und Feedback werden dauerhaft gelöscht.
                 </p>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="flex gap-3">
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
                     disabled={isDeleting}
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      borderRadius: '10px',
-                      border: `1px solid ${b.borderColor}`,
-                      background: '#fff',
-                      color: b.textMain,
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: isDeleting ? 'not-allowed' : 'pointer',
-                      opacity: isDeleting ? 0.5 : 1,
-                    }}
+                    className="flex-1 py-3 px-4 rounded-[10px] border border-slate-200 bg-white text-slate-900 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Abbrechen
                   </button>
@@ -687,26 +495,11 @@ const RoleplaySessionReport = ({
                       }
                     }}
                     disabled={isDeleting}
-                    style={{
-                      flex: 1,
-                      padding: '12px 16px',
-                      borderRadius: '10px',
-                      border: 'none',
-                      background: '#ef4444',
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: isDeleting ? 'not-allowed' : 'pointer',
-                      opacity: isDeleting ? 0.7 : 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                    }}
+                    className="flex-1 py-3 px-4 rounded-[10px] border-none bg-red-500 text-white text-sm font-medium cursor-pointer flex items-center justify-center gap-2 hover:bg-red-600 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     {isDeleting ? (
                       <>
-                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        <Loader2 size={16} className="animate-spin" />
                         Löschen...
                       </>
                     ) : (
@@ -722,14 +515,6 @@ const RoleplaySessionReport = ({
           </>
         )}
       </AnimatePresence>
-
-      {/* CSS for spin animation */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };
