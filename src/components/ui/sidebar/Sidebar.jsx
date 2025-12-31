@@ -56,21 +56,37 @@ const THEME_COLORS = {
 };
 
 /**
+ * Default sidebar theme colors (dark sidebar for Karriereheld standard)
+ * These match the PHP default_branding and partners.js DEFAULT_BRANDING
+ */
+const DEFAULT_SIDEBAR_COLORS = {
+  sidebarBg: '#1e293b',           // Dark slate
+  sidebarText: '#f8fafc',         // Light text for dark bg
+  sidebarTextMuted: '#94a3b8',    // Muted slate
+  sidebarActiveBg: 'rgba(99, 102, 241, 0.15)', // Indigo with opacity
+  sidebarActiveText: '#818cf8',   // Indigo light
+  sidebarHoverBg: 'rgba(255, 255, 255, 0.05)', // Subtle white
+  primaryAccent: '#6366f1',       // Indigo
+  borderColor: 'rgba(255, 255, 255, 0.1)',     // Subtle border for dark bg
+  borderColorLight: 'rgba(255, 255, 255, 0.05)', // Even subtler border
+};
+
+/**
  * Helper to get themed colors from partner branding or fall back to defaults
  */
 const getThemedColors = (branding) => {
   if (!branding) return null;
 
   return {
-    sidebarBg: branding['--sidebar-bg-color'] || THEME_COLORS.slate[50],
-    sidebarText: branding['--sidebar-text-color'] || THEME_COLORS.slate[900],
-    sidebarTextMuted: branding['--sidebar-text-muted'] || THEME_COLORS.slate[400],
-    sidebarActiveBg: branding['--sidebar-active-bg'] || THEME_COLORS.indigo[50],
-    sidebarActiveText: branding['--sidebar-active-text'] || THEME_COLORS.indigo[700],
-    sidebarHoverBg: branding['--sidebar-hover-bg'] || THEME_COLORS.slate[50],
-    primaryAccent: branding['--primary-accent'] || THEME_COLORS.indigo[600],
-    borderColor: branding['--border-color'] || THEME_COLORS.slate[200],
-    borderColorLight: branding['--border-color-light'] || THEME_COLORS.slate[100],
+    sidebarBg: branding['--sidebar-bg-color'] || DEFAULT_SIDEBAR_COLORS.sidebarBg,
+    sidebarText: branding['--sidebar-text-color'] || DEFAULT_SIDEBAR_COLORS.sidebarText,
+    sidebarTextMuted: branding['--sidebar-text-muted'] || DEFAULT_SIDEBAR_COLORS.sidebarTextMuted,
+    sidebarActiveBg: branding['--sidebar-active-bg'] || DEFAULT_SIDEBAR_COLORS.sidebarActiveBg,
+    sidebarActiveText: branding['--sidebar-active-text'] || DEFAULT_SIDEBAR_COLORS.sidebarActiveText,
+    sidebarHoverBg: branding['--sidebar-hover-bg'] || DEFAULT_SIDEBAR_COLORS.sidebarHoverBg,
+    primaryAccent: branding['--primary-accent'] || DEFAULT_SIDEBAR_COLORS.primaryAccent,
+    borderColor: branding['--border-color'] || DEFAULT_SIDEBAR_COLORS.borderColor,
+    borderColorLight: branding['--border-color-light'] || DEFAULT_SIDEBAR_COLORS.borderColorLight,
   };
 };
 
@@ -259,6 +275,7 @@ const AppSidebar = ({
   };
 
   // Determine colors based on whether we have partner branding
+  // Falls back to dark sidebar theme matching DEFAULT_SIDEBAR_COLORS
   const colors = React.useMemo(() => {
     if (themedColors) {
       return {
@@ -273,16 +290,17 @@ const AppSidebar = ({
         borderColorLight: themedColors.borderColorLight,
       };
     }
+    // Default: Dark sidebar with light text (Karriereheld standard theme)
     return {
-      sidebarBg: '#ffffff',
-      sidebarText: THEME_COLORS.slate[900],
-      sidebarTextMuted: THEME_COLORS.slate[400],
-      activeBg: THEME_COLORS.indigo[50],
-      activeText: THEME_COLORS.indigo[700],
-      hoverBg: THEME_COLORS.slate[50],
-      primaryAccent: THEME_COLORS.indigo[600],
-      borderColor: THEME_COLORS.slate[200],
-      borderColorLight: THEME_COLORS.slate[100],
+      sidebarBg: DEFAULT_SIDEBAR_COLORS.sidebarBg,
+      sidebarText: DEFAULT_SIDEBAR_COLORS.sidebarText,
+      sidebarTextMuted: DEFAULT_SIDEBAR_COLORS.sidebarTextMuted,
+      activeBg: DEFAULT_SIDEBAR_COLORS.sidebarActiveBg,
+      activeText: DEFAULT_SIDEBAR_COLORS.sidebarActiveText,
+      hoverBg: DEFAULT_SIDEBAR_COLORS.sidebarHoverBg,
+      primaryAccent: DEFAULT_SIDEBAR_COLORS.primaryAccent,
+      borderColor: DEFAULT_SIDEBAR_COLORS.borderColor,
+      borderColorLight: DEFAULT_SIDEBAR_COLORS.borderColorLight,
     };
   }, [themedColors]);
 
@@ -670,6 +688,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
     showSuccess('Sie wurden erfolgreich abgemeldet', 3000);
   };
 
+  // Mobile colors: header uses dark theme, menu panel uses light theme
   const colors = React.useMemo(() => {
     if (themedColors) {
       return {
@@ -686,16 +705,17 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
         textMuted: THEME_COLORS.slate[400],
       };
     }
+    // Default: Dark header matching desktop sidebar (Karriereheld standard)
     return {
-      headerBg: '#ffffff',
-      headerText: THEME_COLORS.slate[900],
-      headerTextMuted: THEME_COLORS.slate[400],
+      headerBg: DEFAULT_SIDEBAR_COLORS.sidebarBg,
+      headerText: DEFAULT_SIDEBAR_COLORS.sidebarText,
+      headerTextMuted: DEFAULT_SIDEBAR_COLORS.sidebarTextMuted,
       menuBg: '#ffffff',
-      activeBg: THEME_COLORS.indigo[50],
-      activeText: THEME_COLORS.indigo[700],
+      activeBg: DEFAULT_SIDEBAR_COLORS.sidebarActiveBg,
+      activeText: DEFAULT_SIDEBAR_COLORS.sidebarActiveText,
       hoverBg: THEME_COLORS.slate[50],
-      primaryAccent: THEME_COLORS.indigo[600],
-      borderColor: THEME_COLORS.slate[200],
+      primaryAccent: DEFAULT_SIDEBAR_COLORS.primaryAccent,
+      borderColor: DEFAULT_SIDEBAR_COLORS.borderColor,
       textMain: THEME_COLORS.slate[700],
       textMuted: THEME_COLORS.slate[400],
     };
