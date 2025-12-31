@@ -44,15 +44,15 @@ const ICON_MAP = {
 // ================== SUB-COMPONENTS ==================
 
 /**
- * Stats Card Component - Uses Tailwind for styling
+ * Stats Card Component - Clean Professional Design
  */
 const StatsCard = ({ icon: Icon, label, value, isMobile }) => (
-  <Card className="p-3 md:p-4">
-    <div className="w-8 h-8 md:w-10 md:h-10 rounded-md md:rounded-lg bg-primary-light flex-center mb-2 md:mb-3">
-      <Icon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+  <Card className="p-4 md:p-6 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
+    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex-center mb-3 shadow-sm">
+      <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
     </div>
-    <div className="text-xl md:text-2xl font-bold text-slate-900">{value}</div>
-    <div className="text-[10px] md:text-xs text-slate-500">{label}</div>
+    <div className="text-2xl md:text-3xl font-bold text-slate-900">{value}</div>
+    <div className="text-xs md:text-sm text-slate-500 font-medium">{label}</div>
   </Card>
 );
 
@@ -121,7 +121,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           transition={{ delay: 0.1 }}
           className="text-center mb-8"
         >
-          <div className="w-20 h-20 rounded-2xl bg-brand-gradient flex-center mx-auto mb-5 shadow-brand">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex-center mx-auto mb-5 shadow-lg">
             <IconComponent className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{mode.title}</h1>
@@ -135,7 +135,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="w-full bg-brand-gradient rounded-2xl p-8 mb-6 shadow-brand"
+          className="w-full bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-8 mb-6 shadow-card"
         >
           {/* Topic Label */}
           <div className="flex justify-between items-center mb-5">
@@ -181,9 +181,9 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="w-full mb-6">
+          <Card className="w-full mb-6 shadow-card">
             <div className="flex items-center gap-2.5 mb-4 text-slate-700">
-              <Mic className="w-5 h-5 text-primary" />
+              <Mic className="w-5 h-5 text-violet-600" />
               <span className="font-semibold text-base">Mikrofon auswählen</span>
             </div>
             <MicrophoneSelector
@@ -199,10 +199,10 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="w-full bg-slate-50 rounded-xl p-5 mb-8"
+          className="w-full bg-violet-50 border border-violet-100 rounded-2xl p-5 mb-8 shadow-sm"
         >
-          <div className="flex items-center gap-2 mb-3 text-slate-700">
-            <Sparkles className="w-4.5 h-4.5 text-amber-500" />
+          <div className="flex items-center gap-2 mb-3 text-violet-900">
+            <Sparkles className="w-4.5 h-4.5 text-violet-600" />
             <span className="font-semibold text-sm">Tipps für deine Antwort</span>
           </div>
           <ul className="m-0 pl-5 text-slate-600 text-sm leading-relaxed list-disc">
@@ -352,7 +352,7 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
         {/* Header - Compact on mobile */}
         <div className="mb-5 md:mb-8 text-center">
           <div className="inline-flex items-center gap-2.5 md:gap-3 mb-2 md:mb-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-brand-gradient flex-center">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex-center shadow-lg">
               <Dumbbell className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900">

@@ -70,7 +70,7 @@ const CountdownOverlay = ({ count }) => (
 );
 
 /**
- * Timer display component - Tailwind styled
+ * Timer display component - Clean Professional Design
  */
 const TimerDisplay = ({ seconds, total, isWarning }) => {
   const progress = (seconds / total) * 100;
@@ -78,15 +78,15 @@ const TimerDisplay = ({ seconds, total, isWarning }) => {
   const secs = seconds % 60;
 
   return (
-    <div>
-      <div className={`text-[64px] font-bold font-mono text-center ${isWarning ? 'text-red-500' : 'text-slate-900'}`}>
+    <div className="bg-white rounded-2xl shadow-card p-8 mb-6">
+      <div className={`text-7xl md:text-8xl font-bold font-mono text-center mb-4 ${isWarning ? 'text-red-500' : 'bg-gradient-to-br from-violet-600 to-purple-600 bg-clip-text text-transparent'}`}>
         {minutes}:{secs.toString().padStart(2, '0')}
       </div>
 
       {/* Progress bar */}
-      <div className="mt-4 h-2 bg-slate-200 rounded overflow-hidden">
+      <div className="h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
         <motion.div
-          className={`h-full rounded ${isWarning ? 'bg-red-500' : 'bg-primary'}`}
+          className={`h-full rounded-full ${isWarning ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-violet-500 to-purple-600'}`}
           initial={{ width: '100%' }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5 }}
@@ -200,62 +200,58 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
   return (
     <div className="max-w-[600px] mx-auto">
       {/* Score Card */}
-      <div className={`${scoreGradient} rounded-2xl p-8 mb-6 text-white text-center`}>
-        <div className="text-5xl mb-2">{isNoSpeech ? '🎤' : feedback.emoji}</div>
-        <div className="text-[72px] font-bold mb-2">{result.score}</div>
-        <div className="text-xl opacity-90 mb-4">Punkte</div>
-        <p className="text-lg">
+      <div className={`${scoreGradient} rounded-2xl p-10 mb-8 text-white text-center shadow-card`}>
+        <div className="text-6xl mb-4">{isNoSpeech ? '🎤' : feedback.emoji}</div>
+        <div className="text-8xl font-bold mb-3">{result.score}</div>
+        <div className="text-2xl opacity-90 mb-5 font-semibold">Punkte</div>
+        <p className="text-lg leading-relaxed">
           {isNoSpeech ? 'Keine Sprache erkannt. Bitte sprich lauter ins Mikrofon.' : feedback.message}
         </p>
       </div>
 
       {/* Stats Grid - 2x2 */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-6">
         {/* Total Words */}
-        <Card className="p-3.5">
-          <div className="flex items-center gap-1.5 text-primary mb-1.5">
-            <MessageCircle className="w-4 h-4" />
-            <span className="font-medium text-sm">Wörter</span>
+        <Card className="p-5 shadow-card">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-3">
+            <MessageCircle className="w-5 h-5 text-white" />
           </div>
-          <div className="text-2xl font-bold text-slate-900">{result.total_words}</div>
-          <div className="text-[11px] text-slate-500">gesprochen</div>
+          <div className="text-3xl font-bold text-slate-900 mb-1">{result.total_words}</div>
+          <div className="text-sm text-slate-600 font-medium">Wörter gesprochen</div>
         </Card>
 
         {/* Filler Count */}
-        <Card className="p-3.5">
-          <div className="flex items-center gap-1.5 text-red-500 mb-1.5">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="font-medium text-sm">Füllwörter</span>
+        <Card className="p-5 shadow-card">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center mb-3">
+            <AlertTriangle className="w-5 h-5 text-white" />
           </div>
-          <div className="text-2xl font-bold text-slate-900">{result.filler_count}</div>
-          <div className="text-[11px] text-slate-500">{result.filler_percentage?.toFixed(1) || '0'}%</div>
+          <div className="text-3xl font-bold text-slate-900 mb-1">{result.filler_count}</div>
+          <div className="text-sm text-slate-600 font-medium">Füllwörter ({result.filler_percentage?.toFixed(1) || '0'}%)</div>
         </Card>
 
         {/* Words Per Minute */}
-        <Card className="p-3.5">
-          <div className="flex items-center gap-1.5 text-primary mb-1.5">
-            <Volume2 className="w-4 h-4" />
-            <span className="font-medium text-sm">Tempo</span>
+        <Card className="p-5 shadow-card">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3">
+            <Volume2 className="w-5 h-5 text-white" />
           </div>
-          <div className="text-2xl font-bold text-slate-900">{result.words_per_minute}</div>
-          <div className="text-[11px] text-slate-500">WPM</div>
+          <div className="text-3xl font-bold text-slate-900 mb-1">{result.words_per_minute}</div>
+          <div className="text-sm text-slate-600 font-medium">WPM Tempo</div>
         </Card>
 
         {/* Speaking Time */}
-        <Card className="p-3.5">
-          <div className="flex items-center gap-1.5 text-slate-600 mb-1.5">
-            <Clock className="w-4 h-4" />
-            <span className="font-medium text-sm">Sprechzeit</span>
+        <Card className="p-5 shadow-card">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center mb-3">
+            <Clock className="w-5 h-5 text-white" />
           </div>
-          <div className="text-2xl font-bold text-slate-900">{result.duration_seconds || 0}</div>
-          <div className="text-[11px] text-slate-500">Sekunden</div>
+          <div className="text-3xl font-bold text-slate-900 mb-1">{result.duration_seconds || 0}</div>
+          <div className="text-sm text-slate-600 font-medium">Sekunden Sprechzeit</div>
         </Card>
       </div>
 
       {/* Filler Words Detail */}
       {result.filler_words && result.filler_words.length > 0 && (
-        <Card className="mb-6">
-          <h4 className="font-semibold text-slate-900 mb-3 text-[15px]">Erkannte Füllwörter</h4>
+        <Card className="mb-6 shadow-card">
+          <h4 className="font-semibold text-slate-900 mb-4 text-base">Erkannte Füllwörter</h4>
           <div className="flex flex-wrap gap-2">
             {result.filler_words.map((fw, index) => (
               <FillerWordBadge key={index} word={fw.word} count={fw.count} />
@@ -266,8 +262,8 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
 
       {/* Score Breakdown */}
       {!isNoSpeech && (
-        <div className="bg-primary-light border border-primary/15 rounded-xl p-4 mb-6">
-          <h4 className="font-semibold text-primary mb-3 text-[15px]">Bewertung im Detail</h4>
+        <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5 mb-6 shadow-sm">
+          <h4 className="font-semibold text-violet-900 mb-4 text-base">Bewertung im Detail</h4>
 
           {result.score_breakdown && (
             <div className={`grid grid-cols-2 gap-2 ${result.content_feedback ? 'mb-3' : ''}`}>
@@ -279,9 +275,9 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
           )}
 
           {result.content_feedback && (
-            <div className="pt-3 border-t border-primary/15">
-              <p className="text-sm text-slate-600 leading-relaxed">
-                <strong>Inhaltliches Feedback:</strong> {result.content_feedback}
+            <div className="pt-4 border-t border-violet-200">
+              <p className="text-sm text-slate-700 leading-relaxed">
+                <strong className="text-violet-900">Inhaltliches Feedback:</strong> {result.content_feedback}
               </p>
             </div>
           )}
@@ -290,9 +286,9 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
 
       {/* Pace Feedback */}
       {result.pace_feedback && result.pace_feedback !== 'optimal' && result.pace_feedback !== 'keine_sprache' && (
-        <div className="bg-amber-50 border border-amber-500/25 rounded-xl p-4 mb-6">
-          <h4 className="font-semibold text-amber-600 mb-2 text-[15px]">Tempo-Hinweis</h4>
-          <p className="text-sm text-slate-600">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 shadow-sm">
+          <h4 className="font-semibold text-amber-700 mb-3 text-base">Tempo-Hinweis</h4>
+          <p className="text-sm text-slate-700 leading-relaxed">
             {result.pace_feedback === 'zu_schnell'
               ? 'Du sprichst etwas zu schnell. Versuche, bewusst langsamer und deutlicher zu sprechen.'
               : 'Du sprichst etwas zu langsam. Versuche, etwas mehr Energie in deine Präsentation zu legen.'}
@@ -302,9 +298,9 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
 
       {/* Transcript */}
       {result.transcript && result.transcript !== '[Keine Sprache erkannt]' && (
-        <Card className="mb-8 bg-slate-50">
-          <h4 className="font-semibold text-slate-900 mb-3 text-[15px]">Transkript</h4>
-          <p className="text-sm text-slate-600 leading-relaxed">{result.transcript}</p>
+        <Card className="mb-8 bg-slate-50 shadow-card">
+          <h4 className="font-semibold text-slate-900 mb-4 text-base">Transkript</h4>
+          <p className="text-sm text-slate-700 leading-relaxed">{result.transcript}</p>
         </Card>
       )}
 
@@ -633,22 +629,22 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
               <TimerDisplay seconds={timeLeft} total={gameConfig.duration} isWarning={timeLeft <= 10} />
 
               {/* Topic reminder */}
-              <div className="mt-8 mb-8 p-4 bg-slate-100 rounded-xl">
-                <p className="text-[13px] text-slate-500 mb-1">Dein Thema:</p>
-                <p className="text-[15px] font-medium text-slate-900">{gameConfig.topic}</p>
+              <div className="mb-8 p-5 bg-violet-50 border border-violet-100 rounded-2xl shadow-sm">
+                <p className="text-sm text-violet-600 mb-2 font-medium">Dein Thema:</p>
+                <p className="text-base font-semibold text-slate-900">{gameConfig.topic}</p>
               </div>
 
               {/* Audio visualizer */}
               <div className="mb-8">
                 <motion.div
-                  className="h-20 bg-brand-gradient rounded-2xl flex-center"
-                  animate={{ opacity: 0.6 + audioLevel * 0.4 }}
+                  className="h-24 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex-center shadow-card"
+                  animate={{ opacity: 0.7 + audioLevel * 0.3 }}
                 >
                   <motion.div
-                    className="w-14 h-14 rounded-full bg-white/30 flex-center"
-                    animate={{ scale: 1 + audioLevel * 0.3 }}
+                    className="w-16 h-16 rounded-full bg-white/30 flex-center backdrop-blur-sm"
+                    animate={{ scale: 1 + audioLevel * 0.4 }}
                   >
-                    <Mic className="w-7 h-7 text-white" />
+                    <Mic className="w-8 h-8 text-white" />
                   </motion.div>
                 </motion.div>
               </div>
@@ -676,10 +672,10 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-              className="w-14 h-14 border-4 border-primary border-t-transparent rounded-full mx-auto mb-6"
+              className="w-16 h-16 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-6"
             />
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Analysiere deine Aufnahme...</h2>
-            <p className="text-slate-500">Der Füllwort-Killer zählt nach</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-3">Analysiere deine Aufnahme...</h2>
+            <p className="text-base text-slate-600">Der Füllwort-Killer zählt nach</p>
           </div>
         );
 
@@ -690,11 +686,11 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
         return (
           <div className="text-center py-16 px-5">
             <div className="max-w-[400px] mx-auto">
-              <div className="w-16 h-16 rounded-full bg-red-100 flex-center mx-auto mb-6">
-                <XCircle className="w-8 h-8 text-red-500" />
+              <div className="w-20 h-20 rounded-2xl bg-red-100 flex-center mx-auto mb-6 shadow-sm">
+                <XCircle className="w-10 h-10 text-red-500" />
               </div>
-              <h2 className="text-xl font-semibold text-slate-900 mb-3">Fehler</h2>
-              <p className="text-slate-600 mb-6">{error}</p>
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">Fehler</h2>
+              <p className="text-base text-slate-600 mb-8 leading-relaxed">{error}</p>
               <div className="flex gap-3 justify-center">
                 <Button icon={<RotateCcw />} onClick={handlePlayAgain}>
                   Erneut versuchen

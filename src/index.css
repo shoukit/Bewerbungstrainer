@@ -4,132 +4,135 @@
 
 @layer base {
   :root {
-    /* Ocean Blue/Teal Theme - Light Mode */
-    --background: 198 64% 95%;
-    --foreground: 202 45% 15%;
+    /* ===========================================
+       "Clean Professional" Design System v2.0
+       Indigo/Violet Theme - Light Mode
+       =========================================== */
+    --background: 226 100% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 202 45% 15%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 202 45% 15%;
-    --primary: 198 48% 53%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 168 44% 52%;
+    --secondary: 263 70% 58%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 198 35% 90%;
-    --muted-foreground: 202 25% 45%;
-    --accent: 168 48% 48%;
+    --muted: 226 50% 95%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 263 70% 58%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 198 20% 85%;
-    --input: 198 20% 85%;
-    --ring: 168 48% 48%;
-    --radius: 1rem;
-    --chart-1: 198 48% 53%;
-    --chart-2: 168 44% 52%;
-    --chart-3: 202 35% 38%;
-    --chart-4: 178 50% 45%;
-    --chart-5: 188 45% 60%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 239 84% 67%;
+    --radius: 0.75rem;
+    --chart-1: 239 84% 67%;
+    --chart-2: 263 70% 58%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 160 84% 39%;
+    --chart-5: 280 68% 60%;
 
     /* ========================================
        White-Label Partner Theming Variables
        These can be overridden by PartnerContext
        ======================================== */
 
-    /* App background - gradient or solid color */
-    --app-bg-color: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%);
+    /* App background - subtle gradient */
+    --app-bg-color: linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 100%);
 
     /* Sidebar colors */
-    --sidebar-bg-color: #ffffff;
-    --sidebar-text-color: #0f172a;
-    --sidebar-text-muted: #94a3b8;
-    --sidebar-active-bg: #E8F4F8;
-    --sidebar-active-text: #2D6485;
-    --sidebar-hover-bg: #f8fafc;
+    --sidebar-bg-color: #1E293B;
+    --sidebar-text-color: #F8FAFC;
+    --sidebar-text-muted: #94A3B8;
+    --sidebar-active-bg: rgba(79, 70, 229, 0.2);
+    --sidebar-active-text: #A5B4FC;
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
 
     /* Card colors */
     --card-bg-color: #ffffff;
-    --card-bg-hover: #f8fafc;
+    --card-bg-hover: #F8FAFC;
 
-    /* Primary accent - buttons, links, highlights */
-    --primary-accent: #3A7FA7;
-    --primary-accent-light: #E8F4F8;
-    --primary-accent-hover: #2D6485;
+    /* Primary accent - Indigo (NEW) */
+    --primary-accent: #4F46E5;
+    --primary-accent-light: #EEF2FF;
+    --primary-accent-hover: #4338CA;
 
-    /* Button colors */
-    --button-gradient: linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%);
-    --button-gradient-hover: linear-gradient(135deg, #2D6485 0%, #2E8A72 100%);
-    --button-solid: #3A7FA7;
-    --button-solid-hover: #2D6485;
+    /* Button colors - Indigo gradient */
+    --button-gradient: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+    --button-gradient-hover: linear-gradient(135deg, #4338CA 0%, #4F46E5 100%);
+    --button-solid: #4F46E5;
+    --button-solid-hover: #4338CA;
     --button-text: #ffffff;
 
-    /* Header gradient (for profile cards, feature headers) */
-    --header-gradient: linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%);
+    /* Header gradient - Indigo to Violet */
+    --header-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
     --header-text: #ffffff;
 
     /* Icon colors */
-    --icon-primary: #3A7FA7;
-    --icon-secondary: #3DA389;
-    --icon-muted: #94a3b8;
+    --icon-primary: #4F46E5;
+    --icon-secondary: #7C3AED;
+    --icon-muted: #94A3B8;
 
     /* Text colors */
-    --text-main: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
+    --text-main: #0F172A;
+    --text-secondary: #64748B;
+    --text-muted: #94A3B8;
 
     /* Border colors */
-    --border-color: #e2e8f0;
-    --border-color-light: #f1f5f9;
+    --border-color: #E2E8F0;
+    --border-color-light: #F1F5F9;
 
-    /* Focus ring */
-    --focus-ring: rgba(58, 127, 167, 0.3);
+    /* Focus ring - Indigo */
+    --focus-ring: rgba(79, 70, 229, 0.25);
 
     /* Semantic colors - consistent across app */
-    --color-success: #10b981;
-    --color-success-light: #d1fae5;
-    --color-success-dark: #059669;
-    --color-error: #ef4444;
-    --color-error-light: #fee2e2;
-    --color-error-dark: #dc2626;
-    --color-warning: #f59e0b;
-    --color-warning-light: #fef3c7;
-    --color-warning-dark: #d97706;
-    --color-info: #3b82f6;
-    --color-info-light: #dbeafe;
-    --color-info-dark: #2563eb;
+    --color-success: #22C55E;
+    --color-success-light: #F0FDF4;
+    --color-success-dark: #16A34A;
+    --color-error: #EF4444;
+    --color-error-light: #FEF2F2;
+    --color-error-dark: #DC2626;
+    --color-warning: #F59E0B;
+    --color-warning-light: #FFFBEB;
+    --color-warning-dark: #D97706;
+    --color-info: #6366F1;
+    --color-info-light: #EEF2FF;
+    --color-info-dark: #4F46E5;
 
     /* Overlay/backdrop colors */
     --overlay-light: rgba(255, 255, 255, 0.8);
-    --overlay-dark: rgba(0, 0, 0, 0.5);
+    --overlay-dark: rgba(15, 23, 42, 0.6);
     --backdrop-blur: rgba(255, 255, 255, 0.9);
   }
 
   .dark {
-    /* Ocean Blue/Teal Theme - Dark Mode */
-    --background: 202 45% 12%;
-    --foreground: 198 35% 95%;
-    --card: 202 35% 15%;
-    --card-foreground: 198 35% 95%;
-    --popover: 202 35% 15%;
-    --popover-foreground: 198 35% 95%;
-    --primary: 198 48% 53%;
+    /* "Clean Professional" - Dark Mode (Future) */
+    --background: 222 47% 8%;
+    --foreground: 226 100% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 226 100% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 226 100% 98%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 168 44% 52%;
+    --secondary: 263 70% 58%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 202 25% 22%;
-    --muted-foreground: 198 20% 65%;
-    --accent: 168 48% 48%;
+    --muted: 222 47% 15%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 263 70% 58%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
-    --border: 202 25% 25%;
-    --input: 202 25% 25%;
-    --ring: 168 48% 48%;
-    --chart-1: 198 48% 53%;
-    --chart-2: 168 44% 52%;
-    --chart-3: 202 35% 38%;
-    --chart-4: 178 50% 45%;
-    --chart-5: 188 45% 60%;
+    --border: 222 30% 20%;
+    --input: 222 30% 20%;
+    --ring: 239 84% 67%;
+    --chart-1: 239 84% 67%;
+    --chart-2: 263 70% 58%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 160 84% 39%;
+    --chart-5: 280 68% 60%;
   }
 }
 
@@ -322,7 +325,7 @@
 
   /* Primary - gradient background */
   .btn-primary {
-    @apply btn text-white shadow-button;
+    @apply btn text-white shadow-primary;
     background: var(--button-gradient);
   }
   .btn-primary:hover:not(:disabled) {
@@ -414,7 +417,7 @@
 
   .badge {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1
-           rounded-badge text-xs font-semibold;
+           rounded-full text-xs font-semibold;
   }
 
   .badge-success {

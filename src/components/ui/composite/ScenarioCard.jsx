@@ -41,30 +41,31 @@ import { useBranding } from '@/hooks/useBranding';
 
 /**
  * Difficulty level styles - Tailwind classes and labels
+ * Updated to use indigo as primary accent with rounded-full badges
  */
 const DIFFICULTY_CONFIG = {
   easy: {
-    classes: 'bg-green-100 text-green-800 border-green-200',
+    classes: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     label: 'Einfach',
   },
   beginner: {
-    classes: 'bg-green-100 text-green-800 border-green-200',
+    classes: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     label: 'Einsteiger',
   },
   medium: {
-    classes: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    classes: 'bg-indigo-50 text-indigo-600 border-indigo-200',
     label: 'Mittel',
   },
   intermediate: {
-    classes: 'bg-blue-100 text-blue-800 border-blue-200',
+    classes: 'bg-indigo-50 text-indigo-600 border-indigo-200',
     label: 'Fortgeschritten',
   },
   hard: {
-    classes: 'bg-red-100 text-red-800 border-red-200',
+    classes: 'bg-amber-50 text-amber-700 border-amber-200',
     label: 'Schwer',
   },
   advanced: {
-    classes: 'bg-purple-100 text-purple-800 border-purple-200',
+    classes: 'bg-purple-50 text-purple-700 border-purple-200',
     label: 'Experte',
   },
 };
@@ -93,12 +94,13 @@ const Badge = ({ children, className = '' }) => (
 
 /**
  * Icon Container - Themed icon wrapper with gradient background
+ * Updated to use rounded-2xl for consistency
  */
 const IconContainer = ({ icon: Icon, gradient, textColor, size = 'md' }) => {
   const sizeClasses = {
-    sm: 'w-10 h-10 rounded-[10px]',
-    md: 'w-12 h-12 rounded-xl',
-    lg: 'w-14 h-14 rounded-[14px]',
+    sm: 'w-10 h-10 rounded-xl',
+    md: 'w-12 h-12 rounded-2xl',
+    lg: 'w-14 h-14 rounded-2xl',
   };
 
   const iconSizes = {
@@ -153,24 +155,24 @@ const ActionButton = ({ label, icon: Icon, color }) => (
  */
 export const ViewToggle = ({ viewMode, onViewChange }) => {
   return (
-    <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+    <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl">
       <button
         onClick={() => onViewChange('grid')}
-        className={`p-2 rounded-md border-none cursor-pointer transition-all flex items-center justify-center ${
+        className={`p-2 rounded-lg border-none cursor-pointer transition-all flex items-center justify-center ${
           viewMode === 'grid' ? 'bg-white shadow-sm' : 'bg-transparent'
         }`}
         title="Kachelansicht"
       >
-        <LayoutGrid className={`w-4 h-4 ${viewMode === 'grid' ? 'text-primary' : 'text-slate-500'}`} />
+        <LayoutGrid className={`w-4 h-4 ${viewMode === 'grid' ? 'text-indigo-600' : 'text-slate-500'}`} />
       </button>
       <button
         onClick={() => onViewChange('list')}
-        className={`p-2 rounded-md border-none cursor-pointer transition-all flex items-center justify-center ${
+        className={`p-2 rounded-lg border-none cursor-pointer transition-all flex items-center justify-center ${
           viewMode === 'list' ? 'bg-white shadow-sm' : 'bg-transparent'
         }`}
         title="Listenansicht"
       >
-        <List className={`w-4 h-4 ${viewMode === 'list' ? 'text-primary' : 'text-slate-500'}`} />
+        <List className={`w-4 h-4 ${viewMode === 'list' ? 'text-indigo-600' : 'text-slate-500'}`} />
       </button>
     </div>
   );
@@ -207,12 +209,13 @@ const ScenarioCardGridView = ({
       hidden: { opacity: 0, y: 20 },
       visible: { opacity: 1, y: 0 },
     }}
-    whileHover={{ scale: 1.02 }}
+    whileHover={{ y: -4 }}
     whileTap={{ scale: 0.98 }}
+    className="transition-all duration-300"
   >
     <div
       onClick={onClick}
-      className={`bg-white rounded-3xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 cursor-pointer border border-slate-100 h-full flex flex-col ${className}`}
+      className={`bg-white rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:shadow-lg transition-all duration-300 p-6 cursor-pointer border border-slate-100 h-full flex flex-col ${className}`}
       style={style}
     >
       {/* Header Row - Badges and Icon */}
@@ -256,7 +259,7 @@ const ScenarioCardGridView = ({
               {tags.slice(0, 2).map((tag, idx) => (
                 <span
                   key={idx}
-                  className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs"
+                  className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium"
                 >
                   {tag}
                 </span>
@@ -338,12 +341,13 @@ const ScenarioCardListView = ({
         hidden: { opacity: 0, x: -20 },
         visible: { opacity: 1, x: 0 },
       }}
-      whileHover={{ scale: 1.01 }}
+      whileHover={{ y: -2 }}
       whileTap={{ scale: 0.99 }}
+      className="transition-all duration-300"
     >
       <div
         onClick={onClick}
-        className={`bg-white rounded-xl shadow-md p-4 cursor-pointer border border-slate-100 transition-all ${className}`}
+        className={`bg-white rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:shadow-lg p-4 cursor-pointer border border-slate-100 transition-all duration-300 ${className}`}
         style={style}
       >
         {/* Row 1: Icon + Title + Difficulty Badge + Custom Actions */}

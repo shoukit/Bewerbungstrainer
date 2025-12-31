@@ -39,19 +39,30 @@ const Button = React.forwardRef(({
   type = 'button',
   ...props
 }, ref) => {
-  // Variant classes
+  // Base styles - shared across all variants
+  const baseStyles = 'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
+
+  // Variant classes with new Indigo color scheme
   const variants = {
-    primary: 'btn-primary',
-    secondary: 'btn-secondary',
-    ghost: 'btn-ghost',
-    danger: 'btn-danger',
+    primary: 'bg-indigo-600 text-white shadow-primary hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg focus:ring-indigo-500',
+    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 hover:-translate-y-0.5 focus:ring-slate-500',
+    outline: 'border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 hover:-translate-y-0.5 focus:ring-indigo-500',
+    ghost: 'text-slate-700 hover:bg-slate-100 hover:-translate-y-0.5 focus:ring-slate-500',
+    danger: 'bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.35)] hover:bg-red-700 hover:-translate-y-0.5 hover:shadow-lg focus:ring-red-500',
   };
 
   // Size classes
   const sizes = {
-    sm: 'btn-sm',
-    md: '', // Default size in btn class
-    lg: 'btn-lg',
+    sm: 'px-3 py-2 text-sm min-h-[36px]',
+    md: 'px-4 py-3 text-base min-h-[44px]',
+    lg: 'px-6 py-4 text-lg min-h-[52px]',
+  };
+
+  // Icon sizes
+  const iconSizes = {
+    sm: 'w-4 h-4',
+    md: 'w-5 h-5',
+    lg: 'w-6 h-6',
   };
 
   const isDisabled = disabled || loading;
@@ -62,6 +73,7 @@ const Button = React.forwardRef(({
       type={type}
       disabled={isDisabled}
       className={cn(
+        baseStyles,
         variants[variant],
         sizes[size],
         fullWidth && 'w-full',
@@ -71,12 +83,12 @@ const Button = React.forwardRef(({
     >
       {/* Loading spinner */}
       {loading && (
-        <Loader2 className="icon-md animate-spin" />
+        <Loader2 className={cn(iconSizes[size], 'animate-spin')} />
       )}
 
       {/* Left icon */}
       {!loading && icon && iconPosition === 'left' && (
-        <span className="icon-md">{icon}</span>
+        <span className={iconSizes[size]}>{icon}</span>
       )}
 
       {/* Children */}
@@ -84,7 +96,7 @@ const Button = React.forwardRef(({
 
       {/* Right icon */}
       {!loading && icon && iconPosition === 'right' && (
-        <span className="icon-md">{icon}</span>
+        <span className={iconSizes[size]}>{icon}</span>
       )}
     </button>
   );
@@ -106,24 +118,28 @@ const IconButton = React.forwardRef(({
   disabled = false,
   ...props
 }, ref) => {
+  // Base styles for icon buttons
+  const baseStyles = 'inline-flex items-center justify-center rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
+
+  // Variant classes matching the main Button component
   const variants = {
-    primary: 'btn-primary',
-    secondary: 'btn-secondary',
-    ghost: 'btn-ghost',
-    danger: 'btn-danger',
+    primary: 'bg-indigo-600 text-white shadow-primary hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg focus:ring-indigo-500',
+    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 hover:-translate-y-0.5 focus:ring-slate-500',
+    ghost: 'text-slate-700 hover:bg-slate-100 hover:-translate-y-0.5 focus:ring-slate-500',
+    danger: 'bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.35)] hover:bg-red-700 hover:-translate-y-0.5 hover:shadow-lg focus:ring-red-500',
   };
 
   // Square sizes
   const sizes = {
-    sm: 'w-9 h-9 min-h-0 p-0',
-    md: 'w-11 h-11 min-h-0 p-0',
-    lg: 'w-13 h-13 min-h-0 p-0',
+    sm: 'w-9 h-9 p-0',
+    md: 'w-11 h-11 p-0',
+    lg: 'w-13 h-13 p-0',
   };
 
   const iconSizes = {
-    sm: 'icon-sm',
-    md: 'icon-md',
-    lg: 'icon-lg',
+    sm: 'w-4 h-4',
+    md: 'w-5 h-5',
+    lg: 'w-6 h-6',
   };
 
   const isDisabled = disabled || loading;
@@ -136,9 +152,9 @@ const IconButton = React.forwardRef(({
       aria-label={label}
       title={label}
       className={cn(
+        baseStyles,
         variants[variant],
         sizes[size],
-        'rounded-lg',
         className
       )}
       {...props}
@@ -146,7 +162,7 @@ const IconButton = React.forwardRef(({
       {loading ? (
         <Loader2 className={cn(iconSizes[size], 'animate-spin')} />
       ) : (
-        <span className={iconSizes[size]}>{children}</span>
+        <span className={cn('inline-flex items-center justify-center', iconSizes[size])}>{children}</span>
       )}
     </button>
   );

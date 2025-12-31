@@ -114,7 +114,7 @@ const renderInlineMarkdown = (text) => {
         break;
       case 'code':
         parts.push(
-          <code key={key++} className="bg-slate-100 px-1.5 py-0.5 rounded text-[13px] font-mono text-primary">
+          <code key={key++} className="bg-indigo-50 px-1.5 py-0.5 rounded text-[13px] font-mono text-indigo-700">
             {earliest.match[1]}
           </code>
         );
@@ -145,7 +145,7 @@ const MarkdownContent = ({ content }) => {
           <ul key={`list-${elements.length}`} className="my-2 pl-5 list-none">
             {currentList.map((item, idx) => (
               <li key={idx} className="mb-1.5 text-sm leading-relaxed text-slate-700 relative pl-4">
-                <span className="absolute left-0 text-primary font-bold">
+                <span className="absolute left-0 text-indigo-600 font-bold">
                   {listType === 'number' ? `${idx + 1}.` : '•'}
                 </span>
                 {renderInlineMarkdown(item)}
@@ -208,13 +208,13 @@ const MarkdownContent = ({ content }) => {
  * Deleted Item Row - Compact display for deleted items with restore option
  */
 const DeletedItemRow = ({ item, onRestore }) => (
-  <div className="px-3 py-2.5 bg-slate-50 rounded-lg mb-2 flex items-center justify-between opacity-60">
+  <div className="px-3 py-2.5 bg-slate-50 rounded-xl mb-2 flex items-center justify-between opacity-60">
     <span className="text-sm text-slate-500 italic">
       <s>{item.label}</s> - gelöscht
     </span>
     <button
       onClick={onRestore}
-      className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border-none bg-slate-200 text-slate-500 text-xs cursor-pointer hover:bg-slate-300 transition-colors"
+      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border-none bg-slate-200 text-slate-600 text-xs font-medium cursor-pointer hover:bg-indigo-100 hover:text-indigo-700 transition-all"
     >
       <RotateCcw size={12} />
       Wiederherstellen
@@ -271,19 +271,19 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
   }
 
   return (
-    <Card className="mb-2.5 overflow-hidden p-0">
+    <Card className="mb-2.5 overflow-hidden p-0 hover:shadow-md transition-shadow">
       {/* Item Header */}
       <div className="p-3.5 flex items-start gap-3">
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0" />
             <h4 className="text-sm font-semibold text-slate-900 m-0">
               {item.label}
             </h4>
           </div>
           {item.content && (
-            <p className="text-[13px] text-slate-500 m-0 ml-3.5 leading-snug">
+            <p className="text-[13px] text-slate-600 m-0 ml-3.5 leading-snug">
               {renderInlineMarkdown(item.content)}
             </p>
           )}
@@ -292,17 +292,17 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
         {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0">
           {item.user_note && !showNoteField && (
-            <span className="text-[11px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+            <span className="text-[11px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
               Notiz
             </span>
           )}
           <button
             onClick={() => setShowNoteField(!showNoteField)}
             title="Notiz hinzufügen"
-            className={`p-1.5 rounded-md border-none cursor-pointer flex items-center justify-center transition-colors ${
+            className={`p-1.5 rounded-lg border-none cursor-pointer flex items-center justify-center transition-all ${
               showNoteField
-                ? 'bg-primary/10 text-primary'
-                : 'bg-transparent text-slate-400 hover:text-primary hover:bg-primary/5'
+                ? 'bg-indigo-100 text-indigo-600'
+                : 'bg-transparent text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
             }`}
           >
             <PenLine size={16} />
@@ -310,7 +310,7 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
           <button
             onClick={handleDelete}
             title="Löschen"
-            className="p-1.5 rounded-md border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center hover:text-red-500 hover:bg-red-50 transition-colors"
+            className="p-1.5 rounded-lg border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center hover:text-red-500 hover:bg-red-50 transition-all"
           >
             <Trash2 size={16} />
           </button>
@@ -324,7 +324,7 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Deine Notiz zu diesem Punkt..."
-            className="w-full min-h-[60px] p-2.5 rounded-lg border border-slate-200 text-[13px] text-slate-700 resize-y outline-none transition-colors focus:border-primary"
+            className="w-full min-h-[60px] p-2.5 rounded-xl border border-slate-200 text-[13px] text-slate-700 resize-y outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
           />
           <div className="flex justify-end mt-2 gap-2">
             <Button
@@ -362,9 +362,9 @@ const GenerateMoreButton = ({ onClick, isGenerating }) => (
     onClick={onClick}
     disabled={isGenerating}
     className={`flex items-center justify-center gap-2 w-full py-3 px-4 mt-3 mb-2 rounded-xl
-      border border-dashed border-primary/40 bg-primary/5 text-primary text-[13px] font-medium
+      border-2 border-dashed border-indigo-200 bg-indigo-50 text-indigo-600 text-[13px] font-medium
       cursor-pointer transition-all
-      hover:bg-primary/10 hover:border-primary/60
+      hover:bg-indigo-100 hover:border-indigo-300 hover:shadow-sm
       disabled:cursor-wait disabled:opacity-60`}
   >
     {isGenerating ? (
@@ -420,7 +420,7 @@ const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onTogg
   const hasNotes = items.some(item => item.user_note && !item.deleted);
 
   return (
-    <Card className="mb-4 overflow-hidden p-0">
+    <Card className="mb-4 overflow-hidden p-0 hover:shadow-lg transition-shadow">
       {/* Section Header */}
       <button
         onClick={onToggle}
@@ -433,12 +433,12 @@ const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onTogg
         </h3>
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
           {type === 'items' && (
-            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
+            <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full">
               {visibleItems.length} Punkte
             </span>
           )}
           {hasNotes && (
-            <span className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded-lg">
+            <span className="flex items-center gap-1 text-xs font-medium text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
               <PenLine size={12} />
               Notizen
             </span>
@@ -491,10 +491,10 @@ const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onTogg
             </>
           ) : type === 'markdown' ? (
             /* Legacy markdown content */
-            <div className="bg-slate-50 p-4 rounded-xl">
+            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
               <div className="flex items-center gap-2 mb-3">
-                <Bot size={16} className="text-primary" />
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <Bot size={16} className="text-indigo-600" />
+                <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
                   KI-Empfehlung
                 </span>
               </div>
@@ -517,10 +517,10 @@ const HeaderActionButton = ({ onClick, disabled, loading, icon: Icon, danger, ti
     onClick={onClick}
     disabled={disabled}
     title={title}
-    className={`flex items-center justify-center rounded-lg px-3 py-2.5 border cursor-pointer outline-none transition-all
+    className={`flex items-center justify-center rounded-xl px-3 py-2.5 border cursor-pointer outline-none transition-all
       ${danger
-        ? 'bg-red-500/20 border-red-500/40 text-white hover:bg-red-500/30'
-        : 'bg-white/20 border-white/30 text-white hover:bg-white/30'
+        ? 'bg-red-500/20 border-red-500/40 text-white hover:bg-red-500/30 hover:shadow-lg'
+        : 'bg-white/20 border-white/30 text-white hover:bg-white/30 hover:shadow-lg'
       }
       disabled:opacity-60 disabled:cursor-not-allowed`}
   >
@@ -539,7 +539,7 @@ const VariablesPanel = ({ variables, isExpanded, onToggle }) => {
   if (!variables || Object.keys(variables).length === 0) return null;
 
   return (
-    <Card className="mb-5 p-4">
+    <Card className="mb-5 p-4 hover:shadow-md transition-shadow">
       <button
         onClick={onToggle}
         className="flex items-center justify-between w-full p-0 border-none bg-transparent cursor-pointer"
@@ -547,7 +547,7 @@ const VariablesPanel = ({ variables, isExpanded, onToggle }) => {
         <span className="text-sm font-semibold text-slate-900">
           Deine Angaben ({Object.keys(variables).length})
         </span>
-        <div className="flex items-center gap-1.5 text-slate-500">
+        <div className="flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 transition-colors">
           <span className="text-xs">{isExpanded ? 'Einklappen' : 'Ausklappen'}</span>
           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
@@ -558,9 +558,9 @@ const VariablesPanel = ({ variables, isExpanded, onToggle }) => {
           {Object.entries(variables).map(([key, value]) => (
             <span
               key={key}
-              className="bg-slate-100 px-3 py-1.5 rounded-full text-xs text-slate-600"
+              className="bg-indigo-50 px-3 py-1.5 rounded-full text-xs text-slate-700 border border-indigo-100"
             >
-              <strong className="text-slate-900">{getVariableDisplayName(key)}:</strong> {value}
+              <strong className="text-indigo-700">{getVariableDisplayName(key)}:</strong> {value}
             </span>
           ))}
         </div>
@@ -592,7 +592,7 @@ const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, isDeleting }) => (
           className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 max-w-[400px] w-[90%] z-[1001] shadow-2xl"
         >
           <div className="text-center">
-            <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
               <Trash2 size={24} className="text-red-500" />
             </div>
             <h3 className="text-lg font-semibold text-slate-900 mb-2">
@@ -807,7 +807,7 @@ const BriefingWorkbook = ({
           {onBack && (
             <button
               onClick={onBack}
-              className="flex items-center gap-1.5 bg-white/15 border-none rounded-lg px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 transition-colors"
+              className="flex items-center gap-1.5 bg-white/15 border-none rounded-xl px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 hover:shadow-lg transition-all"
             >
               <ArrowLeft size={16} />
               Zurück zur Übersicht
@@ -829,7 +829,7 @@ const BriefingWorkbook = ({
                 <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
                   Smart Briefing
                 </span>
-                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-primary">
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-indigo-700">
                   {briefing.template_title}
                 </span>
               </div>
@@ -878,8 +878,8 @@ const BriefingWorkbook = ({
         {/* Loading State */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 size={40} className="text-primary animate-spin" />
-            <p className="mt-4 text-slate-500">Briefing wird geladen...</p>
+            <Loader2 size={40} className="text-indigo-600 animate-spin" />
+            <p className="mt-4 text-slate-600 font-medium">Briefing wird geladen...</p>
           </div>
         )}
 
@@ -894,12 +894,12 @@ const BriefingWorkbook = ({
         {!loading && !error && briefing.sections && (
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={18} className="text-primary" />
+              <Sparkles size={18} className="text-indigo-600" />
               <h2 className="text-base font-semibold text-slate-900 m-0">
                 Briefing-Inhalte
               </h2>
-              <span className="text-[13px] text-slate-400">
-                ({briefing.sections.length} Abschnitte)
+              <span className="text-[13px] font-medium text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                {briefing.sections.length} Abschnitte
               </span>
             </div>
 
@@ -924,14 +924,14 @@ const BriefingWorkbook = ({
         )}
 
         {/* Info box */}
-        <div className="mt-6 px-5 py-4 bg-primary/5 rounded-xl border border-primary/20">
+        <div className="mt-6 px-5 py-4 bg-indigo-50 rounded-2xl border border-indigo-100">
           <div className="flex items-start gap-3">
-            <Lightbulb size={18} className="text-primary flex-shrink-0 mt-0.5" />
+            <Lightbulb size={18} className="text-indigo-600 flex-shrink-0 mt-0.5" />
             <div>
               <h4 className="m-0 mb-1 text-slate-900 text-sm font-semibold">
                 Tipp: Personalisiere dein Briefing
               </h4>
-              <p className="m-0 text-slate-500 text-[13px] leading-relaxed">
+              <p className="m-0 text-slate-600 text-[13px] leading-relaxed">
                 Klicke auf das Stift-Icon bei jedem Punkt, um deine eigenen Notizen hinzuzufügen.
                 Nicht relevante Punkte kannst du mit dem Papierkorb-Icon ausblenden.
               </p>

@@ -38,7 +38,7 @@ import PreSessionView from './PreSessionView';
 import { CompleteConfirmDialog, CancelConfirmDialog } from './ConfirmationDialogs';
 
 /**
- * Question Number Badge - Tailwind styled
+ * Question Number Badge - Tailwind styled with blue gradient
  */
 const QuestionBadge = ({ number, size = 'md' }) => {
   const sizes = {
@@ -47,7 +47,7 @@ const QuestionBadge = ({ number, size = 'md' }) => {
   };
 
   return (
-    <div className={`${sizes[size]} rounded-full bg-brand-gradient flex-center text-white font-semibold flex-shrink-0`}>
+    <div className={`${sizes[size]} rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-sm`}>
       {number}
     </div>
   );
@@ -82,9 +82,9 @@ const QuestionCard = ({ question, index, labels, isMobile }) => (
  * Error State Component - Tailwind styled
  */
 const ErrorState = ({ error, onRetry, isMobile }) => (
-  <div className={`flex flex-col items-center ${isMobile ? 'p-4' : 'p-5 mt-4'} rounded-xl bg-red-50`}>
+  <div className={`flex flex-col items-center ${isMobile ? 'p-4' : 'p-5 mt-4'} rounded-2xl bg-red-50 border border-red-200 shadow-sm`}>
     <AlertCircle className="w-6 h-6 text-red-500" />
-    <p className="mt-2 text-red-500 font-medium text-sm text-center">
+    <p className="mt-2 text-red-600 font-medium text-sm text-center">
       {error}
     </p>
     <Button variant="danger" size="sm" onClick={onRetry} className="mt-3">
@@ -504,7 +504,7 @@ const SimulatorSession = ({
           {!isTrainingComplete && (
             <button
               onClick={handleCompleteClick}
-              className={`${isMobile ? 'flex-1 py-2.5 px-3.5' : 'py-2 px-4'} rounded-lg bg-green-500 text-white text-sm font-semibold flex items-center justify-center gap-1.5 shadow-md hover:bg-green-600 transition-colors`}
+              className={`${isMobile ? 'flex-1 py-2.5 px-3.5' : 'py-2.5 px-4'} rounded-xl bg-green-500 text-white text-sm font-semibold flex items-center justify-center gap-1.5 shadow-md hover:bg-green-600 hover:shadow-lg transition-all`}
             >
               <Check size={16} />
               {isMobile ? 'Beenden' : 'Training beenden'}
@@ -512,7 +512,7 @@ const SimulatorSession = ({
           )}
           <button
             onClick={handleCancelClick}
-            className={`${isMobile ? 'flex-1 py-2.5 px-3.5' : 'py-2 px-4'} rounded-lg bg-slate-100 text-slate-500 text-sm flex items-center justify-center gap-1.5 hover:bg-slate-200 transition-colors`}
+            className={`${isMobile ? 'flex-1 py-2.5 px-3.5' : 'py-2.5 px-4'} rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-200 transition-colors`}
           >
             <X size={16} />
             Abbrechen

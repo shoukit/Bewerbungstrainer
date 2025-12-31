@@ -298,7 +298,7 @@ const QuadDashboard = ({ onNavigate }) => {
 
   return (
     <div className="min-h-screen py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <div className="max-w-[1000px] mx-auto">
 
         {/* HEADER */}
         <motion.header
@@ -307,19 +307,12 @@ const QuadDashboard = ({ onNavigate }) => {
           transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
           className="text-center mb-14"
         >
-          <h1 style={{
-            fontSize: 'clamp(26px, 4.5vw, 38px)',
-            fontWeight: 800,
-            color: COLORS.slate[900],
-            marginBottom: '12px',
-            lineHeight: 1.2,
-            letterSpacing: '-0.02em',
-          }}>
+          <h1 className="text-[clamp(26px,4.5vw,38px)] font-extrabold text-slate-900 mb-3 leading-tight tracking-tight">
             {firstName ? (
               <>
                 Hallo{' '}
                 <span style={{
-                  background: headerGradient,
+                  background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
@@ -332,7 +325,7 @@ const QuadDashboard = ({ onNavigate }) => {
               <>
                 Willkommen bei{' '}
                 <span style={{
-                  background: headerGradient,
+                  background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
@@ -342,13 +335,7 @@ const QuadDashboard = ({ onNavigate }) => {
               </>
             )}
           </h1>
-          <p style={{
-            fontSize: 'clamp(15px, 2vw, 17px)',
-            color: COLORS.slate[500],
-            maxWidth: '420px',
-            margin: '0 auto',
-            lineHeight: 1.6,
-          }}>
+          <p className="text-[clamp(15px,2vw,17px)] text-slate-500 max-w-[420px] mx-auto leading-relaxed">
             Erst denken, dann handeln. Wähle deine Phase.
           </p>
         </motion.header>
@@ -358,45 +345,20 @@ const QuadDashboard = ({ onNavigate }) => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          style={{ marginBottom: '48px' }}
+          className="mb-12"
         >
           {/* Section Header */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            marginBottom: '24px',
-          }}>
-            <span style={{
-              background: `linear-gradient(135deg, ${COLORS.slate[100]} 0%, ${COLORS.slate[200]} 100%)`,
-              color: COLORS.slate[700],
-              padding: '8px 14px',
-              borderRadius: '10px',
-              fontSize: '12px',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}>
+          <div className="flex items-center gap-3.5 mb-6">
+            <span className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
               Phase 1
             </span>
-            <h2 style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: COLORS.slate[800],
-              margin: 0,
-            }}>
+            <h2 className="text-lg font-bold text-slate-800 m-0">
               Deine Strategie
             </h2>
           </div>
 
           {/* Strategy Cards */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '20px',
-          }}
-          className="strategy-grid"
-          >
+          <div className="grid grid-cols-3 gap-6 strategy-grid">
             {strategyCards.map((card) => (
               <motion.div
                 key={card.id}
@@ -404,132 +366,55 @@ const QuadDashboard = ({ onNavigate }) => {
                 whileHover={{ y: -6, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleNavigate(card.route)}
-                style={{
-                  background: 'white',
-                  borderRadius: '20px',
-                  padding: '28px',
-                  cursor: 'pointer',
-                  border: `1px solid ${COLORS.slate[100]}`,
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-                  transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
+                className="bg-white rounded-2xl p-6 cursor-pointer border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 ease-out relative overflow-hidden"
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = `0 20px 40px -12px ${card.color}25`;
+                  e.currentTarget.style.boxShadow = `0 12px 32px -8px ${card.color}25`;
                   e.currentTarget.style.borderColor = `${card.color}30`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.04)';
-                  e.currentTarget.style.borderColor = COLORS.slate[100];
+                  e.currentTarget.style.boxShadow = '';
+                  e.currentTarget.style.borderColor = '';
                 }}
               >
                 {/* Background Accent */}
-                <div style={{
-                  position: 'absolute',
-                  top: '-30px',
-                  right: '-30px',
-                  width: '120px',
-                  height: '120px',
-                  borderRadius: '50%',
-                  background: `${card.color}08`,
-                  pointerEvents: 'none',
-                }} />
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-5 pointer-events-none" style={{ background: card.color }} />
 
                 {/* Step Badge & Info Button */}
-                <div style={{
-                  position: 'absolute',
-                  top: '20px',
-                  right: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}>
+                <div className="absolute top-5 right-5 flex items-center gap-2">
                   <FeatureInfoButton
                     featureId={card.featureId}
                     size="md"
                   />
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '10px',
-                    background: card.bgLight,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    color: card.color,
-                  }}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold" style={{ background: card.bgLight, color: card.color }}>
                     {card.step}
                   </div>
                 </div>
 
                 {/* Icon */}
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '16px',
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{
                   background: card.gradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '20px',
                   boxShadow: `0 8px 20px -4px ${card.color}40`,
                 }}>
-                  <card.icon style={{ width: '26px', height: '26px', color: 'white' }} />
+                  <card.icon className="w-6 h-6 text-white" />
                 </div>
 
                 {/* Content */}
-                <h3 style={{
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  color: COLORS.slate[900],
-                  marginBottom: '6px',
-                }}>
+                <h3 className="text-xl font-bold text-slate-900 mb-1.5">
                   {card.title}
                 </h3>
 
-                <p style={{
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: card.color,
-                  marginBottom: '10px',
-                }}>
+                <p className="text-sm font-semibold mb-2.5" style={{ color: card.color }}>
                   {card.subtitle}
                 </p>
 
-                <p style={{
-                  fontSize: '14px',
-                  color: COLORS.slate[500],
-                  lineHeight: 1.6,
-                  margin: 0,
-                  minHeight: '44px',
-                }}>
+                <p className="text-sm text-slate-500 leading-relaxed m-0 min-h-[44px]">
                   {card.description}
                 </p>
 
                 {/* Arrow */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  marginTop: '20px',
-                }}>
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '10px',
-                    background: COLORS.slate[50],
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s ease',
-                  }}>
-                    <ArrowRight style={{
-                      width: '16px',
-                      height: '16px',
-                      color: COLORS.slate[400],
-                    }} />
+                <div className="flex justify-end mt-5">
+                  <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center transition-all duration-200">
+                    <ArrowRight className="w-4 h-4 text-slate-400" />
                   </div>
                 </div>
               </motion.div>
@@ -542,50 +427,25 @@ const QuadDashboard = ({ onNavigate }) => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          style={{ marginBottom: '48px' }}
+          className="mb-12"
         >
           {/* Section Header */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            marginBottom: '24px',
-          }}>
-            <span style={{
-              background: `linear-gradient(135deg, ${COLORS.green[50]} 0%, ${COLORS.green[100]} 100%)`,
-              color: COLORS.green[700],
-              padding: '8px 14px',
-              borderRadius: '10px',
-              fontSize: '12px',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}>
+          <div className="flex items-center gap-3.5 mb-6">
+            <span className="bg-gradient-to-br from-green-50 to-green-100 text-green-700 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
               Phase 2
             </span>
-            <h2 style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: COLORS.slate[800],
-              margin: 0,
-            }}>
+            <h2 className="text-lg font-bold text-slate-800 m-0">
               Trainings-Arena
             </h2>
           </div>
 
           {/* Setup Selector - Filter training scenarios */}
-          <div style={{ marginBottom: '24px' }}>
+          <div className="mb-6">
             <SetupSelector />
           </div>
 
           {/* Training Cards - 2x2 Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '20px',
-          }}
-          className="training-grid"
-          >
+          <div className="grid grid-cols-2 gap-6 training-grid">
             {trainingCards.map((card) => (
               <motion.div
                 key={card.id}
@@ -593,128 +453,59 @@ const QuadDashboard = ({ onNavigate }) => {
                 whileHover={{ y: -6, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleNavigate(card.route)}
-                style={{
-                  background: 'white',
-                  borderRadius: '20px',
-                  padding: '26px',
-                  cursor: 'pointer',
-                  border: `1px solid ${COLORS.slate[100]}`,
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-                  transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
+                className="bg-white rounded-2xl p-6 cursor-pointer border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 ease-out relative overflow-hidden flex flex-col"
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = `0 20px 40px -12px ${card.color}25`;
+                  e.currentTarget.style.boxShadow = `0 12px 32px -8px ${card.color}25`;
                   e.currentTarget.style.borderColor = `${card.color}30`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.04)';
-                  e.currentTarget.style.borderColor = COLORS.slate[100];
+                  e.currentTarget.style.boxShadow = '';
+                  e.currentTarget.style.borderColor = '';
                 }}
               >
                 {/* Tag Badge & Info Button */}
-                <div style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: '18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}>
+                <div className="absolute top-4 right-4 flex items-center gap-2">
                   <FeatureInfoButton
                     featureId={card.featureId}
                     size="md"
                   />
-                  <div style={{
-                    background: card.bgLight,
-                    color: card.color,
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.3px',
-                  }}>
+                  <div className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide" style={{ background: card.bgLight, color: card.color }}>
                     {card.tag}
                   </div>
                 </div>
 
                 {/* Icon */}
-                <div style={{
-                  width: '52px',
-                  height: '52px',
-                  borderRadius: '14px',
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{
                   background: card.gradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '18px',
                   boxShadow: `0 8px 20px -4px ${card.color}40`,
                 }}>
-                  <card.icon style={{ width: '24px', height: '24px', color: 'white' }} />
+                  <card.icon className="w-6 h-6 text-white" />
                 </div>
 
                 {/* Content */}
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  color: COLORS.slate[900],
-                  marginBottom: '4px',
-                }}>
+                <h3 className="text-lg font-bold text-slate-900 mb-1">
                   {card.title}
                 </h3>
 
-                <p style={{
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: card.color,
-                  marginBottom: '8px',
-                }}>
+                <p className="text-sm font-semibold mb-2" style={{ color: card.color }}>
                   {card.subtitle}
                 </p>
 
-                <p style={{
-                  fontSize: '14px',
-                  color: COLORS.slate[500],
-                  lineHeight: 1.5,
-                  margin: 0,
-                  flex: 1,
-                }}>
+                <p className="text-sm text-slate-500 leading-normal m-0 flex-1">
                   {card.description}
                 </p>
 
                 {/* Scenario Count Badge & Arrow */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: '16px',
-                }}>
+                <div className="flex justify-between items-center mt-4">
                   {/* Scenario Count - always show when count is available */}
                   {card.countKey && scenarioCounts[card.countKey] !== null && (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      backgroundColor: COLORS.slate[50],
-                      border: `1px solid ${COLORS.slate[100]}`,
-                    }}>
-                      <span style={{
-                        fontSize: '14px',
-                        fontWeight: 700,
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                      <span className="text-sm font-bold" style={{
                         color: scenarioCounts[card.countKey] > 0 ? card.color : COLORS.slate[400],
                       }}>
                         {scenarioCounts[card.countKey]}
                       </span>
-                      <span style={{
-                        fontSize: '12px',
-                        color: COLORS.slate[500],
-                      }}>
+                      <span className="text-xs text-slate-500">
                         {scenarioCounts[card.countKey] === 1 ? 'Szenario' : 'Szenarien'}
                       </span>
                     </div>
@@ -723,20 +514,8 @@ const QuadDashboard = ({ onNavigate }) => {
                   {(!card.countKey || scenarioCounts[card.countKey] === null) && (
                     <div />
                   )}
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '10px',
-                    background: COLORS.slate[50],
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <ArrowRight style={{
-                      width: '16px',
-                      height: '16px',
-                      color: COLORS.slate[400],
-                    }} />
+                  <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
+                    <ArrowRight className="w-4 h-4 text-slate-400" />
                   </div>
                 </div>
               </motion.div>
@@ -751,159 +530,54 @@ const QuadDashboard = ({ onNavigate }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
           >
-            <div style={{
-              background: 'white',
-              borderRadius: '20px',
-              padding: '28px',
-              border: `1px solid ${COLORS.slate[100]}`,
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '20px',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                }}>
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    background: COLORS.slate[100],
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <Clock style={{ width: '18px', height: '18px', color: COLORS.slate[500] }} />
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-md">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-slate-500" />
                   </div>
-                  <h3 style={{
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    color: COLORS.slate[800],
-                    margin: 0,
-                  }}>
+                  <h3 className="text-base font-bold text-slate-800 m-0">
                     Letzte Aktivitäten
                   </h3>
                 </div>
                 <button
                   onClick={() => handleNavigate('history')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    color: primaryAccent,
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '6px 10px',
-                    borderRadius: '8px',
-                    transition: 'background 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = COLORS.slate[50];
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'none';
-                  }}
+                  className="flex items-center gap-1 text-sm font-semibold bg-transparent border-0 cursor-pointer px-2.5 py-1.5 rounded-lg transition-all duration-200 hover:bg-slate-50"
+                  style={{ color: primaryAccent }}
                 >
                   Alle ansehen
-                  <ChevronRight style={{ width: '16px', height: '16px' }} />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
 
               {loadingActivities ? (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '12px',
-                  padding: '32px',
-                  color: COLORS.slate[500],
-                }}>
-                  <div className="animate-spin" style={{
-                    width: '20px',
-                    height: '20px',
-                    border: `2px solid ${COLORS.slate[200]}`,
-                    borderTopColor: primaryAccent,
-                    borderRadius: '50%',
-                  }} />
+                <div className="flex items-center justify-center gap-3 py-8 text-slate-500">
+                  <div className="animate-spin w-5 h-5 border-2 border-slate-200 rounded-full" style={{ borderTopColor: primaryAccent }} />
                   Lädt...
                 </div>
               ) : (
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                }}>
+                <div className="flex flex-col gap-2">
                   {recentActivities.slice(0, 5).map((activity, index) => (
                     <motion.div
                       key={activity.id || index}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.05 * index }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '14px 16px',
-                        background: COLORS.slate[50],
-                        borderRadius: '12px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        border: '1px solid transparent',
-                      }}
+                      className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl cursor-pointer transition-all duration-200 border border-transparent hover:bg-white hover:border-slate-200"
                       onClick={() => handleNavigate('history')}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'white';
-                        e.currentTarget.style.borderColor = COLORS.slate[200];
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = COLORS.slate[50];
-                        e.currentTarget.style.borderColor = 'transparent';
-                      }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, flex: 1 }}>
-                        <div style={{
-                          width: '10px',
-                          height: '10px',
-                          borderRadius: '50%',
-                          background: getActivityColor(activity.type),
-                          flexShrink: 0,
-                        }} />
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <p style={{
-                            fontSize: '14px',
-                            fontWeight: 600,
-                            color: COLORS.slate[800],
-                            margin: 0,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}>
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: getActivityColor(activity.type) }} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-800 m-0 overflow-hidden text-ellipsis whitespace-nowrap">
                             {activity.title || getActivityTypeLabel(activity.type)}
                           </p>
-                          <p style={{
-                            fontSize: '12px',
-                            color: COLORS.slate[500],
-                            margin: '2px 0 0 0',
-                          }}>
+                          <p className="text-xs text-slate-500 mt-0.5 m-0">
                             {getActivityTypeLabel(activity.type)}
                           </p>
                         </div>
                       </div>
-                      <span style={{
-                        fontSize: '12px',
-                        color: COLORS.slate[400],
-                        fontWeight: 500,
-                        flexShrink: 0,
-                        marginLeft: '16px',
-                      }}>
+                      <span className="text-xs text-slate-400 font-medium flex-shrink-0 ml-4">
                         {formatRelativeTime(activity.created_at || activity.date)}
                       </span>
                     </motion.div>
@@ -920,48 +594,15 @@ const QuadDashboard = ({ onNavigate }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.4 }}
-            style={{
-              textAlign: 'center',
-              padding: '40px 32px',
-              background: 'white',
-              borderRadius: '20px',
-              border: `1px solid ${COLORS.slate[100]}`,
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-            }}
+            className="text-center py-10 px-8 bg-white rounded-2xl border border-slate-100 shadow-md"
           >
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              background: `linear-gradient(135deg, ${COLORS.blue[50]} 0%, ${COLORS.purple[50]} 100%)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-            }}>
-              <TrendingUp style={{
-                width: '28px',
-                height: '28px',
-                color: COLORS.blue[500],
-              }} />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center mx-auto mb-4">
+              <TrendingUp className="w-7 h-7 text-blue-500" />
             </div>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: COLORS.slate[800],
-              marginBottom: '8px',
-            }}>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">
               Verfolge deinen Fortschritt
             </h3>
-            <p style={{
-              fontSize: '14px',
-              color: COLORS.slate[500],
-              margin: 0,
-              maxWidth: '360px',
-              marginLeft: 'auto',
-              marginRight: 'auto',
-              lineHeight: 1.6,
-            }}>
+            <p className="text-sm text-slate-500 m-0 max-w-[360px] mx-auto leading-relaxed">
               Melde dich an, um deinen Fortschritt zu speichern und personalisierte Empfehlungen zu erhalten.
             </p>
           </motion.div>

@@ -41,18 +41,24 @@ const Card = React.forwardRef(({
   ...props
 }, ref) => {
   const variants = {
-    default: 'card',
-    elevated: 'card-elevated',
-    interactive: 'card-interactive',
-    outline: 'card border-2',
+    default: 'bg-white rounded-2xl border border-gray-200',
+    elevated: 'bg-white rounded-2xl border border-gray-200 shadow-lg',
+    interactive: 'bg-white rounded-2xl border border-gray-200 transition-all duration-200 hover:shadow-lg hover:border-indigo-200',
+    outline: 'bg-white rounded-2xl border-2 border-gray-300',
   };
+
+  // Base shadow for default and interactive variants
+  const baseShadow = variant === 'default' || variant === 'interactive'
+    ? 'shadow-[0_4px_12px_rgba(0,0,0,0.08)]'
+    : '';
 
   return (
     <div
       ref={ref}
       className={cn(
         variants[variant],
-        padding && 'p-4 md:p-6',
+        baseShadow,
+        padding && 'p-6',
         onClick && 'cursor-pointer',
         className
       )}
@@ -79,8 +85,8 @@ const CardHeader = React.forwardRef(({
     <div
       ref={ref}
       className={cn(
-        gradient ? 'card-header-gradient rounded-t-card' : 'card-header',
-        '-m-4 md:-m-6 mb-4 md:mb-6', // Negative margin to extend to card edges
+        gradient ? 'card-header-gradient rounded-t-2xl' : 'card-header',
+        '-m-6 mb-6', // Negative margin to extend to card edges
         className
       )}
       {...props}
@@ -169,7 +175,7 @@ const CardFooter = React.forwardRef(({
       ref={ref}
       className={cn(
         'card-footer',
-        '-m-4 md:-m-6 mt-4 md:mt-6', // Negative margin to extend to card edges
+        '-m-6 mt-6', // Negative margin to extend to card edges
         className
       )}
       {...props}

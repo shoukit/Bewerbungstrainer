@@ -201,7 +201,7 @@ const SmartBriefingDashboard = ({
   const filterActions = (isAuthenticated || demoCode) && onCreateTemplate ? (
     <button
       onClick={handleCreateTemplate}
-      className="flex items-center gap-2 py-2.5 px-4 rounded-[10px] border-2 border-dashed border-slate-300 bg-white text-slate-500 text-sm font-medium cursor-pointer transition-all whitespace-nowrap hover:border-primary hover:text-primary"
+      className="flex items-center gap-2 py-2.5 px-4 rounded-xl border-2 border-dashed border-indigo-200 bg-white text-indigo-600 text-sm font-medium cursor-pointer transition-all whitespace-nowrap hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-sm"
     >
       <Plus size={18} />
       <span className="hidden sm:inline">persönliches Template</span>
@@ -213,14 +213,14 @@ const SmartBriefingDashboard = ({
    * Render info box
    */
   const renderInfoBox = () => (
-    <div className="mt-12 py-5 px-6 bg-primary/5 rounded-xl border border-primary/20">
+    <div className="mt-12 py-5 px-6 bg-indigo-50 rounded-2xl border border-indigo-100">
       <div className="flex items-start gap-3">
-        <Lightbulb size={20} className="text-primary flex-shrink-0 mt-0.5" />
+        <Lightbulb size={20} className="text-indigo-600 flex-shrink-0 mt-0.5" />
         <div>
           <h4 className="text-sm font-semibold text-slate-900 mb-1">
             So funktioniert Smart Briefing
           </h4>
-          <p className="text-[13px] text-slate-500 leading-relaxed">
+          <p className="text-[13px] text-slate-600 leading-relaxed">
             Wähle ein Template aus, gib deine spezifischen Informationen ein (z.B. Unternehmen, Position),
             und erhalte ein maßgeschneidertes Briefing mit Insider-Wissen, Fachbegriffen und cleveren Rückfragen.
           </p>
@@ -238,11 +238,11 @@ const SmartBriefingDashboard = ({
       onClick={() => setDeleteConfirm(null)}
     >
       <div
-        className="bg-white rounded-2xl p-6 max-w-[400px] w-full shadow-2xl"
+        className="bg-white rounded-2xl p-6 max-w-[400px] w-full shadow-2xl transform transition-all"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center">
             <Trash2 size={24} className="text-red-500" />
           </div>
           <div>
@@ -255,8 +255,8 @@ const SmartBriefingDashboard = ({
           </div>
         </div>
 
-        <div className="bg-slate-50 rounded-lg p-3 mb-5">
-          <p className="text-sm text-slate-600">
+        <div className="bg-slate-50 rounded-xl p-3 mb-5">
+          <p className="text-sm text-slate-700">
             <strong>{deleteConfirm.title}</strong>
           </p>
         </div>

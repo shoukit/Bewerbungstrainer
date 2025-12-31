@@ -29,50 +29,44 @@ import { useBranding } from '@/hooks/useBranding';
  * Score Badge Component
  * Now displays scores on scale of 100 (converts from scale of 10)
  */
-const ScoreBadge = ({ score, label, size = 'normal', primaryAccent, branding }) => {
+const ScoreBadge = ({ score, label, size = 'normal', variant = 'default' }) => {
   // Convert from scale of 10 to scale of 100
   const score100 = score != null ? score * 10 : null;
 
-  const getScoreColor = (s) => {
-    if (s >= 80) return branding.success;
-    if (s >= 60) return primaryAccent;
-    if (s >= 40) return branding.warning;
-    return branding.error;
+  const getScoreColorClasses = (s) => {
+    if (variant === 'white') {
+      // White variant for gradient backgrounds
+      return 'bg-white/20 border-white text-white';
+    }
+    // Default variant
+    if (s >= 80) return 'bg-green-50 border-green-500 text-green-600';
+    if (s >= 60) return 'bg-blue-50 border-blue-500 text-blue-600';
+    if (s >= 40) return 'bg-amber-50 border-amber-500 text-amber-600';
+    return 'bg-red-50 border-red-500 text-red-600';
   };
 
-  const color = getScoreColor(score100);
+  const colorClasses = getScoreColorClasses(score100);
   const isLarge = size === 'large';
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: branding.space[1],
-    }}>
-      <div style={{
-        width: isLarge ? '80px' : '56px',
-        height: isLarge ? '80px' : '56px',
-        borderRadius: branding.radius.full,
-        backgroundColor: `${color}15`,
-        border: `3px solid ${color}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <span style={{
-          fontSize: isLarge ? branding.fontSize['5xl'] : branding.fontSize['2xl'],
-          fontWeight: branding.fontWeight.bold,
-          color: color,
-        }}>
+    <div className="flex flex-col items-center gap-1">
+      <div className={`
+        ${isLarge ? 'w-20 h-20' : 'w-14 h-14'}
+        rounded-full border-3 flex items-center justify-center
+        ${colorClasses}
+      `}>
+        <span className={`
+          ${isLarge ? 'text-3xl' : 'text-2xl'}
+          font-bold
+        `}>
           {score100 != null ? Math.round(score100) : '-'}
         </span>
       </div>
-      <span style={{
-        fontSize: isLarge ? branding.fontSize.base : branding.fontSize.xs,
-        color: branding.textSecondary,
-        fontWeight: branding.fontWeight.medium,
-      }}>
+      <span className={`
+        ${isLarge ? 'text-sm' : 'text-xs'}
+        ${variant === 'white' ? 'text-white' : 'text-slate-600'}
+        font-medium
+      `}>
         {label}
       </span>
     </div>
@@ -82,48 +76,29 @@ const ScoreBadge = ({ score, label, size = 'normal', primaryAccent, branding }) 
 /**
  * Collapsible Section Component
  */
-const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true, primaryAccent, branding }) => {
+const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div style={{
-      borderRadius: branding.radius.lg,
-      border: `1px solid ${branding.borderColor}`,
-      backgroundColor: branding.cardBg,
-      overflow: 'hidden',
-      marginBottom: branding.space[4],
-    }}>
+    <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden mb-4 shadow-sm">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          width: '100%',
-          padding: `${branding.space[4]} ${branding.space[5]}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          border: 'none',
-          backgroundColor: 'transparent',
-          cursor: 'pointer',
-        }}
+        className="w-full px-6 py-4 flex items-center justify-between border-none bg-transparent cursor-pointer hover:bg-slate-50 transition-colors"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: branding.space[3] }}>
-          <Icon style={{ width: branding.iconSize.lg, height: branding.iconSize.lg, color: primaryAccent }} />
-          <span style={{ fontSize: branding.fontSize.md, fontWeight: branding.fontWeight.semibold, color: branding.textMain }}>
+        <div className="flex items-center gap-3">
+          <Icon className="w-5 h-5 text-blue-600" />
+          <span className="text-base font-semibold text-slate-900">
             {title}
           </span>
         </div>
         {isOpen ? (
-          <ChevronUp style={{ width: branding.iconSize.lg, height: branding.iconSize.lg, color: branding.textMuted }} />
+          <ChevronUp className="w-5 h-5 text-slate-400" />
         ) : (
-          <ChevronDown style={{ width: branding.iconSize.lg, height: branding.iconSize.lg, color: branding.textMuted }} />
+          <ChevronDown className="w-5 h-5 text-slate-400" />
         )}
       </button>
       {isOpen && (
-        <div style={{
-          padding: `0 ${branding.space[5]} ${branding.space[5]} ${branding.space[5]}`,
-          borderTop: `1px solid ${branding.cardBgHover}`,
-          paddingTop: branding.space[4],
-        }}>
+        <div className="px-6 pb-6 border-t border-slate-100 pt-4">
           {children}
         </div>
       )}
@@ -134,26 +109,31 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true, p
 /**
  * Feedback List Item
  */
-const FeedbackItem = ({ text, type, primaryAccent, primaryAccentLight, branding }) => {
+const FeedbackItem = ({ text, type }) => {
   const config = {
-    strength: { icon: ThumbsUp, color: branding.success, bg: branding.successLight },
-    improvement: { icon: AlertTriangle, color: branding.warning, bg: branding.warningLight },
-    tip: { icon: Lightbulb, color: primaryAccent, bg: primaryAccentLight },
+    strength: {
+      icon: ThumbsUp,
+      iconClass: 'text-green-600',
+      bgClass: 'bg-green-50'
+    },
+    improvement: {
+      icon: AlertTriangle,
+      iconClass: 'text-amber-600',
+      bgClass: 'bg-amber-50'
+    },
+    tip: {
+      icon: Lightbulb,
+      iconClass: 'text-blue-600',
+      bgClass: 'bg-blue-50'
+    },
   };
 
-  const { icon: Icon, color, bg } = config[type] || config.tip;
+  const { icon: Icon, iconClass, bgClass } = config[type] || config.tip;
 
   return (
-    <div style={{
-      display: 'flex',
-      gap: branding.space[3],
-      padding: branding.space[3],
-      borderRadius: branding.radius.md,
-      backgroundColor: bg,
-      marginBottom: branding.space[2],
-    }}>
-      <Icon style={{ width: branding.iconSize.md, height: branding.iconSize.md, color, flexShrink: 0, marginTop: '2px' }} />
-      <span style={{ fontSize: branding.fontSize.base, color: branding.textSecondary, lineHeight: 1.5 }}>
+    <div className={`flex gap-3 p-3 rounded-xl ${bgClass} mb-2`}>
+      <Icon className={`w-5 h-5 ${iconClass} flex-shrink-0 mt-0.5`} />
+      <span className="text-sm text-slate-700 leading-relaxed">
         {text}
       </span>
     </div>
@@ -163,15 +143,15 @@ const FeedbackItem = ({ text, type, primaryAccent, primaryAccentLight, branding 
 /**
  * Audio Metrics Display
  */
-const AudioMetricsDisplay = ({ metrics, branding }) => {
+const AudioMetricsDisplay = ({ metrics }) => {
   if (!metrics) return null;
 
   const getSpeechRateLabel = (rate) => {
     switch (rate) {
-      case 'optimal': return { label: 'Optimal', color: branding.success };
-      case 'zu_schnell': return { label: 'Zu schnell', color: branding.warning };
-      case 'zu_langsam': return { label: 'Zu langsam', color: branding.warning };
-      default: return { label: rate || 'N/A', color: branding.textMuted };
+      case 'optimal': return { label: 'Optimal', colorClass: 'text-green-600' };
+      case 'zu_schnell': return { label: 'Zu schnell', colorClass: 'text-amber-600' };
+      case 'zu_langsam': return { label: 'Zu langsam', colorClass: 'text-amber-600' };
+      default: return { label: rate || 'N/A', colorClass: 'text-slate-400' };
     }
   };
 
@@ -179,47 +159,35 @@ const AudioMetricsDisplay = ({ metrics, branding }) => {
 
   const getSeverityColor = (severity) => {
     switch (severity) {
-      case 'niedrig': return branding.success;
-      case 'mittel': return branding.warning;
-      case 'hoch': return branding.error;
-      default: return branding.textMuted;
+      case 'niedrig': return 'text-green-600';
+      case 'mittel': return 'text-amber-600';
+      case 'hoch': return 'text-red-600';
+      default: return 'text-slate-400';
     }
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: branding.space[4] }}>
+    <div className="grid grid-cols-2 gap-4">
       {/* Speech Rate */}
-      <div style={{
-        padding: branding.space[4],
-        borderRadius: branding.radius.md,
-        backgroundColor: branding.cardBgHover,
-      }}>
-        <span style={{ fontSize: branding.fontSize.xs, color: branding.textMuted, display: 'block', marginBottom: branding.space[1] }}>
+      <div className="p-4 rounded-xl bg-slate-50">
+        <span className="text-xs text-slate-500 block mb-1">
           Sprechtempo
         </span>
-        <span style={{ fontSize: branding.fontSize.lg, fontWeight: branding.fontWeight.semibold, color: speechRate.color }}>
+        <span className={`text-lg font-semibold ${speechRate.colorClass}`}>
           {speechRate.label}
         </span>
       </div>
 
       {/* Filler Words */}
       {metrics.filler_words && (
-        <div style={{
-          padding: branding.space[4],
-          borderRadius: branding.radius.md,
-          backgroundColor: branding.cardBgHover,
-        }}>
-          <span style={{ fontSize: branding.fontSize.xs, color: branding.textMuted, display: 'block', marginBottom: branding.space[1] }}>
+        <div className="p-4 rounded-xl bg-slate-50">
+          <span className="text-xs text-slate-500 block mb-1">
             Füllwörter
           </span>
-          <span style={{
-            fontSize: branding.fontSize.lg,
-            fontWeight: 600,
-            color: getSeverityColor(metrics.filler_words.severity),
-          }}>
+          <span className={`text-lg font-semibold ${getSeverityColor(metrics.filler_words.severity)}`}>
             {metrics.filler_words.count || 0}
             {metrics.filler_words.words?.length > 0 && (
-              <span style={{ fontSize: '12px', fontWeight: 400, marginLeft: '8px' }}>
+              <span className="text-xs font-normal ml-2">
                 ({metrics.filler_words.words.slice(0, 3).join(', ')})
               </span>
             )}
@@ -229,30 +197,20 @@ const AudioMetricsDisplay = ({ metrics, branding }) => {
 
       {/* Confidence Score */}
       {metrics.confidence_score !== undefined && (
-        <div style={{
-          padding: '16px',
-          borderRadius: '10px',
-          backgroundColor: branding.cardBgHover,
-        }}>
-          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block', marginBottom: '4px' }}>
+        <div className="p-4 rounded-xl bg-slate-50">
+          <span className="text-xs text-slate-500 block mb-1">
             Selbstbewusstsein
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              flex: 1,
-              height: '8px',
-              backgroundColor: branding.borderColor,
-              borderRadius: '4px',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                width: `${metrics.confidence_score}%`,
-                height: '100%',
-                backgroundColor: metrics.confidence_score >= 70 ? branding.success : branding.warning,
-                borderRadius: '4px',
-              }} />
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${
+                  metrics.confidence_score >= 70 ? 'bg-green-500' : 'bg-amber-500'
+                }`}
+                style={{ width: `${metrics.confidence_score}%` }}
+              />
             </div>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textSecondary }}>
+            <span className="text-sm font-semibold text-slate-700">
               {metrics.confidence_score}%
             </span>
           </div>
@@ -261,30 +219,20 @@ const AudioMetricsDisplay = ({ metrics, branding }) => {
 
       {/* Clarity Score */}
       {metrics.clarity_score !== undefined && (
-        <div style={{
-          padding: '16px',
-          borderRadius: '10px',
-          backgroundColor: branding.cardBgHover,
-        }}>
-          <span style={{ fontSize: '12px', color: branding.textMuted, display: 'block', marginBottom: '4px' }}>
+        <div className="p-4 rounded-xl bg-slate-50">
+          <span className="text-xs text-slate-500 block mb-1">
             Klarheit
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              flex: 1,
-              height: '8px',
-              backgroundColor: branding.borderColor,
-              borderRadius: '4px',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                width: `${metrics.clarity_score}%`,
-                height: '100%',
-                backgroundColor: metrics.clarity_score >= 70 ? branding.success : branding.warning,
-                borderRadius: '4px',
-              }} />
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${
+                  metrics.clarity_score >= 70 ? 'bg-green-500' : 'bg-amber-500'
+                }`}
+                style={{ width: `${metrics.clarity_score}%` }}
+              />
             </div>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: branding.textSecondary }}>
+            <span className="text-sm font-semibold text-slate-700">
               {metrics.clarity_score}%
             </span>
           </div>
@@ -293,15 +241,7 @@ const AudioMetricsDisplay = ({ metrics, branding }) => {
 
       {/* Notes */}
       {metrics.notes && (
-        <div style={{
-          gridColumn: '1 / -1',
-          padding: '12px 16px',
-          borderRadius: '10px',
-          backgroundColor: branding.primaryAccentLight,
-          fontSize: '14px',
-          color: branding.textSecondary,
-          lineHeight: 1.5,
-        }}>
+        <div className="col-span-2 p-4 rounded-xl bg-blue-50 text-sm text-slate-700 leading-relaxed">
           💡 {metrics.notes}
         </div>
       )}
@@ -312,7 +252,7 @@ const AudioMetricsDisplay = ({ metrics, branding }) => {
 /**
  * Compact Audio Player for feedback view
  */
-const CompactAudioPlayer = ({ audioUrl, primaryAccent, branding }) => {
+const CompactAudioPlayer = ({ audioUrl }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -389,16 +329,7 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent, branding }) => {
 
   if (error) {
     return (
-      <div style={{
-        padding: '12px 16px',
-        background: branding.cardBgHover,
-        borderRadius: '10px',
-        color: branding.textMuted,
-        fontSize: '13px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-      }}>
+      <div className="p-3 bg-slate-50 rounded-xl text-slate-500 text-sm flex items-center gap-2">
         <AlertCircle size={16} /> {error}
       </div>
     );
@@ -407,44 +338,23 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent, branding }) => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div style={{
-      background: branding.cardBgHover,
-      borderRadius: '12px',
-      padding: '16px',
-    }}>
+    <div className="bg-slate-50 rounded-xl p-4">
       {/* Progress bar */}
       <div
         onClick={handleSeek}
-        style={{
-          height: '6px',
-          background: branding.borderColor,
-          borderRadius: '3px',
-          cursor: 'pointer',
-          marginBottom: '12px',
-        }}
+        className="h-1.5 bg-slate-200 rounded-full cursor-pointer mb-3"
       >
-        <div style={{
-          width: `${progressPercent}%`,
-          height: '100%',
-          background: primaryAccent,
-          borderRadius: '3px',
-          transition: 'width 0.1s',
-        }} />
+        <div
+          className="h-full bg-blue-600 rounded-full transition-all"
+          style={{ width: `${progressPercent}%` }}
+        />
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+      <div className="flex items-center justify-center gap-3">
         <button
           onClick={() => skip(-10)}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '6px',
-            color: branding.textMuted,
-            display: 'flex',
-            alignItems: 'center',
-          }}
+          className="bg-transparent border-none cursor-pointer p-1.5 text-slate-500 hover:text-slate-700 flex items-center transition-colors"
         >
           <SkipBack size={20} />
         </button>
@@ -452,56 +362,31 @@ const CompactAudioPlayer = ({ audioUrl, primaryAccent, branding }) => {
         <button
           onClick={togglePlay}
           disabled={isLoading}
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '50%',
-            background: primaryAccent,
-            border: 'none',
-            cursor: isLoading ? 'wait' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#ffffff',
-            opacity: isLoading ? 0.7 : 1,
-          }}
+          className={`w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 border-none flex items-center justify-center text-white shadow-md transition-all ${
+            isLoading ? 'cursor-wait opacity-70' : 'cursor-pointer'
+          }`}
         >
           {isLoading ? (
-            <Loader2 size={20} color="#ffffff" style={{ animation: 'spin 1s linear infinite' }} />
+            <Loader2 size={20} className="animate-spin" />
           ) : isPlaying ? (
-            <Pause size={20} color="#ffffff" fill="#ffffff" />
+            <Pause size={20} fill="white" />
           ) : (
-            <Play size={20} color="#ffffff" fill="#ffffff" style={{ marginLeft: '2px' }} />
+            <Play size={20} fill="white" className="ml-0.5" />
           )}
         </button>
 
         <button
           onClick={() => skip(10)}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '6px',
-            color: branding.textMuted,
-            display: 'flex',
-            alignItems: 'center',
-          }}
+          className="bg-transparent border-none cursor-pointer p-1.5 text-slate-500 hover:text-slate-700 flex items-center transition-colors"
         >
           <SkipForward size={20} />
         </button>
       </div>
 
       {/* Time display */}
-      <div style={{
-        textAlign: 'center',
-        marginTop: '8px',
-        fontSize: '12px',
-        color: branding.textMuted,
-      }}>
+      <div className="text-center mt-2 text-xs text-slate-500">
         {formatDuration(currentTime)} / {formatDuration(duration)}
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
@@ -522,54 +407,24 @@ const ImmediateFeedback = ({
   isLastQuestion,
   hideButtons = false,
 }) => {
-  // Partner theming
-  const { branding } = usePartner();
-  const b = useBranding();
-  const buttonGradient = branding?.['--button-gradient'] || branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
-
   // Parse feedback if it's a string
   const parsedFeedback = typeof feedback === 'string' ? JSON.parse(feedback) : feedback;
 
   return (
-    <div style={{
-      backgroundColor: b.cardBgHover,
-      borderRadius: b.radius.xl,
-      padding: b.space[6],
-    }}>
-      {/* Summary Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '20px',
-        marginBottom: '24px',
-        padding: b.space[5],
-        backgroundColor: b.cardBg,
-        borderRadius: b.radius.lg,
-      }}>
+    <div className="bg-slate-50 rounded-2xl p-6 shadow-card">
+      {/* Summary Header with blue gradient background */}
+      <div className="flex items-start gap-5 mb-6 p-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
         <ScoreBadge
           score={parsedFeedback?.scores?.overall}
           label="Gesamt"
           size="large"
-          primaryAccent={primaryAccent}
-          branding={b}
+          variant="white"
         />
-        <div style={{ flex: 1 }}>
-          <h3 style={{
-            fontSize: '16px',
-            fontWeight: 600,
-            color: b.textMain,
-            margin: '0 0 8px 0',
-          }}>
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-white mb-2">
             Feedback zu deiner Antwort
           </h3>
-          <p style={{
-            fontSize: '14px',
-            color: b.textSecondary,
-            margin: 0,
-            lineHeight: 1.5,
-          }}>
+          <p className="text-sm text-blue-50 leading-relaxed">
             {parsedFeedback?.summary || 'Deine Antwort wurde analysiert.'}
           </p>
         </div>
@@ -577,113 +432,70 @@ const ImmediateFeedback = ({
 
       {/* Score Breakdown */}
       {parsedFeedback?.scores && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '32px',
-          padding: '16px',
-          marginBottom: '16px',
-          backgroundColor: b.cardBg,
-          borderRadius: '12px',
-        }}>
-          <ScoreBadge score={parsedFeedback.scores.content} label="Inhalt" primaryAccent={primaryAccent} branding={b} />
-          <ScoreBadge score={parsedFeedback.scores.structure} label="Struktur" primaryAccent={primaryAccent} branding={b} />
-          <ScoreBadge score={parsedFeedback.scores.relevance} label="Relevanz" primaryAccent={primaryAccent} branding={b} />
+        <div className="flex justify-center gap-8 p-4 mb-4 bg-white rounded-2xl shadow-sm">
+          <ScoreBadge score={parsedFeedback.scores.content} label="Inhalt" />
+          <ScoreBadge score={parsedFeedback.scores.structure} label="Struktur" />
+          <ScoreBadge score={parsedFeedback.scores.relevance} label="Relevanz" />
         </div>
       )}
 
       {/* Transcript */}
-      <CollapsibleSection title="Transkript" icon={MessageSquare} defaultOpen={true} primaryAccent={primaryAccent} branding={b}>
-        <div style={{
-          padding: '16px',
-          borderRadius: '10px',
-          backgroundColor: b.cardBgHover,
-          fontStyle: 'italic',
-          color: b.textSecondary,
-          lineHeight: 1.6,
-          fontSize: '14px',
-        }}>
+      <CollapsibleSection title="Transkript" icon={MessageSquare} defaultOpen={true}>
+        <div className="p-4 rounded-xl bg-slate-50 italic text-slate-700 leading-relaxed text-sm">
           "{transcript || 'Keine Transkription verfügbar.'}"
         </div>
       </CollapsibleSection>
 
       {/* Audio Player - own section between transcript and strengths */}
       {audioUrl && (
-        <CollapsibleSection title="Deine Aufnahme" icon={Volume2} defaultOpen={true} primaryAccent={primaryAccent} branding={b}>
-          <CompactAudioPlayer audioUrl={audioUrl} primaryAccent={primaryAccent} branding={b} />
+        <CollapsibleSection title="Deine Aufnahme" icon={Volume2} defaultOpen={true}>
+          <CompactAudioPlayer audioUrl={audioUrl} />
         </CollapsibleSection>
       )}
 
       {/* Strengths */}
       {parsedFeedback?.strengths?.length > 0 && (
-        <CollapsibleSection title="Stärken" icon={ThumbsUp} defaultOpen={true} primaryAccent={primaryAccent} branding={b}>
+        <CollapsibleSection title="Stärken" icon={ThumbsUp} defaultOpen={true}>
           {parsedFeedback.strengths.map((strength, i) => (
-            <FeedbackItem key={i} text={strength} type="strength" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} branding={b} />
+            <FeedbackItem key={i} text={strength} type="strength" />
           ))}
         </CollapsibleSection>
       )}
 
       {/* Improvements */}
       {parsedFeedback?.improvements?.length > 0 && (
-        <CollapsibleSection title="Verbesserungen" icon={AlertTriangle} defaultOpen={true} primaryAccent={primaryAccent} branding={b}>
+        <CollapsibleSection title="Verbesserungen" icon={AlertTriangle} defaultOpen={true}>
           {parsedFeedback.improvements.map((improvement, i) => (
-            <FeedbackItem key={i} text={improvement} type="improvement" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} branding={b} />
+            <FeedbackItem key={i} text={improvement} type="improvement" />
           ))}
         </CollapsibleSection>
       )}
 
       {/* Tips */}
       {parsedFeedback?.tips?.length > 0 && (
-        <CollapsibleSection title="Tipps" icon={Lightbulb} defaultOpen={false} primaryAccent={primaryAccent} branding={b}>
+        <CollapsibleSection title="Tipps" icon={Lightbulb} defaultOpen={false}>
           {parsedFeedback.tips.map((tip, i) => (
-            <FeedbackItem key={i} text={tip} type="tip" primaryAccent={primaryAccent} primaryAccentLight={primaryAccentLight} branding={b} />
+            <FeedbackItem key={i} text={tip} type="tip" />
           ))}
         </CollapsibleSection>
       )}
 
       {/* Audio Metrics */}
       {audioMetrics && (
-        <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={false} primaryAccent={primaryAccent} branding={b}>
-          <AudioMetricsDisplay metrics={audioMetrics} branding={b} />
+        <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={false}>
+          <AudioMetricsDisplay metrics={audioMetrics} />
         </CollapsibleSection>
       )}
 
       {/* Action Buttons - only show when not hidden */}
       {!hideButtons && (
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          marginTop: '24px',
-          justifyContent: 'flex-end',
-          flexWrap: 'wrap',
-        }}>
+        <div className="flex gap-3 mt-6 justify-end flex-wrap">
           {onRetry && (
             <button
               onClick={onRetry}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '14px 24px',
-                borderRadius: '12px',
-                border: `2px solid ${b.borderColor}`,
-                backgroundColor: b.cardBg,
-                color: b.textSecondary,
-                fontSize: '15px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.borderColor = primaryAccent;
-                e.target.style.color = primaryAccent;
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.borderColor = b.borderColor;
-                e.target.style.color = b.textSecondary;
-              }}
+              className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-2 border-slate-300 bg-white text-slate-700 text-sm font-semibold cursor-pointer transition-all hover:border-blue-500 hover:text-blue-600 shadow-sm"
             >
-              <RotateCcw style={{ width: '18px', height: '18px' }} />
+              <RotateCcw className="w-4 h-4" />
               Nochmal versuchen
             </button>
           )}
@@ -691,39 +503,17 @@ const ImmediateFeedback = ({
           {/* Nächste Frage / Training abschließen */}
           <button
             onClick={isLastQuestion ? onComplete : onNext}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '14px 24px',
-              borderRadius: '12px',
-              border: 'none',
-              background: buttonGradient,
-              color: 'white',
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: `0 4px 12px ${primaryAccent}4d`,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = `0 6px 16px ${primaryAccent}66`;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'none';
-              e.target.style.boxShadow = `0 4px 12px ${primaryAccent}4d`;
-            }}
+            className="flex items-center gap-2 px-6 py-3.5 rounded-xl border-none bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold cursor-pointer shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
           >
             {isLastQuestion ? (
               <>
-                <Trophy style={{ width: '18px', height: '18px' }} />
+                <Trophy className="w-4 h-4" />
                 Training abschließen
               </>
             ) : (
               <>
                 Nächste Frage
-                <ChevronRight style={{ width: '18px', height: '18px' }} />
+                <ChevronRight className="w-4 h-4" />
               </>
             )}
           </button>

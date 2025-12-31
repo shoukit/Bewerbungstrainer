@@ -763,7 +763,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         {/* Header */}
         <div className="mb-8 text-center">
           <div className="inline-flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-lg bg-brand-gradient flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
               <History className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-4xl font-bold text-slate-900">
@@ -776,8 +776,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         </div>
 
         {/* Login required message */}
-        <Card className="max-w-[500px] mx-auto mt-16 p-10 text-center">
-          <div className="w-16 h-16 rounded-xl bg-brand-gradient flex items-center justify-center mx-auto mb-5">
+        <Card className="max-w-[500px] mx-auto mt-16 p-10 text-center rounded-2xl shadow-card">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mx-auto mb-5">
             <LogIn className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-3">
@@ -830,7 +830,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       {/* Header */}
       <div className="mb-8 text-center relative">
         <div className="inline-flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-lg bg-brand-gradient flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
             <History className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-slate-900">
@@ -845,14 +845,14 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         <button
           onClick={loadAllData}
           disabled={isLoading}
-          className="absolute top-0 right-0 p-2.5 rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm flex items-center justify-center md:hidden disabled:opacity-50"
+          className="absolute top-0 right-0 p-2.5 rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm flex items-center justify-center md:hidden disabled:opacity-50 hover:shadow-md transition-shadow"
         >
           <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {/* Desktop Tabs */}
-      <div className="hidden lg:flex flex-wrap gap-2 mx-6 mb-6 bg-slate-100 p-1.5 rounded-[14px]">
+      <div className="hidden lg:flex flex-wrap gap-2 mx-6 mb-6 bg-slate-100 p-1.5 rounded-2xl">
         {TAB_CONFIG.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -867,7 +867,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 min-w-fit py-3 px-4 rounded-[10px] border-none text-sm cursor-pointer flex items-center justify-center gap-2 transition-all ${
+              className={`flex-1 min-w-fit py-3 px-4 rounded-xl border-none text-sm cursor-pointer flex items-center justify-center gap-2 transition-all ${
                 isActive
                   ? 'bg-white text-slate-900 font-semibold shadow-md'
                   : 'bg-transparent text-slate-500 font-medium hover:bg-white/50'
@@ -875,8 +875,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             >
               <Icon size={18} />
               <span>{tab.label}</span>
-              <span className={`py-0.5 px-2 rounded-[10px] text-xs font-semibold min-w-[24px] text-center ${
-                isActive ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'
+              <span className={`py-0.5 px-2 rounded-xl text-xs font-semibold min-w-[24px] text-center ${
+                isActive ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'
               }`}>
                 {count}
               </span>
@@ -904,13 +904,13 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 max-w-[80px] py-3 px-2 rounded-xl border-2 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all ${
                   isActive
-                    ? 'bg-white shadow-md border-primary'
-                    : 'bg-slate-100 border-transparent'
+                    ? 'bg-white shadow-md border-indigo-600'
+                    : 'bg-slate-100 border-transparent hover:bg-white/60'
                 }`}
               >
-                <Icon size={20} className={isActive ? 'text-primary' : 'text-slate-500'} />
+                <Icon size={20} className={isActive ? 'text-indigo-600' : 'text-slate-500'} />
                 <span className={`py-0.5 px-1.5 rounded-lg text-[11px] font-semibold min-w-[20px] text-center ${
-                  isActive ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'
+                  isActive ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'
                 }`}>
                   {count}
                 </span>
@@ -919,7 +919,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           })}
         </div>
         {/* Active tab label */}
-        <div className="text-center text-[15px] font-semibold text-slate-900 py-2 px-4 bg-white rounded-[10px] shadow-sm">
+        <div className="text-center text-[15px] font-semibold text-slate-900 py-2 px-4 bg-white rounded-xl shadow-sm">
           {TAB_CONFIG.find(t => t.id === activeTab)?.label}
         </div>
       </div>
@@ -958,7 +958,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       {/* Sessions List */}
       <div className="mx-4 sm:mx-6">
         {activeSessions.length === 0 ? (
-          <Card className="text-center py-16 px-6">
+          <Card className="text-center py-16 px-6 rounded-2xl shadow-card">
             {activeTab === TABS.SIMULATOR && <Target className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
             {activeTab === TABS.ROLEPLAY && <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
             {activeTab === TABS.VIDEO && <Video className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
