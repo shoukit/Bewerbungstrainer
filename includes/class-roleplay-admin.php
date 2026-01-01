@@ -1207,16 +1207,25 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <th><label for="initial_message">Begrüßungsnachricht</label></th>
                         <td>
                             <textarea name="initial_message" id="initial_message" rows="3" class="large-text"><?php echo esc_textarea($scenario->initial_message ?? ''); ?></textarea>
-                            <p class="description">Die erste Nachricht, die der KI-Interviewer sagt</p>
+                            <p class="description">Die erste Nachricht, die der KI-Interviewer sagt. Nutze <code>${variable_key}</code> für Benutzer-Variablen.</p>
                         </td>
                     </tr>
                     <tr>
                         <th><label for="system_prompt">System Prompt</label></th>
-                        <td><textarea name="system_prompt" id="system_prompt" rows="10" class="large-text code"><?php echo esc_textarea($scenario->system_prompt ?? ''); ?></textarea></td>
+                        <td>
+                            <textarea name="system_prompt" id="system_prompt" rows="10" class="large-text code"><?php echo esc_textarea($scenario->system_prompt ?? ''); ?></textarea>
+                            <p class="description">
+                                Benutzer-Variablen: <code>${variable_key}</code> &nbsp;|&nbsp;
+                                Interviewer-Felder: <code>{{interviewer_name}}</code>, <code>{{interviewer_role}}</code>, <code>{{interviewer_properties}}</code>, <code>{{interviewer_objections}}</code>, <code>{{interviewer_questions}}</code>
+                            </p>
+                        </td>
                     </tr>
                     <tr>
                         <th><label for="ai_instructions">KI-Anweisungen</label></th>
-                        <td><textarea name="ai_instructions" id="ai_instructions" rows="6" class="large-text code"><?php echo esc_textarea($scenario->ai_instructions ?? ''); ?></textarea></td>
+                        <td>
+                            <textarea name="ai_instructions" id="ai_instructions" rows="6" class="large-text code"><?php echo esc_textarea($scenario->ai_instructions ?? ''); ?></textarea>
+                            <p class="description">Zusätzliche Anweisungen für die KI. Gleiche Variablen wie im System Prompt verfügbar.</p>
+                        </td>
                     </tr>
                     <tr>
                         <th><label for="feedback_coach_type">Feedback Coach-Typ</label></th>
@@ -1304,42 +1313,42 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <th><label for="interviewer_name">Name des Gesprächspartners</label></th>
                         <td>
                             <input type="text" name="interviewer_name" id="interviewer_name" class="regular-text" value="<?php echo esc_attr($scenario->interviewer_name ?? ''); ?>">
-                            <p class="description">Wird als {{interviewer_name}} im System-Prompt verfügbar</p>
+                            <p class="description">Verfügbar als <code>{{interviewer_name}}</code> im System-Prompt</p>
                         </td>
                     </tr>
                     <tr>
                         <th><label for="interviewer_role">Rolle/Position</label></th>
                         <td>
                             <input type="text" name="interviewer_role" id="interviewer_role" class="regular-text" value="<?php echo esc_attr($scenario->interviewer_role ?? ''); ?>">
-                            <p class="description">z.B. "HR-Manager", "Abteilungsleiter"</p>
+                            <p class="description">z.B. "HR-Manager", "Abteilungsleiter". Verfügbar als <code>{{interviewer_role}}</code></p>
                         </td>
                     </tr>
                     <tr>
                         <th><label for="interviewer_image">Profilbild URL</label></th>
                         <td>
                             <input type="url" name="interviewer_image" id="interviewer_image" class="large-text" value="<?php echo esc_attr($scenario->interviewer_image ?? ''); ?>">
-                            <p class="description">URL zu einem Profilbild des Interviewers</p>
+                            <p class="description">URL zu einem Profilbild des Interviewers. Verfügbar als <code>{{interviewer_image}}</code></p>
                         </td>
                     </tr>
                     <tr>
                         <th><label for="interviewer_properties">Eigenschaften</label></th>
                         <td>
                             <textarea name="interviewer_properties" id="interviewer_properties" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_properties ?? ''); ?></textarea>
-                            <p class="description">Charaktereigenschaften, zeilengetrennt oder kommagetrennt</p>
+                            <p class="description">Charaktereigenschaften, zeilengetrennt oder kommagetrennt. Verfügbar als <code>{{interviewer_properties}}</code></p>
                         </td>
                     </tr>
                     <tr>
                         <th><label for="interviewer_objections">Typische Einwände</label></th>
                         <td>
                             <textarea name="interviewer_objections" id="interviewer_objections" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_objections ?? ''); ?></textarea>
-                            <p class="description">Typische kritische Fragen oder Einwände</p>
+                            <p class="description">Typische kritische Fragen oder Einwände. Verfügbar als <code>{{interviewer_objections}}</code></p>
                         </td>
                     </tr>
                     <tr>
                         <th><label for="interviewer_questions">Wichtige Fragen</label></th>
                         <td>
                             <textarea name="interviewer_questions" id="interviewer_questions" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_questions ?? ''); ?></textarea>
-                            <p class="description">Wichtige Fragen, die der Interviewer stellen wird</p>
+                            <p class="description">Wichtige Fragen, die der Interviewer stellen wird. Verfügbar als <code>{{interviewer_questions}}</code></p>
                         </td>
                     </tr>
                 </table>
@@ -1350,7 +1359,7 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <th><label for="coaching_hints">Coaching-Tipps</label></th>
                         <td>
                             <textarea name="coaching_hints" id="coaching_hints" rows="4" class="large-text"><?php echo esc_textarea($scenario->coaching_hints ?? ''); ?></textarea>
-                            <p class="description">Statische Tipps für das Coaching-Panel während des Gesprächs (zeilengetrennt)</p>
+                            <p class="description">Statische Tipps für das Coaching-Panel während des Gesprächs (zeilengetrennt). Verfügbar als <code>{{coaching_hints}}</code></p>
                         </td>
                     </tr>
                 </table>
