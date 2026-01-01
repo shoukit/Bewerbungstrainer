@@ -375,7 +375,12 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false, warmUp = false }) 
       }
     } catch (err) {
       console.error('[AudioRecorder] Transcription error:', err);
-      setError(err.message || 'Transkription fehlgeschlagen');
+      // Convert common network errors to German
+      let errorMessage = err.message || 'Transkription fehlgeschlagen';
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        errorMessage = 'Keine Internetverbindung';
+      }
+      setError(errorMessage);
       // Clean up on error too
       cleanup();
       setDuration(0);

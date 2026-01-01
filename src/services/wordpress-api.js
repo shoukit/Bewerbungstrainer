@@ -4,6 +4,41 @@
  * Handles all communication with WordPress REST API endpoints
  */
 
+/**
+ * Convert technical error messages to user-friendly German messages
+ */
+function getGermanErrorMessage(error) {
+    const message = error?.message || String(error);
+
+    // Network errors
+    if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('ERR_')) {
+        return 'Keine Internetverbindung. Bitte prüfe deine Netzwerkverbindung und versuche es erneut.';
+    }
+
+    // Timeout errors
+    if (message.includes('timeout') || message.includes('Timeout')) {
+        return 'Die Anfrage hat zu lange gedauert. Bitte versuche es erneut.';
+    }
+
+    // Server errors
+    if (message.includes('500') || message.includes('502') || message.includes('503') || message.includes('504')) {
+        return 'Der Server ist vorübergehend nicht erreichbar. Bitte versuche es später erneut.';
+    }
+
+    // Auth errors
+    if (message.includes('401') || message.includes('403')) {
+        return 'Sitzung abgelaufen. Bitte melde dich erneut an.';
+    }
+
+    // Not found
+    if (message.includes('404')) {
+        return 'Die angeforderte Ressource wurde nicht gefunden.';
+    }
+
+    // Return original message if no match (might already be German)
+    return message;
+}
+
 class WordPressAPI {
     constructor() {
         // Get config from WordPress localized script
@@ -72,7 +107,10 @@ class WordPressAPI {
             return data;
         } catch (error) {
             console.error('API Request Error:', error);
-            throw error;
+            // Convert to German error message
+            const germanError = new Error(getGermanErrorMessage(error));
+            germanError.originalError = error;
+            throw germanError;
         }
     }
 
@@ -110,7 +148,10 @@ class WordPressAPI {
             return data;
         } catch (error) {
             console.error('Public API Request Error:', error);
-            throw error;
+            // Convert to German error message
+            const germanError = new Error(getGermanErrorMessage(error));
+            germanError.originalError = error;
+            throw germanError;
         }
     }
 
