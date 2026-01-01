@@ -56,13 +56,14 @@ const FilterBadge = ({ count }) => {
  */
 const SearchInput = ({ value, onChange, placeholder, className = '' }) => (
   <div className={`relative ${className}`}>
-    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400 pointer-events-none z-10" />
+    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-10" />
     <input
       type="text"
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full py-3 pl-14 pr-4 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 placeholder:text-slate-400"
+      className="w-full py-3 pr-4 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 placeholder:text-slate-400"
+      style={{ paddingLeft: '44px' }}
     />
   </div>
 );
@@ -232,13 +233,14 @@ const MobileFilterSheet = ({
         {/* Search Input - increased left padding to avoid icon overlap */}
         {showSearch && (
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full py-2 pl-11 pr-3 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none"
+              className="w-full py-2 pr-3 rounded-lg border border-slate-200 text-base text-slate-900 bg-white outline-none"
+              style={{ paddingLeft: '40px' }}
             />
           </div>
         )}
