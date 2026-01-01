@@ -28,7 +28,6 @@ import {
 } from '@/services/live-coaching-engine';
 import wordpressAPI from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
-import { startDialTone, stopDialTone } from '@/utils/dialTone';
 
 /**
  * @typedef {Object} UseRoleplaySessionOptions
@@ -101,11 +100,7 @@ export const useRoleplaySession = ({
     const now = Date.now();
     setStartTime(now);
     startTimeRef.current = now;
-
-    // Stop dial tone when connection is established (before AI audio arrives)
-    // This ensures the dial tone stops before the first words are spoken
-    stopDialTone();
-    console.log('[useRoleplaySession] Connected, dial tone stopped');
+    console.log('[useRoleplaySession] Connected');
   }, []);
 
   const handleDisconnect = useCallback(() => {
@@ -196,14 +191,6 @@ export const useRoleplaySession = ({
       setIsStarted(true);
       setError(null);
 
-      // Start dial tone while connecting
-      await startDialTone({
-        frequency: 425,     // German standard
-        onDuration: 1000,   // 1 second on
-        offDuration: 4000,  // 4 seconds off
-        volume: 0.3,        // Audible volume
-      });
-
       // Create session in database
       const currentUser = wordpressAPI.getCurrentUser();
       const sessionData = {
@@ -247,7 +234,6 @@ export const useRoleplaySession = ({
       }
     } catch (err) {
       console.error('[useRoleplaySession] Failed to start:', err);
-      stopDialTone(); // Stop dial tone on error
       setError(err.message || 'Verbindung fehlgeschlagen.');
       setIsStarted(false);
     }
@@ -257,9 +243,6 @@ export const useRoleplaySession = ({
    * End the conversation and analyze
    */
   const endSession = useCallback(async () => {
-    // Stop dial tone if still playing
-    stopDialTone();
-
     // Get conversation ID BEFORE disconnecting (cleanup clears it)
     const conversationId = adapter.getConversationId();
 
