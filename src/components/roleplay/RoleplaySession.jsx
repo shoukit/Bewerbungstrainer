@@ -52,6 +52,7 @@ import wordpressAPI from '@/services/wordpress-api';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { COLORS, GRADIENTS } from '@/config/colors';
+import { startDialTone, stopDialTone } from '@/utils/dialTone';
 
 const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd, onNavigateToSession }) => {
   // Partner branding and demo code
@@ -210,6 +211,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const analyserRef = useRef(null);
   const animationFrameRef = useRef(null);
   const userStreamRef = useRef(null);
+  const hasReceivedFirstAiMessageRef = useRef(false); // Track first AI message to stop dial tone
 
   // Get API credentials
   const apiKey = wordpressAPI.getElevenLabsApiKey();
@@ -363,6 +365,12 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
         let messageStartSeconds;
 
         if (message.source === 'ai') {
+          // Stop dial tone on first AI message
+          if (!hasReceivedFirstAiMessageRef.current) {
+            hasReceivedFirstAiMessageRef.current = true;
+            stopDialTone();
+          }
+
           // For AI messages: Use when the previous message ended
           messageStartSeconds = lastMessageEndTimeRef.current;
 
@@ -468,6 +476,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   // Start conversation on mount - REMOVED: Now manual start with button
   useEffect(() => {
     return () => {
+      stopDialTone(); // Cleanup dial tone on unmount
       if (conversation.status === 'connected') {
         conversation.endSession();
       }
@@ -528,6 +537,15 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const startConversation = async () => {
     try {
       setError(null);
+
+      // Reset first message tracking and start dial tone
+      hasReceivedFirstAiMessageRef.current = false;
+      startDialTone({
+        frequency: 425,     // German standard
+        onDuration: 1000,   // 1 second on
+        offDuration: 4000,  // 4 seconds off
+        volume: 0.2,        // Moderate volume
+      });
 
       // Create session in database
       const currentUser = wordpressAPI.getCurrentUser();
@@ -599,11 +617,13 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       );
     } catch (err) {
       console.error('❌ [RoleplaySession] Failed to start:', err);
+      stopDialTone(); // Stop dial tone on error
       setError(err.message || 'Verbindung fehlgeschlagen.');
     }
   };
 
   const handleEndConversation = async () => {
+    stopDialTone(); // Ensure dial tone is stopped
     setShowEndDialog(false);
 
     if (conversation.status === 'connected') {
