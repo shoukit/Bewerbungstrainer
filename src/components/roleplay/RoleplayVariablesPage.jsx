@@ -21,14 +21,35 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext, primaryAccent, header
   const [formValues, setFormValues] = useState({});
   const [errors, setErrors] = useState({});
 
-  // Helper function to replace {{variable}} placeholders with current form values
+  // Helper function to replace {{variable}} placeholders with values
+  // Includes: form values, interviewer profile, and scenario fields
   const replaceVariables = (text) => {
     if (!text) return text;
     let result = text;
+
+    // 1. Replace with form values (user inputs)
     Object.entries(formValues).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
       result = result.replace(regex, value || '');
     });
+
+    // 2. Replace interviewer profile fields
+    if (scenario?.interviewer_profile) {
+      const profileMappings = {
+        'interviewer_name': scenario.interviewer_profile.name,
+        'interviewer_role': scenario.interviewer_profile.role,
+        'interviewer_properties': scenario.interviewer_profile.properties,
+        'interviewer_objections': scenario.interviewer_profile.typical_objections,
+        'interviewer_questions': scenario.interviewer_profile.important_questions,
+      };
+      Object.entries(profileMappings).forEach(([key, value]) => {
+        if (value) {
+          const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+          result = result.replace(regex, value);
+        }
+      });
+    }
+
     return result;
   };
 
@@ -154,7 +175,7 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext, primaryAccent, header
                 Deine Aufgabe
               </h3>
               <p className="text-sm leading-relaxed text-slate-700 m-0 whitespace-pre-wrap">
-                {scenario.long_description?.replace(/\/n/g, '\n')}
+                {replaceVariables(scenario.long_description?.replace(/\/n/g, '\n'))}
               </p>
             </div>
           </div>
@@ -165,7 +186,7 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext, primaryAccent, header
       {!scenario.long_description && scenario.description && (
         <div className="p-4 px-5 rounded-lg bg-slate-100 mb-6">
           <p className="text-sm text-slate-700 m-0 leading-relaxed">
-            {scenario.description}
+            {replaceVariables(scenario.description)}
           </p>
         </div>
       )}

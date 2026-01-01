@@ -61,13 +61,34 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const { triggerConfetti, ConfettiComponent } = useConfetti();
 
   // Helper function to replace {{variable}} placeholders with actual values
+  // Includes: user variables and interviewer profile fields
   const replaceVariables = (text) => {
     if (!text) return text;
     let result = text;
+
+    // 1. Replace with user variables
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
       result = result.replace(regex, value || '');
     });
+
+    // 2. Replace interviewer profile fields
+    if (scenario?.interviewer_profile) {
+      const profileMappings = {
+        'interviewer_name': scenario.interviewer_profile.name,
+        'interviewer_role': scenario.interviewer_profile.role,
+        'interviewer_properties': scenario.interviewer_profile.properties,
+        'interviewer_objections': scenario.interviewer_profile.typical_objections,
+        'interviewer_questions': scenario.interviewer_profile.important_questions,
+      };
+      Object.entries(profileMappings).forEach(([key, value]) => {
+        if (value) {
+          const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+          result = result.replace(regex, value);
+        }
+      });
+    }
+
     return result;
   };
 
@@ -1048,7 +1069,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                       <Bot className="w-12 h-12" style={{ color: themedStyles.headerText }} />
                     </div>
                     <h2 className="text-2xl font-bold text-slate-900 mb-2">{scenario.title}</h2>
-                    <p className="text-slate-600 text-sm mb-6">{scenario.description}</p>
+                    <p className="text-slate-600 text-sm mb-6">{replaceVariables(scenario.description)}</p>
                     <span className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold ${getDifficultyColor(scenario.difficulty)}`}>
                       {getDifficultyLabel(scenario.difficulty)}
                     </span>
