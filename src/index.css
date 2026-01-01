@@ -145,17 +145,16 @@
     @apply bg-background text-foreground;
   }
 
-  /* Override Elementor/WordPress hover styles for headings and text */
+  /* Override Elementor/WordPress hover styles for headings and text
+     Note: Removed !important to allow inline styles to work properly */
   #bewerbungstrainer-app h1,
   #bewerbungstrainer-app h2,
   #bewerbungstrainer-app h3,
   #bewerbungstrainer-app h4,
   #bewerbungstrainer-app h5,
   #bewerbungstrainer-app h6,
-  #bewerbungstrainer-app p,
-  #bewerbungstrainer-app span,
-  #bewerbungstrainer-app div {
-    color: inherit !important;
+  #bewerbungstrainer-app p {
+    color: inherit;
   }
 
   #bewerbungstrainer-app h1:hover,
@@ -164,10 +163,8 @@
   #bewerbungstrainer-app h4:hover,
   #bewerbungstrainer-app h5:hover,
   #bewerbungstrainer-app h6:hover,
-  #bewerbungstrainer-app p:hover,
-  #bewerbungstrainer-app span:hover,
-  #bewerbungstrainer-app div:hover {
-    color: inherit !important;
+  #bewerbungstrainer-app p:hover {
+    color: inherit;
   }
 
   /* Fullscreen loader - white text on dark background */
