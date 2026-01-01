@@ -147,6 +147,39 @@ class Bewerbungstrainer_Roleplay_Admin {
             .roleplay-variable-fields select {
                 width: 100%;
             }
+            .variable-key-preview {
+                color: #999;
+                font-size: 12px;
+                margin-left: 8px;
+            }
+            .remove-btn {
+                background: none;
+                border: none;
+                color: #d63638;
+                cursor: pointer;
+                padding: 4px;
+            }
+            .remove-btn:hover {
+                color: #a00;
+            }
+            .roleplay-options-container {
+                margin-top: 15px;
+                padding: 15px;
+                background: #f0f0f1;
+                border-radius: 4px;
+            }
+            .roleplay-option-item {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 8px;
+                align-items: center;
+            }
+            .roleplay-option-item input {
+                flex: 1;
+            }
+            .add-option-btn {
+                margin-top: 8px;
+            }
         ';
     }
 
@@ -1234,26 +1267,35 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <th><label for="tips">Tipps (JSON)</label></th>
                         <td><textarea name="tips" id="tips" rows="4" class="large-text code"><?php echo esc_textarea(json_encode($tips, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></textarea></td>
                     </tr>
-                    <tr>
-                        <th><label for="input_configuration">Variablen-Konfiguration (JSON)</label></th>
-                        <td>
-                            <?php
-                            $input_config = $scenario->input_configuration ?? '[]';
-                            if (!is_string($input_config)) {
-                                $input_config = json_encode($input_config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-                            } else {
-                                $decoded = json_decode($input_config, true);
-                                if ($decoded !== null) {
-                                    $input_config = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-                                }
-                            }
-                            ?>
-                            <textarea name="input_configuration" id="input_configuration" rows="8" class="large-text code"><?php echo esc_textarea($input_config); ?></textarea>
-                            <p class="description">JSON-Array mit Variablen, die der Nutzer vor dem Gespräch eingibt. Beispiel:<br>
-                            <code>[{"key":"user_name","label":"Dein Name","type":"text","required":true}]</code></p>
-                        </td>
-                    </tr>
                 </table>
+
+                <h2>Benutzer-Variablen</h2>
+                <p class="description">Diese Variablen werden vom Benutzer vor dem Gespräch eingegeben und können in den Prompts mit <code>${variable_key}</code> verwendet werden.</p>
+
+                <div class="roleplay-variables-container" id="variables-container">
+                    <?php
+                    // Parse input_configuration for visual builder
+                    $input_config_raw = $scenario->input_configuration ?? '[]';
+                    if (!is_string($input_config_raw)) {
+                        $input_config = $input_config_raw;
+                    } else {
+                        $input_config = json_decode($input_config_raw, true);
+                        if (!is_array($input_config)) {
+                            $input_config = array();
+                        }
+                    }
+
+                    if (!empty($input_config)):
+                        foreach ($input_config as $index => $var):
+                            $this->render_variable_item($var, $index);
+                        endforeach;
+                    endif;
+                    ?>
+                </div>
+
+                <button type="button" class="button add-variable-btn" id="add-variable-btn" style="margin-top: 10px;">
+                    + Variable hinzufügen
+                </button>
 
                 <h2>Interviewer-Profil</h2>
                 <p class="description">Diese Informationen werden dem Nutzer vor dem Gespräch angezeigt.</p>
@@ -1335,6 +1377,164 @@ class Bewerbungstrainer_Roleplay_Admin {
                     <a href="<?php echo admin_url('admin.php?page=roleplay-scenarios'); ?>" class="button">Abbrechen</a>
                 </p>
             </form>
+        </div>
+
+        <!-- Variable Template (hidden) -->
+        <template id="variable-template">
+            <?php $this->render_variable_item(array(), '__INDEX__'); ?>
+        </template>
+
+        <script>
+        jQuery(document).ready(function($) {
+            var variableIndex = <?php echo !empty($input_config) && is_array($input_config) ? count($input_config) : 0; ?>;
+
+            // Add new variable
+            $('#add-variable-btn').on('click', function() {
+                var template = $('#variable-template').html();
+                template = template.replace(/__INDEX__/g, variableIndex);
+                $('#variables-container').append(template);
+                variableIndex++;
+            });
+
+            // Remove variable
+            $(document).on('click', '.remove-variable-btn', function() {
+                $(this).closest('.roleplay-variable-item').remove();
+            });
+
+            // Toggle options container based on type
+            $(document).on('change', '.var-type-select', function() {
+                var $container = $(this).closest('.roleplay-variable-item');
+                var $options = $container.find('.roleplay-options-container');
+                if ($(this).val() === 'select') {
+                    $options.show();
+                } else {
+                    $options.hide();
+                }
+            });
+
+            // Add option
+            $(document).on('click', '.add-option-btn', function() {
+                var $container = $(this).closest('.roleplay-options-container');
+                var $list = $container.find('.options-list');
+                var index = $(this).closest('.roleplay-variable-item').data('index');
+                var optionHtml = '<div class="roleplay-option-item">' +
+                    '<input type="text" name="var_options[' + index + '][value][]" placeholder="Wert">' +
+                    '<input type="text" name="var_options[' + index + '][label][]" placeholder="Anzeigetext">' +
+                    '<button type="button" class="remove-btn remove-option-btn" title="Option entfernen">&times;</button>' +
+                    '</div>';
+                $list.append(optionHtml);
+            });
+
+            // Remove option
+            $(document).on('click', '.remove-option-btn', function() {
+                $(this).closest('.roleplay-option-item').remove();
+            });
+
+            // Update title preview when label changes
+            $(document).on('input', '.var-label-input', function() {
+                var title = $(this).val() || 'Neue Variable';
+                $(this).closest('.roleplay-variable-item').find('.var-title').text(title);
+            });
+
+            // Update key preview when key changes
+            $(document).on('input', '.var-key-input', function() {
+                var key = $(this).val();
+                $(this).closest('.roleplay-variable-item').find('.variable-key-preview').text('${' + key + '}');
+            });
+
+            // Sortable variables
+            $('#variables-container').sortable({
+                handle: '.handle',
+                placeholder: 'sortable-placeholder',
+                update: function(event, ui) {
+                    // Re-index variables after sort
+                    $('#variables-container .roleplay-variable-item').each(function(i) {
+                        $(this).attr('data-index', i);
+                    });
+                }
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * Render a single variable item for the visual builder
+     */
+    private function render_variable_item($var, $index) {
+        $var = wp_parse_args($var, array(
+            'key' => '',
+            'label' => '',
+            'type' => 'text',
+            'required' => false,
+            'placeholder' => '',
+            'default' => '',
+            'options' => array(),
+            'user_input' => true,
+        ));
+        ?>
+        <div class="roleplay-variable-item" data-index="<?php echo esc_attr($index); ?>">
+            <div class="roleplay-variable-header">
+                <span>
+                    <span class="handle dashicons dashicons-menu"></span>
+                    <strong class="var-title"><?php echo esc_html($var['label'] ?: 'Neue Variable'); ?></strong>
+                    <span class="variable-key-preview">${<?php echo esc_html($var['key']); ?>}</span>
+                </span>
+                <button type="button" class="remove-btn remove-variable-btn" title="Variable entfernen">
+                    <span class="dashicons dashicons-trash"></span>
+                </button>
+            </div>
+
+            <div class="roleplay-variable-fields">
+                <div>
+                    <label>Bezeichnung *</label>
+                    <input type="text" name="var_label[]" value="<?php echo esc_attr($var['label']); ?>" class="var-label-input" required>
+                </div>
+                <div>
+                    <label>Schlüssel (key) *</label>
+                    <input type="text" name="var_key[]" value="<?php echo esc_attr($var['key']); ?>" class="var-key-input" pattern="[a-z_][a-z0-9_]*" required>
+                </div>
+                <div>
+                    <label>Feldtyp</label>
+                    <select name="var_type[]" class="var-type-select">
+                        <option value="text" <?php selected($var['type'], 'text'); ?>>Text (einzeilig)</option>
+                        <option value="textarea" <?php selected($var['type'], 'textarea'); ?>>Textbereich (mehrzeilig)</option>
+                        <option value="select" <?php selected($var['type'], 'select'); ?>>Auswahl (Dropdown)</option>
+                        <option value="number" <?php selected($var['type'], 'number'); ?>>Zahl</option>
+                    </select>
+                </div>
+                <div>
+                    <label>
+                        <input type="checkbox" name="var_required[<?php echo esc_attr($index); ?>]" value="1" <?php checked($var['required'], true); ?>>
+                        Pflichtfeld
+                    </label>
+                </div>
+                <div class="full-width">
+                    <label>Platzhalter-Text</label>
+                    <input type="text" name="var_placeholder[]" value="<?php echo esc_attr($var['placeholder']); ?>">
+                </div>
+                <div class="full-width">
+                    <label>Standardwert</label>
+                    <input type="text" name="var_default[]" value="<?php echo esc_attr($var['default']); ?>">
+                </div>
+            </div>
+
+            <!-- Options for select type -->
+            <div class="roleplay-options-container" style="<?php echo $var['type'] !== 'select' ? 'display:none;' : ''; ?>">
+                <label><strong>Auswahloptionen:</strong></label>
+                <div class="options-list">
+                    <?php if (!empty($var['options'])): ?>
+                        <?php foreach ($var['options'] as $option): ?>
+                            <div class="roleplay-option-item">
+                                <input type="text" name="var_options[<?php echo esc_attr($index); ?>][value][]" value="<?php echo esc_attr($option['value']); ?>" placeholder="Wert">
+                                <input type="text" name="var_options[<?php echo esc_attr($index); ?>][label][]" value="<?php echo esc_attr($option['label']); ?>" placeholder="Anzeigetext">
+                                <button type="button" class="remove-btn remove-option-btn" title="Option entfernen">&times;</button>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                <button type="button" class="button button-small add-option-btn">+ Option hinzufügen</button>
+            </div>
         </div>
         <?php
     }
