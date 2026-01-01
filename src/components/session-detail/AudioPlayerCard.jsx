@@ -149,12 +149,17 @@ export function AudioPlayerCard({
               <Button
                 onClick={onTogglePlay}
                 disabled={isLoading}
-                className="w-12 h-12 rounded-full"
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  padding: 0,
+                }}
               >
                 {isPlaying ? (
                   <Pause size={22} />
                 ) : (
-                  <Play size={22} className="ml-0.5" />
+                  <Play size={22} style={{ marginLeft: '2px' }} />
                 )}
               </Button>
               <Button
