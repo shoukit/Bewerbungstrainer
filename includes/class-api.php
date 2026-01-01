@@ -1858,6 +1858,9 @@ class Bewerbungstrainer_API {
                 'properties' => $scenario->interviewer_properties ?? '',
                 'typical_objections' => $scenario->interviewer_objections ?? '',
                 'important_questions' => $scenario->interviewer_questions ?? '',
+                'editable_fields' => !empty($scenario->interviewer_editable_fields)
+                    ? json_decode($scenario->interviewer_editable_fields, true)
+                    : array(),
             ),
             'tags' => array(),
             'coaching_hints' => $scenario->coaching_hints ?? '',

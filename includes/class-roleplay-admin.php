@@ -376,6 +376,7 @@ class Bewerbungstrainer_Roleplay_Admin {
             'interviewer_properties' => sanitize_textarea_field(wp_unslash($post['interviewer_properties'] ?? '')),
             'interviewer_objections' => sanitize_textarea_field(wp_unslash($post['interviewer_objections'] ?? '')),
             'interviewer_questions' => sanitize_textarea_field(wp_unslash($post['interviewer_questions'] ?? '')),
+            'interviewer_editable_fields' => $this->build_interviewer_editable_fields($post),
             'coaching_hints' => sanitize_textarea_field(wp_unslash($post['coaching_hints'] ?? '')),
             'is_active' => isset($post['is_active']) ? 1 : 0,
             'sort_order' => intval($post['sort_order'] ?? 0),
@@ -430,6 +431,21 @@ class Bewerbungstrainer_Roleplay_Admin {
         }
 
         return $config;
+    }
+
+    /**
+     * Build interviewer_editable_fields JSON from POST data
+     */
+    private function build_interviewer_editable_fields($post) {
+        $editable = array();
+
+        if (isset($post['interviewer_editable']) && is_array($post['interviewer_editable'])) {
+            foreach ($post['interviewer_editable'] as $field => $value) {
+                $editable[sanitize_key($field)] = true;
+            }
+        }
+
+        return !empty($editable) ? json_encode($editable, JSON_UNESCAPED_UNICODE) : null;
     }
 
     /**
@@ -1308,12 +1324,23 @@ class Bewerbungstrainer_Roleplay_Admin {
 
                 <h2>KI-Gesprächspartner</h2>
                 <p class="description">Diese Informationen definieren den KI-Gesprächspartner und werden dem Nutzer vor dem Gespräch angezeigt.</p>
+                <?php
+                // Parse editable fields configuration
+                $editable_fields = array();
+                if (!empty($scenario->interviewer_editable_fields)) {
+                    $editable_fields = json_decode($scenario->interviewer_editable_fields, true) ?: array();
+                }
+                ?>
                 <table class="form-table">
                     <tr>
                         <th><label for="interviewer_name">Name des Gesprächspartners</label></th>
                         <td>
                             <input type="text" name="interviewer_name" id="interviewer_name" class="regular-text" value="<?php echo esc_attr($scenario->interviewer_name ?? ''); ?>">
                             <p class="description">Verfügbar als <code>{{interviewer_name}}</code> im System-Prompt</p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[name]" value="1" <?php checked(!empty($editable_fields['name'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
                         </td>
                     </tr>
                     <tr>
@@ -1321,6 +1348,10 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <td>
                             <input type="text" name="interviewer_role" id="interviewer_role" class="regular-text" value="<?php echo esc_attr($scenario->interviewer_role ?? ''); ?>">
                             <p class="description">z.B. "HR-Manager", "Abteilungsleiter". Verfügbar als <code>{{interviewer_role}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[role]" value="1" <?php checked(!empty($editable_fields['role'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
                         </td>
                     </tr>
                     <tr>
@@ -1328,6 +1359,10 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <td>
                             <input type="url" name="interviewer_image" id="interviewer_image" class="large-text" value="<?php echo esc_attr($scenario->interviewer_image ?? ''); ?>">
                             <p class="description">URL zu einem Profilbild des KI-Gesprächspartners. Verfügbar als <code>{{interviewer_image}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[image]" value="1" <?php checked(!empty($editable_fields['image'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
                         </td>
                     </tr>
                     <tr>
@@ -1335,6 +1370,10 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <td>
                             <textarea name="interviewer_properties" id="interviewer_properties" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_properties ?? ''); ?></textarea>
                             <p class="description">Charaktereigenschaften, zeilengetrennt oder kommagetrennt. Verfügbar als <code>{{interviewer_properties}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[properties]" value="1" <?php checked(!empty($editable_fields['properties'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
                         </td>
                     </tr>
                     <tr>
@@ -1342,6 +1381,10 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <td>
                             <textarea name="interviewer_objections" id="interviewer_objections" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_objections ?? ''); ?></textarea>
                             <p class="description">Typische kritische Fragen oder Einwände. Verfügbar als <code>{{interviewer_objections}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[objections]" value="1" <?php checked(!empty($editable_fields['objections'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
                         </td>
                     </tr>
                     <tr>
@@ -1349,6 +1392,10 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <td>
                             <textarea name="interviewer_questions" id="interviewer_questions" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_questions ?? ''); ?></textarea>
                             <p class="description">Wichtige Fragen, die der KI-Gesprächspartner stellen wird. Verfügbar als <code>{{interviewer_questions}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[questions]" value="1" <?php checked(!empty($editable_fields['questions'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
                         </td>
                     </tr>
                 </table>

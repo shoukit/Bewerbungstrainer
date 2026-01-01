@@ -93,6 +93,7 @@ class Bewerbungstrainer_Roleplay_Database {
             `interviewer_properties` text DEFAULT NULL,
             `interviewer_objections` text DEFAULT NULL,
             `interviewer_questions` text DEFAULT NULL,
+            `interviewer_editable_fields` text DEFAULT NULL,
             `coaching_hints` text DEFAULT NULL,
             `is_active` tinyint(1) DEFAULT 1,
             `sort_order` int DEFAULT 0,
@@ -154,7 +155,8 @@ class Bewerbungstrainer_Roleplay_Database {
             'interviewer_properties' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_properties` text DEFAULT NULL AFTER `interviewer_image`",
             'interviewer_objections' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_objections` text DEFAULT NULL AFTER `interviewer_properties`",
             'interviewer_questions' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_questions` text DEFAULT NULL AFTER `interviewer_objections`",
-            'coaching_hints' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `coaching_hints` text DEFAULT NULL AFTER `interviewer_questions`",
+            'interviewer_editable_fields' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_editable_fields` text DEFAULT NULL AFTER `interviewer_questions`",
+            'coaching_hints' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `coaching_hints` text DEFAULT NULL AFTER `interviewer_editable_fields`",
             'feedback_coach_type' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `feedback_coach_type` varchar(50) DEFAULT 'general' AFTER `feedback_prompt`",
             'feedback_custom_intro' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `feedback_custom_intro` text DEFAULT NULL AFTER `feedback_coach_type`",
             'feedback_extra_focus' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `feedback_extra_focus` text DEFAULT NULL AFTER `feedback_custom_intro`",
@@ -386,7 +388,7 @@ class Bewerbungstrainer_Roleplay_Database {
             'ai_instructions', 'tips', 'input_configuration',
             'interviewer_name', 'interviewer_role', 'interviewer_image',
             'interviewer_properties', 'interviewer_objections', 'interviewer_questions',
-            'coaching_hints', 'is_active', 'sort_order'
+            'interviewer_editable_fields', 'coaching_hints', 'is_active', 'sort_order'
         );
 
         $update_data = array();
