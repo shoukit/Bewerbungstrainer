@@ -220,6 +220,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const voiceId = scenario?.voice_id || DEFAULT_VOICE_ID;
 
   // Build enhanced system prompt with interviewer profile
+  // Replaces all {{variable}} placeholders with actual values
   const buildSystemPrompt = () => {
     // Clean HTML entities and tags from WordPress content
     let prompt = cleanHtmlForPrompt(scenario.content || '');
@@ -249,7 +250,9 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       }
     }
 
-    return prompt;
+    // Replace all {{variable}} placeholders with actual values
+    // This includes user variables AND interviewer profile fields
+    return replaceVariables(prompt);
   };
 
   // Start user audio level analysis for visualizer
