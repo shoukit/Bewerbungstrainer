@@ -10,6 +10,11 @@
 function getGermanErrorMessage(error) {
     const message = error?.message || String(error);
 
+    // Cookie/Nonce validation errors (WordPress specific) - must be checked first
+    if (message.includes('Cookie') || message.includes('cookie') || message.includes('nonce')) {
+        return 'Sitzung abgelaufen. Bitte lade die Seite neu (F5) und melde dich erneut an.';
+    }
+
     // Network errors
     if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('ERR_')) {
         return 'Keine Internetverbindung. Bitte prüfe deine Netzwerkverbindung und versuche es erneut.';
@@ -27,7 +32,7 @@ function getGermanErrorMessage(error) {
 
     // Auth errors
     if (message.includes('401') || message.includes('403')) {
-        return 'Sitzung abgelaufen. Bitte melde dich erneut an.';
+        return 'Sitzung abgelaufen. Bitte lade die Seite neu und melde dich erneut an.';
     }
 
     // Not found
