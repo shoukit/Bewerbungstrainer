@@ -157,9 +157,9 @@ export function AudioPlayerCard({
                 }}
               >
                 {isPlaying ? (
-                  <Pause size={22} />
+                  <Pause size={22} fill="white" color="white" />
                 ) : (
-                  <Play size={22} style={{ marginLeft: '2px' }} />
+                  <Play size={22} fill="white" color="white" style={{ marginLeft: '2px' }} />
                 )}
               </Button>
               <Button
