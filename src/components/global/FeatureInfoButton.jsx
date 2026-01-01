@@ -1,14 +1,13 @@
 /**
- * FeatureInfoButton - Info icon button to show feature information modal
+ * FeatureInfoButton - Simple info icon button to show feature information modal
  *
- * Large, prominent info buttons that are always visible on cards.
+ * Uses the standard Lucide Info icon colored in the feature's accent color.
  */
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Info } from 'lucide-react';
-import { COLORS, hexToRgba } from '@/config/colors';
-import { RADIUS, TRANSITIONS } from '@/config/designTokens';
+import { COLORS } from '@/config/colors';
 import FeatureInfoModal from './FeatureInfoModal';
 import { FEATURE_DESCRIPTIONS } from '@/config/featureDescriptions';
 
@@ -17,14 +16,12 @@ import { FEATURE_DESCRIPTIONS } from '@/config/featureDescriptions';
  *
  * @param {string} featureId - ID of the feature (e.g., 'simulator', 'roleplay')
  * @param {string} size - 'sm' | 'md' | 'lg' (default: 'md')
- * @param {string} variant - 'default' | 'subtle' | 'light' | 'dark' (default: 'default')
  * @param {string} className - Additional CSS classes
  * @param {object} style - Additional inline styles
  */
 const FeatureInfoButton = ({
   featureId,
   size = 'md',
-  variant = 'default',
   className = '',
   style = {},
 }) => {
@@ -44,42 +41,17 @@ const FeatureInfoButton = ({
     return null;
   }
 
-  // Size configurations - icon fills most of button for visibility
+  // Size configurations - just icon sizes
   const sizes = {
-    sm: { button: 44, icon: 28 },
-    md: { button: 52, icon: 32 },
-    lg: { button: 60, icon: 38 },
+    sm: 20,
+    md: 24,
+    lg: 28,
   };
 
-  const sizeConfig = sizes[size] || sizes.md;
+  const iconSize = sizes[size] || sizes.md;
 
-  // Variant configurations
-  const variants = {
-    default: {
-      // Solid feature color background with white icon for maximum visibility
-      background: feature.color,
-      color: COLORS.white,
-      hoverBackground: hexToRgba(feature.color, 0.85),
-    },
-    subtle: {
-      // Subtle version with higher opacity background for visibility
-      background: hexToRgba(feature.color, 0.2),
-      color: feature.color,
-      hoverBackground: hexToRgba(feature.color, 0.35),
-    },
-    light: {
-      background: 'rgba(255, 255, 255, 0.3)',
-      color: COLORS.white,
-      hoverBackground: 'rgba(255, 255, 255, 0.5)',
-    },
-    dark: {
-      background: COLORS.slate[600],
-      color: COLORS.white,
-      hoverBackground: COLORS.slate[700],
-    },
-  };
-
-  const variantConfig = variants[variant] || variants.default;
+  // Use feature color or default to indigo
+  const iconColor = feature.color || COLORS.indigo[500];
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -98,18 +70,15 @@ const FeatureInfoButton = ({
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`${className} border-none cursor-pointer flex items-center justify-center transition-all flex-shrink-0 shadow-md rounded-full`}
+        className={`${className} border-none bg-transparent cursor-pointer flex items-center justify-center transition-all flex-shrink-0 p-1 rounded-full hover:bg-slate-100`}
         title={`Info über ${feature.title}`}
         style={{
-          width: `${sizeConfig.button}px`,
-          height: `${sizeConfig.button}px`,
-          backgroundColor: isHovered ? variantConfig.hoverBackground : variantConfig.background,
-          color: variantConfig.color,
-          transform: isHovered ? 'scale(1.08)' : 'scale(1)',
+          opacity: isHovered ? 0.8 : 1,
+          transform: isHovered ? 'scale(1.1)' : 'scale(1)',
           ...style,
         }}
       >
-        <Info size={sizeConfig.icon} strokeWidth={2.5} />
+        <Info size={iconSize} color={iconColor} strokeWidth={2} />
       </button>
 
       {/* Render modal via portal to ensure it's always at body level */}
