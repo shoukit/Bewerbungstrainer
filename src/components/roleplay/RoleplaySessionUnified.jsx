@@ -132,6 +132,19 @@ const RoleplaySessionUnified = ({
     return result;
   };
 
+  // Merge scenario interviewer_profile with user-edited values from variables
+  const effectiveInterviewerProfile = useMemo(() => {
+    const profile = scenario?.interviewer_profile || {};
+    return {
+      name: variables.interviewer_name || profile.name,
+      role: variables.interviewer_role || profile.role,
+      image_url: variables.interviewer_image || profile.image_url,
+      properties: variables.interviewer_properties || profile.properties,
+      typical_objections: variables.interviewer_objections || profile.typical_objections,
+      important_questions: variables.interviewer_questions || profile.important_questions,
+    };
+  }, [scenario?.interviewer_profile, variables]);
+
   // Auto-scroll transcript
   useEffect(() => {
     if (transcriptEndRef.current) {
@@ -378,10 +391,10 @@ const RoleplaySessionUnified = ({
 
               {/* Profile Info */}
               <div className="flex items-center justify-center gap-4 mb-3">
-                {scenario.interviewer_profile?.image_url ? (
+                {effectiveInterviewerProfile?.image_url ? (
                   <img
-                    src={scenario.interviewer_profile.image_url}
-                    alt={replaceVariables(scenario.interviewer_profile.name)}
+                    src={effectiveInterviewerProfile.image_url}
+                    alt={replaceVariables(effectiveInterviewerProfile.name)}
                     className={`rounded-full shadow-md object-cover ${
                       isMobile ? 'w-16 h-16 border-[3px]' : 'w-20 h-20 border-4'
                     } border-white`}
@@ -398,11 +411,11 @@ const RoleplaySessionUnified = ({
               </div>
 
               <h2 className="text-xl lg:text-2xl font-bold text-white text-center mb-1">
-                {replaceVariables(scenario.interviewer_profile?.name) || scenario.title}
+                {replaceVariables(effectiveInterviewerProfile?.name) || scenario.title}
               </h2>
-              {scenario.interviewer_profile?.role && (
+              {effectiveInterviewerProfile?.role && (
                 <p className="text-blue-100 text-center text-sm font-medium mb-3">
-                  {replaceVariables(scenario.interviewer_profile.role)}
+                  {replaceVariables(effectiveInterviewerProfile.role)}
                 </p>
               )}
 
@@ -450,8 +463,8 @@ const RoleplaySessionUnified = ({
                   className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg disabled:opacity-50"
                 >
                   <Phone className="w-5 h-5 mr-2" />
-                  {scenario.interviewer_profile?.name
-                    ? `${replaceVariables(scenario.interviewer_profile.name)} anrufen`
+                  {effectiveInterviewerProfile?.name
+                    ? `${replaceVariables(effectiveInterviewerProfile.name)} anrufen`
                     : 'Anrufen'}
                 </Button>
               ) : status === 'connected' ? (
@@ -531,7 +544,7 @@ const RoleplaySessionUnified = ({
                   transition={{ duration: 0.2 }}
                   className="lg:flex-1 lg:overflow-y-auto bg-white lg:rounded-b-2xl shadow-xl overflow-hidden"
                 >
-                  <InterviewerProfile profile={scenario.interviewer_profile} replaceVariables={replaceVariables} />
+                  <InterviewerProfile profile={effectiveInterviewerProfile} replaceVariables={replaceVariables} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -571,9 +584,9 @@ const RoleplaySessionUnified = ({
                         >
                           <div className="flex flex-col items-center gap-1 flex-shrink-0">
                             {entry.role === 'agent' ? (
-                              scenario.interviewer_profile?.image_url ? (
+                              effectiveInterviewerProfile?.image_url ? (
                                 <img
-                                  src={scenario.interviewer_profile.image_url}
+                                  src={effectiveInterviewerProfile.image_url}
                                   alt="Interviewer"
                                   className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
                                 />
