@@ -923,7 +923,7 @@ const DecisionBoardInput = ({
               className="flex-[1_1_300px] min-w-0 text-base px-4 py-3 rounded-lg resize-y min-h-[80px]"
             />
             <div className="shrink-0 pb-1">
-              <AudioRecorder onTranscriptReady={handleTranscriptReady} />
+              <AudioRecorder onTranscriptReady={handleTranscriptReady} warmUp={true} />
             </div>
           </div>
         </div>

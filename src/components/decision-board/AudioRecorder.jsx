@@ -135,12 +135,17 @@ const SimpleWaveform = ({ isRecording, analyserNode }) => {
  * 1. Idle: Just a mic button
  * 2. Recording: [X] [Waveform] [Timer] [checkmark]
  * 3. Transcribing: Loading state
+ *
+ * Props:
+ * - warmUp: If true, requests microphone permission on mount to reduce first-click delay
  */
-const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
+const AudioRecorder = ({ onTranscriptReady, disabled = false, warmUp = false }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState(null);
+  const [isWarmedUp, setIsWarmedUp] = useState(false);
 
   // Refs
   const mediaRecorderRef = useRef(null);
@@ -152,6 +157,32 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false }) => {
   const speechDetectedRef = useRef(false);
   const peakLevelRef = useRef(0);
   const speechCheckIntervalRef = useRef(null);
+
+  // Warm-up: Request microphone permission early to reduce first-click delay
+  useEffect(() => {
+    if (warmUp && !isWarmedUp) {
+      const warmUpMic = async () => {
+        try {
+          console.log('[AudioRecorder] Warming up microphone...');
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+          });
+          // Immediately release the stream - we just wanted the permission
+          stream.getTracks().forEach(track => track.stop());
+          setIsWarmedUp(true);
+          console.log('[AudioRecorder] Microphone warm-up complete');
+        } catch (err) {
+          console.warn('[AudioRecorder] Warm-up failed:', err.message);
+          // Don't set error - user hasn't clicked yet
+        }
+      };
+      warmUpMic();
+    }
+  }, [warmUp, isWarmedUp]);
 
   // Cleanup function
   const cleanup = useCallback(() => {
