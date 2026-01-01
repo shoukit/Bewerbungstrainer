@@ -1200,14 +1200,14 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <th><label for="voice_id">ElevenLabs Voice ID</label></th>
                         <td>
                             <input type="text" name="voice_id" id="voice_id" class="regular-text" value="<?php echo esc_attr($scenario->voice_id ?? ''); ?>">
-                            <p class="description">Die Voice ID für die Stimme des KI-Interviewers (z.B. "ErXwobaYiN019PkySvjV")</p>
+                            <p class="description">Die Voice ID für die Stimme des KI-Gesprächspartners (z.B. "ErXwobaYiN019PkySvjV")</p>
                         </td>
                     </tr>
                     <tr>
                         <th><label for="initial_message">Begrüßungsnachricht</label></th>
                         <td>
                             <textarea name="initial_message" id="initial_message" rows="3" class="large-text"><?php echo esc_textarea($scenario->initial_message ?? ''); ?></textarea>
-                            <p class="description">Die erste Nachricht, die der KI-Interviewer sagt. Nutze <code>${variable_key}</code> für Benutzer-Variablen.</p>
+                            <p class="description">Die erste Nachricht, die der KI-Gesprächspartner sagt. Nutze <code>${variable_key}</code> für Benutzer-Variablen.</p>
                         </td>
                     </tr>
                     <tr>
@@ -1216,7 +1216,7 @@ class Bewerbungstrainer_Roleplay_Admin {
                             <textarea name="system_prompt" id="system_prompt" rows="10" class="large-text code"><?php echo esc_textarea($scenario->system_prompt ?? ''); ?></textarea>
                             <p class="description">
                                 Benutzer-Variablen: <code>${variable_key}</code> &nbsp;|&nbsp;
-                                Interviewer-Felder: <code>{{interviewer_name}}</code>, <code>{{interviewer_role}}</code>, <code>{{interviewer_properties}}</code>, <code>{{interviewer_objections}}</code>, <code>{{interviewer_questions}}</code>
+                                Gesprächspartner-Felder: <code>{{interviewer_name}}</code>, <code>{{interviewer_role}}</code>, <code>{{interviewer_properties}}</code>, <code>{{interviewer_objections}}</code>, <code>{{interviewer_questions}}</code>
                             </p>
                         </td>
                     </tr>
@@ -1306,8 +1306,8 @@ class Bewerbungstrainer_Roleplay_Admin {
                     + Variable hinzufügen
                 </button>
 
-                <h2>Interviewer-Profil</h2>
-                <p class="description">Diese Informationen werden dem Nutzer vor dem Gespräch angezeigt.</p>
+                <h2>KI-Gesprächspartner</h2>
+                <p class="description">Diese Informationen definieren den KI-Gesprächspartner und werden dem Nutzer vor dem Gespräch angezeigt.</p>
                 <table class="form-table">
                     <tr>
                         <th><label for="interviewer_name">Name des Gesprächspartners</label></th>
@@ -1327,7 +1327,7 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <th><label for="interviewer_image">Profilbild URL</label></th>
                         <td>
                             <input type="url" name="interviewer_image" id="interviewer_image" class="large-text" value="<?php echo esc_attr($scenario->interviewer_image ?? ''); ?>">
-                            <p class="description">URL zu einem Profilbild des Interviewers. Verfügbar als <code>{{interviewer_image}}</code></p>
+                            <p class="description">URL zu einem Profilbild des KI-Gesprächspartners. Verfügbar als <code>{{interviewer_image}}</code></p>
                         </td>
                     </tr>
                     <tr>
@@ -1348,7 +1348,7 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <th><label for="interviewer_questions">Wichtige Fragen</label></th>
                         <td>
                             <textarea name="interviewer_questions" id="interviewer_questions" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_questions ?? ''); ?></textarea>
-                            <p class="description">Wichtige Fragen, die der Interviewer stellen wird. Verfügbar als <code>{{interviewer_questions}}</code></p>
+                            <p class="description">Wichtige Fragen, die der KI-Gesprächspartner stellen wird. Verfügbar als <code>{{interviewer_questions}}</code></p>
                         </td>
                     </tr>
                 </table>
