@@ -37,6 +37,31 @@ export function DemoWelcomeModal({ isOpen, onClose, onSuccess }) {
   const headerText = branding?.['--header-text'] || COLORS.white;
   const sidebarTextColor = branding?.['--sidebar-text-color'] || COLORS.white;
 
+  // Form styles
+  const labelStyle = {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: COLORS.slate[700],
+    marginBottom: '8px',
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    fontSize: '15px',
+    borderRadius: '12px',
+    border: `1px solid ${COLORS.slate[200]}`,
+    outline: 'none',
+    transition: 'all 0.2s ease',
+    backgroundColor: COLORS.white,
+  };
+
+  const inputFocusStyle = {
+    borderColor: primaryAccent,
+    boxShadow: `0 0 0 3px ${focusRing}`,
+  };
+
   // Step 1: Validate demo code
   const handleValidateCode = async (e) => {
     e.preventDefault();
