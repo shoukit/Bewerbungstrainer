@@ -91,13 +91,6 @@ export const useRoleplaySession = ({
 
     // Generate coaching when agent speaks
     if (entry.role === 'agent') {
-      // Stop dial tone on first AI message
-      if (!hasReceivedFirstAiMessageRef.current) {
-        hasReceivedFirstAiMessageRef.current = true;
-        stopDialTone();
-        console.log('[useRoleplaySession] First AI message received, dial tone stopped');
-      }
-
       setTimeout(() => {
         handleGenerateCoaching(entry.text, transcriptRef.current);
       }, 100);
@@ -159,6 +152,15 @@ export const useRoleplaySession = ({
       if (intervalId) clearInterval(intervalId);
     };
   }, [adapter.status, startTime]);
+
+  // Stop dial tone when AI starts speaking (before transcript arrives)
+  useEffect(() => {
+    if (adapter.speaking && !hasReceivedFirstAiMessageRef.current) {
+      hasReceivedFirstAiMessageRef.current = true;
+      stopDialTone();
+      console.log('[useRoleplaySession] AI started speaking, dial tone stopped');
+    }
+  }, [adapter.speaking]);
 
   // Generate live coaching
   const handleGenerateCoaching = useCallback(async (agentMessage, currentTranscript) => {
