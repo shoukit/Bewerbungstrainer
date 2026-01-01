@@ -17,6 +17,7 @@ import {
   isFeatureInfoDismissed,
   setFeatureInfoDismissed,
 } from '@/config/featureDescriptions';
+import { waitForPreferencesSync } from '@/services/user-preferences';
 import { usePartner } from '@/context/PartnerContext';
 
 const CLOSE_ICON_SIZE = 24;
@@ -88,49 +89,63 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
 
   // Handle auto-show on mount
   // Uses both ref (for within-render protection) and sessionStorage (for StrictMode/remount protection)
+  // Also waits for preferences sync to complete to prevent race conditions after login
   useEffect(() => {
-    const isDismissed = isFeatureInfoDismissed(featureId);
-    const isSessionShown = isAutoShownThisSession(featureId);
-    const isGloballyOpen = globalOpenModals.has(featureId);
-
-    console.log(`${DEBUG_PREFIX} 🔄 Auto-show effect for "${featureId}":`, {
-      showOnMount,
-      hasFeature: !!feature,
-      isDismissed,
-      hasAutoShownRef: hasAutoShownRef.current,
-      isSessionShown,
-      isGloballyOpen,
-      willShow: showOnMount && feature && !isDismissed && !hasAutoShownRef.current && !isSessionShown && !isGloballyOpen,
-    });
-
-    if (showOnMount && feature && !isDismissed && !hasAutoShownRef.current && !isSessionShown && !isGloballyOpen) {
-      console.log(`${DEBUG_PREFIX} ✅ Will auto-show "${featureId}" in 400ms`);
-      hasAutoShownRef.current = true;
-      setAutoShownThisSession(featureId);
-      globalOpenModals.add(featureId); // Mark as globally open immediately
-
-      // Track if component is still mounted
-      let isMounted = true;
-
-      const timer = setTimeout(() => {
-        // Double-check all conditions again in case of race condition
-        const alreadyOpen = globalOpenModals.has(featureId) && internalOpen;
-        console.log(`${DEBUG_PREFIX} 🎉 Timer fired for "${featureId}": isMounted=${isMounted}, alreadyOpen=${alreadyOpen}`);
-
-        if (isMounted && !internalOpen) {
-          setInternalOpen(true);
-        } else if (!isMounted) {
-          console.log(`${DEBUG_PREFIX} ⚠️ Component unmounted before timer, skipping open`);
-          globalOpenModals.delete(featureId);
-        }
-      }, 400);
-
-      return () => {
-        console.log(`${DEBUG_PREFIX} 🧹 Cleanup: clearing timer for "${featureId}"`);
-        isMounted = false;
-        clearTimeout(timer);
-      };
+    if (!showOnMount || !feature || hasAutoShownRef.current) {
+      return;
     }
+
+    let isMounted = true;
+
+    const checkAndShow = async () => {
+      // Wait for preferences sync to complete (if in progress)
+      // This prevents showing the modal before API preferences are loaded
+      await waitForPreferencesSync();
+
+      if (!isMounted) {
+        console.log(`${DEBUG_PREFIX} ⚠️ Component unmounted during sync wait, skipping`);
+        return;
+      }
+
+      const isDismissed = isFeatureInfoDismissed(featureId);
+      const isSessionShown = isAutoShownThisSession(featureId);
+      const isGloballyOpen = globalOpenModals.has(featureId);
+
+      console.log(`${DEBUG_PREFIX} 🔄 Auto-show effect for "${featureId}":`, {
+        showOnMount,
+        hasFeature: !!feature,
+        isDismissed,
+        hasAutoShownRef: hasAutoShownRef.current,
+        isSessionShown,
+        isGloballyOpen,
+        willShow: !isDismissed && !hasAutoShownRef.current && !isSessionShown && !isGloballyOpen,
+      });
+
+      if (!isDismissed && !hasAutoShownRef.current && !isSessionShown && !isGloballyOpen) {
+        console.log(`${DEBUG_PREFIX} ✅ Will auto-show "${featureId}" in 400ms`);
+        hasAutoShownRef.current = true;
+        setAutoShownThisSession(featureId);
+        globalOpenModals.add(featureId); // Mark as globally open immediately
+
+        // Small delay for UI smoothness
+        setTimeout(() => {
+          if (isMounted && !internalOpen) {
+            console.log(`${DEBUG_PREFIX} 🎉 Timer fired for "${featureId}": isMounted=${isMounted}`);
+            setInternalOpen(true);
+          } else if (!isMounted) {
+            console.log(`${DEBUG_PREFIX} ⚠️ Component unmounted before timer, skipping open`);
+            globalOpenModals.delete(featureId);
+          }
+        }, 400);
+      }
+    };
+
+    checkAndShow();
+
+    return () => {
+      console.log(`${DEBUG_PREFIX} 🧹 Cleanup for "${featureId}"`);
+      isMounted = false;
+    };
   }, [showOnMount, featureId, feature, internalOpen]);
 
   // Sync external isOpen with internal state and load saved checkbox state

@@ -17,6 +17,28 @@ export const PREF_KEYS = {
 // localStorage key (for fallback and quick reads)
 const LOCAL_STORAGE_KEY = 'karriereheld_feature_info_dismissed';
 
+// Sync state tracking - prevents race conditions with FeatureInfoModal
+let isSyncInProgress = false;
+let syncPromise = null;
+
+/**
+ * Check if preferences sync is currently in progress
+ * Used by FeatureInfoModal to wait for sync before auto-showing
+ */
+export function isPreferencesSyncInProgress() {
+  return isSyncInProgress;
+}
+
+/**
+ * Wait for preferences sync to complete
+ * Returns immediately if no sync is in progress
+ */
+export async function waitForPreferencesSync() {
+  if (syncPromise) {
+    await syncPromise;
+  }
+}
+
 /**
  * Get feature info dismissed state from localStorage
  * Used for quick synchronous reads
@@ -80,24 +102,35 @@ export async function syncPreferencesFromAPI(isAuthenticated, demoCode) {
     return;
   }
 
-  try {
-    console.log('[UserPrefs] Syncing preferences from API...');
-    const apiPrefs = await wordpressAPI.getAllPreferences(demoCode);
+  // Set sync in progress flag to prevent race conditions
+  isSyncInProgress = true;
 
-    // Sync feature info dismissed state
-    if (apiPrefs[PREF_KEYS.FEATURE_INFO_DISMISSED]) {
-      const apiDismissed = apiPrefs[PREF_KEYS.FEATURE_INFO_DISMISSED];
-      const localDismissed = getAllLocalDismissed();
+  // Create a promise that external code can await
+  syncPromise = (async () => {
+    try {
+      console.log('[UserPrefs] Syncing preferences from API...');
+      const apiPrefs = await wordpressAPI.getAllPreferences(demoCode);
 
-      // Merge: API takes precedence, but keep local additions
-      const merged = { ...localDismissed, ...apiDismissed };
-      setAllLocalDismissed(merged);
+      // Sync feature info dismissed state
+      if (apiPrefs[PREF_KEYS.FEATURE_INFO_DISMISSED]) {
+        const apiDismissed = apiPrefs[PREF_KEYS.FEATURE_INFO_DISMISSED];
+        const localDismissed = getAllLocalDismissed();
 
-      console.log('[UserPrefs] Synced feature_info_dismissed from API:', merged);
+        // Merge: API takes precedence, but keep local additions
+        const merged = { ...localDismissed, ...apiDismissed };
+        setAllLocalDismissed(merged);
+
+        console.log('[UserPrefs] Synced feature_info_dismissed from API:', merged);
+      }
+    } catch (error) {
+      console.error('[UserPrefs] Failed to sync preferences from API:', error);
+    } finally {
+      isSyncInProgress = false;
+      syncPromise = null;
     }
-  } catch (error) {
-    console.error('[UserPrefs] Failed to sync preferences from API:', error);
-  }
+  })();
+
+  await syncPromise;
 }
 
 /**

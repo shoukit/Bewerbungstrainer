@@ -189,4 +189,6 @@ export {
   resetAllFeatureInfoDismissed,
   syncPreferencesFromAPI,
   saveFeatureInfoDismissedToAPI,
+  waitForPreferencesSync,
+  isPreferencesSyncInProgress,
 } from '@/services/user-preferences';
