@@ -445,8 +445,8 @@ const PersonaToolbar = ({
             className="overflow-hidden"
           >
             <div className="mt-4">
-              {/* Persona Buttons - horizontal scroll on mobile */}
-              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+              {/* Persona Buttons - wrap on smaller screens */}
+              <div className="flex flex-wrap gap-2 pb-2">
                 {PERSONAS.map((persona) => (
                   <button
                     key={persona.id}
@@ -455,7 +455,7 @@ const PersonaToolbar = ({
                       if (hasTopic) onSelectPersona(persona.id);
                     }}
                     disabled={!hasTopic || (isLoading && activePersona === persona.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-md border-2 cursor-pointer transition-all whitespace-nowrap shrink-0 ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-md border-2 cursor-pointer transition-all whitespace-nowrap ${
                       activePersona === persona.id
                         ? `${persona.bgColor} ${persona.borderColor}`
                         : 'bg-white border-slate-200'
