@@ -77,7 +77,6 @@ export const useRoleplaySession = ({
   const transcriptRef = useRef([]);
   const durationRef = useRef(0);
   const startTimeRef = useRef(null);
-  const hasReceivedFirstAiMessageRef = useRef(false);
 
   // Message handler
   const handleMessage = useCallback((entry) => {
@@ -102,6 +101,11 @@ export const useRoleplaySession = ({
     const now = Date.now();
     setStartTime(now);
     startTimeRef.current = now;
+
+    // Stop dial tone when connection is established (before AI audio arrives)
+    // This ensures the dial tone stops before the first words are spoken
+    stopDialTone();
+    console.log('[useRoleplaySession] Connected, dial tone stopped');
   }, []);
 
   const handleDisconnect = useCallback(() => {
@@ -153,15 +157,6 @@ export const useRoleplaySession = ({
     };
   }, [adapter.status, startTime]);
 
-  // Stop dial tone when AI starts speaking (before transcript arrives)
-  useEffect(() => {
-    if (adapter.speaking && !hasReceivedFirstAiMessageRef.current) {
-      hasReceivedFirstAiMessageRef.current = true;
-      stopDialTone();
-      console.log('[useRoleplaySession] AI started speaking, dial tone stopped');
-    }
-  }, [adapter.speaking]);
-
   // Generate live coaching
   const handleGenerateCoaching = useCallback(async (agentMessage, currentTranscript) => {
     const geminiApiKey = wordpressAPI.getGeminiApiKey();
@@ -201,8 +196,7 @@ export const useRoleplaySession = ({
       setIsStarted(true);
       setError(null);
 
-      // Reset first message tracking and start dial tone
-      hasReceivedFirstAiMessageRef.current = false;
+      // Start dial tone while connecting
       await startDialTone({
         frequency: 425,     // German standard
         onDuration: 1000,   // 1 second on
