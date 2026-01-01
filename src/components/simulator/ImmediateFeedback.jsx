@@ -499,7 +499,7 @@ const ImmediateFeedback = ({
 
       {/* Tips */}
       {parsedFeedback?.tips?.length > 0 && (
-        <CollapsibleSection title="Tipps" icon={Lightbulb} defaultOpen={false}>
+        <CollapsibleSection title="Tipps" icon={Lightbulb} defaultOpen={true}>
           {parsedFeedback.tips.map((tip, i) => (
             <FeedbackItem key={i} text={tip} type="tip" />
           ))}
@@ -508,7 +508,7 @@ const ImmediateFeedback = ({
 
       {/* Audio Metrics */}
       {audioMetrics && (
-        <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={false}>
+        <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={true}>
           <AudioMetricsDisplay metrics={audioMetrics} />
         </CollapsibleSection>
       )}
