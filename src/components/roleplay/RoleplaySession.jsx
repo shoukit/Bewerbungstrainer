@@ -540,11 +540,11 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
       // Reset first message tracking and start dial tone
       hasReceivedFirstAiMessageRef.current = false;
-      startDialTone({
+      await startDialTone({
         frequency: 425,     // German standard
         onDuration: 1000,   // 1 second on
         offDuration: 4000,  // 4 seconds off
-        volume: 0.2,        // Moderate volume
+        volume: 0.3,        // Audible volume
       });
 
       // Create session in database
