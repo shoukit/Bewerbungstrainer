@@ -541,9 +541,14 @@ function AppContent() {
   }, [isAuthenticated, authLoading]);
 
   // Sync user preferences from API when authenticated or demo user
+  // Add small delay to allow browser to fully process session cookie after login
+  // This prevents "cookie check failed" errors on immediate API calls
   useEffect(() => {
     if (!authLoading && (isAuthenticated || demoCode)) {
-      syncPreferencesFromAPI(isAuthenticated, demoCode);
+      const timer = setTimeout(() => {
+        syncPreferencesFromAPI(isAuthenticated, demoCode);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, authLoading, demoCode]);
 
