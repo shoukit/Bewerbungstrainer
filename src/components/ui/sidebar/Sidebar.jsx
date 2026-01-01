@@ -408,7 +408,7 @@ const AppSidebar = ({
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 py-2 px-3 overflow-y-auto">
+      <nav className="flex-1 py-2 px-3 overflow-y-auto scrollbar-dark">
         {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id ||
@@ -801,7 +801,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="fixed left-0 right-0 z-[45] p-2 shadow-lg rounded-b-2xl max-h-[70vh] overflow-y-auto"
+              className="fixed left-0 right-0 z-[45] p-2 shadow-lg rounded-b-2xl max-h-[70vh] overflow-y-auto scrollbar-dark"
               style={{
                 top: headerOffset + 56,
                 backgroundColor: colors.menuBg,
