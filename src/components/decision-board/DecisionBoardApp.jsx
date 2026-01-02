@@ -1,17 +1,18 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Scale } from 'lucide-react';
+import DecisionBoardDashboard from './DecisionBoardDashboard';
 import DecisionBoardInput from './DecisionBoardInput';
 import DecisionBoardResult from './DecisionBoardResult';
 import wordpressAPI from '@/services/wordpress-api';
-import FeatureInfoModal from '@/components/global/FeatureInfoModal';
 import FeatureAppHeader from '@/components/global/FeatureAppHeader';
 import { COLORS, createGradient } from '@/config/colors';
-import { useRequireAuth, useScrollToTop } from '@/hooks';
+import { useScrollToTop } from '@/hooks';
 
 /**
  * View states for the decision board flow
  */
 const VIEWS = {
+  DASHBOARD: 'dashboard',
   INPUT: 'input',
   RESULT: 'result',
 };
@@ -22,8 +23,9 @@ const VIEWS = {
  * "Der Entscheidungs-Kompass" - AI Decision Support System
  *
  * Coordinates the flow between:
- * 1. Input (decision question + pro/contra with weights)
- * 2. Result (rational score + AI coaching cards)
+ * 1. Dashboard with feature info and session list (public)
+ * 2. Input (decision question + pro/contra with weights) (requires auth)
+ * 3. Result (rational score + AI coaching cards)
  */
 const DecisionBoardApp = ({
   isAuthenticated,
@@ -31,7 +33,7 @@ const DecisionBoardApp = ({
   setPendingAction,
   onNavigateToHistory,
 }) => {
-  const [currentView, setCurrentView] = useState(VIEWS.INPUT);
+  const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [decisionData, setDecisionData] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [savedDecisionId, setSavedDecisionId] = useState(null);
@@ -43,9 +45,59 @@ const DecisionBoardApp = ({
   // Decision Board feature gradient (teal)
   const decisionGradient = createGradient(COLORS.teal[500], COLORS.teal[400]);
 
-  // Custom hooks for auth and scroll
-  useRequireAuth(isAuthenticated, requireAuth);
+  // Scroll to top hook
   useScrollToTop({ dependencies: [currentView] });
+
+  /**
+   * Handle start new from dashboard
+   */
+  const handleStartNew = useCallback(() => {
+    setDecisionData(null);
+    setAnalysisResult(null);
+    setSavedDecisionId(null);
+    sessionSavedRef.current = false;
+    setCurrentView(VIEWS.INPUT);
+  }, []);
+
+  /**
+   * Handle continue existing session from dashboard
+   */
+  const handleContinueSession = useCallback(async (session) => {
+    try {
+      // Load session data
+      setSavedDecisionId(session.id);
+      sessionSavedRef.current = true;
+
+      // Set decision data from session
+      const data = {
+        topic: session.topic || '',
+        context: session.context || '',
+        pros: session.pros || [],
+        cons: session.cons || [],
+        proScore: session.pro_score || 0,
+        contraScore: session.contra_score || 0,
+      };
+      setDecisionData(data);
+
+      // If session has analysis result, show results
+      if (session.status === 'completed' && session.analysis) {
+        setAnalysisResult(session.analysis);
+        setCurrentView(VIEWS.RESULT);
+      } else {
+        // Otherwise go to input
+        setCurrentView(VIEWS.INPUT);
+      }
+    } catch (err) {
+      console.error('[DecisionBoard] Failed to load session:', err);
+    }
+  }, []);
+
+  /**
+   * Handle back to dashboard
+   */
+  const handleBackToDashboard = useCallback(() => {
+    setCurrentView(VIEWS.DASHBOARD);
+  }, []);
 
   /**
    * Save session immediately (called when topic changes)
@@ -164,17 +216,6 @@ const DecisionBoardApp = ({
   }, [savedDecisionId, updateSession]);
 
   /**
-   * Handle start new analysis - go back to input
-   */
-  const handleStartNew = useCallback(() => {
-    setDecisionData(null);
-    setAnalysisResult(null);
-    setSavedDecisionId(null);
-    sessionSavedRef.current = false;
-    setCurrentView(VIEWS.INPUT);
-  }, []);
-
-  /**
    * Handle edit current decision - go back to input with data preserved
    */
   const handleEditDecision = useCallback(() => {
@@ -198,65 +239,81 @@ const DecisionBoardApp = ({
     setSavedDecisionId(null);
     sessionSavedRef.current = false;
 
-    // Navigate to history/dashboard
-    if (onNavigateToHistory) {
-      onNavigateToHistory();
-    }
-  }, [savedDecisionId, deleteSession, onNavigateToHistory]);
+    // Go back to dashboard
+    setCurrentView(VIEWS.DASHBOARD);
+  }, [savedDecisionId, deleteSession]);
 
   /**
    * Render current view
    */
   const renderContent = () => {
     switch (currentView) {
+      case VIEWS.DASHBOARD:
+        return (
+          <DecisionBoardDashboard
+            onStartNew={handleStartNew}
+            onContinueSession={handleContinueSession}
+            onNavigateToHistory={onNavigateToHistory}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+          />
+        );
+
       case VIEWS.RESULT:
         return (
-          <DecisionBoardResult
-            decisionData={decisionData}
-            analysisResult={analysisResult}
-            onStartNew={handleStartNew}
-            onEditDecision={handleEditDecision}
-          />
+          <>
+            <FeatureAppHeader
+              featureId="decisionboard"
+              icon={Scale}
+              title="Entscheidungs-Board"
+              subtitle="Deine Analyse"
+              gradient={decisionGradient}
+              showBackButton
+              onBack={handleBackToDashboard}
+            />
+            <DecisionBoardResult
+              decisionData={decisionData}
+              analysisResult={analysisResult}
+              onStartNew={handleStartNew}
+              onEditDecision={handleEditDecision}
+            />
+          </>
         );
 
       case VIEWS.INPUT:
       default:
         return (
-          <DecisionBoardInput
-            initialData={decisionData}
-            onAnalysisComplete={handleAnalysisComplete}
-            onCancel={onNavigateToHistory ? handleCancel : null}
-            isAuthenticated={isAuthenticated}
-            requireAuth={requireAuth}
-            savedDecisionId={savedDecisionId}
-            onSaveDraft={saveSessionDraft}
-            onUpdateSession={updateSession}
-            onDecisionIdChange={setSavedDecisionId}
-          />
+          <>
+            <FeatureAppHeader
+              featureId="decisionboard"
+              icon={Scale}
+              title="Entscheidungs-Board"
+              subtitle="Strukturierte Entscheidungsfindung"
+              gradient={decisionGradient}
+              showBackButton
+              onBack={handleBackToDashboard}
+            />
+            <DecisionBoardInput
+              initialData={decisionData}
+              onAnalysisComplete={handleAnalysisComplete}
+              onCancel={handleCancel}
+              isAuthenticated={isAuthenticated}
+              requireAuth={requireAuth}
+              savedDecisionId={savedDecisionId}
+              onSaveDraft={saveSessionDraft}
+              onUpdateSession={updateSession}
+              onDecisionIdChange={setSavedDecisionId}
+            />
+          </>
         );
     }
   };
 
   return (
-    <>
-      {/* Feature Info Modal - shows on first visit */}
-      <FeatureInfoModal featureId="decisionboard" showOnMount />
-
-      <div className="min-h-full">
-        {/* Header - using reusable component */}
-        <FeatureAppHeader
-          featureId="decisionboard"
-          icon={Scale}
-          title="Entscheidungs-Board"
-          subtitle="Strukturierte Entscheidungsfindung"
-          gradient={decisionGradient}
-          historyLabel="Meine Entscheidungen"
-          onNavigateToHistory={onNavigateToHistory}
-        />
-
-        {renderContent()}
-      </div>
-    </>
+    <div className="min-h-full">
+      {renderContent()}
+    </div>
   );
 };
 

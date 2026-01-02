@@ -1,18 +1,19 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Compass } from 'lucide-react';
+import IkigaiDashboard from './IkigaiDashboard';
 import IkigaiCompass from './IkigaiCompass';
 import IkigaiResults from './IkigaiResults';
 import wordpressAPI from '@/services/wordpress-api';
-import FeatureInfoModal from '@/components/global/FeatureInfoModal';
 import FeatureAppHeader from '@/components/global/FeatureAppHeader';
 import { COLORS, createGradient } from '@/config/colors';
 import { DIMENSIONS } from '@/config/ikigaiDimensions';
-import { useRequireAuth, useScrollToTop } from '@/hooks';
+import { useScrollToTop } from '@/hooks';
 
 /**
  * View states for the Ikigai flow
  */
 const VIEWS = {
+  DASHBOARD: 'dashboard',
   COMPASS: 'compass',
   RESULTS: 'results',
 };
@@ -23,10 +24,11 @@ const VIEWS = {
  * "Der Ikigai-Kompass" - Career Pathfinder
  *
  * Coordinates the flow:
- * 1. User clicks on circles to fill each dimension
- * 2. AI extracts keywords from their responses
- * 3. When all 4 dimensions are filled, synthesize career paths
- * 4. Show results with training recommendations
+ * 1. Dashboard with feature info and session list (public)
+ * 2. User clicks on circles to fill each dimension (requires auth)
+ * 3. AI extracts keywords from their responses
+ * 4. When all 4 dimensions are filled, synthesize career paths
+ * 5. Show results with training recommendations
  */
 const IkigaiApp = ({
   isAuthenticated,
@@ -34,7 +36,7 @@ const IkigaiApp = ({
   setPendingAction,
   onNavigateToHistory,
 }) => {
-  const [currentView, setCurrentView] = useState(VIEWS.COMPASS);
+  const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [savedIkigaiId, setSavedIkigaiId] = useState(null);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
 
@@ -55,14 +57,82 @@ const IkigaiApp = ({
   // Track if session was saved
   const sessionSavedRef = useRef(false);
 
-  // Custom hooks for auth and scroll
-  useRequireAuth(isAuthenticated, requireAuth);
+  // Scroll to top hook
   useScrollToTop({ dependencies: [currentView] });
 
   // Check if all dimensions have tags
   const allDimensionsFilled = Object.values(dimensions).every(
     (dim) => dim.tags && dim.tags.length > 0
   );
+
+  /**
+   * Handle start new Ikigai from dashboard
+   */
+  const handleStartNew = useCallback(() => {
+    // Reset all state
+    setDimensions({
+      love: { input: '', tags: [] },
+      talent: { input: '', tags: [] },
+      need: { input: '', tags: [] },
+      market: { input: '', tags: [] },
+    });
+    setSynthesisResult(null);
+    setSavedIkigaiId(null);
+    sessionSavedRef.current = false;
+    setCurrentView(VIEWS.COMPASS);
+  }, []);
+
+  /**
+   * Handle continue existing session from dashboard
+   */
+  const handleContinueSession = useCallback(async (session) => {
+    try {
+      // Load session data
+      setSavedIkigaiId(session.id);
+      sessionSavedRef.current = true;
+
+      // Set dimensions from session
+      setDimensions({
+        love: {
+          input: session.love_input || '',
+          tags: session.love_tags || [],
+        },
+        talent: {
+          input: session.talent_input || '',
+          tags: session.talent_tags || [],
+        },
+        need: {
+          input: session.need_input || '',
+          tags: session.need_tags || [],
+        },
+        market: {
+          input: session.market_input || '',
+          tags: session.market_tags || [],
+        },
+      });
+
+      // If session has synthesis result, show results
+      if (session.status === 'completed' && session.paths) {
+        setSynthesisResult({
+          summary: session.summary,
+          paths: session.paths,
+        });
+        setCurrentView(VIEWS.RESULTS);
+      } else {
+        // Otherwise go to compass
+        setCurrentView(VIEWS.COMPASS);
+      }
+    } catch (err) {
+      console.error('[Ikigai] Failed to load session:', err);
+    }
+  }, []);
+
+  /**
+   * Handle back to dashboard
+   */
+  const handleBackToDashboard = useCallback(() => {
+    setCurrentView(VIEWS.DASHBOARD);
+  }, []);
 
   /**
    * Create or get current ikigai session
@@ -176,23 +246,7 @@ const IkigaiApp = ({
   }, []);
 
   /**
-   * Handle start new analysis
-   */
-  const handleStartNew = useCallback(() => {
-    setDimensions({
-      love: { input: '', tags: [] },
-      talent: { input: '', tags: [] },
-      need: { input: '', tags: [] },
-      market: { input: '', tags: [] },
-    });
-    setSynthesisResult(null);
-    setSavedIkigaiId(null);
-    sessionSavedRef.current = false;
-    setCurrentView(VIEWS.COMPASS);
-  }, []);
-
-  /**
-   * Handle edit - go back to compass
+   * Handle edit - go back to compass from results
    */
   const handleEdit = useCallback(() => {
     setSynthesisResult(null);
@@ -204,54 +258,72 @@ const IkigaiApp = ({
    */
   const renderContent = () => {
     switch (currentView) {
+      case VIEWS.DASHBOARD:
+        return (
+          <IkigaiDashboard
+            onStartNew={handleStartNew}
+            onContinueSession={handleContinueSession}
+            onNavigateToHistory={onNavigateToHistory}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+          />
+        );
+
       case VIEWS.RESULTS:
         return (
-          <IkigaiResults
-            dimensions={dimensions}
-            synthesisResult={synthesisResult}
-            onStartNew={handleStartNew}
-            onEdit={handleEdit}
-            DIMENSIONS={DIMENSIONS}
-          />
+          <>
+            <FeatureAppHeader
+              featureId="ikigai"
+              icon={Compass}
+              title="Ikigai-Kompass"
+              subtitle="Deine Ergebnisse"
+              gradient={ikigaiGradient}
+              showBackButton
+              onBack={handleBackToDashboard}
+            />
+            <IkigaiResults
+              dimensions={dimensions}
+              synthesisResult={synthesisResult}
+              onStartNew={handleStartNew}
+              onEdit={handleEdit}
+              DIMENSIONS={DIMENSIONS}
+            />
+          </>
         );
 
       case VIEWS.COMPASS:
       default:
         return (
-          <IkigaiCompass
-            dimensions={dimensions}
-            DIMENSIONS={DIMENSIONS}
-            onExtractKeywords={extractKeywords}
-            onUpdateDimension={updateDimension}
-            onRemoveTag={handleRemoveTag}
-            allDimensionsFilled={allDimensionsFilled}
-            onSynthesize={handleSynthesize}
-            isSynthesizing={isSynthesizing}
-          />
+          <>
+            <FeatureAppHeader
+              featureId="ikigai"
+              icon={Compass}
+              title="Ikigai-Kompass"
+              subtitle="Finde deine berufliche Bestimmung"
+              gradient={ikigaiGradient}
+              showBackButton
+              onBack={handleBackToDashboard}
+            />
+            <IkigaiCompass
+              dimensions={dimensions}
+              DIMENSIONS={DIMENSIONS}
+              onExtractKeywords={extractKeywords}
+              onUpdateDimension={updateDimension}
+              onRemoveTag={handleRemoveTag}
+              allDimensionsFilled={allDimensionsFilled}
+              onSynthesize={handleSynthesize}
+              isSynthesizing={isSynthesizing}
+            />
+          </>
         );
     }
   };
 
   return (
-    <>
-      {/* Feature Info Modal - shows on first visit */}
-      <FeatureInfoModal featureId="ikigai" showOnMount />
-
-      <div className="min-h-full">
-        {/* Header - using reusable component */}
-        <FeatureAppHeader
-          featureId="ikigai"
-          icon={Compass}
-          title="Ikigai-Kompass"
-          subtitle="Finde deine berufliche Bestimmung"
-          gradient={ikigaiGradient}
-          historyLabel="Meine Ikigai"
-          onNavigateToHistory={onNavigateToHistory}
-        />
-
-        {renderContent()}
-      </div>
-    </>
+    <div className="min-h-full">
+      {renderContent()}
+    </div>
   );
 };
 
