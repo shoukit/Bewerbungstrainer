@@ -997,7 +997,21 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                 ? 'Entdecke deinen idealen Karrierepfad mit dem Ikigai-Kompass.'
                 : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
             </p>
-            <Button onClick={onBack}>
+            <Button onClick={() => {
+              if (onNavigateToModule) {
+                const moduleMap = {
+                  [TABS.BRIEFINGS]: 'smart_briefing',
+                  [TABS.DECISIONS]: 'decision_board',
+                  [TABS.IKIGAI]: 'ikigai',
+                  [TABS.SIMULATOR]: 'simulator',
+                  [TABS.VIDEO]: 'video_training',
+                  [TABS.ROLEPLAY]: 'dashboard',
+                };
+                onNavigateToModule(moduleMap[activeTab] || 'overview');
+              } else {
+                onBack?.();
+              }
+            }}>
               <Play className="w-4 h-4 mr-2" />
               {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : activeTab === TABS.DECISIONS ? 'Entscheidung analysieren' : activeTab === TABS.IKIGAI ? 'Ikigai entdecken' : 'Training starten'}
             </Button>
