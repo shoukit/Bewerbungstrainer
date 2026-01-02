@@ -2069,16 +2069,18 @@ class Bewerbungstrainer_API {
             $feedback = $params['feedback_json'];
             if (is_string($feedback)) {
                 $cleaned = $this->clean_json_string($feedback);
-                // Validate it's valid JSON
+                // Validate it's valid JSON - try with UTF8 flag as fallback
                 $test_decode = json_decode($cleaned, true);
+                if ($test_decode === null) {
+                    $test_decode = json_decode($cleaned, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+                }
                 if ($test_decode !== null) {
                     // Store as clean JSON string
                     $update_data['feedback_json'] = json_encode($test_decode, JSON_UNESCAPED_UNICODE);
-                    error_log('Bewerbungstrainer: Stored cleaned feedback_json');
                 } else {
-                    // Store as-is if we can't parse it
-                    $update_data['feedback_json'] = $feedback;
-                    error_log('Bewerbungstrainer: Could not parse feedback_json, storing raw: ' . substr($feedback, 0, 100));
+                    // Store cleaned version even if we can't parse it
+                    $update_data['feedback_json'] = $cleaned;
+                    error_log('Bewerbungstrainer: Could not parse feedback_json (' . json_last_error_msg() . '), storing cleaned: ' . substr($cleaned, 0, 100));
                 }
             } else {
                 // If it's already an array/object, encode it
@@ -2091,16 +2093,18 @@ class Bewerbungstrainer_API {
             $audio = $params['audio_analysis_json'];
             if (is_string($audio)) {
                 $cleaned = $this->clean_json_string($audio);
-                // Validate it's valid JSON
+                // Validate it's valid JSON - try with UTF8 flag as fallback
                 $test_decode = json_decode($cleaned, true);
+                if ($test_decode === null) {
+                    $test_decode = json_decode($cleaned, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+                }
                 if ($test_decode !== null) {
                     // Store as clean JSON string
                     $update_data['audio_analysis_json'] = json_encode($test_decode, JSON_UNESCAPED_UNICODE);
-                    error_log('Bewerbungstrainer: Stored cleaned audio_analysis_json');
                 } else {
-                    // Store as-is if we can't parse it
-                    $update_data['audio_analysis_json'] = $audio;
-                    error_log('Bewerbungstrainer: Could not parse audio_analysis_json, storing raw: ' . substr($audio, 0, 100));
+                    // Store cleaned version even if we can't parse it
+                    $update_data['audio_analysis_json'] = $cleaned;
+                    error_log('Bewerbungstrainer: Could not parse audio_analysis_json (' . json_last_error_msg() . '), storing cleaned: ' . substr($cleaned, 0, 100));
                 }
             } else {
                 // If it's already an array/object, encode it
@@ -2363,17 +2367,12 @@ class Bewerbungstrainer_API {
 
         $cleaned = trim($json_string);
 
-        // Remove ```json or ``` prefix
-        if (strpos($cleaned, '```json') === 0) {
-            $cleaned = substr($cleaned, 7); // Remove ```json
-        } elseif (strpos($cleaned, '```') === 0) {
-            $cleaned = substr($cleaned, 3); // Remove ```
-        }
+        // Remove ```json or ``` prefix (with optional whitespace/newlines after)
+        $cleaned = preg_replace('/^```json\s*/i', '', $cleaned);
+        $cleaned = preg_replace('/^```\s*/', '', $cleaned);
 
-        // Remove trailing ```
-        if (substr($cleaned, -3) === '```') {
-            $cleaned = substr($cleaned, 0, -3);
-        }
+        // Remove trailing ``` (with optional whitespace/newlines before)
+        $cleaned = preg_replace('/\s*```\s*$/', '', $cleaned);
 
         return trim($cleaned);
     }
@@ -2403,9 +2402,19 @@ class Bewerbungstrainer_API {
             return $decoded;
         }
 
+        // Try with JSON_INVALID_UTF8_SUBSTITUTE flag to handle encoding issues
+        $decoded = json_decode($cleaned, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($decoded !== null) {
+            return $decoded;
+        }
+
         // Log error for debugging
-        error_log('Bewerbungstrainer: Failed to decode JSON - ' . substr($json_string, 0, 100) . '...');
-        return null;
+        $json_error = json_last_error_msg();
+        error_log('Bewerbungstrainer: Failed to decode JSON (' . $json_error . ') - ' . substr($json_string, 0, 100) . '...');
+
+        // Return the cleaned string so frontend can try to parse it
+        // This is better than returning null and losing the data
+        return $cleaned;
     }
 
     /**
