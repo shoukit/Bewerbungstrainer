@@ -257,11 +257,16 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             />
           </div>
 
-          {/* Submit button */}
+          {/* Submit button - uses partner branding */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full px-6 py-3.5 text-base font-semibold rounded-xl border-none cursor-pointer flex items-center justify-center gap-2.5 transition-all duration-200 shadow-primary disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none disabled:bg-slate-400 hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg bg-gradient-to-r from-indigo-500 to-violet-500 text-white"
+            className="w-full px-6 py-3.5 text-base font-semibold rounded-xl border-none cursor-pointer flex items-center justify-center gap-2.5 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 disabled:bg-slate-400 hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg"
+            style={{
+              background: isLoading ? undefined : buttonGradient,
+              color: headerText,
+              boxShadow: isLoading ? 'none' : `0 4px 14px 0 ${hexToRgba(primaryAccent, 0.4)}`,
+            }}
           >
             {isLoading ? (
               <>
@@ -269,24 +274,24 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                   fill="none"
                   viewBox="0 0 24 24"
                   className="w-5 h-5 animate-spin"
-                  style={{ color: sidebarTextColor }}
+                  style={{ color: headerText }}
                 >
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span style={{ color: sidebarTextColor }}>Wird angemeldet...</span>
+                <span style={{ color: headerText }}>Wird angemeldet...</span>
               </>
             ) : (
               <>
                 <svg
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke={sidebarTextColor}
+                  stroke={headerText}
                   className="w-5 h-5"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <span style={{ color: sidebarTextColor }}>Anmelden</span>
+                <span style={{ color: headerText }}>Anmelden</span>
               </>
             )}
           </button>
