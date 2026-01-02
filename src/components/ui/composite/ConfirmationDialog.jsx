@@ -157,11 +157,11 @@ const ConfirmationDialog = ({
 
         {/* Actions */}
         <div className="flex gap-3">
-          {/* Cancel Button - uses indigo theme */}
+          {/* Cancel Button - neutral styling for consistency */}
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className={`flex-1 px-5 py-3 text-sm font-semibold rounded-xl border-2 border-indigo-500 bg-white text-indigo-600 transition-all hover:bg-indigo-50 ${
+            className={`flex-1 px-5 py-3 text-sm font-semibold rounded-xl border border-slate-200 bg-white text-slate-900 transition-all hover:bg-slate-50 ${
               isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
             }`}
           >

@@ -54,39 +54,37 @@ class Bewerbungstrainer_Ikigai_API {
      * Register REST API routes
      */
     public function register_routes() {
-        // Get all ikigai sessions for current user
+        // Collection routes: GET (list) and POST (create)
         register_rest_route($this->namespace, '/ikigai', array(
-            'methods' => 'GET',
-            'callback' => array($this, 'get_ikigais'),
-            'permission_callback' => array($this, 'allow_all_users'),
+            array(
+                'methods' => 'GET',
+                'callback' => array($this, 'get_ikigais'),
+                'permission_callback' => array($this, 'allow_all_users'),
+            ),
+            array(
+                'methods' => 'POST',
+                'callback' => array($this, 'create_ikigai'),
+                'permission_callback' => array($this, 'allow_all_users'),
+            ),
         ));
 
-        // Create new ikigai session
-        register_rest_route($this->namespace, '/ikigai', array(
-            'methods' => 'POST',
-            'callback' => array($this, 'create_ikigai'),
-            'permission_callback' => array($this, 'allow_all_users'),
-        ));
-
-        // Get specific ikigai session
+        // Item routes: GET (single), PUT (update), DELETE
         register_rest_route($this->namespace, '/ikigai/(?P<id>\d+)', array(
-            'methods' => 'GET',
-            'callback' => array($this, 'get_ikigai'),
-            'permission_callback' => array($this, 'allow_all_users'),
-        ));
-
-        // Update ikigai session
-        register_rest_route($this->namespace, '/ikigai/(?P<id>\d+)', array(
-            'methods' => 'PUT',
-            'callback' => array($this, 'update_ikigai'),
-            'permission_callback' => array($this, 'allow_all_users'),
-        ));
-
-        // Delete ikigai session
-        register_rest_route($this->namespace, '/ikigai/(?P<id>\d+)', array(
-            'methods' => 'DELETE',
-            'callback' => array($this, 'delete_ikigai'),
-            'permission_callback' => array($this, 'allow_all_users'),
+            array(
+                'methods' => 'GET',
+                'callback' => array($this, 'get_ikigai'),
+                'permission_callback' => array($this, 'allow_all_users'),
+            ),
+            array(
+                'methods' => 'PUT',
+                'callback' => array($this, 'update_ikigai'),
+                'permission_callback' => array($this, 'allow_all_users'),
+            ),
+            array(
+                'methods' => 'DELETE',
+                'callback' => array($this, 'delete_ikigai'),
+                'permission_callback' => array($this, 'allow_all_users'),
+            ),
         ));
 
         // Extract keywords from user input (AI endpoint)
@@ -119,7 +117,9 @@ class Bewerbungstrainer_Ikigai_API {
     }
 
     /**
-     * Get current user context (user_id or demo_code)
+     * Get current user context (user_id and/or demo_code)
+     *
+     * Both can be present if a user logged in after using demo code.
      *
      * @return array Array with 'user_id' and 'demo_code' keys
      */
@@ -127,13 +127,12 @@ class Bewerbungstrainer_Ikigai_API {
         $user_id = get_current_user_id();
         $demo_code = null;
 
-        // Check for demo user
-        if (!$user_id && class_exists('Bewerbungstrainer_Demo_Codes')) {
-            if (Bewerbungstrainer_Demo_Codes::is_demo_user()) {
-                $demo_code = isset($_COOKIE['bewerbungstrainer_demo_code'])
-                    ? sanitize_text_field($_COOKIE['bewerbungstrainer_demo_code'])
-                    : null;
-            }
+        // Always check for demo code cookie (even if logged in)
+        // This handles cases where user created content with demo code then logged in
+        if (class_exists('Bewerbungstrainer_Demo_Codes')) {
+            $demo_code = isset($_COOKIE['bewerbungstrainer_demo_code'])
+                ? sanitize_text_field($_COOKIE['bewerbungstrainer_demo_code'])
+                : null;
         }
 
         return array(
@@ -145,18 +144,27 @@ class Bewerbungstrainer_Ikigai_API {
     /**
      * Check if current user can access an ikigai session
      *
+     * Checks both user_id and demo_code ownership to handle cases
+     * where content was created with demo code before user logged in.
+     *
      * @param int $ikigai_id Ikigai ID
      * @return bool True if user can access
      */
     private function can_access_ikigai($ikigai_id) {
         $context = $this->get_user_context();
 
+        // Check user ownership first
         if ($context['user_id']) {
-            return $this->db->user_owns_ikigai($ikigai_id, $context['user_id']);
+            if ($this->db->user_owns_ikigai($ikigai_id, $context['user_id'])) {
+                return true;
+            }
         }
 
+        // Also check demo ownership (handles content created before login)
         if ($context['demo_code']) {
-            return $this->db->demo_owns_ikigai($ikigai_id, $context['demo_code']);
+            if ($this->db->demo_owns_ikigai($ikigai_id, $context['demo_code'])) {
+                return true;
+            }
         }
 
         return false;

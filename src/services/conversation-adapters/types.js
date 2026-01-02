@@ -70,6 +70,25 @@ export const DEFAULT_VOICE_ID = 'kaGxVtjLwllv1bi2GFag';
 export const PROXY_URL = 'wss://karriereheld-ws-proxy.onrender.com/ws';
 
 /**
+ * Direct ElevenLabs WebSocket URL
+ */
+export const DIRECT_URL = 'wss://api.elevenlabs.io/v1/convai/conversation';
+
+/**
+ * Get WebSocket URL based on connection mode
+ *
+ * @param {string} mode - 'direct' or 'proxy'
+ * @param {string} agentId - ElevenLabs agent ID
+ * @returns {string} WebSocket URL
+ */
+export const getWebSocketUrl = (mode, agentId) => {
+  if (mode === CONNECTION_MODES.DIRECT) {
+    return `${DIRECT_URL}?agent_id=${agentId}`;
+  }
+  return `${PROXY_URL}?agent_id=${agentId}`;
+};
+
+/**
  * Clean HTML from WordPress content for ElevenLabs prompts
  * Shared utility function for both adapters
  *

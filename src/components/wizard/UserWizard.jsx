@@ -209,6 +209,7 @@ function UserWizard({ onComplete, initialData = null }) {
                       onChange={(e) => handleInputChange('user_name', e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder="z.B. Max Mustermann"
+                      autoComplete="name"
                       className={`w-full px-5 py-4 border-2 rounded-xl text-lg focus:outline-none focus:ring-4 transition-all duration-200 ${
                         errors.user_name
                           ? 'border-red-400 bg-red-50 focus:ring-red-200'

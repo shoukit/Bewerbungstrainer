@@ -41,14 +41,12 @@ export function stripCodeBlocks(str) {
 
   let cleaned = str.trim();
 
-  // Remove ```json ... ``` blocks
-  if (cleaned.startsWith('```json')) {
-    cleaned = cleaned.replace(/^```json\s*/i, '').replace(/\s*```\s*$/, '');
-  }
-  // Remove generic ``` ... ``` blocks
-  else if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```\s*$/, '');
-  }
+  // More robust regex that handles various code block formats
+  // Handles: ```json\n...\n```, ```\n...\n```, with or without trailing whitespace
+  cleaned = cleaned
+    .replace(/^```json\s*/i, '')  // Remove opening ```json
+    .replace(/^```\s*/, '')        // Remove opening ``` (if no json specified)
+    .replace(/\s*```\s*$/, '');    // Remove closing ```
 
   return cleaned.trim();
 }

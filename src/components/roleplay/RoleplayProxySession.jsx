@@ -1,11 +1,17 @@
 /**
  * RoleplayProxySession Component
  *
- * Like RoleplaySession, but routes through our WebSocket proxy
- * for corporate firewall compatibility.
+ * Unified conversation component with explicit audio buffering.
+ * Supports two connection modes:
+ * - 'direct': Connect directly to ElevenLabs WebSocket API
+ * - 'proxy': Connect through our WebSocket proxy server (for corporate firewalls)
  *
- * Uses direct WebSocket connection instead of @elevenlabs/react SDK.
- * Creates proper database sessions and performs analysis like RoleplaySession.
+ * Both modes use the same buffering for smooth audio playback:
+ * - audioQueueRef: FIFO queue for incoming chunks
+ * - nextPlayTimeRef: Seamless scheduling (no gaps)
+ * - Web Audio API with precise timing
+ *
+ * This solves the audio dropout issues of the @elevenlabs/react SDK.
  */
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -47,11 +53,13 @@ import {
   extractCoachingContext,
 } from '@/services/live-coaching-engine';
 
-// Proxy URL - can be configured
-const PROXY_URL = 'wss://karriereheld-ws-proxy.onrender.com/ws';
+// Import connection mode constants
+import { CONNECTION_MODES, getWebSocketUrl } from '@/services/conversation-adapters/types';
 
 /**
- * RoleplayProxySession - WebSocket proxy version of RoleplaySession
+ * RoleplayProxySession - Unified WebSocket component with buffering
+ *
+ * @param {string} connectionMode - 'direct' or 'proxy' (default: 'direct')
  */
 const RoleplayProxySession = ({
   scenario,
@@ -59,6 +67,7 @@ const RoleplayProxySession = ({
   selectedMicrophoneId,
   onEnd,
   onNavigateToSession,
+  connectionMode = CONNECTION_MODES.DIRECT, // Default to direct for better audio quality
 }) => {
   // Partner branding and demo code
   const { branding, demoCode } = usePartner();
@@ -198,7 +207,7 @@ const RoleplayProxySession = ({
         variables: variables,
         user_name: 'Gast',
         demo_code: demoCode || null,
-        connection_mode: 'proxy',
+        connection_mode: connectionMode,
       };
 
       const createdSession = await createRoleplaySession(sessionData);
@@ -216,8 +225,9 @@ const RoleplayProxySession = ({
       });
       streamRef.current = stream;
 
-      // 3. Connect to proxy
-      const wsUrl = `${PROXY_URL}?agent_id=${agentId}`;
+      // 3. Connect to ElevenLabs (direct or via proxy)
+      const wsUrl = getWebSocketUrl(connectionMode, agentId);
+      console.log(`[RoleplaySession] Connecting in ${connectionMode} mode to: ${wsUrl}`);
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -226,6 +236,7 @@ const RoleplayProxySession = ({
 
       ws.onopen = () => {
         // Don't set connected yet - wait for conversation_initiation_metadata
+        console.log(`[RoleplaySession] WebSocket opened (${connectionMode} mode)`);
       };
 
       ws.onmessage = (event) => {
@@ -237,11 +248,15 @@ const RoleplayProxySession = ({
         if (status !== 'analyzing') {
           setStatus('disconnected');
         }
+        console.log(`[RoleplaySession] WebSocket closed (${connectionMode} mode)`);
       };
 
       ws.onerror = (error) => {
-        console.error('[ProxySession] WebSocket error:', error);
-        setError('Verbindung zum Proxy fehlgeschlagen');
+        console.error('[RoleplaySession] WebSocket error:', error);
+        const errorMsg = connectionMode === CONNECTION_MODES.PROXY
+          ? 'Verbindung zum Proxy fehlgeschlagen'
+          : 'Verbindung zu ElevenLabs fehlgeschlagen';
+        setError(errorMsg);
         setStatus('disconnected');
       };
 
@@ -893,11 +908,13 @@ const RoleplayProxySession = ({
           >
             {/* Header */}
             <div style={{ background: themedStyles.headerGradient }} className="rounded-t-2xl px-4 lg:px-6 py-3 lg:py-4 shadow-xl">
-              {/* Proxy Mode Badge */}
+              {/* Connection Mode Badge */}
               <div className="flex items-center justify-center gap-2 mb-3">
                 <div className="flex items-center gap-1.5 px-3 py-1 bg-white/20 rounded-full">
                   <Wifi className="w-3.5 h-3.5 text-white" />
-                  <span className="text-xs font-medium text-white">Proxy Modus (WebSocket)</span>
+                  <span className="text-xs font-medium text-white">
+                    {connectionMode === CONNECTION_MODES.DIRECT ? 'Direkt' : 'Proxy'} (WebSocket + Buffer)
+                  </span>
                 </div>
               </div>
 

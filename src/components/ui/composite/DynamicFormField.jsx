@@ -93,6 +93,20 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
     return field.placeholder || field.default || `${field.label} eingeben...`;
   };
 
+  // Determine autoComplete value based on field key/label to prevent Chrome showing wrong suggestions
+  const getAutoComplete = () => {
+    const key = field.key?.toLowerCase() || '';
+    const label = field.label?.toLowerCase() || '';
+
+    if (key.includes('name') || label.includes('name')) return 'name';
+    if (key.includes('email') || label.includes('email')) return 'email';
+    if (key.includes('company') || label.includes('unternehmen') || label.includes('firma')) return 'organization';
+    if (key.includes('position') || label.includes('position') || label.includes('stelle')) return 'organization-title';
+
+    // Default: disable autofill for unknown fields to prevent credit card suggestions
+    return 'off';
+  };
+
   const renderInput = () => {
     switch (field.type) {
       case 'text':
@@ -105,6 +119,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
             style={baseInputStyle}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            autoComplete={getAutoComplete()}
           />
         );
 
@@ -122,6 +137,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
             }}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            autoComplete={getAutoComplete()}
           />
         );
 
@@ -177,6 +193,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
             style={baseInputStyle}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            autoComplete="off"
           />
         );
 
@@ -191,6 +208,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
             style={baseInputStyle}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            autoComplete={getAutoComplete()}
           />
         );
     }

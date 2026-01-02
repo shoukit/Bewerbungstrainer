@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useSdkAdapter, useProxyAdapter, CONNECTION_MODES } from '@/services/conversation-adapters';
+import { useProxyAdapter, CONNECTION_MODES } from '@/services/conversation-adapters';
 import {
   createRoleplaySession,
   analyzeRoleplayTranscript,
@@ -112,23 +112,14 @@ export const useRoleplaySession = ({
     setError(err.message || 'Ein Fehler ist aufgetreten.');
   }, []);
 
-  // Create appropriate adapter based on connection mode
-  const sdkAdapter = useSdkAdapter({
+  // Use the unified adapter with explicit buffering for both modes
+  // The adapter handles both direct and proxy connections with the same buffering
+  const adapter = useProxyAdapter({
     onMessage: handleMessage,
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
     onError: handleError,
   });
-
-  const proxyAdapter = useProxyAdapter({
-    onMessage: handleMessage,
-    onConnect: handleConnect,
-    onDisconnect: handleDisconnect,
-    onError: handleError,
-  });
-
-  // Select active adapter
-  const adapter = connectionMode === CONNECTION_MODES.PROXY ? proxyAdapter : sdkAdapter;
 
   // Get agent ID
   const agentId = useMemo(() => {
@@ -205,13 +196,14 @@ export const useRoleplaySession = ({
       const createdSession = await createRoleplaySession(sessionData);
       setSessionId(createdSession.id);
 
-      // Connect using adapter
+      // Connect using adapter (with explicit buffering for both direct and proxy modes)
       const conversationId = await adapter.connect({
         agentId,
         scenario,
         variables,
         microphoneId,
         demoCode,
+        connectionMode, // Pass connection mode to adapter
       });
 
       console.log(`[useRoleplaySession] Connected via ${connectionMode}, conversation ID:`, conversationId);
@@ -376,13 +368,11 @@ export const useRoleplaySession = ({
   ]);
 
   /**
-   * Set muted state (only for proxy mode)
+   * Set muted state (works for both modes with unified adapter)
    */
   const setMuted = useCallback((muted) => {
-    if (connectionMode === CONNECTION_MODES.PROXY) {
-      proxyAdapter.setMuted(muted);
-    }
-  }, [connectionMode, proxyAdapter]);
+    adapter.setMuted(muted);
+  }, [adapter]);
 
   return {
     // State

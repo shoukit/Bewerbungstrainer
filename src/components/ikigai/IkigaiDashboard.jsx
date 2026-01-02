@@ -87,10 +87,10 @@ const IkigaiDashboard = ({
   const loadSessions = async () => {
     setIsLoading(true);
     try {
-      const response = await wordpressAPI.getIkigaiSessions();
-      if (response?.sessions) {
+      const response = await wordpressAPI.getIkigais();
+      if (response?.data?.ikigais) {
         // Sort by date, newest first, limit to 5
-        const sorted = response.sessions
+        const sorted = response.data.ikigais
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
           .slice(0, 5);
         setSessions(sorted);

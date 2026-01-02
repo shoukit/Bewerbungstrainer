@@ -1,18 +1,26 @@
 /**
- * Proxy Adapter for ElevenLabs Conversational AI
+ * Conversation Adapter for ElevenLabs Conversational AI
  *
- * Uses direct WebSocket connection through our proxy server.
- * This adapter is used for corporate firewall compatibility.
+ * Supports two connection modes:
+ * - 'direct': Connect directly to ElevenLabs WebSocket API
+ * - 'proxy': Connect through our WebSocket proxy server (for corporate firewalls)
+ *
+ * Both modes use the same explicit audio buffering for smooth playback:
+ * - audioQueueRef: FIFO queue for incoming audio chunks
+ * - nextPlayTimeRef: Seamless scheduling tracker (no gaps between chunks)
+ * - playNextAudio(): Web Audio API with precise timing
+ *
+ * This buffering solves the audio dropout issues of the SDK approach.
  *
  * Handles:
- * - WebSocket connection to proxy
- * - Manual audio capture (PCM16 at 16kHz)
- * - Manual audio playback via Web Audio API
+ * - WebSocket connection (direct or via proxy)
+ * - Manual audio capture (PCM16 at 16kHz, 256ms chunks)
+ * - Manual audio playback via Web Audio API with jitter buffering
  * - Message handling and transcript generation
  */
 
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { PROXY_URL, buildSystemPrompt, buildEnhancedVariables, cleanHtmlForPrompt } from './types';
+import { CONNECTION_MODES, getWebSocketUrl, buildSystemPrompt, buildEnhancedVariables, cleanHtmlForPrompt } from './types';
 import { formatDuration } from '@/utils/formatting';
 
 /**
@@ -331,11 +339,19 @@ export const useProxyAdapter = ({
 
   /**
    * Start the conversation
+   *
+   * @param {Object} config - Connection configuration
+   * @param {string} config.agentId - ElevenLabs agent ID
+   * @param {Object} config.scenario - Scenario configuration
+   * @param {Object} config.variables - Dynamic variables
+   * @param {string} [config.microphoneId] - Selected microphone device ID
+   * @param {string} [config.connectionMode='proxy'] - 'direct' or 'proxy'
    */
   const connect = useCallback(async (config) => {
-    const { agentId, scenario, variables, microphoneId } = config;
+    const { agentId, scenario, variables, microphoneId, connectionMode = CONNECTION_MODES.PROXY } = config;
 
     setStatus('connecting');
+    console.log(`[ConversationAdapter] Starting in ${connectionMode} mode`);
 
     try {
       // Get microphone access
@@ -350,8 +366,9 @@ export const useProxyAdapter = ({
       });
       streamRef.current = stream;
 
-      // Connect to proxy
-      const wsUrl = `${PROXY_URL}?agent_id=${agentId}`;
+      // Connect to ElevenLabs (direct or via proxy)
+      const wsUrl = getWebSocketUrl(connectionMode, agentId);
+      console.log(`[ConversationAdapter] Connecting to: ${wsUrl}`);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
       ws.binaryType = 'arraybuffer';
