@@ -150,54 +150,95 @@ function initReactApp() {
   }
 }
 
-// Check if CSS is fully applied by testing CSS variables from our stylesheet
+// Check if CSS is fully applied by testing CSS variables and Tailwind utilities
 function waitForCSSApplied() {
   return new Promise((resolve) => {
-    const maxAttempts = 100; // 1000ms max (100 * 10ms)
+    const maxAttempts = 150; // 1500ms max (150 * 10ms)
     let attempts = 0;
 
     const checkCSS = () => {
       attempts++;
+
+      // Check for CSS loaded class added by PHP onload handler
+      const hasCSSLoadedClass = document.documentElement.classList.contains('bewerbungstrainer-css-loaded');
 
       // Check multiple indicators that our full CSS is loaded:
       // 1. Check for a CSS variable defined in our styles
       const rootStyles = getComputedStyle(document.documentElement);
       const hasCSSVariable = rootStyles.getPropertyValue('--primary-accent').trim() !== '';
 
-      // 2. Check for a Tailwind utility class
-      const testEl = document.createElement('div');
-      testEl.className = 'rounded-xl'; // A Tailwind class
-      testEl.style.display = 'none';
-      document.body.appendChild(testEl);
-      const computedStyle = window.getComputedStyle(testEl);
-      const hasTailwind = computedStyle.borderRadius !== '0px' && computedStyle.borderRadius !== '';
-      document.body.removeChild(testEl);
+      // 2. Check for Tailwind utility classes using visible elements
+      // Use visibility:hidden instead of display:none to get accurate computed styles
+      const testContainer = document.createElement('div');
+      testContainer.style.cssText = 'position:absolute;left:-9999px;visibility:hidden;';
 
-      // 3. Check if stylesheets have rules (indicates parsing is complete)
+      // Test multiple Tailwind classes
+      const flexTest = document.createElement('div');
+      flexTest.className = 'flex';
+
+      const roundedTest = document.createElement('div');
+      roundedTest.className = 'rounded-xl';
+
+      const bgTest = document.createElement('div');
+      bgTest.className = 'bg-transparent';
+
+      testContainer.appendChild(flexTest);
+      testContainer.appendChild(roundedTest);
+      testContainer.appendChild(bgTest);
+      document.body.appendChild(testContainer);
+
+      const flexStyle = window.getComputedStyle(flexTest);
+      const roundedStyle = window.getComputedStyle(roundedTest);
+      const bgStyle = window.getComputedStyle(bgTest);
+
+      const hasFlex = flexStyle.display === 'flex';
+      const hasRounded = roundedStyle.borderRadius !== '0px' && roundedStyle.borderRadius !== '';
+      const hasBgTransparent = bgStyle.backgroundColor === 'rgba(0, 0, 0, 0)' || bgStyle.backgroundColor === 'transparent';
+
+      document.body.removeChild(testContainer);
+
+      const hasTailwind = hasFlex || hasRounded;
+
+      // 3. Check if our specific stylesheet is loaded and has rules
       const stylesheets = document.styleSheets;
-      let hasRules = false;
+      let hasOurStylesheet = false;
+      let hasEnoughRules = false;
       try {
         for (let i = 0; i < stylesheets.length; i++) {
-          if (stylesheets[i].cssRules && stylesheets[i].cssRules.length > 100) {
-            hasRules = true;
-            break;
+          const sheet = stylesheets[i];
+          // Check if this is our stylesheet (contains 'bewerbungstrainer' or 'FeatureInfoButton')
+          if (sheet.href && (sheet.href.includes('bewerbungstrainer') ||
+              sheet.href.includes('FeatureInfoButton') ||
+              sheet.href.includes('karriereheld'))) {
+            hasOurStylesheet = true;
+            if (sheet.cssRules && sheet.cssRules.length > 100) {
+              hasEnoughRules = true;
+            }
+          }
+          // Also accept any stylesheet with lots of rules as fallback
+          if (sheet.cssRules && sheet.cssRules.length > 500) {
+            hasEnoughRules = true;
           }
         }
       } catch (e) {
         // Cross-origin stylesheets will throw - that's fine
-        hasRules = true;
+        hasEnoughRules = true;
       }
 
-      const isReady = (hasCSSVariable || hasTailwind) && hasRules;
+      // CSS is ready if:
+      // - The onload class is set (most reliable), OR
+      // - All computed style checks pass (CSS variable + Tailwind + rules)
+      const isReady = hasCSSLoadedClass || (hasCSSVariable && hasTailwind && hasEnoughRules);
 
       if (isReady || attempts >= maxAttempts) {
         if (attempts >= maxAttempts) {
           console.log(`${DEBUG_PREFIX} 🎨 CSS check timeout after ${attempts} attempts, proceeding...`);
+          console.log(`${DEBUG_PREFIX} 🎨 Final state: loadedClass=${hasCSSLoadedClass}, cssVar=${hasCSSVariable}, flex=${hasFlex}, rounded=${hasRounded}, rules=${hasEnoughRules}`);
         } else {
-          console.log(`${DEBUG_PREFIX} 🎨 CSS is fully applied (attempt ${attempts}, cssVar=${hasCSSVariable}, tailwind=${hasTailwind}, rules=${hasRules})`);
+          console.log(`${DEBUG_PREFIX} 🎨 CSS is fully applied (attempt ${attempts}, loadedClass=${hasCSSLoadedClass}, cssVar=${hasCSSVariable}, flex=${hasFlex}, rounded=${hasRounded})`);
         }
-        // Add a small extra delay to ensure browser has finished rendering
-        setTimeout(() => resolve(), 50);
+        // Add a longer delay to ensure browser has finished all style calculations
+        setTimeout(() => resolve(), 100);
       } else {
         setTimeout(checkCSS, 10); // Check every 10ms
       }

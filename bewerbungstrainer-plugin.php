@@ -744,7 +744,13 @@ class Bewerbungstrainer_Plugin {
             return;
         }
 
-        // Enqueue CSS first
+        // Add CSS preload in head for faster loading
+        $css_url = BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/FeatureInfoButton.css?v=' . filemtime($css_file);
+        add_action('wp_head', function() use ($css_url) {
+            echo '<link rel="preload" href="' . esc_url($css_url) . '" as="style">' . "\n";
+        }, 1);
+
+        // Enqueue CSS first with high priority
         wp_enqueue_style(
             'bewerbungstrainer-app',
             BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/FeatureInfoButton.css',
@@ -786,6 +792,16 @@ class Bewerbungstrainer_Plugin {
             }
             return $tag;
         }, 10, 3);
+
+        // Add blocking attribute to CSS to ensure it loads before rendering
+        add_filter('style_loader_tag', function($tag, $handle) {
+            if ('bewerbungstrainer-app' === $handle) {
+                // Add onload handler to mark CSS as loaded
+                $tag = str_replace(' />', ' onload="document.documentElement.classList.add(\'bewerbungstrainer-css-loaded\')" />', $tag);
+                $tag = str_replace('>', ' onload="document.documentElement.classList.add(\'bewerbungstrainer-css-loaded\')">', $tag);
+            }
+            return $tag;
+        }, 10, 2);
     }
 
     /**
