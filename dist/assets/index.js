@@ -74,7 +74,10 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt in diesem Format:
   "tips": [
     "Tipp 1: Konkrete, umsetzbare Empfehlung",
     "Tipp 2: Praktischer Ratschlag"
-  ]
+  ],
+  "rating": {
+    "overall": "1-10 Gesamtbewertung der Leistung"
+  }
 }`;function As(e,n){if(e.includes("${transcript}")){const s=e.replace("${transcript}",n);return s.toLowerCase().includes('"summary"')||s.toLowerCase().includes('"strengths"')?s:`${s}
 ${bt}`}return`${e}
 

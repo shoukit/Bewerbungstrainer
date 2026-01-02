@@ -251,7 +251,10 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt in diesem Format:
   "tips": [
     "Tipp 1: Konkrete, umsetzbare Empfehlung",
     "Tipp 2: Praktischer Ratschlag"
-  ]
+  ],
+  "rating": {
+    "overall": "1-10 Gesamtbewertung der Leistung"
+  }
 }`;
 
 /**
