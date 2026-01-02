@@ -150,36 +150,56 @@ function initReactApp() {
   }
 }
 
-// Check if CSS is fully applied by testing a known CSS variable or property
+// Check if CSS is fully applied by testing CSS variables from our stylesheet
 function waitForCSSApplied() {
   return new Promise((resolve) => {
-    const maxAttempts = 50; // 500ms max
+    const maxAttempts = 100; // 1000ms max (100 * 10ms)
     let attempts = 0;
 
     const checkCSS = () => {
       attempts++;
 
-      // Check if our CSS variables are available (from Tailwind/our styles)
+      // Check multiple indicators that our full CSS is loaded:
+      // 1. Check for a CSS variable defined in our styles
+      const rootStyles = getComputedStyle(document.documentElement);
+      const hasCSSVariable = rootStyles.getPropertyValue('--primary-accent').trim() !== '';
+
+      // 2. Check for a Tailwind utility class
       const testEl = document.createElement('div');
-      testEl.className = 'bg-primary'; // A class from our styles
+      testEl.className = 'rounded-xl'; // A Tailwind class
       testEl.style.display = 'none';
       document.body.appendChild(testEl);
-
       const computedStyle = window.getComputedStyle(testEl);
-      const hasTailwind = computedStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
-                          computedStyle.backgroundColor !== 'transparent';
-
+      const hasTailwind = computedStyle.borderRadius !== '0px' && computedStyle.borderRadius !== '';
       document.body.removeChild(testEl);
 
-      if (hasTailwind || attempts >= maxAttempts) {
+      // 3. Check if stylesheets have rules (indicates parsing is complete)
+      const stylesheets = document.styleSheets;
+      let hasRules = false;
+      try {
+        for (let i = 0; i < stylesheets.length; i++) {
+          if (stylesheets[i].cssRules && stylesheets[i].cssRules.length > 100) {
+            hasRules = true;
+            break;
+          }
+        }
+      } catch (e) {
+        // Cross-origin stylesheets will throw - that's fine
+        hasRules = true;
+      }
+
+      const isReady = (hasCSSVariable || hasTailwind) && hasRules;
+
+      if (isReady || attempts >= maxAttempts) {
         if (attempts >= maxAttempts) {
           console.log(`${DEBUG_PREFIX} 🎨 CSS check timeout after ${attempts} attempts, proceeding...`);
         } else {
-          console.log(`${DEBUG_PREFIX} 🎨 CSS is applied (attempt ${attempts})`);
+          console.log(`${DEBUG_PREFIX} 🎨 CSS is fully applied (attempt ${attempts}, cssVar=${hasCSSVariable}, tailwind=${hasTailwind}, rules=${hasRules})`);
         }
-        resolve();
+        // Add a small extra delay to ensure browser has finished rendering
+        setTimeout(() => resolve(), 50);
       } else {
-        requestAnimationFrame(checkCSS);
+        setTimeout(checkCSS, 10); // Check every 10ms
       }
     };
 
