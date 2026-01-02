@@ -206,7 +206,10 @@ const DynamicFormField = ({ field, value, onChange, error }) => {
             required={field.required}
           >
             {!field.default && <option value="">Bitte auswählen...</option>}
-            {field.options?.map((opt) => (
+            {field.options
+              ?.slice() // Create a copy to avoid mutating the original
+              .sort((a, b) => a.label.localeCompare(b.label, 'de'))
+              .map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>

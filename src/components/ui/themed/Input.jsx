@@ -179,7 +179,10 @@ const Select = React.forwardRef(({
               {placeholder}
             </option>
           )}
-          {options.map((option) => (
+          {options
+            .slice() // Create a copy to avoid mutating the original
+            .sort((a, b) => a.label.localeCompare(b.label, 'de'))
+            .map((option) => (
             <option
               key={option.value}
               value={option.value}

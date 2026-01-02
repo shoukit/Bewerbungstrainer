@@ -144,7 +144,15 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
             onBlur={handleBlur}
           >
             <option value="">Bitte wählen...</option>
-            {field.options?.map((option) => {
+            {field.options
+              ?.slice() // Create a copy to avoid mutating the original
+              .sort((a, b) => {
+                // Support both {value, label} objects and plain strings
+                const labelA = a.label ?? a;
+                const labelB = b.label ?? b;
+                return String(labelA).localeCompare(String(labelB), 'de');
+              })
+              .map((option) => {
               // Support both {value, label} objects and plain strings
               const optionValue = option.value ?? option;
               const optionLabel = option.label ?? option;
