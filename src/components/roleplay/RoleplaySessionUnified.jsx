@@ -469,16 +469,15 @@ const RoleplaySessionUnified = ({
                 </Button>
               ) : status === 'connected' ? (
                 <>
-                  {connectionMode === CONNECTION_MODES.PROXY && (
-                    <Button
-                      onClick={handleToggleMute}
-                      size="lg"
-                      variant={isMuted ? 'destructive' : 'outline'}
-                      className="rounded-xl"
-                    >
-                      {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                    </Button>
-                  )}
+                  <Button
+                    onClick={handleToggleMute}
+                    size="lg"
+                    variant={isMuted ? 'destructive' : 'outline'}
+                    className="rounded-xl"
+                    title={isMuted ? 'Mikrofon aktivieren' : 'Mikrofon stummschalten'}
+                  >
+                    {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                  </Button>
                   <Button
                     onClick={() => setShowEndDialog(true)}
                     size="lg"
