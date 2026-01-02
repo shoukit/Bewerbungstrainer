@@ -14,8 +14,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/base/dialog';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
 
 const ConfirmDeleteDialog = ({
   isOpen,
@@ -27,9 +25,6 @@ const ConfirmDeleteDialog = ({
   confirmLabel = 'Löschen',
   cancelLabel = 'Abbrechen',
 }) => {
-  const { branding } = usePartner();
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[400px]">
@@ -46,24 +41,14 @@ const ConfirmDeleteDialog = ({
           <button
             onClick={onClose}
             disabled={isDeleting}
-            className="min-w-[100px] h-10 px-5 py-2 rounded-lg bg-white text-sm font-medium transition-all hover:bg-slate-50"
-            style={{
-              border: `2px solid ${primaryAccent}`,
-              color: primaryAccent,
-              cursor: isDeleting ? 'not-allowed' : 'pointer',
-              opacity: isDeleting ? 0.5 : 1,
-            }}
+            className="min-w-[100px] h-10 px-5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm font-medium transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={isDeleting}
-            className="min-w-[100px] h-10 px-5 py-2 rounded-lg border-none bg-gradient-to-br from-red-500 to-red-600 text-white text-sm font-medium transition-all inline-flex items-center justify-center gap-2 hover:opacity-90"
-            style={{
-              cursor: isDeleting ? 'not-allowed' : 'pointer',
-              opacity: isDeleting ? 0.5 : 1,
-            }}
+            className="min-w-[100px] h-10 px-5 py-2 rounded-lg border-none bg-gradient-to-br from-red-500 to-red-600 text-white text-sm font-medium transition-all inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isDeleting ? (
               <>
