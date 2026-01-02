@@ -732,9 +732,14 @@ class Bewerbungstrainer_Plugin {
 
         // Check if build files exist
         if (!file_exists($asset_file) || !file_exists($css_file)) {
-            // Show error message if build files are missing
-            add_action('wp_footer', function() {
-                echo '<script>console.error("Bewerbungstrainer: Build files missing! Please run: npm install && npm run build");</script>';
+            // Show error message if build files are missing with debug info
+            $js_exists = file_exists($asset_file) ? 'YES' : 'NO';
+            $css_exists = file_exists($css_file) ? 'YES' : 'NO';
+            add_action('wp_footer', function() use ($asset_file, $css_file, $js_exists, $css_exists) {
+                echo '<script>console.error("Bewerbungstrainer: Build files missing!");';
+                echo 'console.error("JS path: ' . esc_js($asset_file) . ' - exists: ' . $js_exists . '");';
+                echo 'console.error("CSS path: ' . esc_js($css_file) . ' - exists: ' . $css_exists . '");';
+                echo 'console.error("Please run: npm install && npm run build");</script>';
             });
             return;
         }
