@@ -153,6 +153,39 @@ class Bewerbungstrainer_Shortcodes {
                 100% { transform: translateX(400%); }
             }
         </style>
+        <script>
+            // Immediately apply cached partner branding to prevent flash of default design
+            (function() {
+                try {
+                    // Get partner slug from URL
+                    var urlParams = new URLSearchParams(window.location.search);
+                    var partnerId = urlParams.get('partner') || urlParams.get('pid');
+
+                    if (partnerId) {
+                        // Try to get cached config
+                        var cached = localStorage.getItem('bewerbungstrainer_partner_cache');
+                        if (cached) {
+                            var config = JSON.parse(cached);
+                            if (config && config.slug === partnerId && config.branding) {
+                                // Apply CSS variables immediately
+                                var root = document.documentElement;
+                                Object.keys(config.branding).forEach(function(key) {
+                                    root.style.setProperty(key, config.branding[key]);
+                                });
+
+                                // Store app name for loading screen
+                                window.__partnerAppName = config.app_name || null;
+                                window.__partnerPrimaryColor = config.branding['--primary-accent'] || null;
+
+                                console.log('🚀 [Instant Branding] Applied cached branding for:', partnerId);
+                            }
+                        }
+                    }
+                } catch(e) {
+                    console.warn('🚀 [Instant Branding] Error:', e);
+                }
+            })();
+        </script>
         <div id="bewerbungstrainer-app" class="bewerbungstrainer-interview-container">
             <div class="bewerbungstrainer-loading">
                 <!-- Animated background circles -->
@@ -170,9 +203,9 @@ class Bewerbungstrainer_Shortcodes {
                         </svg>
                     </div>
 
-                    <!-- Brand name -->
+                    <!-- Brand name (dynamically updated by inline script if partner cached) -->
                     <div class="bewerbungstrainer-loading-text">
-                        <h1><?php esc_html_e('Karriereheld', 'bewerbungstrainer'); ?></h1>
+                        <h1 id="bewerbungstrainer-loading-title"><?php esc_html_e('Karriereheld', 'bewerbungstrainer'); ?></h1>
                         <p><?php esc_html_e('wird geladen...', 'bewerbungstrainer'); ?></p>
                     </div>
 
@@ -183,6 +216,20 @@ class Bewerbungstrainer_Shortcodes {
                 </div>
             </div>
         </div>
+        <script>
+            // Update loading screen with partner app name if available
+            (function() {
+                if (window.__partnerAppName) {
+                    var titleEl = document.getElementById('bewerbungstrainer-loading-title');
+                    if (titleEl) {
+                        titleEl.textContent = window.__partnerAppName;
+                        if (window.__partnerPrimaryColor) {
+                            titleEl.style.color = window.__partnerPrimaryColor;
+                        }
+                    }
+                }
+            })();
+        </script>
         <?php
         return ob_get_clean();
     }
