@@ -2,11 +2,14 @@ import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { SidebarLayout } from './components/ui/sidebar';
 import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
-import { LoginModal } from './components/LoginModal';
-import { DisclaimerModal, useDisclaimerModal } from './components/DisclaimerModal';
-import { ToastProvider } from './components/Toast';
+import { LoginModal } from './components/global/LoginModal';
+import { DisclaimerModal, useDisclaimerModal } from './components/global/DisclaimerModal';
+import { ToastProvider } from './components/global/Toast';
+import { setLoginModalOpen } from './components/global/FeatureInfoModal';
 import { Loader2 } from 'lucide-react';
-import { ROUTES, VIEW_TO_ROUTE, getViewFromPath } from './routes';
+import { ROUTES, VIEW_TO_ROUTE, getViewFromPath, isAuthRequiredRoute } from './routes';
+import { syncPreferencesFromAPI } from './services/user-preferences';
+import { COLORS, GRADIENTS, hexToRgba } from './config/colors';
 
 // Debug logging
 const DEBUG_PREFIX = '[APP.JSX]';
@@ -16,7 +19,7 @@ console.log(`${DEBUG_PREFIX} 🚀 Module loaded`);
 // CRITICAL PATH COMPONENTS (loaded immediately)
 // These are needed for the initial render / homepage
 // ============================================================================
-import QuadDashboard from './components/QuadDashboard';
+import QuadDashboard from './components/global/QuadDashboard';
 
 // ============================================================================
 // LAZY-LOADED COMPONENTS
@@ -24,14 +27,14 @@ import QuadDashboard from './components/QuadDashboard';
 // ============================================================================
 
 // Live Training (Roleplay) - includes ElevenLabs SDK (~100KB+)
-const RoleplayDashboard = lazy(() => import('./components/RoleplayDashboard'));
-const RoleplayDeviceSetup = lazy(() => import('./components/RoleplayDeviceSetup'));
-const RoleplayVariablesPage = lazy(() => import('./components/RoleplayVariablesPage'));
-const RoleplaySessionUnified = lazy(() => import('./components/RoleplaySessionUnified'));
+const RoleplayDashboard = lazy(() => import('./components/roleplay/RoleplayDashboard'));
+const RoleplayDeviceSetup = lazy(() => import('./components/roleplay/RoleplayDeviceSetup'));
+const RoleplayVariablesPage = lazy(() => import('./components/roleplay/RoleplayVariablesPage'));
+const RoleplaySessionUnified = lazy(() => import('./components/roleplay/RoleplaySessionUnified'));
 
 // Session History
-const SessionHistory = lazy(() => import('./components/SessionHistory').then(m => ({ default: m.default })));
-const SessionDetailView = lazy(() => import('./components/SessionDetailView'));
+const SessionHistory = lazy(() => import('./components/global/SessionHistory').then(m => ({ default: m.default })));
+const SessionDetailView = lazy(() => import('./components/session-detail/SessionDetailView'));
 
 // Simulator (Scenario Training)
 const SimulatorApp = lazy(() => import('./components/simulator').then(m => ({ default: m.SimulatorApp })));
@@ -53,7 +56,7 @@ const DecisionBoardApp = lazy(() => import('./components/decision-board').then(m
 const IkigaiApp = lazy(() => import('./components/ikigai/IkigaiApp'));
 
 // Usage Limits
-const UsageLimitsDisplay = lazy(() => import('./components/UsageLimitsDisplay'));
+const UsageLimitsDisplay = lazy(() => import('./components/global/UsageLimitsDisplay'));
 
 // Admin components (only loaded for admins)
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
@@ -96,7 +99,7 @@ const LazyLoadFallback = () => (
         width: '48px',
         height: '48px',
         borderRadius: '12px',
-        background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
+        background: `linear-gradient(135deg, ${COLORS.sky[400]} 0%, ${COLORS.indigo[400]} 100%)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -157,7 +160,7 @@ const BrandingLoadingSpinner = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+        background: `linear-gradient(135deg, ${COLORS.slate[900]} 0%, ${COLORS.slate[800]} 50%, ${COLORS.slate[900]} 100%)`,
         zIndex: 9999,
       }}
     >
@@ -169,7 +172,7 @@ const BrandingLoadingSpinner = () => {
         width: '300px',
         height: '300px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%)',
+        background: `radial-gradient(circle, ${hexToRgba(COLORS.sky[400], 0.1)} 0%, transparent 70%)`,
         animation: 'float 6s ease-in-out infinite',
       }} />
       <div style={{
@@ -179,7 +182,7 @@ const BrandingLoadingSpinner = () => {
         width: '400px',
         height: '400px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%)',
+        background: `radial-gradient(circle, ${hexToRgba(COLORS.violet[500], 0.1)} 0%, transparent 70%)`,
         animation: 'float 8s ease-in-out infinite reverse',
       }} />
 
@@ -199,11 +202,11 @@ const BrandingLoadingSpinner = () => {
             width: '80px',
             height: '80px',
             borderRadius: '24px',
-            background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
+            background: `linear-gradient(135deg, ${COLORS.sky[400]} 0%, ${COLORS.indigo[400]} 100%)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 20px 40px rgba(56, 189, 248, 0.3)',
+            boxShadow: `0 20px 40px ${hexToRgba(COLORS.sky[400], 0.3)}`,
             animation: 'pulse 2s ease-in-out infinite',
           }}
         >
@@ -261,7 +264,7 @@ const BrandingLoadingSpinner = () => {
             style={{
               width: '40%',
               height: '100%',
-              background: 'linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8)',
+              background: `linear-gradient(90deg, ${COLORS.sky[400]}, ${COLORS.indigo[400]}, ${COLORS.sky[400]})`,
               backgroundSize: '200% 100%',
               borderRadius: '2px',
               animation: 'loading 1.5s ease-in-out infinite',
@@ -498,8 +501,14 @@ function AppContent() {
 
   // Login modal state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const openLoginModal = () => setIsLoginModalOpen(true);
-  const closeLoginModal = () => setIsLoginModalOpen(false);
+  const openLoginModal = () => {
+    setIsLoginModalOpen(true);
+    setLoginModalOpen(true); // Notify FeatureInfoModal to suppress auto-show
+  };
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    setLoginModalOpen(false); // Allow FeatureInfoModal auto-show again
+  };
 
   // Disclaimer modal state
   const {
@@ -537,6 +546,18 @@ function AppContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading]);
+
+  // Sync user preferences from API when authenticated or demo user
+  // Add small delay to allow browser to fully process session cookie after login
+  // This prevents "cookie check failed" errors on immediate API calls
+  useEffect(() => {
+    if (!authLoading && (isAuthenticated || demoCode)) {
+      const timer = setTimeout(() => {
+        syncPreferencesFromAPI(isAuthenticated, demoCode);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, authLoading, demoCode]);
 
   /**
    * Execute a pending action after successful login
@@ -1107,6 +1128,11 @@ function AppContent() {
             closeLoginModal();
             // Clear pending action if user cancels login
             setPendingAction(null);
+
+            // If user is on a protected route and cancels login, redirect to overview
+            if (!isAuthenticated && isAuthRequiredRoute(location.pathname)) {
+              navigate(ROUTES.HOME);
+            }
           }}
           onLoginSuccess={async (user) => {
 

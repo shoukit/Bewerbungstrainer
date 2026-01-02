@@ -302,6 +302,10 @@ class Bewerbungstrainer_Plugin {
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-decision-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-decision-api.php';
 
+        // Load User Preferences classes
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-user-preferences-database.php';
+        require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-user-preferences-api.php';
+
         // Load Ikigai Career Pathfinder classes
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-ikigai-database.php';
         require_once BEWERBUNGSTRAINER_PLUGIN_DIR . 'includes/class-ikigai-api.php';
@@ -487,6 +491,9 @@ class Bewerbungstrainer_Plugin {
         // Create decision board database table
         Bewerbungstrainer_Decision_Database::get_instance()->create_table();
 
+        // Create user preferences table
+        Bewerbungstrainer_User_Preferences_Database::get_instance()->create_table();
+
         // Create categories database table (centralized for all modules)
         Bewerbungstrainer_Categories_Database::create_tables();
 
@@ -664,6 +671,12 @@ class Bewerbungstrainer_Plugin {
         $ikigai_db->create_table();
         Bewerbungstrainer_Ikigai_API::get_instance();
 
+        // Initialize User Preferences
+        $user_prefs_db = Bewerbungstrainer_User_Preferences_Database::get_instance();
+        // Ensure table exists (for updates without re-activation)
+        $user_prefs_db->create_table();
+        Bewerbungstrainer_User_Preferences_API::get_instance();
+
         // Initialize Categories (centralized for all modules)
         Bewerbungstrainer_Categories_Database::get_instance();
         Bewerbungstrainer_Categories_API::get_instance();
@@ -715,21 +728,32 @@ class Bewerbungstrainer_Plugin {
 
         // Enqueue React app (built version)
         $asset_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/index.js';
-        $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/designTokens.css';
+        $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/FeatureInfoButton.css';
 
         // Check if build files exist
         if (!file_exists($asset_file) || !file_exists($css_file)) {
-            // Show error message if build files are missing
-            add_action('wp_footer', function() {
-                echo '<script>console.error("Bewerbungstrainer: Build files missing! Please run: npm install && npm run build");</script>';
+            // Show error message if build files are missing with debug info
+            $js_exists = file_exists($asset_file) ? 'YES' : 'NO';
+            $css_exists = file_exists($css_file) ? 'YES' : 'NO';
+            add_action('wp_footer', function() use ($asset_file, $css_file, $js_exists, $css_exists) {
+                echo '<script>console.error("Bewerbungstrainer: Build files missing!");';
+                echo 'console.error("JS path: ' . esc_js($asset_file) . ' - exists: ' . $js_exists . '");';
+                echo 'console.error("CSS path: ' . esc_js($css_file) . ' - exists: ' . $css_exists . '");';
+                echo 'console.error("Please run: npm install && npm run build");</script>';
             });
             return;
         }
 
-        // Enqueue CSS first
+        // Add CSS preload in head for faster loading
+        $css_url = BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/FeatureInfoButton.css?v=' . filemtime($css_file);
+        add_action('wp_head', function() use ($css_url) {
+            echo '<link rel="preload" href="' . esc_url($css_url) . '" as="style">' . "\n";
+        }, 1);
+
+        // Enqueue CSS first with high priority
         wp_enqueue_style(
             'bewerbungstrainer-app',
-            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/designTokens.css',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/FeatureInfoButton.css',
             array(),
             filemtime($css_file)
         );
@@ -768,6 +792,70 @@ class Bewerbungstrainer_Plugin {
             }
             return $tag;
         }, 10, 3);
+
+        // Add onload handler to CSS to mark when it's loaded
+        add_filter('style_loader_tag', function($tag, $handle) {
+            if ('bewerbungstrainer-app' === $handle) {
+                // Use regex to reliably add onload handler to link tag
+                $onload_handler = 'onload="document.documentElement.classList.add(\'bewerbungstrainer-css-loaded\')"';
+
+                // Check if tag is self-closing (<link ... />) or not (<link ...>)
+                if (strpos($tag, '/>') !== false) {
+                    $tag = preg_replace('/<link\s/', '<link ' . $onload_handler . ' ', $tag, 1);
+                } else {
+                    $tag = preg_replace('/<link\s/', '<link ' . $onload_handler . ' ', $tag, 1);
+                }
+            }
+            return $tag;
+        }, 10, 2);
+
+        // Add fallback script to check CSS loading status
+        add_action('wp_footer', function() {
+            ?>
+            <script>
+            // Fallback: Check if CSS is loaded and add class if onload didn't fire
+            (function() {
+                var maxAttempts = 100; // 5 seconds max
+                var attempts = 0;
+                var checkCSS = function() {
+                    attempts++;
+                    // Check if class already added
+                    if (document.documentElement.classList.contains('bewerbungstrainer-css-loaded')) {
+                        return;
+                    }
+                    // Check if our stylesheet is loaded
+                    var sheets = document.styleSheets;
+                    for (var i = 0; i < sheets.length; i++) {
+                        try {
+                            var sheet = sheets[i];
+                            if (sheet.href && (sheet.href.indexOf('FeatureInfoButton') !== -1 ||
+                                sheet.href.indexOf('bewerbungstrainer') !== -1)) {
+                                // Stylesheet found, check if it has rules
+                                if (sheet.cssRules && sheet.cssRules.length > 50) {
+                                    document.documentElement.classList.add('bewerbungstrainer-css-loaded');
+                                    console.log('[CSS-GUARD] CSS loaded via fallback check');
+                                    return;
+                                }
+                            }
+                        } catch(e) {
+                            // Cross-origin, continue
+                        }
+                    }
+                    // Keep checking
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkCSS, 50);
+                    } else {
+                        // Timeout - add class anyway to prevent infinite wait
+                        document.documentElement.classList.add('bewerbungstrainer-css-loaded');
+                        console.warn('[CSS-GUARD] CSS loading timeout, showing content anyway');
+                    }
+                };
+                // Start checking after a short delay
+                setTimeout(checkCSS, 100);
+            })();
+            </script>
+            <?php
+        }, 100); // High priority to run after CSS
     }
 
     /**

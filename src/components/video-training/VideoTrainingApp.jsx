@@ -221,7 +221,7 @@ const VideoTrainingApp = ({
   };
 
   return (
-    <div style={{ minHeight: '100%' }}>
+    <div className="min-h-full">
       {renderView()}
     </div>
   );

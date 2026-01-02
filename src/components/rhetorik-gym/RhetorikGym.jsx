@@ -2,7 +2,7 @@
  * RhetorikGym - Dashboard Component
  *
  * Main interface for the Rhetorik-Gym "Füllwort-Killer" game.
- * Uses Ocean theme design consistent with other features.
+ * Migrated to Tailwind CSS + themed components for consistent styling.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -24,14 +24,13 @@ import {
   MessageCircle,
   Mic,
 } from 'lucide-react';
-import { GAME_MODES, getRandomTopic, getRandomStressQuestion } from '@/config/prompts/gamePrompts';
+import { GAME_MODES } from '@/config/prompts/gamePrompts';
 import wordpressAPI from '@/services/wordpress-api';
-import MicrophoneSelector from '@/components/MicrophoneSelector';
-import MicrophoneTestDialog from '@/components/MicrophoneTestDialog';
-import { useBranding } from '@/hooks/useBranding';
-import { COLORS, GAME_MODE_COLORS } from '@/config/colors';
-import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/ScenarioCard';
-import FeatureInfoModal from '@/components/FeatureInfoModal';
+import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
+import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog';
+import { Button, Card } from '@/components/ui';
+import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/composite/ScenarioCard';
+import FeatureInfoModal from '@/components/global/FeatureInfoModal';
 
 /**
  * Icon mapping for game modes
@@ -45,38 +44,20 @@ const ICON_MAP = {
 // ================== SUB-COMPONENTS ==================
 
 /**
- * Stats Card Component
+ * Stats Card Component - Clean Professional Design
  */
-const StatsCard = ({ icon: Icon, label, value, primaryAccent, primaryAccentLight, isMobile, b }) => {
-  // Use branding colors for all stats cards
-
-  return (
-    <div style={{
-      backgroundColor: 'white',
-      borderRadius: isMobile ? b.radius.md : b.radius.lg,
-      padding: isMobile ? b.space[3] : b.space[4],
-      border: `1px solid ${COLORS.slate[200]}`,
-    }}>
-      <div style={{
-        width: isMobile ? '32px' : '40px',
-        height: isMobile ? '32px' : '40px',
-        borderRadius: isMobile ? b.radius.sm : b.radius.md,
-        backgroundColor: primaryAccentLight,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: isMobile ? b.space[2] : b.space[3],
-      }}>
-        <Icon style={{ width: isMobile ? '16px' : '20px', height: isMobile ? '16px' : '20px', color: primaryAccent }} />
-      </div>
-      <div style={{ fontSize: isMobile ? b.fontSize.xl : b.fontSize['2xl'], fontWeight: 700, color: COLORS.slate[900] }}>{value}</div>
-      <div style={{ fontSize: isMobile ? b.fontSize['2xs'] : b.fontSize.xs, color: COLORS.slate[500] }}>{label}</div>
+const StatsCard = ({ icon: Icon, label, value, isMobile }) => (
+  <Card className="p-4 md:p-6 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5">
+    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex-center mb-3 shadow-sm">
+      <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
     </div>
-  );
-};
+    <div className="text-2xl md:text-3xl font-bold text-slate-900">{value}</div>
+    <div className="text-xs md:text-sm text-slate-500 font-medium">{label}</div>
+  </Card>
+);
 
 /**
- * Topic Selection Screen Component
+ * Topic Selection Screen Component - Uses Tailwind + themed Button
  */
 const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   const [topic, setTopic] = useState('');
@@ -84,10 +65,6 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
   const IconComponent = ICON_MAP[mode.icon] || Rocket;
-  const colors = GAME_MODE_COLORS[mode.id] || GAME_MODE_COLORS.klassiker;
-
-  // Partner theming
-  const b = useBranding();
 
   // Initialize topic
   useEffect(() => {
@@ -127,81 +104,28 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
   };
 
   return (
-    <div style={{
-      minHeight: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: b.space[6],
-    }}>
+    <div className="min-h-full flex flex-col p-6">
       {/* Back Button */}
-      <motion.button
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        onClick={onBack}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: b.space[2],
-          padding: `${b.space[2.5]} ${b.space[4]}`,
-          backgroundColor: 'white',
-          border: `1px solid ${COLORS.slate[200]}`,
-          borderRadius: b.radius.md,
-          color: COLORS.slate[600],
-          fontSize: b.fontSize.sm,
-          fontWeight: 500,
-          cursor: 'pointer',
-          marginBottom: b.space[8],
-          width: 'fit-content',
-        }}
-      >
-        <ArrowLeft style={{ width: '18px', height: '18px' }} />
-        Zurück zur Auswahl
-      </motion.button>
+      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+        <Button variant="secondary" size="sm" icon={<ArrowLeft />} onClick={onBack} className="mb-8 w-fit">
+          Zurück zur Auswahl
+        </Button>
+      </motion.div>
 
       {/* Center Content */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        maxWidth: '600px',
-        margin: '0 auto',
-        width: '100%',
-      }}>
+      <div className="flex-1 flex flex-col items-center justify-center max-w-[600px] mx-auto w-full">
         {/* Mode Icon & Title */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          style={{ textAlign: 'center', marginBottom: b.space[8] }}
+          className="text-center mb-8"
         >
-          <div style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: b.radius['2xl'],
-            background: b.headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: `0 auto ${b.space[5]}`,
-            boxShadow: b.coloredShadow(b.primaryAccent, 'lg'),
-          }}>
-            <IconComponent style={{ width: '40px', height: '40px', color: 'white' }} />
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex-center mx-auto mb-5 shadow-lg">
+            <IconComponent className="w-10 h-10 text-white" />
           </div>
-          <h1 style={{
-            fontSize: b.fontSize['3xl'],
-            fontWeight: 700,
-            color: COLORS.slate[900],
-            margin: `0 0 ${b.space[2]} 0`,
-          }}>
-            {mode.title}
-          </h1>
-          <p style={{
-            fontSize: b.fontSize.md,
-            color: COLORS.slate[500],
-            margin: 0,
-          }}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{mode.title}</h1>
+          <p className="text-base text-slate-500">
             {mode.duration} Sekunden • {mode.subtitle}
           </p>
         </motion.div>
@@ -211,30 +135,13 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          style={{
-            width: '100%',
-            background: b.headerGradient,
-            borderRadius: b.radius['2xl'],
-            padding: b.space[8],
-            marginBottom: b.space[6],
-            boxShadow: b.coloredShadow(b.primaryAccent, 'xl'),
-          }}
+          className="w-full bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-8 mb-6 shadow-card"
         >
           {/* Topic Label */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: b.space[5],
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: b.space[2.5],
-              color: 'rgba(255,255,255,0.9)',
-            }}>
-              <MessageCircle style={{ width: '20px', height: '20px' }} />
-              <span style={{ fontWeight: 600, fontSize: b.fontSize.md }}>
+          <div className="flex justify-between items-center mb-5">
+            <div className="flex items-center gap-2.5 text-white/90">
+              <MessageCircle className="w-5 h-5" />
+              <span className="font-semibold text-base">
                 {mode.id === 'klassiker' ? 'Deine Aufgabe' : mode.id === 'stress' ? 'Die Frage' : 'Dein Thema'}
               </span>
             </div>
@@ -246,28 +153,9 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSpin}
                 disabled={isSpinning}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: b.space[2],
-                  padding: `${b.space[2.5]} ${b.space[4.5]}`,
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: b.radius.md,
-                  color: 'white',
-                  fontSize: b.fontSize.sm,
-                  fontWeight: 600,
-                  cursor: isSpinning ? 'not-allowed' : 'pointer',
-                }}
+                className="btn-glass flex items-center gap-2 px-4 py-2.5 border border-white/30 rounded-lg text-sm font-semibold disabled:cursor-not-allowed"
               >
-                <RefreshCw
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    animation: isSpinning ? 'spin 0.5s linear infinite' : 'none',
-                  }}
-                />
+                <RefreshCw className={`w-4 h-4 ${isSpinning ? 'animate-spin' : ''}`} />
                 {isSpinning ? 'Dreht...' : 'Neu würfeln'}
               </motion.button>
             )}
@@ -280,14 +168,7 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              style={{
-                fontSize: b.fontSize['2xl'],
-                fontWeight: 600,
-                color: 'white',
-                margin: 0,
-                lineHeight: 1.5,
-                minHeight: '66px',
-              }}
+              className="text-2xl font-semibold text-white leading-relaxed min-h-[66px]"
             >
               "{topic}"
             </motion.p>
@@ -299,30 +180,18 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          style={{
-            width: '100%',
-            backgroundColor: 'white',
-            borderRadius: b.radius.xl,
-            padding: b.space[6],
-            marginBottom: b.space[6],
-            border: `1px solid ${COLORS.slate[200]}`,
-          }}
         >
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: b.space[2.5],
-            marginBottom: b.space[4],
-            color: COLORS.slate[700],
-          }}>
-            <Mic style={{ width: '20px', height: '20px', color: b.primaryAccent }} />
-            <span style={{ fontWeight: 600, fontSize: b.fontSize.md }}>Mikrofon auswählen</span>
-          </div>
-          <MicrophoneSelector
-            selectedDeviceId={selectedMicrophoneId}
-            onDeviceChange={setSelectedMicrophoneId}
-            onTestClick={() => setShowMicrophoneTest(true)}
-          />
+          <Card className="w-full mb-6 shadow-card">
+            <div className="flex items-center gap-2.5 mb-4 text-slate-700">
+              <Mic className="w-5 h-5 text-violet-600" />
+              <span className="font-semibold text-base">Mikrofon auswählen</span>
+            </div>
+            <MicrophoneSelector
+              selectedDeviceId={selectedMicrophoneId}
+              onDeviceChange={setSelectedMicrophoneId}
+              onTestClick={() => setShowMicrophoneTest(true)}
+            />
+          </Card>
         </motion.div>
 
         {/* Tips Section */}
@@ -330,31 +199,13 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          style={{
-            width: '100%',
-            backgroundColor: COLORS.slate[50],
-            borderRadius: b.radius.xl,
-            padding: b.space[5],
-            marginBottom: b.space[8],
-          }}
+          className="w-full bg-violet-50 border border-violet-100 rounded-2xl p-5 mb-8 shadow-sm"
         >
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: b.space[2],
-            marginBottom: b.space[3],
-            color: COLORS.slate[700],
-          }}>
-            <Sparkles style={{ width: '18px', height: '18px', color: COLORS.amber[500] }} />
-            <span style={{ fontWeight: 600, fontSize: b.fontSize.sm }}>Tipps für deine Antwort</span>
+          <div className="flex items-center gap-2 mb-3 text-violet-900">
+            <Sparkles className="w-4.5 h-4.5 text-violet-600" />
+            <span className="font-semibold text-sm">Tipps für deine Antwort</span>
           </div>
-          <ul style={{
-            margin: 0,
-            paddingLeft: b.space[5],
-            color: COLORS.slate[600],
-            fontSize: b.fontSize.sm,
-            lineHeight: 1.7,
-          }}>
+          <ul className="m-0 pl-5 text-slate-600 text-sm leading-relaxed list-disc">
             <li>Atme tief durch bevor du beginnst</li>
             <li>Sprich in einem ruhigen, gleichmäßigen Tempo</li>
             <li>Mache bewusst Pausen statt "Ähm" zu sagen</li>
@@ -363,43 +214,17 @@ const TopicSelectionScreen = ({ mode, onBack, onStart }) => {
         </motion.div>
 
         {/* Start Button */}
-        <motion.button
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleStart}
-          style={{
-            width: '100%',
-            maxWidth: '400px',
-            padding: `${b.space[4.5]} ${b.space[8]}`,
-            borderRadius: b.radius.xl,
-            border: 'none',
-            background: b.buttonGradient,
-            color: 'white',
-            fontSize: b.fontSize.lg,
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: b.space[3],
-            boxShadow: b.coloredShadow(b.primaryAccent, 'md'),
-          }}
+          className="w-full max-w-[400px]"
         >
-          <Play style={{ width: '22px', height: '22px' }} />
-          Aufnahme starten
-        </motion.button>
+          <Button size="lg" icon={<Play />} onClick={handleStart} fullWidth>
+            Aufnahme starten
+          </Button>
+        </motion.div>
       </div>
-
-      {/* CSS for spin animation */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
 
       {/* Microphone Test Dialog */}
       <MicrophoneTestDialog
@@ -422,7 +247,7 @@ const VIEWS = {
 };
 
 /**
- * Main RhetorikGym Component
+ * Main RhetorikGym Component - Uses Tailwind for styling
  */
 const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingAction }) => {
   const [currentView, setCurrentView] = useState(VIEWS.MODES);
@@ -440,9 +265,6 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
 
   // Pending mode for after login
   const [pendingMode, setPendingMode] = useState(null);
-
-  // Partner theming
-  const b = useBranding();
 
   // Load user stats - reload when returning to mode selection view
   useEffect(() => {
@@ -526,100 +348,62 @@ const RhetorikGym = ({ onStartGame, isAuthenticated, requireAuth, setPendingActi
       {/* Feature Info Modal - shows on first visit */}
       <FeatureInfoModal featureId="rhetorikgym" showOnMount />
 
-      <div style={{ padding: isMobile ? b.space[4] : b.space[6] }}>
-      {/* Header - Compact on mobile */}
-      <div style={{ marginBottom: isMobile ? b.space[5] : b.space[8], textAlign: 'center' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: isMobile ? b.space[2.5] : b.space[3],
-          marginBottom: isMobile ? b.space[2] : b.space[3],
-        }}>
-          <div style={{
-            width: isMobile ? '40px' : '48px',
-            height: isMobile ? '40px' : '48px',
-            borderRadius: isMobile ? b.radius.lg : b.radius.xl,
-            background: b.headerGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Dumbbell style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px', color: b.headerText }} />
+      <div className="p-4 md:p-6">
+        {/* Header - Compact on mobile */}
+        <div className="mb-5 md:mb-8 text-center">
+          <div className="inline-flex items-center gap-2.5 md:gap-3 mb-2 md:mb-3">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex-center shadow-lg">
+              <Dumbbell className="w-5 h-5 md:w-6 md:h-6 text-white" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+              Der Füllwort-Killer
+            </h1>
           </div>
-          <h1 style={{
-            fontSize: isMobile ? b.fontSize['2xl'] : b.fontSize['3xl'],
-            fontWeight: 700,
-            color: COLORS.slate[900],
-            margin: 0,
-          }}>
-            Der Füllwort-Killer
-          </h1>
+          <p className="text-sm md:text-base text-slate-600 max-w-[600px] mx-auto">
+            Trainiere deine Rhetorik - sprich flüssig und überzeugend ohne Ähm und Öh!
+          </p>
         </div>
-        <p style={{
-          fontSize: isMobile ? b.fontSize.sm : b.fontSize.base,
-          color: COLORS.slate[600],
-          maxWidth: '600px',
-          margin: '0 auto',
-        }}>
-          Trainiere deine Rhetorik - sprich flüssig und überzeugend ohne Ähm und Öh!
-        </p>
+
+        <div className="px-2 md:px-6">
+          {/* Stats Row - 2x2 grid on mobile */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-4 mb-6 md:mb-8">
+            <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} isMobile={isMobile} />
+            <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} isMobile={isMobile} />
+            <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} isMobile={isMobile} />
+            <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} isMobile={isMobile} />
+          </div>
+
+          {/* Section Title with View Toggle */}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-slate-800">
+              Wähle deinen Modus
+            </h2>
+            <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+          </div>
+
+          {/* Game Mode Grid */}
+          <ScenarioCardGrid minCardWidth="280px" viewMode={viewMode}>
+            {gameModes.map((mode) => {
+              const IconComponent = ICON_MAP[mode.icon] || Rocket;
+              return (
+                <ScenarioCard
+                  key={mode.id}
+                  title={mode.title}
+                  subtitle={mode.subtitle}
+                  description={mode.description}
+                  icon={IconComponent}
+                  meta={[
+                    { icon: Clock, text: `${mode.duration} Sekunden` },
+                  ]}
+                  action={{ label: 'Starten', icon: TrendingUp }}
+                  onClick={() => handleSelectMode(mode)}
+                  viewMode={viewMode}
+                />
+              );
+            })}
+          </ScenarioCardGrid>
+        </div>
       </div>
-
-      <div style={{ padding: isMobile ? `0 ${b.space[2]}` : `0 ${b.space[6]}` }}>
-        {/* Stats Row - 2x2 grid on mobile */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: isMobile ? b.space[2.5] : b.space[4],
-          marginBottom: isMobile ? b.space[6] : b.space[8],
-        }}>
-          <StatsCard icon={Trophy} label="Highscore" value={userStats.bestScore || '-'} primaryAccent={b.primaryAccent} primaryAccentLight={b.primaryAccentLight} isMobile={isMobile} b={b} />
-          <StatsCard icon={Target} label="Spiele" value={userStats.totalGames || 0} primaryAccent={b.primaryAccent} primaryAccentLight={b.primaryAccentLight} isMobile={isMobile} b={b} />
-          <StatsCard icon={TrendingUp} label="Durchschnitt" value={userStats.avgScore ? Math.round(userStats.avgScore) : '-'} primaryAccent={b.primaryAccent} primaryAccentLight={b.primaryAccentLight} isMobile={isMobile} b={b} />
-          <StatsCard icon={Clock} label="Trainingszeit" value={userStats.totalPracticeTime ? `${Math.round(userStats.totalPracticeTime / 60)}m` : '0m'} primaryAccent={b.primaryAccent} primaryAccentLight={b.primaryAccentLight} isMobile={isMobile} b={b} />
-        </div>
-
-        {/* Section Title with View Toggle */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: b.space[4],
-        }}>
-          <h2 style={{
-            fontSize: b.fontSize.lg,
-            fontWeight: 600,
-            color: COLORS.slate[800],
-            margin: 0,
-          }}>
-            Wähle deinen Modus
-          </h2>
-          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
-        </div>
-
-        {/* Game Mode Grid */}
-        <ScenarioCardGrid minCardWidth="280px" viewMode={viewMode}>
-          {gameModes.map((mode) => {
-            const IconComponent = ICON_MAP[mode.icon] || Rocket;
-            return (
-              <ScenarioCard
-                key={mode.id}
-                title={mode.title}
-                subtitle={mode.subtitle}
-                description={mode.description}
-                icon={IconComponent}
-                meta={[
-                  { icon: Clock, text: `${mode.duration} Sekunden` },
-                ]}
-                action={{ label: 'Starten', icon: TrendingUp }}
-                onClick={() => handleSelectMode(mode)}
-                viewMode={viewMode}
-              />
-            );
-          })}
-        </ScenarioCardGrid>
-      </div>
-    </div>
     </>
   );
 };

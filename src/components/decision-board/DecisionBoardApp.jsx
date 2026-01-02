@@ -1,18 +1,18 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Scale, FolderOpen } from 'lucide-react';
+import React, { useState, useCallback, useRef } from 'react';
+import { Scale } from 'lucide-react';
+import DecisionBoardDashboard from './DecisionBoardDashboard';
 import DecisionBoardInput from './DecisionBoardInput';
 import DecisionBoardResult from './DecisionBoardResult';
 import wordpressAPI from '@/services/wordpress-api';
-import FeatureInfoModal from '@/components/FeatureInfoModal';
-import FeatureInfoButton from '@/components/FeatureInfoButton';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import FeatureAppHeader from '@/components/global/FeatureAppHeader';
 import { COLORS, createGradient } from '@/config/colors';
+import { useScrollToTop } from '@/hooks';
 
 /**
  * View states for the decision board flow
  */
 const VIEWS = {
+  DASHBOARD: 'dashboard',
   INPUT: 'input',
   RESULT: 'result',
 };
@@ -23,8 +23,9 @@ const VIEWS = {
  * "Der Entscheidungs-Kompass" - AI Decision Support System
  *
  * Coordinates the flow between:
- * 1. Input (decision question + pro/contra with weights)
- * 2. Result (rational score + AI coaching cards)
+ * 1. Dashboard with feature info and session list (public)
+ * 2. Input (decision question + pro/contra with weights) (requires auth)
+ * 3. Result (rational score + AI coaching cards)
  */
 const DecisionBoardApp = ({
   isAuthenticated,
@@ -32,7 +33,7 @@ const DecisionBoardApp = ({
   setPendingAction,
   onNavigateToHistory,
 }) => {
-  const [currentView, setCurrentView] = useState(VIEWS.INPUT);
+  const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [decisionData, setDecisionData] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [savedDecisionId, setSavedDecisionId] = useState(null);
@@ -41,24 +42,62 @@ const DecisionBoardApp = ({
   // Track if session was saved to avoid duplicate saves
   const sessionSavedRef = useRef(false);
 
-  // Partner context for theming
-  const { branding } = usePartner();
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-
   // Decision Board feature gradient (teal)
   const decisionGradient = createGradient(COLORS.teal[500], COLORS.teal[400]);
 
-  // Scroll to top on every view change
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentView]);
+  // Scroll to top hook
+  useScrollToTop({ dependencies: [currentView] });
 
-  // Require authentication to use this feature
-  useEffect(() => {
-    if (!isAuthenticated && requireAuth) {
-      requireAuth();
+  /**
+   * Handle start new from dashboard
+   */
+  const handleStartNew = useCallback(() => {
+    setDecisionData(null);
+    setAnalysisResult(null);
+    setSavedDecisionId(null);
+    sessionSavedRef.current = false;
+    setCurrentView(VIEWS.INPUT);
+  }, []);
+
+  /**
+   * Handle continue existing session from dashboard
+   */
+  const handleContinueSession = useCallback(async (session) => {
+    try {
+      // Load session data
+      setSavedDecisionId(session.id);
+      sessionSavedRef.current = true;
+
+      // Set decision data from session
+      const data = {
+        topic: session.topic || '',
+        context: session.context || '',
+        pros: session.pros || [],
+        cons: session.cons || [],
+        proScore: session.pro_score || 0,
+        contraScore: session.contra_score || 0,
+      };
+      setDecisionData(data);
+
+      // If session has analysis result, show results
+      if (session.status === 'completed' && session.analysis) {
+        setAnalysisResult(session.analysis);
+        setCurrentView(VIEWS.RESULT);
+      } else {
+        // Otherwise go to input
+        setCurrentView(VIEWS.INPUT);
+      }
+    } catch (err) {
+      console.error('[DecisionBoard] Failed to load session:', err);
     }
-  }, [isAuthenticated, requireAuth]);
+  }, []);
+
+  /**
+   * Handle back to dashboard
+   */
+  const handleBackToDashboard = useCallback(() => {
+    setCurrentView(VIEWS.DASHBOARD);
+  }, []);
 
   /**
    * Save session immediately (called when topic changes)
@@ -177,17 +216,6 @@ const DecisionBoardApp = ({
   }, [savedDecisionId, updateSession]);
 
   /**
-   * Handle start new analysis - go back to input
-   */
-  const handleStartNew = useCallback(() => {
-    setDecisionData(null);
-    setAnalysisResult(null);
-    setSavedDecisionId(null);
-    sessionSavedRef.current = false;
-    setCurrentView(VIEWS.INPUT);
-  }, []);
-
-  /**
    * Handle edit current decision - go back to input with data preserved
    */
   const handleEditDecision = useCallback(() => {
@@ -211,117 +239,81 @@ const DecisionBoardApp = ({
     setSavedDecisionId(null);
     sessionSavedRef.current = false;
 
-    // Navigate to history/dashboard
-    if (onNavigateToHistory) {
-      onNavigateToHistory();
-    }
-  }, [savedDecisionId, deleteSession, onNavigateToHistory]);
+    // Go back to dashboard
+    setCurrentView(VIEWS.DASHBOARD);
+  }, [savedDecisionId, deleteSession]);
 
   /**
    * Render current view
    */
   const renderContent = () => {
     switch (currentView) {
+      case VIEWS.DASHBOARD:
+        return (
+          <DecisionBoardDashboard
+            onStartNew={handleStartNew}
+            onContinueSession={handleContinueSession}
+            onNavigateToHistory={onNavigateToHistory}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+          />
+        );
+
       case VIEWS.RESULT:
         return (
-          <DecisionBoardResult
-            decisionData={decisionData}
-            analysisResult={analysisResult}
-            onStartNew={handleStartNew}
-            onEditDecision={handleEditDecision}
-          />
+          <>
+            <FeatureAppHeader
+              featureId="decisionboard"
+              icon={Scale}
+              title="Entscheidungs-Board"
+              subtitle="Deine Analyse"
+              gradient={decisionGradient}
+              showBackButton
+              onBack={handleBackToDashboard}
+            />
+            <DecisionBoardResult
+              decisionData={decisionData}
+              analysisResult={analysisResult}
+              onStartNew={handleStartNew}
+              onEditDecision={handleEditDecision}
+            />
+          </>
         );
 
       case VIEWS.INPUT:
       default:
         return (
-          <DecisionBoardInput
-            initialData={decisionData}
-            onAnalysisComplete={handleAnalysisComplete}
-            onCancel={onNavigateToHistory ? handleCancel : null}
-            isAuthenticated={isAuthenticated}
-            requireAuth={requireAuth}
-            savedDecisionId={savedDecisionId}
-            onSaveDraft={saveSessionDraft}
-            onUpdateSession={updateSession}
-            onDecisionIdChange={setSavedDecisionId}
-          />
+          <>
+            <FeatureAppHeader
+              featureId="decisionboard"
+              icon={Scale}
+              title="Entscheidungs-Board"
+              subtitle="Strukturierte Entscheidungsfindung"
+              gradient={decisionGradient}
+              showBackButton
+              onBack={handleBackToDashboard}
+            />
+            <DecisionBoardInput
+              initialData={decisionData}
+              onAnalysisComplete={handleAnalysisComplete}
+              onCancel={handleCancel}
+              isAuthenticated={isAuthenticated}
+              requireAuth={requireAuth}
+              savedDecisionId={savedDecisionId}
+              onSaveDraft={saveSessionDraft}
+              onUpdateSession={updateSession}
+              onDecisionIdChange={setSavedDecisionId}
+            />
+          </>
         );
     }
   };
 
   return (
-    <>
-      {/* Feature Info Modal - shows on first visit */}
-      <FeatureInfoModal featureId="decisionboard" showOnMount />
-
-      <div style={{ minHeight: '100%' }}>
-        {/* Header */}
-        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  background: decisionGradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <Scale style={{ width: '24px', height: '24px', color: 'white' }} />
-                </div>
-                <div>
-                  <h1 style={{
-                    fontSize: '28px',
-                    fontWeight: 700,
-                    color: COLORS.slate[900],
-                    margin: 0
-                  }}>
-                    Entscheidungs-Board
-                  </h1>
-                  <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
-                    Strukturierte Entscheidungsfindung
-                  </p>
-                </div>
-              </div>
-
-              {/* Right side: Info button + History button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <FeatureInfoButton featureId="decisionboard" size="sm" />
-
-                {/* Meine Entscheidungen Button - Always visible */}
-                {onNavigateToHistory && (
-                  <button
-                    onClick={onNavigateToHistory}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '12px 20px',
-                      borderRadius: '12px',
-                      border: `2px solid ${primaryAccent}`,
-                      backgroundColor: 'white',
-                      color: primaryAccent,
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <FolderOpen size={18} />
-                    Meine Entscheidungen
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {renderContent()}
-      </div>
-    </>
+    <div className="min-h-full">
+      {renderContent()}
+    </div>
   );
 };
 

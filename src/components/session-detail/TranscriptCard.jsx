@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { MessageSquare, User, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TRANSCRIPT_CONFIG, SPEAKER_STYLES } from '@/config/constants';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/base/card';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { formatDuration } from '@/utils/formatting';
@@ -114,7 +114,7 @@ export function TranscriptCard({
                       )
                     ) : (
                       <>
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-teal-500 to-teal-600">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-indigo-500 to-indigo-600">
                           <User className="icon-sm text-white" />
                         </div>
                         {timeDisplay && (
@@ -132,7 +132,7 @@ export function TranscriptCard({
                       'max-w-[92%] px-3 py-2 rounded-xl shadow-sm transition-all',
                       isAgent
                         ? 'bg-slate-50 border'
-                        : 'bg-gradient-to-br from-teal-500 to-teal-600 text-white',
+                        : 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white',
                       isActive && 'ring-2 ring-offset-1'
                     )}
                     style={{

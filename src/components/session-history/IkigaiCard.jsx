@@ -10,16 +10,18 @@ import { motion } from 'framer-motion';
 import { Calendar, ChevronRight, Loader2, Trash2, Compass, Heart, Star, Globe, Coins } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime } from '@/utils/formatting';
-import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
+import { IKIGAI_COLORS, COLORS } from '@/config/colors';
 
 /**
  * Dimension icons and colors
+ * Uses centralized IKIGAI_COLORS from colors.js
  */
 const DIMENSION_CONFIG = {
-  love: { icon: Heart, color: '#E11D48', label: 'Liebe' },
-  talent: { icon: Star, color: '#F59E0B', label: 'Talent' },
-  need: { icon: Globe, color: '#10B981', label: 'Welt' },
-  market: { icon: Coins, color: '#6366F1', label: 'Markt' },
+  love: { icon: Heart, color: IKIGAI_COLORS.love.color, label: 'Liebe' },
+  talent: { icon: Star, color: IKIGAI_COLORS.talent.color, label: 'Talent' },
+  need: { icon: Globe, color: IKIGAI_COLORS.need.color, label: 'Welt' },
+  market: { icon: Coins, color: IKIGAI_COLORS.market.color, label: 'Markt' },
 };
 
 /**
@@ -27,7 +29,7 @@ const DIMENSION_CONFIG = {
  */
 const DimensionPills = ({ dimensions }) => {
   return (
-    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+    <div className="flex gap-1.5 flex-wrap">
       {Object.entries(DIMENSION_CONFIG).map(([key, config]) => {
         const tags = dimensions?.[key] || [];
         const hasData = tags.length > 0;
@@ -36,17 +38,11 @@ const DimensionPills = ({ dimensions }) => {
         return (
           <div
             key={key}
+            className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-medium"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '4px 8px',
-              borderRadius: '12px',
-              fontSize: '12px',
-              fontWeight: 500,
-              backgroundColor: hasData ? `${config.color}15` : '#f1f5f9',
-              color: hasData ? config.color : '#94a3b8',
-              border: hasData ? `1px solid ${config.color}30` : '1px solid #e2e8f0',
+              backgroundColor: hasData ? `${config.color}15` : COLORS.slate[100],
+              color: hasData ? config.color : COLORS.slate[400],
+              border: hasData ? `1px solid ${config.color}30` : `1px solid ${COLORS.slate[200]}`,
             }}
           >
             <Icon size={12} />
@@ -116,70 +112,36 @@ const IkigaiCard = ({
       >
         <div
           onClick={onNavigate}
-          style={{
-            background: '#fff',
-            borderRadius: '16px',
-            padding: '16px',
-            cursor: 'pointer',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          }}
+          className="bg-white rounded-2xl p-4 cursor-pointer border border-slate-200 shadow-sm"
         >
           {/* Top row: Icon + Title + Delete */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+          <div className="flex items-start gap-3 mb-3">
             <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
               style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
                 background: isComplete
-                  ? 'linear-gradient(135deg, #E11D48, #F59E0B, #10B981, #6366F1)'
-                  : 'linear-gradient(135deg, #6366F115, #6366F130)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
+                  ? `linear-gradient(135deg, ${IKIGAI_COLORS.love.color}, ${IKIGAI_COLORS.talent.color}, ${IKIGAI_COLORS.need.color}, ${IKIGAI_COLORS.market.color})`
+                  : `linear-gradient(135deg, ${COLORS.indigo[500]}15, ${COLORS.indigo[500]}30)`,
               }}
             >
-              <Compass style={{ width: '22px', height: '22px', color: isComplete ? 'white' : '#6366F1' }} />
+              <Compass className={`w-[22px] h-[22px] ${isComplete ? 'text-white' : 'text-indigo-500'}`} />
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h3 style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#0f172a',
-                marginBottom: '4px',
-                lineHeight: '1.3',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3] line-clamp-2">
                 {title}
               </h3>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
+              <div className="text-[13px] text-slate-500">
                 {formatDateTime(ikigai.created_at)}
               </div>
             </div>
             <button
               onClick={handleDeleteClick}
               disabled={isDeleting}
-              style={{
-                padding: '8px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
+              className="p-2 rounded-lg border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center shrink-0 hover:text-slate-600"
               title="Löschen"
             >
               {isDeleting ? (
-                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={18} className="animate-spin" />
               ) : (
                 <Trash2 size={18} />
               )}
@@ -187,16 +149,9 @@ const IkigaiCard = ({
           </div>
 
           {/* Bottom row: Dimension pills + Arrow */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            paddingTop: '12px',
-            borderTop: '1px solid #f1f5f9',
-          }}>
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
             <DimensionPills dimensions={dimensions} />
-            <ChevronRight size={22} style={{ color: '#94a3b8', flexShrink: 0 }} />
+            <ChevronRight size={22} className="text-slate-400 shrink-0" />
           </div>
         </div>
 
@@ -225,97 +180,43 @@ const IkigaiCard = ({
     >
       <div
         onClick={onNavigate}
-        style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          cursor: 'pointer',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
-          e.currentTarget.style.borderColor = '#cbd5e1';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-          e.currentTarget.style.borderColor = '#e2e8f0';
-        }}
+        className="bg-white rounded-2xl p-5 cursor-pointer border border-slate-200 shadow-sm hover:shadow-lg hover:border-slate-300 transition-all"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div className="flex items-center gap-4">
           {/* Icon */}
           <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
             style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
               background: isComplete
-                ? 'linear-gradient(135deg, #E11D48, #F59E0B, #10B981, #6366F1)'
-                : 'linear-gradient(135deg, #6366F115, #6366F130)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+                ? `linear-gradient(135deg, ${IKIGAI_COLORS.love.color}, ${IKIGAI_COLORS.talent.color}, ${IKIGAI_COLORS.need.color}, ${IKIGAI_COLORS.market.color})`
+                : `linear-gradient(135deg, ${COLORS.indigo[500]}15, ${COLORS.indigo[500]}30)`,
             }}
           >
-            <Compass style={{ width: '24px', height: '24px', color: isComplete ? 'white' : '#6366F1' }} />
+            <Compass className={`w-6 h-6 ${isComplete ? 'text-white' : 'text-indigo-500'}`} />
           </div>
 
           {/* Content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <h3 style={{
-                fontSize: '16px',
-                fontWeight: 600,
-                color: '#0f172a',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1.5">
+              <h3 className="text-base font-semibold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis">
                 {title}
               </h3>
               {isComplete && (
-                <span
-                  style={{
-                    padding: '2px 8px',
-                    borderRadius: '10px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                    color: 'white',
-                  }}
-                >
+                <span className="px-2 py-0.5 rounded-[10px] text-[11px] font-semibold bg-gradient-to-r from-green-500 to-green-600 text-white">
                   Abgeschlossen
                 </span>
               )}
               {!isComplete && filledDimensions > 0 && (
-                <span
-                  style={{
-                    padding: '2px 8px',
-                    borderRadius: '10px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    background: '#f59e0b20',
-                    color: '#f59e0b',
-                  }}
-                >
+                <span className="px-2 py-0.5 rounded-[10px] text-[11px] font-semibold bg-amber-500/10 text-amber-500">
                   {filledDimensions}/4 Dimensionen
                 </span>
               )}
             </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              flexWrap: 'wrap',
-              fontSize: '13px',
-              color: '#64748b',
-            }}>
+            <div className="flex items-center gap-4 flex-wrap text-[13px] text-slate-500">
               {/* Dimension pills */}
               <DimensionPills dimensions={dimensions} />
               {/* Date */}
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span className="flex items-center gap-1">
                 <Calendar size={14} />
                 {formatDateTime(ikigai.created_at)}
               </span>
@@ -323,30 +224,20 @@ const IkigaiCard = ({
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleDeleteClick}
               disabled={isDeleting}
-              style={{
-                padding: '8px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="p-2 rounded-lg border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center hover:text-red-500 transition-colors"
               title="Löschen"
             >
               {isDeleting ? (
-                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={18} className="animate-spin" />
               ) : (
                 <Trash2 size={18} />
               )}
             </button>
-            <ChevronRight size={20} style={{ color: '#94a3b8' }} />
+            <ChevronRight size={20} className="text-slate-400" />
           </div>
         </div>
       </div>

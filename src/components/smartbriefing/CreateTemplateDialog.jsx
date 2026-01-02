@@ -35,7 +35,6 @@ import {
   Loader2,
   Save,
 } from 'lucide-react';
-import { usePartner } from '@/context/PartnerContext';
 import wordpressAPI from '@/services/wordpress-api';
 
 /**
@@ -106,7 +105,6 @@ const VariableItem = ({
   onDelete,
   onMoveUp,
   onMoveDown,
-  primaryAccent,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [localLabel, setLocalLabel] = useState(variable.label);
@@ -160,93 +158,56 @@ const VariableItem = ({
   };
 
   return (
-    <div
-      style={{
-        backgroundColor: '#f8fafc',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
-        marginBottom: '12px',
-        overflow: 'hidden',
-      }}
-    >
+    <div className="bg-slate-50 rounded-xl border border-slate-200 mb-3 overflow-hidden">
       {/* Header */}
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '12px 16px',
-          backgroundColor: 'white',
-          borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none',
-          cursor: 'pointer',
-        }}
+        className={`flex items-center gap-2 px-4 py-3 bg-white cursor-pointer ${
+          isExpanded ? 'border-b border-slate-200' : ''
+        }`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <GripVertical size={16} style={{ color: '#94a3b8', cursor: 'grab' }} />
+        <GripVertical size={16} className="text-slate-400 cursor-grab" />
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '14px' }}>
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-slate-900 text-sm">
             {variable.label || `Variable ${index + 1}`}
           </span>
           {variable.key && (
-            <span style={{ marginLeft: '8px', color: '#64748b', fontSize: '12px' }}>
+            <span className="ml-2 text-slate-500 text-xs">
               ${'{'}${variable.key}{'}'}
             </span>
           )}
         </div>
 
-        <span
-          style={{
-            padding: '2px 8px',
-            borderRadius: '4px',
-            fontSize: '11px',
-            fontWeight: 500,
-            backgroundColor: `${primaryAccent}15`,
-            color: primaryAccent,
-          }}
-        >
+        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary">
           {VARIABLE_TYPES.find(t => t.value === variable.type)?.label || variable.type}
         </span>
 
         {/* Move buttons */}
-        <div style={{ display: 'flex', gap: '2px' }}>
+        <div className="flex gap-0.5">
           <button
             onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
             disabled={index === 0}
-            style={{
-              padding: '4px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              cursor: index === 0 ? 'not-allowed' : 'pointer',
-              opacity: index === 0 ? 0.3 : 1,
-            }}
+            className={`p-1 border-none bg-transparent ${
+              index === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'
+            }`}
           >
-            <ChevronUp size={16} style={{ color: '#64748b' }} />
+            <ChevronUp size={16} className="text-slate-500" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
             disabled={index === total - 1}
-            style={{
-              padding: '4px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              cursor: index === total - 1 ? 'not-allowed' : 'pointer',
-              opacity: index === total - 1 ? 0.3 : 1,
-            }}
+            className={`p-1 border-none bg-transparent ${
+              index === total - 1 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'
+            }`}
           >
-            <ChevronDown size={16} style={{ color: '#64748b' }} />
+            <ChevronDown size={16} className="text-slate-500" />
           </button>
         </div>
 
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          style={{
-            padding: '6px',
-            border: 'none',
-            backgroundColor: 'transparent',
-            cursor: 'pointer',
-            color: '#ef4444',
-          }}
+          className="p-1.5 border-none bg-transparent cursor-pointer text-red-500"
           title="Variable löschen"
         >
           <Trash2 size={16} />
@@ -262,11 +223,11 @@ const VariableItem = ({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="p-4 flex flex-col gap-3">
               {/* Row 1: Label and Key */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">
                     Feldbezeichnung *
                   </label>
                   <input
@@ -275,17 +236,11 @@ const VariableItem = ({
                     onChange={(e) => setLocalLabel(e.target.value)}
                     onBlur={handleLabelBlur}
                     placeholder="z.B. Unternehmen"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '14px',
-                    }}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">
                     Variablenname *
                   </label>
                   <input
@@ -293,55 +248,41 @@ const VariableItem = ({
                     value={variable.key}
                     onChange={(e) => handleChange('key', e.target.value)}
                     placeholder="z.B. unternehmen"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '14px',
-                      fontFamily: 'monospace',
-                    }}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono"
                   />
                 </div>
               </div>
 
               {/* Row 2: Type and Required */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'end' }}>
+              <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">
                     Feldtyp
                   </label>
                   <select
                     value={variable.type}
                     onChange={(e) => handleChange('type', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '14px',
-                      backgroundColor: 'white',
-                    }}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm bg-white"
                   >
                     {VARIABLE_TYPES.map(type => (
                       <option key={type.value} value={type.value}>{type.label}</option>
                     ))}
                   </select>
                 </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 0', cursor: 'pointer' }}>
+                <label className="flex items-center gap-2 py-2.5 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={variable.required}
                     onChange={(e) => handleChange('required', e.target.checked)}
-                    style={{ width: '16px', height: '16px', accentColor: primaryAccent }}
+                    className="w-4 h-4 accent-primary"
                   />
-                  <span style={{ fontSize: '14px', color: '#475569' }}>Pflichtfeld</span>
+                  <span className="text-sm text-slate-600">Pflichtfeld</span>
                 </label>
               </div>
 
               {/* Row 3: Placeholder */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Platzhalter-Text (optional)
                 </label>
                 <input
@@ -349,61 +290,36 @@ const VariableItem = ({
                   value={variable.placeholder}
                   onChange={(e) => handleChange('placeholder', e.target.value)}
                   placeholder="z.B. BMW AG, Siemens, etc."
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    fontSize: '14px',
-                  }}
+                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
                 />
               </div>
 
               {/* Options for select type */}
               {variable.type === 'select' && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
+                  <label className="block text-xs font-semibold text-slate-600 mb-2">
                     Auswahloptionen
                   </label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div className="flex flex-col gap-2">
                     {(variable.options || []).map((option, optIndex) => (
-                      <div key={option.id} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div key={option.id} className="flex gap-2 items-center">
                         <input
                           type="text"
                           value={option.value}
                           onChange={(e) => handleOptionChange(option.id, 'value', e.target.value)}
                           placeholder="Wert"
-                          style={{
-                            flex: 1,
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid #e2e8f0',
-                            fontSize: '13px',
-                            fontFamily: 'monospace',
-                          }}
+                          className="flex-1 px-2.5 py-2 rounded-md border border-slate-200 text-[13px] font-mono"
                         />
                         <input
                           type="text"
                           value={option.label}
                           onChange={(e) => handleOptionChange(option.id, 'label', e.target.value)}
                           placeholder="Anzeigename"
-                          style={{
-                            flex: 2,
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid #e2e8f0',
-                            fontSize: '13px',
-                          }}
+                          className="flex-[2] px-2.5 py-2 rounded-md border border-slate-200 text-[13px]"
                         />
                         <button
                           onClick={() => handleDeleteOption(option.id)}
-                          style={{
-                            padding: '6px',
-                            border: 'none',
-                            backgroundColor: 'transparent',
-                            cursor: 'pointer',
-                            color: '#ef4444',
-                          }}
+                          className="p-1.5 border-none bg-transparent cursor-pointer text-red-500"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -411,19 +327,7 @@ const VariableItem = ({
                     ))}
                     <button
                       onClick={handleAddOption}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 12px',
-                        border: '1px dashed #cbd5e1',
-                        borderRadius: '6px',
-                        backgroundColor: 'transparent',
-                        color: '#64748b',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        marginTop: '4px',
-                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 border border-dashed border-slate-300 rounded-md bg-transparent text-slate-500 text-[13px] cursor-pointer mt-1 hover:bg-slate-50 transition-colors"
                     >
                       <Plus size={14} />
                       Option hinzufügen
@@ -442,9 +346,9 @@ const VariableItem = ({
 /**
  * Icon Selector Component
  */
-const IconSelector = ({ selectedIcon, onSelect, primaryAccent }) => {
+const IconSelector = ({ selectedIcon, onSelect }) => {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+    <div className="flex flex-wrap gap-3">
       {AVAILABLE_ICONS.map(({ key, icon: Icon, label }) => {
         const isSelected = selectedIcon === key;
         return (
@@ -452,20 +356,13 @@ const IconSelector = ({ selectedIcon, onSelect, primaryAccent }) => {
             key={key}
             onClick={() => onSelect(key)}
             title={label}
-            style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '12px',
-              border: `2px solid ${isSelected ? primaryAccent : '#e2e8f0'}`,
-              backgroundColor: isSelected ? `${primaryAccent}15` : 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
+            className={`w-[60px] h-[60px] rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all ${
+              isSelected
+                ? 'border-primary bg-primary/10'
+                : 'border-slate-200 bg-white hover:border-primary/40'
+            }`}
           >
-            <Icon size={28} style={{ color: isSelected ? primaryAccent : '#64748b' }} />
+            <Icon size={28} className={isSelected ? 'text-primary' : 'text-slate-500'} />
           </button>
         );
       })}
@@ -483,8 +380,6 @@ const CreateTemplateDialog = ({
   editTemplate = null,
   demoCode,
 }) => {
-  const { branding, config } = usePartner();
-  const primaryAccent = branding?.['--primary-accent'] || config?.buttonGradientStart || '#3A7FA7';
 
   // Form state
   const [title, setTitle] = useState('');
@@ -647,76 +542,34 @@ const CreateTemplateDialog = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 50,
-        padding: '16px',
-      }}
-      // Don't close on backdrop click - user must use Cancel or X button
-    >
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '20px',
-          width: '100%',
-          maxWidth: '700px',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          overflow: 'hidden',
-        }}
+        className="bg-white rounded-2xl w-full max-w-[700px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div
-          style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
+        <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
           <div>
-            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
+            <h2 className="m-0 text-xl font-bold text-slate-900">
               {editTemplate ? 'Template bearbeiten' : 'Neues Template erstellen'}
             </h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#64748b' }}>
+            <p className="mt-1 mb-0 text-sm text-slate-500">
               Erstelle ein persönliches Briefing-Template
             </p>
           </div>
           <button
             onClick={onClose}
-            style={{
-              padding: '8px',
-              border: 'none',
-              backgroundColor: '#f1f5f9',
-              borderRadius: '8px',
-              cursor: 'pointer',
-            }}
+            className="p-2 border-none bg-slate-100 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors"
           >
-            <X size={20} style={{ color: '#64748b' }} />
+            <X size={20} className="text-slate-500" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid #e2e8f0',
-            padding: '0 24px',
-          }}
-        >
+        <div className="flex border-b border-slate-200 px-6">
           {[
             { key: 'basics', label: 'Grundlagen' },
             { key: 'variables', label: 'Eingabefelder' },
@@ -725,18 +578,11 @@ const CreateTemplateDialog = ({
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              style={{
-                padding: '12px 20px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                color: activeTab === tab.key ? primaryAccent : '#64748b',
-                borderBottom: `3px solid ${activeTab === tab.key ? primaryAccent : 'transparent'}`,
-                marginBottom: '-1px',
-                transition: 'all 0.2s',
-              }}
+              className={`px-5 py-3 border-none bg-transparent text-sm font-semibold cursor-pointer -mb-px transition-all ${
+                activeTab === tab.key
+                  ? 'text-primary border-b-[3px] border-primary'
+                  : 'text-slate-500 border-b-[3px] border-transparent hover:text-slate-700'
+              }`}
             >
               {tab.label}
             </button>
@@ -744,32 +590,21 @@ const CreateTemplateDialog = ({
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
+        <div className="flex-1 overflow-auto p-6">
           {/* Error message */}
           {error && (
-            <div
-              style={{
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                marginBottom: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              <AlertCircle size={18} style={{ color: '#ef4444', flexShrink: 0 }} />
-              <span style={{ color: '#dc2626', fontSize: '14px' }}>{error}</span>
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
+              <AlertCircle size={18} className="text-red-500 flex-shrink-0" />
+              <span className="text-red-700 text-sm">{error}</span>
             </div>
           )}
 
           {/* Basics Tab */}
           {activeTab === 'basics' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="flex flex-col gap-5">
               {/* Title */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '6px' }}>
+                <label className="block text-sm font-semibold text-slate-900 mb-1.5">
                   Titel *
                 </label>
                 <input
@@ -777,19 +612,13 @@ const CreateTemplateDialog = ({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="z.B. Projektpräsentation Vorbereitung"
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #e2e8f0',
-                    fontSize: '15px',
-                  }}
+                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-[15px]"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '6px' }}>
+                <label className="block text-sm font-semibold text-slate-900 mb-1.5">
                   Beschreibung
                 </label>
                 <textarea
@@ -797,23 +626,16 @@ const CreateTemplateDialog = ({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Kurze Beschreibung, wofür dieses Template verwendet wird..."
                   rows={3}
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #e2e8f0',
-                    fontSize: '14px',
-                    resize: 'vertical',
-                  }}
+                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-sm resize-y"
                 />
               </div>
 
               {/* Icon */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '8px' }}>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">
                   Symbol
                 </label>
-                <IconSelector selectedIcon={icon} onSelect={setIcon} primaryAccent={primaryAccent} />
+                <IconSelector selectedIcon={icon} onSelect={setIcon} />
               </div>
             </div>
           )}
@@ -821,10 +643,10 @@ const CreateTemplateDialog = ({
           {/* Variables Tab */}
           {activeTab === 'variables' && (
             <div>
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <HelpCircle size={16} style={{ color: '#64748b' }} />
-                  <span style={{ fontSize: '13px', color: '#64748b' }}>
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <HelpCircle size={16} className="text-slate-500" />
+                  <span className="text-[13px] text-slate-500">
                     Definiere die Eingabefelder, die der Nutzer beim Erstellen eines Briefings ausfüllen soll.
                   </span>
                 </div>
@@ -841,51 +663,20 @@ const CreateTemplateDialog = ({
                   onDelete={() => handleDeleteVariable(index)}
                   onMoveUp={() => handleMoveUp(index)}
                   onMoveDown={() => handleMoveDown(index)}
-                  primaryAccent={primaryAccent}
                 />
               ))}
 
               {/* Add variable button */}
               <button
                 onClick={handleAddVariable}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  width: '100%',
-                  padding: '14px',
-                  borderRadius: '10px',
-                  border: '2px dashed #cbd5e1',
-                  backgroundColor: 'white',
-                  color: '#64748b',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = primaryAccent;
-                  e.currentTarget.style.color = primaryAccent;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#cbd5e1';
-                  e.currentTarget.style.color = '#64748b';
-                }}
+                className="flex items-center justify-center gap-2 w-full px-3.5 py-3.5 rounded-xl border-2 border-dashed border-slate-300 bg-white text-slate-500 text-sm font-medium cursor-pointer transition-all hover:border-primary hover:text-primary"
               >
                 <Plus size={18} />
                 Eingabefeld hinzufügen
               </button>
 
               {variables.length === 0 && (
-                <div
-                  style={{
-                    textAlign: 'center',
-                    padding: '32px',
-                    color: '#94a3b8',
-                    fontSize: '14px',
-                  }}
-                >
+                <div className="text-center py-8 text-slate-400 text-sm">
                   Noch keine Eingabefelder definiert.
                 </div>
               )}
@@ -895,23 +686,15 @@ const CreateTemplateDialog = ({
           {/* Prompt Tab */}
           {activeTab === 'prompt' && (
             <div>
-              <div
-                style={{
-                  backgroundColor: '#f0f9ff',
-                  borderRadius: '10px',
-                  padding: '16px',
-                  marginBottom: '16px',
-                  border: '1px solid #bae6fd',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <Lightbulb size={18} style={{ color: '#0284c7', flexShrink: 0, marginTop: '2px' }} />
+              <div className="bg-sky-50 rounded-xl p-4 mb-4 border border-sky-200">
+                <div className="flex items-start gap-2.5">
+                  <Lightbulb size={18} className="text-sky-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', fontWeight: 600, color: '#0369a1' }}>
+                    <h4 className="m-0 mb-1.5 text-sm font-semibold text-sky-900">
                       Tipps für effektive Prompts
                     </h4>
-                    <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '13px', color: '#0369a1', lineHeight: 1.6 }}>
-                      <li>Verwende <code style={{ backgroundColor: '#e0f2fe', padding: '1px 4px', borderRadius: '3px' }}>${'{variablenname}'}</code> um auf Eingabefelder zu verweisen</li>
+                    <ul className="m-0 pl-4 text-[13px] text-sky-900 leading-relaxed">
+                      <li>Verwende <code className="bg-sky-100 px-1 py-0.5 rounded">${'{variablenname}'}</code> um auf Eingabefelder zu verweisen</li>
                       <li>Beschreibe die Rolle der KI (z.B. "Du bist ein erfahrener Karriere-Coach...")</li>
                       <li>Definiere die Struktur des gewünschten Outputs</li>
                       <li>Gib Beispiele für den Ton und Stil</li>
@@ -922,23 +705,12 @@ const CreateTemplateDialog = ({
 
               {/* Available variables */}
               {variables.length > 0 && (
-                <div style={{ marginBottom: '12px' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>Verfügbare Variablen: </span>
+                <div className="mb-3">
+                  <span className="text-xs text-slate-500">Verfügbare Variablen: </span>
                   {variables.map(v => (
                     <code
                       key={v.id}
-                      style={{
-                        display: 'inline-block',
-                        padding: '2px 6px',
-                        marginRight: '6px',
-                        marginBottom: '4px',
-                        backgroundColor: '#f1f5f9',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontFamily: 'monospace',
-                        color: '#475569',
-                        cursor: 'pointer',
-                      }}
+                      className="inline-block px-1.5 py-0.5 mr-1.5 mb-1 bg-slate-100 rounded text-xs font-mono text-slate-600 cursor-pointer hover:bg-slate-200"
                       onClick={() => {
                         const insertion = `\${${v.key}}`;
                         setSystemPrompt(prev => prev + insertion);
@@ -952,7 +724,7 @@ const CreateTemplateDialog = ({
               )}
 
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '6px' }}>
+                <label className="block text-sm font-semibold text-slate-900 mb-1.5">
                   System-Prompt *
                 </label>
                 <textarea
@@ -970,16 +742,7 @@ Das Briefing soll folgende Abschnitte enthalten:
 
 Formatiere jeden Abschnitt mit einem Titel und 5-8 konkreten Bullet Points.`}
                   rows={15}
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    borderRadius: '10px',
-                    border: '1px solid #e2e8f0',
-                    fontSize: '14px',
-                    fontFamily: 'monospace',
-                    resize: 'vertical',
-                    lineHeight: 1.5,
-                  }}
+                  className="w-full px-3.5 py-3.5 rounded-xl border border-slate-200 text-sm font-mono resize-y leading-relaxed"
                 />
               </div>
             </div>
@@ -987,52 +750,23 @@ Formatiere jeden Abschnitt mit einem Titel und 5-8 konkreten Bullet Points.`}
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            padding: '16px 24px',
-            borderTop: '1px solid #e2e8f0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
+        <div className="px-6 py-4 border-t border-slate-200 flex justify-between items-center gap-3">
           <button
             onClick={onClose}
-            style={{
-              padding: '12px 24px',
-              borderRadius: '10px',
-              border: '1px solid #e2e8f0',
-              backgroundColor: 'white',
-              color: '#475569',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
+            className="px-6 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors"
           >
             Abbrechen
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 24px',
-              borderRadius: '10px',
-              border: 'none',
-              background: `linear-gradient(135deg, ${primaryAccent} 0%, ${primaryAccent}dd 100%)`,
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.7 : 1,
-            }}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl border-none bg-brand-gradient text-white text-sm font-semibold transition-all ${
+              saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer opacity-100'
+            }`}
           >
             {saving ? (
               <>
-                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={18} className="animate-spin" />
                 Speichern...
               </>
             ) : (
@@ -1043,10 +777,6 @@ Formatiere jeden Abschnitt mit einem Titel und 5-8 konkreten Bullet Points.`}
             )}
           </button>
         </div>
-
-        <style>
-          {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
-        </style>
       </motion.div>
     </div>
   );

@@ -251,28 +251,39 @@ export async function generateInterviewFeedback(
     throw new Error(ERROR_MESSAGES.TRANSCRIPT_EMPTY);
   }
 
+  // Check for custom prompt (legacy parameter or in roleOptions)
+  const effectiveCustomPrompt = customPrompt || roleOptions.feedbackPrompt || null;
+
   if (DEBUG_PROMPTS) {
     console.log(`📝 [GEMINI FEEDBACK] Transcript length: ${transcript.length} chars`);
-    console.log(`📝 [GEMINI FEEDBACK] Custom prompt: ${customPrompt ? 'Yes' : 'No'}`);
+    console.log(`📝 [GEMINI FEEDBACK] Custom prompt (legacy): ${customPrompt ? 'Yes' : 'No'}`);
+    console.log(`📝 [GEMINI FEEDBACK] Coach type: ${roleOptions.coachType || 'general (default)'}`);
+    console.log(`📝 [GEMINI FEEDBACK] Custom intro: ${roleOptions.customIntro ? 'Yes' : 'No'}`);
+    console.log(`📝 [GEMINI FEEDBACK] Extra focus: ${roleOptions.extraFocus ? 'Yes' : 'No'}`);
     console.log(`📝 [GEMINI FEEDBACK] Role type: ${roleOptions.roleType || 'interview (default)'}`);
     console.log(`📝 [GEMINI FEEDBACK] User role label: ${roleOptions.userRoleLabel || 'Bewerber (default)'}`);
   }
 
-  // Build prompt - pass role options to getFeedbackPrompt
-  const prompt = customPrompt
-    ? applyCustomPrompt(customPrompt, transcript)
-    : getFeedbackPrompt(transcript, roleOptions);
+  // Build prompt - getFeedbackPrompt handles all options including legacy feedbackPrompt
+  const prompt = getFeedbackPrompt(transcript, {
+    ...roleOptions,
+    feedbackPrompt: effectiveCustomPrompt, // Merge legacy customPrompt parameter
+  });
 
   // Debug logging
   const roleTypeLabel = roleOptions.roleType === 'simulation' ? 'Simulation' : 'Interview';
   const userLabel = roleOptions.userRoleLabel || 'Bewerber';
+  const coachTypeLabel = roleOptions.coachType || 'general';
   logPromptDebug(
     'FEEDBACK',
-    `Live-Training (${roleTypeLabel}): Analyse des Gesprächs-Transkripts. Bewertet Kommunikation, Professionalität des/der ${userLabel}.`,
+    `Live-Training (${roleTypeLabel}, Coach: ${coachTypeLabel}): Analyse des Gesprächs-Transkripts. Bewertet ${userLabel}.`,
     prompt,
     {
       'Transkript-Länge': `${transcript.length} Zeichen`,
-      'Custom Prompt': customPrompt ? 'Ja' : 'Nein (Standard-Prompt)',
+      'Coach-Typ': coachTypeLabel,
+      'Custom Intro': roleOptions.customIntro ? 'Ja' : 'Nein',
+      'Extra Fokus': roleOptions.extraFocus ? 'Ja' : 'Nein',
+      'Legacy Prompt': effectiveCustomPrompt ? 'Ja (überschreibt alles)' : 'Nein',
       'Rollentyp': roleTypeLabel,
       'User-Rolle': userLabel,
       'Transkript-Vorschau': transcript.substring(0, 300),

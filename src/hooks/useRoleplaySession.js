@@ -100,6 +100,7 @@ export const useRoleplaySession = ({
     const now = Date.now();
     setStartTime(now);
     startTimeRef.current = now;
+    console.log('[useRoleplaySession] Connected');
   }, []);
 
   const handleDisconnect = useCallback(() => {

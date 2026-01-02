@@ -109,7 +109,8 @@ export const useSdkAdapter = ({
           prompt: {
             prompt: buildSystemPrompt(scenario),
           },
-          firstMessage: scenario?.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.',
+          // Prefix with "..." to absorb initial audio buffering speed burst
+          firstMessage: '... ' + (scenario?.initial_message || 'Hallo! Ich freue mich auf unser Gespräch.'),
         },
         // Voice override - requires TTS Override enabled in ElevenLabs Agent Settings
         ...(scenario?.voice_id && {

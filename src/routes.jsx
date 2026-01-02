@@ -53,6 +53,26 @@ export const ROUTES = {
 };
 
 /**
+ * Routes that require authentication
+ *
+ * Note: All features now use action-based auth instead of route-based auth.
+ * This means users can view the public dashboard/landing page for any feature,
+ * but authentication is required when they click "Start" to begin a session.
+ *
+ * This array is kept for potential future use but is currently empty.
+ */
+export const AUTH_REQUIRED_ROUTES = [
+  // All features now use action-based auth (dashboard-first pattern)
+];
+
+/**
+ * Check if a route requires authentication
+ */
+export function isAuthRequiredRoute(pathname) {
+  return AUTH_REQUIRED_ROUTES.some(route => pathname === route || pathname.startsWith(route + '/'));
+}
+
+/**
  * Map old VIEWS constants to new routes for backward compatibility
  */
 export const VIEW_TO_ROUTE = {

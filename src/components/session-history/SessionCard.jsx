@@ -21,7 +21,8 @@ import {
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime, formatDuration } from '@/utils/formatting';
-import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
+import { COLORS } from '@/config/colors';
 
 /**
  * Session type constants (must match parent component)
@@ -147,11 +148,11 @@ const SessionCard = ({
   const scorePercent = getScoreAsPercent();
 
   const getScoreBadgeStyle = (scoreVal) => {
-    if (!scoreVal && scoreVal !== 0) return { background: '#f1f5f9', color: '#64748b' };
+    if (!scoreVal && scoreVal !== 0) return { background: COLORS.slate[100], color: COLORS.slate[500] };
     const numScore = parseFloat(scoreVal);
-    if (numScore >= 80) return { background: '#dcfce7', color: '#166534' };
-    if (numScore >= 60) return { background: '#fef9c3', color: '#854d0e' };
-    return { background: '#fee2e2', color: '#991b1b' };
+    if (numScore >= 80) return { background: COLORS.green[100], color: COLORS.green[800] };
+    if (numScore >= 60) return { background: COLORS.amber[100], color: COLORS.amber[800] };
+    return { background: COLORS.red[100], color: COLORS.red[800] };
   };
 
   const getIcon = () => {
@@ -176,42 +177,21 @@ const SessionCard = ({
       >
         <div
           onClick={onClick}
-          style={{
-            background: '#fff',
-            borderRadius: '16px',
-            padding: '16px',
-            cursor: 'pointer',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          }}
+          className="bg-white rounded-2xl p-4 cursor-pointer border border-slate-200 shadow-sm"
         >
           {/* Top row: Icon + Title + Delete */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+          <div className="flex items-start gap-3 mb-3">
             <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: headerGradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: headerGradient }}
             >
-              <Icon style={{ width: '22px', height: '22px', color: headerText }} />
+              <Icon className="w-[22px] h-[22px]" style={{ color: headerText }} />
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h3 style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#0f172a',
-                marginBottom: '4px',
-                lineHeight: '1.3',
-              }}>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3]">
                 {scenario?.title || session.scenario_title || `Session #${session.id}`}
               </h3>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
+              <div className="text-[13px] text-slate-500">
                 {formatDateTime(session.created_at)}
               </div>
             </div>
@@ -219,22 +199,11 @@ const SessionCard = ({
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
-                style={{
-                  padding: '8px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
+                className="p-3 rounded-xl border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center shrink-0 hover:text-slate-600 hover:bg-slate-100 transition-colors min-w-[44px] min-h-[44px]"
                 title="Löschen"
               >
                 {isDeleting ? (
-                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  <Loader2 size={18} className="animate-spin" />
                 ) : (
                   <Trash2 size={18} />
                 )}
@@ -243,57 +212,28 @@ const SessionCard = ({
           </div>
 
           {/* Bottom row: Status badges + Action */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '8px',
-            paddingTop: '12px',
-            borderTop: '1px solid #f1f5f9',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* Status indicator */}
               {!isCompleted && !isResumable && (
-                <span style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: '#fef3c7',
-                  color: '#92400e',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                }}>
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
                   <Clock size={12} />
                   In Bearbeitung
                 </span>
               )}
 
               {/* Score badge */}
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '5px 10px',
-                borderRadius: '20px',
-                fontSize: '13px',
-                fontWeight: 600,
-                ...getScoreBadgeStyle(scorePercent),
-              }}>
+              <span
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[13px] font-semibold"
+                style={getScoreBadgeStyle(scorePercent)}
+              >
                 <Star size={13} />
                 {scorePercent !== null ? `${Math.round(scorePercent)}%` : '-- %'}
               </span>
 
               {/* Duration */}
               {(session.duration || session.video_duration_seconds) && (
-                <span style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '12px',
-                  color: '#64748b',
-                }}>
+                <span className="flex items-center gap-1 text-xs text-slate-500">
                   <Clock size={12} />
                   {formatDuration(session.duration || session.video_duration_seconds)}
                 </span>
@@ -301,17 +241,7 @@ const SessionCard = ({
 
               {/* Progress for resumable */}
               {isResumable && (
-                <span style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  background: '#dbeafe',
-                  color: '#1e40af',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                }}>
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium">
                   {getProgressInfo()}
                 </span>
               )}
@@ -321,27 +251,13 @@ const SessionCard = ({
             {isResumable && onContinueSession ? (
               <button
                 onClick={handleContinueClick}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '10px 16px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: primaryAccent || '#3B82F6',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: `0 2px 8px ${primaryAccent || '#3B82F6'}40`,
-                  flexShrink: 0,
-                }}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] border-none bg-primary text-white text-[13px] font-semibold cursor-pointer shadow-md hover:shadow-lg transition-shadow shrink-0"
               >
                 <Play size={14} />
                 Fortsetzen
               </button>
             ) : (
-              <ChevronRight size={22} style={{ color: '#94a3b8', flexShrink: 0 }} />
+              <ChevronRight size={22} className="text-slate-400 shrink-0" />
             )}
           </div>
         </div>
@@ -371,68 +287,29 @@ const SessionCard = ({
     >
       <div
         onClick={onClick}
-        style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          cursor: 'pointer',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
-          e.currentTarget.style.borderColor = '#cbd5e1';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-          e.currentTarget.style.borderColor = '#e2e8f0';
-        }}
+        className="bg-white rounded-2xl p-5 cursor-pointer border border-slate-200 shadow-sm hover:shadow-lg hover:border-slate-300 transition-all"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div className="flex items-center gap-4">
           {/* Icon */}
           <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: headerGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: headerGradient }}
           >
-            <Icon style={{ width: '24px', height: '24px', color: headerText }} />
+            <Icon className="w-6 h-6" style={{ color: headerText }} />
           </div>
 
           {/* Content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{
-              fontSize: '16px',
-              fontWeight: 600,
-              color: '#0f172a',
-              marginBottom: '4px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-slate-900 mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
               {scenario?.title || session.scenario_title || `Session #${session.id}`}
             </h3>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              flexWrap: 'wrap',
-              fontSize: '13px',
-              color: '#64748b',
-            }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className="flex items-center gap-3 flex-wrap text-[13px] text-slate-500">
+              <span className="flex items-center gap-1">
                 <Calendar size={14} />
                 {formatDateTime(session.created_at)}
               </span>
               {session.duration || session.video_duration_seconds ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span className="flex items-center gap-1">
                   <Clock size={14} />
                   {formatDuration(session.duration || session.video_duration_seconds)}
                 </span>
@@ -441,34 +318,12 @@ const SessionCard = ({
           </div>
 
           {/* Status & Score */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          <div className="flex items-center gap-3 shrink-0">
             {/* Resume button for incomplete sessions */}
             {isResumable && onContinueSession && (
               <button
                 onClick={handleContinueClick}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: primaryAccent || '#3B82F6',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: `0 2px 8px ${primaryAccent || '#3B82F6'}40`,
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                  e.currentTarget.style.boxShadow = `0 4px 12px ${primaryAccent || '#3B82F6'}50`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = `0 2px 8px ${primaryAccent || '#3B82F6'}40`;
-                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] border-none bg-primary text-white text-[13px] font-semibold cursor-pointer shadow-md hover:scale-105 hover:shadow-lg transition-all"
               >
                 <Play size={14} />
                 Fortsetzen
@@ -477,81 +332,38 @@ const SessionCard = ({
 
             {/* Progress indicator for resumable sessions */}
             {isResumable && (
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                background: '#dbeafe',
-                color: '#1e40af',
-                fontSize: '12px',
-                fontWeight: 500,
-              }}>
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium">
                 {getProgressInfo()}
               </span>
             )}
 
             {/* Status indicator (only for non-resumable incomplete sessions) */}
             {!isCompleted && !isResumable && (
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                background: '#fef3c7',
-                color: '#92400e',
-                fontSize: '12px',
-                fontWeight: 500,
-              }}>
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
                 <Clock size={12} />
                 In Bearbeitung
               </span>
             )}
 
             {/* Score badge - always show for consistency */}
-            <span style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              fontSize: '14px',
-              fontWeight: 600,
-              ...getScoreBadgeStyle(scorePercent),
-            }}>
+            <span
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold"
+              style={getScoreBadgeStyle(scorePercent)}
+            >
               <Star size={14} />
               {scorePercent !== null ? `${Math.round(scorePercent)}%` : '-- %'}
             </span>
 
-            {/* Delete button */}
+            {/* Delete button - 44px touch target for accessibility */}
             {onDeleteSession && (
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
-                style={{
-                  padding: '8px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#ef4444';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#94a3b8';
-                }}
+                className="p-3 rounded-xl border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center hover:text-red-500 hover:bg-red-50 transition-colors min-w-[44px] min-h-[44px]"
                 title="Löschen"
               >
                 {isDeleting ? (
-                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  <Loader2 size={18} className="animate-spin" />
                 ) : (
                   <Trash2 size={18} />
                 )}
@@ -559,7 +371,7 @@ const SessionCard = ({
             )}
 
             {/* Arrow */}
-            <ChevronRight size={20} style={{ color: '#94a3b8' }} />
+            <ChevronRight size={20} className="text-slate-400" />
           </div>
         </div>
       </div>

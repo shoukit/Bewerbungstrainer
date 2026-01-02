@@ -1,0 +1,555 @@
+/**
+ * ScenarioCard - Unified Card Component for Dashboard Scenarios
+ *
+ * A reusable card component that provides consistent styling across all dashboards:
+ * - Live-Simulationen (RoleplayDashboard)
+ * - Video Training
+ * - Szenario-Training (SimulatorDashboard)
+ * - Rhetorik-Gym
+ * - Smart Briefing
+ *
+ * Supports both grid and list views.
+ *
+ * Usage:
+ *   import { ScenarioCard, ScenarioCardGrid, ViewToggle } from '@/components/ui/composite/ScenarioCard';
+ *
+ *   const [viewMode, setViewMode] = useState('grid');
+ *
+ *   <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+ *   <ScenarioCardGrid viewMode={viewMode}>
+ *     <ScenarioCard
+ *       title="Bewerbungsgespräch"
+ *       description="Übe ein realistisches Vorstellungsgespräch"
+ *       difficulty="medium"
+ *       icon={Briefcase}
+ *       meta={[{ icon: Clock, text: '~10 Min' }]}
+ *       action={{ label: 'Starten', icon: TrendingUp }}
+ *       onClick={() => handleSelect(scenario)}
+ *       viewMode={viewMode}
+ *     />
+ *   </ScenarioCardGrid>
+ */
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import { TrendingUp, LayoutGrid, List } from 'lucide-react';
+import { useBranding } from '@/hooks/useBranding';
+
+// =============================================================================
+// DIFFICULTY CONFIGURATION
+// =============================================================================
+
+/**
+ * Difficulty level styles - Tailwind classes and labels
+ * Updated to use indigo as primary accent with rounded-full badges
+ */
+const DIFFICULTY_CONFIG = {
+  easy: {
+    classes: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    label: 'Einfach',
+  },
+  beginner: {
+    classes: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    label: 'Einsteiger',
+  },
+  medium: {
+    classes: 'bg-indigo-50 text-indigo-600 border-indigo-200',
+    label: 'Mittel',
+  },
+  intermediate: {
+    classes: 'bg-indigo-50 text-indigo-600 border-indigo-200',
+    label: 'Fortgeschritten',
+  },
+  hard: {
+    classes: 'bg-amber-50 text-amber-700 border-amber-200',
+    label: 'Schwer',
+  },
+  advanced: {
+    classes: 'bg-purple-50 text-purple-700 border-purple-200',
+    label: 'Experte',
+  },
+};
+
+/**
+ * Get difficulty badge configuration
+ * @param {string} difficulty - Difficulty level key
+ * @returns {object} Configuration with classes and label
+ */
+const getDifficultyConfig = (difficulty) => {
+  return DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.medium;
+};
+
+// =============================================================================
+// SUB-COMPONENTS
+// =============================================================================
+
+/**
+ * Badge Component - Used for difficulty, category, and tags
+ */
+const Badge = ({ children, className = '' }) => (
+  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${className}`}>
+    {children}
+  </span>
+);
+
+/**
+ * Icon Container - Themed icon wrapper with gradient background
+ * Updated to use rounded-2xl for consistency
+ */
+const IconContainer = ({ icon: Icon, gradient, textColor, size = 'md' }) => {
+  const sizeClasses = {
+    sm: 'w-10 h-10 rounded-xl',
+    md: 'w-12 h-12 rounded-2xl',
+    lg: 'w-14 h-14 rounded-2xl',
+  };
+
+  const iconSizes = {
+    sm: { width: '20px', height: '20px' },
+    md: { width: '24px', height: '24px' },
+    lg: { width: '28px', height: '28px' },
+  };
+
+  const sizeClass = sizeClasses[size] || sizeClasses.md;
+  const iconSize = iconSizes[size] || iconSizes.md;
+
+  return (
+    <div
+      className={`flex items-center justify-center flex-shrink-0 ${sizeClass}`}
+      style={{ background: gradient }}
+    >
+      <Icon style={{ width: iconSize.width, height: iconSize.height, color: textColor }} />
+    </div>
+  );
+};
+
+/**
+ * Meta Item - Footer metadata with icon and text
+ */
+const MetaItem = ({ icon: Icon, text }) => (
+  <div className="flex items-center gap-1">
+    {Icon && <Icon className="w-3 h-3" />}
+    <span>{text}</span>
+  </div>
+);
+
+/**
+ * Action Button - Call-to-action link in footer
+ */
+const ActionButton = ({ label, icon: Icon, color }) => (
+  <div className="flex items-center gap-1 text-sm font-semibold" style={{ color }}>
+    <span>{label}</span>
+    {Icon && <Icon className="w-4 h-4" />}
+  </div>
+);
+
+// =============================================================================
+// VIEW TOGGLE COMPONENT
+// =============================================================================
+
+/**
+ * ViewToggle - Toggle between grid and list view
+ *
+ * @param {object} props
+ * @param {'grid' | 'list'} props.viewMode - Current view mode
+ * @param {function} props.onViewChange - Callback when view changes
+ */
+export const ViewToggle = ({ viewMode, onViewChange }) => {
+  return (
+    <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl">
+      <button
+        onClick={() => onViewChange('grid')}
+        className={`p-2 rounded-lg border-none cursor-pointer transition-all flex items-center justify-center ${
+          viewMode === 'grid' ? 'bg-white shadow-sm' : 'bg-transparent'
+        }`}
+        title="Kachelansicht"
+      >
+        <LayoutGrid className={`w-4 h-4 ${viewMode === 'grid' ? 'text-indigo-600' : 'text-slate-500'}`} />
+      </button>
+      <button
+        onClick={() => onViewChange('list')}
+        className={`p-2 rounded-lg border-none cursor-pointer transition-all flex items-center justify-center ${
+          viewMode === 'list' ? 'bg-white shadow-sm' : 'bg-transparent'
+        }`}
+        title="Listenansicht"
+      >
+        <List className={`w-4 h-4 ${viewMode === 'list' ? 'text-indigo-600' : 'text-slate-500'}`} />
+      </button>
+    </div>
+  );
+};
+
+// =============================================================================
+// MAIN COMPONENT - GRID VIEW
+// =============================================================================
+
+/**
+ * ScenarioCardGrid - Grid view of the card
+ */
+const ScenarioCardGridView = ({
+  title,
+  description,
+  difficulty,
+  icon,
+  subtitle,
+  meta = [],
+  tags = [],
+  action = { label: 'Starten', icon: TrendingUp },
+  categoryBadge,
+  customActions,
+  onClick,
+  className = '',
+  style = {},
+  headerGradient,
+  headerText,
+  primaryAccent,
+  difficultyConfig,
+}) => (
+  <motion.div
+    variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: { opacity: 1, y: 0 },
+    }}
+    whileHover={{ y: -4 }}
+    whileTap={{ scale: 0.98 }}
+    className="transition-all duration-300"
+  >
+    <div
+      onClick={onClick}
+      className={`bg-white rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:shadow-lg transition-all duration-300 p-6 cursor-pointer border border-slate-100 h-full flex flex-col ${className}`}
+      style={style}
+    >
+      {/* Header Row - Badges and Icon */}
+      <div className="flex items-start justify-between mb-4">
+        {/* Left side: Icon or Difficulty Badge */}
+        {icon ? (
+          <IconContainer
+            icon={icon}
+            gradient={headerGradient}
+            textColor={headerText}
+            size="lg"
+          />
+        ) : difficulty ? (
+          <Badge className={difficultyConfig.classes}>
+            {difficultyConfig.label}
+          </Badge>
+        ) : null}
+
+        {/* Right side: Difficulty (if icon shown) + Category + Tags + Custom Actions */}
+        <div className="flex flex-col items-end gap-2">
+          {/* Custom Actions (edit/delete buttons) */}
+          {customActions && (
+            <div onClick={(e) => e.stopPropagation()}>
+              {customActions}
+            </div>
+          )}
+
+          {/* Difficulty badge when icon is shown */}
+          {icon && difficulty && (
+            <Badge className={difficultyConfig.classes}>
+              {difficultyConfig.label}
+            </Badge>
+          )}
+
+          {/* Category badge (custom component) */}
+          {categoryBadge}
+
+          {/* Tags */}
+          {tags.length > 0 && (
+            <div className="flex gap-1">
+              {tags.slice(0, 2).map((tag, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Title */}
+      <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
+
+      {/* Subtitle (optional - used by RhetorikGym) */}
+      {subtitle && (
+        <div className="text-sm font-semibold mb-2 text-primary">
+          {subtitle}
+        </div>
+      )}
+
+      {/* Description */}
+      {description && (
+        <p className="text-slate-600 text-sm mb-4 flex-1 line-clamp-3">
+          {description}
+        </p>
+      )}
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+        {/* Meta information */}
+        <div className="flex items-center gap-4 text-xs text-slate-500">
+          {meta.map((item, idx) => (
+            <MetaItem key={idx} icon={item.icon} text={item.text} />
+          ))}
+        </div>
+
+        {/* Action button */}
+        {action && (
+          <ActionButton
+            label={action.label}
+            icon={action.icon}
+            color={primaryAccent}
+          />
+        )}
+      </div>
+    </div>
+  </motion.div>
+);
+
+// =============================================================================
+// MAIN COMPONENT - LIST VIEW
+// =============================================================================
+
+/**
+ * ScenarioCardListView - List/row view of the card
+ * Responsive: stacks vertically on mobile, horizontal on desktop
+ */
+const ScenarioCardListView = ({
+  title,
+  description,
+  difficulty,
+  icon,
+  subtitle,
+  meta = [],
+  tags = [],
+  action = { label: 'Starten', icon: TrendingUp },
+  categoryBadge,
+  customActions,
+  onClick,
+  className = '',
+  style = {},
+  headerGradient,
+  headerText,
+  primaryAccent,
+  difficultyConfig,
+}) => {
+  return (
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, x: -20 },
+        visible: { opacity: 1, x: 0 },
+      }}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.99 }}
+      className="transition-all duration-300"
+    >
+      <div
+        onClick={onClick}
+        className={`bg-white rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:shadow-lg p-4 cursor-pointer border border-slate-100 transition-all duration-300 ${className}`}
+        style={style}
+      >
+        {/* Row 1: Icon + Title + Difficulty Badge + Custom Actions */}
+        <div className="flex items-start gap-3 mb-2">
+          {/* Icon */}
+          {icon && (
+            <IconContainer
+              icon={icon}
+              gradient={headerGradient}
+              textColor={headerText}
+              size="sm"
+            />
+          )}
+
+          {/* Title & Subtitle */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-slate-900 m-0 leading-tight">
+              {title}
+            </h3>
+            {subtitle && (
+              <span className="text-xs font-semibold text-primary">
+                {subtitle}
+              </span>
+            )}
+          </div>
+
+          {/* Custom Actions (edit/delete buttons) */}
+          {customActions && (
+            <div onClick={(e) => e.stopPropagation()}>
+              {customActions}
+            </div>
+          )}
+
+          {/* Difficulty Badge - always visible */}
+          {difficulty && (
+            <Badge className={difficultyConfig.classes}>
+              {difficultyConfig.label}
+            </Badge>
+          )}
+        </div>
+
+        {/* Row 2: Description (if exists) */}
+        {description && (
+          <p className="text-slate-600 text-xs m-0 mb-2 leading-snug line-clamp-2">
+            {description}
+          </p>
+        )}
+
+        {/* Row 3: Meta + Category + Action */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          {/* Meta information */}
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            {meta.slice(0, 2).map((item, idx) => (
+              <MetaItem key={idx} icon={item.icon} text={item.text} />
+            ))}
+          </div>
+
+          {/* Category + Action */}
+          <div className="flex items-center gap-2">
+            {/* Category badge */}
+            {categoryBadge}
+
+            {/* Action button */}
+            {action && (
+              <div className="flex items-center gap-1 text-sm font-semibold text-primary">
+                <span>{action.label}</span>
+                {action.icon && <action.icon style={{ width: '16px', height: '16px' }} />}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+/**
+ * ScenarioCard Component
+ *
+ * @param {object} props
+ * @param {string} props.title - Card title (required)
+ * @param {string} props.description - Card description
+ * @param {string} props.difficulty - Difficulty level: easy, medium, hard, beginner, intermediate, advanced
+ * @param {React.Component} props.icon - Lucide icon component to display
+ * @param {string} props.subtitle - Optional subtitle shown below title (used by RhetorikGym)
+ * @param {Array<{icon?: Component, text: string}>} props.meta - Footer metadata items
+ * @param {Array<string>} props.tags - Optional tags shown in header
+ * @param {{label: string, icon?: Component}} props.action - Call-to-action button config
+ * @param {React.Component} props.categoryBadge - Custom category badge component
+ * @param {React.Component} props.customActions - Custom action buttons (edit/delete for user templates)
+ * @param {function} props.onClick - Click handler
+ * @param {'grid' | 'list'} props.viewMode - View mode (default: 'grid')
+ * @param {string} props.className - Additional CSS classes
+ * @param {object} props.style - Additional inline styles
+ */
+export const ScenarioCard = ({
+  title,
+  description,
+  difficulty,
+  icon,
+  subtitle,
+  meta = [],
+  tags = [],
+  action = { label: 'Starten', icon: TrendingUp },
+  categoryBadge,
+  customActions,
+  onClick,
+  viewMode = 'grid',
+  className = '',
+  style = {},
+}) => {
+  // Partner theming
+  const b = useBranding();
+  const headerGradient = b.headerGradient;
+  const headerText = b.headerText;
+  const primaryAccent = b.primaryAccent;
+
+  const difficultyConfig = getDifficultyConfig(difficulty);
+
+  const commonProps = {
+    title,
+    description,
+    difficulty,
+    icon,
+    subtitle,
+    meta,
+    tags,
+    action,
+    categoryBadge,
+    customActions,
+    onClick,
+    className,
+    style,
+    headerGradient,
+    headerText,
+    primaryAccent,
+    difficultyConfig,
+  };
+
+  if (viewMode === 'list') {
+    return <ScenarioCardListView {...commonProps} />;
+  }
+
+  return <ScenarioCardGridView {...commonProps} />;
+};
+
+// =============================================================================
+// CARD GRID/LIST CONTAINER
+// =============================================================================
+
+/**
+ * ScenarioCardGrid - Responsive container for scenario cards (grid or list)
+ *
+ * @param {object} props
+ * @param {React.ReactNode} props.children - ScenarioCard components
+ * @param {string} props.minCardWidth - Minimum card width for grid (default: 320px)
+ * @param {'grid' | 'list'} props.viewMode - View mode (default: 'grid')
+ */
+export const ScenarioCardGrid = ({
+  children,
+  minCardWidth = '320px',
+  viewMode = 'grid',
+  className = '',
+}) => {
+  const isListView = viewMode === 'list';
+
+  return (
+    <motion.div
+      className={`${isListView ? 'flex flex-col gap-3' : 'grid gap-6'} ${className}`}
+      style={
+        isListView
+          ? {}
+          : {
+              gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${minCardWidth}), 1fr))`,
+            }
+      }
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: {
+            staggerChildren: isListView ? 0.05 : 0.1,
+          },
+        },
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+// =============================================================================
+// EXPORTS
+// =============================================================================
+
+export default ScenarioCard;
+
+// Re-export helpers for convenience
+export { getDifficultyConfig, DIFFICULTY_CONFIG };

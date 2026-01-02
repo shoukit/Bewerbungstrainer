@@ -258,6 +258,207 @@ export const COMPONENT = {
 };
 
 // =============================================================================
+// OPACITY - Transparenz-Werte
+// =============================================================================
+export const OPACITY = {
+  /** Deaktivierte Elemente */
+  disabled: 0.5,
+  /** Hover-Overlay */
+  hover: 0.1,
+  /** Active/Pressed-Overlay */
+  active: 0.2,
+  /** Leichte Hintergründe */
+  subtle: 0.05,
+  /** Mittlere Hintergründe */
+  light: 0.15,
+  /** Mittlere Transparenz */
+  medium: 0.3,
+  /** Starke Transparenz */
+  strong: 0.6,
+  /** Backdrop/Overlay */
+  backdrop: 0.5,
+};
+
+// =============================================================================
+// HOVER & INTERACTION STATES
+// =============================================================================
+export const INTERACTION = {
+  /** Standard Hover-Skalierung */
+  hoverScale: 1.02,
+  /** Aktiv/Pressed-Skalierung */
+  activeScale: 0.98,
+  /** Card Lift bei Hover (translateY) */
+  hoverLift: '-4px',
+  /** Button Hover Opacity */
+  buttonHoverOpacity: 0.9,
+  /** Focus Ring Width */
+  focusRingWidth: '3px',
+  /** Focus Ring Opacity */
+  focusRingOpacity: 0.25,
+};
+
+// =============================================================================
+// ANIMATION DURATIONS (in ms)
+// =============================================================================
+export const DURATION = {
+  instant: 0,
+  fast: 100,
+  normal: 200,
+  slow: 300,
+  slower: 400,
+  slowest: 500,
+};
+
+// =============================================================================
+// EASING FUNCTIONS
+// =============================================================================
+export const EASING = {
+  linear: 'linear',
+  ease: 'ease',
+  easeIn: 'ease-in',
+  easeOut: 'ease-out',
+  easeInOut: 'ease-in-out',
+  /** Smooth spring-like easing */
+  spring: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  /** Bounce effect */
+  bounce: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+};
+
+// =============================================================================
+// BORDERS
+// =============================================================================
+export const BORDERS = {
+  /** Keine Border */
+  none: 'none',
+  /** Dünne Border (1px) */
+  thin: '1px solid',
+  /** Standard Border (2px) */
+  normal: '2px solid',
+  /** Dicke Border für Akzente (3px) */
+  thick: '3px solid',
+  /** Sehr dicke Border (4px) */
+  heavy: '4px solid',
+};
+
+// =============================================================================
+// LINE HEIGHTS
+// =============================================================================
+export const LINE_HEIGHT = {
+  tight: 1.2,
+  snug: 1.375,
+  normal: 1.5,
+  relaxed: 1.625,
+  loose: 2,
+};
+
+// =============================================================================
+// LETTER SPACING
+// =============================================================================
+export const LETTER_SPACING = {
+  tighter: '-0.05em',
+  tight: '-0.025em',
+  normal: '0',
+  wide: '0.025em',
+  wider: '0.05em',
+  widest: '0.1em',
+};
+
+// =============================================================================
+// BLUR VALUES
+// =============================================================================
+export const BLUR = {
+  none: '0',
+  sm: '4px',
+  md: '8px',
+  lg: '12px',
+  xl: '16px',
+  '2xl': '24px',
+  '3xl': '40px',
+};
+
+// =============================================================================
+// TOUCH TARGETS (Accessibility)
+// =============================================================================
+export const TOUCH = {
+  /** Minimum Touch Target (44px - iOS standard) */
+  min: '44px',
+  /** Comfortable Touch Target */
+  comfortable: '48px',
+  /** Large Touch Target */
+  large: '56px',
+};
+
+// =============================================================================
+// ASPECT RATIOS
+// =============================================================================
+export const ASPECT_RATIO = {
+  square: '1 / 1',
+  video: '16 / 9',
+  photo: '4 / 3',
+  portrait: '3 / 4',
+  wide: '21 / 9',
+};
+
+// =============================================================================
+// MAX WIDTHS
+// =============================================================================
+export const MAX_WIDTH = {
+  xs: '320px',
+  sm: '384px',
+  md: '448px',
+  lg: '512px',
+  xl: '576px',
+  '2xl': '672px',
+  '3xl': '768px',
+  '4xl': '896px',
+  '5xl': '1024px',
+  '6xl': '1152px',
+  '7xl': '1280px',
+  full: '100%',
+  prose: '65ch',
+};
+
+// =============================================================================
+// ANIMATION KEYFRAMES (for framer-motion)
+// =============================================================================
+export const ANIMATION = {
+  fadeIn: {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+  },
+  slideUp: {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+  },
+  slideDown: {
+    initial: { opacity: 0, y: -20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 20 },
+  },
+  scaleIn: {
+    initial: { opacity: 0, scale: 0.95 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.95 },
+  },
+  slideInRight: {
+    initial: { opacity: 0, x: 20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 },
+  },
+};
+
+// =============================================================================
+// STAGGER DELAYS (for list animations)
+// =============================================================================
+export const STAGGER = {
+  fast: 0.03,
+  normal: 0.05,
+  slow: 0.1,
+};
+
+// =============================================================================
 // DEFAULT EXPORT
 // =============================================================================
 export default {
@@ -271,5 +472,18 @@ export default {
   Z_INDEX,
   ICON_SIZE,
   COMPONENT,
+  OPACITY,
+  INTERACTION,
+  DURATION,
+  EASING,
+  BORDERS,
+  LINE_HEIGHT,
+  LETTER_SPACING,
+  BLUR,
+  TOUCH,
+  ASPECT_RATIO,
+  MAX_WIDTH,
+  ANIMATION,
+  STAGGER,
   coloredShadow,
 };

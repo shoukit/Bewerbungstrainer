@@ -1,8 +1,8 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
-import DeviceSetupPage from '@/components/DeviceSetupPage';
-import FullscreenLoader from '@/components/ui/fullscreen-loader';
-import { ErrorToast } from '@/components/ui/StatusBanner';
+import DeviceSetupPage from '@/components/device-setup/DeviceSetupPage';
+import FullscreenLoader from '@/components/ui/composite/fullscreen-loader';
+import { ErrorToast } from '@/components/ui/composite/StatusBanner';
 import wordpressAPI from '@/services/wordpress-api';
 import useSessionStartup from '@/hooks/useSessionStartup';
 

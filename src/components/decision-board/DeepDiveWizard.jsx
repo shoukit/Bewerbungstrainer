@@ -13,10 +13,10 @@ import {
   Quote,
   SkipForward,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { useBranding } from '@/hooks/useBranding';
+import { Button } from '@/components/ui/base/button';
+import { Textarea } from '@/components/ui/base/textarea';
 import { generateWizardQuestion, extractWizardArguments } from '@/services/gemini';
+import { COLORS } from '@/config/colors';
 
 /**
  * Generate unique ID for items
@@ -26,33 +26,24 @@ const generateId = () => `wizard_${Date.now()}_${Math.random().toString(36).subs
 /**
  * Weight Slider for extracted items
  */
-const ExtractedItemSlider = ({ value, onChange, type, b }) => {
-  const accentColor = type === 'pro' ? b.success : b.error;
+const ExtractedItemSlider = ({ value, onChange, type }) => {
+  const isPro = type === 'pro';
+  const accentColor = isPro ? COLORS.green[500] : COLORS.red[500];
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], minWidth: '100px' }}>
+    <div className="flex items-center gap-2 min-w-[100px]">
       <input
         type="range"
         min="1"
         max="10"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
+        className="w-[70px] h-1.5 rounded cursor-pointer appearance-none"
         style={{
-          width: '70px',
-          height: '6px',
-          borderRadius: b.radius.sm,
-          background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(value - 1) * 11.1}%, ${b.borderColor} ${(value - 1) * 11.1}%, ${b.borderColor} 100%)`,
-          appearance: 'none',
-          cursor: 'pointer',
+          background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(value - 1) * 11.1}%, ${COLORS.slate[200]} ${(value - 1) * 11.1}%, ${COLORS.slate[200]} 100%)`,
         }}
       />
-      <span style={{
-        minWidth: '24px',
-        textAlign: 'center',
-        fontWeight: b.fontWeight.semibold,
-        fontSize: b.fontSize.sm,
-        color: accentColor,
-      }}>
+      <span className={`min-w-[24px] text-center font-semibold text-sm ${isPro ? 'text-green-600' : 'text-red-600'}`}>
         {value}
       </span>
     </div>
@@ -62,11 +53,8 @@ const ExtractedItemSlider = ({ value, onChange, type, b }) => {
 /**
  * Extracted Item Card with checkbox and editable text
  */
-const ExtractedItemCard = ({ item, onToggle, onWeightChange, onTextChange, b }) => {
+const ExtractedItemCard = ({ item, onToggle, onWeightChange, onTextChange }) => {
   const isPro = item.type === 'pro';
-  const bgColor = isPro ? b.successLight : b.errorLight;
-  const borderColor = isPro ? '#bbf7d0' : '#fecaca';
-  const iconColor = isPro ? b.successDark : b.errorDark;
   const textareaRef = React.useRef(null);
 
   // Auto-resize textarea
@@ -82,51 +70,37 @@ const ExtractedItemCard = ({ item, onToggle, onWeightChange, onTextChange, b }) 
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: b.space[3],
-        padding: b.space[4],
-        backgroundColor: item.selected ? bgColor : b.cardBgHover,
-        borderRadius: b.radius.lg,
-        border: `2px solid ${item.selected ? borderColor : b.borderColor}`,
-        transition: b.transition.normal,
-      }}
+      className={`flex flex-col sm:flex-row items-start gap-3 p-3 sm:p-4 rounded-xl border-2 transition-all ${
+        item.selected
+          ? isPro
+            ? 'bg-green-50 border-green-200'
+            : 'bg-red-50 border-red-200'
+          : 'bg-slate-50 border-slate-200'
+      }`}
     >
       {/* Checkbox */}
       <div
         onClick={() => onToggle(item.id)}
-        style={{
-          width: '24px',
-          height: '24px',
-          borderRadius: b.radius.md,
-          border: `2px solid ${item.selected ? iconColor : b.borderColor}`,
-          backgroundColor: item.selected ? iconColor : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          cursor: 'pointer',
-          transition: b.transition.normal,
-        }}
+        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 cursor-pointer transition-all ${
+          item.selected
+            ? isPro
+              ? 'border-green-600 bg-green-600'
+              : 'border-red-600 bg-red-600'
+            : 'border-slate-300 bg-transparent'
+        }`}
       >
-        {item.selected && <Check size={14} color={b.white} strokeWidth={3} />}
+        {item.selected && <Check size={14} className="text-white" strokeWidth={3} />}
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], marginBottom: b.space[1] }}>
+      <div className="flex-1 min-w-0 w-full">
+        <div className="flex items-center gap-2 mb-1">
           {isPro ? (
-            <ThumbsUp size={b.iconSize.md} color={iconColor} />
+            <ThumbsUp size={16} className="text-green-600" />
           ) : (
-            <ThumbsDown size={b.iconSize.md} color={iconColor} />
+            <ThumbsDown size={16} className="text-red-600" />
           )}
-          <span style={{
-            fontSize: b.fontSize.xs,
-            fontWeight: b.fontWeight.semibold,
-            color: iconColor,
-            textTransform: 'uppercase',
-          }}>
+          <span className={`text-xs font-semibold uppercase ${isPro ? 'text-green-600' : 'text-red-600'}`}>
             {isPro ? 'Pro' : 'Contra'}
           </span>
         </div>
@@ -134,44 +108,24 @@ const ExtractedItemCard = ({ item, onToggle, onWeightChange, onTextChange, b }) 
           ref={textareaRef}
           value={item.text}
           onChange={(e) => onTextChange(item.id, e.target.value)}
-          style={{
-            width: '100%',
-            fontSize: b.fontSize.md,
-            fontWeight: b.fontWeight.medium,
-            color: b.textMain,
-            marginBottom: b.space[2],
-            padding: `${b.space[2]} ${b.space[2.5]}`,
-            border: `1px solid ${borderColor}`,
-            borderRadius: b.radius.md,
-            backgroundColor: b.white,
-            resize: 'none',
-            overflow: 'hidden',
-            minHeight: '36px',
-            lineHeight: 1.4,
-          }}
+          className={`w-full text-base font-medium text-slate-800 mb-2 px-2.5 py-2 border rounded-lg bg-white resize-none overflow-hidden min-h-[36px] leading-snug ${
+            isPro ? 'border-green-200' : 'border-red-200'
+          }`}
         />
         {item.source_quote && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: b.space[1.5],
-            fontSize: b.fontSize.sm,
-            color: b.textMuted,
-            fontStyle: 'italic',
-          }}>
-            <Quote size={12} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div className="flex items-start gap-1.5 text-sm text-slate-500 italic">
+            <Quote size={12} className="shrink-0 mt-0.5" />
             <span>"{item.source_quote}"</span>
           </div>
         )}
       </div>
 
       {/* Weight Slider */}
-      <div onClick={(e) => e.stopPropagation()}>
+      <div onClick={(e) => e.stopPropagation()} className="shrink-0 self-center sm:self-start">
         <ExtractedItemSlider
           value={item.weight}
           onChange={(weight) => onWeightChange(item.id, weight)}
           type={item.type}
-          b={b}
         />
       </div>
     </motion.div>
@@ -189,8 +143,6 @@ const DeepDiveWizard = ({
   existingCons,
   onAddItems,
 }) => {
-  const b = useBranding();
-
   // Wizard state
   const [step, setStep] = useState('loading_question'); // loading_question | input | analyzing | selection
   const [currentQuestion, setCurrentQuestion] = useState('');
@@ -350,19 +302,7 @@ const DeepDiveWizard = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: b.zIndex.modal,
-          padding: b.space[4],
-        }}
+        className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-3 sm:p-4"
         onClick={onClose}
       >
         <motion.div
@@ -370,99 +310,41 @@ const DeepDiveWizard = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="wizard-modal"
-          style={{
-            backgroundColor: b.cardBgColor,
-            borderRadius: b.radius.xl,
-            width: '100%',
-            maxWidth: '640px',
-            maxHeight: '90dvh', // Use dvh for better mobile viewport handling
-            overflow: 'hidden',
-            boxShadow: b.shadow.xl,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
+          className="bg-white rounded-2xl w-full max-w-[640px] max-h-[90dvh] overflow-hidden shadow-2xl flex flex-col"
         >
           {/* Header */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: `${b.space[4]} ${b.space[5]}`,
-            borderBottom: `1px solid ${b.borderColor}`,
-            background: b.headerGradient,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3] }}>
-              <div style={{
-                width: b.space[10],
-                height: b.space[10],
-                borderRadius: b.radius.lg,
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <Wand2 size={b.iconSize.xl} color={b.white} />
+          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 bg-brand-gradient">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                <Wand2 size={24} className="text-white" />
               </div>
               <div>
-                <h2 style={{
-                  fontSize: b.fontSize.xl,
-                  fontWeight: b.fontWeight.bold,
-                  color: b.white,
-                  margin: 0,
-                }}>
+                <h2 className="text-lg sm:text-xl font-bold text-white m-0">
                   Deep Dive Interview
                 </h2>
-                <p style={{
-                  fontSize: b.fontSize.sm,
-                  color: 'rgba(255,255,255,0.8)',
-                  margin: 0,
-                }}>
+                <p className="text-sm text-white/80 m-0">
                   Frage {questionsAsked} • Entdecke deine wahren Motive
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              style={{
-                width: b.space[10],
-                height: b.space[10],
-                borderRadius: b.radius.md,
-                border: 'none',
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: b.white,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="w-10 h-10 rounded-lg border-none bg-white/20 text-white cursor-pointer flex items-center justify-center hover:bg-white/30 transition-all"
             >
-              <X size={b.iconSize.xl} />
+              <X size={24} />
             </button>
           </div>
 
           {/* Content */}
-          <div style={{
-            flex: 1,
-            overflow: 'auto',
-            padding: b.space[5],
-          }}>
+          <div className="flex-1 overflow-auto p-4 sm:p-5">
             {/* Loading Question Step */}
             {step === 'loading_question' && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: b.space[8],
-                gap: b.space[4],
-              }}>
+              <div className="flex flex-col items-center justify-center py-12 sm:py-16 gap-4">
                 <Loader2
                   size={48}
-                  color={b.primaryAccent}
-                  style={{ animation: 'spin 1s linear infinite' }}
+                  className="text-primary animate-spin"
                 />
-                <p style={{ color: b.textSecondary, fontSize: b.fontSize.lg }}>
+                <p className="text-slate-500 text-lg">
                   Generiere nächste Frage...
                 </p>
               </div>
@@ -472,63 +354,28 @@ const DeepDiveWizard = ({
             {step === 'input' && (
               <div>
                 {/* Question Display */}
-                <div style={{
-                  backgroundColor: `${b.primaryAccent}10`,
-                  borderRadius: b.radius.lg,
-                  padding: b.space[5],
-                  marginBottom: b.space[5],
-                  borderLeft: `4px solid ${b.primaryAccent}`,
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: b.space[2],
-                    marginBottom: b.space[2],
-                  }}>
-                    <MessageCircle size={b.iconSize.md} color={b.primaryAccent} />
-                    <span style={{
-                      fontSize: b.fontSize.sm,
-                      fontWeight: b.fontWeight.semibold,
-                      color: b.primaryAccent,
-                      textTransform: 'uppercase',
-                    }}>
+                <div className="bg-primary/10 rounded-xl p-4 sm:p-5 mb-5 border-l-4 border-primary">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageCircle size={16} className="text-primary" />
+                    <span className="text-sm font-semibold text-primary uppercase">
                       Coach fragt
                     </span>
                   </div>
-                  <p style={{
-                    fontSize: b.fontSize.xl,
-                    fontWeight: b.fontWeight.medium,
-                    color: b.textMain,
-                    lineHeight: 1.5,
-                    margin: 0,
-                  }}>
+                  <p className="text-lg sm:text-xl font-medium text-slate-800 leading-relaxed m-0">
                     {currentQuestion || 'Lade Frage...'}
                   </p>
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                  <div style={{
-                    backgroundColor: b.errorLight,
-                    color: b.errorDark,
-                    padding: b.space[3],
-                    borderRadius: b.radius.md,
-                    marginBottom: b.space[4],
-                    fontSize: b.fontSize.sm,
-                  }}>
+                  <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 text-sm">
                     {error}
                   </div>
                 )}
 
                 {/* Answer Input */}
                 <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: b.fontSize.base,
-                    fontWeight: b.fontWeight.medium,
-                    color: b.textSecondary,
-                    marginBottom: b.space[2],
-                  }}>
+                  <label className="block text-base font-medium text-slate-500 mb-2">
                     Deine Antwort
                   </label>
                   <Textarea
@@ -536,13 +383,7 @@ const DeepDiveWizard = ({
                     onChange={(e) => setUserAnswer(e.target.value)}
                     placeholder="Schreib einfach drauf los... Was fällt dir ein? Was fühlst du dabei?"
                     rows={5}
-                    style={{
-                      fontSize: b.fontSize.md,
-                      padding: b.space[4],
-                      borderRadius: b.radius.lg,
-                      resize: 'vertical',
-                      minHeight: '120px',
-                    }}
+                    className="text-base p-4 rounded-xl resize-y min-h-[120px]"
                   />
                 </div>
               </div>
@@ -550,21 +391,14 @@ const DeepDiveWizard = ({
 
             {/* Analyzing Step */}
             {step === 'analyzing' && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: b.space[8],
-                gap: b.space[4],
-              }}>
+              <div className="flex flex-col items-center justify-center py-12 sm:py-16 gap-4">
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                 >
-                  <Sparkles size={48} color={b.primaryAccent} />
+                  <Sparkles size={48} className="text-primary" />
                 </motion.div>
-                <p style={{ color: b.textSecondary, fontSize: b.fontSize.lg }}>
+                <p className="text-slate-500 text-lg">
                   KI extrahiert Argumente...
                 </p>
               </div>
@@ -573,39 +407,24 @@ const DeepDiveWizard = ({
             {/* Selection Step */}
             {step === 'selection' && (
               <div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: b.space[2],
-                  marginBottom: b.space[4],
-                }}>
-                  <Sparkles size={b.iconSize.lg} color={b.primaryAccent} />
-                  <h3 style={{
-                    fontSize: b.fontSize.lg,
-                    fontWeight: b.fontWeight.semibold,
-                    color: b.textMain,
-                    margin: 0,
-                  }}>
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles size={20} className="text-primary" />
+                  <h3 className="text-lg font-semibold text-slate-800 m-0">
                     Extrahierte Argumente
                   </h3>
                 </div>
 
                 {extractedItems.length === 0 ? (
-                  <div style={{
-                    textAlign: 'center',
-                    padding: b.space[6],
-                    backgroundColor: b.cardBgHover,
-                    borderRadius: b.radius.lg,
-                  }}>
-                    <p style={{ color: b.textSecondary, marginBottom: b.space[3] }}>
+                  <div className="text-center py-8 sm:py-10 bg-slate-50 rounded-xl">
+                    <p className="text-slate-500 mb-3">
                       Keine konkreten Argumente gefunden.
                     </p>
-                    <p style={{ color: b.textMuted, fontSize: b.fontSize.sm }}>
+                    <p className="text-slate-400 text-sm">
                       Das ist okay! Versuch es mit einer ausführlicheren Antwort oder einer anderen Frage.
                     </p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}>
+                  <div className="flex flex-col gap-3">
                     {extractedItems.map((item) => (
                       <ExtractedItemCard
                         key={item.id}
@@ -613,18 +432,12 @@ const DeepDiveWizard = ({
                         onToggle={handleToggleItem}
                         onWeightChange={handleWeightChange}
                         onTextChange={handleTextChange}
-                        b={b}
                       />
                     ))}
                   </div>
                 )}
 
-                <p style={{
-                  fontSize: b.fontSize.sm,
-                  color: b.textMuted,
-                  marginTop: b.space[4],
-                  textAlign: 'center',
-                }}>
+                <p className="text-sm text-slate-400 mt-4 text-center">
                   Klicke auf ein Argument um es ab-/anzuwählen. Passe die Gewichtung nach Bedarf an.
                 </p>
               </div>
@@ -632,38 +445,29 @@ const DeepDiveWizard = ({
           </div>
 
           {/* Footer */}
-          <div className="wizard-footer" style={{
-            padding: `${b.space[4]} ${b.space[5]}`,
-            borderTop: `1px solid ${b.borderColor}`,
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            gap: b.space[3],
-            flexShrink: 0,
-            backgroundColor: b.cardBgColor,
-          }}>
+          <div className="p-3 sm:p-4 border-t border-slate-200 flex flex-wrap justify-between gap-3 shrink-0 bg-white">
             {step === 'input' && (
               <>
-                <Button variant="ghost" onClick={onClose}>
+                <Button variant="ghost" onClick={onClose} className="order-1">
                   Abbrechen
                 </Button>
-                <div style={{ display: 'flex', gap: b.space[2] }}>
+                <div className="flex gap-2 order-2 flex-1 sm:flex-none justify-end">
                   <Button
                     variant="outline"
                     onClick={handleSkipToNextQuestion}
+                    className="flex-1 sm:flex-none"
                   >
-                    <SkipForward size={b.iconSize.md} style={{ marginRight: b.space[1.5] }} />
-                    Überspringen
+                    <SkipForward size={16} className="mr-1.5" />
+                    <span className="hidden sm:inline">Überspringen</span>
+                    <span className="sm:hidden">Skip</span>
                   </Button>
                   <Button
                     variant="solid"
                     onClick={handleAnalyze}
                     disabled={!userAnswer.trim() || userAnswer.length < 10}
-                    style={{
-                      background: userAnswer.trim().length >= 10 ? b.headerGradient : undefined,
-                    }}
+                    className={`flex-1 sm:flex-none ${userAnswer.trim().length >= 10 ? 'bg-brand-gradient' : ''}`}
                   >
-                    <Sparkles size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
+                    <Sparkles size={16} className="mr-2" />
                     Auswerten
                   </Button>
                 </div>
@@ -675,10 +479,7 @@ const DeepDiveWizard = ({
                 <Button
                   variant="outline"
                   onClick={handleFinish}
-                  style={{
-                    borderColor: b.borderColor,
-                    backgroundColor: b.cardBgHover,
-                  }}
+                  className="order-1"
                 >
                   Fertig
                 </Button>
@@ -692,12 +493,17 @@ const DeepDiveWizard = ({
                       handleSkipToNextQuestion();
                     }
                   }}
-                  style={{
-                    background: b.headerGradient,
-                  }}
+                  className="bg-brand-gradient order-2"
                 >
-                  {extractedItems.some(i => i.selected) ? 'Übernehmen & Weiter' : 'Nächste Frage'}
-                  <ChevronRight size={b.iconSize.md} style={{ marginLeft: b.space[1] }} />
+                  {extractedItems.some(i => i.selected) ? (
+                    <>
+                      <span className="hidden sm:inline">Übernehmen & Weiter</span>
+                      <span className="sm:hidden">Weiter</span>
+                    </>
+                  ) : (
+                    'Nächste Frage'
+                  )}
+                  <ChevronRight size={16} className="ml-1" />
                 </Button>
               </>
             )}
@@ -707,31 +513,25 @@ const DeepDiveWizard = ({
 
       <style>
         {`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+          input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid currentColor;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
           }
 
-          /* Mobile responsive: footer buttons stack on small screens */
-          @media (max-width: 480px) {
-            .wizard-modal {
-              max-height: calc(100dvh - 16px) !important;
-              border-radius: 16px !important;
-            }
-            .wizard-footer {
-              padding: 12px 16px !important;
-            }
-            .wizard-footer > button,
-            .wizard-footer > div {
-              flex: 1 1 auto;
-            }
-            .wizard-footer > div {
-              width: 100%;
-              justify-content: stretch;
-            }
-            .wizard-footer > div > button {
-              flex: 1;
-            }
+          input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid currentColor;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
           }
         `}
       </style>

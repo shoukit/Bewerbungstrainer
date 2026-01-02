@@ -7,7 +7,7 @@
  * - Real-time visual feedback
  * - Result display with score
  *
- * Uses Ocean theme design consistent with other features.
+ * Migrated to Tailwind CSS + themed components.
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -22,7 +22,6 @@ import {
   Clock,
   Volume2,
   XCircle,
-  CheckCircle,
   MessageCircle,
 } from 'lucide-react';
 import { analyzeRhetoricGame } from '@/services/gemini';
@@ -33,9 +32,8 @@ import {
   MIN_AUDIO_SIZE_BYTES,
   getEmptyTranscriptResult,
 } from '@/config/prompts/transcriptionCore';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
-import { useBranding } from '@/hooks/useBranding';
+import { Button, Card, Badge } from '@/components/ui';
+import { useConfetti } from '@/components/ui/composite/Confetti';
 
 // Game states
 const GAME_STATES = {
@@ -48,32 +46,24 @@ const GAME_STATES = {
 };
 
 /**
- * Countdown overlay component
+ * Countdown overlay component - Tailwind styled
  */
-const CountdownOverlay = ({ count, branding }) => (
+const CountdownOverlay = ({ count }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
-    style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.9)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 50,
-    }}
+    className="fixed inset-0 bg-slate-900/90 flex-center z-50"
   >
     <motion.div
       key={count}
       initial={{ scale: 0.5, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 1.5, opacity: 0 }}
-      style={{ color: 'white', textAlign: 'center' }}
+      className="text-white text-center"
     >
-      <div style={{ fontSize: '120px', fontWeight: 700, marginBottom: '16px' }}>{count}</div>
-      <div style={{ fontSize: '24px', color: branding.textMuted }}>
+      <div className="text-[120px] font-bold mb-4">{count}</div>
+      <div className="text-2xl text-slate-400">
         {count === 3 ? 'Mach dich bereit...' : count === 2 ? 'Durchatmen...' : "Los geht's!"}
       </div>
     </motion.div>
@@ -81,39 +71,23 @@ const CountdownOverlay = ({ count, branding }) => (
 );
 
 /**
- * Timer display component
+ * Timer display component - Clean Professional Design
  */
-const TimerDisplay = ({ seconds, total, isWarning, primaryAccent, branding }) => {
+const TimerDisplay = ({ seconds, total, isWarning }) => {
   const progress = (seconds / total) * 100;
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
 
   return (
-    <div>
-      <div style={{
-        fontSize: '64px',
-        fontWeight: 700,
-        fontFamily: 'monospace',
-        textAlign: 'center',
-        color: isWarning ? branding.error : branding.textMain,
-      }}>
+    <div className="bg-white rounded-2xl shadow-card p-8 mb-6">
+      <div className={`text-7xl md:text-8xl font-bold font-mono text-center mb-4 ${isWarning ? 'text-red-500' : 'bg-gradient-to-br from-violet-600 to-purple-600 bg-clip-text text-transparent'}`}>
         {minutes}:{secs.toString().padStart(2, '0')}
       </div>
 
       {/* Progress bar */}
-      <div style={{
-        marginTop: '16px',
-        height: '8px',
-        backgroundColor: branding.borderColor,
-        borderRadius: '4px',
-        overflow: 'hidden',
-      }}>
+      <div className="h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
         <motion.div
-          style={{
-            height: '100%',
-            backgroundColor: isWarning ? branding.error : primaryAccent,
-            borderRadius: '4px',
-          }}
+          className={`h-full rounded-full ${isWarning ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-violet-500 to-purple-600'}`}
           initial={{ width: '100%' }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5 }}
@@ -124,28 +98,13 @@ const TimerDisplay = ({ seconds, total, isWarning, primaryAccent, branding }) =>
 };
 
 /**
- * Filler word badge component
+ * Filler word badge component - Uses themed Badge
  */
-const FillerWordBadge = ({ word, count, branding }) => (
-  <span style={{
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: branding.space[1],
-    padding: `${branding.space[1.5]} ${branding.space[3]}`,
-    backgroundColor: branding.errorLight,
-    color: branding.error,
-    borderRadius: branding.radius['2xl'],
-    fontSize: branding.fontSize.base,
-    fontWeight: branding.fontWeight.medium,
-  }}>
+const FillerWordBadge = ({ word, count }) => (
+  <Badge variant="error" className="gap-1">
     "{word}"
-    <span style={{
-      backgroundColor: `${branding.error}30`,
-      padding: `${branding.space[0.5] || '2px'} ${branding.space[1.5]}`,
-      borderRadius: branding.radius.md,
-      fontSize: branding.fontSize.xs,
-    }}>{count}x</span>
-  </span>
+    <span className="bg-red-500/20 px-1.5 py-0.5 rounded text-xs">{count}x</span>
+  </Badge>
 );
 
 /**
@@ -225,196 +184,113 @@ const calculateScores = (transcript, fillerWords, contentScore, actualDurationSe
 };
 
 /**
- * Results display component
+ * Results display component - Tailwind + themed components
  */
-const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAccent, primaryAccentLight, branding }) => {
+const ResultsDisplay = ({ result, onPlayAgain, onBack }) => {
   const feedback = getScoreFeedback(result.score);
   const isGoodScore = result.score >= 70;
   const isNoSpeech = result.pace_feedback === 'keine_sprache' || result.transcript === '[Keine Sprache erkannt]';
 
+  // Confetti celebration for good scores
+  const { triggerConfetti, ConfettiComponent } = useConfetti();
+
+  // Trigger confetti on mount for good scores (70+)
+  useEffect(() => {
+    if (isGoodScore && !isNoSpeech) {
+      triggerConfetti();
+    }
+  }, [isGoodScore, isNoSpeech, triggerConfetti]);
+
+  // Score card gradient based on result
+  const scoreGradient = isNoSpeech
+    ? 'bg-gradient-to-br from-slate-500 to-slate-600'
+    : isGoodScore
+      ? 'bg-gradient-to-br from-green-500 to-primary'
+      : 'bg-gradient-to-br from-amber-500 to-orange-500';
+
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+    <>
+      <ConfettiComponent />
+      <div className="max-w-[600px] mx-auto">
       {/* Score Card */}
-      <div style={{
-        borderRadius: branding.radius['2xl'],
-        padding: branding.space[8],
-        marginBottom: branding.space[6],
-        background: isNoSpeech
-          ? `linear-gradient(135deg, ${branding.textSecondary} 0%, ${branding.textMuted} 100%)`
-          : isGoodScore
-            ? `linear-gradient(135deg, ${branding.success} 0%, ${primaryAccent} 100%)`
-            : `linear-gradient(135deg, ${branding.warning} 0%, ${branding.warningDark || branding.warning} 100%)`,
-        color: 'white',
-        textAlign: 'center',
-      }}>
-        <div style={{ fontSize: branding.iconSize['4xl'], marginBottom: branding.space[2] }}>
-          {isNoSpeech ? '🎤' : feedback.emoji}
-        </div>
-        <div style={{ fontSize: '72px', fontWeight: branding.fontWeight.bold, marginBottom: branding.space[2] }}>{result.score}</div>
-        <div style={{ fontSize: branding.fontSize.xl, opacity: 0.9, marginBottom: branding.space[4] }}>Punkte</div>
-        <p style={{ fontSize: branding.fontSize.lg, margin: 0 }}>
+      <div className={`${scoreGradient} rounded-2xl p-10 mb-8 text-white text-center shadow-card`}>
+        <div className="text-6xl mb-4">{isNoSpeech ? '🎤' : feedback.emoji}</div>
+        <div className="text-8xl font-bold mb-3">{result.score}</div>
+        <div className="text-2xl opacity-90 mb-5 font-semibold">Punkte</div>
+        <p className="text-lg leading-relaxed">
           {isNoSpeech ? 'Keine Sprache erkannt. Bitte sprich lauter ins Mikrofon.' : feedback.message}
         </p>
       </div>
 
       {/* Stats Grid - 2x2 */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: branding.space[3],
-        marginBottom: branding.space[6],
-      }}>
+      <div className="grid grid-cols-2 gap-4 mb-6">
         {/* Total Words */}
-        <div style={{
-          backgroundColor: branding.cardBg,
-          borderRadius: branding.radius.lg,
-          padding: branding.space[3.5],
-          border: `1px solid ${branding.borderColor}`,
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: branding.space[1.5],
-            color: primaryAccent,
-            marginBottom: branding.space[1.5],
-          }}>
-            <MessageCircle style={{ width: branding.iconSize.sm, height: branding.iconSize.sm }} />
-            <span style={{ fontWeight: branding.fontWeight.medium, fontSize: branding.fontSize.sm }}>Wörter</span>
+        <Card className="p-5 shadow-card">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-3">
+            <MessageCircle className="w-5 h-5 text-white" />
           </div>
-          <div style={{ fontSize: branding.fontSize['4xl'], fontWeight: branding.fontWeight.bold, color: branding.textMain }}>{result.total_words}</div>
-          <div style={{ fontSize: branding.fontSize['2xs'], color: branding.textMuted }}>gesprochen</div>
-        </div>
+          <div className="text-3xl font-bold text-slate-900 mb-1">{result.total_words}</div>
+          <div className="text-sm text-slate-600 font-medium">Wörter gesprochen</div>
+        </Card>
 
         {/* Filler Count */}
-        <div style={{
-          backgroundColor: branding.cardBg,
-          borderRadius: branding.radius.lg,
-          padding: branding.space[3.5],
-          border: `1px solid ${branding.borderColor}`,
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: branding.error,
-            marginBottom: '6px',
-          }}>
-            <AlertTriangle style={{ width: '16px', height: '16px' }} />
-            <span style={{ fontWeight: 500, fontSize: '13px' }}>Füllwörter</span>
+        <Card className="p-5 shadow-card">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center mb-3">
+            <AlertTriangle className="w-5 h-5 text-white" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: branding.textMain }}>{result.filler_count}</div>
-          <div style={{ fontSize: '11px', color: branding.textMuted }}>
-            {result.filler_percentage?.toFixed(1) || '0'}%
-          </div>
-        </div>
+          <div className="text-3xl font-bold text-slate-900 mb-1">{result.filler_count}</div>
+          <div className="text-sm text-slate-600 font-medium">Füllwörter ({result.filler_percentage?.toFixed(1) || '0'}%)</div>
+        </Card>
 
         {/* Words Per Minute */}
-        <div style={{
-          backgroundColor: branding.cardBg,
-          borderRadius: '12px',
-          padding: '14px',
-          border: `1px solid ${branding.borderColor}`,
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: primaryAccent,
-            marginBottom: '6px',
-          }}>
-            <Volume2 style={{ width: '16px', height: '16px' }} />
-            <span style={{ fontWeight: 500, fontSize: '13px' }}>Tempo</span>
+        <Card className="p-5 shadow-card">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3">
+            <Volume2 className="w-5 h-5 text-white" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: branding.textMain }}>{result.words_per_minute}</div>
-          <div style={{ fontSize: '11px', color: branding.textMuted }}>WPM</div>
-        </div>
+          <div className="text-3xl font-bold text-slate-900 mb-1">{result.words_per_minute}</div>
+          <div className="text-sm text-slate-600 font-medium">WPM Tempo</div>
+        </Card>
 
         {/* Speaking Time */}
-        <div style={{
-          backgroundColor: branding.cardBg,
-          borderRadius: '12px',
-          padding: '14px',
-          border: `1px solid ${branding.borderColor}`,
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: branding.textSecondary,
-            marginBottom: '6px',
-          }}>
-            <Clock style={{ width: '16px', height: '16px' }} />
-            <span style={{ fontWeight: 500, fontSize: '13px' }}>Sprechzeit</span>
+        <Card className="p-5 shadow-card">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center mb-3">
+            <Clock className="w-5 h-5 text-white" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: branding.textMain }}>{result.duration_seconds || 0}</div>
-          <div style={{ fontSize: '11px', color: branding.textMuted }}>Sekunden</div>
-        </div>
+          <div className="text-3xl font-bold text-slate-900 mb-1">{result.duration_seconds || 0}</div>
+          <div className="text-sm text-slate-600 font-medium">Sekunden Sprechzeit</div>
+        </Card>
       </div>
 
       {/* Filler Words Detail */}
       {result.filler_words && result.filler_words.length > 0 && (
-        <div style={{
-          backgroundColor: branding.cardBg,
-          borderRadius: '12px',
-          padding: '16px',
-          border: `1px solid ${branding.borderColor}`,
-          marginBottom: '24px',
-        }}>
-          <h4 style={{ fontWeight: 600, color: branding.textMain, marginBottom: '12px', fontSize: '15px' }}>
-            Erkannte Füllwörter
-          </h4>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        <Card className="mb-6 shadow-card">
+          <h4 className="font-semibold text-slate-900 mb-4 text-base">Erkannte Füllwörter</h4>
+          <div className="flex flex-wrap gap-2">
             {result.filler_words.map((fw, index) => (
-              <FillerWordBadge key={index} word={fw.word} count={fw.count} branding={branding} />
+              <FillerWordBadge key={index} word={fw.word} count={fw.count} />
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Score Breakdown */}
       {!isNoSpeech && (
-        <div style={{
-          backgroundColor: primaryAccentLight,
-          border: `1px solid ${primaryAccent}26`,
-          borderRadius: '12px',
-          padding: '16px',
-          marginBottom: '24px',
-        }}>
-          <h4 style={{ fontWeight: 600, color: primaryAccent, marginBottom: '12px', fontSize: '15px' }}>
-            Bewertung im Detail
-          </h4>
+        <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5 mb-6 shadow-sm">
+          <h4 className="font-semibold text-violet-900 mb-4 text-base">Bewertung im Detail</h4>
 
-          {/* Score Breakdown Grid */}
           {result.score_breakdown && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '8px',
-              marginBottom: result.content_feedback ? '12px' : 0,
-            }}>
-              <div style={{ fontSize: '13px', color: branding.textSecondary }}>
-                📝 Wortanzahl: <strong>{result.score_breakdown.words_score || 0}/25</strong>
-              </div>
-              <div style={{ fontSize: '13px', color: branding.textSecondary }}>
-                🚫 Füllwörter: <strong>{result.score_breakdown.filler_score || 0}/25</strong>
-              </div>
-              <div style={{ fontSize: '13px', color: branding.textSecondary }}>
-                ⏱️ Tempo: <strong>{result.score_breakdown.tempo_score || 0}/10</strong>
-              </div>
-              <div style={{ fontSize: '13px', color: branding.textSecondary }}>
-                💡 Inhalt: <strong>{result.score_breakdown.content_score || 0}/40</strong>
-              </div>
+            <div className={`grid grid-cols-2 gap-2 ${result.content_feedback ? 'mb-3' : ''}`}>
+              <div className="text-[13px] text-slate-600">📝 Wortanzahl: <strong>{result.score_breakdown.words_score || 0}/25</strong></div>
+              <div className="text-[13px] text-slate-600">🚫 Füllwörter: <strong>{result.score_breakdown.filler_score || 0}/25</strong></div>
+              <div className="text-[13px] text-slate-600">⏱️ Tempo: <strong>{result.score_breakdown.tempo_score || 0}/10</strong></div>
+              <div className="text-[13px] text-slate-600">💡 Inhalt: <strong>{result.score_breakdown.content_score || 0}/40</strong></div>
             </div>
           )}
 
-          {/* Content Feedback Text */}
           {result.content_feedback && (
-            <div style={{
-              paddingTop: '12px',
-              borderTop: `1px solid ${primaryAccent}26`,
-            }}>
-              <p style={{ fontSize: '14px', color: branding.textSecondary, margin: 0, lineHeight: 1.5 }}>
-                <strong>Inhaltliches Feedback:</strong> {result.content_feedback}
+            <div className="pt-4 border-t border-violet-200">
+              <p className="text-sm text-slate-700 leading-relaxed">
+                <strong className="text-violet-900">Inhaltliches Feedback:</strong> {result.content_feedback}
               </p>
             </div>
           )}
@@ -423,17 +299,9 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
 
       {/* Pace Feedback */}
       {result.pace_feedback && result.pace_feedback !== 'optimal' && result.pace_feedback !== 'keine_sprache' && (
-        <div style={{
-          backgroundColor: branding.warningLight,
-          border: `1px solid ${branding.warning}40`,
-          borderRadius: '12px',
-          padding: '16px',
-          marginBottom: '24px',
-        }}>
-          <h4 style={{ fontWeight: 600, color: branding.warning, marginBottom: '8px', fontSize: '15px' }}>
-            Tempo-Hinweis
-          </h4>
-          <p style={{ fontSize: '14px', color: branding.textSecondary, margin: 0 }}>
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 shadow-sm">
+          <h4 className="font-semibold text-amber-700 mb-3 text-base">Tempo-Hinweis</h4>
+          <p className="text-sm text-slate-700 leading-relaxed">
             {result.pace_feedback === 'zu_schnell'
               ? 'Du sprichst etwas zu schnell. Versuche, bewusst langsamer und deutlicher zu sprechen.'
               : 'Du sprichst etwas zu langsam. Versuche, etwas mehr Energie in deine Präsentation zu legen.'}
@@ -443,73 +311,28 @@ const ResultsDisplay = ({ result, onPlayAgain, onBack, buttonGradient, primaryAc
 
       {/* Transcript */}
       {result.transcript && result.transcript !== '[Keine Sprache erkannt]' && (
-        <div style={{
-          backgroundColor: branding.cardBgHover,
-          borderRadius: '12px',
-          border: `1px solid ${branding.borderColor}`,
-          padding: '16px',
-          marginBottom: '32px',
-        }}>
-          <h4 style={{ fontWeight: 600, color: branding.textMain, marginBottom: '12px', fontSize: '15px' }}>
-            Transkript
-          </h4>
-          <p style={{ fontSize: '14px', color: branding.textSecondary, lineHeight: 1.6, margin: 0 }}>
-            {result.transcript}
-          </p>
-        </div>
+        <Card className="mb-8 bg-slate-50 shadow-card">
+          <h4 className="font-semibold text-slate-900 mb-4 text-base">Transkript</h4>
+          <p className="text-sm text-slate-700 leading-relaxed">{result.transcript}</p>
+        </Card>
       )}
 
       {/* Action Buttons */}
-      <div style={{ display: 'flex', gap: '16px' }}>
-        <button
-          onClick={onPlayAgain}
-          style={{
-            flex: 1,
-            padding: '14px 24px',
-            borderRadius: '12px',
-            border: 'none',
-            background: buttonGradient,
-            color: 'white',
-            fontSize: '15px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-          }}
-        >
-          <RotateCcw style={{ width: '18px', height: '18px' }} />
+      <div className="flex gap-4">
+        <Button icon={<RotateCcw />} onClick={onPlayAgain} fullWidth>
           Nochmal spielen
-        </button>
-        <button
-          onClick={onBack}
-          style={{
-            flex: 1,
-            padding: '14px 24px',
-            borderRadius: '12px',
-            border: `1px solid ${branding.borderColor}`,
-            backgroundColor: branding.cardBg,
-            color: branding.textSecondary,
-            fontSize: '15px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-          }}
-        >
-          <ArrowLeft style={{ width: '18px', height: '18px' }} />
+        </Button>
+        <Button variant="secondary" icon={<ArrowLeft />} onClick={onBack} fullWidth>
           Zurück
-        </button>
+        </Button>
       </div>
     </div>
+    </>
   );
 };
 
 /**
- * Main GameSession Component
+ * Main GameSession Component - Tailwind + themed components
  */
 const GameSession = ({ gameConfig, onBack, onComplete }) => {
   // Start directly with COUNTDOWN state - no intermediate "Ready?" screen
@@ -520,16 +343,6 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
   const [error, setError] = useState(null);
   const [audioLevel, setAudioLevel] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
-
-  // Partner theming
-  const { branding } = usePartner();
-  const headerGradient = branding?.['--header-gradient'] || DEFAULT_BRANDING['--header-gradient'];
-  const buttonGradient = branding?.['--button-gradient'] || headerGradient;
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-  const primaryAccentLight = branding?.['--primary-accent-light'] || DEFAULT_BRANDING['--primary-accent-light'];
-
-  // Get full branding object for sub-components
-  const b = useBranding();
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -796,69 +609,27 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
     switch (gameState) {
       case GAME_STATES.READY:
         return (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ maxWidth: '500px', margin: '0 auto' }}>
-              <div style={{ fontSize: '64px', marginBottom: '24px' }}>🎤</div>
-              <h2 style={{ fontSize: '24px', fontWeight: 700, color: b.textMain, marginBottom: '12px' }}>
-                Bereit?
-              </h2>
-              <p style={{ fontSize: '16px', color: b.textSecondary, marginBottom: '24px', lineHeight: 1.6 }}>
-                {gameConfig.topic}
-              </p>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 16px',
-                backgroundColor: b.cardBgHover,
-                borderRadius: '20px',
-                color: b.textSecondary,
-                fontSize: '14px',
-                marginBottom: '32px',
-              }}>
-                <Clock style={{ width: '16px', height: '16px' }} />
+          <div className="text-center py-10 px-5">
+            <div className="max-w-[500px] mx-auto">
+              <div className="text-6xl mb-6">🎤</div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-3">Bereit?</h2>
+              <p className="text-base text-slate-600 mb-6 leading-relaxed">{gameConfig.topic}</p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full text-slate-600 text-sm mb-8">
+                <Clock className="w-4 h-4" />
                 {gameConfig.duration} Sekunden
               </div>
 
               <div>
-                <button
-                  onClick={startCountdown}
-                  style={{
-                    padding: '16px 40px',
-                    borderRadius: '14px',
-                    border: 'none',
-                    background: buttonGradient,
-                    color: 'white',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    boxShadow: `0 4px 14px ${primaryAccent}66`,
-                  }}
-                >
-                  <Play style={{ width: '20px', height: '20px' }} />
+                <Button size="lg" icon={<Play />} onClick={startCountdown}>
                   Aufnahme starten
-                </button>
+                </Button>
               </div>
 
               <button
                 onClick={onBack}
-                style={{
-                  marginTop: '24px',
-                  padding: '10px 20px',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: b.textMuted,
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
+                className="mt-6 px-5 py-2.5 border-none bg-transparent text-slate-400 text-sm cursor-pointer inline-flex items-center gap-1.5"
               >
-                <ArrowLeft style={{ width: '16px', height: '16px' }} />
+                <ArrowLeft className="w-4 h-4" />
                 Zurück zur Auswahl
               </button>
             </div>
@@ -867,200 +638,80 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
 
       case GAME_STATES.RECORDING:
         return (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ maxWidth: '500px', margin: '0 auto' }}>
-              <TimerDisplay
-                seconds={timeLeft}
-                total={gameConfig.duration}
-                isWarning={timeLeft <= 10}
-                primaryAccent={primaryAccent}
-                branding={b}
-              />
+          <div className="text-center py-10 px-5">
+            <div className="max-w-[500px] mx-auto">
+              <TimerDisplay seconds={timeLeft} total={gameConfig.duration} isWarning={timeLeft <= 10} />
 
               {/* Topic reminder */}
-              <div style={{
-                marginTop: '32px',
-                marginBottom: '32px',
-                padding: '16px',
-                backgroundColor: b.cardBgHover,
-                borderRadius: '12px',
-              }}>
-                <p style={{ fontSize: '13px', color: b.textMuted, marginBottom: '4px' }}>Dein Thema:</p>
-                <p style={{ fontSize: '15px', fontWeight: 500, color: b.textMain, margin: 0 }}>
-                  {gameConfig.topic}
-                </p>
+              <div className="mb-8 p-5 bg-violet-50 border border-violet-100 rounded-2xl shadow-sm">
+                <p className="text-sm text-violet-600 mb-2 font-medium">Dein Thema:</p>
+                <p className="text-base font-semibold text-slate-900">{gameConfig.topic}</p>
               </div>
 
               {/* Audio visualizer */}
-              <div style={{ marginBottom: '32px' }}>
+              <div className="mb-8">
                 <motion.div
-                  style={{
-                    height: '80px',
-                    background: buttonGradient,
-                    borderRadius: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  animate={{ opacity: 0.6 + audioLevel * 0.4 }}
+                  className="h-24 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex-center shadow-card"
+                  animate={{ opacity: 0.7 + audioLevel * 0.3 }}
                 >
                   <motion.div
-                    style={{
-                      width: '56px',
-                      height: '56px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    animate={{ scale: 1 + audioLevel * 0.3 }}
+                    className="w-16 h-16 rounded-full bg-white/30 flex-center backdrop-blur-sm"
+                    animate={{ scale: 1 + audioLevel * 0.4 }}
                   >
-                    <Mic style={{ width: '28px', height: '28px', color: 'white' }} />
+                    <Mic className="w-8 h-8 text-white" />
                   </motion.div>
                 </motion.div>
               </div>
 
               {/* Recording indicator */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                marginBottom: '32px',
-              }}>
+              <div className="flex-center gap-2 mb-8">
                 <motion.div
                   animate={{ scale: [1, 1.2, 1], opacity: 1 }}
                   transition={{ repeat: Infinity, duration: 1 }}
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    backgroundColor: b.error,
-                  }}
+                  className="w-3 h-3 rounded-full bg-red-500"
                 />
-                <span style={{ fontWeight: 500, color: b.error, fontSize: '14px' }}>
-                  Aufnahme läuft...
-                </span>
+                <span className="font-medium text-red-500 text-sm">Aufnahme läuft...</span>
               </div>
 
-              <button
-                onClick={handleEarlyStop}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  backgroundColor: b.error,
-                  color: 'white',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
-                <Square style={{ width: '16px', height: '16px' }} />
+              <Button variant="danger" icon={<Square />} onClick={handleEarlyStop}>
                 Aufnahme beenden
-              </button>
+              </Button>
             </div>
           </div>
         );
 
       case GAME_STATES.PROCESSING:
         return (
-          <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+          <div className="text-center py-20 px-5">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-              style={{
-                width: '56px',
-                height: '56px',
-                border: `4px solid ${primaryAccent}`,
-                borderTopColor: 'transparent',
-                borderRadius: '50%',
-                margin: '0 auto 24px',
-              }}
+              className="w-16 h-16 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-6"
             />
-            <h2 style={{ fontSize: '20px', fontWeight: 600, color: b.textMain, marginBottom: '8px' }}>
-              Analysiere deine Aufnahme...
-            </h2>
-            <p style={{ color: b.textMuted }}>Der Füllwort-Killer zählt nach</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-3">Analysiere deine Aufnahme...</h2>
+            <p className="text-base text-slate-600">Der Füllwort-Killer zählt nach</p>
           </div>
         );
 
       case GAME_STATES.RESULTS:
-        return (
-          <ResultsDisplay
-            result={result}
-            onPlayAgain={handlePlayAgain}
-            onBack={onBack}
-            buttonGradient={buttonGradient}
-            primaryAccent={primaryAccent}
-            primaryAccentLight={primaryAccentLight}
-            branding={b}
-          />
-        );
+        return <ResultsDisplay result={result} onPlayAgain={handlePlayAgain} onBack={onBack} />;
 
       case GAME_STATES.ERROR:
         return (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ maxWidth: '400px', margin: '0 auto' }}>
-              <div style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                backgroundColor: b.errorLight,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 24px',
-              }}>
-                <XCircle style={{ width: '32px', height: '32px', color: b.error }} />
+          <div className="text-center py-16 px-5">
+            <div className="max-w-[400px] mx-auto">
+              <div className="w-20 h-20 rounded-2xl bg-red-100 flex-center mx-auto mb-6 shadow-sm">
+                <XCircle className="w-10 h-10 text-red-500" />
               </div>
-              <h2 style={{ fontSize: '20px', fontWeight: 600, color: b.textMain, marginBottom: '12px' }}>
-                Fehler
-              </h2>
-              <p style={{ color: b.textSecondary, marginBottom: '24px' }}>{error}</p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                <button
-                  onClick={handlePlayAgain}
-                  style={{
-                    padding: '12px 24px',
-                    borderRadius: '12px',
-                    border: 'none',
-                    background: buttonGradient,
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <RotateCcw style={{ width: '16px', height: '16px' }} />
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">Fehler</h2>
+              <p className="text-base text-slate-600 mb-8 leading-relaxed">{error}</p>
+              <div className="flex gap-3 justify-center">
+                <Button icon={<RotateCcw />} onClick={handlePlayAgain}>
                   Erneut versuchen
-                </button>
-                <button
-                  onClick={onBack}
-                  style={{
-                    padding: '12px 24px',
-                    borderRadius: '12px',
-                    border: `1px solid ${b.borderColor}`,
-                    backgroundColor: b.cardBg,
-                    color: b.textSecondary,
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <ArrowLeft style={{ width: '16px', height: '16px' }} />
+                </Button>
+                <Button variant="secondary" icon={<ArrowLeft />} onClick={onBack}>
                   Zurück
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1072,52 +723,34 @@ const GameSession = ({ gameConfig, onBack, onComplete }) => {
   };
 
   return (
-    <div style={{ minHeight: '100%', paddingBottom: '32px' }}>
+    <div className="min-h-full pb-8">
       {/* Countdown overlay */}
       <AnimatePresence>
-        {gameState === GAME_STATES.COUNTDOWN && (
-          <CountdownOverlay count={countdown} branding={b} />
-        )}
+        {gameState === GAME_STATES.COUNTDOWN && <CountdownOverlay count={countdown} />}
       </AnimatePresence>
 
       {/* Header - only show when not recording */}
       {gameState !== GAME_STATES.COUNTDOWN && gameState !== GAME_STATES.RECORDING && (
-        <div style={{
-          padding: '16px 24px',
-          borderBottom: `1px solid ${b.borderColor}`,
-          backgroundColor: b.cardBg,
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}>
-          <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="px-6 py-4 border-b border-slate-200 bg-white sticky top-0 z-10">
+          <div className="max-w-[600px] mx-auto flex items-center justify-between">
             <button
               onClick={onBack}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: b.textSecondary,
-                fontSize: '14px',
-                cursor: 'pointer',
-              }}
+              className="flex items-center gap-1.5 border-none bg-transparent text-slate-600 text-sm cursor-pointer"
             >
-              <ArrowLeft style={{ width: '18px', height: '18px' }} />
+              <ArrowLeft className="w-4.5 h-4.5" />
               Zurück
             </button>
-            <h1 style={{ fontWeight: 600, color: b.textMain, fontSize: '16px', margin: 0 }}>
+            <h1 className="font-semibold text-slate-900 text-base">
               {gameConfig.mode.title}
             </h1>
-            <div style={{ width: '60px' }} />
+            <div className="w-[60px]" />
           </div>
         </div>
       )}
 
       {/* Main content */}
-      <div style={{ padding: '24px' }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+      <div className="p-6">
+        <div className="max-w-[600px] mx-auto">
           {renderContent()}
         </div>
       </div>

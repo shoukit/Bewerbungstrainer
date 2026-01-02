@@ -16,14 +16,14 @@ import {
   ChevronUp,
   Wand2,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { useBranding } from '@/hooks/useBranding';
+import { Card } from '@/components/ui/themed/Card';
+import { Button } from '@/components/ui/themed/Button';
+import { Input } from '@/components/ui/base/input';
+import { Textarea } from '@/components/ui/base/textarea';
 import { analyzeDecision, brainstormArguments } from '@/services/gemini';
 import AudioRecorder from './AudioRecorder';
 import DeepDiveWizard from './DeepDiveWizard';
+import { COLORS } from '@/config/colors';
 
 /**
  * Generate unique ID for items
@@ -38,40 +38,50 @@ const PERSONAS = [
     id: 'strategist',
     name: 'Der Stratege',
     icon: '♟️',
-    color: '#6366f1',
-    bgColor: '#eef2ff',
+    color: COLORS.indigo[500],
+    bgColor: 'bg-indigo-50',
+    borderColor: 'border-indigo-500',
+    textColor: 'text-indigo-600',
     description: 'Karriere, Geld, Macht',
   },
   {
     id: 'security',
     name: 'Der Sicherheits-Beauftragte',
     icon: '🛡️',
-    color: '#0891b2',
-    bgColor: '#ecfeff',
+    color: COLORS.cyan[600],
+    bgColor: 'bg-cyan-50',
+    borderColor: 'border-cyan-600',
+    textColor: 'text-cyan-700',
     description: 'Risiko, Beständigkeit',
   },
   {
     id: 'feelgood',
     name: 'Der Feel-Good Manager',
     icon: '🧘',
-    color: '#10b981',
-    bgColor: '#ecfdf5',
+    color: COLORS.emerald[500],
+    bgColor: 'bg-emerald-50',
+    borderColor: 'border-emerald-500',
+    textColor: 'text-emerald-600',
     description: 'Work-Life-Balance, Kultur',
   },
   {
     id: 'growth',
     name: 'Der Gründer',
     icon: '🚀',
-    color: '#f59e0b',
-    bgColor: '#fffbeb',
+    color: COLORS.amber[500],
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-500',
+    textColor: 'text-amber-600',
     description: 'Wachstum, Innovation',
   },
   {
     id: 'future',
     name: 'Dein Zukunfts-Ich',
     icon: '🔮',
-    color: '#8b5cf6',
-    bgColor: '#f5f3ff',
+    color: COLORS.violet[500],
+    bgColor: 'bg-violet-50',
+    borderColor: 'border-violet-500',
+    textColor: 'text-violet-600',
     description: 'Langzeit, Reue-Vermeidung',
   },
 ];
@@ -79,14 +89,12 @@ const PERSONAS = [
 /**
  * Weight Slider Component - compact for mobile
  */
-const WeightSlider = ({ value, onChange, onChangeEnd, color, b }) => {
+const WeightSlider = ({ value, onChange, onChangeEnd, color }) => {
   const isGreen = color === 'green';
-  const accentColor = isGreen ? b.success : b.error;
-  const accentDark = isGreen ? b.successDark : b.errorDark;
-  const accentLight = isGreen ? b.successLight : b.errorLight;
+  const accentColor = isGreen ? COLORS.green[500] : COLORS.red[500];
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], minWidth: '90px', flexShrink: 0 }}>
+    <div className="flex items-center gap-2 min-w-[90px] shrink-0">
       <input
         type="range"
         min="1"
@@ -95,26 +103,12 @@ const WeightSlider = ({ value, onChange, onChangeEnd, color, b }) => {
         onChange={(e) => onChange(parseInt(e.target.value))}
         onMouseUp={onChangeEnd}
         onTouchEnd={onChangeEnd}
+        className="w-[60px] h-1.5 rounded cursor-pointer appearance-none shrink-0"
         style={{
-          width: '60px',
-          height: '6px',
-          borderRadius: b.radius.sm,
-          background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(value - 1) * 11.1}%, ${b.borderColor} ${(value - 1) * 11.1}%, ${b.borderColor} 100%)`,
-          appearance: 'none',
-          cursor: 'pointer',
-          flexShrink: 0,
+          background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(value - 1) * 11.1}%, ${COLORS.slate[200]} ${(value - 1) * 11.1}%, ${COLORS.slate[200]} 100%)`,
         }}
       />
-      <span
-        style={{
-          minWidth: '20px',
-          textAlign: 'center',
-          fontWeight: b.fontWeight.semibold,
-          fontSize: b.fontSize.sm,
-          color: accentDark,
-          flexShrink: 0,
-        }}
-      >
+      <span className={`min-w-[20px] text-center font-semibold text-sm shrink-0 ${isGreen ? 'text-green-700' : 'text-red-700'}`}>
         {value}
       </span>
     </div>
@@ -124,12 +118,8 @@ const WeightSlider = ({ value, onChange, onChangeEnd, color, b }) => {
 /**
  * Decision Item Component - Mobile responsive with multiline support
  */
-const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoFocus, b }) => {
+const DecisionItem = ({ item, onUpdate, onDelete, onBlur, color, autoFocus }) => {
   const isGreen = color === 'green';
-  const bgColor = isGreen ? b.successLight : b.errorLight;
-  const borderColor = isGreen ? '#bbf7d0' : '#fecaca';
-  const inputBorderColor = isGreen ? '#86efac' : '#fca5a5';
-  const iconColor = isGreen ? b.successDark : b.errorDark;
   const textareaRef = React.useRef(null);
 
   // Auto-resize textarea based on content
@@ -147,32 +137,20 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoF
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: isGreen ? -20 : 20 }}
       transition={{ duration: 0.2 }}
-      className="decision-item"
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'flex-start',
-        gap: b.space[2.5],
-        padding: b.space[3],
-        backgroundColor: bgColor,
-        borderRadius: b.radius.lg,
-        border: `1px solid ${borderColor}`,
-      }}
+      className={`decision-item flex flex-wrap items-start gap-2.5 p-3 rounded-lg border ${
+        isGreen
+          ? 'bg-green-50 border-green-200'
+          : 'bg-red-50 border-red-200'
+      }`}
     >
       {/* Icon + Textarea Row */}
-      <div className="decision-item-input-row" style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: b.space[2.5],
-        flex: '1 1 100%',
-        minWidth: 0,
-      }}>
+      <div className="decision-item-input-row flex items-start gap-2.5 flex-[1_1_100%] min-w-0">
         {/* Icon */}
-        <div style={{ flexShrink: 0, paddingTop: b.space[2] }}>
+        <div className="shrink-0 pt-2">
           {isGreen ? (
-            <ThumbsUp size={b.iconSize.lg} color={iconColor} />
+            <ThumbsUp size={20} className="text-green-700" />
           ) : (
-            <ThumbsDown size={b.iconSize.lg} color={iconColor} />
+            <ThumbsDown size={20} className="text-red-700" />
           )}
         </div>
         <Textarea
@@ -183,58 +161,24 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoF
           autoFocus={autoFocus}
           placeholder={isGreen ? 'Pro-Argument...' : 'Contra-Argument...'}
           rows={1}
-          style={{
-            flex: 1,
-            minWidth: '0',
-            backgroundColor: b.white,
-            border: `1px solid ${inputBorderColor}`,
-            borderRadius: b.radius.md,
-            padding: `${b.space[2]} ${b.space[3]}`,
-            fontSize: b.fontSize.base,
-            resize: 'none',
-            minHeight: '44px',
-            overflow: 'hidden',
-          }}
+          className={`flex-1 min-w-0 bg-white rounded-md px-3 py-2 text-base resize-none min-h-[44px] overflow-hidden border ${
+            isGreen ? 'border-green-300' : 'border-red-300'
+          }`}
         />
       </div>
       {/* Controls Row - wraps to new line on mobile */}
-      <div className="decision-item-controls" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        gap: b.space[2],
-        flex: '0 0 auto',
-        marginLeft: 'auto',
-      }}>
+      <div className="decision-item-controls flex items-center justify-end gap-2 shrink-0 ml-auto">
         <WeightSlider
           value={item.weight}
           onChange={(weight) => onUpdate(item.id, { weight })}
           onChangeEnd={onBlur}
           color={color}
-          b={b}
         />
         <button
           onClick={() => onDelete(item.id)}
-          style={{
-            padding: b.space[2],
-            backgroundColor: b.transparent,
-            border: 'none',
-            borderRadius: b.radius.sm,
-            cursor: 'pointer',
-            color: b.textMuted,
-            transition: b.transition.normal,
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = b.errorLight;
-            e.currentTarget.style.color = b.errorDark;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = b.transparent;
-            e.currentTarget.style.color = b.textMuted;
-          }}
+          className="p-2 bg-transparent border-none rounded cursor-pointer text-slate-400 transition-all shrink-0 hover:bg-red-50 hover:text-red-700"
         >
-          <Trash2 size={b.iconSize.md} />
+          <Trash2 size={18} />
         </button>
       </div>
     </motion.div>
@@ -244,46 +188,24 @@ const DecisionItem = ({ item, onUpdate, onDelete, onAddNew, onBlur, color, autoF
 /**
  * Rational Score Bar Component
  */
-const RationalScoreBar = ({ proScore, contraScore, b }) => {
+const RationalScoreBar = ({ proScore, contraScore }) => {
   const total = proScore + contraScore;
   const proPercentage = total > 0 ? Math.round((proScore / total) * 100) : 50;
   const contraPercentage = 100 - proPercentage;
 
   return (
-    <div style={{ marginTop: b.space[6] }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginBottom: b.space[2],
-        fontSize: b.fontSize.base,
-        fontWeight: b.fontWeight.semibold,
-      }}>
-        <span style={{ color: b.successDark }}>Pro: {proScore} Punkte ({proPercentage}%)</span>
-        <span style={{ color: b.errorDark }}>Contra: {contraScore} Punkte ({contraPercentage}%)</span>
+    <div className="mt-6">
+      <div className="flex justify-between mb-2 text-base font-semibold">
+        <span className="text-green-700">Pro: {proScore} Punkte ({proPercentage}%)</span>
+        <span className="text-red-700">Contra: {contraScore} Punkte ({contraPercentage}%)</span>
       </div>
-      <div style={{
-        height: b.space[6],
-        borderRadius: b.radius.lg,
-        overflow: 'hidden',
-        display: 'flex',
-        backgroundColor: b.borderColorLight,
-        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
-      }}>
+      <div className="h-6 rounded-lg overflow-hidden flex bg-slate-100 shadow-inner">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${proPercentage}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          style={{
-            background: `linear-gradient(90deg, ${b.success} 0%, ${b.successDark} 100%)`,
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: b.white,
-            fontWeight: b.fontWeight.semibold,
-            fontSize: b.fontSize.xs,
-            minWidth: proPercentage > 10 ? 'auto' : '0',
-          }}
+          className="h-full flex items-center justify-center text-white font-semibold text-xs bg-gradient-to-r from-green-500 to-green-600"
+          style={{ minWidth: proPercentage > 10 ? 'auto' : '0' }}
         >
           {proPercentage > 15 && `${proPercentage}%`}
         </motion.div>
@@ -291,17 +213,8 @@ const RationalScoreBar = ({ proScore, contraScore, b }) => {
           initial={{ width: 0 }}
           animate={{ width: `${contraPercentage}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          style={{
-            background: `linear-gradient(90deg, ${b.error} 0%, ${b.errorDark} 100%)`,
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: b.white,
-            fontWeight: b.fontWeight.semibold,
-            fontSize: b.fontSize.xs,
-            minWidth: contraPercentage > 10 ? 'auto' : '0',
-          }}
+          className="h-full flex items-center justify-center text-white font-semibold text-xs bg-gradient-to-r from-red-500 to-red-600"
+          style={{ minWidth: contraPercentage > 10 ? 'auto' : '0' }}
         >
           {contraPercentage > 15 && `${contraPercentage}%`}
         </motion.div>
@@ -313,71 +226,43 @@ const RationalScoreBar = ({ proScore, contraScore, b }) => {
 /**
  * Brainstorm Suggestion Card
  */
-const SuggestionCard = ({ suggestion, onAdd, isAdded, b }) => {
+const SuggestionCard = ({ suggestion, onAdd, isAdded }) => {
   const isPro = suggestion.type === 'pro';
-  const bgColor = isPro ? b.successLight : b.errorLight;
-  const borderColor = isPro ? '#bbf7d0' : '#fecaca';
-  const iconBgColor = isPro ? '#dcfce7' : '#fee2e2';
-  const iconColor = isPro ? b.successDark : b.errorDark;
-  const buttonBg = isPro ? b.success : b.error;
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: b.space[3],
-        padding: `${b.space[3]} ${b.space[4]}`,
-        backgroundColor: bgColor,
-        borderRadius: b.radius.md,
-        border: `1px solid ${borderColor}`,
-      }}
+      className={`flex items-center gap-3 px-4 py-3 rounded-md border ${
+        isPro
+          ? 'bg-green-50 border-green-200'
+          : 'bg-red-50 border-red-200'
+      }`}
     >
-      <div style={{
-        width: b.space[6],
-        height: b.space[6],
-        borderRadius: b.radius.sm,
-        backgroundColor: iconBgColor,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-      }}>
+      <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
+        isPro ? 'bg-green-100' : 'bg-red-100'
+      }`}>
         {isPro ? (
-          <ThumbsUp size={b.iconSize.sm} color={iconColor} />
+          <ThumbsUp size={14} className="text-green-700" />
         ) : (
-          <ThumbsDown size={b.iconSize.sm} color={iconColor} />
+          <ThumbsDown size={14} className="text-red-700" />
         )}
       </div>
-      <span style={{
-        flex: 1,
-        fontSize: b.fontSize.base,
-        color: b.textSecondary,
-        lineHeight: 1.4,
-      }}>
+      <span className="flex-1 text-base text-slate-600 leading-snug">
         {suggestion.text}
       </span>
       <button
         onClick={() => onAdd(suggestion)}
         disabled={isAdded}
-        style={{
-          width: b.space[12],
-          height: b.space[12],
-          borderRadius: b.radius.lg,
-          border: 'none',
-          backgroundColor: isAdded ? b.borderColor : buttonBg,
-          color: isAdded ? b.textMuted : b.white,
-          cursor: isAdded ? 'default' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: b.transition.normal,
-          flexShrink: 0,
-        }}
+        className={`w-12 h-12 rounded-lg border-none flex items-center justify-center shrink-0 transition-all ${
+          isAdded
+            ? 'bg-slate-200 text-slate-400 cursor-default'
+            : isPro
+              ? 'bg-green-500 text-white cursor-pointer hover:bg-green-600'
+              : 'bg-red-500 text-white cursor-pointer hover:bg-red-600'
+        }`}
       >
-        {isAdded ? '✓' : <Plus size={b.iconSize['3xl']} color="white" strokeWidth={2.5} />}
+        {isAdded ? '✓' : <Plus size={24} color="white" strokeWidth={2.5} />}
       </button>
     </motion.div>
   );
@@ -395,7 +280,6 @@ const BrainstormPopover = ({
   onAddSuggestion,
   onLoadMore,
   addedSuggestions,
-  b,
 }) => {
   if (!isOpen) return null;
 
@@ -406,61 +290,25 @@ const BrainstormPopover = ({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      style={{
-        position: 'relative',
-        marginTop: b.space[4],
-        padding: b.space[5],
-        backgroundColor: b.cardBgColor,
-        borderRadius: b.radius.xl,
-        border: `2px solid ${persona?.color || '#6366f1'}`,
-        boxShadow: b.shadow.lg,
-      }}
+      className="relative mt-4 p-5 bg-white rounded-xl shadow-lg border-2"
+      style={{ borderColor: persona?.color || COLORS.indigo[500] }}
     >
       {/* Close button */}
       <button
         onClick={onClose}
-        style={{
-          position: 'absolute',
-          top: b.space[3],
-          right: b.space[3],
-          width: b.space[10],
-          height: b.space[10],
-          borderRadius: b.radius.md,
-          border: 'none',
-          backgroundColor: b.borderColorLight,
-          color: b.textSecondary,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        className="absolute top-3 right-3 w-10 h-10 rounded-md border-none bg-slate-100 text-slate-600 cursor-pointer flex items-center justify-center hover:bg-slate-200"
       >
-        <X size={b.iconSize['2xl']} strokeWidth={2.5} />
+        <X size={20} strokeWidth={2.5} />
       </button>
 
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: b.space[3],
-        marginBottom: b.space[4],
-        paddingRight: b.space[8],
-      }}>
-        <span style={{ fontSize: b.fontSize['5xl'] }}>{persona?.icon}</span>
+      <div className="flex items-center gap-3 mb-4 pr-8">
+        <span className="text-4xl">{persona?.icon}</span>
         <div>
-          <h4 style={{
-            fontSize: b.fontSize.lg,
-            fontWeight: b.fontWeight.semibold,
-            color: b.textMain,
-            margin: 0,
-          }}>
+          <h4 className="text-lg font-semibold text-slate-800 m-0">
             {persona?.name}
           </h4>
-          <p style={{
-            fontSize: b.fontSize.sm,
-            color: b.textSecondary,
-            margin: 0,
-          }}>
+          <p className="text-sm text-slate-600 m-0">
             {persona?.description}
           </p>
         </div>
@@ -468,33 +316,21 @@ const BrainstormPopover = ({
 
       {/* Content */}
       {isLoading ? (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: b.space[3],
-          padding: b.space[6],
-        }}>
+        <div className="flex flex-col items-center gap-3 py-6">
           <Loader2
-            size={b.iconSize['3xl']}
-            color={persona?.color}
-            style={{ animation: 'spin 1s linear infinite' }}
+            size={28}
+            className="animate-spin"
+            style={{ color: persona?.color }}
           />
-          <span style={{ color: b.textSecondary, fontSize: b.fontSize.base }}>
+          <span className="text-slate-600 text-base">
             {persona?.name} denkt nach...
           </span>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[2.5] }}>
+        <div className="flex flex-col gap-2.5">
           {/* Pro suggestions */}
-          <div style={{ marginBottom: b.space[2] }}>
-            <span style={{
-              fontSize: b.fontSize.xs,
-              fontWeight: b.fontWeight.semibold,
-              color: b.successDark,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}>
+          <div className="mb-2">
+            <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
               Pro-Argumente
             </span>
           </div>
@@ -506,19 +342,12 @@ const BrainstormPopover = ({
                 suggestion={suggestion}
                 onAdd={onAddSuggestion}
                 isAdded={addedSuggestions.has(`${suggestion.type}-${suggestion.text}`)}
-                b={b}
               />
             ))}
 
           {/* Contra suggestions */}
-          <div style={{ marginTop: b.space[3], marginBottom: b.space[2] }}>
-            <span style={{
-              fontSize: b.fontSize.xs,
-              fontWeight: b.fontWeight.semibold,
-              color: b.errorDark,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}>
+          <div className="mt-3 mb-2">
+            <span className="text-xs font-semibold text-red-700 uppercase tracking-wide">
               Contra-Argumente
             </span>
           </div>
@@ -530,7 +359,6 @@ const BrainstormPopover = ({
                 suggestion={suggestion}
                 onAdd={onAddSuggestion}
                 isAdded={addedSuggestions.has(`${suggestion.type}-${suggestion.text}`)}
-                b={b}
               />
             ))}
 
@@ -539,33 +367,20 @@ const BrainstormPopover = ({
             <button
               onClick={onLoadMore}
               disabled={isLoading}
+              className="mt-4 py-3 px-4 bg-transparent border-2 border-dashed rounded-lg text-base font-medium cursor-pointer flex items-center justify-center gap-2 w-full transition-all disabled:cursor-not-allowed disabled:opacity-60 hover:bg-slate-50"
               style={{
-                marginTop: b.space[4],
-                padding: `${b.space[3]} ${b.space[4]}`,
-                backgroundColor: 'transparent',
-                border: `2px dashed ${persona?.color || b.borderColor}`,
-                borderRadius: b.radius.lg,
-                color: persona?.color || b.textSecondary,
-                fontSize: b.fontSize.base,
-                fontWeight: b.fontWeight.medium,
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: b.space[2],
-                width: '100%',
-                transition: b.transition.normal,
-                opacity: isLoading ? 0.6 : 1,
+                borderColor: persona?.color || COLORS.slate[200],
+                color: persona?.color || COLORS.slate[500],
               }}
             >
               {isLoading ? (
                 <>
-                  <Loader2 size={b.iconSize.md} style={{ animation: 'spin 1s linear infinite' }} />
+                  <Loader2 size={18} className="animate-spin" />
                   Generiere mehr...
                 </>
               ) : (
                 <>
-                  <Sparkles size={b.iconSize.md} />
+                  <Sparkles size={18} />
                   Mehr Inspirationen
                 </>
               )}
@@ -590,61 +405,33 @@ const PersonaToolbar = ({
   onAddSuggestion,
   onLoadMore,
   addedSuggestions,
-  b,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasTopic = topic.trim().length > 0;
 
   return (
-    <Card variant="elevated" padding="lg" style={{ marginBottom: b.space[4] }}>
+    <Card variant="elevated" className="mb-4 p-4 md:p-6">
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          cursor: 'pointer',
-          gap: b.space[2],
-        }}
+        className="flex items-center justify-between cursor-pointer gap-2"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], minWidth: 0 }}>
-          <div style={{
-            width: b.space[10],
-            height: b.space[10],
-            borderRadius: b.radius.md,
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <Users size={b.iconSize.lg} color="white" />
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-md bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shrink-0">
+            <Users size={20} color="white" />
           </div>
-          <div style={{ minWidth: 0 }}>
-            <h3 style={{
-              fontSize: b.fontSize.lg,
-              fontWeight: b.fontWeight.semibold,
-              color: b.textMain,
-              margin: 0,
-            }}>
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-slate-800 m-0">
               Brainstorming
             </h3>
-            <p style={{
-              fontSize: b.fontSize.base,
-              color: b.textSecondary,
-              margin: 0,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}>
+            <p className="text-base text-slate-600 m-0 whitespace-nowrap overflow-hidden text-ellipsis">
               Frag dein inneres Team
             </p>
           </div>
         </div>
         {isExpanded ? (
-          <ChevronUp size={b.iconSize.xl} color={b.textSecondary} style={{ flexShrink: 0 }} />
+          <ChevronUp size={22} className="text-slate-500 shrink-0" />
         ) : (
-          <ChevronDown size={b.iconSize.xl} color={b.textSecondary} style={{ flexShrink: 0 }} />
+          <ChevronDown size={22} className="text-slate-500 shrink-0" />
         )}
       </div>
 
@@ -655,23 +442,11 @@ const PersonaToolbar = ({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
+            className="overflow-hidden"
           >
-            <div style={{ marginTop: b.space[4] }}>
-              {/* Persona Buttons - horizontal scroll on mobile */}
-              <div style={{
-                display: 'flex',
-                gap: b.space[2],
-                overflowX: 'auto',
-                paddingBottom: b.space[2],
-                marginLeft: `-${b.space[1]}`,
-                marginRight: `-${b.space[1]}`,
-                paddingLeft: b.space[1],
-                paddingRight: b.space[1],
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-              }}>
+            <div className="mt-4">
+              {/* Persona Buttons - wrap on smaller screens */}
+              <div className="flex flex-wrap gap-2 pb-2">
                 {PERSONAS.map((persona) => (
                   <button
                     key={persona.id}
@@ -680,39 +455,24 @@ const PersonaToolbar = ({
                       if (hasTopic) onSelectPersona(persona.id);
                     }}
                     disabled={!hasTopic || (isLoading && activePersona === persona.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: b.space[1.5],
-                      padding: `${b.space[2]} ${b.space[3]}`,
-                      borderRadius: b.radius.md,
-                      border: activePersona === persona.id
-                        ? `2px solid ${persona.color}`
-                        : `2px solid ${b.borderColor}`,
-                      backgroundColor: activePersona === persona.id
-                        ? persona.bgColor
-                        : b.cardBgColor,
-                      cursor: hasTopic ? 'pointer' : 'not-allowed',
-                      opacity: hasTopic ? 1 : 0.5,
-                      transition: b.transition.normal,
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                    }}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-md border-2 cursor-pointer transition-all whitespace-nowrap ${
+                      activePersona === persona.id
+                        ? `${persona.bgColor} ${persona.borderColor}`
+                        : 'bg-white border-slate-200'
+                    } ${!hasTopic ? 'cursor-not-allowed opacity-50' : ''}`}
                   >
                     {isLoading && activePersona === persona.id ? (
                       <Loader2
-                        size={b.iconSize.sm}
-                        color={persona.color}
-                        style={{ animation: 'spin 1s linear infinite' }}
+                        size={14}
+                        className="animate-spin"
+                        style={{ color: persona.color }}
                       />
                     ) : (
-                      <span style={{ fontSize: b.fontSize.lg }}>{persona.icon}</span>
+                      <span className="text-lg">{persona.icon}</span>
                     )}
-                    <span style={{
-                      fontSize: b.fontSize.sm,
-                      fontWeight: b.fontWeight.medium,
-                      color: activePersona === persona.id ? persona.color : b.textSecondary,
-                    }}>
+                    <span className={`text-sm font-medium ${
+                      activePersona === persona.id ? persona.textColor : 'text-slate-600'
+                    }`}>
                       {persona.name.replace('Der ', '').replace('Dein ', '')}
                     </span>
                   </button>
@@ -720,12 +480,7 @@ const PersonaToolbar = ({
               </div>
 
               {!hasTopic && (
-                <p style={{
-                  marginTop: b.space[3],
-                  fontSize: b.fontSize.sm,
-                  color: b.textMuted,
-                  fontStyle: 'italic',
-                }}>
+                <p className="mt-3 text-sm text-slate-400 italic">
                   Gib zuerst deine Entscheidungsfrage ein, um Vorschläge zu erhalten.
                 </p>
               )}
@@ -742,7 +497,6 @@ const PersonaToolbar = ({
                     onAddSuggestion={onAddSuggestion}
                     onLoadMore={onLoadMore}
                     addedSuggestions={addedSuggestions}
-                    b={b}
                   />
                 )}
               </AnimatePresence>
@@ -768,7 +522,6 @@ const DecisionBoardInput = ({
   onUpdateSession,
   onDecisionIdChange,
 }) => {
-  const b = useBranding();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Initialize state from initialData if provided (for editing)
@@ -1118,121 +871,62 @@ const DecisionBoardInput = ({
   }, [topic, context, pros, cons, proScore, contraScore, canAnalyze, onAnalysisComplete]);
 
   return (
-    <div style={{ padding: b.space[4], maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="p-4 max-w-[1200px] mx-auto">
       {/* Top Bar with Cancel Button */}
       {onCancel && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: b.space[4],
-        }}>
+        <div className="flex justify-end mb-4">
           <button
             onClick={() => setShowCancelConfirm(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: b.space[2],
-              padding: `${b.space[2]} ${b.space[4]}`,
-              borderRadius: b.radius.md,
-              border: `1px solid ${b.borderColor}`,
-              backgroundColor: b.cardBgColor,
-              color: b.textSecondary,
-              cursor: 'pointer',
-              fontSize: b.fontSize.base,
-              fontWeight: b.fontWeight.medium,
-              transition: b.transition.normal,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = b.errorLight;
-              e.currentTarget.style.borderColor = b.error;
-              e.currentTarget.style.color = b.errorDark;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = b.cardBgColor;
-              e.currentTarget.style.borderColor = b.borderColor;
-              e.currentTarget.style.color = b.textSecondary;
-            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-md border border-slate-200 bg-white text-slate-600 cursor-pointer text-base font-medium transition-all hover:bg-red-50 hover:border-red-500 hover:text-red-700"
           >
-            <X size={b.iconSize.md} />
+            <X size={18} />
             Abbrechen
           </button>
         </div>
       )}
 
       {/* Instructions */}
-      <div style={{ marginBottom: b.space[4], textAlign: 'center' }}>
-        <p style={{
-          fontSize: b.fontSize.sm,
-          color: b.textMuted,
-          maxWidth: '600px',
-          margin: '0 auto',
-        }}>
+      <div className="mb-4 text-center">
+        <p className="text-sm text-slate-400 max-w-[600px] mx-auto">
           Analysiere deine Entscheidung objektiv. Gewichte Pro und Contra,
           und erhalte KI-gestützte Impulse für blinde Flecken.
         </p>
       </div>
 
       {/* Decision Question Card */}
-      <Card variant="elevated" padding="lg" style={{ marginBottom: b.space[4] }}>
-        <CardHeader>
-          <CardTitle icon={Lightbulb} size="md">
-            Deine Entscheidungsfrage
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Input
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            onBlur={handleFieldBlur}
-            placeholder="z.B. Soll ich das Jobangebot annehmen?"
-            style={{
-              fontSize: b.fontSize.lg,
-              padding: b.space[4],
-              borderRadius: b.radius.lg,
-              marginBottom: b.space[4],
-            }}
-          />
+      <Card variant="elevated" className="mb-4 p-4 md:p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Lightbulb size={20} className="text-amber-500" />
+          <h3 className="text-lg font-semibold text-slate-800">Deine Entscheidungsfrage</h3>
+        </div>
+        <Input
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          onBlur={handleFieldBlur}
+          placeholder="z.B. Soll ich das Jobangebot annehmen?"
+          className="text-lg p-4 rounded-lg mb-4"
+        />
 
-          {/* Context / Situation Description with integrated Audio */}
-          <div style={{ marginTop: b.space[2] }}>
-            <label style={{
-              display: 'block',
-              fontSize: b.fontSize.base,
-              fontWeight: b.fontWeight.medium,
-              color: b.textSecondary,
-              marginBottom: b.space[2],
-            }}>
-              Beschreibe die Situation (optional)
-            </label>
+        {/* Context / Situation Description with integrated Audio */}
+        <div className="mt-2">
+          <label className="block text-base font-medium text-slate-600 mb-2">
+            Beschreibe die Situation (optional)
+          </label>
 
-            <div className="context-input-wrapper" style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'flex-end',
-              gap: b.space[3],
-            }}>
-              <Textarea
-                value={context}
-                onChange={(e) => setContext(e.target.value)}
-                onBlur={handleFieldBlur}
-                placeholder="Hintergrund, Rahmenbedingungen, Gefühle, was dich beschäftigt..."
-                rows={3}
-                style={{
-                  flex: '1 1 300px',
-                  minWidth: 0,
-                  fontSize: b.fontSize.md,
-                  padding: `${b.space[3]} ${b.space[4]}`,
-                  borderRadius: b.radius.lg,
-                  resize: 'vertical',
-                  minHeight: '80px',
-                }}
-              />
-              <div style={{ flexShrink: 0, paddingBottom: b.space[1] }}>
-                <AudioRecorder onTranscriptReady={handleTranscriptReady} />
-              </div>
+          <div className="context-input-wrapper flex flex-wrap items-end gap-3">
+            <Textarea
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              onBlur={handleFieldBlur}
+              placeholder="Hintergrund, Rahmenbedingungen, Gefühle, was dich beschäftigt..."
+              rows={3}
+              className="flex-[1_1_300px] min-w-0 text-base px-4 py-3 rounded-lg resize-y min-h-[80px]"
+            />
+            <div className="shrink-0 pb-1">
+              <AudioRecorder onTranscriptReady={handleTranscriptReady} warmUp={true} />
             </div>
           </div>
-        </CardContent>
+        </div>
       </Card>
 
       {/* Persona Toolbar - Brainstorming Section */}
@@ -1246,56 +940,26 @@ const DecisionBoardInput = ({
         onAddSuggestion={handleAddSuggestion}
         onLoadMore={handleLoadMore}
         addedSuggestions={addedSuggestions}
-        b={b}
       />
 
       {/* Deep Dive Wizard Card */}
       <Card
         variant="elevated"
-        padding="lg"
-        style={{
-          marginBottom: b.space[4],
-          cursor: topic.trim() ? 'pointer' : 'not-allowed',
-          opacity: topic.trim() ? 1 : 0.6,
-          transition: b.transition.normal,
-        }}
+        className={`mb-4 p-4 md:p-6 transition-all ${
+          topic.trim() ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-60'
+        }`}
         onClick={() => topic.trim() && setIsWizardOpen(true)}
       >
-        <div className="deep-dive-card-content" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: b.space[3],
-          flexWrap: 'wrap',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], flex: '1 1 auto', minWidth: '200px' }}>
-            <div style={{
-              width: b.space[10],
-              height: b.space[10],
-              borderRadius: b.radius.md,
-              background: b.headerGradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Wand2 size={b.iconSize.lg} color="white" />
+        <div className="deep-dive-card-content flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-[1_1_auto] min-w-[200px]">
+            <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand-gradient">
+              <Wand2 size={20} color="white" />
             </div>
-            <div style={{ minWidth: 0 }}>
-              <h3 style={{
-                fontSize: b.fontSize.lg,
-                fontWeight: b.fontWeight.semibold,
-                color: b.textMain,
-                margin: 0,
-              }}>
+            <div className="min-w-0">
+              <h3 className="text-lg font-semibold text-slate-800 m-0">
                 Deep Dive Interview
               </h3>
-              <p style={{
-                fontSize: b.fontSize.sm,
-                color: b.textSecondary,
-                margin: 0,
-                lineHeight: 1.4,
-              }}>
+              <p className="text-sm text-slate-600 m-0 leading-snug">
                 Entdecke verborgene Argumente durch gezielte Coaching-Fragen
               </p>
             </div>
@@ -1308,56 +972,28 @@ const DecisionBoardInput = ({
               e.stopPropagation();
               if (topic.trim()) setIsWizardOpen(true);
             }}
-            style={{
-              background: topic.trim() ? b.headerGradient : undefined,
-              flexShrink: 0,
-            }}
+            className={`shrink-0 ${topic.trim() ? 'bg-brand-gradient' : ''}`}
           >
-            <Sparkles size={b.iconSize.md} style={{ marginRight: b.space[1.5] }} />
+            <Sparkles size={18} className="mr-1.5" />
             Starten
           </Button>
         </div>
       </Card>
 
       {/* Pro/Contra Split - responsive grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
-        gap: b.space[4],
-        marginBottom: b.space[6],
-      }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] gap-4 mb-6">
         {/* Pro Column */}
-        <div
-          className="decision-card-pro"
-          style={{
-            backgroundColor: b.cardBgColor,
-            borderRadius: b.radius.lg,
-            padding: b.space[6],
-            boxShadow: b.shadow.md,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], marginBottom: b.space[4] }}>
-            <div style={{
-              width: b.space[10],
-              height: b.space[10],
-              borderRadius: b.radius.md,
-              backgroundColor: b.successLight,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <ThumbsUp size={b.iconSize.lg} color={b.successDark} />
+        <div className="decision-card-pro bg-white rounded-lg p-6 shadow-md">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-md bg-green-50 flex items-center justify-center">
+              <ThumbsUp size={20} className="text-green-700" />
             </div>
             <div>
-              <h3 style={{ fontSize: b.fontSize.xl, fontWeight: b.fontWeight.semibold, color: b.successDark, margin: 0 }}>
-                PRO
-              </h3>
-              <p style={{ fontSize: b.fontSize.base, color: b.textSecondary, margin: 0 }}>
-                Was spricht dafür?
-              </p>
+              <h3 className="text-xl font-semibold text-green-700 m-0">PRO</h3>
+              <p className="text-base text-slate-600 m-0">Was spricht dafür?</p>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}>
+          <div className="flex flex-col gap-3">
             <AnimatePresence mode="popLayout">
               {pros.map((item) => (
                 <DecisionItem
@@ -1365,61 +1001,35 @@ const DecisionBoardInput = ({
                   item={item}
                   onUpdate={updatePro}
                   onDelete={deletePro}
-                  onAddNew={addPro}
                   onBlur={handleFieldBlur}
                   color="green"
                   autoFocus={focusedItemId === item.id}
-                  b={b}
                 />
               ))}
             </AnimatePresence>
             <Button
               variant="outline"
               onClick={addPro}
-              style={{
-                borderColor: b.success,
-                color: b.successDark,
-                borderStyle: 'dashed',
-              }}
+              className="border-green-500 text-green-700 border-dashed"
             >
-              <Plus size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
+              <Plus size={18} className="mr-2" />
               Argument hinzufügen
             </Button>
           </div>
         </div>
 
         {/* Contra Column */}
-        <div
-          className="decision-card-contra"
-          style={{
-            backgroundColor: b.cardBgColor,
-            borderRadius: b.radius.lg,
-            padding: b.space[6],
-            boxShadow: b.shadow.md,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: b.space[3], marginBottom: b.space[4] }}>
-            <div style={{
-              width: b.space[10],
-              height: b.space[10],
-              borderRadius: b.radius.md,
-              backgroundColor: b.errorLight,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <ThumbsDown size={b.iconSize.lg} color={b.errorDark} />
+        <div className="decision-card-contra bg-white rounded-lg p-6 shadow-md">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-md bg-red-50 flex items-center justify-center">
+              <ThumbsDown size={20} className="text-red-700" />
             </div>
             <div>
-              <h3 style={{ fontSize: b.fontSize.xl, fontWeight: b.fontWeight.semibold, color: b.errorDark, margin: 0 }}>
-                CONTRA
-              </h3>
-              <p style={{ fontSize: b.fontSize.base, color: b.textSecondary, margin: 0 }}>
-                Was spricht dagegen?
-              </p>
+              <h3 className="text-xl font-semibold text-red-700 m-0">CONTRA</h3>
+              <p className="text-base text-slate-600 m-0">Was spricht dagegen?</p>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: b.space[3] }}>
+          <div className="flex flex-col gap-3">
             <AnimatePresence mode="popLayout">
               {cons.map((item) => (
                 <DecisionItem
@@ -1427,24 +1037,18 @@ const DecisionBoardInput = ({
                   item={item}
                   onUpdate={updateCon}
                   onDelete={deleteCon}
-                  onAddNew={addCon}
                   onBlur={handleFieldBlur}
                   color="red"
                   autoFocus={focusedItemId === item.id}
-                  b={b}
                 />
               ))}
             </AnimatePresence>
             <Button
               variant="outline"
               onClick={addCon}
-              style={{
-                borderColor: b.error,
-                color: b.errorDark,
-                borderStyle: 'dashed',
-              }}
+              className="border-red-500 text-red-700 border-dashed"
             >
-              <Plus size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
+              <Plus size={18} className="mr-2" />
               Argument hinzufügen
             </Button>
           </div>
@@ -1453,15 +1057,12 @@ const DecisionBoardInput = ({
 
       {/* Score Bar */}
       {(hasValidPros || hasValidCons) && (
-        <Card variant="elevated" padding="lg" style={{ marginBottom: b.space[6] }}>
-          <CardHeader>
-            <CardTitle icon={Scale} size="md">
-              Rationaler Score
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RationalScoreBar proScore={proScore} contraScore={contraScore} b={b} />
-          </CardContent>
+        <Card variant="elevated" className="mb-6 p-4 md:p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Scale size={20} className="text-primary" />
+            <h3 className="text-lg font-semibold text-slate-800">Rationaler Score</h3>
+          </div>
+          <RationalScoreBar proScore={proScore} contraScore={contraScore} />
         </Card>
       )}
 
@@ -1470,45 +1071,30 @@ const DecisionBoardInput = ({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: b.space[3],
-            padding: b.space[4],
-            backgroundColor: b.errorLight,
-            border: `1px solid ${b.error}33`,
-            borderRadius: b.radius.lg,
-            marginBottom: b.space[6],
-            color: b.errorDark,
-          }}
+          className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg mb-6 text-red-700"
         >
-          <AlertCircle size={b.iconSize.lg} />
+          <AlertCircle size={20} />
           <span>{error}</span>
         </motion.div>
       )}
 
       {/* Analyze Button */}
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div className="flex justify-center">
         <Button
           onClick={handleAnalyze}
           disabled={!canAnalyze || isAnalyzing}
           variant="solid"
           size="lg"
-          style={{
-            padding: `${b.space[4]} ${b.space[8]}`,
-            fontSize: b.fontSize.xl,
-            background: canAnalyze ? b.headerGradient : undefined,
-            boxShadow: canAnalyze ? b.coloredShadow(b.primaryAccent, 'lg') : undefined,
-          }}
+          className={`px-8 py-4 text-xl ${canAnalyze ? 'bg-brand-gradient' : ''}`}
         >
           {isAnalyzing ? (
             <>
-              <Loader2 size={b.iconSize.xl} style={{ marginRight: b.space[2.5], animation: 'spin 1s linear infinite' }} />
+              <Loader2 size={22} className="mr-2.5 animate-spin" />
               Analyse läuft...
             </>
           ) : (
             <>
-              <Sparkles size={b.iconSize.xl} style={{ marginRight: b.space[2.5] }} />
+              <Sparkles size={22} className="mr-2.5" />
               Entscheidung analysieren
             </>
           )}
@@ -1558,6 +1144,14 @@ const DecisionBoardInput = ({
               padding-left: 32px;
             }
           }
+
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
         `}
       </style>
 
@@ -1568,19 +1162,7 @@ const DecisionBoardInput = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: b.zIndex.modal,
-              padding: b.space[4],
-            }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
             onClick={() => setShowCancelConfirm(false)}
           >
             <motion.div
@@ -1588,54 +1170,20 @@ const DecisionBoardInput = ({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              style={{
-                backgroundColor: b.cardBgColor,
-                borderRadius: b.radius.xl,
-                padding: b.space[6],
-                maxWidth: '400px',
-                width: '100%',
-                boxShadow: b.shadow.xl,
-              }}
+              className="bg-white rounded-xl p-6 max-w-[400px] w-full shadow-xl"
             >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: b.space[3],
-                marginBottom: b.space[4],
-              }}>
-                <div style={{
-                  width: b.space[10],
-                  height: b.space[10],
-                  borderRadius: b.radius.md,
-                  backgroundColor: b.errorLight,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <AlertCircle size={b.iconSize.xl} color={b.error} />
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-md bg-red-50 flex items-center justify-center">
+                  <AlertCircle size={22} className="text-red-500" />
                 </div>
-                <h3 style={{
-                  fontSize: b.fontSize.xl,
-                  fontWeight: b.fontWeight.semibold,
-                  color: b.textMain,
-                  margin: 0,
-                }}>
+                <h3 className="text-xl font-semibold text-slate-800 m-0">
                   Session abbrechen?
                 </h3>
               </div>
-              <p style={{
-                fontSize: b.fontSize.base,
-                color: b.textSecondary,
-                marginBottom: b.space[6],
-                lineHeight: 1.5,
-              }}>
+              <p className="text-base text-slate-600 mb-6 leading-relaxed">
                 Alle eingegebenen Daten werden verworfen und nicht gespeichert.
               </p>
-              <div style={{
-                display: 'flex',
-                gap: b.space[3],
-                justifyContent: 'flex-end',
-              }}>
+              <div className="flex gap-3 justify-end">
                 <Button
                   variant="outline"
                   onClick={() => setShowCancelConfirm(false)}
@@ -1648,12 +1196,9 @@ const DecisionBoardInput = ({
                     setShowCancelConfirm(false);
                     onCancel();
                   }}
-                  style={{
-                    backgroundColor: b.error,
-                    color: b.white,
-                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white"
                 >
-                  <X size={b.iconSize.md} style={{ marginRight: b.space[2] }} />
+                  <X size={18} className="mr-2" />
                   Abbrechen
                 </Button>
               </div>

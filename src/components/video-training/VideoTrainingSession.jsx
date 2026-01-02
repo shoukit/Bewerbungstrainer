@@ -1,19 +1,32 @@
+/**
+ * VideoTrainingSession - Video Recording Component
+ *
+ * Handles video recording for training sessions with:
+ * - Camera/microphone access
+ * - Recording controls
+ * - Question navigation
+ * - Video upload and analysis
+ *
+ * Migrated to Tailwind CSS + themed components.
+ */
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  Video, VideoOff, Mic, MicOff, StopCircle, PlayCircle, ChevronLeft, ChevronRight,
-  Clock, AlertCircle, Loader2, Lightbulb, X, Check, Camera, RefreshCw, Settings
+  Video, VideoOff, StopCircle, ChevronLeft, ChevronRight,
+  Clock, AlertCircle, Loader2, Lightbulb, X, Check, RefreshCw, Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
-import { useBranding } from '@/hooks/useBranding';
+import { usePartner } from '@/context/PartnerContext';
 import { useMobile } from '@/hooks/useMobile';
-import DeviceSettingsDialog from '@/components/DeviceSettingsDialog';
-import AudioVisualizer from '@/components/AudioVisualizer';
+import DeviceSettingsDialog from '@/components/device-setup/DeviceSettingsDialog';
+import AudioVisualizer from '@/components/ui/composite/AudioVisualizer';
 import { formatDuration } from '@/utils/formatting';
-import ProgressBar from '@/components/ui/progress-bar';
+import ProgressBar from '@/components/ui/composite/progress-bar';
+import { Button, Card } from '@/components/ui';
 
 /**
- * QuestionTips - Collapsible tips for current question
+ * QuestionTips - Collapsible tips component - Tailwind styled
  */
 const QuestionTips = ({ tips, primaryAccent }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,36 +34,18 @@ const QuestionTips = ({ tips, primaryAccent }) => {
   if (!tips || tips.length === 0) return null;
 
   return (
-    <div
-      style={{
-        marginTop: '16px',
-        background: `linear-gradient(135deg, ${primaryAccent}08 0%, ${primaryAccent}04 100%)`,
-        borderRadius: '12px',
-        border: `1px solid ${primaryAccent}15`,
-        overflow: 'hidden',
-      }}
-    >
+    <div className="mt-4 rounded-xl border overflow-hidden bg-primary-light/50 border-primary/10">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          width: '100%',
-          padding: '14px 16px',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
+        className="w-full px-4 py-3.5 bg-transparent border-none cursor-pointer flex items-center justify-between"
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
-          <Lightbulb size={18} color={primaryAccent} />
+        <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <Lightbulb size={18} className="text-primary" />
           Tipps für diese Frage
         </span>
         <ChevronRight
           size={18}
-          color="#64748b"
-          style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}
+          className={`text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
         />
       </button>
       <AnimatePresence>
@@ -59,12 +54,12 @@ const QuestionTips = ({ tips, primaryAccent }) => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            style={{ overflow: 'hidden' }}
+            className="overflow-hidden"
           >
-            <div style={{ padding: '0 16px 16px' }}>
-              <ul style={{ margin: 0, paddingLeft: '20px' }}>
+            <div className="px-4 pb-4">
+              <ul className="m-0 pl-5 list-disc">
                 {tips.map((tip, i) => (
-                  <li key={i} style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px', lineHeight: 1.5 }}>
+                  <li key={i} className="text-sm text-slate-500 mb-2 leading-relaxed">
                     {tip}
                   </li>
                 ))}
@@ -76,6 +71,106 @@ const QuestionTips = ({ tips, primaryAccent }) => {
     </div>
   );
 };
+
+/**
+ * Question Badge - Tailwind styled
+ */
+const QuestionBadge = ({ number, size = 'md' }) => {
+  const sizes = {
+    sm: 'w-[26px] h-[26px] text-xs',
+    md: 'w-7 h-7 text-[13px]',
+  };
+
+  return (
+    <div className={`${sizes[size]} rounded-full bg-brand-gradient flex-center text-white font-semibold flex-shrink-0`}>
+      {number}
+    </div>
+  );
+};
+
+/**
+ * Question Card - Tailwind styled
+ */
+const VideoQuestionCard = ({ question, index, scenario, isMobile }) => (
+  <Card className={isMobile ? 'p-4' : 'p-6'}>
+    <div className="flex items-center gap-2 mb-3 md:mb-4">
+      <QuestionBadge number={index + 1} size={isMobile ? 'sm' : 'md'} />
+      <span className="text-[13px] md:text-sm text-slate-500">
+        {question?.category || 'Frage'}
+      </span>
+    </div>
+
+    <h2 className={`font-semibold text-slate-900 leading-relaxed ${isMobile ? 'text-[15px]' : 'text-lg'} mb-0`}>
+      {question?.question || 'Frage wird geladen...'}
+    </h2>
+
+    {question?.estimated_time && (
+      <div className="flex items-center gap-1.5 text-slate-500 text-[13px] md:text-sm mt-3 md:mt-4">
+        <Clock size={isMobile ? 14 : 16} />
+        Empfohlene Antwortzeit: ~{Math.round(question.estimated_time / 60)} Min.
+      </div>
+    )}
+
+    {/* Tips */}
+    {scenario?.enable_tips && question?.tips && (
+      <QuestionTips tips={question.tips} />
+    )}
+  </Card>
+);
+
+/**
+ * Recording Indicator Overlay - Tailwind styled
+ */
+const RecordingIndicator = ({ time, isRecording }) => (
+  <div className="absolute top-3 md:top-4 left-3 md:left-4 flex items-center gap-1.5 md:gap-2 bg-black/60 px-3 py-1.5 rounded-lg">
+    {isRecording ? (
+      <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-red-500 animate-pulse" />
+    ) : (
+      <Clock size={14} className="text-white" />
+    )}
+    <span className="text-white text-[13px] md:text-sm font-medium">
+      {formatDuration(time)}
+    </span>
+  </div>
+);
+
+/**
+ * Camera Error State - Tailwind styled
+ */
+const CameraError = ({ error, onRetry }) => (
+  <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4 md:p-5 text-center">
+    <VideoOff size={40} className="mb-3 md:mb-4 opacity-60" />
+    <p className="mb-3 md:mb-4 text-sm md:text-base">{error}</p>
+    <Button onClick={onRetry} icon={<RefreshCw size={16} />}>
+      Erneut versuchen
+    </Button>
+  </div>
+);
+
+/**
+ * Loading Overlay - Tailwind styled
+ */
+const LoadingOverlay = ({ isUploading, isAnalyzing }) => (
+  <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/30 flex items-center justify-center p-4">
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="bg-white rounded-2xl p-12 shadow-xl max-w-[500px] w-full text-center"
+    >
+      <div className="w-20 h-20 rounded-full bg-primary-light flex-center mx-auto mb-6">
+        <Loader2 size={40} className="text-primary animate-spin" />
+      </div>
+      <h2 className="text-xl md:text-[22px] font-bold text-slate-900 mb-3">
+        {isUploading ? 'Video wird hochgeladen...' : 'KI analysiert dein Video...'}
+      </h2>
+      <p className="text-slate-500 text-[15px] leading-relaxed">
+        {isUploading
+          ? 'Dein Video wird sicher übertragen. Dies kann je nach Dateigröße einen Moment dauern.'
+          : 'Die KI analysiert dein Auftreten, deine Körpersprache und Kommunikation. Das dauert etwa 30-60 Sekunden.'}
+      </p>
+    </motion.div>
+  </div>
+);
 
 /**
  * VideoTrainingSession - Video recording component
@@ -99,7 +194,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
 
-  // Mobile detection - using shared hook
+  // Mobile detection
   const isMobile = useMobile();
 
   const videoRef = useRef(null);
@@ -109,9 +204,9 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
   const analyserRef = useRef(null);
   const animationFrameRef = useRef(null);
 
-  // Partner theming - using shared hook
-  const b = useBranding();
-  const { primaryAccent, headerGradient: themedGradient } = b;
+  // Partner theming
+  const { branding } = usePartner();
+  const primaryAccent = branding?.['--primary-accent'];
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -151,7 +246,7 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
         analyserRef.current.getByteFrequencyData(dataArray);
         const sum = dataArray.reduce((a, b) => a + b, 0);
         const average = sum / dataArray.length;
-        setAudioLevel(average / 255); // Normalize to 0-1
+        setAudioLevel(average / 255);
         animationFrameRef.current = requestAnimationFrame(updateLevel);
       };
 
@@ -174,7 +269,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     try {
       setCameraError(null);
 
-      // Stop existing stream if any
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
@@ -201,10 +295,8 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     }
   };
 
-  // Handle device change from settings dialog
   const handleMicrophoneChange = (deviceId) => {
     setSelectedMicrophoneId(deviceId);
-    // If recording, don't reinitialize - changes will take effect next session
     if (!isRecording) {
       initializeCamera(deviceId, selectedCameraId);
     }
@@ -212,13 +304,11 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
 
   const handleCameraChange = (deviceId) => {
     setSelectedCameraId(deviceId);
-    // If recording, don't reinitialize - changes will take effect next session
     if (!isRecording) {
       initializeCamera(selectedMicrophoneId, deviceId);
     }
   };
 
-  // Stop camera
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
@@ -226,7 +316,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     }
   };
 
-  // Start recording
   const startRecording = () => {
     if (!stream) {
       initializeCamera();
@@ -245,23 +334,19 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
         }
       };
 
-      mediaRecorder.onstop = () => {
-      };
+      mediaRecorder.onstop = () => {};
 
-      mediaRecorder.start(1000); // Collect data every second
+      mediaRecorder.start(1000);
       setIsRecording(true);
       setIsPaused(false);
 
-      // Start audio analysis for visualizer
       startAudioAnalysis(stream);
 
-      // Record start time for current question
       setTimeline((prev) => [
         ...prev,
         { question_index: currentQuestionIndex, start_time: recordingTime },
       ]);
 
-      // Start timer
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
@@ -272,7 +357,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     }
   };
 
-  // Stop recording
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -285,10 +369,8 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     }
   };
 
-  // Go to next question
   const goToNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      // Record end time for current question and start time for next
       if (isRecording) {
         setTimeline((prev) => [
           ...prev,
@@ -299,37 +381,31 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     }
   };
 
-  // Go to previous question
   const goToPrevQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 
-  // Finish and upload
   const finishRecording = async () => {
     stopRecording();
-    stopCamera(); // Release camera immediately after stopping recording
+    stopCamera();
     setIsUploading(true);
     setError(null);
 
     try {
-      // Create video blob
       const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
       const apiUrl = getWPApiUrl();
 
-      // Use FormData for file upload (avoids 413 error with large files)
       const formData = new FormData();
       formData.append('video', videoBlob, `video_${session.id}.webm`);
       formData.append('video_duration', recordingTime.toString());
       formData.append('timeline', JSON.stringify(timeline));
 
-      // Upload video using FormData
       const uploadResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/video`, {
         method: 'POST',
         headers: {
           'X-WP-Nonce': getWPNonce(),
-          // Don't set Content-Type - browser will set it with boundary for FormData
         },
         body: formData,
       });
@@ -348,7 +424,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
       setIsUploading(false);
       setIsAnalyzing(true);
 
-      // Analyze video
       const analyzeResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/analyze`, {
         method: 'POST',
         headers: {
@@ -363,7 +438,6 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
 
       const analyzeData = await analyzeResponse.json();
 
-      // Complete session
       onComplete({
         session: analyzeData.data?.session || session,
         analysis: analyzeData.data?.analysis,
@@ -378,310 +452,81 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
     }
   };
 
-  // Convert blob to base64
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-
-
-  // Handle exit
   const handleExit = () => {
     stopRecording();
     stopCamera();
     onExit();
   };
 
-  // Upload/Analyzing state - Full screen blocking overlay to prevent navigation
+  // Loading overlay
   if (isUploading || isAnalyzing) {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 9999, // Above sidebar (z-50) and all other elements
-          background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-        }}
-      >
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          style={{
-            background: '#fff',
-            borderRadius: '20px',
-            padding: '48px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
-            maxWidth: '500px',
-            width: '100%',
-            textAlign: 'center',
-          }}
-        >
-          <div
-            style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: `${primaryAccent}15`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 24px',
-            }}
-          >
-            <Loader2
-              size={40}
-              color={primaryAccent}
-              style={{ animation: 'spin 1s linear infinite' }}
-            />
-          </div>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>
-            {isUploading ? 'Video wird hochgeladen...' : 'KI analysiert dein Video...'}
-          </h2>
-          <p style={{ color: '#64748b', fontSize: '15px', lineHeight: 1.6 }}>
-            {isUploading
-              ? 'Dein Video wird sicher übertragen. Dies kann je nach Dateigröße einen Moment dauern.'
-              : 'Die KI analysiert dein Auftreten, deine Körpersprache und Kommunikation. Das dauert etwa 30-60 Sekunden.'}
-          </p>
-        </motion.div>
-        <style>
-          {`@keyframes spin { to { transform: rotate(360deg); } }`}
-        </style>
-      </div>
-    );
+    return <LoadingOverlay isUploading={isUploading} isAnalyzing={isAnalyzing} />;
   }
 
+  const hasRecordings = recordedChunks.length > 0;
+  const canNavigatePrev = scenario?.enable_navigation && currentQuestionIndex > 0;
+  const canNavigateNext = scenario?.enable_navigation && currentQuestionIndex < questions.length - 1;
+
   return (
-    <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: '1000px', margin: '0 auto' }}>
-      {/* Header - Mobile responsive */}
-      <div style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        justifyContent: 'space-between',
-        alignItems: isMobile ? 'stretch' : 'center',
-        gap: isMobile ? '12px' : '0',
-        marginBottom: '24px',
-      }}>
-        <h1 style={{
-          fontSize: isMobile ? '18px' : '20px',
-          fontWeight: 600,
-          color: '#0f172a',
-          margin: 0,
-        }}>
+    <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-[1000px] mx-auto`}>
+      {/* Header */}
+      <div className={`flex ${isMobile ? 'flex-col gap-3' : 'flex-row justify-between items-center'} mb-6`}>
+        <h1 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-slate-900`}>
           {scenario?.title}
         </h1>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
-            onClick={handleExit}
-            style={{
-              padding: isMobile ? '10px 14px' : '8px 16px',
-              borderRadius: '8px',
-              background: '#f1f5f9',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              color: '#64748b',
-              fontSize: '14px',
-            }}
-          >
-            <X size={16} />
-            Abbrechen
-          </button>
-        </div>
+        <button
+          onClick={handleExit}
+          className={`${isMobile ? 'py-2.5 px-3.5' : 'py-2 px-4'} rounded-lg bg-slate-100 text-slate-500 text-sm flex items-center justify-center gap-1.5 hover:bg-slate-200 transition-colors`}
+        >
+          <X size={16} />
+          Abbrechen
+        </button>
       </div>
 
       {/* Progress */}
-      <ProgressBar current={currentQuestionIndex} total={questions.length} primaryAccent={primaryAccent} b={b} showCompleted={false} />
+      <ProgressBar
+        current={currentQuestionIndex}
+        total={questions.length}
+        primaryAccent={primaryAccent}
+        showCompleted={false}
+      />
 
-      {/* Main Content - Mobile: stacked, Desktop: two columns */}
+      {/* Main Content */}
       {isMobile ? (
-        /* Mobile Layout - Stacked vertically: Question first, then Video */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Question Panel - Mobile */}
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: '16px',
-              padding: '16px',
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <div
-                style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '50%',
-                  background: themedGradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  flexShrink: 0,
-                }}
-              >
-                {currentQuestionIndex + 1}
-              </div>
-              <span style={{ fontSize: '13px', color: '#64748b' }}>
-                {currentQuestion?.category || 'Frage'}
-              </span>
-            </div>
-
-            <p
-              style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#0f172a',
-                lineHeight: 1.5,
-                margin: 0,
-              }}
-            >
-              {currentQuestion?.question || 'Frage wird geladen...'}
-            </p>
-
-            {currentQuestion?.estimated_time && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginTop: '12px' }}>
-                <Clock size={14} />
-                Empfohlene Antwortzeit: ~{Math.round(currentQuestion.estimated_time / 60)} Min.
-              </div>
-            )}
-
-            {/* Tips - collapsed by default on mobile */}
-            {scenario?.enable_tips && currentQuestion?.tips && (
-              <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} />
-            )}
-          </div>
+        /* Mobile Layout - Stacked */
+        <div className="flex flex-col gap-4">
+          {/* Question Card - Mobile */}
+          <VideoQuestionCard
+            question={currentQuestion}
+            index={currentQuestionIndex}
+            scenario={scenario}
+            isMobile={true}
+          />
 
           {/* Video Preview - Mobile */}
           <div>
-            <div
-              style={{
-                position: 'relative',
-                background: '#000',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                aspectRatio: '16/9',
-              }}
-            >
+            <div className="relative bg-black rounded-2xl overflow-hidden aspect-video">
               {cameraError ? (
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    padding: '16px',
-                    textAlign: 'center',
-                  }}
-                >
-                  <VideoOff size={40} style={{ marginBottom: '12px', opacity: 0.6 }} />
-                  <p style={{ marginBottom: '12px', fontSize: '14px' }}>{cameraError}</p>
-                  <button
-                    onClick={initializeCamera}
-                    style={{
-                      padding: '10px 16px',
-                      borderRadius: '8px',
-                      background: primaryAccent,
-                      color: '#fff',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      fontSize: '14px',
-                    }}
-                  >
-                    <RefreshCw size={16} />
-                    Erneut versuchen
-                  </button>
-                </div>
+                <CameraError error={cameraError} onRetry={initializeCamera} />
               ) : (
                 <video
                   ref={videoRef}
                   autoPlay
                   muted
                   playsInline
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transform: 'scaleX(-1)',
-                  }}
+                  className="w-full h-full object-cover scale-x-[-1]"
                 />
               )}
 
-              {/* Recording indicator */}
-              {isRecording && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    left: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(0, 0, 0, 0.6)',
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: '#ef4444',
-                      animation: 'pulse 1.5s infinite',
-                    }}
-                  />
-                  <span style={{ color: '#fff', fontSize: '13px', fontWeight: 500 }}>
-                    {formatDuration(recordingTime)}
-                  </span>
-                </div>
-              )}
-
-              {/* Time display when not recording */}
-              {!isRecording && recordingTime > 0 && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    left: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(0, 0, 0, 0.6)',
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                  }}
-                >
-                  <Clock size={14} color="#fff" />
-                  <span style={{ color: '#fff', fontSize: '13px' }}>{formatDuration(recordingTime)}</span>
-                </div>
+              {/* Recording/Time indicator */}
+              {(isRecording || recordingTime > 0) && (
+                <RecordingIndicator time={recordingTime} isRecording={isRecording} />
               )}
             </div>
 
-            {/* Audio Visualizer - Mobile */}
+            {/* Audio Visualizer */}
             {isRecording && (
-              <div style={{ marginTop: '16px' }}>
+              <div className="mt-4">
                 <AudioVisualizer
                   audioLevel={audioLevel}
                   isActive={true}
@@ -693,46 +538,25 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
             )}
 
             {/* Controls - Mobile */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+            <div className="flex flex-col gap-3 mt-4">
               {/* Recording button with settings */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-                {/* Settings button */}
+              <div className="flex justify-center gap-2.5">
                 <button
                   onClick={() => setShowDeviceSettings(true)}
-                  style={{
-                    padding: '14px',
-                    borderRadius: '12px',
-                    background: '#f1f5f9',
-                    border: '1px solid #e2e8f0',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                  className="p-3.5 rounded-xl bg-slate-100 border border-slate-200 flex-center"
                 >
-                  <Settings size={20} color="#64748b" />
+                  <Settings size={20} className="text-slate-500" />
                 </button>
 
                 {!isRecording ? (
                   <button
                     onClick={startRecording}
                     disabled={!stream}
-                    style={{
-                      padding: '14px 24px',
-                      borderRadius: '12px',
-                      background: stream ? '#ef4444' : '#94a3b8',
-                      color: '#fff',
-                      border: 'none',
-                      cursor: stream ? 'pointer' : 'not-allowed',
-                      fontSize: '15px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      flex: 1,
-                      justifyContent: 'center',
-                      boxShadow: stream ? '0 4px 14px rgba(239, 68, 68, 0.4)' : 'none',
-                    }}
+                    className={`flex-1 py-3.5 px-6 rounded-xl text-white text-[15px] font-semibold flex items-center justify-center gap-2.5 ${
+                      stream
+                        ? 'bg-red-500 shadow-lg shadow-red-500/40'
+                        : 'bg-slate-400 cursor-not-allowed'
+                    }`}
                   >
                     <Video size={20} />
                     Aufnahme starten
@@ -740,99 +564,48 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                 ) : (
                   <button
                     onClick={stopRecording}
-                    style={{
-                      padding: '14px 24px',
-                      borderRadius: '12px',
-                      background: '#f1f5f9',
-                      color: '#0f172a',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '15px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      flex: 1,
-                      justifyContent: 'center',
-                    }}
+                    className="flex-1 py-3.5 px-6 rounded-xl bg-slate-100 text-slate-900 text-[15px] font-semibold flex items-center justify-center gap-2.5"
                   >
-                    <StopCircle size={20} color="#ef4444" />
+                    <StopCircle size={20} className="text-red-500" />
                     Aufnahme pausieren
                   </button>
                 )}
               </div>
 
-              {/* Navigation and finish buttons - Mobile */}
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {/* Previous button */}
-                {scenario?.enable_navigation && currentQuestionIndex > 0 && (
-                  <button
+              {/* Navigation and finish buttons */}
+              <div className="flex gap-2">
+                {canNavigatePrev && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<ChevronLeft size={16} />}
                     onClick={goToPrevQuestion}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      background: '#fff',
-                      border: '1px solid #e2e8f0',
-                      cursor: 'pointer',
-                      color: '#0f172a',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px',
-                      fontSize: '13px',
-                      flex: 1,
-                    }}
+                    className="flex-1"
                   >
-                    <ChevronLeft size={16} />
                     Zurück
-                  </button>
+                  </Button>
                 )}
 
-                {/* Next button */}
-                {scenario?.enable_navigation && currentQuestionIndex < questions.length - 1 && (
-                  <button
+                {canNavigateNext && (
+                  <Button
+                    size="sm"
+                    iconPosition="right"
+                    icon={<ChevronRight size={16} />}
                     onClick={goToNextQuestion}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      background: primaryAccent,
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      flex: 1,
-                    }}
+                    className="flex-1"
                   >
                     Nächste
-                    <ChevronRight size={16} />
-                  </button>
+                  </Button>
                 )}
 
-                {/* Finish button */}
                 <button
                   onClick={finishRecording}
-                  disabled={recordedChunks.length === 0}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    background: recordedChunks.length === 0 ? '#94a3b8' : '#22c55e',
-                    border: 'none',
-                    cursor: recordedChunks.length === 0 ? 'not-allowed' : 'pointer',
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    flex: 1,
-                    boxShadow: recordedChunks.length > 0 ? '0 4px 14px rgba(34, 197, 94, 0.3)' : 'none',
-                  }}
+                  disabled={!hasRecordings}
+                  className={`flex-1 py-2.5 px-3.5 rounded-lg text-white text-[13px] font-semibold flex items-center justify-center gap-1 ${
+                    hasRecordings
+                      ? 'bg-green-500 shadow-md shadow-green-500/30'
+                      : 'bg-slate-400 cursor-not-allowed'
+                  }`}
                 >
                   <Check size={16} />
                   Abschließen
@@ -843,326 +616,122 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
         </div>
       ) : (
         /* Desktop Layout - Two columns */
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          {/* Video Preview */}
+        <div className="grid grid-cols-2 gap-6">
+          {/* Video Preview - Desktop */}
           <div>
-          <div
-            style={{
-              position: 'relative',
-              background: '#000',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              aspectRatio: '16/9',
-            }}
-          >
-            {cameraError ? (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                  padding: '20px',
-                  textAlign: 'center',
-                }}
-              >
-                <VideoOff size={48} style={{ marginBottom: '16px', opacity: 0.6 }} />
-                <p style={{ marginBottom: '16px' }}>{cameraError}</p>
-                <button
-                  onClick={initializeCamera}
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    background: primaryAccent,
-                    color: '#fff',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <RefreshCw size={16} />
-                  Erneut versuchen
-                </button>
-              </div>
-            ) : (
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  transform: 'scaleX(-1)', // Mirror effect
-                }}
-              />
-            )}
-
-            {/* Recording indicator */}
-            {isRecording && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  left: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'rgba(0, 0, 0, 0.6)',
-                  padding: '8px 14px',
-                  borderRadius: '8px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    background: '#ef4444',
-                    animation: 'pulse 1.5s infinite',
-                  }}
-                />
-                <span style={{ color: '#fff', fontSize: '14px', fontWeight: 500 }}>
-                  {formatDuration(recordingTime)}
-                </span>
-              </div>
-            )}
-
-            {/* Time display when not recording */}
-            {!isRecording && recordingTime > 0 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  left: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'rgba(0, 0, 0, 0.6)',
-                  padding: '8px 14px',
-                  borderRadius: '8px',
-                }}
-              >
-                <Clock size={16} color="#fff" />
-                <span style={{ color: '#fff', fontSize: '14px' }}>{formatDuration(recordingTime)}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Audio Visualizer - Desktop */}
-          {isRecording && (
-            <div style={{ marginTop: '20px' }}>
-              <AudioVisualizer
-                audioLevel={audioLevel}
-                isActive={true}
-                variant="bars"
-                size="sm"
-                accentColor={primaryAccent}
-              />
-            </div>
-          )}
-
-          {/* Controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
-            {/* Recording button with settings */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-              {/* Settings button */}
-              <button
-                onClick={() => setShowDeviceSettings(true)}
-                style={{
-                  padding: '14px',
-                  borderRadius: '12px',
-                  background: '#f1f5f9',
-                  border: '1px solid #e2e8f0',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Settings size={20} color="#64748b" />
-              </button>
-
-              {!isRecording ? (
-                <button
-                  onClick={startRecording}
-                  disabled={!stream}
-                  style={{
-                    padding: '14px 28px',
-                    borderRadius: '12px',
-                    background: stream ? '#ef4444' : '#94a3b8',
-                    color: '#fff',
-                    border: 'none',
-                    cursor: stream ? 'pointer' : 'not-allowed',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    boxShadow: stream ? '0 4px 14px rgba(239, 68, 68, 0.4)' : 'none',
-                  }}
-                >
-                  <Video size={20} />
-                  Aufnahme starten
-                </button>
+            <div className="relative bg-black rounded-2xl overflow-hidden aspect-video">
+              {cameraError ? (
+                <CameraError error={cameraError} onRetry={initializeCamera} />
               ) : (
-                <button
-                  onClick={stopRecording}
-                  style={{
-                    padding: '14px 28px',
-                    borderRadius: '12px',
-                    background: '#f1f5f9',
-                    color: '#0f172a',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                  }}
-                >
-                  <StopCircle size={20} color="#ef4444" />
-                  Aufnahme pausieren
-                </button>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover scale-x-[-1]"
+                />
+              )}
+
+              {/* Recording/Time indicator */}
+              {(isRecording || recordingTime > 0) && (
+                <RecordingIndicator time={recordingTime} isRecording={isRecording} />
               )}
             </div>
 
-            {/* Navigation buttons - always visible */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              {/* Previous button - only show if enable_navigation and not first question */}
-              {scenario?.enable_navigation && currentQuestionIndex > 0 && (
-                <button
-                  onClick={goToPrevQuestion}
-                  style={{
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    background: '#fff',
-                    border: '1px solid #e2e8f0',
-                    cursor: 'pointer',
-                    color: '#0f172a',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '14px',
-                  }}
-                >
-                  <ChevronLeft size={18} />
-                  Vorherige
-                </button>
-              )}
+            {/* Audio Visualizer */}
+            {isRecording && (
+              <div className="mt-5">
+                <AudioVisualizer
+                  audioLevel={audioLevel}
+                  isActive={true}
+                  variant="bars"
+                  size="sm"
+                  accentColor={primaryAccent}
+                />
+              </div>
+            )}
 
-              {/* Next button - only show if enable_navigation and not last question */}
-              {scenario?.enable_navigation && currentQuestionIndex < questions.length - 1 && (
+            {/* Controls */}
+            <div className="flex flex-col gap-4 mt-5">
+              {/* Recording button with settings */}
+              <div className="flex justify-center gap-3">
                 <button
-                  onClick={goToNextQuestion}
-                  style={{
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    background: primaryAccent,
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                  }}
+                  onClick={() => setShowDeviceSettings(true)}
+                  className="p-3.5 rounded-xl bg-slate-100 border border-slate-200 flex-center"
                 >
-                  Nächste
-                  <ChevronRight size={18} />
+                  <Settings size={20} className="text-slate-500" />
                 </button>
-              )}
 
-              {/* Finish button - always visible */}
-              <button
-                onClick={finishRecording}
-                disabled={recordedChunks.length === 0}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  background: recordedChunks.length === 0 ? '#94a3b8' : '#22c55e',
-                  border: 'none',
-                  cursor: recordedChunks.length === 0 ? 'not-allowed' : 'pointer',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  boxShadow: recordedChunks.length > 0 ? '0 4px 14px rgba(34, 197, 94, 0.3)' : 'none',
-                }}
-              >
-                <Check size={18} />
-                Training abschließen
-              </button>
+                {!isRecording ? (
+                  <button
+                    onClick={startRecording}
+                    disabled={!stream}
+                    className={`py-3.5 px-7 rounded-xl text-white text-base font-semibold flex items-center gap-2.5 ${
+                      stream
+                        ? 'bg-red-500 shadow-lg shadow-red-500/40'
+                        : 'bg-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <Video size={20} />
+                    Aufnahme starten
+                  </button>
+                ) : (
+                  <button
+                    onClick={stopRecording}
+                    className="py-3.5 px-7 rounded-xl bg-slate-100 text-slate-900 text-base font-semibold flex items-center gap-2.5"
+                  >
+                    <StopCircle size={20} className="text-red-500" />
+                    Aufnahme pausieren
+                  </button>
+                )}
+              </div>
+
+              {/* Navigation buttons */}
+              <div className="flex justify-center gap-3 flex-wrap">
+                {canNavigatePrev && (
+                  <Button
+                    variant="secondary"
+                    icon={<ChevronLeft size={18} />}
+                    onClick={goToPrevQuestion}
+                  >
+                    Vorherige
+                  </Button>
+                )}
+
+                {canNavigateNext && (
+                  <Button
+                    iconPosition="right"
+                    icon={<ChevronRight size={18} />}
+                    onClick={goToNextQuestion}
+                  >
+                    Nächste
+                  </Button>
+                )}
+
+                <button
+                  onClick={finishRecording}
+                  disabled={!hasRecordings}
+                  className={`py-2.5 px-5 rounded-lg text-white text-sm font-semibold flex items-center gap-1.5 ${
+                    hasRecordings
+                      ? 'bg-green-500 shadow-md shadow-green-500/30'
+                      : 'bg-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Check size={18} />
+                  Training abschließen
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Question Card - Desktop */}
+          <VideoQuestionCard
+            question={currentQuestion}
+            index={currentQuestionIndex}
+            scenario={scenario}
+            isMobile={false}
+          />
         </div>
-
-        {/* Question Panel */}
-        <div
-          style={{
-            background: '#fff',
-            borderRadius: '16px',
-            padding: '24px',
-            border: '1px solid #e2e8f0',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <div
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: themedGradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: '13px',
-                fontWeight: 600,
-              }}
-            >
-              {currentQuestionIndex + 1}
-            </div>
-            <span style={{ fontSize: '14px', color: '#64748b' }}>
-              {currentQuestion?.category || 'Frage'}
-            </span>
-          </div>
-
-          <h2
-            style={{
-              fontSize: '18px',
-              fontWeight: 600,
-              color: '#0f172a',
-              lineHeight: 1.5,
-              marginBottom: '16px',
-            }}
-          >
-            {currentQuestion?.question || 'Frage wird geladen...'}
-          </h2>
-
-          {currentQuestion?.estimated_time && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '14px', marginBottom: '16px' }}>
-              <Clock size={16} />
-              Empfohlene Antwortzeit: ~{Math.round(currentQuestion.estimated_time / 60)} Min.
-            </div>
-          )}
-
-          {/* Tips */}
-          {scenario?.enable_tips && currentQuestion?.tips && (
-            <QuestionTips tips={currentQuestion.tips} primaryAccent={primaryAccent} />
-          )}
-        </div>
-      </div>
       )}
 
       {/* Error display */}
@@ -1170,37 +739,18 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{
-            marginTop: '24px',
-            padding: '16px',
-            background: '#fef2f2',
-            borderRadius: '12px',
-            border: '1px solid #fecaca',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
+          className="mt-6 p-4 bg-red-50 rounded-xl border border-red-200 flex items-center gap-3"
         >
-          <AlertCircle size={20} color="#ef4444" />
-          <p style={{ color: '#dc2626', fontSize: '14px', flex: 1 }}>{error}</p>
+          <AlertCircle size={20} className="text-red-500" />
+          <p className="text-red-600 text-sm flex-1">{error}</p>
           <button
             onClick={() => setError(null)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+            className="bg-transparent border-none cursor-pointer p-1"
           >
-            <X size={16} color="#ef4444" />
+            <X size={16} className="text-red-500" />
           </button>
         </motion.div>
       )}
-
-      <style>
-        {`
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-          }
-          @keyframes spin { to { transform: rotate(360deg); } }
-        `}
-      </style>
 
       {/* Device Settings Dialog */}
       <DeviceSettingsDialog

@@ -10,7 +10,8 @@ import { motion } from 'framer-motion';
 import { Calendar, ChevronRight, Loader2, Trash2, Scale, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime } from '@/utils/formatting';
-import ConfirmDeleteDialog from '@/components/ui/ConfirmDeleteDialog';
+import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
+import { COLORS } from '@/config/colors';
 
 /**
  * Mini Score Bar for cards
@@ -20,28 +21,14 @@ const MiniScoreBar = ({ proScore, contraScore }) => {
   const proPercentage = total > 0 ? Math.round((proScore / total) * 100) : 50;
 
   return (
-    <div style={{
-      height: '6px',
-      borderRadius: '3px',
-      overflow: 'hidden',
-      display: 'flex',
-      backgroundColor: '#f1f5f9',
-      width: '100%',
-      maxWidth: '120px',
-    }}>
+    <div className="h-1.5 rounded-[3px] overflow-hidden flex bg-slate-100 w-full max-w-[120px]">
       <div
-        style={{
-          background: 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)',
-          width: `${proPercentage}%`,
-          height: '100%',
-        }}
+        className="bg-gradient-to-r from-green-500 to-green-600 h-full"
+        style={{ width: `${proPercentage}%` }}
       />
       <div
-        style={{
-          background: 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)',
-          width: `${100 - proPercentage}%`,
-          height: '100%',
-        }}
+        className="bg-gradient-to-r from-red-500 to-red-600 h-full"
+        style={{ width: `${100 - proPercentage}%` }}
       />
     </div>
   );
@@ -84,11 +71,11 @@ const DecisionCard = ({
 
   // Determine recommendation color based on analysis
   const getRecommendationColor = () => {
-    if (!decision.analysis?.recommendation) return '#64748b';
+    if (!decision.analysis?.recommendation) return COLORS.slate[500];
     const rec = decision.analysis.recommendation.toLowerCase();
-    if (rec.includes('dafür') || rec.includes('empfehl') || rec.includes('ja')) return '#16a34a';
-    if (rec.includes('dagegen') || rec.includes('nein') || rec.includes('abraten')) return '#dc2626';
-    return '#f59e0b';
+    if (rec.includes('dafür') || rec.includes('empfehl') || rec.includes('ja')) return COLORS.green[600];
+    if (rec.includes('dagegen') || rec.includes('nein') || rec.includes('abraten')) return COLORS.red[600];
+    return COLORS.amber[500];
   };
 
   // Mobile-optimized card layout
@@ -103,68 +90,29 @@ const DecisionCard = ({
       >
         <div
           onClick={onClick}
-          style={{
-            background: '#fff',
-            borderRadius: '16px',
-            padding: '16px',
-            cursor: 'pointer',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          }}
+          className="bg-white rounded-2xl p-4 cursor-pointer border border-slate-200 shadow-sm"
         >
           {/* Top row: Icon + Title + Delete */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #8b5cf615, #8b5cf630)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Scale style={{ width: '22px', height: '22px', color: '#8b5cf6' }} />
+          <div className="flex items-start gap-3 mb-3">
+            <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
+              <Scale className="w-[22px] h-[22px] text-purple-500" />
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h3 style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#0f172a',
-                marginBottom: '4px',
-                lineHeight: '1.3',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3] line-clamp-2">
                 {decision.topic || 'Entscheidung'}
               </h3>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
+              <div className="text-[13px] text-slate-500">
                 {formatDateTime(decision.created_at)}
               </div>
             </div>
             <button
               onClick={handleDeleteClick}
               disabled={isDeleting}
-              style={{
-                padding: '8px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
+              className="p-2 rounded-lg border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center shrink-0 hover:text-slate-600"
               title="Löschen"
             >
               {isDeleting ? (
-                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={18} className="animate-spin" />
               ) : (
                 <Trash2 size={18} />
               )}
@@ -172,26 +120,19 @@ const DecisionCard = ({
           </div>
 
           {/* Bottom row: Pro/Contra counts + Score bar + Arrow */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            paddingTop: '12px',
-            borderTop: '1px solid #f1f5f9',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <ThumbsUp size={14} color="#16a34a" />
-                <span style={{ fontSize: '13px', fontWeight: 500, color: '#16a34a' }}>{proCount}</span>
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="flex items-center gap-1">
+                <ThumbsUp size={14} className="text-green-600" />
+                <span className="text-[13px] font-medium text-green-600">{proCount}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <ThumbsDown size={14} color="#dc2626" />
-                <span style={{ fontSize: '13px', fontWeight: 500, color: '#dc2626' }}>{contraCount}</span>
+              <div className="flex items-center gap-1">
+                <ThumbsDown size={14} className="text-red-600" />
+                <span className="text-[13px] font-medium text-red-600">{contraCount}</span>
               </div>
               <MiniScoreBar proScore={proScore} contraScore={contraScore} />
             </div>
-            <ChevronRight size={22} style={{ color: '#94a3b8', flexShrink: 0 }} />
+            <ChevronRight size={22} className="text-slate-400 shrink-0" />
           </div>
         </div>
 
@@ -220,77 +161,35 @@ const DecisionCard = ({
     >
       <div
         onClick={onClick}
-        style={{
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '20px',
-          cursor: 'pointer',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
-          e.currentTarget.style.borderColor = '#cbd5e1';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-          e.currentTarget.style.borderColor = '#e2e8f0';
-        }}
+        className="bg-white rounded-2xl p-5 cursor-pointer border border-slate-200 shadow-sm hover:shadow-lg hover:border-slate-300 transition-all"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div className="flex items-center gap-4">
           {/* Icon */}
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #8b5cf615, #8b5cf630)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Scale style={{ width: '24px', height: '24px', color: '#8b5cf6' }} />
+          <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
+            <Scale className="w-6 h-6 text-purple-500" />
           </div>
 
           {/* Content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{
-              fontSize: '16px',
-              fontWeight: 600,
-              color: '#0f172a',
-              marginBottom: '6px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-slate-900 mb-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
               {decision.topic || 'Entscheidung'}
             </h3>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              flexWrap: 'wrap',
-              fontSize: '13px',
-              color: '#64748b',
-            }}>
+            <div className="flex items-center gap-4 flex-wrap text-[13px] text-slate-500">
               {/* Pro/Contra counts */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <ThumbsUp size={14} color="#16a34a" />
-                  <span style={{ fontWeight: 500, color: '#16a34a' }}>{proCount} Pro</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <ThumbsUp size={14} className="text-green-600" />
+                  <span className="font-medium text-green-600">{proCount} Pro</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <ThumbsDown size={14} color="#dc2626" />
-                  <span style={{ fontWeight: 500, color: '#dc2626' }}>{contraCount} Contra</span>
+                <div className="flex items-center gap-1">
+                  <ThumbsDown size={14} className="text-red-600" />
+                  <span className="font-medium text-red-600">{contraCount} Contra</span>
                 </div>
               </div>
               {/* Score bar */}
               <MiniScoreBar proScore={proScore} contraScore={contraScore} />
               {/* Date */}
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span className="flex items-center gap-1">
                 <Calendar size={14} />
                 {formatDateTime(decision.created_at)}
               </span>
@@ -298,30 +197,20 @@ const DecisionCard = ({
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleDeleteClick}
               disabled={isDeleting}
-              style={{
-                padding: '8px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="p-2 rounded-lg border-none bg-transparent text-slate-400 cursor-pointer flex items-center justify-center hover:text-red-500 transition-colors"
               title="Löschen"
             >
               {isDeleting ? (
-                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={18} className="animate-spin" />
               ) : (
                 <Trash2 size={18} />
               )}
             </button>
-            <ChevronRight size={20} style={{ color: '#94a3b8' }} />
+            <ChevronRight size={20} className="text-slate-400" />
           </div>
         </div>
       </div>

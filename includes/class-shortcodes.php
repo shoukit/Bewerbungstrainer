@@ -55,6 +55,96 @@ class Bewerbungstrainer_Shortcodes {
         ob_start();
         ?>
         <style>
+            /*
+             * CSS Loading Guard: Hide React content until Tailwind CSS is fully loaded
+             * The loading screen stays visible until CSS is ready, then fades out smoothly
+             */
+
+            /* Step 1: Hide React app content initially (not the loading screen) */
+            #bewerbungstrainer-app > *:not(.bewerbungstrainer-loading) {
+                opacity: 0 !important;
+                transition: opacity 0.3s ease-out !important;
+            }
+
+            /* Step 2: Show content when CSS is loaded (class added by stylesheet onload) */
+            .bewerbungstrainer-css-loaded #bewerbungstrainer-app > *:not(.bewerbungstrainer-loading) {
+                opacity: 1 !important;
+            }
+
+            /* Step 3: Keep loading screen visible until CSS loaded, then fade out */
+            #bewerbungstrainer-app .bewerbungstrainer-loading {
+                transition: opacity 0.3s ease-out, visibility 0.3s ease-out !important;
+            }
+
+            /* Backup: If React removes loading screen before CSS loads,
+               prevent flash of unstyled content */
+            #bewerbungstrainer-app:empty::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+                z-index: 9999;
+            }
+            .bewerbungstrainer-css-loaded #bewerbungstrainer-app:empty::before {
+                display: none;
+            }
+
+            /* Critical CSS for components that need immediate styling */
+            /* FeatureInfoButton - info icon buttons on cards */
+            #bewerbungstrainer-app button[title*="Info über"] {
+                border: none !important;
+                background: transparent !important;
+                cursor: pointer !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                flex-shrink: 0 !important;
+                padding: 0.25rem !important;
+                border-radius: 9999px !important;
+                transition: all 0.15s ease !important;
+                opacity: 1 !important;
+            }
+            #bewerbungstrainer-app button[title*="Info über"]:hover {
+                background: #f1f5f9 !important; /* slate-100 */
+                opacity: 0.8 !important;
+                transform: scale(1.1) !important;
+            }
+
+            /* Login button in sidebar - critical styling for dark sidebar */
+            #bewerbungstrainer-app aside button[title="Anmelden"] {
+                border-radius: 0.75rem !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.625rem !important;
+                transition: all 0.2s !important;
+                cursor: pointer !important;
+                font-size: 0.875rem !important;
+                font-weight: 500 !important;
+                padding: 0.625rem 0.75rem !important;
+                color: #f8fafc !important; /* slate-50 - default sidebar text */
+                background: transparent !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            }
+            #bewerbungstrainer-app aside button[title="Anmelden"]:hover {
+                background: rgba(255, 255, 255, 0.05) !important;
+            }
+
+            /* Mobile navigation login button */
+            #bewerbungstrainer-app nav button:has(svg.lucide-log-in) {
+                border-radius: 0.75rem !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.75rem !important;
+                transition: all 0.2s !important;
+                cursor: pointer !important;
+                font-size: 0.9375rem !important;
+                font-weight: 600 !important;
+                padding: 0.875rem 1rem !important;
+            }
+
             /* Modern Loading Screen - Inline for immediate display */
             .bewerbungstrainer-loading {
                 position: fixed !important;
@@ -153,6 +243,39 @@ class Bewerbungstrainer_Shortcodes {
                 100% { transform: translateX(400%); }
             }
         </style>
+        <script>
+            // Immediately apply cached partner branding to prevent flash of default design
+            (function() {
+                try {
+                    // Get partner slug from URL
+                    var urlParams = new URLSearchParams(window.location.search);
+                    var partnerId = urlParams.get('partner') || urlParams.get('pid');
+
+                    if (partnerId) {
+                        // Try to get cached config
+                        var cached = localStorage.getItem('bewerbungstrainer_partner_cache');
+                        if (cached) {
+                            var config = JSON.parse(cached);
+                            if (config && config.slug === partnerId && config.branding) {
+                                // Apply CSS variables immediately
+                                var root = document.documentElement;
+                                Object.keys(config.branding).forEach(function(key) {
+                                    root.style.setProperty(key, config.branding[key]);
+                                });
+
+                                // Store app name for loading screen
+                                window.__partnerAppName = config.app_name || null;
+                                window.__partnerPrimaryColor = config.branding['--primary-accent'] || null;
+
+                                console.log('🚀 [Instant Branding] Applied cached branding for:', partnerId);
+                            }
+                        }
+                    }
+                } catch(e) {
+                    console.warn('🚀 [Instant Branding] Error:', e);
+                }
+            })();
+        </script>
         <div id="bewerbungstrainer-app" class="bewerbungstrainer-interview-container">
             <div class="bewerbungstrainer-loading">
                 <!-- Animated background circles -->
@@ -170,9 +293,9 @@ class Bewerbungstrainer_Shortcodes {
                         </svg>
                     </div>
 
-                    <!-- Brand name -->
+                    <!-- Brand name (dynamically updated by inline script if partner cached) -->
                     <div class="bewerbungstrainer-loading-text">
-                        <h1><?php esc_html_e('Karriereheld', 'bewerbungstrainer'); ?></h1>
+                        <h1 id="bewerbungstrainer-loading-title"><?php esc_html_e('Karriereheld', 'bewerbungstrainer'); ?></h1>
                         <p><?php esc_html_e('wird geladen...', 'bewerbungstrainer'); ?></p>
                     </div>
 
@@ -183,6 +306,20 @@ class Bewerbungstrainer_Shortcodes {
                 </div>
             </div>
         </div>
+        <script>
+            // Update loading screen with partner app name if available
+            (function() {
+                if (window.__partnerAppName) {
+                    var titleEl = document.getElementById('bewerbungstrainer-loading-title');
+                    if (titleEl) {
+                        titleEl.textContent = window.__partnerAppName;
+                        if (window.__partnerPrimaryColor) {
+                            titleEl.style.color = window.__partnerPrimaryColor;
+                        }
+                    }
+                }
+            })();
+        </script>
         <?php
         return ob_get_clean();
     }

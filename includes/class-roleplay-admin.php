@@ -147,6 +147,39 @@ class Bewerbungstrainer_Roleplay_Admin {
             .roleplay-variable-fields select {
                 width: 100%;
             }
+            .variable-key-preview {
+                color: #999;
+                font-size: 12px;
+                margin-left: 8px;
+            }
+            .remove-btn {
+                background: none;
+                border: none;
+                color: #d63638;
+                cursor: pointer;
+                padding: 4px;
+            }
+            .remove-btn:hover {
+                color: #a00;
+            }
+            .roleplay-options-container {
+                margin-top: 15px;
+                padding: 15px;
+                background: #f0f0f1;
+                border-radius: 4px;
+            }
+            .roleplay-option-item {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 8px;
+                align-items: center;
+            }
+            .roleplay-option-item input {
+                flex: 1;
+            }
+            .add-option-btn {
+                margin-top: 8px;
+            }
         ';
     }
 
@@ -173,6 +206,24 @@ class Bewerbungstrainer_Roleplay_Admin {
         // Handle bulk actions
         if (isset($_POST['roleplay_bulk_action']) && wp_verify_nonce($_POST['_wpnonce'], 'roleplay_bulk_action')) {
             $this->handle_bulk_action();
+        }
+
+        // Handle migration from CPT
+        if (isset($_GET['action']) && $_GET['action'] === 'migrate_from_cpt') {
+            if (!wp_verify_nonce($_GET['_wpnonce'], 'migrate_roleplay_from_cpt')) {
+                wp_die('Security check failed');
+            }
+
+            $results = $this->db->migrate_from_posts();
+            $query_args = array(
+                'page' => 'roleplay-scenarios',
+                'migration_created' => $results['created'],
+                'migration_updated' => $results['updated'],
+                'migration_skipped' => $results['skipped'],
+                'migration_failed' => $results['failed'],
+            );
+            wp_redirect(add_query_arg($query_args, admin_url('admin.php')));
+            exit;
         }
 
         // Handle form submission
@@ -268,8 +319,18 @@ class Bewerbungstrainer_Roleplay_Admin {
      * Sanitize scenario data from form
      */
     private function sanitize_scenario_data($post) {
-        // Build input_configuration from visual builder data
-        $input_configuration = $this->build_input_configuration_from_post($post);
+        // Build input_configuration - either from visual builder or JSON textarea
+        $input_configuration = array();
+        if (!empty($post['input_configuration'])) {
+            // JSON textarea input
+            $decoded = json_decode(stripslashes($post['input_configuration']), true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $input_configuration = $decoded;
+            }
+        } elseif (isset($post['var_key']) && is_array($post['var_key'])) {
+            // Visual builder input
+            $input_configuration = $this->build_input_configuration_from_post($post);
+        }
 
         // Handle target_audience (checkboxes array to semicolon-separated string)
         $target_audience = '';
@@ -299,11 +360,24 @@ class Bewerbungstrainer_Roleplay_Admin {
             'role_type' => sanitize_text_field($post['role_type'] ?? 'interview'),
             'user_role_label' => sanitize_text_field(wp_unslash($post['user_role_label'] ?? 'Bewerber')),
             'agent_id' => sanitize_text_field($post['agent_id'] ?? ''),
+            'voice_id' => sanitize_text_field($post['voice_id'] ?? ''),
+            'initial_message' => sanitize_textarea_field(wp_unslash($post['initial_message'] ?? '')),
             'system_prompt' => wp_kses_post(wp_unslash($post['system_prompt'] ?? '')),
             'feedback_prompt' => wp_kses_post(wp_unslash($post['feedback_prompt'] ?? '')),
+            'feedback_coach_type' => sanitize_text_field($post['feedback_coach_type'] ?? 'general'),
+            'feedback_custom_intro' => sanitize_textarea_field(wp_unslash($post['feedback_custom_intro'] ?? '')),
+            'feedback_extra_focus' => sanitize_textarea_field(wp_unslash($post['feedback_extra_focus'] ?? '')),
             'ai_instructions' => wp_kses_post(wp_unslash($post['ai_instructions'] ?? '')),
             'tips' => $tips,
             'input_configuration' => json_encode($input_configuration, JSON_UNESCAPED_UNICODE),
+            'interviewer_name' => sanitize_text_field(wp_unslash($post['interviewer_name'] ?? '')),
+            'interviewer_role' => sanitize_text_field(wp_unslash($post['interviewer_role'] ?? '')),
+            'interviewer_image' => esc_url_raw($post['interviewer_image'] ?? ''),
+            'interviewer_properties' => sanitize_textarea_field(wp_unslash($post['interviewer_properties'] ?? '')),
+            'interviewer_objections' => sanitize_textarea_field(wp_unslash($post['interviewer_objections'] ?? '')),
+            'interviewer_questions' => sanitize_textarea_field(wp_unslash($post['interviewer_questions'] ?? '')),
+            'interviewer_editable_fields' => $this->build_interviewer_editable_fields($post),
+            'coaching_hints' => sanitize_textarea_field(wp_unslash($post['coaching_hints'] ?? '')),
             'is_active' => isset($post['is_active']) ? 1 : 0,
             'sort_order' => intval($post['sort_order'] ?? 0),
         );
@@ -360,6 +434,21 @@ class Bewerbungstrainer_Roleplay_Admin {
     }
 
     /**
+     * Build interviewer_editable_fields JSON from POST data
+     */
+    private function build_interviewer_editable_fields($post) {
+        $editable = array();
+
+        if (isset($post['interviewer_editable']) && is_array($post['interviewer_editable'])) {
+            foreach ($post['interviewer_editable'] as $field => $value) {
+                $editable[sanitize_key($field)] = true;
+            }
+        }
+
+        return !empty($editable) ? json_encode($editable, JSON_UNESCAPED_UNICODE) : null;
+    }
+
+    /**
      * Handle CSV import/export actions
      */
     public function handle_csv_actions() {
@@ -381,7 +470,8 @@ class Bewerbungstrainer_Roleplay_Admin {
             if (!wp_verify_nonce($_POST['_wpnonce'], 'import_roleplay_scenarios')) {
                 wp_die('Security check failed');
             }
-            $this->import_scenarios_csv($_FILES['csv_file']);
+            $force_update = isset($_POST['force_update']) && $_POST['force_update'] === '1';
+            $this->import_scenarios_csv($_FILES['csv_file'], $force_update);
         }
     }
 
@@ -389,6 +479,9 @@ class Bewerbungstrainer_Roleplay_Admin {
      * Export scenarios to CSV
      */
     private function export_scenarios_csv() {
+        // Ensure schema is up to date before export
+        $this->db->maybe_create_tables();
+
         $scenarios = $this->db->get_scenarios(array('is_active' => null));
 
         $filename = 'roleplay-scenarios-' . date('Y-m-d-His') . '.csv';
@@ -401,7 +494,7 @@ class Bewerbungstrainer_Roleplay_Admin {
         // UTF-8 BOM for Excel
         fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-        // CSV Header
+        // CSV Header - all fields including new ones
         fputcsv($output, array(
             'id',
             'title',
@@ -414,11 +507,23 @@ class Bewerbungstrainer_Roleplay_Admin {
             'role_type',
             'user_role_label',
             'agent_id',
+            'voice_id',
+            'initial_message',
             'system_prompt',
             'feedback_prompt',
+            'feedback_coach_type',
+            'feedback_custom_intro',
+            'feedback_extra_focus',
             'ai_instructions',
             'tips',
             'input_configuration',
+            'interviewer_name',
+            'interviewer_role',
+            'interviewer_image',
+            'interviewer_properties',
+            'interviewer_objections',
+            'interviewer_questions',
+            'coaching_hints',
             'is_active',
             'sort_order'
         ), ';');
@@ -446,11 +551,23 @@ class Bewerbungstrainer_Roleplay_Admin {
                 $scenario->role_type ?? 'interview',
                 $clean_text($scenario->user_role_label ?? 'Bewerber'),
                 $scenario->agent_id ?? '',
+                $scenario->voice_id ?? '',
+                $clean_text($scenario->initial_message ?? ''),
                 $clean_text($scenario->system_prompt ?? ''),
                 $clean_text($scenario->feedback_prompt ?? ''),
+                $scenario->feedback_coach_type ?? 'general',
+                $clean_text($scenario->feedback_custom_intro ?? ''),
+                $clean_text($scenario->feedback_extra_focus ?? ''),
                 $clean_text($scenario->ai_instructions ?? ''),
                 $scenario->tips ?? '[]',
                 $scenario->input_configuration ?? '[]',
+                $clean_text($scenario->interviewer_name ?? ''),
+                $clean_text($scenario->interviewer_role ?? ''),
+                $scenario->interviewer_image ?? '',
+                $clean_text($scenario->interviewer_properties ?? ''),
+                $clean_text($scenario->interviewer_objections ?? ''),
+                $clean_text($scenario->interviewer_questions ?? ''),
+                $clean_text($scenario->coaching_hints ?? ''),
                 $scenario->is_active,
                 $scenario->sort_order
             ), ';');
@@ -461,8 +578,11 @@ class Bewerbungstrainer_Roleplay_Admin {
 
     /**
      * Import scenarios from CSV
+     *
+     * @param array $file Uploaded file data
+     * @param bool $force_update If true, overwrite all fields (not just empty ones)
      */
-    private function import_scenarios_csv($file) {
+    private function import_scenarios_csv($file, $force_update = false) {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             wp_redirect(admin_url('admin.php?page=roleplay-scenarios&import_error=upload'));
             exit;
@@ -490,6 +610,7 @@ class Bewerbungstrainer_Roleplay_Admin {
 
         $imported = 0;
         $updated = 0;
+        $skipped = 0;
 
         $restore_newlines = function($text) {
             if (empty($text)) return '';
@@ -518,23 +639,77 @@ class Bewerbungstrainer_Roleplay_Admin {
                 'role_type' => sanitize_text_field($data['role_type'] ?? 'interview'),
                 'user_role_label' => sanitize_text_field($restore_newlines($data['user_role_label'] ?? 'Bewerber')),
                 'agent_id' => sanitize_text_field($data['agent_id'] ?? ''),
-                'system_prompt' => $restore_newlines($data['system_prompt'] ?? ''),
+                'voice_id' => sanitize_text_field($data['voice_id'] ?? ''),
+                'initial_message' => $restore_newlines($data['initial_message'] ?? ''),
+                // Support both 'system_prompt' and 'content' column names (use empty() not ??)
+                'system_prompt' => $restore_newlines(
+                    !empty($data['system_prompt']) ? $data['system_prompt'] :
+                    (!empty($data['content']) ? $data['content'] : '')
+                ),
                 'feedback_prompt' => $restore_newlines($data['feedback_prompt'] ?? ''),
+                'feedback_coach_type' => sanitize_text_field($data['feedback_coach_type'] ?? 'general'),
+                'feedback_custom_intro' => $restore_newlines($data['feedback_custom_intro'] ?? ''),
+                'feedback_extra_focus' => $restore_newlines($data['feedback_extra_focus'] ?? ''),
                 'ai_instructions' => $restore_newlines($data['ai_instructions'] ?? ''),
-                'tips' => $data['tips'] ?? '[]',
-                'input_configuration' => $data['input_configuration'] ?? '[]',
-                'is_active' => intval($data['is_active'] ?? 1),
+                'tips' => !empty($data['tips']) ? $data['tips'] : '[]',
+                // Support both 'input_configuration' and 'variables_schema' column names (use empty() not ??)
+                'input_configuration' => !empty($data['input_configuration']) ? $data['input_configuration'] :
+                    (!empty($data['variables_schema']) ? $data['variables_schema'] : '[]'),
+                'interviewer_name' => sanitize_text_field($restore_newlines($data['interviewer_name'] ?? '')),
+                'interviewer_role' => sanitize_text_field($restore_newlines($data['interviewer_role'] ?? '')),
+                'interviewer_image' => esc_url_raw($data['interviewer_image'] ?? ''),
+                'interviewer_properties' => sanitize_textarea_field($restore_newlines($data['interviewer_properties'] ?? '')),
+                'interviewer_objections' => sanitize_textarea_field($restore_newlines($data['interviewer_objections'] ?? '')),
+                'interviewer_questions' => sanitize_textarea_field($restore_newlines($data['interviewer_questions'] ?? '')),
+                'coaching_hints' => sanitize_textarea_field($restore_newlines($data['coaching_hints'] ?? '')),
+                // Support both 'is_active' (0/1) and 'status' (publish/draft) column names (use !empty() not isset())
+                'is_active' => !empty($data['status'])
+                    ? ($data['status'] === 'publish' ? 1 : 0)
+                    : intval($data['is_active'] ?? 1),
                 'sort_order' => intval($data['sort_order'] ?? 0),
             );
 
-            // Check if updating existing
+            // Try to find existing scenario: first by ID, then by title
+            $existing = null;
+
+            // Match by ID first if available (more reliable for re-imports)
             if (!empty($data['id']) && is_numeric($data['id'])) {
                 $existing = $this->db->get_scenario(intval($data['id']));
-                if ($existing) {
-                    $this->db->update_scenario(intval($data['id']), $scenario_data);
-                    $updated++;
-                    continue;
+            }
+
+            // Fall back to title matching if ID not found or not provided
+            if (!$existing) {
+                $existing = $this->db->get_scenario_by_title($scenario_data['title']);
+            }
+
+            if ($existing) {
+                // Update existing
+                $update_data = array();
+                foreach ($scenario_data as $field => $value) {
+                    if ($field === 'title') continue; // Don't update title
+
+                    if ($force_update) {
+                        // Force mode: update all non-empty values from CSV
+                        if (!empty($value)) {
+                            $update_data[$field] = $value;
+                        }
+                    } else {
+                        // Normal mode: only fill empty fields in DB
+                        $existing_value = $existing->$field ?? '';
+                        if (empty($existing_value) && !empty($value)) {
+                            $update_data[$field] = $value;
+                        }
+                    }
                 }
+
+                if (!empty($update_data)) {
+                    $this->db->update_scenario($existing->id, $update_data);
+                    $updated++;
+                } else {
+                    // Scenario exists but nothing to update
+                    $skipped++;
+                }
+                continue;
             }
 
             // Create new
@@ -544,7 +719,7 @@ class Bewerbungstrainer_Roleplay_Admin {
 
         fclose($handle);
 
-        wp_redirect(admin_url('admin.php?page=roleplay-scenarios&imported=' . $imported . '&csv_updated=' . $updated));
+        wp_redirect(admin_url('admin.php?page=roleplay-scenarios&imported=' . $imported . '&csv_updated=' . $updated . '&csv_skipped=' . $skipped));
         exit;
     }
 
@@ -583,11 +758,22 @@ class Bewerbungstrainer_Roleplay_Admin {
         // Show notices
         $this->render_admin_notices();
 
+        // Check for CPT scenarios that can be migrated
+        $cpt_count = wp_count_posts('roleplay_scenario');
+        $cpt_total = isset($cpt_count->publish) ? $cpt_count->publish : 0;
+        $cpt_total += isset($cpt_count->draft) ? $cpt_count->draft : 0;
+        $cpt_total += isset($cpt_count->private) ? $cpt_count->private : 0;
+
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline">Live-Simulationen</h1>
             <a href="<?php echo admin_url('admin.php?page=roleplay-scenario-edit'); ?>" class="page-title-action">Neu hinzufügen</a>
             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=roleplay-scenarios&action=export_csv'), 'export_roleplay_scenarios'); ?>" class="page-title-action">CSV Export</a>
+            <?php if ($cpt_total > 0): ?>
+                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=roleplay-scenarios&action=migrate_from_cpt'), 'migrate_roleplay_from_cpt'); ?>" class="page-title-action" style="background: #2271b1; color: white; border-color: #2271b1;" onclick="return confirm('<?php echo esc_js(sprintf('%d Szenario(s) aus Custom Post Types migrieren?\n\n• Neue Szenarien werden erstellt\n• Bestehende Szenarien: Nur LEERE Felder werden mit CPT-Daten gefüllt\n• Bereits gefüllte Felder bleiben unverändert', $cpt_total)); ?>')">
+                    ⬆️ <?php echo $cpt_total; ?> CPT-Szenarien migrieren
+                </a>
+            <?php endif; ?>
             <hr class="wp-header-end">
 
             <!-- Filter Bar -->
@@ -621,6 +807,10 @@ class Bewerbungstrainer_Roleplay_Admin {
                     <span style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
                         <strong>CSV Import:</strong>
                         <input type="file" name="csv_file" accept=".csv" form="csv-import-form">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 12px;" form="csv-import-form">
+                            <input type="checkbox" name="force_update" value="1" form="csv-import-form">
+                            Überschreiben
+                        </label>
                         <button type="submit" form="csv-import-form" name="roleplay_import_csv" class="button">Importieren</button>
                     </span>
                 </form>
@@ -798,10 +988,23 @@ class Bewerbungstrainer_Roleplay_Admin {
         if (isset($_GET['created'])) {
             echo '<div class="notice notice-success is-dismissible"><p>Szenario erstellt.</p></div>';
         }
-        if (isset($_GET['imported'])) {
-            $imported = intval($_GET['imported']);
-            $csv_updated = isset($_GET['csv_updated']) ? intval($_GET['csv_updated']) : 0;
-            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Szenario(s) importiert, %d aktualisiert.', $imported, $csv_updated) . '</p></div>';
+        if (isset($_GET['imported']) || isset($_GET['csv_updated']) || isset($_GET['csv_skipped'])) {
+            $imported = intval($_GET['imported'] ?? 0);
+            $csv_updated = intval($_GET['csv_updated'] ?? 0);
+            $csv_skipped = intval($_GET['csv_skipped'] ?? 0);
+
+            $parts = array();
+            if ($imported > 0) $parts[] = sprintf('%d neu erstellt', $imported);
+            if ($csv_updated > 0) $parts[] = sprintf('%d aktualisiert', $csv_updated);
+            if ($csv_skipped > 0) $parts[] = sprintf('%d übersprungen (bereits vorhanden, keine Änderungen)', $csv_skipped);
+
+            if (empty($parts)) {
+                $message = 'CSV-Import abgeschlossen: Keine Änderungen vorgenommen.';
+            } else {
+                $message = 'CSV-Import: ' . implode(', ', $parts) . '.';
+            }
+
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
         }
         if (isset($_GET['import_error'])) {
             $errors = array(
@@ -815,6 +1018,26 @@ class Bewerbungstrainer_Roleplay_Admin {
         if (isset($_GET['bulk_updated'])) {
             $count = intval($_GET['bulk_updated']);
             echo '<div class="notice notice-success is-dismissible"><p>' . sprintf('%d Szenario(s) aktualisiert.', $count) . '</p></div>';
+        }
+        if (isset($_GET['migration_created']) || isset($_GET['migration_updated'])) {
+            $created = intval($_GET['migration_created'] ?? 0);
+            $updated = intval($_GET['migration_updated'] ?? 0);
+            $skipped = intval($_GET['migration_skipped'] ?? 0);
+            $failed = intval($_GET['migration_failed'] ?? 0);
+
+            $parts = array();
+            if ($created > 0) $parts[] = sprintf('%d neu erstellt', $created);
+            if ($updated > 0) $parts[] = sprintf('%d aktualisiert (leere Felder gefüllt)', $updated);
+            if ($skipped > 0) $parts[] = sprintf('%d übersprungen (alle Felder bereits gefüllt)', $skipped);
+            if ($failed > 0) $parts[] = sprintf('%d fehlgeschlagen', $failed);
+
+            $message = 'CPT-Migration abgeschlossen: ' . implode(', ', $parts);
+
+            if ($failed > 0) {
+                echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html($message) . '</p></div>';
+            } else {
+                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
+            }
         }
         if (isset($_GET['error']) && $_GET['error'] === 'no_selection') {
             echo '<div class="notice notice-warning is-dismissible"><p>Bitte wähle mindestens ein Szenario aus.</p></div>';
@@ -990,21 +1213,206 @@ class Bewerbungstrainer_Roleplay_Admin {
                         <td><input type="text" name="agent_id" id="agent_id" class="regular-text" value="<?php echo esc_attr($scenario->agent_id ?? ''); ?>"></td>
                     </tr>
                     <tr>
+                        <th><label for="voice_id">ElevenLabs Voice ID</label></th>
+                        <td>
+                            <input type="text" name="voice_id" id="voice_id" class="regular-text" value="<?php echo esc_attr($scenario->voice_id ?? ''); ?>">
+                            <p class="description">Die Voice ID für die Stimme des KI-Gesprächspartners (z.B. "ErXwobaYiN019PkySvjV")</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="initial_message">Begrüßungsnachricht</label></th>
+                        <td>
+                            <textarea name="initial_message" id="initial_message" rows="3" class="large-text"><?php echo esc_textarea($scenario->initial_message ?? ''); ?></textarea>
+                            <p class="description">Die erste Nachricht, die der KI-Gesprächspartner sagt. Nutze <code>${variable_key}</code> für Benutzer-Variablen.</p>
+                        </td>
+                    </tr>
+                    <tr>
                         <th><label for="system_prompt">System Prompt</label></th>
-                        <td><textarea name="system_prompt" id="system_prompt" rows="10" class="large-text code"><?php echo esc_textarea($scenario->system_prompt ?? ''); ?></textarea></td>
+                        <td>
+                            <textarea name="system_prompt" id="system_prompt" rows="10" class="large-text code"><?php echo esc_textarea($scenario->system_prompt ?? ''); ?></textarea>
+                            <p class="description">
+                                Benutzer-Variablen: <code>${variable_key}</code> &nbsp;|&nbsp;
+                                Gesprächspartner-Felder: <code>{{interviewer_name}}</code>, <code>{{interviewer_role}}</code>, <code>{{interviewer_properties}}</code>, <code>{{interviewer_objections}}</code>, <code>{{interviewer_questions}}</code>
+                            </p>
+                        </td>
                     </tr>
                     <tr>
                         <th><label for="ai_instructions">KI-Anweisungen</label></th>
-                        <td><textarea name="ai_instructions" id="ai_instructions" rows="6" class="large-text code"><?php echo esc_textarea($scenario->ai_instructions ?? ''); ?></textarea></td>
+                        <td>
+                            <textarea name="ai_instructions" id="ai_instructions" rows="6" class="large-text code"><?php echo esc_textarea($scenario->ai_instructions ?? ''); ?></textarea>
+                            <p class="description">Zusätzliche Anweisungen für die KI. Gleiche Variablen wie im System Prompt verfügbar.</p>
+                        </td>
                     </tr>
                     <tr>
-                        <th><label for="feedback_prompt">Feedback Prompt</label></th>
-                        <td><textarea name="feedback_prompt" id="feedback_prompt" rows="6" class="large-text code"><?php echo esc_textarea($scenario->feedback_prompt ?? ''); ?></textarea></td>
+                        <th><label for="feedback_coach_type">Feedback Coach-Typ</label></th>
+                        <td>
+                            <?php
+                            $coach_types = array(
+                                'general' => '🎯 Allgemein (Kommunikations-Coach)',
+                                'interview' => '💼 Interview (Karriere-Coach)',
+                                'sales' => '💰 Sales (Vertriebs-Coach)',
+                                'leadership' => '👥 Führung (Leadership-Coach)',
+                                'conflict' => '🤝 Konflikt (Mediations-Coach)',
+                                'customer' => '🎧 Kundenservice (Service-Coach)',
+                            );
+                            $current_coach_type = $scenario->feedback_coach_type ?? 'general';
+                            ?>
+                            <select name="feedback_coach_type" id="feedback_coach_type" style="min-width: 300px;">
+                                <?php foreach ($coach_types as $value => $label): ?>
+                                    <option value="<?php echo esc_attr($value); ?>" <?php selected($current_coach_type, $value); ?>>
+                                        <?php echo esc_html($label); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description">Bestimmt die Rating-Dimensionen und den Analyse-Fokus im Feedback</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="feedback_custom_intro">Custom Intro</label></th>
+                        <td>
+                            <textarea name="feedback_custom_intro" id="feedback_custom_intro" rows="2" class="large-text"><?php echo esc_textarea($scenario->feedback_custom_intro ?? ''); ?></textarea>
+                            <p class="description">Optional: Zusätzlicher Kontext für die Feedback-KI, z.B. "Du analysierst ein B2B-Verkaufsgespräch im IT-Bereich."</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="feedback_extra_focus">Extra Fokus</label></th>
+                        <td>
+                            <textarea name="feedback_extra_focus" id="feedback_extra_focus" rows="2" class="large-text"><?php echo esc_textarea($scenario->feedback_extra_focus ?? ''); ?></textarea>
+                            <p class="description">Optional: Besondere Analyse-Schwerpunkte, z.B. "Achte besonders auf die Bedarfsanalyse und den Umgang mit Preiseinwänden."</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="feedback_prompt">Feedback Prompt (Legacy)</label></th>
+                        <td>
+                            <textarea name="feedback_prompt" id="feedback_prompt" rows="4" class="large-text code"><?php echo esc_textarea($scenario->feedback_prompt ?? ''); ?></textarea>
+                            <p class="description">Überschreibt den automatischen Prompt komplett. Leer lassen, um den Coach-Typ-basierten Prompt zu nutzen.</p>
+                        </td>
                     </tr>
                     <tr>
                         <th><label for="tips">Tipps (JSON)</label></th>
                         <td><textarea name="tips" id="tips" rows="4" class="large-text code"><?php echo esc_textarea(json_encode($tips, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></textarea></td>
                     </tr>
+                </table>
+
+                <h2>Benutzer-Variablen</h2>
+                <p class="description">Diese Variablen werden vom Benutzer vor dem Gespräch eingegeben und können in den Prompts mit <code>${variable_key}</code> verwendet werden.</p>
+
+                <div class="roleplay-variables-container" id="variables-container">
+                    <?php
+                    // Parse input_configuration for visual builder
+                    $input_config_raw = $scenario->input_configuration ?? '[]';
+                    if (!is_string($input_config_raw)) {
+                        $input_config = $input_config_raw;
+                    } else {
+                        $input_config = json_decode($input_config_raw, true);
+                        if (!is_array($input_config)) {
+                            $input_config = array();
+                        }
+                    }
+
+                    if (!empty($input_config)):
+                        foreach ($input_config as $index => $var):
+                            $this->render_variable_item($var, $index);
+                        endforeach;
+                    endif;
+                    ?>
+                </div>
+
+                <button type="button" class="button add-variable-btn" id="add-variable-btn" style="margin-top: 10px;">
+                    + Variable hinzufügen
+                </button>
+
+                <h2>KI-Gesprächspartner</h2>
+                <p class="description">Diese Informationen definieren den KI-Gesprächspartner und werden dem Nutzer vor dem Gespräch angezeigt.</p>
+                <?php
+                // Parse editable fields configuration
+                $editable_fields = array();
+                if (!empty($scenario->interviewer_editable_fields)) {
+                    $editable_fields = json_decode($scenario->interviewer_editable_fields, true) ?: array();
+                }
+                ?>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="interviewer_name">Name des Gesprächspartners</label></th>
+                        <td>
+                            <input type="text" name="interviewer_name" id="interviewer_name" class="regular-text" value="<?php echo esc_attr($scenario->interviewer_name ?? ''); ?>">
+                            <p class="description">Verfügbar als <code>{{interviewer_name}}</code> im System-Prompt</p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[name]" value="1" <?php checked(!empty($editable_fields['name'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_role">Rolle/Position</label></th>
+                        <td>
+                            <input type="text" name="interviewer_role" id="interviewer_role" class="regular-text" value="<?php echo esc_attr($scenario->interviewer_role ?? ''); ?>">
+                            <p class="description">z.B. "HR-Manager", "Abteilungsleiter". Verfügbar als <code>{{interviewer_role}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[role]" value="1" <?php checked(!empty($editable_fields['role'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_image">Profilbild URL</label></th>
+                        <td>
+                            <input type="url" name="interviewer_image" id="interviewer_image" class="large-text" value="<?php echo esc_attr($scenario->interviewer_image ?? ''); ?>">
+                            <p class="description">URL zu einem Profilbild des KI-Gesprächspartners. Verfügbar als <code>{{interviewer_image}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[image]" value="1" <?php checked(!empty($editable_fields['image'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_properties">Eigenschaften</label></th>
+                        <td>
+                            <textarea name="interviewer_properties" id="interviewer_properties" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_properties ?? ''); ?></textarea>
+                            <p class="description">Charaktereigenschaften, zeilengetrennt oder kommagetrennt. Verfügbar als <code>{{interviewer_properties}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[properties]" value="1" <?php checked(!empty($editable_fields['properties'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_objections">Typische Einwände</label></th>
+                        <td>
+                            <textarea name="interviewer_objections" id="interviewer_objections" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_objections ?? ''); ?></textarea>
+                            <p class="description">Typische kritische Fragen oder Einwände. Verfügbar als <code>{{interviewer_objections}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[objections]" value="1" <?php checked(!empty($editable_fields['objections'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="interviewer_questions">Wichtige Fragen</label></th>
+                        <td>
+                            <textarea name="interviewer_questions" id="interviewer_questions" rows="3" class="large-text"><?php echo esc_textarea($scenario->interviewer_questions ?? ''); ?></textarea>
+                            <p class="description">Wichtige Fragen, die der KI-Gesprächspartner stellen wird. Verfügbar als <code>{{interviewer_questions}}</code></p>
+                            <label style="margin-top: 8px; display: inline-block;">
+                                <input type="checkbox" name="interviewer_editable[questions]" value="1" <?php checked(!empty($editable_fields['questions'])); ?>>
+                                <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
+                            </label>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2>Coaching</h2>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="coaching_hints">Coaching-Tipps</label></th>
+                        <td>
+                            <textarea name="coaching_hints" id="coaching_hints" rows="4" class="large-text"><?php echo esc_textarea($scenario->coaching_hints ?? ''); ?></textarea>
+                            <p class="description">Statische Tipps für das Coaching-Panel während des Gesprächs (zeilengetrennt). Verfügbar als <code>{{coaching_hints}}</code></p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2>Einstellungen</h2>
+                <table class="form-table">
                     <tr>
                         <th><label>Aktiv</label></th>
                         <td>
@@ -1025,6 +1433,164 @@ class Bewerbungstrainer_Roleplay_Admin {
                     <a href="<?php echo admin_url('admin.php?page=roleplay-scenarios'); ?>" class="button">Abbrechen</a>
                 </p>
             </form>
+        </div>
+
+        <!-- Variable Template (hidden) -->
+        <template id="variable-template">
+            <?php $this->render_variable_item(array(), '__INDEX__'); ?>
+        </template>
+
+        <script>
+        jQuery(document).ready(function($) {
+            var variableIndex = <?php echo !empty($input_config) && is_array($input_config) ? count($input_config) : 0; ?>;
+
+            // Add new variable
+            $('#add-variable-btn').on('click', function() {
+                var template = $('#variable-template').html();
+                template = template.replace(/__INDEX__/g, variableIndex);
+                $('#variables-container').append(template);
+                variableIndex++;
+            });
+
+            // Remove variable
+            $(document).on('click', '.remove-variable-btn', function() {
+                $(this).closest('.roleplay-variable-item').remove();
+            });
+
+            // Toggle options container based on type
+            $(document).on('change', '.var-type-select', function() {
+                var $container = $(this).closest('.roleplay-variable-item');
+                var $options = $container.find('.roleplay-options-container');
+                if ($(this).val() === 'select') {
+                    $options.show();
+                } else {
+                    $options.hide();
+                }
+            });
+
+            // Add option
+            $(document).on('click', '.add-option-btn', function() {
+                var $container = $(this).closest('.roleplay-options-container');
+                var $list = $container.find('.options-list');
+                var index = $(this).closest('.roleplay-variable-item').data('index');
+                var optionHtml = '<div class="roleplay-option-item">' +
+                    '<input type="text" name="var_options[' + index + '][value][]" placeholder="Wert">' +
+                    '<input type="text" name="var_options[' + index + '][label][]" placeholder="Anzeigetext">' +
+                    '<button type="button" class="remove-btn remove-option-btn" title="Option entfernen">&times;</button>' +
+                    '</div>';
+                $list.append(optionHtml);
+            });
+
+            // Remove option
+            $(document).on('click', '.remove-option-btn', function() {
+                $(this).closest('.roleplay-option-item').remove();
+            });
+
+            // Update title preview when label changes
+            $(document).on('input', '.var-label-input', function() {
+                var title = $(this).val() || 'Neue Variable';
+                $(this).closest('.roleplay-variable-item').find('.var-title').text(title);
+            });
+
+            // Update key preview when key changes
+            $(document).on('input', '.var-key-input', function() {
+                var key = $(this).val();
+                $(this).closest('.roleplay-variable-item').find('.variable-key-preview').text('${' + key + '}');
+            });
+
+            // Sortable variables
+            $('#variables-container').sortable({
+                handle: '.handle',
+                placeholder: 'sortable-placeholder',
+                update: function(event, ui) {
+                    // Re-index variables after sort
+                    $('#variables-container .roleplay-variable-item').each(function(i) {
+                        $(this).attr('data-index', i);
+                    });
+                }
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * Render a single variable item for the visual builder
+     */
+    private function render_variable_item($var, $index) {
+        $var = wp_parse_args($var, array(
+            'key' => '',
+            'label' => '',
+            'type' => 'text',
+            'required' => false,
+            'placeholder' => '',
+            'default' => '',
+            'options' => array(),
+            'user_input' => true,
+        ));
+        ?>
+        <div class="roleplay-variable-item" data-index="<?php echo esc_attr($index); ?>">
+            <div class="roleplay-variable-header">
+                <span>
+                    <span class="handle dashicons dashicons-menu"></span>
+                    <strong class="var-title"><?php echo esc_html($var['label'] ?: 'Neue Variable'); ?></strong>
+                    <span class="variable-key-preview">${<?php echo esc_html($var['key']); ?>}</span>
+                </span>
+                <button type="button" class="remove-btn remove-variable-btn" title="Variable entfernen">
+                    <span class="dashicons dashicons-trash"></span>
+                </button>
+            </div>
+
+            <div class="roleplay-variable-fields">
+                <div>
+                    <label>Bezeichnung *</label>
+                    <input type="text" name="var_label[]" value="<?php echo esc_attr($var['label']); ?>" class="var-label-input" required>
+                </div>
+                <div>
+                    <label>Schlüssel (key) *</label>
+                    <input type="text" name="var_key[]" value="<?php echo esc_attr($var['key']); ?>" class="var-key-input" pattern="[a-z_][a-z0-9_]*" required>
+                </div>
+                <div>
+                    <label>Feldtyp</label>
+                    <select name="var_type[]" class="var-type-select">
+                        <option value="text" <?php selected($var['type'], 'text'); ?>>Text (einzeilig)</option>
+                        <option value="textarea" <?php selected($var['type'], 'textarea'); ?>>Textbereich (mehrzeilig)</option>
+                        <option value="select" <?php selected($var['type'], 'select'); ?>>Auswahl (Dropdown)</option>
+                        <option value="number" <?php selected($var['type'], 'number'); ?>>Zahl</option>
+                    </select>
+                </div>
+                <div>
+                    <label>
+                        <input type="checkbox" name="var_required[<?php echo esc_attr($index); ?>]" value="1" <?php checked($var['required'], true); ?>>
+                        Pflichtfeld
+                    </label>
+                </div>
+                <div class="full-width">
+                    <label>Platzhalter-Text</label>
+                    <input type="text" name="var_placeholder[]" value="<?php echo esc_attr($var['placeholder']); ?>">
+                </div>
+                <div class="full-width">
+                    <label>Standardwert</label>
+                    <input type="text" name="var_default[]" value="<?php echo esc_attr($var['default']); ?>">
+                </div>
+            </div>
+
+            <!-- Options for select type -->
+            <div class="roleplay-options-container" style="<?php echo $var['type'] !== 'select' ? 'display:none;' : ''; ?>">
+                <label><strong>Auswahloptionen:</strong></label>
+                <div class="options-list">
+                    <?php if (!empty($var['options'])): ?>
+                        <?php foreach ($var['options'] as $option): ?>
+                            <div class="roleplay-option-item">
+                                <input type="text" name="var_options[<?php echo esc_attr($index); ?>][value][]" value="<?php echo esc_attr($option['value']); ?>" placeholder="Wert">
+                                <input type="text" name="var_options[<?php echo esc_attr($index); ?>][label][]" value="<?php echo esc_attr($option['label']); ?>" placeholder="Anzeigetext">
+                                <button type="button" class="remove-btn remove-option-btn" title="Option entfernen">&times;</button>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                <button type="button" class="button button-small add-option-btn">+ Option hinzufügen</button>
+            </div>
         </div>
         <?php
     }

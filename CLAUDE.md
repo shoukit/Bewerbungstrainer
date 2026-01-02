@@ -1211,6 +1211,62 @@ UI_TIMING.ANIMATION_DURATION_NORMAL = 0.4
 
 ---
 
+### ⚠️ WICHTIG: Partner-Branding (Zentralisierte Hooks)
+
+**Für alle Komponenten mit dynamischem Partner-Branding** → Immer `useBranding` und `useBrandingStyles` verwenden:
+
+```jsx
+import { useBranding, useBrandingStyles } from '@/hooks/useBranding';
+
+function MyComponent() {
+  const branding = useBranding();     // Alle Branding-Werte mit Fallbacks
+  const styles = useBrandingStyles(); // Fertige Style-Objekte
+
+  return (
+    <>
+      {/* Header mit Partner-Gradient */}
+      <div style={styles.gradientHeader}>
+        <h1 style={{ color: branding.headerText }}>Titel</h1>
+      </div>
+
+      {/* Buttons mit Partner-Farben */}
+      <button
+        style={{
+          ...styles.primaryButton,
+          boxShadow: branding.coloredShadow(branding.primaryAccent, 'md'),
+        }}
+      >
+        Aktion
+      </button>
+    </>
+  );
+}
+```
+
+**Verfügbare Werte in `branding`:**
+- `primaryAccent`, `secondaryAccent` – Hauptfarben
+- `headerText`, `buttonText` – Textfarben
+- `gradientStart`, `gradientEnd` – Für Gradienten
+- `coloredShadow(color, size)` – Farbige Schatten-Funktion
+- `disabledBg` – Disabled-State Hintergrund
+
+**Verfügbare Styles in `styles`:**
+- `gradientHeader` – Header-Gradient (background, color)
+- `primaryButton` – Primärer Button (background, color, border)
+- `secondaryButton` – Sekundärer Button
+
+**Regeln:**
+1. **NIE hardcoded Farben** für Partner-abhängige Elemente (z.B. `#4F46E5`)
+2. **IMMER Hooks verwenden** in: LoginModal, Header, Buttons, Modals
+3. **Inline Styles bevorzugen** für Branding-Elemente (Tailwind CSS-Variablen funktionieren nicht zuverlässig beim ersten Render)
+
+**Warum Inline Styles für Branding?**
+- CSS-Variablen werden manchmal nicht rechtzeitig geladen
+- Inline Styles garantieren korrektes Styling beim ersten Render
+- Partner-Branding muss sofort sichtbar sein (kein Flash of Wrong Colors)
+
+---
+
 ### Komponenten-Patterns
 
 #### 1. Dashboard-Komponenten
@@ -1367,8 +1423,8 @@ console.log('[WARN] Potential issue');
 | `onNavigateToHistory` nicht übergeben | Immer in App.jsx bei Route prüfen |
 | History-Button fehlt | `showHistoryButton` und `onNavigateToHistory` Props setzen |
 | Feature-Info fehlt | `FeatureInfoModal` + `FeatureInfoButton` + Eintrag in config |
-| Inkonsistentes Styling | Inline Styles verwenden, nicht Tailwind |
-| Hardcoded Farben | `COLORS` aus config verwenden |
+| Inkonsistentes Styling | Tailwind für neue Komponenten, Legacy-Styles belassen |
+| Hardcoded Farben | Tailwind-Klassen oder `COLORS` aus config verwenden |
 
 ---
 

@@ -1,66 +1,21 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Compass, FolderOpen } from 'lucide-react';
+import React, { useState, useCallback, useRef } from 'react';
+import { Compass } from 'lucide-react';
+import IkigaiDashboard from './IkigaiDashboard';
 import IkigaiCompass from './IkigaiCompass';
 import IkigaiResults from './IkigaiResults';
 import wordpressAPI from '@/services/wordpress-api';
-import FeatureInfoModal from '@/components/FeatureInfoModal';
-import FeatureInfoButton from '@/components/FeatureInfoButton';
-import { usePartner } from '@/context/PartnerContext';
-import { DEFAULT_BRANDING } from '@/config/partners';
+import FeatureAppHeader from '@/components/global/FeatureAppHeader';
 import { COLORS, createGradient } from '@/config/colors';
+import { DIMENSIONS } from '@/config/ikigaiDimensions';
+import { useScrollToTop } from '@/hooks';
 
 /**
  * View states for the Ikigai flow
  */
 const VIEWS = {
+  DASHBOARD: 'dashboard',
   COMPASS: 'compass',
   RESULTS: 'results',
-};
-
-/**
- * Dimension configuration
- */
-const DIMENSIONS = {
-  love: {
-    key: 'love',
-    label: 'Leidenschaft',
-    title: 'Deine Leidenschaft',
-    icon: '❤️',
-    color: '#E11D48', // Rose-600
-    question: 'Stell dir vor, Geld spielt keine Rolle: Womit würdest du deinen Tag verbringen? Bei welchem Thema vergisst du völlig die Zeit?',
-    placeholder: 'Schreib einfach drauf los: Hobbys, Themen, Tätigkeiten...',
-    description: 'Was treibt dich an?',
-  },
-  talent: {
-    key: 'talent',
-    label: 'Stärken',
-    title: 'Deine Stärken',
-    icon: '⭐',
-    color: '#F59E0B', // Amber-500
-    question: 'Wofür bitten dich Freunde oder Kollegen oft um Rat? Was erledigst du "mit links", während andere daran verzweifeln?',
-    placeholder: 'Z.B. Organisieren, Zuhören, Coden, Designen...',
-    description: 'Was fällt dir leicht?',
-  },
-  need: {
-    key: 'need',
-    label: 'Mission',
-    title: 'Deine Mission',
-    icon: '🌍',
-    color: '#10B981', // Emerald-500
-    question: 'Welches Problem in der Gesellschaft oder Wirtschaft nervt dich? Wo würdest du gerne mitanpacken, um Dinge zu verbessern?',
-    placeholder: 'Z.B. Nachhaltigkeit, Bildung, bessere Software, Pflege...',
-    description: 'Welchen Beitrag leistest du?',
-  },
-  market: {
-    key: 'market',
-    label: 'Markt',
-    title: 'Der Markt',
-    icon: '💰',
-    color: '#6366F1', // Indigo-500
-    question: 'Welche deiner Fähigkeiten sind bares Geld wert? Für welche Jobs oder Dienstleistungen existiert ein echtes Budget?',
-    placeholder: 'Z.B. Projektmanagement, Beratung, Handwerk...',
-    description: 'Wofür wirst du bezahlt?',
-  },
 };
 
 /**
@@ -69,10 +24,11 @@ const DIMENSIONS = {
  * "Der Ikigai-Kompass" - Career Pathfinder
  *
  * Coordinates the flow:
- * 1. User clicks on circles to fill each dimension
- * 2. AI extracts keywords from their responses
- * 3. When all 4 dimensions are filled, synthesize career paths
- * 4. Show results with training recommendations
+ * 1. Dashboard with feature info and session list (public)
+ * 2. User clicks on circles to fill each dimension (requires auth)
+ * 3. AI extracts keywords from their responses
+ * 4. When all 4 dimensions are filled, synthesize career paths
+ * 5. Show results with training recommendations
  */
 const IkigaiApp = ({
   isAuthenticated,
@@ -80,13 +36,9 @@ const IkigaiApp = ({
   setPendingAction,
   onNavigateToHistory,
 }) => {
-  const [currentView, setCurrentView] = useState(VIEWS.COMPASS);
+  const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [savedIkigaiId, setSavedIkigaiId] = useState(null);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
-
-  // Partner context for theming
-  const { branding } = usePartner();
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
 
   // Ikigai feature gradient (purple)
   const ikigaiGradient = createGradient(COLORS.purple[500], COLORS.purple[400]);
@@ -105,22 +57,82 @@ const IkigaiApp = ({
   // Track if session was saved
   const sessionSavedRef = useRef(false);
 
-  // Scroll to top on view change
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentView]);
-
-  // Require authentication to use this feature
-  useEffect(() => {
-    if (!isAuthenticated && requireAuth) {
-      requireAuth();
-    }
-  }, [isAuthenticated, requireAuth]);
+  // Scroll to top hook
+  useScrollToTop({ dependencies: [currentView] });
 
   // Check if all dimensions have tags
   const allDimensionsFilled = Object.values(dimensions).every(
     (dim) => dim.tags && dim.tags.length > 0
   );
+
+  /**
+   * Handle start new Ikigai from dashboard
+   */
+  const handleStartNew = useCallback(() => {
+    // Reset all state
+    setDimensions({
+      love: { input: '', tags: [] },
+      talent: { input: '', tags: [] },
+      need: { input: '', tags: [] },
+      market: { input: '', tags: [] },
+    });
+    setSynthesisResult(null);
+    setSavedIkigaiId(null);
+    sessionSavedRef.current = false;
+    setCurrentView(VIEWS.COMPASS);
+  }, []);
+
+  /**
+   * Handle continue existing session from dashboard
+   */
+  const handleContinueSession = useCallback(async (session) => {
+    try {
+      // Load session data
+      setSavedIkigaiId(session.id);
+      sessionSavedRef.current = true;
+
+      // Set dimensions from session
+      setDimensions({
+        love: {
+          input: session.love_input || '',
+          tags: session.love_tags || [],
+        },
+        talent: {
+          input: session.talent_input || '',
+          tags: session.talent_tags || [],
+        },
+        need: {
+          input: session.need_input || '',
+          tags: session.need_tags || [],
+        },
+        market: {
+          input: session.market_input || '',
+          tags: session.market_tags || [],
+        },
+      });
+
+      // If session has synthesis result, show results
+      if (session.status === 'completed' && session.paths) {
+        setSynthesisResult({
+          summary: session.summary,
+          paths: session.paths,
+        });
+        setCurrentView(VIEWS.RESULTS);
+      } else {
+        // Otherwise go to compass
+        setCurrentView(VIEWS.COMPASS);
+      }
+    } catch (err) {
+      console.error('[Ikigai] Failed to load session:', err);
+    }
+  }, []);
+
+  /**
+   * Handle back to dashboard
+   */
+  const handleBackToDashboard = useCallback(() => {
+    setCurrentView(VIEWS.DASHBOARD);
+  }, []);
 
   /**
    * Create or get current ikigai session
@@ -234,23 +246,7 @@ const IkigaiApp = ({
   }, []);
 
   /**
-   * Handle start new analysis
-   */
-  const handleStartNew = useCallback(() => {
-    setDimensions({
-      love: { input: '', tags: [] },
-      talent: { input: '', tags: [] },
-      need: { input: '', tags: [] },
-      market: { input: '', tags: [] },
-    });
-    setSynthesisResult(null);
-    setSavedIkigaiId(null);
-    sessionSavedRef.current = false;
-    setCurrentView(VIEWS.COMPASS);
-  }, []);
-
-  /**
-   * Handle edit - go back to compass
+   * Handle edit - go back to compass from results
    */
   const handleEdit = useCallback(() => {
     setSynthesisResult(null);
@@ -262,106 +258,72 @@ const IkigaiApp = ({
    */
   const renderContent = () => {
     switch (currentView) {
+      case VIEWS.DASHBOARD:
+        return (
+          <IkigaiDashboard
+            onStartNew={handleStartNew}
+            onContinueSession={handleContinueSession}
+            onNavigateToHistory={onNavigateToHistory}
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            setPendingAction={setPendingAction}
+          />
+        );
+
       case VIEWS.RESULTS:
         return (
-          <IkigaiResults
-            dimensions={dimensions}
-            synthesisResult={synthesisResult}
-            onStartNew={handleStartNew}
-            onEdit={handleEdit}
-            DIMENSIONS={DIMENSIONS}
-          />
+          <>
+            <FeatureAppHeader
+              featureId="ikigai"
+              icon={Compass}
+              title="Ikigai-Kompass"
+              subtitle="Deine Ergebnisse"
+              gradient={ikigaiGradient}
+              showBackButton
+              onBack={handleBackToDashboard}
+            />
+            <IkigaiResults
+              dimensions={dimensions}
+              synthesisResult={synthesisResult}
+              onStartNew={handleStartNew}
+              onEdit={handleEdit}
+              DIMENSIONS={DIMENSIONS}
+            />
+          </>
         );
 
       case VIEWS.COMPASS:
       default:
         return (
-          <IkigaiCompass
-            dimensions={dimensions}
-            DIMENSIONS={DIMENSIONS}
-            onExtractKeywords={extractKeywords}
-            onUpdateDimension={updateDimension}
-            onRemoveTag={handleRemoveTag}
-            allDimensionsFilled={allDimensionsFilled}
-            onSynthesize={handleSynthesize}
-            isSynthesizing={isSynthesizing}
-          />
+          <>
+            <FeatureAppHeader
+              featureId="ikigai"
+              icon={Compass}
+              title="Ikigai-Kompass"
+              subtitle="Finde deine berufliche Bestimmung"
+              gradient={ikigaiGradient}
+              showBackButton
+              onBack={handleBackToDashboard}
+            />
+            <IkigaiCompass
+              dimensions={dimensions}
+              DIMENSIONS={DIMENSIONS}
+              onExtractKeywords={extractKeywords}
+              onUpdateDimension={updateDimension}
+              onRemoveTag={handleRemoveTag}
+              allDimensionsFilled={allDimensionsFilled}
+              onSynthesize={handleSynthesize}
+              isSynthesizing={isSynthesizing}
+            />
+          </>
         );
     }
   };
 
   return (
-    <>
-      {/* Feature Info Modal - shows on first visit */}
-      <FeatureInfoModal featureId="ikigai" showOnMount />
-
-      <div style={{ minHeight: '100%' }}>
-        {/* Header */}
-        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  background: ikigaiGradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <Compass style={{ width: '24px', height: '24px', color: 'white' }} />
-                </div>
-                <div>
-                  <h1 style={{
-                    fontSize: '28px',
-                    fontWeight: 700,
-                    color: COLORS.slate[900],
-                    margin: 0
-                  }}>
-                    Ikigai-Kompass
-                  </h1>
-                  <p style={{ fontSize: '14px', color: COLORS.slate[600], margin: 0 }}>
-                    Finde deine berufliche Bestimmung
-                  </p>
-                </div>
-              </div>
-
-              {/* Right side: Info button + History button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <FeatureInfoButton featureId="ikigai" size="sm" />
-
-                {/* Meine Ikigai Button - Always visible */}
-                {onNavigateToHistory && (
-                  <button
-                    onClick={onNavigateToHistory}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '12px 20px',
-                      borderRadius: '12px',
-                      border: `2px solid ${primaryAccent}`,
-                      backgroundColor: 'white',
-                      color: primaryAccent,
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <FolderOpen size={18} />
-                    Meine Ikigai
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {renderContent()}
-      </div>
-    </>
+    <div className="min-h-full">
+      {renderContent()}
+    </div>
   );
 };
 

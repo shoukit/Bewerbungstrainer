@@ -35,35 +35,36 @@ class Bewerbungstrainer_Whitelabel_Partners {
 
     /**
      * Default branding configuration (matches React DEFAULT_BRANDING)
+     * Design System v2.0 "Clean Professional" - Indigo/Violet Theme
      */
     private $default_branding = array(
-        '--app-bg-color' => 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
-        '--sidebar-bg-color' => '#ffffff',
-        '--sidebar-text-color' => '#0f172a',
+        '--app-bg-color' => 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f5f3ff 100%)',
+        '--sidebar-bg-color' => '#1e293b',
+        '--sidebar-text-color' => '#f8fafc',
         '--sidebar-text-muted' => '#94a3b8',
-        '--sidebar-active-bg' => '#E8F4F8',
-        '--sidebar-active-text' => '#2D6485',
-        '--sidebar-hover-bg' => '#f8fafc',
+        '--sidebar-active-bg' => 'rgba(99, 102, 241, 0.15)',
+        '--sidebar-active-text' => '#818cf8',
+        '--sidebar-hover-bg' => 'rgba(255, 255, 255, 0.05)',
         '--card-bg-color' => '#ffffff',
-        '--primary-accent' => '#3A7FA7',
-        '--primary-accent-light' => '#E8F4F8',
-        '--primary-accent-hover' => '#2D6485',
-        '--button-gradient' => 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)',
-        '--button-gradient-hover' => 'linear-gradient(135deg, #2D6485 0%, #2E8A72 100%)',
-        '--button-solid' => '#3A7FA7',
-        '--button-solid-hover' => '#2D6485',
+        '--primary-accent' => '#6366f1',
+        '--primary-accent-light' => '#eef2ff',
+        '--primary-accent-hover' => '#4f46e5',
+        '--button-gradient' => 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+        '--button-gradient-hover' => 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+        '--button-solid' => '#6366f1',
+        '--button-solid-hover' => '#4f46e5',
         '--button-text' => '#ffffff',
-        '--header-gradient' => 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)',
+        '--header-gradient' => 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
         '--header-text' => '#ffffff',
-        '--icon-primary' => '#3A7FA7',
-        '--icon-secondary' => '#3DA389',
+        '--icon-primary' => '#6366f1',
+        '--icon-secondary' => '#8b5cf6',
         '--icon-muted' => '#94a3b8',
         '--text-main' => '#0f172a',
         '--text-secondary' => '#475569',
         '--text-muted' => '#94a3b8',
         '--border-color' => '#e2e8f0',
         '--border-color-light' => '#f1f5f9',
-        '--focus-ring' => 'rgba(58, 127, 167, 0.3)',
+        '--focus-ring' => 'rgba(99, 102, 241, 0.3)',
     );
 
     /**
@@ -104,6 +105,8 @@ class Bewerbungstrainer_Whitelabel_Partners {
      */
     private $available_modules = array(
         'dashboard' => 'Dashboard',
+        'ikigai' => 'Ikigai-Kompass (Orientierung)',
+        'decision' => 'Entscheidungsfinder (Decision-Navigator)',
         'briefings' => 'Smart Briefings',
         'roleplay' => 'Live-Simulation (Roleplay)',
         'simulator' => 'Szenario-Training (Simulator)',
@@ -262,8 +265,8 @@ class Bewerbungstrainer_Whitelabel_Partners {
         }
 
         $description = get_post_meta($post->ID, '_partner_description', true);
-        $dashboard_title = get_post_meta($post->ID, '_partner_dashboard_title', true);
-        $dashboard_hook = get_post_meta($post->ID, '_partner_dashboard_hook', true);
+        $app_name = get_post_meta($post->ID, '_partner_app_name', true);
+        $dashboard_subtitle = get_post_meta($post->ID, '_partner_dashboard_title', true);
         ?>
         <table class="form-table">
             <tr>
@@ -283,21 +286,22 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 </td>
             </tr>
             <tr>
-                <th><label for="partner_dashboard_title">Dashboard-Titel</label></th>
+                <th><label for="partner_app_name">App-Name</label></th>
                 <td>
-                    <input type="text" id="partner_dashboard_title" name="partner_dashboard_title" value="<?php echo esc_attr($dashboard_title); ?>" class="large-text" placeholder="z.B. Karriere & Placement" />
+                    <input type="text" id="partner_app_name" name="partner_app_name" value="<?php echo esc_attr($app_name); ?>" class="large-text" placeholder="z.B. Karriere-Coach" />
                     <p class="description">
-                        Wird auf dem Dashboard unter "Willkommen im Trainingscenter" angezeigt.<br>
-                        Leer lassen für Standard-Ansicht ohne Titel.
+                        Ersetzt "Karriereheld" auf der Startseite.<br>
+                        Leer lassen für Standard "Karriereheld".
                     </p>
                 </td>
             </tr>
             <tr>
-                <th><label for="partner_dashboard_hook">Marketing-Hook</label></th>
+                <th><label for="partner_dashboard_title">Dashboard-Untertitel</label></th>
                 <td>
-                    <textarea id="partner_dashboard_hook" name="partner_dashboard_hook" rows="3" class="large-text" placeholder="z.B. Vom Berufseinstieg bis zum Jobwechsel. Kein Bewerber geht mehr unvorbereitet ins Rennen."><?php echo esc_textarea($dashboard_hook); ?></textarea>
+                    <input type="text" id="partner_dashboard_title" name="partner_dashboard_title" value="<?php echo esc_attr($dashboard_subtitle); ?>" class="large-text" placeholder="z.B. Dein persönlicher Karriere-Assistent" />
                     <p class="description">
-                        Beschreibungstext unterhalb des Dashboard-Titels.
+                        Ersetzt "Erst denken, dann handeln. Wähle deine Phase." auf der Startseite.<br>
+                        Leer lassen für Standard-Text.
                     </p>
                 </td>
             </tr>
@@ -307,12 +311,13 @@ class Bewerbungstrainer_Whitelabel_Partners {
 
     /**
      * Gradient fields configuration (field => array of default start/end colors)
+     * Design System v2.0 - Indigo/Violet Theme
      */
     private $gradient_fields = array(
-        '--app-bg-color' => array('start' => '#f8fafc', 'end' => '#f0fdfa', 'mid' => '#eff6ff'),
-        '--button-gradient' => array('start' => '#3A7FA7', 'end' => '#3DA389'),
-        '--button-gradient-hover' => array('start' => '#2D6485', 'end' => '#2E8A72'),
-        '--header-gradient' => array('start' => '#3A7FA7', 'end' => '#3DA389'),
+        '--app-bg-color' => array('start' => '#f8fafc', 'end' => '#f5f3ff', 'mid' => '#eef2ff'),
+        '--button-gradient' => array('start' => '#6366f1', 'end' => '#8b5cf6'),
+        '--button-gradient-hover' => array('start' => '#4f46e5', 'end' => '#7c3aed'),
+        '--header-gradient' => array('start' => '#6366f1', 'end' => '#8b5cf6'),
     );
 
     /**
@@ -1314,14 +1319,14 @@ class Bewerbungstrainer_Whitelabel_Partners {
             update_post_meta($post_id, '_partner_description', sanitize_textarea_field($_POST['partner_description']));
         }
 
-        // Save dashboard title
-        if (isset($_POST['partner_dashboard_title'])) {
-            update_post_meta($post_id, '_partner_dashboard_title', sanitize_text_field($_POST['partner_dashboard_title']));
+        // Save app name (replaces "Karriereheld" on homepage)
+        if (isset($_POST['partner_app_name'])) {
+            update_post_meta($post_id, '_partner_app_name', sanitize_text_field($_POST['partner_app_name']));
         }
 
-        // Save dashboard marketing hook
-        if (isset($_POST['partner_dashboard_hook'])) {
-            update_post_meta($post_id, '_partner_dashboard_hook', sanitize_textarea_field($_POST['partner_dashboard_hook']));
+        // Save dashboard subtitle (replaces "Erst denken, dann handeln...")
+        if (isset($_POST['partner_dashboard_title'])) {
+            update_post_meta($post_id, '_partner_dashboard_title', sanitize_text_field($_POST['partner_dashboard_title']));
         }
 
         // Save branding
@@ -1989,19 +1994,19 @@ class Bewerbungstrainer_Whitelabel_Partners {
         }
 
         // Get dashboard customization fields
-        $dashboard_title = get_post_meta($post_id, '_partner_dashboard_title', true);
-        $dashboard_hook = get_post_meta($post_id, '_partner_dashboard_hook', true);
+        $app_name = get_post_meta($post_id, '_partner_app_name', true);
+        $dashboard_subtitle = get_post_meta($post_id, '_partner_dashboard_title', true);
 
         return array(
-            'id'                => $slug,
-            'slug'              => $slug,
-            'name'              => $post->post_title,
-            'branding'          => $branding,
-            'logo_url'          => $logo_url,
-            'modules'           => $modules,
-            'visible_scenarios' => $visible_scenarios,
-            'dashboard_title'   => $dashboard_title ?: null,
-            'dashboard_hook'    => $dashboard_hook ?: null,
+            'id'                  => $slug,
+            'slug'                => $slug,
+            'name'                => $post->post_title,
+            'branding'            => $branding,
+            'logo_url'            => $logo_url,
+            'modules'             => $modules,
+            'visible_scenarios'   => $visible_scenarios,
+            'app_name'            => $app_name ?: null,           // Replaces "Karriereheld"
+            'dashboard_subtitle'  => $dashboard_subtitle ?: null, // Replaces "Erst denken, dann handeln..."
         );
     }
 

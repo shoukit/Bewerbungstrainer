@@ -115,27 +115,29 @@ export const buildSystemPrompt = (scenario) => {
   let prompt = cleanHtmlForPrompt(scenario?.content || '');
 
   // Add interviewer profile information to system prompt
+  // Use ${variable} placeholders so ElevenLabs can replace them with dynamicVariables
+  // This allows user-edited values to be used in the prompt
   if (scenario?.interviewer_profile) {
     prompt += '\n\n## Dein Profil:\n';
 
     if (scenario.interviewer_profile.name) {
-      prompt += `\nDein Name: ${scenario.interviewer_profile.name}`;
+      prompt += '\nDein Name: ${interviewer_name}';
     }
 
     if (scenario.interviewer_profile.role) {
-      prompt += `\nDeine Rolle: ${scenario.interviewer_profile.role}`;
+      prompt += '\nDeine Rolle: ${interviewer_role}';
     }
 
     if (scenario.interviewer_profile.properties) {
-      prompt += `\n\n### Deine Eigenschaften:\n${cleanHtmlForPrompt(scenario.interviewer_profile.properties)}`;
+      prompt += '\n\n### Deine Eigenschaften:\n${interviewer_properties}';
     }
 
     if (scenario.interviewer_profile.typical_objections) {
-      prompt += `\n\n### Typische Einwände, die du vorbringen solltest:\n${cleanHtmlForPrompt(scenario.interviewer_profile.typical_objections)}`;
+      prompt += '\n\n### Typische Einwände, die du vorbringen solltest:\n${interviewer_objections}';
     }
 
     if (scenario.interviewer_profile.important_questions) {
-      prompt += `\n\n### Wichtige Fragen, die du stellen solltest:\n${cleanHtmlForPrompt(scenario.interviewer_profile.important_questions)}`;
+      prompt += '\n\n### Wichtige Fragen, die du stellen solltest:\n${interviewer_questions}';
     }
   }
 
@@ -152,15 +154,27 @@ export const buildSystemPrompt = (scenario) => {
 export const buildEnhancedVariables = (variables, scenario) => {
   const enhanced = { ...variables };
 
+  // Only set interviewer values from scenario if NOT already provided in variables
+  // This allows user-edited values from the frontend to take precedence
   if (scenario?.interviewer_profile) {
-    if (scenario.interviewer_profile.name) {
+    if (scenario.interviewer_profile.name && !enhanced.interviewer_name) {
       enhanced.interviewer_name = scenario.interviewer_profile.name;
     }
-    if (scenario.interviewer_profile.role) {
+    if (scenario.interviewer_profile.role && !enhanced.interviewer_role) {
       enhanced.interviewer_role = scenario.interviewer_profile.role;
     }
-    if (scenario.interviewer_profile.company) {
+    if (scenario.interviewer_profile.company && !enhanced.interviewer_company) {
       enhanced.interviewer_company = scenario.interviewer_profile.company;
+    }
+    // Also handle properties, objections, and questions if user edited them
+    if (scenario.interviewer_profile.properties && !enhanced.interviewer_properties) {
+      enhanced.interviewer_properties = scenario.interviewer_profile.properties;
+    }
+    if (scenario.interviewer_profile.typical_objections && !enhanced.interviewer_objections) {
+      enhanced.interviewer_objections = scenario.interviewer_profile.typical_objections;
+    }
+    if (scenario.interviewer_profile.important_questions && !enhanced.interviewer_questions) {
+      enhanced.interviewer_questions = scenario.interviewer_profile.important_questions;
     }
   }
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import VideoTrainingApp from './components/VideoTrainingApp';
+import { VideoTrainingApp } from './components/video-training';
 import './index.css';
 
 

@@ -177,41 +177,18 @@ export const FEATURE_DESCRIPTIONS = {
 
 /**
  * localStorage key for "don't show again" preferences
+ * @deprecated Use user-preferences service for API-synced preferences
  */
 export const FEATURE_INFO_STORAGE_KEY = 'karriereheld_feature_info_dismissed';
 
-/**
- * Get dismissed state for a feature
- */
-export const isFeatureInfoDismissed = (featureId) => {
-  try {
-    const dismissed = JSON.parse(localStorage.getItem(FEATURE_INFO_STORAGE_KEY) || '{}');
-    return dismissed[featureId] === true;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Set dismissed state for a feature
- */
-export const setFeatureInfoDismissed = (featureId, dismissed = true) => {
-  try {
-    const current = JSON.parse(localStorage.getItem(FEATURE_INFO_STORAGE_KEY) || '{}');
-    current[featureId] = dismissed;
-    localStorage.setItem(FEATURE_INFO_STORAGE_KEY, JSON.stringify(current));
-  } catch (e) {
-    console.error('Failed to save feature info preference:', e);
-  }
-};
-
-/**
- * Reset all dismissed states
- */
-export const resetAllFeatureInfoDismissed = () => {
-  try {
-    localStorage.removeItem(FEATURE_INFO_STORAGE_KEY);
-  } catch (e) {
-    console.error('Failed to reset feature info preferences:', e);
-  }
-};
+// Re-export from user-preferences service for backward compatibility
+// These functions now support API sync when user context is provided
+export {
+  isFeatureInfoDismissed,
+  setFeatureInfoDismissed,
+  resetAllFeatureInfoDismissed,
+  syncPreferencesFromAPI,
+  saveFeatureInfoDismissedToAPI,
+  waitForPreferencesSync,
+  isPreferencesSyncInProgress,
+} from '@/services/user-preferences';

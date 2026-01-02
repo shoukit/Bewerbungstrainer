@@ -1,6 +1,14 @@
+/**
+ * BriefingList Component
+ *
+ * Displays all saved briefings for the current user.
+ * Migrated to Tailwind CSS for consistent styling.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { usePartner } from '../../context/PartnerContext';
 import wordpressAPI from '../../services/wordpress-api';
+import { Button, Card } from '@/components/ui';
 import {
   FileText,
   Briefcase,
@@ -65,7 +73,7 @@ const formatDate = (dateString) => {
 /**
  * Briefing Card Component
  */
-const BriefingCard = ({ briefing, onOpen, onDelete, primaryAccent, isDeleting }) => {
+const BriefingCard = ({ briefing, onOpen, onDelete, isDeleting }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const IconComponent = ICON_MAP[briefing.template_icon] || FileText;
@@ -83,60 +91,41 @@ const BriefingCard = ({ briefing, onOpen, onDelete, primaryAccent, isDeleting })
   };
 
   return (
-    <div
+    <Card
       onClick={() => onOpen(briefing)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
         setShowDeleteConfirm(false);
       }}
-      style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: '20px',
-        border: `2px solid ${isHovered ? primaryAccent : '#e2e8f0'}`,
-        boxShadow: isHovered
-          ? `0 10px 25px -5px rgba(0,0,0,0.1), 0 0 0 1px ${primaryAccent}20`
-          : '0 1px 3px rgba(0,0,0,0.1)',
-        cursor: 'pointer',
-        transition: 'all 0.3s ease',
-        transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-        position: 'relative',
-      }}
+      className={`p-5 cursor-pointer transition-all duration-300 relative ${
+        isHovered
+          ? 'border-primary shadow-lg -translate-y-0.5'
+          : 'border-slate-200 hover:border-slate-300'
+      }`}
     >
       {/* Header with icon and actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-        <div
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '10px',
-            background: `linear-gradient(135deg, ${primaryAccent}15, ${primaryAccent}25)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <IconComponent size={22} style={{ color: primaryAccent }} />
+      <div className="flex justify-between items-start mb-3">
+        <div className="w-11 h-11 rounded-[10px] bg-primary/10 flex items-center justify-center">
+          <IconComponent size={22} className="text-primary" />
         </div>
 
         {/* Delete button */}
         <button
           onClick={handleDelete}
           disabled={isDeleting}
-          style={{
-            padding: '8px',
-            borderRadius: '8px',
-            border: 'none',
-            backgroundColor: showDeleteConfirm ? '#fef2f2' : (isHovered ? '#f1f5f9' : 'transparent'),
-            color: showDeleteConfirm ? '#ef4444' : '#94a3b8',
-            cursor: isDeleting ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            opacity: isHovered || showDeleteConfirm ? 1 : 0,
-          }}
+          className={`p-2 rounded-lg border-none cursor-pointer transition-all ${
+            showDeleteConfirm
+              ? 'bg-red-50 text-red-500'
+              : isHovered
+              ? 'bg-slate-100 text-slate-400'
+              : 'bg-transparent text-slate-400'
+          } ${isHovered || showDeleteConfirm ? 'opacity-100' : 'opacity-0'} ${
+            isDeleting ? 'cursor-not-allowed' : ''
+          }`}
         >
           {isDeleting ? (
-            <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+            <Loader2 size={18} className="animate-spin" />
           ) : (
             <Trash2 size={18} />
           )}
@@ -144,57 +133,23 @@ const BriefingCard = ({ briefing, onOpen, onDelete, primaryAccent, isDeleting })
       </div>
 
       {/* Title */}
-      <h3
-        style={{
-          fontSize: '16px',
-          fontWeight: 600,
-          color: '#0f172a',
-          margin: '0 0 4px 0',
-          lineHeight: 1.3,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      <h3 className="text-base font-semibold text-slate-900 mb-1 leading-tight truncate">
         {briefing.title || 'Unbenanntes Briefing'}
       </h3>
 
       {/* Template name */}
-      <p
-        style={{
-          fontSize: '13px',
-          color: '#64748b',
-          margin: '0 0 12px 0',
-        }}
-      >
+      <p className="text-[13px] text-slate-500 mb-3">
         {briefing.template_title}
       </p>
 
       {/* Footer with date */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: '12px',
-          borderTop: '1px solid #f1f5f9',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '12px' }}>
+      <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+        <div className="flex items-center gap-1.5 text-slate-400 text-xs">
           <Calendar size={14} />
           {formatDate(briefing.created_at)}
         </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            color: primaryAccent,
-            fontSize: '13px',
-            fontWeight: 500,
-          }}
-        >
-          Offnen
+        <div className="flex items-center gap-1 text-primary text-[13px] font-medium">
+          Öffnen
           <ChevronRight size={16} />
         </div>
       </div>
@@ -202,29 +157,13 @@ const BriefingCard = ({ briefing, onOpen, onDelete, primaryAccent, isDeleting })
       {/* Delete confirmation overlay */}
       {showDeleteConfirm && (
         <div
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '8px',
-            padding: '8px 12px',
-            fontSize: '12px',
-            color: '#dc2626',
-            fontWeight: 500,
-            zIndex: 10,
-          }}
+          className="absolute top-2 right-2 bg-red-50 border border-red-200 rounded-lg py-2 px-3 text-xs text-red-600 font-medium z-10"
           onClick={(e) => e.stopPropagation()}
         >
-          Nochmal klicken zum Loschen
+          Nochmal klicken zum Löschen
         </div>
       )}
-
-      <style>
-        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
-      </style>
-    </div>
+    </Card>
   );
 };
 
@@ -238,14 +177,10 @@ const BriefingList = ({
   onCreateNew,
   isAuthenticated,
 }) => {
-  const { config } = usePartner();
   const [briefings, setBriefings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-
-  // Get primary accent color from partner config
-  const primaryAccent = config?.buttonGradientStart || '#3A7FA7';
 
   // Fetch briefings on mount
   useEffect(() => {
@@ -293,11 +228,11 @@ const BriefingList = ({
       if (response.success) {
         setBriefings((prev) => prev.filter((b) => b.id !== briefingId));
       } else {
-        throw new Error('Fehler beim Loschen');
+        throw new Error('Fehler beim Löschen');
       }
     } catch (err) {
       console.error('[SmartBriefing] Error deleting briefing:', err);
-      setError(err.message || 'Fehler beim Loschen des Briefings');
+      setError(err.message || 'Fehler beim Löschen des Briefings');
     } finally {
       setDeletingId(null);
     }
@@ -306,100 +241,42 @@ const BriefingList = ({
   // Not authenticated state
   if (!isAuthenticated) {
     return (
-      <div
-        style={{
-          padding: '24px',
-          maxWidth: '800px',
-          margin: '0 auto',
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            padding: '48px 24px',
-            textAlign: 'center',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}
-        >
-          <FolderOpen size={48} style={{ color: '#cbd5e1', marginBottom: '16px' }} />
-          <h2 style={{ color: '#64748b', margin: '0 0 8px 0', fontSize: '18px' }}>
+      <div className="p-6 max-w-[800px] mx-auto">
+        <Card className="py-12 px-6 text-center">
+          <FolderOpen size={48} className="text-slate-300 mx-auto mb-4" />
+          <h2 className="text-lg text-slate-500 mb-2">
             Anmeldung erforderlich
           </h2>
-          <p style={{ color: '#94a3b8', margin: '0 0 24px 0', fontSize: '14px' }}>
+          <p className="text-sm text-slate-400">
             Melde dich an, um deine gespeicherten Briefings zu sehen.
           </p>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        padding: '24px',
-        maxWidth: '1200px',
-        margin: '0 auto',
-      }}
-    >
+    <div className="p-6 max-w-[1200px] mx-auto">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1
-            style={{
-              fontSize: '24px',
-              fontWeight: 700,
-              color: '#0f172a',
-              margin: '0 0 4px 0',
-            }}
-          >
+          <h1 className="text-2xl font-bold text-slate-900 mb-1">
             Meine Briefings
           </h1>
-          <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
+          <p className="text-sm text-slate-500">
             {briefings.length} gespeicherte Briefings
           </p>
         </div>
-        <button
-          onClick={onCreateNew}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '12px 20px',
-            borderRadius: '12px',
-            border: 'none',
-            background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: `0 4px 14px ${primaryAccent}40`,
-          }}
-        >
-          <Plus size={18} />
+        <Button onClick={onCreateNew} icon={<Plus size={18} />}>
           Neues Briefing
-        </button>
+        </Button>
       </div>
 
       {/* Loading State */}
       {loading && (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '64px 24px',
-          }}
-        >
-          <Loader2
-            size={40}
-            style={{
-              color: primaryAccent,
-              animation: 'spin 1s linear infinite',
-            }}
-          />
-          <p style={{ marginTop: '16px', color: '#64748b' }}>
+        <div className="flex flex-col items-center justify-center py-16">
+          <Loader2 size={40} className="text-primary animate-spin" />
+          <p className="mt-4 text-slate-500">
             Briefings werden geladen...
           </p>
         </div>
@@ -407,23 +284,13 @@ const BriefingList = ({
 
       {/* Error State */}
       {error && !loading && (
-        <div
-          style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '12px',
-            padding: '24px',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '12px',
-          }}
-        >
-          <AlertCircle size={24} style={{ color: '#ef4444', flexShrink: 0 }} />
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex items-start gap-3">
+          <AlertCircle size={24} className="text-red-500 flex-shrink-0" />
           <div>
-            <h3 style={{ margin: '0 0 4px 0', color: '#dc2626', fontSize: '16px' }}>
+            <h3 className="text-base text-red-600 font-medium mb-1">
               Fehler beim Laden
             </h3>
-            <p style={{ margin: 0, color: '#991b1b', fontSize: '14px' }}>{error}</p>
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         </div>
       )}
@@ -432,58 +299,26 @@ const BriefingList = ({
       {!loading && !error && (
         <>
           {briefings.length === 0 ? (
-            <div
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                padding: '48px 24px',
-                textAlign: 'center',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              }}
-            >
-              <FolderOpen size={48} style={{ color: '#cbd5e1', marginBottom: '16px' }} />
-              <h2 style={{ color: '#64748b', margin: '0 0 8px 0', fontSize: '18px' }}>
+            <Card className="py-12 px-6 text-center">
+              <FolderOpen size={48} className="text-slate-300 mx-auto mb-4" />
+              <h2 className="text-lg text-slate-500 mb-2">
                 Noch keine Briefings
               </h2>
-              <p style={{ color: '#94a3b8', margin: '0 0 24px 0', fontSize: '14px' }}>
+              <p className="text-sm text-slate-400 mb-6">
                 Erstelle dein erstes Briefing, um loszulegen.
               </p>
-              <button
-                onClick={onCreateNew}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '14px 24px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  background: `linear-gradient(135deg, ${primaryAccent}, ${primaryAccent}dd)`,
-                  color: 'white',
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: `0 4px 14px ${primaryAccent}40`,
-                }}
-              >
-                <Plus size={18} />
+              <Button onClick={onCreateNew} icon={<Plus size={18} />}>
                 Briefing erstellen
-              </button>
-            </div>
+              </Button>
+            </Card>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                gap: '20px',
-              }}
-            >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {briefings.map((briefing) => (
                 <BriefingCard
                   key={briefing.id}
                   briefing={briefing}
                   onOpen={onOpenBriefing}
                   onDelete={handleDelete}
-                  primaryAccent={primaryAccent}
                   isDeleting={deletingId === briefing.id}
                 />
               ))}

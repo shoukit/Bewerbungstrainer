@@ -9,8 +9,8 @@ import { motion } from 'framer-motion';
 import { Music2, CheckCircle2, AlertTriangle, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TONALITY_CONFIG, INTERACTIVE_STATES } from '@/config/constants';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge, TimestampBadge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle } from '@/components/ui/base/card';
+import { Badge, TimestampBadge } from '@/components/ui/base/badge';
 
 export function TonalityCard({ rating, highlights, feedback, onJumpToTimestamp }) {
   const config = TONALITY_CONFIG[rating] || TONALITY_CONFIG.natürlich;
@@ -33,7 +33,7 @@ export function TonalityCard({ rating, highlights, feedback, onJumpToTimestamp }
   return (
     <Card>
       <CardHeader>
-        <CardTitle icon={Music2} iconColor="text-ocean-teal-600">
+        <CardTitle icon={Music2} iconColor="text-violet-600">
           Betonung & Melodie
         </CardTitle>
         <Badge variant="default" className={cn(config.bg, config.color)}>

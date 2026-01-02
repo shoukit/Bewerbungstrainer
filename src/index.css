@@ -4,132 +4,135 @@
 
 @layer base {
   :root {
-    /* Ocean Blue/Teal Theme - Light Mode */
-    --background: 198 64% 95%;
-    --foreground: 202 45% 15%;
+    /* ===========================================
+       "Clean Professional" Design System v2.0
+       Indigo/Violet Theme - Light Mode
+       =========================================== */
+    --background: 226 100% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 202 45% 15%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 202 45% 15%;
-    --primary: 198 48% 53%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 168 44% 52%;
+    --secondary: 263 70% 58%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 198 35% 90%;
-    --muted-foreground: 202 25% 45%;
-    --accent: 168 48% 48%;
+    --muted: 226 50% 95%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 263 70% 58%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 198 20% 85%;
-    --input: 198 20% 85%;
-    --ring: 168 48% 48%;
-    --radius: 1rem;
-    --chart-1: 198 48% 53%;
-    --chart-2: 168 44% 52%;
-    --chart-3: 202 35% 38%;
-    --chart-4: 178 50% 45%;
-    --chart-5: 188 45% 60%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 239 84% 67%;
+    --radius: 0.75rem;
+    --chart-1: 239 84% 67%;
+    --chart-2: 263 70% 58%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 160 84% 39%;
+    --chart-5: 280 68% 60%;
 
     /* ========================================
        White-Label Partner Theming Variables
        These can be overridden by PartnerContext
        ======================================== */
 
-    /* App background - gradient or solid color */
-    --app-bg-color: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%);
+    /* App background - subtle gradient */
+    --app-bg-color: linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 100%);
 
     /* Sidebar colors */
-    --sidebar-bg-color: #ffffff;
-    --sidebar-text-color: #0f172a;
-    --sidebar-text-muted: #94a3b8;
-    --sidebar-active-bg: #E8F4F8;
-    --sidebar-active-text: #2D6485;
-    --sidebar-hover-bg: #f8fafc;
+    --sidebar-bg-color: #1E293B;
+    --sidebar-text-color: #F8FAFC;
+    --sidebar-text-muted: #94A3B8;
+    --sidebar-active-bg: rgba(79, 70, 229, 0.2);
+    --sidebar-active-text: #A5B4FC;
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
 
     /* Card colors */
     --card-bg-color: #ffffff;
-    --card-bg-hover: #f8fafc;
+    --card-bg-hover: #F8FAFC;
 
-    /* Primary accent - buttons, links, highlights */
-    --primary-accent: #3A7FA7;
-    --primary-accent-light: #E8F4F8;
-    --primary-accent-hover: #2D6485;
+    /* Primary accent - Indigo (NEW) */
+    --primary-accent: #4F46E5;
+    --primary-accent-light: #EEF2FF;
+    --primary-accent-hover: #4338CA;
 
-    /* Button colors */
-    --button-gradient: linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%);
-    --button-gradient-hover: linear-gradient(135deg, #2D6485 0%, #2E8A72 100%);
-    --button-solid: #3A7FA7;
-    --button-solid-hover: #2D6485;
+    /* Button colors - Indigo gradient */
+    --button-gradient: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+    --button-gradient-hover: linear-gradient(135deg, #4338CA 0%, #4F46E5 100%);
+    --button-solid: #4F46E5;
+    --button-solid-hover: #4338CA;
     --button-text: #ffffff;
 
-    /* Header gradient (for profile cards, feature headers) */
-    --header-gradient: linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%);
+    /* Header gradient - Indigo to Violet */
+    --header-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
     --header-text: #ffffff;
 
     /* Icon colors */
-    --icon-primary: #3A7FA7;
-    --icon-secondary: #3DA389;
-    --icon-muted: #94a3b8;
+    --icon-primary: #4F46E5;
+    --icon-secondary: #7C3AED;
+    --icon-muted: #94A3B8;
 
     /* Text colors */
-    --text-main: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
+    --text-main: #0F172A;
+    --text-secondary: #64748B;
+    --text-muted: #94A3B8;
 
     /* Border colors */
-    --border-color: #e2e8f0;
-    --border-color-light: #f1f5f9;
+    --border-color: #E2E8F0;
+    --border-color-light: #F1F5F9;
 
-    /* Focus ring */
-    --focus-ring: rgba(58, 127, 167, 0.3);
+    /* Focus ring - Indigo */
+    --focus-ring: rgba(79, 70, 229, 0.25);
 
     /* Semantic colors - consistent across app */
-    --color-success: #10b981;
-    --color-success-light: #d1fae5;
-    --color-success-dark: #059669;
-    --color-error: #ef4444;
-    --color-error-light: #fee2e2;
-    --color-error-dark: #dc2626;
-    --color-warning: #f59e0b;
-    --color-warning-light: #fef3c7;
-    --color-warning-dark: #d97706;
-    --color-info: #3b82f6;
-    --color-info-light: #dbeafe;
-    --color-info-dark: #2563eb;
+    --color-success: #22C55E;
+    --color-success-light: #F0FDF4;
+    --color-success-dark: #16A34A;
+    --color-error: #EF4444;
+    --color-error-light: #FEF2F2;
+    --color-error-dark: #DC2626;
+    --color-warning: #F59E0B;
+    --color-warning-light: #FFFBEB;
+    --color-warning-dark: #D97706;
+    --color-info: #6366F1;
+    --color-info-light: #EEF2FF;
+    --color-info-dark: #4F46E5;
 
     /* Overlay/backdrop colors */
     --overlay-light: rgba(255, 255, 255, 0.8);
-    --overlay-dark: rgba(0, 0, 0, 0.5);
+    --overlay-dark: rgba(15, 23, 42, 0.6);
     --backdrop-blur: rgba(255, 255, 255, 0.9);
   }
 
   .dark {
-    /* Ocean Blue/Teal Theme - Dark Mode */
-    --background: 202 45% 12%;
-    --foreground: 198 35% 95%;
-    --card: 202 35% 15%;
-    --card-foreground: 198 35% 95%;
-    --popover: 202 35% 15%;
-    --popover-foreground: 198 35% 95%;
-    --primary: 198 48% 53%;
+    /* "Clean Professional" - Dark Mode (Future) */
+    --background: 222 47% 8%;
+    --foreground: 226 100% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 226 100% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 226 100% 98%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 168 44% 52%;
+    --secondary: 263 70% 58%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 202 25% 22%;
-    --muted-foreground: 198 20% 65%;
-    --accent: 168 48% 48%;
+    --muted: 222 47% 15%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 263 70% 58%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
-    --border: 202 25% 25%;
-    --input: 202 25% 25%;
-    --ring: 168 48% 48%;
-    --chart-1: 198 48% 53%;
-    --chart-2: 168 44% 52%;
-    --chart-3: 202 35% 38%;
-    --chart-4: 178 50% 45%;
-    --chart-5: 188 45% 60%;
+    --border: 222 30% 20%;
+    --input: 222 30% 20%;
+    --ring: 239 84% 67%;
+    --chart-1: 239 84% 67%;
+    --chart-2: 263 70% 58%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 160 84% 39%;
+    --chart-5: 280 68% 60%;
   }
 }
 
@@ -142,17 +145,16 @@
     @apply bg-background text-foreground;
   }
 
-  /* Override Elementor/WordPress hover styles for headings and text */
+  /* Override Elementor/WordPress hover styles for headings and text
+     Note: Removed !important to allow inline styles to work properly */
   #bewerbungstrainer-app h1,
   #bewerbungstrainer-app h2,
   #bewerbungstrainer-app h3,
   #bewerbungstrainer-app h4,
   #bewerbungstrainer-app h5,
   #bewerbungstrainer-app h6,
-  #bewerbungstrainer-app p,
-  #bewerbungstrainer-app span,
-  #bewerbungstrainer-app div {
-    color: inherit !important;
+  #bewerbungstrainer-app p {
+    color: inherit;
   }
 
   #bewerbungstrainer-app h1:hover,
@@ -161,10 +163,8 @@
   #bewerbungstrainer-app h4:hover,
   #bewerbungstrainer-app h5:hover,
   #bewerbungstrainer-app h6:hover,
-  #bewerbungstrainer-app p:hover,
-  #bewerbungstrainer-app span:hover,
-  #bewerbungstrainer-app div:hover {
-    color: inherit !important;
+  #bewerbungstrainer-app p:hover {
+    color: inherit;
   }
 
   /* Fullscreen loader - white text on dark background */
@@ -260,73 +260,464 @@
 
 /* =============================================================================
    COMPONENT CLASSES
-   Reusable patterns extracted from audio-analysis and session-detail components
+   Professional reusable patterns for consistent UI across the app
    ============================================================================= */
 
 @layer components {
-  /* Interactive button with scale effect */
+  /* =========================================
+     CARDS
+     ========================================= */
+
+  /* Base card - partner branded */
+  .card {
+    @apply rounded-card border shadow-card transition-all duration-200;
+    background-color: var(--card-bg-color);
+    border-color: var(--border-color);
+  }
+
+  .card-elevated {
+    @apply card shadow-card-hover;
+  }
+
+  .card-interactive {
+    @apply card cursor-pointer;
+  }
+  .card-interactive:hover {
+    @apply shadow-card-hover;
+    background-color: var(--card-bg-hover);
+    border-color: var(--primary-accent);
+  }
+
+  .card-header {
+    @apply flex items-center justify-between p-4 md:p-6 border-b;
+    border-color: var(--border-color-light);
+  }
+
+  .card-header-gradient {
+    @apply p-4 md:p-6 text-white;
+    background: var(--header-gradient);
+  }
+
+  .card-body {
+    @apply p-4 md:p-6;
+  }
+
+  .card-footer {
+    @apply flex items-center justify-end gap-3 p-4 md:p-6 border-t;
+    border-color: var(--border-color-light);
+  }
+
+  /* =========================================
+     BUTTONS
+     ========================================= */
+
+  /* Base button */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           font-semibold rounded-button transition-all duration-200
+           min-h-touch px-4 py-2.5
+           disabled:opacity-50 disabled:cursor-not-allowed
+           active:scale-[0.98];
+  }
+
+  /* Primary - gradient background */
+  .btn-primary {
+    @apply btn text-white shadow-primary;
+    background: var(--button-gradient);
+  }
+  .btn-primary:hover:not(:disabled) {
+    @apply shadow-card-hover;
+    background: var(--button-gradient-hover);
+  }
+
+  /* Secondary - outlined */
+  .btn-secondary {
+    @apply btn border-2;
+    color: var(--primary-accent);
+    border-color: var(--primary-accent);
+    background: transparent;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--primary-accent-light);
+  }
+
+  /* Ghost - no border */
+  .btn-ghost {
+    @apply btn;
+    color: var(--text-secondary);
+    background: transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--card-bg-hover);
+  }
+
+  /* Danger */
+  .btn-danger {
+    @apply btn text-white;
+    background: var(--color-error);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--color-error-dark);
+  }
+
+  /* Sizes */
+  .btn-sm {
+    @apply min-h-[36px] px-3 py-1.5 text-sm;
+  }
+  .btn-lg {
+    @apply min-h-[52px] px-6 py-3 text-lg;
+  }
+
+  /* =========================================
+     INPUTS
+     ========================================= */
+
+  .input {
+    @apply w-full px-4 py-3 rounded-input border transition-all duration-200
+           text-base min-h-touch
+           placeholder:text-slate-400
+           focus:outline-none focus:ring-2;
+    background-color: var(--card-bg-color);
+    border-color: var(--border-color);
+    color: var(--text-main);
+  }
+  .input:focus {
+    border-color: var(--primary-accent);
+    --tw-ring-color: var(--focus-ring);
+  }
+  .input:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .input-error {
+    border-color: var(--color-error) !important;
+    --tw-ring-color: rgba(239, 68, 68, 0.3) !important;
+  }
+
+  .input-label {
+    @apply block text-sm font-medium mb-1.5;
+    color: var(--text-secondary);
+  }
+
+  .input-error-message {
+    @apply text-sm mt-1;
+    color: var(--color-error);
+  }
+
+  .textarea {
+    @apply input min-h-[120px] resize-y;
+  }
+
+  /* =========================================
+     BADGES
+     ========================================= */
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1
+           rounded-full text-xs font-semibold;
+  }
+
+  .badge-success {
+    @apply badge;
+    background: var(--color-success-light);
+    color: var(--color-success-dark);
+  }
+
+  .badge-error {
+    @apply badge;
+    background: var(--color-error-light);
+    color: var(--color-error-dark);
+  }
+
+  .badge-warning {
+    @apply badge;
+    background: var(--color-warning-light);
+    color: var(--color-warning-dark);
+  }
+
+  .badge-info {
+    @apply badge;
+    background: var(--color-info-light);
+    color: var(--color-info-dark);
+  }
+
+  .badge-default {
+    @apply badge bg-slate-100 text-slate-600;
+  }
+
+  .badge-brand {
+    @apply badge;
+    background: var(--primary-accent-light);
+    color: var(--primary-accent);
+  }
+
+  /* =========================================
+     LAYOUT HELPERS
+     ========================================= */
+
+  /* Page container */
+  .page-container {
+    @apply min-h-screen p-4 md:p-6 lg:p-8;
+  }
+
+  .page-content {
+    @apply max-w-4xl mx-auto;
+  }
+
+  .page-content-wide {
+    @apply max-w-6xl mx-auto;
+  }
+
+  /* Section spacing */
+  .section {
+    @apply space-y-4;
+  }
+
+  .section-lg {
+    @apply space-y-6;
+  }
+
+  /* Flex utilities */
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+
+  .flex-start {
+    @apply flex items-center justify-start;
+  }
+
+  /* Stack (vertical spacing) */
+  .stack {
+    @apply flex flex-col;
+  }
+
+  .stack-sm {
+    @apply stack gap-2;
+  }
+
+  .stack-md {
+    @apply stack gap-4;
+  }
+
+  .stack-lg {
+    @apply stack gap-6;
+  }
+
+  /* =========================================
+     INTERACTIVE ELEMENTS
+     ========================================= */
+
   .interactive-scale {
     @apply transition-all duration-150 hover:scale-[1.02] active:scale-[0.98];
   }
 
-  /* Card sections with consistent spacing */
-  .analysis-section {
-    @apply space-y-4;
+  .interactive-lift {
+    @apply transition-all duration-200;
+  }
+  .interactive-lift:hover {
+    @apply -translate-y-1 shadow-card-hover;
   }
 
-  /* Icon sizes - standardized across components */
-  .icon-xs {
-    @apply w-3 h-3;
-  }
-  .icon-sm {
-    @apply w-4 h-4;
-  }
-  .icon-md {
-    @apply w-5 h-5;
-  }
-  .icon-lg {
-    @apply w-6 h-6;
-  }
-
-  /* Text hierarchy */
-  .text-label {
-    @apply text-xs text-slate-500;
-  }
-  .text-body {
-    @apply text-sm text-slate-600 leading-relaxed;
-  }
-  .text-body-muted {
-    @apply text-xs text-slate-500 leading-relaxed;
-  }
-
-  /* Interactive list item (for clickable timestamps, filler words, etc.) */
   .interactive-list-item {
-    @apply flex items-center gap-2 p-2 rounded-lg cursor-pointer
-           bg-white border border-slate-200
-           hover:bg-blue-50 hover:border-blue-300
-           transition-all duration-150;
+    @apply flex items-center gap-3 p-3 rounded-lg cursor-pointer
+           border transition-all duration-150;
+    background: var(--card-bg-color);
+    border-color: var(--border-color);
+  }
+  .interactive-list-item:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--primary-accent);
   }
 
-  /* Positive/Negative/Warning state backgrounds */
+  /* =========================================
+     STATUS STATES
+     ========================================= */
+
   .state-positive {
-    @apply bg-green-50 border border-green-200 hover:bg-green-100;
+    background: var(--color-success-light);
+    border: 1px solid var(--color-success);
   }
-  .state-negative {
-    @apply bg-red-50 border border-red-200 hover:bg-red-100;
-  }
-  .state-warning {
-    @apply bg-amber-50 border border-amber-200 hover:bg-amber-100;
-  }
-  .state-info {
-    @apply bg-blue-50 border border-blue-200 hover:bg-blue-100;
+  .state-positive:hover {
+    @apply opacity-90;
   }
 
-  /* Audio player progress bar */
-  .progress-bar {
-    @apply w-full h-2 bg-slate-200 rounded-full overflow-hidden cursor-pointer;
+  .state-negative {
+    background: var(--color-error-light);
+    border: 1px solid var(--color-error);
   }
+
+  .state-warning {
+    background: var(--color-warning-light);
+    border: 1px solid var(--color-warning);
+  }
+
+  .state-info {
+    background: var(--color-info-light);
+    border: 1px solid var(--color-info);
+  }
+
+  /* =========================================
+     TEXT HIERARCHY
+     ========================================= */
+
+  .text-heading {
+    @apply text-xl md:text-2xl font-bold;
+    color: var(--text-main);
+  }
+
+  .text-subheading {
+    @apply text-lg font-semibold;
+    color: var(--text-main);
+  }
+
+  .text-body {
+    @apply text-sm md:text-base leading-relaxed;
+    color: var(--text-secondary);
+  }
+
+  .text-body-muted {
+    @apply text-sm leading-relaxed;
+    color: var(--text-muted);
+  }
+
+  .text-label {
+    @apply text-xs font-medium uppercase tracking-wider;
+    color: var(--text-muted);
+  }
+
+  .text-brand {
+    color: var(--primary-accent);
+  }
+
+  /* =========================================
+     ICON SIZES
+     ========================================= */
+
+  .icon-xs { @apply w-3 h-3; }
+  .icon-sm { @apply w-4 h-4; }
+  .icon-md { @apply w-5 h-5; }
+  .icon-lg { @apply w-6 h-6; }
+  .icon-xl { @apply w-8 h-8; }
+  .icon-2xl { @apply w-10 h-10; }
+
+  /* =========================================
+     PROGRESS & LOADING
+     ========================================= */
+
+  .progress-bar {
+    @apply w-full h-2 rounded-full overflow-hidden cursor-pointer;
+    background: var(--border-color);
+  }
+
   .progress-fill {
-    @apply h-full bg-gradient-to-r from-blue-500 to-teal-500 transition-all duration-100;
+    @apply h-full transition-all duration-100;
+    background: var(--header-gradient);
+  }
+
+  .loading-spinner {
+    @apply animate-spin rounded-full border-2 border-current border-t-transparent;
+  }
+
+  /* =========================================
+     RESPONSIVE GRID LAYOUTS
+     ========================================= */
+
+  .grid-cards {
+    @apply grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-cards-2 {
+    @apply grid gap-4 grid-cols-1 md:grid-cols-2;
+  }
+
+  .grid-form {
+    @apply grid gap-4 grid-cols-1 md:grid-cols-2;
+  }
+
+  /* =========================================
+     MOBILE-FIRST UTILITIES
+     ========================================= */
+
+  /* Full-width on mobile, auto on desktop */
+  .mobile-full {
+    @apply w-full md:w-auto;
+  }
+
+  /* Stack on mobile, row on desktop */
+  .mobile-stack {
+    @apply flex flex-col md:flex-row;
+  }
+
+  /* Hide on mobile */
+  .mobile-hide {
+    @apply hidden md:block;
+  }
+
+  /* Show only on mobile */
+  .mobile-only {
+    @apply block md:hidden;
+  }
+
+  /* Touch-friendly spacing on mobile */
+  .mobile-spacing {
+    @apply p-4 md:p-6;
+  }
+
+  /* =========================================
+     GLASS MORPHISM
+     ========================================= */
+
+  .glass {
+    @apply backdrop-blur-md;
+    background: var(--overlay-light);
+  }
+
+  .glass-dark {
+    @apply backdrop-blur-md;
+    background: var(--overlay-dark);
+  }
+
+  /* =========================================
+     SCROLLBAR (WebKit)
+     ========================================= */
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
+  }
+
+  /* Dark scrollbar for sidebar */
+  .scrollbar-dark {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+  .scrollbar-dark::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-dark::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .scrollbar-dark::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+  .scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 }
 
@@ -367,6 +758,30 @@
 #bewerbungstrainer-app button:focus,
 #bewerbungstrainer-app button:active {
   color: inherit;
+  /* Prevent Elementor from overriding backgrounds - only if not explicitly set */
+  background-color: inherit;
+}
+
+/* Buttons with explicit background classes should NOT inherit */
+#bewerbungstrainer-app button[class*="bg-"],
+#bewerbungstrainer-app button[class*="btn-"],
+#bewerbungstrainer-app button.btn {
+  background-color: unset; /* Let Tailwind/our classes handle it */
+}
+
+/* Glass button on gradient backgrounds - with explicit hover protection */
+#bewerbungstrainer-app .btn-glass,
+#bewerbungstrainer-app .btn-glass:hover,
+#bewerbungstrainer-app .btn-glass:focus,
+#bewerbungstrainer-app .btn-glass:active {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#bewerbungstrainer-app .btn-glass:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Fix for session sidebar tab buttons - let inline styles handle colors (partner branding) */

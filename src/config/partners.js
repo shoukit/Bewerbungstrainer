@@ -17,38 +17,38 @@
  */
 export const DEFAULT_BRANDING = {
   // App Background
-  '--app-bg-color': 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdfa 100%)',
+  '--app-bg-color': 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f5f3ff 100%)',
 
   // Sidebar
-  '--sidebar-bg-color': '#ffffff',
-  '--sidebar-text-color': '#0f172a',
+  '--sidebar-bg-color': '#1e293b',
+  '--sidebar-text-color': '#f8fafc',
   '--sidebar-text-muted': '#94a3b8',
-  '--sidebar-active-bg': '#E8F4F8',
-  '--sidebar-active-text': '#2D6485',
-  '--sidebar-hover-bg': '#f8fafc',
+  '--sidebar-active-bg': 'rgba(99, 102, 241, 0.15)',
+  '--sidebar-active-text': '#818cf8',
+  '--sidebar-hover-bg': 'rgba(255, 255, 255, 0.05)',
 
   // Cards
   '--card-bg-color': '#ffffff',
 
-  // Primary Accent (für Links, aktive Zustände)
-  '--primary-accent': '#3A7FA7',
-  '--primary-accent-light': '#E8F4F8',
-  '--primary-accent-hover': '#2D6485',
+  // Primary Accent (für Links, aktive Zustände) - Indigo
+  '--primary-accent': '#6366f1',
+  '--primary-accent-light': '#eef2ff',
+  '--primary-accent-hover': '#4f46e5',
 
-  // Buttons - Gradient oder Solid
-  '--button-gradient': 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)',
-  '--button-gradient-hover': 'linear-gradient(135deg, #2D6485 0%, #2E8A72 100%)',
-  '--button-solid': '#3A7FA7',
-  '--button-solid-hover': '#2D6485',
+  // Buttons - Indigo to Violet Gradient (softer 500 shades)
+  '--button-gradient': 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+  '--button-gradient-hover': 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+  '--button-solid': '#6366f1',
+  '--button-solid-hover': '#4f46e5',
   '--button-text': '#ffffff',
 
-  // Header Gradient (für Profilkarten, Feature-Header)
-  '--header-gradient': 'linear-gradient(135deg, #3A7FA7 0%, #3DA389 100%)',
+  // Header Gradient (für Profilkarten, Feature-Header) - Indigo to Violet
+  '--header-gradient': 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
   '--header-text': '#ffffff',
 
-  // Icons
-  '--icon-primary': '#3A7FA7',
-  '--icon-secondary': '#3DA389',
+  // Icons - Indigo Töne
+  '--icon-primary': '#6366f1',
+  '--icon-secondary': '#8b5cf6',
   '--icon-muted': '#94a3b8',
 
   // Text
@@ -61,7 +61,7 @@ export const DEFAULT_BRANDING = {
   '--border-color-light': '#f1f5f9',
 
   // Focus Ring
-  '--focus-ring': 'rgba(58, 127, 167, 0.3)',
+  '--focus-ring': 'rgba(99, 102, 241, 0.3)',
 };
 
 /**

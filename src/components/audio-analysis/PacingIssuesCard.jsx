@@ -8,7 +8,7 @@ import React from 'react';
 import { AlertTriangle, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { INTERACTIVE_STATES } from '@/config/constants';
-import { TimestampBadge } from '@/components/ui/badge';
+import { TimestampBadge } from '@/components/ui/base/badge';
 
 export function PacingIssuesCard({ issues, onJumpToTimestamp }) {
   if (!issues || issues.length === 0) return null;

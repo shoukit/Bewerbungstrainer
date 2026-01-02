@@ -26,7 +26,7 @@ class Bewerbungstrainer_Roleplay_Database {
     /**
      * Database version
      */
-    const DB_VERSION = '1.0.0';
+    const DB_VERSION = '1.1.0';
 
     /**
      * Get singleton instance
@@ -44,6 +44,8 @@ class Bewerbungstrainer_Roleplay_Database {
     private function __construct() {
         global $wpdb;
         $this->table_scenarios = $wpdb->prefix . 'bewerbungstrainer_roleplay_scenarios';
+        error_log('[ROLEPLAY DB] Constructor called, initializing...');
+        $this->maybe_create_tables();
     }
 
     /**
@@ -75,11 +77,24 @@ class Bewerbungstrainer_Roleplay_Database {
             `role_type` varchar(20) DEFAULT 'interview',
             `user_role_label` varchar(100) DEFAULT 'Bewerber',
             `agent_id` varchar(100) DEFAULT NULL,
+            `voice_id` varchar(100) DEFAULT NULL,
+            `initial_message` text DEFAULT NULL,
             `system_prompt` longtext DEFAULT NULL,
             `feedback_prompt` longtext DEFAULT NULL,
+            `feedback_coach_type` varchar(50) DEFAULT 'general',
+            `feedback_custom_intro` text DEFAULT NULL,
+            `feedback_extra_focus` text DEFAULT NULL,
             `ai_instructions` longtext DEFAULT NULL,
             `tips` longtext DEFAULT NULL,
             `input_configuration` longtext DEFAULT NULL,
+            `interviewer_name` varchar(255) DEFAULT NULL,
+            `interviewer_role` varchar(255) DEFAULT NULL,
+            `interviewer_image` text DEFAULT NULL,
+            `interviewer_properties` text DEFAULT NULL,
+            `interviewer_objections` text DEFAULT NULL,
+            `interviewer_questions` text DEFAULT NULL,
+            `interviewer_editable_fields` text DEFAULT NULL,
+            `coaching_hints` text DEFAULT NULL,
             `is_active` tinyint(1) DEFAULT 1,
             `sort_order` int DEFAULT 0,
             `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -114,8 +129,67 @@ class Bewerbungstrainer_Roleplay_Database {
         );
 
         if (!$table_exists) {
+            error_log('[ROLEPLAY DB] Table does not exist, creating...');
             self::create_tables();
+        } else {
+            // Always check for schema upgrades
+            error_log('[ROLEPLAY DB] Table exists, checking schema...');
+            $this->maybe_upgrade_schema();
         }
+    }
+
+    /**
+     * Check and upgrade schema if needed
+     * Always checks for missing columns regardless of version
+     */
+    private function maybe_upgrade_schema() {
+        global $wpdb;
+
+        // Always check for missing columns (not version-dependent)
+        $columns_to_add = array(
+            'voice_id' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `voice_id` varchar(100) DEFAULT NULL AFTER `agent_id`",
+            'initial_message' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `initial_message` text DEFAULT NULL AFTER `voice_id`",
+            'interviewer_name' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_name` varchar(255) DEFAULT NULL AFTER `input_configuration`",
+            'interviewer_role' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_role` varchar(255) DEFAULT NULL AFTER `interviewer_name`",
+            'interviewer_image' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_image` text DEFAULT NULL AFTER `interviewer_role`",
+            'interviewer_properties' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_properties` text DEFAULT NULL AFTER `interviewer_image`",
+            'interviewer_objections' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_objections` text DEFAULT NULL AFTER `interviewer_properties`",
+            'interviewer_questions' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_questions` text DEFAULT NULL AFTER `interviewer_objections`",
+            'interviewer_editable_fields' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `interviewer_editable_fields` text DEFAULT NULL AFTER `interviewer_questions`",
+            'coaching_hints' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `coaching_hints` text DEFAULT NULL AFTER `interviewer_editable_fields`",
+            'feedback_coach_type' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `feedback_coach_type` varchar(50) DEFAULT 'general' AFTER `feedback_prompt`",
+            'feedback_custom_intro' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `feedback_custom_intro` text DEFAULT NULL AFTER `feedback_coach_type`",
+            'feedback_extra_focus' => "ALTER TABLE `{$this->table_scenarios}` ADD COLUMN `feedback_extra_focus` text DEFAULT NULL AFTER `feedback_custom_intro`",
+        );
+
+        $columns_added = 0;
+        foreach ($columns_to_add as $column => $sql) {
+            // Check if column exists
+            $column_exists = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $this->table_scenarios,
+                    $column
+                )
+            );
+
+            if (!$column_exists) {
+                $wpdb->query($sql);
+                if ($wpdb->last_error) {
+                    error_log("[ROLEPLAY DB] Error adding column {$column}: " . $wpdb->last_error);
+                } else {
+                    error_log("[ROLEPLAY DB] Added column {$column}");
+                    $columns_added++;
+                }
+            }
+        }
+
+        if ($columns_added > 0) {
+            error_log("[ROLEPLAY DB] Schema upgrade complete: {$columns_added} columns added");
+        }
+
+        update_option('bewerbungstrainer_roleplay_db_version', self::DB_VERSION);
     }
 
     /**
@@ -229,11 +303,23 @@ class Bewerbungstrainer_Roleplay_Database {
             'role_type' => 'interview',
             'user_role_label' => 'Bewerber',
             'agent_id' => '',
+            'voice_id' => '',
+            'initial_message' => '',
             'system_prompt' => '',
             'feedback_prompt' => '',
+            'feedback_coach_type' => 'general',
+            'feedback_custom_intro' => '',
+            'feedback_extra_focus' => '',
             'ai_instructions' => '',
             'tips' => '[]',
             'input_configuration' => '[]',
+            'interviewer_name' => '',
+            'interviewer_role' => '',
+            'interviewer_image' => '',
+            'interviewer_properties' => '',
+            'interviewer_objections' => '',
+            'interviewer_questions' => '',
+            'coaching_hints' => '',
             'is_active' => 1,
             'sort_order' => 0,
         );
@@ -253,15 +339,27 @@ class Bewerbungstrainer_Roleplay_Database {
                 'role_type' => $data['role_type'],
                 'user_role_label' => $data['user_role_label'],
                 'agent_id' => $data['agent_id'],
+                'voice_id' => $data['voice_id'],
+                'initial_message' => $data['initial_message'],
                 'system_prompt' => $data['system_prompt'],
                 'feedback_prompt' => $data['feedback_prompt'],
+                'feedback_coach_type' => $data['feedback_coach_type'],
+                'feedback_custom_intro' => $data['feedback_custom_intro'],
+                'feedback_extra_focus' => $data['feedback_extra_focus'],
                 'ai_instructions' => $data['ai_instructions'],
                 'tips' => $data['tips'],
                 'input_configuration' => $data['input_configuration'],
+                'interviewer_name' => $data['interviewer_name'],
+                'interviewer_role' => $data['interviewer_role'],
+                'interviewer_image' => $data['interviewer_image'],
+                'interviewer_properties' => $data['interviewer_properties'],
+                'interviewer_objections' => $data['interviewer_objections'],
+                'interviewer_questions' => $data['interviewer_questions'],
+                'coaching_hints' => $data['coaching_hints'],
                 'is_active' => $data['is_active'],
                 'sort_order' => $data['sort_order'],
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d')
         );
 
         if ($result === false) {
@@ -285,8 +383,12 @@ class Bewerbungstrainer_Roleplay_Database {
         $allowed_fields = array(
             'title', 'description', 'long_description', 'icon', 'difficulty',
             'target_audience', 'category', 'role_type', 'user_role_label',
-            'agent_id', 'system_prompt', 'feedback_prompt', 'ai_instructions',
-            'tips', 'input_configuration', 'is_active', 'sort_order'
+            'agent_id', 'voice_id', 'initial_message', 'system_prompt',
+            'feedback_prompt', 'feedback_coach_type', 'feedback_custom_intro', 'feedback_extra_focus',
+            'ai_instructions', 'tips', 'input_configuration',
+            'interviewer_name', 'interviewer_role', 'interviewer_image',
+            'interviewer_properties', 'interviewer_objections', 'interviewer_questions',
+            'interviewer_editable_fields', 'coaching_hints', 'is_active', 'sort_order'
         );
 
         $update_data = array();
@@ -397,7 +499,25 @@ class Bewerbungstrainer_Roleplay_Database {
     }
 
     /**
+     * Find scenario by title
+     *
+     * @param string $title Scenario title
+     * @return object|null Scenario object or null
+     */
+    public function get_scenario_by_title($title) {
+        global $wpdb;
+
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_scenarios} WHERE title = %s LIMIT 1",
+                $title
+            )
+        );
+    }
+
+    /**
      * Migrate from WordPress Custom Post Type to new table
+     * Updates empty fields in existing scenarios, creates new ones if not found
      *
      * @return array Migration result with counts
      */
@@ -406,7 +526,9 @@ class Bewerbungstrainer_Roleplay_Database {
 
         $results = array(
             'total' => 0,
-            'migrated' => 0,
+            'created' => 0,
+            'updated' => 0,
+            'skipped' => 0,
             'failed' => 0,
             'errors' => array(),
         );
@@ -469,7 +591,8 @@ class Bewerbungstrainer_Roleplay_Database {
                 $input_configuration = get_post_meta($post->ID, '_roleplay_variables_schema', true) ?: '[]';
             }
 
-            $data = array(
+            // Collect CPT data
+            $cpt_data = array(
                 'title' => $post->post_title,
                 'description' => get_post_meta($post->ID, '_roleplay_description', true),
                 'long_description' => get_post_meta($post->ID, '_roleplay_long_description', true),
@@ -480,32 +603,86 @@ class Bewerbungstrainer_Roleplay_Database {
                 'role_type' => get_post_meta($post->ID, '_roleplay_role_type', true) ?: 'interview',
                 'user_role_label' => get_post_meta($post->ID, '_roleplay_user_role_label', true) ?: 'Bewerber',
                 'agent_id' => get_post_meta($post->ID, '_roleplay_agent_id', true),
+                'voice_id' => get_post_meta($post->ID, '_roleplay_voice_id', true),
+                'initial_message' => get_post_meta($post->ID, '_roleplay_initial_message', true),
                 'system_prompt' => $system_prompt,
                 'feedback_prompt' => get_post_meta($post->ID, '_roleplay_feedback_prompt', true),
                 'ai_instructions' => $ai_instructions,
                 'tips' => get_post_meta($post->ID, '_roleplay_tips', true) ?: '[]',
                 'input_configuration' => $input_configuration,
+                'interviewer_name' => get_post_meta($post->ID, '_roleplay_interviewer_name', true),
+                'interviewer_role' => get_post_meta($post->ID, '_roleplay_interviewer_role', true),
+                'interviewer_image' => get_post_meta($post->ID, '_roleplay_interviewer_image', true),
+                'interviewer_properties' => get_post_meta($post->ID, '_roleplay_interviewer_properties', true),
+                'interviewer_objections' => get_post_meta($post->ID, '_roleplay_interviewer_objections', true),
+                'interviewer_questions' => get_post_meta($post->ID, '_roleplay_interviewer_questions', true),
+                'coaching_hints' => get_post_meta($post->ID, '_roleplay_coaching_hints', true),
                 'is_active' => $post->post_status === 'publish' ? 1 : 0,
                 'sort_order' => $post->menu_order,
             );
 
-            error_log('[ROLEPLAY MIGRATION] Migrating: ' . $post->post_title);
+            // Check if scenario with same title exists
+            $existing = $this->get_scenario_by_title($post->post_title);
 
-            $scenario_id = $this->create_scenario($data);
+            if ($existing) {
+                // Update only empty fields in existing scenario
+                $update_data = array();
+                $fields_to_check = array(
+                    'description', 'long_description', 'target_audience',
+                    'agent_id', 'voice_id', 'initial_message', 'system_prompt',
+                    'feedback_prompt', 'ai_instructions',
+                    'interviewer_name', 'interviewer_role', 'interviewer_image',
+                    'interviewer_properties', 'interviewer_objections', 'interviewer_questions',
+                    'coaching_hints'
+                );
 
-            if ($scenario_id) {
-                $results['migrated']++;
-                // Store mapping for reference
-                update_post_meta($post->ID, '_migrated_to_scenario_id', $scenario_id);
-                error_log('[ROLEPLAY MIGRATION] Migrated post ' . $post->ID . ' to scenario ' . $scenario_id);
+                foreach ($fields_to_check as $field) {
+                    // Check if existing field is empty and CPT has data
+                    $existing_value = $existing->$field ?? '';
+                    $cpt_value = $cpt_data[$field] ?? '';
+
+                    if (empty($existing_value) && !empty($cpt_value)) {
+                        $update_data[$field] = $cpt_value;
+                    }
+                }
+
+                if (!empty($update_data)) {
+                    $update_result = $this->update_scenario($existing->id, $update_data);
+                    if ($update_result) {
+                        $results['updated']++;
+                        $updated_fields = implode(', ', array_keys($update_data));
+                        error_log('[ROLEPLAY MIGRATION] Updated scenario ' . $existing->id . ' (' . $post->post_title . ') - Fields: ' . $updated_fields);
+                        update_post_meta($post->ID, '_migrated_to_scenario_id', $existing->id);
+                    } else {
+                        $results['failed']++;
+                        $results['errors'][] = "Failed to update scenario ID {$existing->id}: {$post->post_title}";
+                    }
+                } else {
+                    $results['skipped']++;
+                    error_log('[ROLEPLAY MIGRATION] Skipped (no empty fields to fill): ' . $post->post_title);
+                }
             } else {
-                $results['failed']++;
-                $results['errors'][] = "Failed to migrate post ID {$post->ID}: {$post->post_title}";
-                error_log('[ROLEPLAY MIGRATION] Failed to migrate post ' . $post->ID);
+                // Create new scenario
+                error_log('[ROLEPLAY MIGRATION] Creating new: ' . $post->post_title);
+
+                $scenario_id = $this->create_scenario($cpt_data);
+
+                if ($scenario_id) {
+                    $results['created']++;
+                    update_post_meta($post->ID, '_migrated_to_scenario_id', $scenario_id);
+                    error_log('[ROLEPLAY MIGRATION] Created scenario ' . $scenario_id . ' from post ' . $post->ID);
+                } else {
+                    $results['failed']++;
+                    $results['errors'][] = "Failed to create scenario from post ID {$post->ID}: {$post->post_title}";
+                    error_log('[ROLEPLAY MIGRATION] Failed to create from post ' . $post->ID);
+                }
             }
         }
 
-        error_log('[ROLEPLAY MIGRATION] Complete. Migrated: ' . $results['migrated'] . ', Failed: ' . $results['failed']);
+        // For backwards compatibility, set migrated = created + updated
+        $results['migrated'] = $results['created'] + $results['updated'];
+
+        error_log('[ROLEPLAY MIGRATION] Complete. Created: ' . $results['created'] . ', Updated: ' . $results['updated'] . ', Skipped: ' . $results['skipped'] . ', Failed: ' . $results['failed']);
 
         return $results;
     }
@@ -532,11 +709,23 @@ class Bewerbungstrainer_Roleplay_Database {
                 'role_type' => $scenario->role_type,
                 'user_role_label' => $scenario->user_role_label,
                 'agent_id' => $scenario->agent_id,
+                'voice_id' => $scenario->voice_id,
+                'initial_message' => $scenario->initial_message,
                 'system_prompt' => $scenario->system_prompt,
                 'feedback_prompt' => $scenario->feedback_prompt,
+                'feedback_coach_type' => $scenario->feedback_coach_type,
+                'feedback_custom_intro' => $scenario->feedback_custom_intro,
+                'feedback_extra_focus' => $scenario->feedback_extra_focus,
                 'ai_instructions' => $scenario->ai_instructions,
                 'tips' => $scenario->tips,
                 'input_configuration' => $scenario->input_configuration,
+                'interviewer_name' => $scenario->interviewer_name,
+                'interviewer_role' => $scenario->interviewer_role,
+                'interviewer_image' => $scenario->interviewer_image,
+                'interviewer_properties' => $scenario->interviewer_properties,
+                'interviewer_objections' => $scenario->interviewer_objections,
+                'interviewer_questions' => $scenario->interviewer_questions,
+                'coaching_hints' => $scenario->coaching_hints,
                 'is_active' => $scenario->is_active,
                 'sort_order' => $scenario->sort_order,
             );

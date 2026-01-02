@@ -4,6 +4,46 @@
  * Handles all communication with WordPress REST API endpoints
  */
 
+/**
+ * Convert technical error messages to user-friendly German messages
+ */
+function getGermanErrorMessage(error) {
+    const message = error?.message || String(error);
+
+    // Cookie/Nonce validation errors (WordPress specific) - must be checked first
+    if (message.includes('Cookie') || message.includes('cookie') || message.includes('nonce')) {
+        return 'Sitzung abgelaufen. Bitte lade die Seite neu (F5) und melde dich erneut an.';
+    }
+
+    // Network errors
+    if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('ERR_')) {
+        return 'Keine Internetverbindung. Bitte prüfe deine Netzwerkverbindung und versuche es erneut.';
+    }
+
+    // Timeout errors
+    if (message.includes('timeout') || message.includes('Timeout')) {
+        return 'Die Anfrage hat zu lange gedauert. Bitte versuche es erneut.';
+    }
+
+    // Server errors
+    if (message.includes('500') || message.includes('502') || message.includes('503') || message.includes('504')) {
+        return 'Der Server ist vorübergehend nicht erreichbar. Bitte versuche es später erneut.';
+    }
+
+    // Auth errors
+    if (message.includes('401') || message.includes('403')) {
+        return 'Sitzung abgelaufen. Bitte lade die Seite neu und melde dich erneut an.';
+    }
+
+    // Not found
+    if (message.includes('404')) {
+        return 'Die angeforderte Ressource wurde nicht gefunden.';
+    }
+
+    // Return original message if no match (might already be German)
+    return message;
+}
+
 class WordPressAPI {
     constructor() {
         // Get config from WordPress localized script
@@ -72,7 +112,51 @@ class WordPressAPI {
             return data;
         } catch (error) {
             console.error('API Request Error:', error);
-            throw error;
+            // Convert to German error message
+            const germanError = new Error(getGermanErrorMessage(error));
+            germanError.originalError = error;
+            throw germanError;
+        }
+    }
+
+    /**
+     * Make public API request (no authentication/nonce required)
+     * Use this for endpoints that have permission_callback: '__return_true'
+     */
+    async publicRequest(endpoint, options = {}) {
+        const url = `${this.apiUrl}${endpoint}`;
+
+        const defaultOptions = {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        const mergedOptions = {
+            ...defaultOptions,
+            ...options,
+            headers: {
+                ...defaultOptions.headers,
+                ...options.headers
+            }
+        };
+
+        try {
+            const response = await fetch(url, mergedOptions);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Public API Request Error:', error);
+            // Convert to German error message
+            const germanError = new Error(getGermanErrorMessage(error));
+            germanError.originalError = error;
+            throw germanError;
         }
     }
 
@@ -736,11 +820,12 @@ class WordPressAPI {
     /**
      * Get all categories from centralized category system
      * Categories are used for filtering scenarios across all modules
+     * NOTE: Uses publicRequest as this endpoint is public (no auth required)
      * @returns {Promise<Array>} Array of category objects
      */
     async getCategories() {
         try {
-            const response = await this.request('/categories', {
+            const response = await this.publicRequest('/categories', {
                 method: 'GET'
             });
 
@@ -1260,6 +1345,80 @@ class WordPressAPI {
         } catch (error) {
             console.error('[WordPressAPI] Failed to get recent activities:', error);
             return [];
+        }
+    }
+
+    // ===== User Preferences API Methods =====
+
+    /**
+     * Get a user preference
+     *
+     * @param {string} key - Preference key
+     * @param {string} demoCode - Optional demo code for demo users
+     * @returns {Promise<any>} Preference value or null
+     */
+    async getPreference(key, demoCode = null) {
+        try {
+            const queryParams = demoCode ? `?demo_code=${encodeURIComponent(demoCode)}` : '';
+            const response = await this.request(`/preferences/${key}${queryParams}`, {
+                method: 'GET'
+            });
+
+            if (response.success) {
+                return response.value;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to get preference:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Set a user preference
+     *
+     * @param {string} key - Preference key
+     * @param {any} value - Preference value
+     * @param {string} demoCode - Optional demo code for demo users
+     * @returns {Promise<boolean>} Success status
+     */
+    async setPreference(key, value, demoCode = null) {
+        try {
+            const queryParams = demoCode ? `?demo_code=${encodeURIComponent(demoCode)}` : '';
+            const response = await this.request(`/preferences/${key}${queryParams}`, {
+                method: 'POST',
+                body: JSON.stringify({ value })
+            });
+
+            return response.success === true;
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to set preference:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Get all user preferences
+     *
+     * @param {string} demoCode - Optional demo code for demo users
+     * @returns {Promise<object>} Object with all preferences
+     */
+    async getAllPreferences(demoCode = null) {
+        try {
+            const queryParams = demoCode ? `?demo_code=${encodeURIComponent(demoCode)}` : '';
+            const response = await this.request(`/preferences${queryParams}`, {
+                method: 'GET'
+            });
+
+            if (response.success && response.preferences) {
+                return response.preferences;
+            }
+
+            return {};
+        } catch (error) {
+            console.error('[WordPressAPI] Failed to get all preferences:', error);
+            return {};
         }
     }
 }

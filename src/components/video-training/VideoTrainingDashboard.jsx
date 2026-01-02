@@ -14,10 +14,10 @@ import {
   Handshake,
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
-import { usePartner } from '@/context/PartnerContext';
-import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
-import FeatureInfoModal from '@/components/FeatureInfoModal';
-import FeatureInfoButton from '@/components/FeatureInfoButton';
+import { COLORS } from '@/config/colors';
+import ScenarioDashboard from '@/components/ui/composite/ScenarioDashboard';
+import FeatureInfoModal from '@/components/global/FeatureInfoModal';
+import FeatureInfoButton from '@/components/global/FeatureInfoButton';
 
 // Icon mapping for scenarios
 const ICON_MAP = {
@@ -35,32 +35,32 @@ const SCENARIO_TYPE_CONFIG = {
   self_presentation: {
     label: 'Selbstpräsentation',
     icon: User,
-    color: '#3A7FA7',
-    bgColor: '#E8F4F8',
+    color: COLORS.indigo[500],
+    bgColor: COLORS.indigo[50],
   },
   interview: {
     label: 'Bewerbungsgespräch',
     icon: Briefcase,
-    color: '#059669',
-    bgColor: '#d1fae5',
+    color: COLORS.emerald[600],
+    bgColor: COLORS.emerald[100],
   },
   pitch: {
     label: 'Elevator Pitch',
     icon: Rocket,
-    color: '#7c3aed',
-    bgColor: '#ede9fe',
+    color: COLORS.violet[600],
+    bgColor: COLORS.violet[100],
   },
   negotiation: {
     label: 'Verhandlung',
     icon: Handshake,
-    color: '#d97706',
-    bgColor: '#fef3c7',
+    color: COLORS.amber[600],
+    bgColor: COLORS.amber[100],
   },
   custom: {
     label: 'Training',
     icon: Target,
-    color: '#64748b',
-    bgColor: '#f1f5f9',
+    color: COLORS.slate[500],
+    bgColor: COLORS.slate[100],
   },
 };
 
@@ -105,23 +105,15 @@ const renderCardMeta = (scenario) => [
 /**
  * Render info box for video training
  */
-const renderInfoBox = (primaryAccent) => (
-  <div
-    style={{
-      marginTop: '40px',
-      padding: '20px',
-      background: `linear-gradient(135deg, ${primaryAccent}10 0%, ${primaryAccent}05 100%)`,
-      borderRadius: '12px',
-      border: `1px solid ${primaryAccent}20`,
-    }}
-  >
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-      <Sparkles size={20} color={primaryAccent} style={{ flexShrink: 0, marginTop: '2px' }} />
+const renderInfoBox = () => (
+  <div className="mt-10 p-5 bg-primary/5 rounded-xl border border-primary/20">
+    <div className="flex items-start gap-3">
+      <Sparkles size={20} className="text-primary flex-shrink-0 mt-0.5" />
       <div>
-        <h4 style={{ fontWeight: 600, color: '#0f172a', marginBottom: '4px' }}>
+        <h4 className="font-semibold text-slate-900 mb-1">
           Wie funktioniert das Video Training?
         </h4>
-        <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
+        <p className="text-sm text-slate-600 leading-relaxed m-0">
           1. Wähle ein Szenario und konfiguriere dein Training<br />
           2. Beantworte die generierten Fragen per Video-Aufnahme<br />
           3. Die KI analysiert dein Video und gibt detailliertes Feedback zu Auftreten, Körpersprache und Kommunikation
@@ -141,9 +133,6 @@ const VideoTrainingDashboard = ({
   setPendingScenario,
   onNavigateToHistory,
 }) => {
-  const { branding } = usePartner();
-  const primaryAccent = branding?.primaryAccent || branding?.['--primary-accent'] || '#3A7FA7';
-
   return (
     <>
       {/* Feature Info Modal - shows on first visit */}
@@ -185,7 +174,7 @@ const VideoTrainingDashboard = ({
       searchPlaceholder="Szenarien durchsuchen..."
 
       // Info box
-      renderInfoBox={() => renderInfoBox(primaryAccent)}
+      renderInfoBox={renderInfoBox}
 
       // Auth
       isAuthenticated={isAuthenticated}

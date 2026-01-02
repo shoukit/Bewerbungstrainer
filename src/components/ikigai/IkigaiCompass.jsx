@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, Sparkles, ArrowRight, Heart, Star, Globe, Coins } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, ArrowRight, Heart, Star, Globe, Coins, Settings2 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/base/card';
+import { Button } from '@/components/ui/base/button';
 import AudioRecorder from '@/components/decision-board/AudioRecorder';
+import DeviceSettingsDialog from '@/components/device-setup/DeviceSettingsDialog';
 
 /**
  * Dimension icon components
@@ -39,6 +40,8 @@ const IkigaiCompass = ({
   const [activeCircle, setActiveCircle] = useState(null);
   const [inputValue, setInputValue] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const textareaRef = useRef(null);
 
   // Focus textarea when chat opens
@@ -750,17 +753,37 @@ const IkigaiCompass = ({
                   </button>
                 </div>
 
-                {/* Audio Recorder */}
+                {/* Audio Recorder with Settings */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  gap: b.space[2],
                   marginTop: b.space[3],
                 }}>
                   <AudioRecorder
                     onTranscriptReady={handleTranscriptReady}
                     disabled={isExtracting}
+                    warmUp={true}
                   />
+                  <button
+                    onClick={() => setShowDeviceSettings(true)}
+                    title="Audio-Einstellungen"
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: b.radius.full,
+                      border: `1px solid ${b.borderColor}`,
+                      background: b.cardBgHover,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <Settings2 size={18} style={{ color: b.textMuted }} />
+                  </button>
                 </div>
 
                 <p style={{ fontSize: b.fontSize.xs, color: b.textMuted, marginTop: b.space[2], textAlign: 'center' }}>
@@ -771,6 +794,15 @@ const IkigaiCompass = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Device Settings Dialog */}
+      <DeviceSettingsDialog
+        isOpen={showDeviceSettings}
+        onClose={() => setShowDeviceSettings(false)}
+        mode="audio"
+        selectedMicrophoneId={selectedMicrophoneId}
+        onMicrophoneChange={setSelectedMicrophoneId}
+      />
     </div>
   );
 };

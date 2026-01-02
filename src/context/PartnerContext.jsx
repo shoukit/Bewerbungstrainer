@@ -29,8 +29,49 @@ const SPLASH_MIN_DURATION = 3000;
 // Track if app has been initialized (persists across re-renders)
 let hasAppInitialized = false;
 
+// LocalStorage key for cached partner config
+const PARTNER_CACHE_KEY = 'bewerbungstrainer_partner_cache';
+
+/**
+ * Get cached partner config from localStorage
+ */
+const getCachedPartnerConfig = (partnerId) => {
+  if (typeof window === 'undefined' || !partnerId) return null;
+  try {
+    const cached = localStorage.getItem(PARTNER_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      // Check if cached config matches the requested partner
+      if (parsed && parsed.slug === partnerId) {
+        console.log('🏷️ [PartnerContext] Using cached partner config for:', partnerId);
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('🏷️ [PartnerContext] Failed to read cached partner config:', e);
+  }
+  return null;
+};
+
+/**
+ * Save partner config to localStorage
+ */
+const setCachedPartnerConfig = (config) => {
+  if (typeof window === 'undefined' || !config) return;
+  try {
+    localStorage.setItem(PARTNER_CACHE_KEY, JSON.stringify(config));
+    console.log('🏷️ [PartnerContext] Cached partner config for:', config.slug);
+  } catch (e) {
+    console.warn('🏷️ [PartnerContext] Failed to cache partner config:', e);
+  }
+};
+
 export function PartnerProvider({ children }) {
-  const [partner, setPartner] = useState(null);
+  // Initialize partner from localStorage cache immediately to prevent flash
+  const [partner, setPartner] = useState(() => {
+    const partnerId = typeof window !== 'undefined' ? getPartnerIdFromUrl() : null;
+    return getCachedPartnerConfig(partnerId);
+  });
   const [dataLoading, setDataLoading] = useState(true); // Internal loading state for data
 
   // Splash screen minimum time - ensures loader shows for at least 3 seconds
@@ -188,26 +229,40 @@ export function PartnerProvider({ children }) {
   }, []);
 
   // Initialize partner from URL on mount - now fetches from API
+  // Note: Partner may already be set from localStorage cache (in useState initializer)
   useEffect(() => {
     const initializePartner = async () => {
       const partnerId = getPartnerIdFromUrl();
 
+      // If no partner ID in URL, clear cache and partner state
+      if (!partnerId) {
+        if (partner) {
+          setPartner(null);
+          localStorage.removeItem(PARTNER_CACHE_KEY);
+        }
+        setDataLoading(false);
+        return;
+      }
+
       try {
-        // Try to fetch from API first
+        // Fetch fresh config from API
         const partnerConfig = await fetchPartnerConfig(partnerId);
 
         if (partnerConfig) {
+          // Update state and cache
           setPartner(partnerConfig);
-        } else if (partnerId) {
-          // API returned nothing and we had a partner ID - log warning
-          console.warn('🏷️ [PartnerContext] Partner not found:', partnerId);
+          setCachedPartnerConfig(partnerConfig);
         } else {
+          // API returned nothing - clear cache and state
+          console.warn('🏷️ [PartnerContext] Partner not found:', partnerId);
+          setPartner(null);
+          localStorage.removeItem(PARTNER_CACHE_KEY);
         }
       } catch (error) {
         console.error('🏷️ [PartnerContext] Error loading partner config:', error);
 
-        // Fallback to mock if API fails
-        if (partnerId) {
+        // Keep cached version if available, otherwise try mock
+        if (!partner && partnerId) {
           const mockConfig = getPartnerConfig(partnerId);
           if (mockConfig) {
             setPartner(mockConfig);
@@ -466,6 +521,13 @@ export function PartnerProvider({ children }) {
         console.warn('⚠️ [PartnerContext] Cookie could not be verified, proceeding anyway');
       }
 
+      // CRITICAL: Update the global nonce with the new one from login
+      // This ensures all subsequent API calls use the authenticated nonce
+      if (result.nonce && window.bewerbungstrainerConfig) {
+        console.log('🔐 [PartnerContext] Updating global nonce after login');
+        window.bewerbungstrainerConfig.nonce = result.nonce;
+      }
+
       setUser(result.user);
       setIsAuthenticated(true);
 
@@ -644,8 +706,8 @@ export function PartnerProvider({ children }) {
     branding: partner?.branding || DEFAULT_BRANDING,
     logoUrl: partner?.logo_url || null,
     partnerName: partner?.name || 'Karriereheld',
-    dashboardTitle: partner?.dashboard_title || null,
-    dashboardHook: partner?.dashboard_hook || null,
+    appName: partner?.app_name || null,              // Replaces "Karriereheld" on homepage
+    dashboardSubtitle: partner?.dashboard_subtitle || null, // Replaces "Erst denken, dann handeln..."
 
     // Authentication
     user,

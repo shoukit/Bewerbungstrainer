@@ -17,8 +17,9 @@ import {
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { COLORS } from '@/config/colors';
+import { Card, CardContent } from '@/components/ui/base/card';
+import { Button } from '@/components/ui/base/button';
 import wordpressAPI from '@/services/wordpress-api';
 
 /**
@@ -406,13 +407,13 @@ const IkigaiResults = ({
                               backgroundColor:
                                 scenario.type === 'simulator'
                                   ? `${b.primaryAccent}15`
-                                  : '#8B5CF615',
+                                  : `${COLORS.violet[500]}15`,
                             }}
                           >
                             {scenario.type === 'simulator' ? (
                               <Target size={18} style={{ color: b.primaryAccent }} />
                             ) : (
-                              <Play size={18} style={{ color: '#8B5CF6' }} />
+                              <Play size={18} style={{ color: COLORS.violet[500] }} />
                             )}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>

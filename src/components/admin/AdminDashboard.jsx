@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/base/card';
+import { Button } from '@/components/ui/base/button';
 import {
   MessageSquare,
   Users,

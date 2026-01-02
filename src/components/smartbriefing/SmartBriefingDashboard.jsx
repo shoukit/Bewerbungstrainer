@@ -1,5 +1,11 @@
+/**
+ * SmartBriefingDashboard Component
+ *
+ * Displays available briefing templates for selection.
+ * Migrated to Tailwind CSS for consistent styling.
+ */
+
 import React, { useState, useCallback } from 'react';
-import { usePartner } from '@/context/PartnerContext';
 import wordpressAPI from '@/services/wordpress-api';
 import {
   FileText,
@@ -25,10 +31,10 @@ import {
   Folder,
   TrendingUp,
 } from 'lucide-react';
-import { DEFAULT_BRANDING } from '@/config/partners';
-import ScenarioDashboard from '@/components/ui/ScenarioDashboard';
-import FeatureInfoModal from '@/components/FeatureInfoModal';
-import FeatureInfoButton from '@/components/FeatureInfoButton';
+import ScenarioDashboard from '@/components/ui/composite/ScenarioDashboard';
+import FeatureInfoModal from '@/components/global/FeatureInfoModal';
+import FeatureInfoButton from '@/components/global/FeatureInfoButton';
+import { Button } from '@/components/ui';
 
 /**
  * Icon mapping for template icons
@@ -54,11 +60,6 @@ const ICON_MAP = {
   'trending-up': TrendingUp,
 };
 
-/**
- * SmartBriefingDashboard Component
- *
- * Displays available briefing templates for selection
- */
 const SmartBriefingDashboard = ({
   onSelectTemplate,
   onShowList,
@@ -69,9 +70,6 @@ const SmartBriefingDashboard = ({
   setPendingAction,
   demoCode,
 }) => {
-  const { branding } = usePartner();
-  const primaryAccent = branding?.['--primary-accent'] || DEFAULT_BRANDING['--primary-accent'];
-
   // Delete confirmation state
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -178,55 +176,17 @@ const SmartBriefingDashboard = ({
     if (!template.is_custom) return null;
 
     return (
-      <div style={{ display: 'flex', gap: '4px' }}>
+      <div className="flex gap-1">
         <button
           onClick={(e) => handleEditTemplate(e, template)}
-          style={{
-            padding: '6px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: 'transparent',
-            color: '#64748b',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f1f5f9';
-            e.currentTarget.style.color = primaryAccent;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = '#64748b';
-          }}
+          className="p-1.5 rounded-md border-none bg-transparent text-slate-500 cursor-pointer flex items-center justify-center transition-all hover:bg-slate-100 hover:text-primary"
           title="Template bearbeiten"
         >
           <Pencil size={16} />
         </button>
         <button
           onClick={(e) => handleDeleteTemplate(e, template)}
-          style={{
-            padding: '6px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: 'transparent',
-            color: '#64748b',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#fef2f2';
-            e.currentTarget.style.color = '#ef4444';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = '#64748b';
-          }}
+          className="p-1.5 rounded-md border-none bg-transparent text-slate-500 cursor-pointer flex items-center justify-center transition-all hover:bg-red-50 hover:text-red-500"
           title="Template löschen"
         >
           <Trash2 size={16} />
@@ -241,29 +201,7 @@ const SmartBriefingDashboard = ({
   const filterActions = (isAuthenticated || demoCode) && onCreateTemplate ? (
     <button
       onClick={handleCreateTemplate}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '10px 16px',
-        borderRadius: '10px',
-        border: '2px dashed #cbd5e1',
-        backgroundColor: 'white',
-        color: '#64748b',
-        fontSize: '14px',
-        fontWeight: 500,
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        whiteSpace: 'nowrap',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = primaryAccent;
-        e.currentTarget.style.color = primaryAccent;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = '#cbd5e1';
-        e.currentTarget.style.color = '#64748b';
-      }}
+      className="flex items-center gap-2 py-2.5 px-4 rounded-xl border-2 border-dashed border-indigo-200 bg-white text-indigo-500 text-sm font-medium cursor-pointer transition-all whitespace-nowrap hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-sm"
     >
       <Plus size={18} />
       <span className="hidden sm:inline">persönliches Template</span>
@@ -275,24 +213,16 @@ const SmartBriefingDashboard = ({
    * Render info box
    */
   const renderInfoBox = () => (
-    <div
-      style={{
-        marginTop: '48px',
-        padding: '20px 24px',
-        backgroundColor: `${primaryAccent}08`,
-        borderRadius: '12px',
-        border: `1px solid ${primaryAccent}20`,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-        <Lightbulb size={20} style={{ color: primaryAccent, flexShrink: 0, marginTop: '2px' }} />
+    <div className="mt-12 py-5 px-6 bg-indigo-50 rounded-2xl border border-indigo-100">
+      <div className="flex items-start gap-3">
+        <Lightbulb size={20} className="text-indigo-500 flex-shrink-0 mt-0.5" />
         <div>
-          <h4 style={{ margin: '0 0 4px 0', color: '#0f172a', fontSize: '14px', fontWeight: 600 }}>
+          <h4 className="text-sm font-semibold text-slate-900 mb-1">
             So funktioniert Smart Briefing
           </h4>
-          <p style={{ margin: 0, color: '#64748b', fontSize: '13px', lineHeight: 1.6 }}>
-            Wahle ein Template aus, gib deine spezifischen Informationen ein (z.B. Unternehmen, Position),
-            und erhalte ein massgeschneidertes Briefing mit Insider-Wissen, Fachbegriffen und cleveren Ruckfragen.
+          <p className="text-[13px] text-slate-600 leading-relaxed">
+            Wähle ein Template aus, gib deine spezifischen Informationen ein (z.B. Unternehmen, Position),
+            und erhalte ein maßgeschneidertes Briefing mit Insider-Wissen, Fachbegriffen und cleveren Rückfragen.
           </p>
         </div>
       </div>
@@ -304,97 +234,46 @@ const SmartBriefingDashboard = ({
    */
   const deleteDialog = deleteConfirm && (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 50,
-        padding: '16px',
-      }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={() => setDeleteConfirm(null)}
     >
       <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          padding: '24px',
-          maxWidth: '400px',
-          width: '100%',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        }}
+        className="bg-white rounded-2xl p-6 max-w-[400px] w-full shadow-2xl transform transition-all"
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              backgroundColor: '#fef2f2',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Trash2 size={24} style={{ color: '#ef4444' }} />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center">
+            <Trash2 size={24} className="text-red-500" />
           </div>
           <div>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>
+            <h3 className="text-lg font-semibold text-slate-900">
               Template löschen?
             </h3>
-            <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
+            <p className="text-sm text-slate-500">
               Diese Aktion kann nicht rückgängig gemacht werden.
             </p>
           </div>
         </div>
 
-        <div
-          style={{
-            backgroundColor: '#f8fafc',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '20px',
-          }}
-        >
-          <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>
+        <div className="bg-slate-50 rounded-xl p-3 mb-5">
+          <p className="text-sm text-slate-700">
             <strong>{deleteConfirm.title}</strong>
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-          <button
+        <div className="flex gap-3 justify-end">
+          <Button
+            variant="secondary"
             onClick={() => setDeleteConfirm(null)}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0',
-              backgroundColor: 'white',
-              color: '#475569',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
           >
             Abbrechen
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="danger"
             onClick={confirmDelete}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: '#ef4444',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
           >
             Löschen
-          </button>
+          </Button>
         </div>
       </div>
     </div>
