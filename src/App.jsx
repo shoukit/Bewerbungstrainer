@@ -7,7 +7,7 @@ import { DisclaimerModal, useDisclaimerModal } from './components/global/Disclai
 import { ToastProvider } from './components/global/Toast';
 import { setLoginModalOpen } from './components/global/FeatureInfoModal';
 import { Loader2 } from 'lucide-react';
-import { ROUTES, VIEW_TO_ROUTE, getViewFromPath } from './routes';
+import { ROUTES, VIEW_TO_ROUTE, getViewFromPath, isAuthRequiredRoute } from './routes';
 import { syncPreferencesFromAPI } from './services/user-preferences';
 import { COLORS, GRADIENTS, hexToRgba } from './config/colors';
 
@@ -1128,6 +1128,11 @@ function AppContent() {
             closeLoginModal();
             // Clear pending action if user cancels login
             setPendingAction(null);
+
+            // If user is on a protected route and cancels login, redirect to overview
+            if (!isAuthenticated && isAuthRequiredRoute(location.pathname)) {
+              navigate(ROUTES.HOME);
+            }
           }}
           onLoginSuccess={async (user) => {
 

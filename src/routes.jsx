@@ -53,6 +53,23 @@ export const ROUTES = {
 };
 
 /**
+ * Routes that require authentication
+ * If user closes login modal on these routes, they will be redirected to overview
+ */
+export const AUTH_REQUIRED_ROUTES = [
+  ROUTES.IKIGAI,
+  ROUTES.DECISION_BOARD,
+  // Note: Other features handle auth differently (allow browsing, require auth for actions)
+];
+
+/**
+ * Check if a route requires authentication
+ */
+export function isAuthRequiredRoute(pathname) {
+  return AUTH_REQUIRED_ROUTES.some(route => pathname === route || pathname.startsWith(route + '/'));
+}
+
+/**
  * Map old VIEWS constants to new routes for backward compatibility
  */
 export const VIEW_TO_ROUTE = {
