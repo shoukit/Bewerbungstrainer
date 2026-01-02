@@ -610,13 +610,19 @@ function AppContent() {
       return true;
     }
 
+    // Don't show login modal while auth is still being checked
+    // This prevents the modal from flashing briefly after page reload
+    if (authLoading) {
+      return false;
+    }
+
     // User not logged in - store pending action and show login modal
     if (actionData) {
       setPendingAction(actionData);
     }
     openLoginModal();
     return false;
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoading]);
 
   // Detect WP header height on mount
   useEffect(() => {
