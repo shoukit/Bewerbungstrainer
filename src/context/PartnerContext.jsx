@@ -466,6 +466,13 @@ export function PartnerProvider({ children }) {
         console.warn('⚠️ [PartnerContext] Cookie could not be verified, proceeding anyway');
       }
 
+      // CRITICAL: Update the global nonce with the new one from login
+      // This ensures all subsequent API calls use the authenticated nonce
+      if (result.nonce && window.bewerbungstrainerConfig) {
+        console.log('🔐 [PartnerContext] Updating global nonce after login');
+        window.bewerbungstrainerConfig.nonce = result.nonce;
+      }
+
       setUser(result.user);
       setIsAuthenticated(true);
 

@@ -64,15 +64,12 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           setUsername('');
           setPassword('');
 
-          // Call success callback
-          if (onLoginSuccess) {
-            onLoginSuccess(result.user);
-          }
-
-          // Close modal
-          if (onClose) {
-            onClose();
-          }
+          // IMPORTANT: Reload the page to ensure WordPress properly sets up
+          // all auth cookies and the nonce. This prevents 403 errors on
+          // subsequent API calls.
+          console.log('🔐 [LoginModal] Login successful, reloading page to apply auth cookies...');
+          window.location.reload();
+          return; // Don't close modal, let reload handle it
         }
       } else {
         setError(result.error || 'Login fehlgeschlagen. Bitte versuchen Sie es erneut.');
@@ -203,7 +200,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               <img
                 src={logoUrl}
                 alt={`${partnerName} Logo`}
-                className="h-[8.5rem] max-w-full object-contain"
+                className="h-16 max-h-16 max-w-[200px] object-contain"
               />
             </div>
           )}
