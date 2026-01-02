@@ -509,7 +509,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           updateState = () => setSimulatorSessions((prev) => prev.filter((s) => s.id !== session.id));
           break;
         case TABS.ROLEPLAY:
-          endpoint = `${apiUrl}/sessions/${session.id}`;
+          endpoint = `${apiUrl}/roleplays/sessions/${session.id}`;
           updateState = () => setRoleplaySessions((prev) => prev.filter((s) => s.id !== session.id));
           break;
         case TABS.VIDEO:
