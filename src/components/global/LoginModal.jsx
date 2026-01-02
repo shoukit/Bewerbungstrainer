@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { usePartner } from '@/context/PartnerContext';
+import { useBranding, useBrandingStyles } from '@/hooks/useBranding';
 import DemoWelcomeModal from './DemoWelcomeModal';
-import { COLORS, GRADIENTS, hexToRgba } from '@/config/colors';
 
 // Demo user username constant
 const DEMO_USERNAME = 'demo';
@@ -11,7 +11,9 @@ const DEMO_USERNAME = 'demo';
  * Modal dialog for user authentication via WordPress REST API
  */
 export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
-  const { login, logout, branding, partnerName, logoUrl, setDemoCode } = usePartner();
+  const { login, logout, partnerName, logoUrl, setDemoCode } = usePartner();
+  const branding = useBranding();
+  const styles = useBrandingStyles();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -21,14 +23,6 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   // Demo modal state
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [demoUser, setDemoUser] = useState(null);
-
-  // Get brand colors from partner branding
-  const primaryAccent = branding?.['--primary-accent'] || COLORS.indigo[500];
-  const buttonGradient = branding?.['--button-gradient'] || GRADIENTS.button;
-  const headerGradient = branding?.['--header-gradient'] || GRADIENTS.header;
-  const focusRing = branding?.['--focus-ring'] || hexToRgba(COLORS.indigo[500], 0.3);
-  const headerText = branding?.['--header-text'] || COLORS.white;
-  const sidebarTextColor = branding?.['--sidebar-text-color'] || COLORS.white;
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -173,19 +167,19 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       aria-labelledby="login-modal-title"
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-        {/* Header */}
+        {/* Header - uses centralized branding */}
         <div
           className="px-6 py-5"
-          style={{ background: headerGradient, color: headerText }}
+          style={styles.gradientHeader}
         >
           <div className="flex items-center justify-between">
-            <h2 id="login-modal-title" className="text-xl font-semibold" style={{ color: headerText }}>
+            <h2 id="login-modal-title" className="text-xl font-semibold" style={{ color: branding.headerText }}>
               Anmelden
             </h2>
             <button
               onClick={handleClose}
               className="p-2 rounded-xl transition-colors hover:bg-white/20"
-              style={{ color: headerText }}
+              style={{ color: branding.headerText }}
               aria-label="Schließen"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -205,7 +199,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             </div>
           )}
 
-          <p className="text-sm mt-1 opacity-80" style={{ color: headerText }}>
+          <p className="text-sm mt-1 opacity-80" style={{ color: branding.headerText }}>
             Bei {partnerName} anmelden
           </p>
         </div>
@@ -257,15 +251,15 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             />
           </div>
 
-          {/* Submit button - uses partner branding */}
+          {/* Submit button - uses centralized branding */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full px-6 py-3.5 text-base font-semibold rounded-xl border-none cursor-pointer flex items-center justify-center gap-2.5 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 disabled:bg-slate-400 hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg"
+            className="w-full px-6 py-3.5 text-base rounded-xl flex items-center justify-center gap-2.5 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70 disabled:bg-slate-400 hover:enabled:-translate-y-0.5 hover:enabled:shadow-lg"
             style={{
-              background: isLoading ? undefined : buttonGradient,
-              color: headerText,
-              boxShadow: isLoading ? 'none' : `0 4px 14px 0 ${hexToRgba(primaryAccent, 0.4)}`,
+              ...styles.primaryButton,
+              boxShadow: isLoading ? 'none' : branding.coloredShadow(branding.primaryAccent, 'md'),
+              background: isLoading ? branding.disabledBg : styles.primaryButton.background,
             }}
           >
             {isLoading ? (
@@ -274,24 +268,24 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
                   fill="none"
                   viewBox="0 0 24 24"
                   className="w-5 h-5 animate-spin"
-                  style={{ color: headerText }}
+                  style={{ color: branding.buttonText }}
                 >
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span style={{ color: headerText }}>Wird angemeldet...</span>
+                <span style={{ color: branding.buttonText }}>Wird angemeldet...</span>
               </>
             ) : (
               <>
                 <svg
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke={headerText}
+                  stroke={branding.buttonText}
                   className="w-5 h-5"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <span style={{ color: headerText }}>Anmelden</span>
+                <span style={{ color: branding.buttonText }}>Anmelden</span>
               </>
             )}
           </button>
