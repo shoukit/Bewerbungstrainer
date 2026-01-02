@@ -793,15 +793,69 @@ class Bewerbungstrainer_Plugin {
             return $tag;
         }, 10, 3);
 
-        // Add blocking attribute to CSS to ensure it loads before rendering
+        // Add onload handler to CSS to mark when it's loaded
         add_filter('style_loader_tag', function($tag, $handle) {
             if ('bewerbungstrainer-app' === $handle) {
-                // Add onload handler to mark CSS as loaded
-                $tag = str_replace(' />', ' onload="document.documentElement.classList.add(\'bewerbungstrainer-css-loaded\')" />', $tag);
-                $tag = str_replace('>', ' onload="document.documentElement.classList.add(\'bewerbungstrainer-css-loaded\')">', $tag);
+                // Use regex to reliably add onload handler to link tag
+                $onload_handler = 'onload="document.documentElement.classList.add(\'bewerbungstrainer-css-loaded\')"';
+
+                // Check if tag is self-closing (<link ... />) or not (<link ...>)
+                if (strpos($tag, '/>') !== false) {
+                    $tag = preg_replace('/<link\s/', '<link ' . $onload_handler . ' ', $tag, 1);
+                } else {
+                    $tag = preg_replace('/<link\s/', '<link ' . $onload_handler . ' ', $tag, 1);
+                }
             }
             return $tag;
         }, 10, 2);
+
+        // Add fallback script to check CSS loading status
+        add_action('wp_footer', function() {
+            ?>
+            <script>
+            // Fallback: Check if CSS is loaded and add class if onload didn't fire
+            (function() {
+                var maxAttempts = 100; // 5 seconds max
+                var attempts = 0;
+                var checkCSS = function() {
+                    attempts++;
+                    // Check if class already added
+                    if (document.documentElement.classList.contains('bewerbungstrainer-css-loaded')) {
+                        return;
+                    }
+                    // Check if our stylesheet is loaded
+                    var sheets = document.styleSheets;
+                    for (var i = 0; i < sheets.length; i++) {
+                        try {
+                            var sheet = sheets[i];
+                            if (sheet.href && (sheet.href.indexOf('FeatureInfoButton') !== -1 ||
+                                sheet.href.indexOf('bewerbungstrainer') !== -1)) {
+                                // Stylesheet found, check if it has rules
+                                if (sheet.cssRules && sheet.cssRules.length > 50) {
+                                    document.documentElement.classList.add('bewerbungstrainer-css-loaded');
+                                    console.log('[CSS-GUARD] CSS loaded via fallback check');
+                                    return;
+                                }
+                            }
+                        } catch(e) {
+                            // Cross-origin, continue
+                        }
+                    }
+                    // Keep checking
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkCSS, 50);
+                    } else {
+                        // Timeout - add class anyway to prevent infinite wait
+                        document.documentElement.classList.add('bewerbungstrainer-css-loaded');
+                        console.warn('[CSS-GUARD] CSS loading timeout, showing content anyway');
+                    }
+                };
+                // Start checking after a short delay
+                setTimeout(checkCSS, 100);
+            })();
+            </script>
+            <?php
+        }, 100); // High priority to run after CSS
     }
 
     /**
