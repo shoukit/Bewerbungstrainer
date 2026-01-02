@@ -113,16 +113,35 @@ class Bewerbungstrainer_Demo_Codes {
             }
         }
 
-        // Get filter
+        // Get filter and sorting
         $filter = isset($_GET['filter']) ? sanitize_text_field($_GET['filter']) : null;
+        $orderby = isset($_GET['orderby']) ? sanitize_text_field($_GET['orderby']) : 'created_at';
+        $order = isset($_GET['order']) ? strtoupper(sanitize_text_field($_GET['order'])) : 'DESC';
 
         // Get codes
         $codes = $this->get_all_codes(array(
             'filter' => $filter,
             'limit' => 200,
-            'orderby' => 'created_at',
-            'order' => 'ASC',
+            'orderby' => $orderby,
+            'order' => $order,
         ));
+
+        // Helper function to build sort URL
+        $sort_url = function($column) use ($filter, $orderby, $order) {
+            $new_order = ($orderby === $column && $order === 'ASC') ? 'DESC' : 'ASC';
+            $url = admin_url('admin.php?page=bewerbungstrainer-demo-codes');
+            if ($filter) {
+                $url .= '&filter=' . $filter;
+            }
+            $url .= '&orderby=' . $column . '&order=' . $new_order;
+            return $url;
+        };
+
+        // Helper function to get sort indicator
+        $sort_indicator = function($column) use ($orderby, $order) {
+            if ($orderby !== $column) return '';
+            return $order === 'ASC' ? ' ▲' : ' ▼';
+        };
 
         $total_all = $this->get_codes_count();
         $total_used = $this->get_codes_count('used');
@@ -199,18 +218,59 @@ class Bewerbungstrainer_Demo_Codes {
             </ul>
 
             <!-- Codes Table -->
+            <style>
+                .sortable-header { text-decoration: none; color: #1d2327; display: flex; align-items: center; gap: 4px; }
+                .sortable-header:hover { color: #2271b1; }
+                .sort-indicator { font-size: 10px; color: #2271b1; }
+            </style>
             <table class="wp-list-table widefat striped" style="table-layout: auto;">
                 <thead>
                     <tr>
-                        <th style="width: 100px; white-space: nowrap;"><?php _e('Code', 'bewerbungstrainer'); ?></th>
-                        <th style="width: 90px; white-space: nowrap;"><?php _e('Status', 'bewerbungstrainer'); ?></th>
-                        <th style="white-space: nowrap;"><?php _e('Reserviert für', 'bewerbungstrainer'); ?></th>
-                        <th style="white-space: nowrap;"><?php _e('Firma', 'bewerbungstrainer'); ?></th>
-                        <th style="white-space: nowrap;"><?php _e('Ansprechpartner', 'bewerbungstrainer'); ?></th>
-                        <th style="white-space: nowrap;"><?php _e('E-Mail', 'bewerbungstrainer'); ?></th>
-                        <th style="width: 70px; white-space: nowrap;"><?php _e('Sessions', 'bewerbungstrainer'); ?></th>
-                        <th style="width: 130px; white-space: nowrap;"><?php _e('Erste Nutzung', 'bewerbungstrainer'); ?></th>
-                        <th style="width: 130px; white-space: nowrap;"><?php _e('Letzter Login', 'bewerbungstrainer'); ?></th>
+                        <th style="width: 100px; white-space: nowrap;">
+                            <a href="<?php echo esc_url($sort_url('demo_code')); ?>" class="sortable-header">
+                                <?php _e('Code', 'bewerbungstrainer'); ?><span class="sort-indicator"><?php echo $sort_indicator('demo_code'); ?></span>
+                            </a>
+                        </th>
+                        <th style="width: 90px; white-space: nowrap;">
+                            <a href="<?php echo esc_url($sort_url('is_used')); ?>" class="sortable-header">
+                                <?php _e('Status', 'bewerbungstrainer'); ?><span class="sort-indicator"><?php echo $sort_indicator('is_used'); ?></span>
+                            </a>
+                        </th>
+                        <th style="white-space: nowrap;">
+                            <a href="<?php echo esc_url($sort_url('reserved_for')); ?>" class="sortable-header">
+                                <?php _e('Reserviert für', 'bewerbungstrainer'); ?><span class="sort-indicator"><?php echo $sort_indicator('reserved_for'); ?></span>
+                            </a>
+                        </th>
+                        <th style="white-space: nowrap;">
+                            <a href="<?php echo esc_url($sort_url('company_name')); ?>" class="sortable-header">
+                                <?php _e('Firma', 'bewerbungstrainer'); ?><span class="sort-indicator"><?php echo $sort_indicator('company_name'); ?></span>
+                            </a>
+                        </th>
+                        <th style="white-space: nowrap;">
+                            <a href="<?php echo esc_url($sort_url('contact_name')); ?>" class="sortable-header">
+                                <?php _e('Ansprechpartner', 'bewerbungstrainer'); ?><span class="sort-indicator"><?php echo $sort_indicator('contact_name'); ?></span>
+                            </a>
+                        </th>
+                        <th style="white-space: nowrap;">
+                            <a href="<?php echo esc_url($sort_url('contact_email')); ?>" class="sortable-header">
+                                <?php _e('E-Mail', 'bewerbungstrainer'); ?><span class="sort-indicator"><?php echo $sort_indicator('contact_email'); ?></span>
+                            </a>
+                        </th>
+                        <th style="width: 70px; white-space: nowrap;">
+                            <a href="<?php echo esc_url($sort_url('session_count')); ?>" class="sortable-header">
+                                <?php _e('Sessions', 'bewerbungstrainer'); ?><span class="sort-indicator"><?php echo $sort_indicator('session_count'); ?></span>
+                            </a>
+                        </th>
+                        <th style="width: 130px; white-space: nowrap;">
+                            <a href="<?php echo esc_url($sort_url('first_used_at')); ?>" class="sortable-header">
+                                <?php _e('Erste Nutzung', 'bewerbungstrainer'); ?><span class="sort-indicator"><?php echo $sort_indicator('first_used_at'); ?></span>
+                            </a>
+                        </th>
+                        <th style="width: 130px; white-space: nowrap;">
+                            <a href="<?php echo esc_url($sort_url('last_used_at')); ?>" class="sortable-header">
+                                <?php _e('Letzter Login', 'bewerbungstrainer'); ?><span class="sort-indicator"><?php echo $sort_indicator('last_used_at'); ?></span>
+                            </a>
+                        </th>
                         <th style="width: 150px; white-space: nowrap;"><?php _e('Aktion', 'bewerbungstrainer'); ?></th>
                     </tr>
                 </thead>
@@ -701,7 +761,7 @@ class Bewerbungstrainer_Demo_Codes {
         $args = wp_parse_args($args, $defaults);
 
         // Validate orderby
-        $allowed_orderby = array('id', 'demo_code', 'company_name', 'is_used', 'first_used_at', 'session_count', 'created_at');
+        $allowed_orderby = array('id', 'demo_code', 'company_name', 'contact_name', 'contact_email', 'is_used', 'first_used_at', 'last_used_at', 'session_count', 'created_at', 'reserved_for', 'reserved_at');
         if (!in_array($args['orderby'], $allowed_orderby)) {
             $args['orderby'] = 'created_at';
         }
