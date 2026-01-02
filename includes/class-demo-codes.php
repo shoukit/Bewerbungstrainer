@@ -210,13 +210,14 @@ class Bewerbungstrainer_Demo_Codes {
                         <th style="white-space: nowrap;"><?php _e('E-Mail', 'bewerbungstrainer'); ?></th>
                         <th style="width: 70px; white-space: nowrap;"><?php _e('Sessions', 'bewerbungstrainer'); ?></th>
                         <th style="width: 130px; white-space: nowrap;"><?php _e('Erste Nutzung', 'bewerbungstrainer'); ?></th>
+                        <th style="width: 130px; white-space: nowrap;"><?php _e('Letzter Login', 'bewerbungstrainer'); ?></th>
                         <th style="width: 150px; white-space: nowrap;"><?php _e('Aktion', 'bewerbungstrainer'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($codes)): ?>
                         <tr>
-                            <td colspan="9"><?php _e('Keine Codes gefunden.', 'bewerbungstrainer'); ?></td>
+                            <td colspan="10"><?php _e('Keine Codes gefunden.', 'bewerbungstrainer'); ?></td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($codes as $code): ?>
@@ -260,6 +261,13 @@ class Bewerbungstrainer_Demo_Codes {
                                 <td style="vertical-align: middle; white-space: nowrap;">
                                     <?php if ($code->first_used_at): ?>
                                         <?php echo date_i18n('d.m.Y H:i', strtotime($code->first_used_at)); ?>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                                <td style="vertical-align: middle; white-space: nowrap;">
+                                    <?php if ($code->last_used_at): ?>
+                                        <?php echo date_i18n('d.m.Y H:i', strtotime($code->last_used_at)); ?>
                                     <?php else: ?>
                                         -
                                     <?php endif; ?>
