@@ -95,6 +95,15 @@ class Bewerbungstrainer_Video_Training_Admin {
         }
 
         wp_enqueue_style('bewerbungstrainer-admin');
+
+        // Enqueue tips builder script
+        wp_enqueue_script(
+            'bewerbungstrainer-tips-builder',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'assets/js/tips-builder.js',
+            array(),
+            BEWERBUNGSTRAINER_VERSION,
+            true
+        );
     }
 
     /**
@@ -1175,10 +1184,10 @@ class Bewerbungstrainer_Video_Training_Admin {
 
                     <tr>
                         <th scope="row">
-                            <label for="tips"><?php _e('Tipps für Nutzer (JSON)', 'bewerbungstrainer'); ?></label>
+                            <label for="tips"><?php _e('Tipps für Nutzer', 'bewerbungstrainer'); ?></label>
                         </th>
                         <td>
-                            <textarea name="tips" id="tips" class="large-text code" rows="10"><?php
+                            <textarea name="tips" id="tips" class="large-text code" rows="10" style="display:none;"><?php
                                 $tips_value = $values['tips'] ?? '';
                                 if (is_array($tips_value)) {
                                     echo esc_textarea(json_encode($tips_value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -1186,11 +1195,16 @@ class Bewerbungstrainer_Video_Training_Admin {
                                     echo esc_textarea($tips_value);
                                 }
                             ?></textarea>
-                            <p class="description">
-                                <?php _e('Szenario-spezifische Tipps für die Vorbereitungsseite. Wenn leer, werden Standard-Tipps verwendet.', 'bewerbungstrainer'); ?><br>
-                                <?php _e('Format:', 'bewerbungstrainer'); ?> <code>[{"icon": "target", "title": "Tipp-Titel", "text": "Tipp-Beschreibung"}]</code><br>
-                                <?php _e('Icons:', 'bewerbungstrainer'); ?> <code>target, clock, mic, message-square, lightbulb, brain</code>
+                            <p class="description" style="margin-top: 8px;">
+                                <?php _e('Szenario-spezifische Tipps für die Vorbereitungsseite. Wenn leer, werden Standard-Tipps verwendet.', 'bewerbungstrainer'); ?>
                             </p>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    if (typeof initTipsBuilder === 'function') {
+                                        initTipsBuilder('tips');
+                                    }
+                                });
+                            </script>
                         </td>
                     </tr>
 

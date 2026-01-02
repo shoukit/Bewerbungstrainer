@@ -101,6 +101,15 @@ class Bewerbungstrainer_Simulator_Admin {
 
         // Add inline styles
         wp_add_inline_style('wp-admin', $this->get_admin_styles());
+
+        // Enqueue tips builder script
+        wp_enqueue_script(
+            'bewerbungstrainer-tips-builder',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'assets/js/tips-builder.js',
+            array(),
+            BEWERBUNGSTRAINER_VERSION,
+            true
+        );
     }
 
     /**
@@ -1211,26 +1220,21 @@ class Bewerbungstrainer_Simulator_Admin {
                                     <p class="description" style="margin-bottom: 15px;">
                                         Szenario-spezifische Tipps, die auf der Vorbereitungsseite angezeigt werden. Wenn leer, werden die Standard-Tipps verwendet.
                                     </p>
-                                    <table class="form-table">
-                                        <tr>
-                                            <th><label for="tips">Tipps (JSON)</label></th>
-                                            <td>
-                                                <textarea name="tips" id="tips" rows="10" class="large-text code"><?php
-                                                    $tips_value = $data['tips'] ?? '';
-                                                    if (is_array($tips_value)) {
-                                                        echo esc_textarea(json_encode($tips_value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-                                                    } else {
-                                                        echo esc_textarea($tips_value);
-                                                    }
-                                                ?></textarea>
-                                                <p class="description">
-                                                    JSON-Array mit Tipps. Format:<br>
-                                                    <code>[{"icon": "target", "title": "Tipp-Titel", "text": "Tipp-Beschreibung"}]</code><br><br>
-                                                    Verfügbare Icons: <code>target</code>, <code>clock</code>, <code>mic</code>, <code>message-square</code>, <code>lightbulb</code>, <code>brain</code>
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </table>
+                                    <textarea name="tips" id="tips" rows="10" class="large-text code" style="display:none;"><?php
+                                        $tips_value = $data['tips'] ?? '';
+                                        if (is_array($tips_value)) {
+                                            echo esc_textarea(json_encode($tips_value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                                        } else {
+                                            echo esc_textarea($tips_value);
+                                        }
+                                    ?></textarea>
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            if (typeof initTipsBuilder === 'function') {
+                                                initTipsBuilder('tips');
+                                            }
+                                        });
+                                    </script>
                                 </div>
                             </div>
 

@@ -93,6 +93,15 @@ class Bewerbungstrainer_Roleplay_Admin {
 
         wp_enqueue_script('jquery-ui-sortable');
         wp_add_inline_style('wp-admin', $this->get_admin_styles());
+
+        // Enqueue tips builder script
+        wp_enqueue_script(
+            'bewerbungstrainer-tips-builder',
+            BEWERBUNGSTRAINER_PLUGIN_URL . 'assets/js/tips-builder.js',
+            array(),
+            BEWERBUNGSTRAINER_VERSION,
+            true
+        );
     }
 
     /**
@@ -1289,10 +1298,20 @@ class Bewerbungstrainer_Roleplay_Admin {
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="tips">Tipps (JSON)</label></th>
-                        <td><textarea name="tips" id="tips" rows="4" class="large-text code"><?php echo esc_textarea(json_encode($tips, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></textarea></td>
+                        <th><label for="tips">Tipps</label></th>
+                        <td>
+                            <textarea name="tips" id="tips" rows="4" class="large-text code" style="display:none;"><?php echo esc_textarea(json_encode($tips, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></textarea>
+                            <p class="description" style="margin-top: 8px;">Tipps werden den Nutzern während der Vorbereitung angezeigt.</p>
+                        </td>
                     </tr>
                 </table>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (typeof initTipsBuilder === 'function') {
+                            initTipsBuilder('tips');
+                        }
+                    });
+                </script>
 
                 <h2>Benutzer-Variablen</h2>
                 <p class="description">Diese Variablen werden vom Benutzer vor dem Gespräch eingegeben und können in den Prompts mit <code>${variable_key}</code> verwendet werden.</p>
