@@ -21,6 +21,8 @@ Menschen dabei unterstützen, selbstbewusst und optimal vorbereitet in wichtige 
 | **Szenario-Training** | Strukturiertes Q&A mit sofortigem Feedback | Anfänger und systematische Lerner |
 | **Wirkungs-Analyse** | Video-Training mit Körpersprache-Analyse | Nutzer, die an ihrer Präsenz arbeiten wollen |
 | **Rhetorik-Gym** | Gamifiziertes Sprechtraining gegen Füllwörter | Alle, die ihre Redegewandtheit verbessern wollen |
+| **Ikigai-Kompass** | Interaktive Karriereweg-Entdeckung mit KI-Synthese | Nutzer auf der Suche nach beruflicher Orientierung |
+| **Entscheidungs-Kompass** | Strukturierte Pro/Contra-Analyse mit KI-Coaching | Nutzer vor wichtigen Karriereentscheidungen |
 
 ### Kernvorteile
 - **Kein menschlicher Trainer nötig** – Üben jederzeit und überall möglich
@@ -79,10 +81,10 @@ Menschen dabei unterstützen, selbstbewusst und optimal vorbereitet in wichtige 
 │  │   Smart     │ │    Live     │ │  Szenario   │ │  Wirkungs   │         │
 │  │  Briefing   │ │  Simulation │ │  Training   │ │  Analyse    │         │
 │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘         │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                         │
-│  │  Rhetorik   │ │  Session    │ │   Login/    │                         │
-│  │    Gym      │ │  History    │ │   Profile   │                         │
-│  └─────────────┘ └─────────────┘ └─────────────┘                         │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐         │
+│  │  Rhetorik   │ │   Ikigai    │ │ Entscheid.  │ │  Session    │         │
+│  │    Gym      │ │   Kompass   │ │   Kompass   │ │  History    │         │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘         │
 ├───────────────────────────────────────────────────────────────────────────┤
 │  Services Layer                                                           │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐         │
@@ -111,7 +113,8 @@ Menschen dabei unterstützen, selbstbewusst und optimal vorbereitet in wichtige 
 ├───────────────────────────────────────────────────────────────────────────┤
 │  wp_bewerbungstrainer_sessions         │  wp_bewerbungstrainer_simulator  │
 │  wp_bewerbungstrainer_games            │  wp_bewerbungstrainer_video      │
-│  wp_bewerbungstrainer_smartbriefing_*  │  Custom Post Types (Szenarien)   │
+│  wp_bewerbungstrainer_smartbriefing_*  │  wp_bewerbungstrainer_ikigais    │
+│  wp_bewerbungstrainer_decisions        │  Custom Post Types (Szenarien)   │
 └───────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -152,6 +155,10 @@ Bewerbungstrainer/
 │   ├── class-pdf-exporter.php      # PDF-Export mit DomPDF
 │   ├── class-roleplay-scenarios.php # Custom Post Type: Szenarien
 │   ├── class-whitelabel-partners.php # White-Label Partner-System
+│   ├── class-ikigai-api.php        # Ikigai-Kompass REST API
+│   ├── class-ikigai-database.php   # Ikigai-Datenbank
+│   ├── class-decision-api.php      # Entscheidungs-Kompass REST API
+│   ├── class-decision-database.php # Entscheidungs-Datenbank
 │   └── class-shortcodes.php        # WordPress Shortcodes
 ├── src/                             # React Frontend
 │   ├── App.jsx                     # Haupt-App mit View-Router
@@ -182,6 +189,16 @@ Bewerbungstrainer/
 │   │   ├── rhetorik-gym/           # Gamification-Modul
 │   │   │   ├── RhetorikGym.jsx         # Spielmodus-Auswahl
 │   │   │   └── GameSession.jsx         # Aktive Spielsitzung
+│   │   ├── ikigai/                 # Ikigai-Kompass Modul
+│   │   │   ├── IkigaiApp.jsx           # Haupt-Orchestrator
+│   │   │   ├── IkigaiDashboard.jsx     # Übersicht + Sessions
+│   │   │   ├── IkigaiCompass.jsx       # Interaktiver Kompass
+│   │   │   └── IkigaiResults.jsx       # KI-Synthese Ergebnisse
+│   │   ├── decision-board/         # Entscheidungs-Kompass Modul
+│   │   │   ├── DecisionBoardApp.jsx    # Haupt-Orchestrator
+│   │   │   ├── DecisionBoardDashboard.jsx # Übersicht + Sessions
+│   │   │   ├── DecisionBoardInput.jsx  # Pro/Contra Eingabe
+│   │   │   └── DecisionBoardResult.jsx # KI-Analyse Ergebnisse
 │   │   ├── SessionHistory.jsx      # Übersicht aller Sessions
 │   │   ├── TrainingSessionDetailView.jsx # Unified Detail-Ansicht
 │   │   ├── session-detail/         # Session-Detail Komponenten
@@ -1475,10 +1492,15 @@ console.log('[WARN] Potential issue');
 
 ## Weiterführende Dokumentation
 
-- **README.md** - Projekt-Übersicht
-- **README-WORDPRESS.md** - WordPress-spezifische Dokumentation
-- **ELEVENLABS_AGENT_SETUP.md** - ElevenLabs Agent-Konfiguration
-- **TROUBLESHOOTING.md** - Fehlerbehebungs-Leitfaden
+Im `docs/` Ordner finden sich zusätzliche Dokumentationen:
+
+- **PRODUKTBESCHREIBUNG.md** - Umfassende fachliche Dokumentation
+- **FUNKTIONALES_DESIGN.md** - Detaillierte Benutzerflows und Wireframes
+- **TECHNISCHE_DOKUMENTATION.md** - API-Referenz und Datenbank-Details
+- **DESIGN_SYSTEM.md** - Aktuelles Design-System (Indigo-Theme)
+- **STYLEGUIDE.md** - Legacy Style-Guide (Ocean Blue-Theme für Partner)
+- **BRIEFING-LIVE-SIMULATION.md** - Partner-Briefing für Live-Simulation
+- **SKILL_SIMULATOR_SPEC.md** - Technische Spezifikation Szenario-Training
 
 ---
 
@@ -1502,6 +1524,9 @@ console.log('[WARN] Potential issue');
 | **v1.2.0** | 2025-12-01 | White-Label Partner-System |
 | **v1.3.0** | 2025-12-08 | Smart Briefings Feature mit Templates und Workbook |
 | **v1.4.0** | 2025-12-15 | Video-Training (Wirkungs-Analyse) mit Körpersprache-Feedback |
+| **v1.5.0** | 2025-12-22 | Ikigai-Kompass – Interaktive Karriereweg-Entdeckung |
+| **v1.6.0** | 2025-12-29 | Entscheidungs-Kompass – Pro/Contra-Analyse mit KI-Coaching |
+| **v1.7.0** | 2026-01-02 | Session-History mit allen Modulen, diverse Bugfixes |
 
 ---
 
@@ -1514,8 +1539,10 @@ console.log('[WARN] Potential issue');
 | **Szenario-Training** | ~15-30 min | Nach jeder Antwort | Gemini | Systematisch lernen |
 | **Wirkungs-Analyse** | ~15-30 min | Nach Upload | Gemini Vision | Körpersprache verbessern |
 | **Rhetorik-Gym** | 60-90s | Sofort | Gemini | Füllwörter reduzieren |
+| **Ikigai-Kompass** | ~10-15 min | Nach 4 Dimensionen | Gemini | Karriereorientierung finden |
+| **Entscheidungs-Kompass** | ~5-10 min | Nach Analyse | Gemini | Fundierte Entscheidungen |
 
 ---
 
-**Letzte Aktualisierung:** 2025-12-15
-**Dokumentations-Version:** 3.0.0
+**Letzte Aktualisierung:** 2026-01-02
+**Dokumentations-Version:** 4.0.0
