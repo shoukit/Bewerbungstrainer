@@ -22,10 +22,97 @@ import {
   Clock,
   Scale,
   Compass,
+  AlertTriangle,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/global/Toast';
 import { COLORS, hexToRgba } from '@/config/colors';
+
+/**
+ * Logout Confirmation Dialog
+ * Shows a confirmation prompt before logging out
+ */
+const LogoutConfirmDialog = ({ isOpen, onClose, onConfirm, colors }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+      />
+
+      {/* Dialog */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative bg-white rounded-2xl shadow-2xl p-6 mx-4 max-w-sm w-full"
+      >
+        <div className="flex flex-col items-center text-center">
+          {/* Icon */}
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
+            style={{ backgroundColor: `${COLORS.amber[100]}` }}
+          >
+            <AlertTriangle className="w-6 h-6" style={{ color: COLORS.amber[600] }} />
+          </div>
+
+          {/* Title */}
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+            Abmelden?
+          </h3>
+
+          {/* Message */}
+          <p className="text-slate-600 text-sm mb-6">
+            Möchten Sie sich wirklich abmelden?
+          </p>
+
+          {/* Buttons */}
+          <div className="flex gap-3 w-full">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors border cursor-pointer"
+              style={{
+                backgroundColor: 'transparent',
+                borderColor: COLORS.slate[200],
+                color: COLORS.slate[700],
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = COLORS.slate[50];
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              Abbrechen
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors border-none cursor-pointer"
+              style={{
+                backgroundColor: colors?.primaryAccent || COLORS.indigo[500],
+                color: 'white',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
+            >
+              Abmelden
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 /**
  * Indigo theme colors - using centralized COLORS for consistency
@@ -247,6 +334,7 @@ const AppSidebar = ({
   onLoginClick,
 }) => {
   const [expandedItems, setExpandedItems] = React.useState([]);
+  const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
 
   // Get partner branding for theming
   const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
@@ -269,8 +357,14 @@ const AppSidebar = ({
     return regularItems;
   }, [checkModuleAllowed, isAdmin]);
 
-  // Handle logout with toast notification
-  const handleLogout = async () => {
+  // Show logout confirmation dialog
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  // Handle confirmed logout with toast notification
+  const handleLogoutConfirm = async () => {
+    setShowLogoutConfirm(false);
     await logout();
     showSuccess('Sie wurden erfolgreich abgemeldet', 3000);
   };
@@ -579,7 +673,7 @@ const AppSidebar = ({
               </div>
             )}
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               className="w-full rounded-xl flex items-center gap-2.5 transition-all duration-200 border-none cursor-pointer text-sm"
               style={{
                 padding: '10px 12px',
@@ -654,6 +748,14 @@ const AppSidebar = ({
           )}
         </button>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmDialog
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogoutConfirm}
+        colors={colors}
+      />
     </motion.aside>
   );
 };
@@ -665,6 +767,7 @@ const AppSidebar = ({
 const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginClick }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [expandedItems, setExpandedItems] = React.useState([]);
+  const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
 
   const { branding, isWhiteLabel, partnerName, logoUrl, checkModuleAllowed } = usePartner();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -684,7 +787,15 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
     return regularItems;
   }, [checkModuleAllowed, isAdmin]);
 
-  const handleLogout = async () => {
+  // Show logout confirmation dialog
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  // Handle confirmed logout
+  const handleLogoutConfirm = async () => {
+    setShowLogoutConfirm(false);
+    setIsOpen(false);
     await logout();
     showSuccess('Sie wurden erfolgreich abgemeldet', 3000);
   };
@@ -920,10 +1031,7 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
                       </div>
                     </div>
                     <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsOpen(false);
-                      }}
+                      onClick={handleLogoutClick}
                       className="w-full flex items-center gap-3 rounded-xl border-none cursor-pointer text-left"
                       style={{
                         padding: '12px 16px',
@@ -962,6 +1070,14 @@ const MobileNavigation = ({ activeView, onNavigate, headerOffset = 0, onLoginCli
           </>
         )}
       </AnimatePresence>
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmDialog
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogoutConfirm}
+        colors={colors}
+      />
     </>
   );
 };
