@@ -105,6 +105,8 @@ class Bewerbungstrainer_Whitelabel_Partners {
      */
     private $available_modules = array(
         'dashboard' => 'Dashboard',
+        'ikigai' => 'Ikigai-Kompass (Orientierung)',
+        'decision' => 'Entscheidungsfinder (Decision-Navigator)',
         'briefings' => 'Smart Briefings',
         'roleplay' => 'Live-Simulation (Roleplay)',
         'simulator' => 'Szenario-Training (Simulator)',

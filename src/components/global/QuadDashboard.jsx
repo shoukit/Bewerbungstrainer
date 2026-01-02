@@ -29,7 +29,7 @@ import FeatureInfoButton from './FeatureInfoButton';
  * Zone B: Training Arena (Phase 2) - 2x2 grid
  */
 const QuadDashboard = ({ onNavigate }) => {
-  const { branding, user, filterScenariosBySetupAndPartner, currentSetup } = usePartner();
+  const { branding, user, filterScenariosBySetupAndPartner, currentSetup, checkModuleAllowed } = usePartner();
   const { isAuthenticated } = useAuth();
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
@@ -138,10 +138,11 @@ const QuadDashboard = ({ onNavigate }) => {
 
   const firstName = getFirstName();
 
-  // Zone A: Strategy Suite cards
-  const strategyCards = [
+  // Zone A: Strategy Suite cards - with moduleKey for partner filtering
+  const allStrategyCards = [
     {
       id: 'ikigai',
+      moduleKey: 'ikigai', // Matches PHP module ID
       featureId: 'ikigai',
       step: '1',
       title: 'Orientierung',
@@ -155,6 +156,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'decision',
+      moduleKey: 'decision', // Matches PHP module ID
       featureId: 'decisionboard',
       step: '2',
       title: 'Entscheiden',
@@ -168,6 +170,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'briefing',
+      moduleKey: 'briefings', // Matches PHP module ID
       featureId: 'smartbriefing',
       step: '3',
       title: 'Vorbereiten',
@@ -181,10 +184,14 @@ const QuadDashboard = ({ onNavigate }) => {
     },
   ];
 
-  // Zone B: Training Arena cards
-  const trainingCards = [
+  // Filter strategy cards based on partner's allowed modules
+  const strategyCards = allStrategyCards.filter(card => checkModuleAllowed(card.moduleKey));
+
+  // Zone B: Training Arena cards - with moduleKey for partner filtering
+  const allTrainingCards = [
     {
       id: 'simulator',
+      moduleKey: 'simulator', // Matches PHP module ID
       featureId: 'simulator',
       title: 'Szenario Training',
       subtitle: 'Frage-Antwort',
@@ -199,6 +206,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'roleplay',
+      moduleKey: 'roleplay', // Matches PHP module ID
       featureId: 'roleplay',
       title: 'Live Simulation',
       subtitle: 'Echtzeit-Dialog',
@@ -213,6 +221,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'video',
+      moduleKey: 'video_training', // Matches PHP module ID
       featureId: 'videotraining',
       title: 'Wirkungsanalyse',
       subtitle: 'Körpersprache',
@@ -227,6 +236,7 @@ const QuadDashboard = ({ onNavigate }) => {
     },
     {
       id: 'gym',
+      moduleKey: 'gym', // Matches PHP module ID
       featureId: 'rhetorikgym',
       title: 'Rhetorik Gym',
       subtitle: 'Sprechtraining',
@@ -240,6 +250,9 @@ const QuadDashboard = ({ onNavigate }) => {
       countKey: null, // No scenarios for gym
     },
   ];
+
+  // Filter training cards based on partner's allowed modules
+  const trainingCards = allTrainingCards.filter(card => checkModuleAllowed(card.moduleKey));
 
   // Animation variants
   const containerVariants = {
@@ -340,26 +353,27 @@ const QuadDashboard = ({ onNavigate }) => {
           </p>
         </motion.header>
 
-        {/* ZONE A: STRATEGIE */}
-        <motion.section
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="mb-12"
-        >
-          {/* Section Header */}
-          <div className="flex items-center gap-3.5 mb-6">
-            <span className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
-              Phase 1
-            </span>
-            <h2 className="text-lg font-bold text-slate-800 m-0">
-              Deine Strategie
-            </h2>
-          </div>
+        {/* ZONE A: STRATEGIE - Only show if there are visible strategy cards */}
+        {strategyCards.length > 0 && (
+          <motion.section
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="mb-12"
+          >
+            {/* Section Header */}
+            <div className="flex items-center gap-3.5 mb-6">
+              <span className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
+                Phase 1
+              </span>
+              <h2 className="text-lg font-bold text-slate-800 m-0">
+                Deine Strategie
+              </h2>
+            </div>
 
-          {/* Strategy Cards */}
-          <div className="grid grid-cols-3 gap-6 strategy-grid">
-            {strategyCards.map((card) => (
+            {/* Strategy Cards */}
+            <div className="grid grid-cols-3 gap-6 strategy-grid">
+              {strategyCards.map((card) => (
               <motion.div
                 key={card.id}
                 variants={itemVariants}
@@ -419,34 +433,36 @@ const QuadDashboard = ({ onNavigate }) => {
                 </div>
               </motion.div>
             ))}
-          </div>
-        </motion.section>
+            </div>
+          </motion.section>
+        )}
 
-        {/* ZONE B: TRAINING */}
-        <motion.section
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="mb-12"
-        >
-          {/* Section Header */}
-          <div className="flex items-center gap-3.5 mb-6">
-            <span className="bg-gradient-to-br from-green-50 to-green-100 text-green-700 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
-              Phase 2
-            </span>
-            <h2 className="text-lg font-bold text-slate-800 m-0">
-              Trainings-Arena
-            </h2>
-          </div>
+        {/* ZONE B: TRAINING - Only show if there are visible training cards */}
+        {trainingCards.length > 0 && (
+          <motion.section
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="mb-12"
+          >
+            {/* Section Header */}
+            <div className="flex items-center gap-3.5 mb-6">
+              <span className="bg-gradient-to-br from-green-50 to-green-100 text-green-700 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
+                Phase 2
+              </span>
+              <h2 className="text-lg font-bold text-slate-800 m-0">
+                Trainings-Arena
+              </h2>
+            </div>
 
-          {/* Setup Selector - Filter training scenarios */}
-          <div className="mb-6">
-            <SetupSelector />
-          </div>
+            {/* Setup Selector - Filter training scenarios */}
+            <div className="mb-6">
+              <SetupSelector />
+            </div>
 
-          {/* Training Cards - 2x2 Grid */}
-          <div className="grid grid-cols-2 gap-6 training-grid">
-            {trainingCards.map((card) => (
+            {/* Training Cards - 2x2 Grid */}
+            <div className="grid grid-cols-2 gap-6 training-grid">
+              {trainingCards.map((card) => (
               <motion.div
                 key={card.id}
                 variants={itemVariants}
@@ -520,8 +536,9 @@ const QuadDashboard = ({ onNavigate }) => {
                 </div>
               </motion.div>
             ))}
-          </div>
-        </motion.section>
+            </div>
+          </motion.section>
+        )}
 
         {/* RECENT ACTIVITIES */}
         {isAuthenticated && recentActivities.length > 0 && (
