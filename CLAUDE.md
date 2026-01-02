@@ -1494,13 +1494,27 @@ console.log('[WARN] Potential issue');
 
 Im `docs/` Ordner finden sich zusätzliche Dokumentationen:
 
+### Fachliche Dokumentation
 - **PRODUKTBESCHREIBUNG.md** - Umfassende fachliche Dokumentation
 - **FUNKTIONALES_DESIGN.md** - Detaillierte Benutzerflows und Wireframes
+- **BUSINESS_ANGEL_PITCH.md** - Investment-Pitch für Business Angels
+
+### Technische Dokumentation
 - **TECHNISCHE_DOKUMENTATION.md** - API-Referenz und Datenbank-Details
+- **README-WORDPRESS.md** - WordPress Plugin Installation und Shortcodes
+- **ELEVENLABS_AGENT_SETUP.md** - ElevenLabs Agent-Konfiguration (Conversation Styles)
+- **TROUBLESHOOTING.md** - Fehlerbehebung für Build- und Entwicklungsprobleme
+
+### Design & Spezifikationen
 - **DESIGN_SYSTEM.md** - Aktuelles Design-System (Indigo-Theme)
 - **STYLEGUIDE.md** - Legacy Style-Guide (Ocean Blue-Theme für Partner)
-- **BRIEFING-LIVE-SIMULATION.md** - Partner-Briefing für Live-Simulation
 - **SKILL_SIMULATOR_SPEC.md** - Technische Spezifikation Szenario-Training
+
+### Content-Guides (für Redakteure)
+- **SMART_BRIEFING_CONTENT_GUIDE.md** - Anleitung für Smart Briefing Templates
+- **SCENARIO_TRAINING_CONTENT_GUIDE.md** - Anleitung für Szenario-Training Inhalte
+- **VIDEO_TRAINING_CONTENT_GUIDE.md** - Anleitung für Video-Training Inhalte
+- **BRIEFING-LIVE-SIMULATION.md** - Partner-Briefing für Live-Simulation
 
 ---
 
