@@ -651,8 +651,8 @@ export function PartnerProvider({ children }) {
     branding: partner?.branding || DEFAULT_BRANDING,
     logoUrl: partner?.logo_url || null,
     partnerName: partner?.name || 'Karriereheld',
-    dashboardTitle: partner?.dashboard_title || null,
-    dashboardHook: partner?.dashboard_hook || null,
+    appName: partner?.app_name || null,              // Replaces "Karriereheld" on homepage
+    dashboardSubtitle: partner?.dashboard_subtitle || null, // Replaces "Erst denken, dann handeln..."
 
     // Authentication
     user,

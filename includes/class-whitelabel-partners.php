@@ -265,8 +265,8 @@ class Bewerbungstrainer_Whitelabel_Partners {
         }
 
         $description = get_post_meta($post->ID, '_partner_description', true);
-        $dashboard_title = get_post_meta($post->ID, '_partner_dashboard_title', true);
-        $dashboard_hook = get_post_meta($post->ID, '_partner_dashboard_hook', true);
+        $app_name = get_post_meta($post->ID, '_partner_app_name', true);
+        $dashboard_subtitle = get_post_meta($post->ID, '_partner_dashboard_title', true);
         ?>
         <table class="form-table">
             <tr>
@@ -286,21 +286,22 @@ class Bewerbungstrainer_Whitelabel_Partners {
                 </td>
             </tr>
             <tr>
-                <th><label for="partner_dashboard_title">Dashboard-Titel</label></th>
+                <th><label for="partner_app_name">App-Name</label></th>
                 <td>
-                    <input type="text" id="partner_dashboard_title" name="partner_dashboard_title" value="<?php echo esc_attr($dashboard_title); ?>" class="large-text" placeholder="z.B. Karriere & Placement" />
+                    <input type="text" id="partner_app_name" name="partner_app_name" value="<?php echo esc_attr($app_name); ?>" class="large-text" placeholder="z.B. Karriere-Coach" />
                     <p class="description">
-                        Wird auf dem Dashboard unter "Willkommen im Trainingscenter" angezeigt.<br>
-                        Leer lassen für Standard-Ansicht ohne Titel.
+                        Ersetzt "Karriereheld" auf der Startseite.<br>
+                        Leer lassen für Standard "Karriereheld".
                     </p>
                 </td>
             </tr>
             <tr>
-                <th><label for="partner_dashboard_hook">Marketing-Hook</label></th>
+                <th><label for="partner_dashboard_title">Dashboard-Untertitel</label></th>
                 <td>
-                    <textarea id="partner_dashboard_hook" name="partner_dashboard_hook" rows="3" class="large-text" placeholder="z.B. Vom Berufseinstieg bis zum Jobwechsel. Kein Bewerber geht mehr unvorbereitet ins Rennen."><?php echo esc_textarea($dashboard_hook); ?></textarea>
+                    <input type="text" id="partner_dashboard_title" name="partner_dashboard_title" value="<?php echo esc_attr($dashboard_subtitle); ?>" class="large-text" placeholder="z.B. Dein persönlicher Karriere-Assistent" />
                     <p class="description">
-                        Beschreibungstext unterhalb des Dashboard-Titels.
+                        Ersetzt "Erst denken, dann handeln. Wähle deine Phase." auf der Startseite.<br>
+                        Leer lassen für Standard-Text.
                     </p>
                 </td>
             </tr>
@@ -1318,14 +1319,14 @@ class Bewerbungstrainer_Whitelabel_Partners {
             update_post_meta($post_id, '_partner_description', sanitize_textarea_field($_POST['partner_description']));
         }
 
-        // Save dashboard title
-        if (isset($_POST['partner_dashboard_title'])) {
-            update_post_meta($post_id, '_partner_dashboard_title', sanitize_text_field($_POST['partner_dashboard_title']));
+        // Save app name (replaces "Karriereheld" on homepage)
+        if (isset($_POST['partner_app_name'])) {
+            update_post_meta($post_id, '_partner_app_name', sanitize_text_field($_POST['partner_app_name']));
         }
 
-        // Save dashboard marketing hook
-        if (isset($_POST['partner_dashboard_hook'])) {
-            update_post_meta($post_id, '_partner_dashboard_hook', sanitize_textarea_field($_POST['partner_dashboard_hook']));
+        // Save dashboard subtitle (replaces "Erst denken, dann handeln...")
+        if (isset($_POST['partner_dashboard_title'])) {
+            update_post_meta($post_id, '_partner_dashboard_title', sanitize_text_field($_POST['partner_dashboard_title']));
         }
 
         // Save branding
@@ -1993,19 +1994,19 @@ class Bewerbungstrainer_Whitelabel_Partners {
         }
 
         // Get dashboard customization fields
-        $dashboard_title = get_post_meta($post_id, '_partner_dashboard_title', true);
-        $dashboard_hook = get_post_meta($post_id, '_partner_dashboard_hook', true);
+        $app_name = get_post_meta($post_id, '_partner_app_name', true);
+        $dashboard_subtitle = get_post_meta($post_id, '_partner_dashboard_title', true);
 
         return array(
-            'id'                => $slug,
-            'slug'              => $slug,
-            'name'              => $post->post_title,
-            'branding'          => $branding,
-            'logo_url'          => $logo_url,
-            'modules'           => $modules,
-            'visible_scenarios' => $visible_scenarios,
-            'dashboard_title'   => $dashboard_title ?: null,
-            'dashboard_hook'    => $dashboard_hook ?: null,
+            'id'                  => $slug,
+            'slug'                => $slug,
+            'name'                => $post->post_title,
+            'branding'            => $branding,
+            'logo_url'            => $logo_url,
+            'modules'             => $modules,
+            'visible_scenarios'   => $visible_scenarios,
+            'app_name'            => $app_name ?: null,           // Replaces "Karriereheld"
+            'dashboard_subtitle'  => $dashboard_subtitle ?: null, // Replaces "Erst denken, dann handeln..."
         );
     }
 

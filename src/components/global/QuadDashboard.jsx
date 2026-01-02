@@ -29,7 +29,7 @@ import FeatureInfoButton from './FeatureInfoButton';
  * Zone B: Training Arena (Phase 2) - 2x2 grid
  */
 const QuadDashboard = ({ onNavigate }) => {
-  const { branding, user, filterScenariosBySetupAndPartner, currentSetup, checkModuleAllowed } = usePartner();
+  const { branding, user, filterScenariosBySetupAndPartner, currentSetup, checkModuleAllowed, appName, dashboardSubtitle } = usePartner();
   const { isAuthenticated } = useAuth();
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
@@ -325,7 +325,7 @@ const QuadDashboard = ({ onNavigate }) => {
               <>
                 Hallo{' '}
                 <span style={{
-                  background: GRADIENTS.header,
+                  background: headerGradient,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
@@ -338,18 +338,18 @@ const QuadDashboard = ({ onNavigate }) => {
               <>
                 Willkommen bei{' '}
                 <span style={{
-                  background: GRADIENTS.header,
+                  background: headerGradient,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
                 }}>
-                  Karriereheld
+                  {appName || 'Karriereheld'}
                 </span>
               </>
             )}
           </h1>
           <p className="text-[clamp(15px,2vw,17px)] text-slate-500 max-w-[420px] mx-auto leading-relaxed">
-            Erst denken, dann handeln. Wähle deine Phase.
+            {dashboardSubtitle || 'Erst denken, dann handeln. Wähle deine Phase.'}
           </p>
         </motion.header>
 
