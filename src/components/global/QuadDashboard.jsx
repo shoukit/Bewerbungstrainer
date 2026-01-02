@@ -324,12 +324,7 @@ const QuadDashboard = ({ onNavigate }) => {
             {firstName ? (
               <>
                 Hallo{' '}
-                <span style={{
-                  background: headerGradient,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>
+                <span style={{ color: primaryAccent }}>
                   {firstName}
                 </span>
                 , wo stehst du?
@@ -337,12 +332,7 @@ const QuadDashboard = ({ onNavigate }) => {
             ) : (
               <>
                 Willkommen bei{' '}
-                <span style={{
-                  background: headerGradient,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>
+                <span style={{ color: primaryAccent }}>
                   {appName || 'Karriereheld'}
                 </span>
               </>
