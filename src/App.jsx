@@ -5,6 +5,7 @@ import { PartnerProvider, usePartner, useAuth } from './context/PartnerContext';
 import { LoginModal } from './components/global/LoginModal';
 import { DisclaimerModal, useDisclaimerModal } from './components/global/DisclaimerModal';
 import { ToastProvider } from './components/global/Toast';
+import { setLoginModalOpen } from './components/global/FeatureInfoModal';
 import { Loader2 } from 'lucide-react';
 import { ROUTES, VIEW_TO_ROUTE, getViewFromPath } from './routes';
 import { syncPreferencesFromAPI } from './services/user-preferences';
@@ -500,8 +501,14 @@ function AppContent() {
 
   // Login modal state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const openLoginModal = () => setIsLoginModalOpen(true);
-  const closeLoginModal = () => setIsLoginModalOpen(false);
+  const openLoginModal = () => {
+    setIsLoginModalOpen(true);
+    setLoginModalOpen(true); // Notify FeatureInfoModal to suppress auto-show
+  };
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    setLoginModalOpen(false); // Allow FeatureInfoModal auto-show again
+  };
 
   // Disclaimer modal state
   const {

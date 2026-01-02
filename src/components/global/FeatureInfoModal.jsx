@@ -33,6 +33,18 @@ const AUTO_SHOW_SESSION_KEY = 'karriereheld_feature_info_session_shown';
 const globalOpenModals = new Set();
 const globalMountedInstances = new Map(); // featureId -> mountId
 
+// GLOBAL flag to track if login modal is open
+// When login modal is open, feature info modals should NOT auto-show
+let isLoginModalOpen = false;
+
+// Export functions to control login modal state from App.jsx
+export const setLoginModalOpen = (open) => {
+  isLoginModalOpen = open;
+  console.log(`${DEBUG_PREFIX} 🔐 Login modal state: ${open ? 'OPEN' : 'CLOSED'}`);
+};
+
+export const getLoginModalOpen = () => isLoginModalOpen;
+
 const isAutoShownThisSession = (featureId) => {
   try {
     const shown = JSON.parse(sessionStorage.getItem(AUTO_SHOW_SESSION_KEY) || '{}');
@@ -110,6 +122,7 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
       const isDismissed = isFeatureInfoDismissed(featureId);
       const isSessionShown = isAutoShownThisSession(featureId);
       const isGloballyOpen = globalOpenModals.has(featureId);
+      const loginModalIsOpen = isLoginModalOpen;
 
       console.log(`${DEBUG_PREFIX} 🔄 Auto-show effect for "${featureId}":`, {
         showOnMount,
@@ -118,8 +131,15 @@ const FeatureInfoModal = ({ featureId, isOpen, onClose, showOnMount = false }) =
         hasAutoShownRef: hasAutoShownRef.current,
         isSessionShown,
         isGloballyOpen,
-        willShow: !isDismissed && !hasAutoShownRef.current && !isSessionShown && !isGloballyOpen,
+        loginModalIsOpen,
+        willShow: !isDismissed && !hasAutoShownRef.current && !isSessionShown && !isGloballyOpen && !loginModalIsOpen,
       });
+
+      // Don't auto-show if login modal is open
+      if (loginModalIsOpen) {
+        console.log(`${DEBUG_PREFIX} ⛔ Login modal is open, skipping auto-show for "${featureId}"`);
+        return;
+      }
 
       if (!isDismissed && !hasAutoShownRef.current && !isSessionShown && !isGloballyOpen) {
         console.log(`${DEBUG_PREFIX} ✅ Will auto-show "${featureId}" in 400ms`);

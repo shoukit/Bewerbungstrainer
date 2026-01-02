@@ -200,7 +200,7 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }) {
               <img
                 src={logoUrl}
                 alt={`${partnerName} Logo`}
-                className="h-16 max-h-16 max-w-[200px] object-contain"
+                className="h-32 max-h-32 max-w-[280px] object-contain"
               />
             </div>
           )}
