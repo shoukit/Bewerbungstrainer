@@ -16,33 +16,49 @@ function waitForCSS() {
   return new Promise((resolve) => {
     // Get all stylesheets from the document
     const styleSheets = document.querySelectorAll('link[rel="stylesheet"]');
-    const bewerbungstrainerCSS = Array.from(styleSheets).filter(
-      link => link.href && link.href.includes('bewerbungstrainer')
-    );
 
-    console.log(`${DEBUG_PREFIX} 🎨 Found ${bewerbungstrainerCSS.length} Bewerbungstrainer stylesheets`);
+    // Look for our app CSS - could be named FeatureInfoButton.css, bewerbungstrainer-app, etc.
+    const appCSS = Array.from(styleSheets).filter(link => {
+      if (!link.href) return false;
+      const href = link.href.toLowerCase();
+      return href.includes('bewerbungstrainer') ||
+             href.includes('featureinfobutton') ||
+             href.includes('karriereheld') ||
+             (link.id && link.id.includes('bewerbungstrainer'));
+    });
 
-    if (bewerbungstrainerCSS.length === 0) {
-      // No external CSS found, resolve immediately
-      console.log(`${DEBUG_PREFIX} 🎨 No external CSS, resolving immediately`);
-      resolve();
+    console.log(`${DEBUG_PREFIX} 🎨 Found ${appCSS.length} app stylesheets`);
+
+    if (appCSS.length === 0) {
+      // No external CSS found - wait a bit for inline styles to apply
+      console.log(`${DEBUG_PREFIX} 🎨 No external CSS found, waiting for styles to apply...`);
+      // Use requestAnimationFrame to ensure styles are computed
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          console.log(`${DEBUG_PREFIX} 🎨 Styles should be applied now`);
+          resolve();
+        });
+      });
       return;
     }
 
     let loadedCount = 0;
-    const totalCount = bewerbungstrainerCSS.length;
+    const totalCount = appCSS.length;
 
     const checkAllLoaded = () => {
       loadedCount++;
       console.log(`${DEBUG_PREFIX} 🎨 CSS loaded: ${loadedCount}/${totalCount}`);
       if (loadedCount >= totalCount) {
         console.log(`${DEBUG_PREFIX} ✅ All CSS loaded!`);
-        resolve();
+        // Extra frame to ensure styles are applied
+        requestAnimationFrame(() => {
+          resolve();
+        });
       }
     };
 
-    bewerbungstrainerCSS.forEach((link) => {
-      // Check if already loaded
+    appCSS.forEach((link) => {
+      // Check if already loaded (has stylesheet)
       if (link.sheet) {
         console.log(`${DEBUG_PREFIX} 🎨 CSS already loaded: ${link.href}`);
         checkAllLoaded();
@@ -134,6 +150,43 @@ function initReactApp() {
   }
 }
 
+// Check if CSS is fully applied by testing a known CSS variable or property
+function waitForCSSApplied() {
+  return new Promise((resolve) => {
+    const maxAttempts = 50; // 500ms max
+    let attempts = 0;
+
+    const checkCSS = () => {
+      attempts++;
+
+      // Check if our CSS variables are available (from Tailwind/our styles)
+      const testEl = document.createElement('div');
+      testEl.className = 'bg-primary'; // A class from our styles
+      testEl.style.display = 'none';
+      document.body.appendChild(testEl);
+
+      const computedStyle = window.getComputedStyle(testEl);
+      const hasTailwind = computedStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+                          computedStyle.backgroundColor !== 'transparent';
+
+      document.body.removeChild(testEl);
+
+      if (hasTailwind || attempts >= maxAttempts) {
+        if (attempts >= maxAttempts) {
+          console.log(`${DEBUG_PREFIX} 🎨 CSS check timeout after ${attempts} attempts, proceeding...`);
+        } else {
+          console.log(`${DEBUG_PREFIX} 🎨 CSS is applied (attempt ${attempts})`);
+        }
+        resolve();
+      } else {
+        requestAnimationFrame(checkCSS);
+      }
+    };
+
+    checkCSS();
+  });
+}
+
 // WordPress compatibility: Use multiple strategies to ensure DOM is ready
 async function waitForDOMAndMount() {
   console.log(`${DEBUG_PREFIX} 🕐 waitForDOMAndMount() called, readyState=${document.readyState}`);
@@ -146,6 +199,11 @@ async function waitForDOMAndMount() {
     // Wait for CSS to load before mounting React
     console.log(`${DEBUG_PREFIX} ⏳ Waiting for CSS to load...`);
     await waitForCSS();
+
+    // Additional check: wait for CSS to be actually applied
+    console.log(`${DEBUG_PREFIX} ⏳ Verifying CSS is applied...`);
+    await waitForCSSApplied();
+
     console.log(`${DEBUG_PREFIX} 🎨 CSS ready, mounting React...`);
 
     requestAnimationFrame(() => {
