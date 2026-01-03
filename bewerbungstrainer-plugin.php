@@ -780,15 +780,20 @@ class Bewerbungstrainer_Plugin {
                 'firstName' => $is_logged_in ? get_user_meta($current_user_id, 'first_name', true) : '',
             ),
             'uploadsUrl' => wp_upload_dir()['baseurl'] . '/bewerbungstrainer',
+            'pluginUrl' => BEWERBUNGSTRAINER_PLUGIN_URL,
+            'assetsUrl' => BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/',
             'elevenlabsAgentId' => get_option('bewerbungstrainer_elevenlabs_agent_id', ''),
             'elevenlabsApiKey' => get_option('bewerbungstrainer_elevenlabs_api_key', ''),
             'geminiApiKey' => get_option('bewerbungstrainer_gemini_api_key', ''),
         ));
 
         // Add type="module" to script tag for ES6 module support
+        // Use clean URL without query string to ensure proper relative import resolution
         add_filter('script_loader_tag', function($tag, $handle, $src) {
             if ('bewerbungstrainer-app' === $handle) {
-                $tag = '<script type="module" src="' . esc_url($src) . '"></script>';
+                // Remove query string from URL to prevent module resolution issues
+                $clean_src = preg_replace('/\?.*$/', '', $src);
+                $tag = '<script type="module" src="' . esc_url($clean_src) . '"></script>';
             }
             return $tag;
         }, 10, 3);
