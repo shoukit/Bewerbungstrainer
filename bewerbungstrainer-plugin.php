@@ -726,6 +726,24 @@ class Bewerbungstrainer_Plugin {
             return;
         }
 
+        // Prevent page caching to ensure fresh JS chunks are always loaded
+        // This is important because dynamic imports use content-hashed filenames
+        if (!headers_sent()) {
+            header('Cache-Control: no-cache, no-store, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+        }
+        // Also set nocache constants for WordPress caching plugins
+        if (!defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+        if (!defined('DONOTCACHEOBJECT')) {
+            define('DONOTCACHEOBJECT', true);
+        }
+        if (!defined('DONOTCACHEDB')) {
+            define('DONOTCACHEDB', true);
+        }
+
         // Enqueue React app (built version)
         $asset_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/index.js';
         $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/FeatureInfoButton.css';
