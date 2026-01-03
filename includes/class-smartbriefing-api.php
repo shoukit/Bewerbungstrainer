@@ -112,6 +112,13 @@ class Bewerbungstrainer_SmartBriefing_API {
             'permission_callback' => array($this, 'allow_all_users'),
         ));
 
+        // Update briefing (for renaming title)
+        register_rest_route($this->namespace, '/smartbriefing/briefings/(?P<id>\d+)', array(
+            'methods' => 'PUT',
+            'callback' => array($this, 'update_briefing'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
         // Delete briefing
         register_rest_route($this->namespace, '/smartbriefing/briefings/(?P<id>\d+)', array(
             'methods' => 'DELETE',
@@ -974,6 +981,59 @@ class Bewerbungstrainer_SmartBriefing_API {
             'data' => array(
                 'section' => $this->format_section($updated_section),
                 'new_items_count' => count($new_items),
+            ),
+        ), 200);
+    }
+
+    /**
+     * Update briefing (e.g., rename title)
+     */
+    public function update_briefing($request) {
+        $briefing_id = intval($request['id']);
+        $user_id = get_current_user_id();
+        $params = $request->get_json_params();
+
+        // Validate briefing ownership
+        $briefing = $this->db->get_briefing($briefing_id);
+        if (!$briefing || (int) $briefing->user_id !== $user_id) {
+            return new WP_Error(
+                'not_found',
+                __('Briefing nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Build update data (only allow specific fields)
+        $update_data = array();
+        if (isset($params['title'])) {
+            $update_data['title'] = sanitize_text_field($params['title']);
+        }
+
+        if (empty($update_data)) {
+            return new WP_Error(
+                'no_data',
+                __('Keine Daten zum Aktualisieren.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        $result = $this->db->update_briefing($briefing_id, $update_data);
+
+        if (!$result) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Aktualisieren des Briefings.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Get updated briefing
+        $updated_briefing = $this->db->get_briefing($briefing_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'briefing' => $this->format_briefing($updated_briefing),
             ),
         ), 200);
     }

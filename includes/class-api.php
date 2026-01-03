@@ -739,6 +739,11 @@ class Bewerbungstrainer_API {
             $params = $request->get_params();
         }
 
+        // Sanitize custom_title if present
+        if (isset($params['custom_title'])) {
+            $params['custom_title'] = sanitize_text_field($params['custom_title']);
+        }
+
         // Update session
         $result = $this->db->update_session($session_id, $params);
 

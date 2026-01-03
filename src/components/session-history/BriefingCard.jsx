@@ -2,7 +2,7 @@
  * BriefingCard - Card component for Smart Briefings
  *
  * Displays a briefing with icon, title, date, and template info.
- * Supports both mobile and desktop layouts.
+ * Supports both mobile and desktop layouts with inline title editing.
  */
 
 import React, { useState } from 'react';
@@ -12,21 +12,31 @@ import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime } from '@/utils/formatting';
 import { getBriefingIcon } from '@/utils/iconMaps';
 import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
+import InlineEditTitle from './InlineEditTitle';
 
 const BriefingCard = ({
   briefing,
   onClick,
   onDelete,
+  onRename,
   headerGradient,
   headerText,
   primaryAccent,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [localTitle, setLocalTitle] = useState(briefing.title);
   // Use 900px breakpoint for better tablet support (consistent with SessionCard)
   const isMobile = useMobile(900);
 
   const Icon = getBriefingIcon(briefing.template_icon);
+
+  const handleRename = async (newTitle) => {
+    if (onRename) {
+      await onRename(briefing.id, newTitle);
+      setLocalTitle(newTitle);
+    }
+  };
 
   const handleDeleteClick = (e) => {
     e.stopPropagation();
@@ -65,9 +75,18 @@ const BriefingCard = ({
               <Icon className="w-[22px] h-[22px] text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3] line-clamp-2">
-                {briefing.title || 'Briefing'}
-              </h3>
+              {onRename ? (
+                <InlineEditTitle
+                  title={localTitle || 'Briefing'}
+                  onSave={handleRename}
+                  className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3] line-clamp-2"
+                  placeholder="Briefing"
+                />
+              ) : (
+                <h3 className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3] line-clamp-2">
+                  {localTitle || 'Briefing'}
+                </h3>
+              )}
               <div className="text-[13px] text-slate-500">
                 {formatDateTime(briefing.created_at)}
               </div>
@@ -130,9 +149,18 @@ const BriefingCard = ({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-slate-900 mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
-              {briefing.title || 'Briefing'}
-            </h3>
+            {onRename ? (
+              <InlineEditTitle
+                title={localTitle || 'Briefing'}
+                onSave={handleRename}
+                className="text-base font-semibold text-slate-900 mb-1 whitespace-nowrap overflow-hidden text-ellipsis"
+                placeholder="Briefing"
+              />
+            ) : (
+              <h3 className="text-base font-semibold text-slate-900 mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                {localTitle || 'Briefing'}
+              </h3>
+            )}
             <div className="flex items-center gap-3 flex-wrap text-[13px] text-slate-500">
               <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-[10px] text-xs font-medium">
                 {briefing.template_title}

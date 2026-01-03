@@ -353,6 +353,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     }
   };
 
+  // Rename briefing handler
+  const handleRenameBriefing = async (briefing, newTitle) => {
+    const updatedBriefing = await wordpressAPI.updateBriefing(briefing.id, { title: newTitle });
+    setBriefings((prev) =>
+      prev.map((b) => (b.id === briefing.id ? { ...b, title: newTitle } : b))
+    );
+    return updatedBriefing;
+  };
+
   // Handle briefing click - open workbook
   const handleBriefingClick = (briefing) => {
     setSelectedBriefing(briefing);
@@ -370,6 +379,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     if (response.success) {
       setDecisions((prev) => prev.filter((d) => d.id !== decisionId));
     }
+  };
+
+  // Rename decision handler
+  const handleRenameDecision = async (decision, newTopic) => {
+    const updatedDecision = await wordpressAPI.updateDecision(decision.id, { topic: newTopic });
+    setDecisions((prev) =>
+      prev.map((d) => (d.id === decision.id ? { ...d, topic: newTopic } : d))
+    );
+    return updatedDecision;
   };
 
   // Handle delete ikigai
@@ -581,6 +599,42 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       }
     } catch (err) {
       console.error('Failed to delete session:', err);
+      throw err;
+    }
+  };
+
+  // Handle rename session
+  const handleRenameSession = async (session, type, newTitle) => {
+    try {
+      let updateFn;
+
+      switch (type) {
+        case TABS.SIMULATOR:
+          await wordpressAPI.updateSimulatorSession(session.id, { custom_title: newTitle });
+          updateFn = (prev) => prev.map((s) =>
+            s.id === session.id ? { ...s, custom_title: newTitle } : s
+          );
+          setSimulatorSessions(updateFn);
+          break;
+        case TABS.ROLEPLAY:
+          await wordpressAPI.updateSession(session.id, { custom_title: newTitle });
+          updateFn = (prev) => prev.map((s) =>
+            s.id === session.id ? { ...s, custom_title: newTitle } : s
+          );
+          setRoleplaySessions(updateFn);
+          break;
+        case TABS.VIDEO:
+          await wordpressAPI.updateVideoTraining(session.id, { custom_title: newTitle });
+          updateFn = (prev) => prev.map((s) =>
+            s.id === session.id ? { ...s, custom_title: newTitle } : s
+          );
+          setVideoSessions(updateFn);
+          break;
+        default:
+          throw new Error('Unknown session type');
+      }
+    } catch (err) {
+      console.error('Failed to rename session:', err);
       throw err;
     }
   };
@@ -1080,6 +1134,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   briefing={briefing}
                   onClick={() => handleBriefingClick(briefing)}
                   onDelete={handleDeleteBriefing}
+                  onRename={handleRenameBriefing}
                 />
               ))
             ) : activeTab === TABS.DECISIONS ? (
@@ -1090,6 +1145,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   decision={decision}
                   onClick={() => handleDecisionClick(decision)}
                   onDelete={handleDeleteDecision}
+                  onRename={handleRenameDecision}
                 />
               ))
             ) : activeTab === TABS.IKIGAI ? (
@@ -1115,6 +1171,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                     onClick={() => handleSessionClick(session)}
                     onContinueSession={onContinueSession}
                     onDeleteSession={handleDeleteSession}
+                    onRename={handleRenameSession}
                   />
                 );
               })

@@ -229,6 +229,20 @@ class Bewerbungstrainer_Simulator_Database {
             $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD INDEX `demo_code` (`demo_code`)");
             error_log('[SIMULATOR] demo_code column added successfully');
         }
+
+        // Add custom_title column for session renaming
+        $custom_title_exists = $wpdb->get_row(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_sessions}` LIKE %s",
+                'custom_title'
+            )
+        );
+
+        if (empty($custom_title_exists)) {
+            error_log('[SIMULATOR] Adding custom_title column to sessions table...');
+            $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD COLUMN `custom_title` varchar(255) DEFAULT NULL AFTER `scenario_id`");
+            error_log('[SIMULATOR] custom_title column added successfully');
+        }
     }
 
     /**

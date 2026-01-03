@@ -2,7 +2,7 @@
  * DecisionCard - Card component for Decision Board entries
  *
  * Displays a decision with topic, pro/contra count, date, and score bar.
- * Supports both mobile and desktop layouts.
+ * Supports both mobile and desktop layouts with inline title editing.
  */
 
 import React, { useState } from 'react';
@@ -11,6 +11,7 @@ import { Calendar, ChevronRight, Loader2, Trash2, Scale, ThumbsUp, ThumbsDown } 
 import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime } from '@/utils/formatting';
 import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
+import InlineEditTitle from './InlineEditTitle';
 import { COLORS } from '@/config/colors';
 
 /**
@@ -38,13 +39,22 @@ const DecisionCard = ({
   decision,
   onClick,
   onDelete,
+  onRename,
   headerGradient,
   headerText,
   primaryAccent,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [localTopic, setLocalTopic] = useState(decision.topic);
   const isMobile = useMobile(900);
+
+  const handleRename = async (newTopic) => {
+    if (onRename) {
+      await onRename(decision.id, newTopic);
+      setLocalTopic(newTopic);
+    }
+  };
 
   // Calculate scores
   const proScore = (decision.pros || []).reduce((acc, item) => acc + (item.text?.trim() ? (item.weight || 5) : 0), 0);
@@ -98,9 +108,18 @@ const DecisionCard = ({
               <Scale className="w-[22px] h-[22px] text-purple-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3] line-clamp-2">
-                {decision.topic || 'Entscheidung'}
-              </h3>
+              {onRename ? (
+                <InlineEditTitle
+                  title={localTopic || 'Entscheidung'}
+                  onSave={handleRename}
+                  className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3] line-clamp-2"
+                  placeholder="Entscheidung"
+                />
+              ) : (
+                <h3 className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3] line-clamp-2">
+                  {localTopic || 'Entscheidung'}
+                </h3>
+              )}
               <div className="text-[13px] text-slate-500">
                 {formatDateTime(decision.created_at)}
               </div>
@@ -171,9 +190,18 @@ const DecisionCard = ({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-slate-900 mb-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
-              {decision.topic || 'Entscheidung'}
-            </h3>
+            {onRename ? (
+              <InlineEditTitle
+                title={localTopic || 'Entscheidung'}
+                onSave={handleRename}
+                className="text-base font-semibold text-slate-900 mb-1.5 whitespace-nowrap overflow-hidden text-ellipsis"
+                placeholder="Entscheidung"
+              />
+            ) : (
+              <h3 className="text-base font-semibold text-slate-900 mb-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                {localTopic || 'Entscheidung'}
+              </h3>
+            )}
             <div className="flex items-center gap-4 flex-wrap text-[13px] text-slate-500">
               {/* Pro/Contra counts */}
               <div className="flex items-center gap-3">

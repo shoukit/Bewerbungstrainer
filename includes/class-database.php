@@ -72,6 +72,12 @@ class Bewerbungstrainer_Database {
             $this->add_demo_code_columns();
             update_option('bewerbungstrainer_db_migration_version', '1.0.1');
         }
+
+        // Migration 2: Add custom_title column for session renaming
+        if (version_compare($current_version, '1.0.2', '<')) {
+            $this->add_custom_title_column();
+            update_option('bewerbungstrainer_db_migration_version', '1.0.2');
+        }
     }
 
     /**
@@ -106,6 +112,35 @@ class Bewerbungstrainer_Database {
                 $wpdb->query("ALTER TABLE `$table` ADD INDEX `demo_code` (`demo_code`)");
                 error_log("[DATABASE] demo_code column added to $table successfully");
             }
+        }
+    }
+
+    /**
+     * Add custom_title column to roleplay sessions table for session renaming
+     */
+    private function add_custom_title_column() {
+        global $wpdb;
+
+        $table = $this->table_roleplay_sessions;
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'");
+        if (!$table_exists) {
+            return;
+        }
+
+        // Check if column exists
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `$table` LIKE %s",
+                'custom_title'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log("[DATABASE] Adding custom_title column to $table...");
+            $wpdb->query("ALTER TABLE `$table` ADD COLUMN `custom_title` varchar(255) DEFAULT NULL AFTER `scenario_id`");
+            error_log("[DATABASE] custom_title column added to $table successfully");
         }
     }
 

@@ -1162,6 +1162,10 @@ class Bewerbungstrainer_Simulator_API {
             $update_data['completed_questions'] = intval($params['completed_questions']);
         }
 
+        if (isset($params['custom_title'])) {
+            $update_data['custom_title'] = sanitize_text_field($params['custom_title']);
+        }
+
         if (!empty($update_data)) {
             $this->db->update_session($session_id, $update_data);
         }

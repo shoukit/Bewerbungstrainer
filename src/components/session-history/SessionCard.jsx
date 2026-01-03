@@ -5,7 +5,7 @@
  * Shows score, status, progress, and actions (continue/delete).
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Calendar,
@@ -23,6 +23,7 @@ import { useMobile } from '@/hooks/useMobile';
 import { formatDateTime, formatDuration } from '@/utils/formatting';
 import ConfirmDeleteDialog from '@/components/ui/composite/ConfirmDeleteDialog';
 import { COLORS } from '@/config/colors';
+import InlineEditTitle from './InlineEditTitle';
 
 /**
  * Session type constants (must match parent component)
@@ -40,6 +41,7 @@ const SessionCard = ({
   onClick,
   onContinueSession,
   onDeleteSession,
+  onRename,
   headerGradient,
   headerText,
   primaryAccent,
@@ -48,6 +50,31 @@ const SessionCard = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   // Use 900px breakpoint for better tablet support - cards have many elements
   const isMobile = useMobile(900);
+
+  // Local state for the title to allow optimistic updates
+  const getDisplayTitle = () => {
+    return session.custom_title || scenario?.title || session.scenario_title || `Session #${session.id}`;
+  };
+  const [localTitle, setLocalTitle] = useState(getDisplayTitle());
+
+  // Update local title when session changes
+  useEffect(() => {
+    setLocalTitle(getDisplayTitle());
+  }, [session.custom_title, scenario?.title, session.scenario_title, session.id]);
+
+  // Handle rename
+  const handleRename = async (newTitle) => {
+    if (onRename) {
+      setLocalTitle(newTitle);
+      try {
+        await onRename(session, type, newTitle);
+      } catch (err) {
+        // Revert on error
+        setLocalTitle(getDisplayTitle());
+        throw err;
+      }
+    }
+  };
 
   const getScore = () => {
     let rawScore = null;
@@ -188,9 +215,17 @@ const SessionCard = ({
               <Icon className="w-[22px] h-[22px]" style={{ color: headerText }} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3]">
-                {scenario?.title || session.scenario_title || `Session #${session.id}`}
-              </h3>
+              {onRename ? (
+                <InlineEditTitle
+                  title={localTitle}
+                  onSave={handleRename}
+                  className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3]"
+                />
+              ) : (
+                <h3 className="text-[15px] font-semibold text-slate-900 mb-1 leading-[1.3]">
+                  {localTitle}
+                </h3>
+              )}
               <div className="text-[13px] text-slate-500">
                 {formatDateTime(session.created_at)}
               </div>
@@ -300,9 +335,17 @@ const SessionCard = ({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-slate-900 mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
-              {scenario?.title || session.scenario_title || `Session #${session.id}`}
-            </h3>
+            {onRename ? (
+              <InlineEditTitle
+                title={localTitle}
+                onSave={handleRename}
+                className="text-base font-semibold text-slate-900 mb-1 whitespace-nowrap overflow-hidden text-ellipsis"
+              />
+            ) : (
+              <h3 className="text-base font-semibold text-slate-900 mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                {localTitle}
+              </h3>
+            )}
             <div className="flex items-center gap-3 flex-wrap text-[13px] text-slate-500">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
