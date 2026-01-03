@@ -1110,7 +1110,7 @@ const CreateTemplateDialog = ({
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-slate-200 px-6">
+          <div className="flex border-b border-slate-200 px-6 gap-1">
             {[
               { key: 'basics', label: '1. Grundlagen' },
               { key: 'variables', label: '2. Eingabefelder' },
@@ -1119,10 +1119,10 @@ const CreateTemplateDialog = ({
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-5 py-3 border-none bg-transparent text-sm font-semibold cursor-pointer -mb-px transition-all ${
+                className={`px-5 py-3 text-sm font-semibold cursor-pointer -mb-px transition-all rounded-t-lg border-none ${
                   activeTab === tab.key
-                    ? 'text-primary border-b-[3px] border-primary'
-                    : 'text-slate-500 border-b-[3px] border-transparent hover:text-slate-700'
+                    ? 'bg-indigo-100 text-indigo-700 border-b-[3px] border-indigo-600'
+                    : 'bg-transparent text-slate-500 border-b-[3px] border-transparent hover:text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 {tab.label}
@@ -1142,31 +1142,31 @@ const CreateTemplateDialog = ({
             {/* Basics Tab */}
             {activeTab === 'basics' && (
               <div className="flex flex-col gap-5">
-                {/* Preset Selector - Moved here from step 3 */}
-                {!editTemplate && (
-                  <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-4 border border-indigo-100">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Sparkles size={18} className="text-indigo-600" />
-                      <label className="text-sm font-semibold text-slate-900">
-                        Schnellstart mit Vorlage
-                      </label>
-                    </div>
-                    <select
-                      value={selectedPreset}
-                      onChange={(e) => handleApplyPreset(e.target.value)}
-                      className="w-full px-3.5 py-3 rounded-xl border border-indigo-200 text-sm bg-white cursor-pointer"
-                    >
-                      {USECASE_PRESETS.map(preset => (
-                        <option key={preset.key} value={preset.key}>
-                          {preset.label}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-slate-500 mt-2">
-                      Eine Vorlage füllt Eingabefelder und KI-Anweisungen automatisch aus.
-                    </p>
+                {/* Preset Selector - Always visible */}
+                <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-4 border border-indigo-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Sparkles size={18} className="text-indigo-600" />
+                    <label className="text-sm font-semibold text-slate-900">
+                      {editTemplate ? 'Vorlage anwenden' : 'Schnellstart mit Vorlage'}
+                    </label>
                   </div>
-                )}
+                  <select
+                    value={selectedPreset}
+                    onChange={(e) => handleApplyPreset(e.target.value)}
+                    className="w-full px-3.5 py-3 rounded-xl border border-indigo-200 text-sm bg-white cursor-pointer"
+                  >
+                    {USECASE_PRESETS.map(preset => (
+                      <option key={preset.key} value={preset.key}>
+                        {preset.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {editTemplate
+                      ? 'Wähle eine Vorlage, um die KI-Anweisungen zu ersetzen. Titel und Beschreibung bleiben erhalten.'
+                      : 'Eine Vorlage füllt Eingabefelder und KI-Anweisungen automatisch aus.'}
+                  </p>
+                </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-1.5">
