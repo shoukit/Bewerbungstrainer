@@ -283,7 +283,11 @@ class Bewerbungstrainer_SmartBriefing_API {
             'icon' => isset($params['icon']) ? sanitize_text_field($params['icon']) : 'file-text',
             'category' => 'MEINE', // Always set to MEINE for custom templates
             'system_prompt' => $params['system_prompt'], // Don't over-sanitize the prompt
+            'ai_role' => isset($params['ai_role']) ? $params['ai_role'] : '',
+            'ai_task' => isset($params['ai_task']) ? $params['ai_task'] : '',
+            'ai_behavior' => isset($params['ai_behavior']) ? $params['ai_behavior'] : '',
             'variables_schema' => isset($params['variables_schema']) ? $params['variables_schema'] : array(),
+            'allow_custom_variables' => !empty($params['allow_user_variables']) ? 1 : 0,
             'is_active' => 1,
             'sort_order' => 0,
             'user_id' => $user_id ?: null,
@@ -374,8 +378,24 @@ class Bewerbungstrainer_SmartBriefing_API {
             $update_data['system_prompt'] = $params['system_prompt'];
         }
 
+        if (isset($params['ai_role'])) {
+            $update_data['ai_role'] = $params['ai_role'];
+        }
+
+        if (isset($params['ai_task'])) {
+            $update_data['ai_task'] = $params['ai_task'];
+        }
+
+        if (isset($params['ai_behavior'])) {
+            $update_data['ai_behavior'] = $params['ai_behavior'];
+        }
+
         if (isset($params['variables_schema'])) {
             $update_data['variables_schema'] = $params['variables_schema'];
+        }
+
+        if (isset($params['allow_user_variables'])) {
+            $update_data['allow_custom_variables'] = !empty($params['allow_user_variables']) ? 1 : 0;
         }
 
         if (empty($update_data)) {

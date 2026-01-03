@@ -38,11 +38,12 @@ import {
   AlertCircle,
   Loader2,
   Save,
-  Eye,
   ChevronRight,
   Sparkles,
   Copy,
   Check,
+  CheckCircle,
+  FileSearch,
 } from 'lucide-react';
 import wordpressAPI from '@/services/wordpress-api';
 
@@ -641,186 +642,6 @@ const IconSelector = ({ selectedIcon, onSelect }) => {
 };
 
 /**
- * Preview Modal Component
- */
-const PreviewModal = ({ isOpen, onClose, templateData, variables }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [preview, setPreview] = useState(null);
-  const [error, setError] = useState(null);
-  const [testValues, setTestValues] = useState({});
-
-  // Initialize test values when variables change
-  useEffect(() => {
-    const initial = {};
-    variables.forEach(v => {
-      initial[v.key] = v.placeholder || `[${v.label}]`;
-    });
-    setTestValues(initial);
-    setPreview(null);
-  }, [variables]);
-
-  const generatePreview = async () => {
-    setIsGenerating(true);
-    setError(null);
-
-    try {
-      const geminiApiKey = wordpressAPI.getGeminiApiKey();
-      if (!geminiApiKey) {
-        throw new Error('Kein Gemini API-Key konfiguriert');
-      }
-
-      // Build the full prompt
-      let fullPrompt = templateData.aiRole + '\n\n';
-
-      if (templateData.sections.length > 0) {
-        fullPrompt += 'Erstelle ein strukturiertes Briefing mit folgenden Abschnitten:\n\n';
-        templateData.sections.forEach((section, idx) => {
-          fullPrompt += `### ${idx + 1}. ${section.title}\n${section.instruction}\n\n`;
-        });
-      }
-
-      if (templateData.aiBehavior) {
-        fullPrompt += `\n\nWICHTIG: ${templateData.aiBehavior}`;
-      }
-
-      // Replace variables with test values
-      Object.entries(testValues).forEach(([key, value]) => {
-        fullPrompt = fullPrompt.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value);
-      });
-
-      // Generate preview (simplified - just show the prompt for now)
-      // In production, this would call the actual API
-      setPreview({
-        prompt: fullPrompt,
-        sections: templateData.sections.map(s => ({
-          title: s.title,
-          instruction: s.instruction.replace(/\$\{(\w+)\}/g, (_, key) => testValues[key] || `[${key}]`),
-        })),
-      });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl w-full max-w-[800px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
-      >
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-violet-50">
-          <div className="flex items-center gap-3">
-            <Eye size={20} className="text-indigo-600" />
-            <h3 className="text-lg font-bold text-slate-900">Template Vorschau</h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 border-none bg-white/80 rounded-lg cursor-pointer hover:bg-white transition-colors"
-          >
-            <X size={18} className="text-slate-500" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-auto p-6">
-          {/* Test Values */}
-          {variables.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-sm font-semibold text-slate-700 mb-3">Testwerte für Variablen:</h4>
-              <div className="grid grid-cols-2 gap-3">
-                {variables.map(v => (
-                  <div key={v.id}>
-                    <label className="block text-xs text-slate-500 mb-1">{v.label}</label>
-                    <input
-                      type="text"
-                      value={testValues[v.key] || ''}
-                      onChange={(e) => setTestValues(prev => ({ ...prev, [v.key]: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={generatePreview}
-            disabled={isGenerating}
-            className="w-full mb-6 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold border-none cursor-pointer disabled:opacity-50"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Generiere Vorschau...
-              </>
-            ) : (
-              <>
-                <Sparkles size={18} />
-                Vorschau generieren
-              </>
-            )}
-          </button>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
-              <AlertCircle size={18} className="text-red-500" />
-              <span className="text-red-700 text-sm">{error}</span>
-            </div>
-          )}
-
-          {preview && (
-            <div className="space-y-4">
-              {/* AI Role */}
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">KI-Rolle</h4>
-                <p className="text-sm text-slate-700">{templateData.aiRole}</p>
-              </div>
-
-              {/* Sections */}
-              {preview.sections.map((section, idx) => (
-                <div key={idx} className="bg-white rounded-xl p-4 border border-slate-200">
-                  <h4 className="font-semibold text-slate-800 mb-2">{section.title}</h4>
-                  <p className="text-sm text-slate-600">{section.instruction}</p>
-                </div>
-              ))}
-
-              {/* Behavior */}
-              {templateData.aiBehavior && (
-                <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-                  <h4 className="text-xs font-semibold text-amber-600 uppercase mb-2">Verhalten</h4>
-                  <p className="text-sm text-amber-800">{templateData.aiBehavior}</p>
-                </div>
-              )}
-
-              {/* Full Prompt */}
-              <div className="bg-slate-900 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-semibold text-slate-400 uppercase">Vollständiger Prompt</h4>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(preview.prompt)}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800 text-slate-300 text-xs border-none cursor-pointer hover:bg-slate-700"
-                  >
-                    <Copy size={12} />
-                    Kopieren
-                  </button>
-                </div>
-                <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono leading-relaxed max-h-[300px] overflow-auto">
-                  {preview.prompt}
-                </pre>
-              </div>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
-/**
  * Main CreateTemplateDialog Component
  */
 const CreateTemplateDialog = ({
@@ -846,8 +667,11 @@ const CreateTemplateDialog = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('basics');
-  const [showPreview, setShowPreview] = useState(false);
   const [pendingPreset, setPendingPreset] = useState(null); // For confirmation dialog
+  const [syntaxCheckResult, setSyntaxCheckResult] = useState(null); // { success, undefinedVars }
+
+  // Option to allow user-defined variables at frontend
+  const [allowUserVariables, setAllowUserVariables] = useState(false);
 
   // Refs for variable insertion
   const aiRoleRef = useRef(null);
@@ -889,6 +713,7 @@ const CreateTemplateDialog = ({
       }
 
       setAiBehavior(editTemplate.ai_behavior || '');
+      setAllowUserVariables(editTemplate.allow_user_variables || false);
       setSelectedPreset('empty');
     } else {
       // Reset form for new template
@@ -899,10 +724,12 @@ const CreateTemplateDialog = ({
       setAiRole('');
       setSections([]);
       setAiBehavior('');
+      setAllowUserVariables(false);
       setSelectedPreset('empty');
     }
     setActiveTab('basics');
     setError(null);
+    setSyntaxCheckResult(null);
   }, [editTemplate, isOpen]);
 
   // Check if form has existing data
@@ -1046,6 +873,49 @@ const CreateTemplateDialog = ({
     return prompt;
   };
 
+  // Extract all ${variable} references from the prompt
+  const extractVariablesFromPrompt = () => {
+    const fullPrompt = buildSystemPrompt();
+    const regex = /\$\{(\w+)\}/g;
+    const matches = [];
+    let match;
+    while ((match = regex.exec(fullPrompt)) !== null) {
+      if (!matches.includes(match[1])) {
+        matches.push(match[1]);
+      }
+    }
+    return matches;
+  };
+
+  // Check syntax - find undefined variables in prompt
+  const checkSyntax = () => {
+    const usedVariables = extractVariablesFromPrompt();
+    const definedKeys = variables.map(v => v.key).filter(k => k.trim());
+    const undefinedVars = usedVariables.filter(v => !definedKeys.includes(v));
+
+    return {
+      success: undefinedVars.length === 0,
+      undefinedVars,
+      usedVariables,
+      definedKeys,
+    };
+  };
+
+  // Handle syntax check button click
+  const handleSyntaxCheck = () => {
+    const result = checkSyntax();
+    setSyntaxCheckResult(result);
+
+    if (!result.success) {
+      setError(`Undefinierte Variablen im Prompt gefunden: ${result.undefinedVars.map(v => '${' + v + '}').join(', ')}`);
+      setActiveTab('prompt');
+    } else {
+      setError(null);
+    }
+
+    return result.success;
+  };
+
   // Validate form
   const validate = () => {
     if (!title.trim()) {
@@ -1082,6 +952,16 @@ const CreateTemplateDialog = ({
         return false;
       }
     }
+
+    // Syntax check - ensure all variables used in prompt are defined
+    const syntaxResult = checkSyntax();
+    setSyntaxCheckResult(syntaxResult);
+    if (!syntaxResult.success) {
+      setError(`Undefinierte Variablen im Prompt: ${syntaxResult.undefinedVars.map(v => '${' + v + '}').join(', ')}. Bitte definiere diese Variablen unter "Eingabefelder".`);
+      setActiveTab('prompt');
+      return false;
+    }
+
     return true;
   };
 
@@ -1115,6 +995,8 @@ const CreateTemplateDialog = ({
         // Legacy field for backward compatibility
         system_prompt: buildSystemPrompt(),
         variables_schema: variablesSchema,
+        // Allow frontend users to add their own variables
+        allow_user_variables: allowUserVariables,
         ...(demoCode ? { demo_code: demoCode } : {}),
       };
 
@@ -1167,21 +1049,12 @@ const CreateTemplateDialog = ({
                 Erstelle ein persönliches Briefing-Template
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowPreview(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors"
-              >
-                <Eye size={16} />
-                Vorschau
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 border-none bg-slate-100 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors"
-              >
-                <X size={20} className="text-slate-500" />
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              className="p-2 border-none bg-slate-100 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors"
+            >
+              <X size={20} className="text-slate-500" />
+            </button>
           </div>
 
           {/* Tabs */}
@@ -1317,6 +1190,26 @@ const CreateTemplateDialog = ({
                     Noch keine Eingabefelder definiert.
                   </div>
                 )}
+
+                {/* Option to allow user-defined variables */}
+                <div className="mt-6 pt-4 border-t border-slate-200">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={allowUserVariables}
+                      onChange={(e) => setAllowUserVariables(e.target.checked)}
+                      className="w-5 h-5 accent-primary mt-0.5"
+                    />
+                    <div>
+                      <span className="font-semibold text-slate-800 text-sm">
+                        Nutzer darf eigene Variablen hinzufügen
+                      </span>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Wenn aktiviert, kann der Nutzer beim Erstellen eines Briefings eigene zusätzliche Eingabefelder definieren.
+                      </p>
+                    </div>
+                  </label>
+                </div>
               </div>
             )}
 
@@ -1431,6 +1324,29 @@ const CreateTemplateDialog = ({
             )}
           </div>
 
+          {/* Syntax Check Result */}
+          {syntaxCheckResult && (
+            <div className={`px-6 py-3 border-t ${syntaxCheckResult.success ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+              <div className="flex items-center gap-2">
+                {syntaxCheckResult.success ? (
+                  <>
+                    <CheckCircle size={18} className="text-green-600" />
+                    <span className="text-green-700 text-sm font-medium">
+                      Syntax OK - Alle {syntaxCheckResult.usedVariables.length} Variablen sind definiert.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle size={18} className="text-amber-600" />
+                    <span className="text-amber-700 text-sm">
+                      <strong>Undefinierte Variablen:</strong> {syntaxCheckResult.undefinedVars.map(v => '${' + v + '}').join(', ')}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="px-6 py-4 border-t border-slate-200 flex justify-between items-center gap-3">
             <button
@@ -1441,11 +1357,11 @@ const CreateTemplateDialog = ({
             </button>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowPreview(true)}
+                onClick={handleSyntaxCheck}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors"
               >
-                <Eye size={16} />
-                Vorschau
+                <FileSearch size={16} />
+                Syntax prüfen
               </button>
               <button
                 onClick={handleSave}
@@ -1470,14 +1386,6 @@ const CreateTemplateDialog = ({
           </div>
         </motion.div>
       </div>
-
-      {/* Preview Modal */}
-      <PreviewModal
-        isOpen={showPreview}
-        onClose={() => setShowPreview(false)}
-        templateData={{ aiRole, sections, aiBehavior }}
-        variables={variables}
-      />
 
       {/* Confirmation Dialog for Preset Overwrite */}
       <AnimatePresence>
