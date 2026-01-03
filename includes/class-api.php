@@ -828,9 +828,10 @@ class Bewerbungstrainer_API {
             return $result;
         }
 
-        // Update session with audio information
+        // Update roleplay session with audio information
+        // Note: ElevenLabs audio is only used for roleplay sessions
         $session_id = intval($params['session_id']);
-        $this->db->update_session($session_id, array(
+        $this->db->update_roleplay_session($session_id, array(
             'conversation_id' => $params['conversation_id'],
             'audio_filename' => $result['filename'],
             'audio_url' => $result['url'],
