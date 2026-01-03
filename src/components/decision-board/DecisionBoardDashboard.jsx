@@ -22,7 +22,6 @@ import {
   History,
   Lightbulb,
   Target,
-  TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import wordpressAPI from '@/services/wordpress-api';
@@ -85,9 +84,9 @@ const DecisionBoardDashboard = ({
     setIsLoading(true);
     try {
       const response = await wordpressAPI.getDecisions();
-      if (response?.decisions) {
+      if (response?.data?.decisions) {
         // Sort by date, newest first, limit to 5
-        const sorted = response.decisions
+        const sorted = response.data.decisions
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
           .slice(0, 5);
         setSessions(sorted);
