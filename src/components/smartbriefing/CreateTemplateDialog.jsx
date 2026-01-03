@@ -77,7 +77,7 @@ const VARIABLE_TYPES = [
 ];
 
 /**
- * Usecase Presets with pre-filled prompt structures
+ * Usecase Presets with pre-filled prompt structures and variables
  */
 const USECASE_PRESETS = [
   {
@@ -87,6 +87,7 @@ const USECASE_PRESETS = [
     aiRole: '',
     sections: [],
     aiBehavior: '',
+    variables: [],
   },
   {
     key: 'sales',
@@ -101,6 +102,11 @@ const USECASE_PRESETS = [
       { id: 'closing', title: 'Closing Path 🎯', instruction: 'Entwickle einen Weg zum Ziel: ${meeting_goal}' },
     ],
     aiBehavior: 'Schreibe praxisnah und actionable. Jeder Punkt soll direkt umsetzbar sein. Vermeide Theorie - fokussiere auf konkrete Formulierungen und Techniken.',
+    variables: [
+      { key: 'customer_type', label: 'Kundentyp', type: 'text', placeholder: 'z.B. Enterprise, KMU, Startup' },
+      { key: 'product_service', label: 'Produkt/Service', type: 'text', placeholder: 'Was verkaufst du?' },
+      { key: 'meeting_goal', label: 'Ziel des Gesprächs', type: 'text', placeholder: 'z.B. Demo-Termin, Angebot' },
+    ],
   },
   {
     key: 'career',
@@ -115,6 +121,10 @@ const USECASE_PRESETS = [
       { id: 'questions_to_ask', title: 'Eigene Fragen 🙋', instruction: 'Formuliere 5-7 kluge Rückfragen an den Interviewer' },
     ],
     aiBehavior: 'Sei konkret und praxisorientiert. Gib Formulierungsvorschläge die direkt verwendet werden können. Berücksichtige deutsche Geschäftskultur.',
+    variables: [
+      { key: 'unternehmen', label: 'Unternehmen', type: 'text', placeholder: 'Name des Unternehmens' },
+      { key: 'position', label: 'Position', type: 'text', placeholder: 'Stelle, auf die du dich bewirbst' },
+    ],
   },
   {
     key: 'negotiation',
@@ -129,6 +139,12 @@ const USECASE_PRESETS = [
       { id: 'alternatives', title: 'Alternativen 🔄', instruction: 'Liste nicht-monetäre Benefits die verhandelbar sind' },
     ],
     aiBehavior: 'Fokussiere auf konkrete Zahlen und Formulierungen. Sei selbstbewusst aber nicht arrogant im Ton.',
+    variables: [
+      { key: 'position', label: 'Position', type: 'text', placeholder: 'Deine aktuelle/angestrebte Position' },
+      { key: 'branche', label: 'Branche', type: 'text', placeholder: 'z.B. IT, Finanzen, Marketing' },
+      { key: 'region', label: 'Region', type: 'text', placeholder: 'z.B. München, Berlin, Remote' },
+      { key: 'erfolge', label: 'Deine Erfolge', type: 'textarea', placeholder: 'Beschreibe deine wichtigsten Leistungen' },
+    ],
   },
   {
     key: 'presentation',
@@ -143,6 +159,10 @@ const USECASE_PRESETS = [
       { id: 'cta', title: 'Call-to-Action 🎯', instruction: 'Formuliere einen klaren nächsten Schritt' },
     ],
     aiBehavior: 'Schreibe in aktivem, energetischem Stil. Jeder Abschnitt soll eine klare Botschaft haben. Nutze Storytelling-Elemente.',
+    variables: [
+      { key: 'thema', label: 'Thema der Präsentation', type: 'text', placeholder: 'Worüber präsentierst du?' },
+      { key: 'zielgruppe', label: 'Zielgruppe', type: 'text', placeholder: 'Wer ist dein Publikum?' },
+    ],
   },
   {
     key: 'feedback',
@@ -157,6 +177,9 @@ const USECASE_PRESETS = [
       { id: 'support', title: 'Unterstützungsangebote 🤝', instruction: 'Liste mögliche Unterstützungsmaßnahmen' },
     ],
     aiBehavior: 'Schreibe wertschätzend und konstruktiv. Fokussiere auf Verhalten, nicht auf Persönlichkeit. Nutze die SBI-Methode (Situation-Behavior-Impact).',
+    variables: [
+      { key: 'mitarbeiter_name', label: 'Name des Mitarbeiters', type: 'text', placeholder: 'Vorname oder "der Mitarbeiter"' },
+    ],
   },
 ];
 
@@ -824,6 +847,7 @@ const CreateTemplateDialog = ({
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('basics');
   const [showPreview, setShowPreview] = useState(false);
+  const [pendingPreset, setPendingPreset] = useState(null); // For confirmation dialog
 
   // Refs for variable insertion
   const aiRoleRef = useRef(null);
@@ -881,7 +905,12 @@ const CreateTemplateDialog = ({
     setError(null);
   }, [editTemplate, isOpen]);
 
-  // Apply preset
+  // Check if form has existing data
+  const hasExistingData = () => {
+    return aiRole.trim() || sections.length > 0 || aiBehavior.trim() || variables.length > 0;
+  };
+
+  // Apply preset - shows confirmation if data exists
   const handleApplyPreset = (presetKey) => {
     const preset = USECASE_PRESETS.find(p => p.key === presetKey);
     if (!preset || presetKey === 'empty') {
@@ -889,11 +918,38 @@ const CreateTemplateDialog = ({
       return;
     }
 
-    setSelectedPreset(presetKey);
+    // Check if there's existing data that would be overwritten
+    if (hasExistingData()) {
+      setPendingPreset(preset);
+    } else {
+      applyPreset(preset);
+    }
+  };
+
+  // Actually apply the preset
+  const applyPreset = (preset) => {
+    setSelectedPreset(preset.key);
     setAiRole(preset.aiRole);
     setSections(preset.sections.map(s => ({ ...s, id: generateId() })));
     setAiBehavior(preset.aiBehavior);
     setIcon(AVAILABLE_ICONS.find(i => i.icon === preset.icon)?.key || 'file-text');
+
+    // Also apply preset variables
+    if (preset.variables && preset.variables.length > 0) {
+      setVariables(preset.variables.map(v => ({
+        ...v,
+        id: generateId(),
+        required: true,
+        options: [],
+      })));
+    }
+
+    setPendingPreset(null);
+  };
+
+  // Cancel preset application
+  const cancelPresetApplication = () => {
+    setPendingPreset(null);
   };
 
   // Variable management
@@ -1161,6 +1217,32 @@ const CreateTemplateDialog = ({
             {/* Basics Tab */}
             {activeTab === 'basics' && (
               <div className="flex flex-col gap-5">
+                {/* Preset Selector - Moved here from step 3 */}
+                {!editTemplate && (
+                  <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-4 border border-indigo-100">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Sparkles size={18} className="text-indigo-600" />
+                      <label className="text-sm font-semibold text-slate-900">
+                        Schnellstart mit Vorlage
+                      </label>
+                    </div>
+                    <select
+                      value={selectedPreset}
+                      onChange={(e) => handleApplyPreset(e.target.value)}
+                      className="w-full px-3.5 py-3 rounded-xl border border-indigo-200 text-sm bg-white cursor-pointer"
+                    >
+                      {USECASE_PRESETS.map(preset => (
+                        <option key={preset.key} value={preset.key}>
+                          {preset.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-slate-500 mt-2">
+                      Eine Vorlage füllt Eingabefelder und KI-Anweisungen automatisch aus.
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-semibold text-slate-900 mb-1.5">
                     Titel *
@@ -1241,27 +1323,6 @@ const CreateTemplateDialog = ({
             {/* Prompt Tab - Structured Editor */}
             {activeTab === 'prompt' && (
               <div className="space-y-6">
-                {/* Preset Selector */}
-                <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-4 border border-indigo-100">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Sparkles size={18} className="text-indigo-600" />
-                    <label className="text-sm font-semibold text-slate-900">
-                      Schnellstart mit Vorlage
-                    </label>
-                  </div>
-                  <select
-                    value={selectedPreset}
-                    onChange={(e) => handleApplyPreset(e.target.value)}
-                    className="w-full px-3.5 py-3 rounded-xl border border-indigo-200 text-sm bg-white cursor-pointer"
-                  >
-                    {USECASE_PRESETS.map(preset => (
-                      <option key={preset.key} value={preset.key}>
-                        {preset.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 {/* AI Role */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -1417,6 +1478,77 @@ const CreateTemplateDialog = ({
         templateData={{ aiRole, sections, aiBehavior }}
         variables={variables}
       />
+
+      {/* Confirmation Dialog for Preset Overwrite */}
+      <AnimatePresence>
+        {pendingPreset && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl w-full max-w-[420px] shadow-2xl overflow-hidden"
+            >
+              <div className="px-6 py-4 border-b border-slate-200 bg-amber-50">
+                <div className="flex items-center gap-3">
+                  <AlertCircle size={24} className="text-amber-600" />
+                  <h3 className="text-lg font-bold text-slate-900">Daten überschreiben?</h3>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="text-slate-600 text-sm mb-4">
+                  Du hast bereits Eingabefelder oder KI-Anweisungen definiert.
+                  Wenn du die Vorlage <strong>"{pendingPreset.label}"</strong> anwendest,
+                  werden diese Daten überschrieben.
+                </p>
+                <div className="bg-slate-50 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-slate-500 font-medium mb-1">Was wird überschrieben:</p>
+                  <ul className="text-sm text-slate-600 space-y-1">
+                    {variables.length > 0 && (
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                        {variables.length} Eingabefeld{variables.length !== 1 ? 'er' : ''}
+                      </li>
+                    )}
+                    {aiRole && (
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                        KI-Rolle
+                      </li>
+                    )}
+                    {sections.length > 0 && (
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                        {sections.length} Briefing-Abschnitt{sections.length !== 1 ? 'e' : ''}
+                      </li>
+                    )}
+                    {aiBehavior && (
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                        Verhalten & Stil
+                      </li>
+                    )}
+                  </ul>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={cancelPresetApplication}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm cursor-pointer hover:bg-slate-50 transition-colors"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={() => applyPreset(pendingPreset)}
+                    className="flex-1 px-4 py-2.5 rounded-xl border-none bg-amber-500 text-white font-medium text-sm cursor-pointer hover:bg-amber-600 transition-colors"
+                  >
+                    Überschreiben
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

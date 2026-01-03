@@ -98,6 +98,7 @@ const DefaultCategoryBadge = ({ category, getCategoryConfig }) => {
  * @param {string} props.cardActionLabel - Label for card action button (default: 'Starten')
  * @param {React.Component} props.cardActionIcon - Icon for card action button
  * @param {Function} props.getCardCustomActions - (scenario) => React element for custom card actions (e.g., edit/delete)
+ * @param {Function} props.getCardClassName - (scenario) => additional className for the card
  * @param {boolean} props.isAuthenticated - Whether user is authenticated
  * @param {Function} props.requireAuth - Function to require authentication
  * @param {Function} props.setPendingAction - Function to set pending action for auth flow
@@ -130,6 +131,7 @@ const ScenarioDashboard = ({
   cardActionLabel = 'Starten',
   cardActionIcon,
   getCardCustomActions,
+  getCardClassName,
 
   // Category system
   categoryField = 'category',
@@ -477,6 +479,7 @@ const ScenarioDashboard = ({
             const IconComponent = getIconForScenario ? getIconForScenario(scenario) : null;
             const meta = renderCardMeta ? renderCardMeta(scenario) : [];
             const customActions = getCardCustomActions ? getCardCustomActions(scenario) : null;
+            const cardClassName = getCardClassName ? getCardClassName(scenario) : '';
 
             return (
               <ScenarioCard
@@ -490,6 +493,7 @@ const ScenarioDashboard = ({
                 onClick={() => handleSelectScenario(scenario)}
                 viewMode={viewMode}
                 customActions={customActions}
+                className={cardClassName}
               />
             );
           })}
