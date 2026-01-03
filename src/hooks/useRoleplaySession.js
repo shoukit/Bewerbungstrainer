@@ -19,7 +19,6 @@ import {
   analyzeRoleplayTranscript,
   saveRoleplaySessionAnalysis,
   updateRoleplaySessionConversationId,
-  fetchRoleplaySessionAudio,
 } from '@/services/roleplay-feedback-adapter';
 import {
   generateLiveCoaching,
@@ -283,33 +282,29 @@ export const useRoleplaySession = ({
 
       // Fetch audio for analysis
       let audioBlob = null;
+      let audioUrl = null;
 
       if (sessionId && conversationId) {
         try {
           // Update conversation ID in database
           await updateRoleplaySessionConversationId(sessionId, conversationId);
 
-          // For direct mode, fetch via WordPress proxy
-          if (connectionMode === CONNECTION_MODES.DIRECT) {
-            audioBlob = await fetchRoleplaySessionAudio(sessionId, 10, 3000);
-          } else {
-            // For proxy mode, save audio from ElevenLabs
-            const audioResult = await wordpressAPI.saveAudioFromElevenLabs(conversationId, sessionId);
-            const audioUrl = audioResult?.data?.url;
+          // Save audio from ElevenLabs to WordPress server
+          const audioResult = await wordpressAPI.saveAudioFromElevenLabs(conversationId, sessionId);
+          audioUrl = audioResult?.data?.url;
 
-            if (audioUrl) {
-              try {
-                const audioResponse = await fetch(audioUrl);
-                if (audioResponse.ok) {
-                  audioBlob = await audioResponse.blob();
-                }
-              } catch (fetchError) {
-                console.warn('[useRoleplaySession] Failed to fetch audio blob:', fetchError.message);
+          if (audioUrl) {
+            try {
+              const audioResponse = await fetch(audioUrl);
+              if (audioResponse.ok) {
+                audioBlob = await audioResponse.blob();
               }
+            } catch (fetchError) {
+              console.warn('[useRoleplaySession] Failed to fetch audio blob:', fetchError.message);
             }
           }
         } catch (audioError) {
-          console.warn('[useRoleplaySession] Could not fetch audio:', audioError.message);
+          console.warn('[useRoleplaySession] Could not save audio:', audioError.message);
         }
       }
 
@@ -348,6 +343,7 @@ export const useRoleplaySession = ({
           audio_analysis_json: analysis.audioAnalysisContent,
           duration: finalDuration,
           conversation_id: conversationId,
+          audio_url: audioUrl, // Include the saved audio URL for playback
           created_at: new Date().toISOString(),
         };
         onNavigateToSession(sessionForNavigation);
