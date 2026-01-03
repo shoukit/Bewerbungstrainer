@@ -48,25 +48,12 @@ class Bewerbungstrainer_Shortcodes {
         // Allow all users (logged in or not) to use the interview app
         // The wizard will let them enter their name manually if not logged in
 
-        // Enqueue assets
+        // Enqueue assets (includes inline scripts via wp_add_inline_script)
         $this->enqueue_interview_assets();
-
-        // Add inline scripts via wp_head to avoid wpautop corrupting JavaScript
-        // Using a static flag to ensure scripts are only added once
-        static $scripts_added = false;
-        if (!$scripts_added) {
-            $scripts_added = true;
-
-            // Add partner branding script to head (runs before DOM is ready)
-            add_action('wp_head', array($this, 'output_partner_branding_script'), 1);
-
-            // Add loading screen update script to footer (runs after DOM is ready)
-            add_action('wp_footer', array($this, 'output_loading_screen_script'), 1);
-        }
 
         // Return container div where React app will mount
         // Note: CSS is output via wp_add_inline_style in enqueue_interview_assets()
-        // to avoid wpautop issues with inline styles
+        // and inline scripts via wp_add_inline_script to avoid wpautop issues
         ob_start();
         ?>
         <div id="bewerbungstrainer-app" class="bewerbungstrainer-interview-container">
@@ -101,30 +88,6 @@ class Bewerbungstrainer_Shortcodes {
         </div>
         <?php
         return ob_get_clean();
-    }
-
-    /**
-     * Output partner branding script in wp_head
-     * This runs before the DOM is ready to apply cached branding immediately
-     */
-    public function output_partner_branding_script() {
-        ?>
-        <script>
-        (function(){try{var u=new URLSearchParams(window.location.search);var p=u.get('partner')||u.get('pid');if(p){var c=localStorage.getItem('bewerbungstrainer_partner_cache');if(c){var cfg=JSON.parse(c);if(cfg&&cfg.slug===p&&cfg.branding){var r=document.documentElement;Object.keys(cfg.branding).forEach(function(k){r.style.setProperty(k,cfg.branding[k]);});window.__partnerAppName=cfg.app_name||null;window.__partnerPrimaryColor=cfg.branding['--primary-accent']||null;console.log('🚀 [Instant Branding] Applied cached branding for:',p);}}}}catch(e){console.warn('🚀 [Instant Branding] Error:',e);}})();
-        </script>
-        <?php
-    }
-
-    /**
-     * Output loading screen update script in wp_footer
-     * This runs after the DOM is ready to update the loading screen with partner branding
-     */
-    public function output_loading_screen_script() {
-        ?>
-        <script>
-        (function(){if(window.__partnerAppName){var t=document.getElementById('bewerbungstrainer-loading-title');if(t){t.textContent=window.__partnerAppName;if(window.__partnerPrimaryColor){t.style.color=window.__partnerPrimaryColor;}}}})();
-        </script>
-        <?php
     }
 
     /**
@@ -1246,6 +1209,16 @@ class Bewerbungstrainer_Shortcodes {
                 100% { transform: rotate(360deg); }
             }
         ');
+
+        // Add partner branding script BEFORE the React app loads
+        // This applies cached partner branding immediately for instant theming
+        $partner_branding_script = "(function(){try{var u=new URLSearchParams(window.location.search);var p=u.get('partner')||u.get('pid');if(p){var c=localStorage.getItem('bewerbungstrainer_partner_cache');if(c){var cfg=JSON.parse(c);if(cfg&&cfg.slug===p&&cfg.branding){var r=document.documentElement;Object.keys(cfg.branding).forEach(function(k){r.style.setProperty(k,cfg.branding[k]);});window.__partnerAppName=cfg.app_name||null;window.__partnerPrimaryColor=cfg.branding['--primary-accent']||null;console.log('[Instant Branding] Applied cached branding for:',p);}}}}catch(e){console.warn('[Instant Branding] Error:',e);}})();";
+        wp_add_inline_script('bewerbungstrainer-app', $partner_branding_script, 'before');
+
+        // Add loading screen update script AFTER the React app loads
+        // This updates the loading screen title with partner branding
+        $loading_screen_script = "(function(){if(window.__partnerAppName){var t=document.getElementById('bewerbungstrainer-loading-title');if(t){t.textContent=window.__partnerAppName;if(window.__partnerPrimaryColor){t.style.color=window.__partnerPrimaryColor;}}}})();";
+        wp_add_inline_script('bewerbungstrainer-app', $loading_screen_script, 'after');
     }
 
     /**
