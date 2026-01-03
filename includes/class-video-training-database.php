@@ -253,6 +253,24 @@ class Bewerbungstrainer_Video_Training_Database {
                 error_log('[VIDEO TRAINING] target_audience column added successfully');
             }
         }
+
+        // Add custom_title column for session renaming
+        $custom_title_exists = $wpdb->get_row(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `{$this->table_sessions}` LIKE %s",
+                'custom_title'
+            )
+        );
+
+        if (empty($custom_title_exists)) {
+            error_log('[VIDEO TRAINING] Adding custom_title column to sessions table...');
+            $result = $wpdb->query("ALTER TABLE `{$this->table_sessions}` ADD COLUMN `custom_title` varchar(255) DEFAULT NULL AFTER `scenario_id`");
+            if ($result === false) {
+                error_log('[VIDEO TRAINING] Error adding custom_title column: ' . $wpdb->last_error);
+            } else {
+                error_log('[VIDEO TRAINING] custom_title column added successfully');
+            }
+        }
     }
 
     /**

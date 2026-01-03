@@ -697,12 +697,16 @@ class Bewerbungstrainer_Video_Training_API {
         $update_data = array();
 
         $allowed_updates = array(
-            'status', 'current_question_index', 'timeline_json'
+            'status', 'current_question_index', 'timeline_json', 'custom_title'
         );
 
         foreach ($allowed_updates as $field) {
             if (isset($params[$field])) {
-                $update_data[$field] = $params[$field];
+                if ($field === 'custom_title') {
+                    $update_data[$field] = sanitize_text_field($params[$field]);
+                } else {
+                    $update_data[$field] = $params[$field];
+                }
             }
         }
 

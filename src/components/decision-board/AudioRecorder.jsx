@@ -138,8 +138,9 @@ const SimpleWaveform = ({ isRecording, analyserNode }) => {
  *
  * Props:
  * - warmUp: If true, requests microphone permission on mount to reduce first-click delay
+ * - deviceId: Optional specific microphone device ID to use
  */
-const AudioRecorder = ({ onTranscriptReady, disabled = false, warmUp = false }) => {
+const AudioRecorder = ({ onTranscriptReady, disabled = false, warmUp = false, deviceId = null }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
@@ -158,6 +159,19 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false, warmUp = false }) 
   const peakLevelRef = useRef(0);
   const speechCheckIntervalRef = useRef(null);
 
+  // Build audio constraints with optional device ID
+  const getAudioConstraints = useCallback(() => {
+    const constraints = {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    };
+    if (deviceId) {
+      constraints.deviceId = { exact: deviceId };
+    }
+    return constraints;
+  }, [deviceId]);
+
   // Warm-up: Request microphone permission early to reduce first-click delay
   useEffect(() => {
     if (warmUp && !isWarmedUp) {
@@ -165,11 +179,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false, warmUp = false }) 
         try {
           console.log('[AudioRecorder] Warming up microphone...');
           const stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            },
+            audio: getAudioConstraints(),
           });
           // Immediately release the stream - we just wanted the permission
           stream.getTracks().forEach(track => track.stop());
@@ -218,11 +228,7 @@ const AudioRecorder = ({ onTranscriptReady, disabled = false, warmUp = false }) 
       setError(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
+        audio: getAudioConstraints(),
       });
       streamRef.current = stream;
 

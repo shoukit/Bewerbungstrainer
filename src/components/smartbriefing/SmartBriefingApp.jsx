@@ -184,6 +184,16 @@ const SmartBriefingApp = ({
   }, []);
 
   /**
+   * Handle copy template - opens dialog with copied template data
+   * Template is pre-modified with (Kopie) suffix and no ID
+   */
+  const handleCopyTemplate = useCallback((copiedTemplate) => {
+    // Set as editing template - but since id is null, it will create new
+    setEditingTemplate(copiedTemplate);
+    setTemplateDialogOpen(true);
+  }, []);
+
+  /**
    * Handle template dialog close
    */
   const handleTemplateDialogClose = useCallback(() => {
@@ -253,6 +263,7 @@ const SmartBriefingApp = ({
             onShowList={onNavigateToHistory}
             onCreateTemplate={handleCreateTemplate}
             onEditTemplate={handleEditTemplate}
+            onCopyTemplate={handleCopyTemplate}
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}

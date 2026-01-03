@@ -739,6 +739,11 @@ class Bewerbungstrainer_API {
             $params = $request->get_params();
         }
 
+        // Sanitize custom_title if present
+        if (isset($params['custom_title'])) {
+            $params['custom_title'] = sanitize_text_field($params['custom_title']);
+        }
+
         // Update session
         $result = $this->db->update_session($session_id, $params);
 
@@ -823,9 +828,10 @@ class Bewerbungstrainer_API {
             return $result;
         }
 
-        // Update session with audio information
+        // Update roleplay session with audio information
+        // Note: ElevenLabs audio is only used for roleplay sessions
         $session_id = intval($params['session_id']);
-        $this->db->update_session($session_id, array(
+        $this->db->update_roleplay_session($session_id, array(
             'conversation_id' => $params['conversation_id'],
             'audio_filename' => $result['filename'],
             'audio_url' => $result['url'],

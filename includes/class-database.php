@@ -72,6 +72,18 @@ class Bewerbungstrainer_Database {
             $this->add_demo_code_columns();
             update_option('bewerbungstrainer_db_migration_version', '1.0.1');
         }
+
+        // Migration 2: Add custom_title column for session renaming
+        if (version_compare($current_version, '1.0.2', '<')) {
+            $this->add_custom_title_column();
+            update_option('bewerbungstrainer_db_migration_version', '1.0.2');
+        }
+
+        // Migration 3: Add audio_url and audio_filename columns to roleplay sessions
+        if (version_compare($current_version, '1.0.3', '<')) {
+            $this->add_audio_columns_to_roleplay();
+            update_option('bewerbungstrainer_db_migration_version', '1.0.3');
+        }
     }
 
     /**
@@ -106,6 +118,78 @@ class Bewerbungstrainer_Database {
                 $wpdb->query("ALTER TABLE `$table` ADD INDEX `demo_code` (`demo_code`)");
                 error_log("[DATABASE] demo_code column added to $table successfully");
             }
+        }
+    }
+
+    /**
+     * Add custom_title column to roleplay sessions table for session renaming
+     */
+    private function add_custom_title_column() {
+        global $wpdb;
+
+        $table = $this->table_roleplay_sessions;
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'");
+        if (!$table_exists) {
+            return;
+        }
+
+        // Check if column exists
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `$table` LIKE %s",
+                'custom_title'
+            )
+        );
+
+        if (empty($column_exists)) {
+            error_log("[DATABASE] Adding custom_title column to $table...");
+            $wpdb->query("ALTER TABLE `$table` ADD COLUMN `custom_title` varchar(255) DEFAULT NULL AFTER `scenario_id`");
+            error_log("[DATABASE] custom_title column added to $table successfully");
+        }
+    }
+
+    /**
+     * Add audio_url and audio_filename columns to roleplay sessions table for local audio storage
+     */
+    private function add_audio_columns_to_roleplay() {
+        global $wpdb;
+
+        $table = $this->table_roleplay_sessions;
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'");
+        if (!$table_exists) {
+            return;
+        }
+
+        // Check if audio_filename column exists
+        $audio_filename_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `$table` LIKE %s",
+                'audio_filename'
+            )
+        );
+
+        if (empty($audio_filename_exists)) {
+            error_log("[DATABASE] Adding audio_filename column to $table...");
+            $wpdb->query("ALTER TABLE `$table` ADD COLUMN `audio_filename` varchar(255) DEFAULT NULL AFTER `conversation_id`");
+            error_log("[DATABASE] audio_filename column added to $table successfully");
+        }
+
+        // Check if audio_url column exists
+        $audio_url_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SHOW COLUMNS FROM `$table` LIKE %s",
+                'audio_url'
+            )
+        );
+
+        if (empty($audio_url_exists)) {
+            error_log("[DATABASE] Adding audio_url column to $table...");
+            $wpdb->query("ALTER TABLE `$table` ADD COLUMN `audio_url` text DEFAULT NULL AFTER `audio_filename`");
+            error_log("[DATABASE] audio_url column added to $table successfully");
         }
     }
 
@@ -204,12 +288,15 @@ class Bewerbungstrainer_Database {
             user_name varchar(255) DEFAULT NULL,
             session_id varchar(255) NOT NULL,
             scenario_id bigint(20) UNSIGNED DEFAULT NULL,
+            custom_title varchar(255) DEFAULT NULL,
             agent_id varchar(255) NOT NULL,
             variables_json longtext DEFAULT NULL,
             transcript longtext DEFAULT NULL,
             feedback_json longtext DEFAULT NULL,
             audio_analysis_json longtext DEFAULT NULL,
             conversation_id varchar(255) DEFAULT NULL,
+            audio_filename varchar(255) DEFAULT NULL,
+            audio_url text DEFAULT NULL,
             duration int DEFAULT NULL,
             demo_code varchar(10) DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1161,6 +1248,16 @@ class Bewerbungstrainer_Database {
 
         if (isset($data['conversation_id'])) {
             $update_data['conversation_id'] = sanitize_text_field($data['conversation_id']);
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['audio_filename'])) {
+            $update_data['audio_filename'] = sanitize_file_name($data['audio_filename']);
+            $update_format[] = '%s';
+        }
+
+        if (isset($data['audio_url'])) {
+            $update_data['audio_url'] = esc_url_raw($data['audio_url']);
             $update_format[] = '%s';
         }
 

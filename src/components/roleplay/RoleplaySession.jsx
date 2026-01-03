@@ -41,7 +41,6 @@ import {
   saveRoleplaySessionAnalysis,
   createRoleplaySession,
   updateRoleplaySessionConversationId,
-  fetchRoleplaySessionAudio,
 } from '@/services/roleplay-feedback-adapter';
 import {
   generateLiveCoaching,
@@ -651,19 +650,37 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
         feedback_prompt: scenario.feedback_prompt,
       };
 
-      // Step 1: Save conversation_id to database first
-      // This is required so the WordPress proxy can fetch the audio
+      // Step 1: Save audio from ElevenLabs to server and get audio blob for analysis
       let audioBlob = null;
+      let audioUrl = null;
       if (sessionId && conversationIdRef.current) {
         try {
+          // First, save the conversation_id to the database
           await updateRoleplaySessionConversationId(sessionId, conversationIdRef.current);
 
-          // Step 2: Fetch audio via WordPress proxy
-          // The proxy uses the conversation_id we just saved to fetch from ElevenLabs
-          audioBlob = await fetchRoleplaySessionAudio(sessionId, 10, 3000);
+          // Then, download and save the audio from ElevenLabs to WordPress
+          const audioResult = await wordpressAPI.saveAudioFromElevenLabs(
+            conversationIdRef.current,
+            sessionId
+          );
+
+          // Get the audio URL from the response
+          audioUrl = audioResult?.data?.url;
+
+          // Fetch the audio as a Blob for Gemini analysis
+          if (audioUrl) {
+            try {
+              const audioResponse = await fetch(audioUrl);
+              if (audioResponse.ok) {
+                audioBlob = await audioResponse.blob();
+              }
+            } catch (fetchError) {
+              console.warn('[RoleplaySession] Failed to fetch audio blob for analysis:', fetchError.message);
+            }
+          }
         } catch (audioError) {
-          // Audio fetch failed - continue without audio analysis
-          console.warn('[RoleplaySession] Could not fetch audio for analysis:', audioError.message);
+          // Audio save failed - continue without audio analysis
+          console.warn('[RoleplaySession] Could not save audio:', audioError.message);
         }
       }
 
@@ -700,6 +717,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
           audio_analysis_json: analysis.audioAnalysisContent,
           duration: duration,
           conversation_id: conversationIdRef.current,
+          audio_url: audioUrl, // Include the saved audio URL for playback
           created_at: new Date().toISOString(),
         };
         onNavigateToSession(sessionForNavigation);

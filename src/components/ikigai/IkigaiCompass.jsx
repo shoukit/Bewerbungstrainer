@@ -34,6 +34,8 @@ const IkigaiCompass = ({
   allDimensionsFilled,
   onSynthesize,
   isSynthesizing,
+  selectedMicrophoneId: propSelectedMicrophoneId,
+  onMicrophoneChange: propOnMicrophoneChange,
 }) => {
   const b = useBranding();
   const isMobile = useMobile(768);
@@ -41,7 +43,12 @@ const IkigaiCompass = ({
   const [inputValue, setInputValue] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
-  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+
+  // Use props if provided, otherwise use local state
+  const [localSelectedMicrophoneId, setLocalSelectedMicrophoneId] = useState(null);
+  const selectedMicrophoneId = propSelectedMicrophoneId ?? localSelectedMicrophoneId;
+  const setSelectedMicrophoneId = propOnMicrophoneChange ?? setLocalSelectedMicrophoneId;
+
   const textareaRef = useRef(null);
 
   // Focus textarea when chat opens
@@ -765,6 +772,7 @@ const IkigaiCompass = ({
                     onTranscriptReady={handleTranscriptReady}
                     disabled={isExtracting}
                     warmUp={true}
+                    deviceId={selectedMicrophoneId}
                   />
                   <button
                     onClick={() => setShowDeviceSettings(true)}

@@ -1,0 +1,25 @@
+# Serve JavaScript files directly without WordPress processing
+<FilesMatch "\.js$">
+    # Ensure JavaScript files are served with correct MIME type
+    Header set Content-Type "application/javascript; charset=UTF-8"
+
+    # Disable WordPress rewrite for JS files
+    RewriteEngine Off
+</FilesMatch>
+
+# Allow direct access to all files in this directory
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Don't process .js files through WordPress
+    RewriteRule \.js$ - [L]
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
+
+# Allow access to all asset files
+<FilesMatch "\.(js|css|map)$">
+    Order Allow,Deny
+    Allow from all
+    Satisfy Any
+</FilesMatch>

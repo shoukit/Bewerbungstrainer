@@ -22,12 +22,14 @@ import {
   History,
   Lightbulb,
   Target,
-  TrendingUp,
+  Mic,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { Card } from '@/components/ui/base/card';
 import wordpressAPI from '@/services/wordpress-api';
 import FeatureInfoModal from '@/components/global/FeatureInfoModal';
 import FeatureAppHeader from '@/components/global/FeatureAppHeader';
+import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
 import { COLORS, createGradient } from '@/config/colors';
 
 /**
@@ -67,6 +69,9 @@ const DecisionBoardDashboard = ({
   isAuthenticated,
   requireAuth,
   setPendingAction,
+  selectedMicrophoneId,
+  onMicrophoneChange,
+  onTestMicrophone,
 }) => {
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -85,9 +90,9 @@ const DecisionBoardDashboard = ({
     setIsLoading(true);
     try {
       const response = await wordpressAPI.getDecisions();
-      if (response?.decisions) {
+      if (response?.data?.decisions) {
         // Sort by date, newest first, limit to 5
-        const sorted = response.decisions
+        const sorted = response.data.decisions
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
           .slice(0, 5);
         setSessions(sorted);
@@ -232,6 +237,28 @@ const DecisionBoardDashboard = ({
                 </p>
               </motion.div>
             ))}
+          </motion.div>
+
+          {/* Microphone Setup Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mb-8"
+          >
+            <Card className="p-5 bg-white border border-slate-200 rounded-2xl">
+              <div className="flex items-center gap-2.5 mb-4">
+                <Mic className="w-[22px] h-[22px] text-teal-500" />
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Mikrofon testen
+                </h3>
+              </div>
+              <MicrophoneSelector
+                selectedDeviceId={selectedMicrophoneId}
+                onDeviceChange={onMicrophoneChange}
+                onTestClick={onTestMicrophone}
+              />
+            </Card>
           </motion.div>
 
           {/* Start Button */}

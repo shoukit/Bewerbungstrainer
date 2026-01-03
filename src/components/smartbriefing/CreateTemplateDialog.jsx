@@ -2,10 +2,15 @@
  * CreateTemplateDialog Component
  *
  * A dialog for creating and editing custom Smart Briefing templates.
- * Features a user-friendly variable builder for defining form fields.
+ * Features:
+ * - User-friendly variable builder for defining form fields
+ * - Structured prompt editor (ai_role, sections, ai_behavior)
+ * - Usecase presets (Sales, Career, Application, etc.)
+ * - Variable insertion via dropdown
+ * - Live preview before saving
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -31,9 +36,14 @@ import {
   User,
   HelpCircle,
   AlertCircle,
-  CheckCircle,
   Loader2,
   Save,
+  ChevronRight,
+  Sparkles,
+  Copy,
+  Check,
+  CheckCircle,
+  FileSearch,
 } from 'lucide-react';
 import wordpressAPI from '@/services/wordpress-api';
 
@@ -68,6 +78,113 @@ const VARIABLE_TYPES = [
 ];
 
 /**
+ * Usecase Presets with pre-filled prompt structures and variables
+ */
+const USECASE_PRESETS = [
+  {
+    key: 'empty',
+    label: '--- Vorlage wählen ---',
+    icon: FileText,
+    aiRole: '',
+    sections: [],
+    aiBehavior: '',
+    variables: [],
+  },
+  {
+    key: 'sales',
+    label: '🎯 Sales / Kundengespräch',
+    icon: Target,
+    aiRole: 'Du bist ein erfahrener Sales-Coach und Vertriebsexperte mit 15+ Jahren Erfahrung im B2B-Vertrieb.',
+    sections: [
+      { id: 'hook', title: 'The Hook 🪝', instruction: 'Erstelle einen packenden Gesprächseinstieg für ${customer_type} Kunden' },
+      { id: 'discovery', title: 'Discovery Questions 🔍', instruction: 'Formuliere 5-7 offene Fragen um Bedarf zu wecken und Pain Points zu identifizieren' },
+      { id: 'value', title: 'Value Proposition 💎', instruction: 'Beschreibe den Mehrwert basierend auf ${product_service}' },
+      { id: 'objections', title: 'Einwandbehandlung 🛡️', instruction: 'Liste typische Einwände und passende Antworten' },
+      { id: 'closing', title: 'Closing Path 🎯', instruction: 'Entwickle einen Weg zum Ziel: ${meeting_goal}' },
+    ],
+    aiBehavior: 'Schreibe praxisnah und actionable. Jeder Punkt soll direkt umsetzbar sein. Vermeide Theorie - fokussiere auf konkrete Formulierungen und Techniken.',
+    variables: [
+      { key: 'customer_type', label: 'Kundentyp', type: 'text', placeholder: 'z.B. Enterprise, KMU, Startup' },
+      { key: 'product_service', label: 'Produkt/Service', type: 'text', placeholder: 'Was verkaufst du?' },
+      { key: 'meeting_goal', label: 'Ziel des Gesprächs', type: 'text', placeholder: 'z.B. Demo-Termin, Angebot' },
+    ],
+  },
+  {
+    key: 'career',
+    label: '💼 Karriere / Vorstellungsgespräch',
+    icon: Briefcase,
+    aiRole: 'Du bist ein erfahrener Karriere-Coach und HR-Experte mit umfassender Erfahrung in Bewerbungsprozessen.',
+    sections: [
+      { id: 'company', title: 'Unternehmens-Insights 🏢', instruction: 'Recherchiere wichtige Fakten über ${unternehmen} die im Gespräch relevant sind' },
+      { id: 'position', title: 'Positions-Analyse 📋', instruction: 'Analysiere die Anforderungen für ${position} und wie der Kandidat diese erfüllt' },
+      { id: 'questions', title: 'Typische Fragen ❓', instruction: 'Liste die 10 wahrscheinlichsten Interviewfragen mit Antwortstrategien' },
+      { id: 'stories', title: 'STAR-Stories ⭐', instruction: 'Entwickle 3-5 Erfolgsgeschichten nach der STAR-Methode' },
+      { id: 'questions_to_ask', title: 'Eigene Fragen 🙋', instruction: 'Formuliere 5-7 kluge Rückfragen an den Interviewer' },
+    ],
+    aiBehavior: 'Sei konkret und praxisorientiert. Gib Formulierungsvorschläge die direkt verwendet werden können. Berücksichtige deutsche Geschäftskultur.',
+    variables: [
+      { key: 'unternehmen', label: 'Unternehmen', type: 'text', placeholder: 'Name des Unternehmens' },
+      { key: 'position', label: 'Position', type: 'text', placeholder: 'Stelle, auf die du dich bewirbst' },
+    ],
+  },
+  {
+    key: 'negotiation',
+    label: '💰 Gehaltsverhandlung',
+    icon: Banknote,
+    aiRole: 'Du bist ein Experte für Gehaltsverhandlungen und Karriereentwicklung.',
+    sections: [
+      { id: 'market', title: 'Marktanalyse 📊', instruction: 'Analysiere Gehaltsspannen für ${position} in ${branche} und ${region}' },
+      { id: 'arguments', title: 'Argumente 💪', instruction: 'Entwickle 5-7 überzeugende Argumente für eine Gehaltserhöhung basierend auf ${erfolge}' },
+      { id: 'counter', title: 'Konterstrategien 🛡️', instruction: 'Bereite Antworten auf typische Gegenargumente des Arbeitgebers vor' },
+      { id: 'tactics', title: 'Verhandlungstaktiken 🎯', instruction: 'Beschreibe bewährte Taktiken für die Gehaltsverhandlung' },
+      { id: 'alternatives', title: 'Alternativen 🔄', instruction: 'Liste nicht-monetäre Benefits die verhandelbar sind' },
+    ],
+    aiBehavior: 'Fokussiere auf konkrete Zahlen und Formulierungen. Sei selbstbewusst aber nicht arrogant im Ton.',
+    variables: [
+      { key: 'position', label: 'Position', type: 'text', placeholder: 'Deine aktuelle/angestrebte Position' },
+      { key: 'branche', label: 'Branche', type: 'text', placeholder: 'z.B. IT, Finanzen, Marketing' },
+      { key: 'region', label: 'Region', type: 'text', placeholder: 'z.B. München, Berlin, Remote' },
+      { key: 'erfolge', label: 'Deine Erfolge', type: 'textarea', placeholder: 'Beschreibe deine wichtigsten Leistungen' },
+    ],
+  },
+  {
+    key: 'presentation',
+    label: '🎤 Präsentation / Pitch',
+    icon: Rocket,
+    aiRole: 'Du bist ein Präsentations-Coach und Storytelling-Experte.',
+    sections: [
+      { id: 'hook', title: 'Eröffnung 🎬', instruction: 'Erstelle einen aufmerksamkeitsstarken Einstieg für ${thema}' },
+      { id: 'problem', title: 'Problem/Herausforderung ⚡', instruction: 'Beschreibe das Problem das ${zielgruppe} hat' },
+      { id: 'solution', title: 'Lösung/Angebot 💡', instruction: 'Präsentiere die Lösung klar und überzeugend' },
+      { id: 'proof', title: 'Beweise/Beispiele 📈', instruction: 'Liste Erfolgsbeispiele, Zahlen und Social Proof' },
+      { id: 'cta', title: 'Call-to-Action 🎯', instruction: 'Formuliere einen klaren nächsten Schritt' },
+    ],
+    aiBehavior: 'Schreibe in aktivem, energetischem Stil. Jeder Abschnitt soll eine klare Botschaft haben. Nutze Storytelling-Elemente.',
+    variables: [
+      { key: 'thema', label: 'Thema der Präsentation', type: 'text', placeholder: 'Worüber präsentierst du?' },
+      { key: 'zielgruppe', label: 'Zielgruppe', type: 'text', placeholder: 'Wer ist dein Publikum?' },
+    ],
+  },
+  {
+    key: 'feedback',
+    label: '💬 Feedback-Gespräch',
+    icon: MessageCircle,
+    aiRole: 'Du bist ein erfahrener Leadership-Coach und Experte für Mitarbeiterführung.',
+    sections: [
+      { id: 'context', title: 'Gesprächsrahmen 📋', instruction: 'Bereite den Rahmen für das Feedback-Gespräch mit ${mitarbeiter_name} vor' },
+      { id: 'positive', title: 'Stärken & Erfolge ⭐', instruction: 'Liste konkrete positive Beobachtungen und Erfolge' },
+      { id: 'development', title: 'Entwicklungsfelder 🌱', instruction: 'Beschreibe Verbesserungspotenziale konstruktiv' },
+      { id: 'goals', title: 'Zielvereinbarung 🎯', instruction: 'Formuliere SMART-Ziele für die nächste Periode' },
+      { id: 'support', title: 'Unterstützungsangebote 🤝', instruction: 'Liste mögliche Unterstützungsmaßnahmen' },
+    ],
+    aiBehavior: 'Schreibe wertschätzend und konstruktiv. Fokussiere auf Verhalten, nicht auf Persönlichkeit. Nutze die SBI-Methode (Situation-Behavior-Impact).',
+    variables: [
+      { key: 'mitarbeiter_name', label: 'Name des Mitarbeiters', type: 'text', placeholder: 'Vorname oder "der Mitarbeiter"' },
+    ],
+  },
+];
+
+/**
  * Generate a unique ID
  */
 const generateId = () => `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -95,6 +212,15 @@ const createEmptyOption = () => ({
 });
 
 /**
+ * Default empty section
+ */
+const createEmptySection = () => ({
+  id: generateId(),
+  title: '',
+  instruction: '',
+});
+
+/**
  * Variable Item Component
  */
 const VariableItem = ({
@@ -109,7 +235,6 @@ const VariableItem = ({
   const [isExpanded, setIsExpanded] = useState(true);
   const [localLabel, setLocalLabel] = useState(variable.label);
 
-  // Sync local label when variable changes from outside
   useEffect(() => {
     setLocalLabel(variable.label);
   }, [variable.label]);
@@ -144,12 +269,9 @@ const VariableItem = ({
       .replace(/^_|_$/g, '');
   };
 
-  // Update label and auto-generate key on blur (when leaving the field)
   const handleLabelBlur = () => {
     if (localLabel !== variable.label) {
-      // Update label
       const updates = { label: localLabel };
-      // Auto-generate key if empty or was auto-generated from previous label
       if (!variable.key || variable.key === generateKeyFromLabel(variable.label)) {
         updates.key = generateKeyFromLabel(localLabel);
       }
@@ -159,7 +281,6 @@ const VariableItem = ({
 
   return (
     <div className="bg-slate-50 rounded-xl border border-slate-200 mb-3 overflow-hidden">
-      {/* Header */}
       <div
         className={`flex items-center gap-2 px-4 py-3 bg-white cursor-pointer ${
           isExpanded ? 'border-b border-slate-200' : ''
@@ -167,7 +288,6 @@ const VariableItem = ({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <GripVertical size={16} className="text-slate-400 cursor-grab" />
-
         <div className="flex-1 min-w-0">
           <span className="font-semibold text-slate-900 text-sm">
             {variable.label || `Variable ${index + 1}`}
@@ -178,18 +298,15 @@ const VariableItem = ({
             </span>
           )}
         </div>
-
         <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary">
           {VARIABLE_TYPES.find(t => t.value === variable.type)?.label || variable.type}
         </span>
-
-        {/* Move buttons */}
         <div className="flex gap-0.5">
           <button
             onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
             disabled={index === 0}
             className={`p-1 border-none bg-transparent ${
-              index === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'
+              index === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'
             }`}
           >
             <ChevronUp size={16} className="text-slate-500" />
@@ -198,23 +315,20 @@ const VariableItem = ({
             onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
             disabled={index === total - 1}
             className={`p-1 border-none bg-transparent ${
-              index === total - 1 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'
+              index === total - 1 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'
             }`}
           >
             <ChevronDown size={16} className="text-slate-500" />
           </button>
         </div>
-
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           className="p-1.5 border-none bg-transparent cursor-pointer text-red-500"
-          title="Variable löschen"
         >
           <Trash2 size={16} />
         </button>
       </div>
 
-      {/* Expanded content */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -224,7 +338,6 @@ const VariableItem = ({
             transition={{ duration: 0.2 }}
           >
             <div className="p-4 flex flex-col gap-3">
-              {/* Row 1: Label and Key */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -253,7 +366,6 @@ const VariableItem = ({
                 </div>
               </div>
 
-              {/* Row 2: Type and Required */}
               <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -280,7 +392,6 @@ const VariableItem = ({
                 </label>
               </div>
 
-              {/* Row 3: Placeholder */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Platzhalter-Text (optional)
@@ -294,14 +405,13 @@ const VariableItem = ({
                 />
               </div>
 
-              {/* Options for select type */}
               {variable.type === 'select' && (
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-2">
                     Auswahloptionen
                   </label>
                   <div className="flex flex-col gap-2">
-                    {(variable.options || []).map((option, optIndex) => (
+                    {(variable.options || []).map((option) => (
                       <div key={option.id} className="flex gap-2 items-center">
                         <input
                           type="text"
@@ -327,7 +437,7 @@ const VariableItem = ({
                     ))}
                     <button
                       onClick={handleAddOption}
-                      className="flex items-center gap-1.5 px-3 py-2 border border-dashed border-slate-300 rounded-md bg-transparent text-slate-500 text-[13px] cursor-pointer mt-1 hover:bg-slate-50 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2 border border-dashed border-slate-300 rounded-md bg-transparent text-slate-500 text-[13px] cursor-pointer mt-1 hover:bg-slate-50"
                     >
                       <Plus size={14} />
                       Option hinzufügen
@@ -336,6 +446,167 @@ const VariableItem = ({
                 </div>
               )}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+/**
+ * Section Item Component for structured prompts
+ */
+const SectionItem = ({
+  section,
+  index,
+  total,
+  variables,
+  onChange,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+  onInsertVariable,
+}) => {
+  const instructionRef = useRef(null);
+
+  const handleChange = (field, value) => {
+    onChange({ ...section, [field]: value });
+  };
+
+  const handleInsertVariable = (varKey) => {
+    const textarea = instructionRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = section.instruction;
+      const insertion = `\${${varKey}}`;
+      const newText = text.substring(0, start) + insertion + text.substring(end);
+      handleChange('instruction', newText);
+      // Set cursor position after insertion
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + insertion.length, start + insertion.length);
+      }, 0);
+    } else {
+      handleChange('instruction', section.instruction + `\${${varKey}}`);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 mb-3 overflow-hidden shadow-sm">
+      <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-slate-200">
+        <GripVertical size={16} className="text-slate-400 cursor-grab" />
+        <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+          {index + 1}
+        </span>
+        <input
+          type="text"
+          value={section.title}
+          onChange={(e) => handleChange('title', e.target.value)}
+          placeholder="Abschnittstitel (z.B. 'Discovery Questions 🔍')"
+          className="flex-1 px-2 py-1 rounded border-0 bg-transparent text-sm font-semibold text-slate-800 placeholder:text-slate-400"
+        />
+        <div className="flex gap-0.5">
+          <button
+            onClick={onMoveUp}
+            disabled={index === 0}
+            className={`p-1 border-none bg-transparent ${index === 0 ? 'opacity-30' : 'cursor-pointer'}`}
+          >
+            <ChevronUp size={16} className="text-slate-500" />
+          </button>
+          <button
+            onClick={onMoveDown}
+            disabled={index === total - 1}
+            className={`p-1 border-none bg-transparent ${index === total - 1 ? 'opacity-30' : 'cursor-pointer'}`}
+          >
+            <ChevronDown size={16} className="text-slate-500" />
+          </button>
+        </div>
+        <button
+          onClick={onDelete}
+          className="p-1.5 border-none bg-transparent cursor-pointer text-red-500 hover:bg-red-50 rounded"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-semibold text-slate-600">
+            Anweisung für diesen Abschnitt
+          </label>
+          {variables.length > 0 && (
+            <VariableDropdown
+              variables={variables}
+              onSelect={handleInsertVariable}
+            />
+          )}
+        </div>
+        <textarea
+          ref={instructionRef}
+          value={section.instruction}
+          onChange={(e) => handleChange('instruction', e.target.value)}
+          placeholder="z.B. 'Erstelle 5-7 offene Fragen um Bedarf zu wecken basierend auf ${customer_type}'"
+          rows={2}
+          className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm resize-y"
+        />
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Variable Dropdown Component for inserting variables
+ */
+const VariableDropdown = ({ variables, onSelect }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (variables.length === 0) return null;
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-indigo-50 text-indigo-600 text-xs font-medium border-none cursor-pointer hover:bg-indigo-100 transition-colors"
+      >
+        <Plus size={14} />
+        Variable einfügen
+        <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-slate-200 z-50 min-w-[180px] py-1"
+          >
+            {variables.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => {
+                  onSelect(v.key);
+                  setIsOpen(false);
+                }}
+                className="w-full px-3 py-2.5 text-left text-sm hover:bg-indigo-50 border-none bg-transparent cursor-pointer flex items-center justify-between gap-3"
+              >
+                <span className="text-slate-800 font-medium">{v.label}</span>
+                <code className="text-xs text-indigo-700 bg-indigo-100 px-2 py-1 rounded font-mono font-semibold whitespace-nowrap">
+                  ${'{'}${v.key}{'}'}
+                </code>
+              </button>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
@@ -380,18 +651,80 @@ const CreateTemplateDialog = ({
   editTemplate = null,
   demoCode,
 }) => {
-
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [icon, setIcon] = useState('file-text');
-  const [systemPrompt, setSystemPrompt] = useState('');
   const [variables, setVariables] = useState([]);
+
+  // Structured prompt state
+  const [aiRole, setAiRole] = useState('');
+  const [sections, setSections] = useState([]);
+  const [aiBehavior, setAiBehavior] = useState('');
+  const [selectedPreset, setSelectedPreset] = useState('empty');
 
   // UI state
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('basics'); // 'basics' | 'variables' | 'prompt'
+  const [activeTab, setActiveTab] = useState('basics');
+  const [pendingPreset, setPendingPreset] = useState(null); // For confirmation dialog
+  const [syntaxCheckResult, setSyntaxCheckResult] = useState(null); // { success, undefinedVars }
+
+  // Option to allow user-defined variables at frontend
+  const [allowUserVariables, setAllowUserVariables] = useState(false);
+
+  // Refs for variable insertion
+  const aiRoleRef = useRef(null);
+  const aiBehaviorRef = useRef(null);
+
+  /**
+   * Parse a legacy system_prompt into structured format (aiRole, sections, aiBehavior)
+   */
+  const parseLegacyPrompt = (prompt) => {
+    if (!prompt) return { aiRole: '', sections: [], aiBehavior: '' };
+
+    let aiRole = '';
+    let sections = [];
+    let aiBehavior = '';
+
+    // Extract behavior (everything after WICHTIG:)
+    const wichtigMatch = prompt.match(/\n*WICHTIG:\s*([\s\S]*?)$/i);
+    if (wichtigMatch) {
+      aiBehavior = wichtigMatch[1].trim();
+      prompt = prompt.replace(wichtigMatch[0], '').trim();
+    }
+
+    // Extract sections (### numbered items)
+    const sectionRegex = /###\s*\d+\.\s*([^\n]+)\n([\s\S]*?)(?=###\s*\d+\.|$)/g;
+    let sectionMatch;
+    const foundSections = [];
+
+    while ((sectionMatch = sectionRegex.exec(prompt)) !== null) {
+      foundSections.push({
+        id: generateId(),
+        title: sectionMatch[1].trim(),
+        instruction: sectionMatch[2].trim(),
+      });
+    }
+
+    if (foundSections.length > 0) {
+      sections = foundSections;
+      // Extract aiRole: everything before the first section or "Erstelle ein strukturiertes Briefing"
+      const firstSectionIndex = prompt.indexOf('###');
+      const briefingIntroIndex = prompt.indexOf('Erstelle ein strukturiertes Briefing');
+
+      if (briefingIntroIndex !== -1 && briefingIntroIndex < firstSectionIndex) {
+        aiRole = prompt.substring(0, briefingIntroIndex).trim();
+      } else if (firstSectionIndex !== -1) {
+        aiRole = prompt.substring(0, firstSectionIndex).trim();
+      }
+    } else {
+      // No sections found - put everything in aiRole
+      aiRole = prompt;
+    }
+
+    return { aiRole, sections, aiBehavior };
+  };
 
   // Initialize form when editing
   useEffect(() => {
@@ -399,7 +732,6 @@ const CreateTemplateDialog = ({
       setTitle(editTemplate.title || '');
       setDescription(editTemplate.description || '');
       setIcon(editTemplate.icon || 'file-text');
-      setSystemPrompt(editTemplate.system_prompt || '');
       setVariables(
         (editTemplate.variables_schema || []).map(v => ({
           ...v,
@@ -407,36 +739,113 @@ const CreateTemplateDialog = ({
           options: (v.options || []).map(o => ({ ...o, id: o.id || generateId() })),
         }))
       );
+
+      // Parse existing prompt into structured format
+      if (editTemplate.ai_role) {
+        // New structured format - use directly
+        setAiRole(editTemplate.ai_role);
+
+        if (editTemplate.ai_task) {
+          try {
+            const parsed = JSON.parse(editTemplate.ai_task);
+            if (Array.isArray(parsed)) {
+              setSections(parsed.map(s => ({ ...s, id: s.id || generateId() })));
+            }
+          } catch {
+            setSections([{ id: generateId(), title: 'Hauptabschnitt', instruction: editTemplate.ai_task }]);
+          }
+        }
+
+        setAiBehavior(editTemplate.ai_behavior || '');
+      } else if (editTemplate.system_prompt) {
+        // Legacy format - parse the system_prompt into structured parts
+        const parsed = parseLegacyPrompt(editTemplate.system_prompt);
+        setAiRole(parsed.aiRole);
+        setSections(parsed.sections);
+        setAiBehavior(parsed.aiBehavior);
+      }
+
+      setAllowUserVariables(editTemplate.allow_user_variables || false);
+      setSelectedPreset('empty');
     } else {
       // Reset form for new template
       setTitle('');
       setDescription('');
       setIcon('file-text');
-      setSystemPrompt('');
       setVariables([]);
+      setAiRole('');
+      setSections([]);
+      setAiBehavior('');
+      setAllowUserVariables(false);
+      setSelectedPreset('empty');
     }
     setActiveTab('basics');
     setError(null);
+    setSyntaxCheckResult(null);
   }, [editTemplate, isOpen]);
 
-  // Add new variable
+  // Check if form has existing data
+  const hasExistingData = () => {
+    return aiRole.trim() || sections.length > 0 || aiBehavior.trim() || variables.length > 0;
+  };
+
+  // Apply preset - shows confirmation if data exists
+  const handleApplyPreset = (presetKey) => {
+    const preset = USECASE_PRESETS.find(p => p.key === presetKey);
+    if (!preset || presetKey === 'empty') {
+      setSelectedPreset('empty');
+      return;
+    }
+
+    // Check if there's existing data that would be overwritten
+    if (hasExistingData()) {
+      setPendingPreset(preset);
+    } else {
+      applyPreset(preset);
+    }
+  };
+
+  // Actually apply the preset
+  const applyPreset = (preset) => {
+    setSelectedPreset(preset.key);
+    setAiRole(preset.aiRole);
+    setSections(preset.sections.map(s => ({ ...s, id: generateId() })));
+    setAiBehavior(preset.aiBehavior);
+    setIcon(AVAILABLE_ICONS.find(i => i.icon === preset.icon)?.key || 'file-text');
+
+    // Also apply preset variables
+    if (preset.variables && preset.variables.length > 0) {
+      setVariables(preset.variables.map(v => ({
+        ...v,
+        id: generateId(),
+        required: true,
+        options: [],
+      })));
+    }
+
+    setPendingPreset(null);
+  };
+
+  // Cancel preset application
+  const cancelPresetApplication = () => {
+    setPendingPreset(null);
+  };
+
+  // Variable management
   const handleAddVariable = () => {
     setVariables([...variables, createEmptyVariable()]);
   };
 
-  // Update variable
   const handleVariableChange = (index, updatedVariable) => {
     const newVariables = [...variables];
     newVariables[index] = updatedVariable;
     setVariables(newVariables);
   };
 
-  // Delete variable
   const handleDeleteVariable = (index) => {
     setVariables(variables.filter((_, i) => i !== index));
   };
 
-  // Move variable up
   const handleMoveUp = (index) => {
     if (index === 0) return;
     const newVariables = [...variables];
@@ -444,12 +853,119 @@ const CreateTemplateDialog = ({
     setVariables(newVariables);
   };
 
-  // Move variable down
   const handleMoveDown = (index) => {
     if (index === variables.length - 1) return;
     const newVariables = [...variables];
     [newVariables[index], newVariables[index + 1]] = [newVariables[index + 1], newVariables[index]];
     setVariables(newVariables);
+  };
+
+  // Section management
+  const handleAddSection = () => {
+    setSections([...sections, createEmptySection()]);
+  };
+
+  const handleSectionChange = (index, updatedSection) => {
+    const newSections = [...sections];
+    newSections[index] = updatedSection;
+    setSections(newSections);
+  };
+
+  const handleDeleteSection = (index) => {
+    setSections(sections.filter((_, i) => i !== index));
+  };
+
+  const handleSectionMoveUp = (index) => {
+    if (index === 0) return;
+    const newSections = [...sections];
+    [newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]];
+    setSections(newSections);
+  };
+
+  const handleSectionMoveDown = (index) => {
+    if (index === sections.length - 1) return;
+    const newSections = [...sections];
+    [newSections[index], newSections[index + 1]] = [newSections[index + 1], newSections[index]];
+    setSections(newSections);
+  };
+
+  // Insert variable into text field
+  const insertVariableAt = (ref, setter, currentValue, varKey) => {
+    const textarea = ref.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const insertion = `\${${varKey}}`;
+      const newText = currentValue.substring(0, start) + insertion + currentValue.substring(end);
+      setter(newText);
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + insertion.length, start + insertion.length);
+      }, 0);
+    } else {
+      setter(currentValue + `\${${varKey}}`);
+    }
+  };
+
+  // Build system_prompt from structured fields (for backward compatibility)
+  const buildSystemPrompt = () => {
+    let prompt = aiRole + '\n\n';
+
+    if (sections.length > 0) {
+      prompt += 'Erstelle ein strukturiertes Briefing mit folgenden Abschnitten:\n\n';
+      sections.forEach((section, idx) => {
+        prompt += `### ${idx + 1}. ${section.title}\n${section.instruction}\n\n`;
+      });
+    }
+
+    if (aiBehavior) {
+      prompt += `\nWICHTIG: ${aiBehavior}`;
+    }
+
+    return prompt;
+  };
+
+  // Extract all ${variable} references from the prompt
+  const extractVariablesFromPrompt = () => {
+    const fullPrompt = buildSystemPrompt();
+    const regex = /\$\{(\w+)\}/g;
+    const matches = [];
+    let match;
+    while ((match = regex.exec(fullPrompt)) !== null) {
+      if (!matches.includes(match[1])) {
+        matches.push(match[1]);
+      }
+    }
+    return matches;
+  };
+
+  // Check syntax - find undefined variables in prompt
+  const checkSyntax = () => {
+    const usedVariables = extractVariablesFromPrompt();
+    const definedKeys = variables.map(v => v.key).filter(k => k.trim());
+    const undefinedVars = usedVariables.filter(v => !definedKeys.includes(v));
+
+    return {
+      success: undefinedVars.length === 0,
+      undefinedVars,
+      usedVariables,
+      definedKeys,
+    };
+  };
+
+  // Handle syntax check button click
+  const handleSyntaxCheck = () => {
+    const result = checkSyntax();
+    setSyntaxCheckResult(result);
+
+    if (!result.success) {
+      setError(`Undefinierte Variablen im Prompt gefunden: ${result.undefinedVars.map(v => '${' + v + '}').join(', ')}`);
+      setActiveTab('prompt');
+    } else {
+      setError(null);
+    }
+
+    return result.success;
   };
 
   // Validate form
@@ -459,12 +975,23 @@ const CreateTemplateDialog = ({
       setActiveTab('basics');
       return false;
     }
-    if (!systemPrompt.trim()) {
-      setError('Bitte gib einen System-Prompt ein.');
+    if (!aiRole.trim()) {
+      setError('Bitte definiere eine KI-Rolle.');
       setActiveTab('prompt');
       return false;
     }
-    // Validate variables
+    if (sections.length === 0) {
+      setError('Bitte füge mindestens einen Abschnitt hinzu.');
+      setActiveTab('prompt');
+      return false;
+    }
+    for (const section of sections) {
+      if (!section.title.trim()) {
+        setError('Alle Abschnitte benötigen einen Titel.');
+        setActiveTab('prompt');
+        return false;
+      }
+    }
     for (const v of variables) {
       if (!v.key.trim() || !v.label.trim()) {
         setError('Alle Variablen benötigen einen Namen und eine Bezeichnung.');
@@ -477,19 +1004,27 @@ const CreateTemplateDialog = ({
         return false;
       }
     }
+
+    // Syntax check - ensure all variables used in prompt are defined
+    const syntaxResult = checkSyntax();
+    setSyntaxCheckResult(syntaxResult);
+    if (!syntaxResult.success) {
+      setError(`Undefinierte Variablen im Prompt: ${syntaxResult.undefinedVars.map(v => '${' + v + '}').join(', ')}. Bitte definiere diese Variablen unter "Eingabefelder".`);
+      setActiveTab('prompt');
+      return false;
+    }
+
     return true;
   };
 
   // Save template
   const handleSave = async () => {
     setError(null);
-
     if (!validate()) return;
 
     setSaving(true);
 
     try {
-      // Prepare variables schema (remove internal IDs)
       const variablesSchema = variables.map(v => ({
         key: v.key,
         label: v.label,
@@ -505,20 +1040,25 @@ const CreateTemplateDialog = ({
         title: title.trim(),
         description: description.trim(),
         icon,
-        system_prompt: systemPrompt,
+        // Structured prompt fields
+        ai_role: aiRole,
+        ai_task: JSON.stringify(sections.map(s => ({ title: s.title, instruction: s.instruction }))),
+        ai_behavior: aiBehavior,
+        // Legacy field for backward compatibility
+        system_prompt: buildSystemPrompt(),
         variables_schema: variablesSchema,
+        // Allow frontend users to add their own variables
+        allow_user_variables: allowUserVariables,
         ...(demoCode ? { demo_code: demoCode } : {}),
       };
 
       let response;
       if (editTemplate) {
-        // Update existing template
         response = await wordpressAPI.request(`/smartbriefing/templates/${editTemplate.id}`, {
           method: 'PUT',
           body: JSON.stringify(templateData),
         });
       } else {
-        // Create new template
         response = await wordpressAPI.request('/smartbriefing/templates', {
           method: 'POST',
           body: JSON.stringify(templateData),
@@ -542,243 +1082,439 @@ const CreateTemplateDialog = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-2xl w-full max-w-[700px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
-          <div>
-            <h2 className="m-0 text-xl font-bold text-slate-900">
-              {editTemplate ? 'Template bearbeiten' : 'Neues Template erstellen'}
-            </h2>
-            <p className="mt-1 mb-0 text-sm text-slate-500">
-              Erstelle ein persönliches Briefing-Template
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 border-none bg-slate-100 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors"
-          >
-            <X size={20} className="text-slate-500" />
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-slate-200 px-6">
-          {[
-            { key: 'basics', label: 'Grundlagen' },
-            { key: 'variables', label: 'Eingabefelder' },
-            { key: 'prompt', label: 'KI-Anweisung' },
-          ].map(tab => (
+    <>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="bg-white rounded-2xl w-full max-w-[750px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h2 className="m-0 text-xl font-bold text-slate-900">
+                {editTemplate ? 'Template bearbeiten' : 'Neues Template erstellen'}
+              </h2>
+              <p className="mt-1 mb-0 text-sm text-slate-500">
+                Erstelle ein persönliches Briefing-Template
+              </p>
+            </div>
             <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-5 py-3 border-none bg-transparent text-sm font-semibold cursor-pointer -mb-px transition-all ${
-                activeTab === tab.key
-                  ? 'text-primary border-b-[3px] border-primary'
-                  : 'text-slate-500 border-b-[3px] border-transparent hover:text-slate-700'
-              }`}
+              onClick={onClose}
+              className="p-2 border-none bg-slate-100 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors"
             >
-              {tab.label}
+              <X size={20} className="text-slate-500" />
             </button>
-          ))}
-        </div>
+          </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
-          {/* Error message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
-              <AlertCircle size={18} className="text-red-500 flex-shrink-0" />
-              <span className="text-red-700 text-sm">{error}</span>
-            </div>
-          )}
+          {/* Tabs */}
+          <div className="flex border-b border-slate-200 px-6 gap-1">
+            {[
+              { key: 'basics', label: '1. Grundlagen' },
+              { key: 'variables', label: '2. Eingabefelder' },
+              { key: 'prompt', label: '3. KI-Anweisung' },
+            ].map(tab => {
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className="px-5 py-3 text-sm font-semibold cursor-pointer transition-all rounded-t-lg"
+                  style={{
+                    backgroundColor: isActive ? '#E0E7FF' : 'transparent',
+                    color: isActive ? '#4338CA' : '#64748B',
+                    borderBottom: isActive ? '3px solid #4F46E5' : '3px solid transparent',
+                    marginBottom: '-1px',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
 
-          {/* Basics Tab */}
-          {activeTab === 'basics' && (
-            <div className="flex flex-col gap-5">
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                  Titel *
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="z.B. Projektpräsentation Vorbereitung"
-                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-[15px]"
-                />
+          {/* Content */}
+          <div className="flex-1 overflow-auto p-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
+                <AlertCircle size={18} className="text-red-500 flex-shrink-0" />
+                <span className="text-red-700 text-sm">{error}</span>
               </div>
+            )}
 
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                  Beschreibung
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Kurze Beschreibung, wofür dieses Template verwendet wird..."
-                  rows={3}
-                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-sm resize-y"
-                />
-              </div>
+            {/* Basics Tab */}
+            {activeTab === 'basics' && (
+              <div className="flex flex-col gap-5">
+                {/* Preset Selector - Always visible */}
+                <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-4 border border-indigo-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Sparkles size={18} className="text-indigo-600" />
+                    <label className="text-sm font-semibold text-slate-900">
+                      {editTemplate ? 'Vorlage anwenden' : 'Schnellstart mit Vorlage'}
+                    </label>
+                  </div>
+                  <select
+                    value={selectedPreset}
+                    onChange={(e) => handleApplyPreset(e.target.value)}
+                    className="w-full px-3.5 py-3 rounded-xl border border-indigo-200 text-sm bg-white cursor-pointer"
+                  >
+                    {USECASE_PRESETS.map(preset => (
+                      <option key={preset.key} value={preset.key}>
+                        {preset.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {editTemplate
+                      ? 'Wähle eine Vorlage, um die KI-Anweisungen zu ersetzen. Titel und Beschreibung bleiben erhalten.'
+                      : 'Eine Vorlage füllt Eingabefelder und KI-Anweisungen automatisch aus.'}
+                  </p>
+                </div>
 
-              {/* Icon */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Symbol
-                </label>
-                <IconSelector selectedIcon={icon} onSelect={setIcon} />
-              </div>
-            </div>
-          )}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-1.5">
+                    Titel *
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="z.B. Sales Discovery Call Prep"
+                    className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-[15px]"
+                  />
+                </div>
 
-          {/* Variables Tab */}
-          {activeTab === 'variables' && (
-            <div>
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <HelpCircle size={16} className="text-slate-500" />
-                  <span className="text-[13px] text-slate-500">
-                    Definiere die Eingabefelder, die der Nutzer beim Erstellen eines Briefings ausfüllen soll.
-                  </span>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-1.5">
+                    Beschreibung
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Kurze Beschreibung, wofür dieses Template verwendet wird..."
+                    rows={3}
+                    className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-sm resize-y"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Symbol
+                  </label>
+                  <IconSelector selectedIcon={icon} onSelect={setIcon} />
                 </div>
               </div>
+            )}
 
-              {/* Variables list */}
-              {variables.map((variable, index) => (
-                <VariableItem
-                  key={variable.id}
-                  variable={variable}
-                  index={index}
-                  total={variables.length}
-                  onChange={(updated) => handleVariableChange(index, updated)}
-                  onDelete={() => handleDeleteVariable(index)}
-                  onMoveUp={() => handleMoveUp(index)}
-                  onMoveDown={() => handleMoveDown(index)}
-                />
-              ))}
-
-              {/* Add variable button */}
-              <button
-                onClick={handleAddVariable}
-                className="flex items-center justify-center gap-2 w-full px-3.5 py-3.5 rounded-xl border-2 border-dashed border-slate-300 bg-white text-slate-500 text-sm font-medium cursor-pointer transition-all hover:border-primary hover:text-primary"
-              >
-                <Plus size={18} />
-                Eingabefeld hinzufügen
-              </button>
-
-              {variables.length === 0 && (
-                <div className="text-center py-8 text-slate-400 text-sm">
-                  Noch keine Eingabefelder definiert.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Prompt Tab */}
-          {activeTab === 'prompt' && (
-            <div>
-              <div className="bg-sky-50 rounded-xl p-4 mb-4 border border-sky-200">
-                <div className="flex items-start gap-2.5">
-                  <Lightbulb size={18} className="text-sky-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="m-0 mb-1.5 text-sm font-semibold text-sky-900">
-                      Tipps für effektive Prompts
-                    </h4>
-                    <ul className="m-0 pl-4 text-[13px] text-sky-900 leading-relaxed">
-                      <li>Verwende <code className="bg-sky-100 px-1 py-0.5 rounded">${'{variablenname}'}</code> um auf Eingabefelder zu verweisen</li>
-                      <li>Beschreibe die Rolle der KI (z.B. "Du bist ein erfahrener Karriere-Coach...")</li>
-                      <li>Definiere die Struktur des gewünschten Outputs</li>
-                      <li>Gib Beispiele für den Ton und Stil</li>
-                    </ul>
+            {/* Variables Tab */}
+            {activeTab === 'variables' && (
+              <div>
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <HelpCircle size={16} className="text-slate-500" />
+                    <span className="text-[13px] text-slate-500">
+                      Definiere die Eingabefelder, die der Nutzer beim Erstellen eines Briefings ausfüllen soll.
+                      Diese können dann im Prompt als ${'{variablenname}'} verwendet werden.
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              {/* Available variables */}
-              {variables.length > 0 && (
-                <div className="mb-3">
-                  <span className="text-xs text-slate-500">Verfügbare Variablen: </span>
-                  {variables.map(v => (
-                    <code
-                      key={v.id}
-                      className="inline-block px-1.5 py-0.5 mr-1.5 mb-1 bg-slate-100 rounded text-xs font-mono text-slate-600 cursor-pointer hover:bg-slate-200"
-                      onClick={() => {
-                        const insertion = `\${${v.key}}`;
-                        setSystemPrompt(prev => prev + insertion);
-                      }}
-                      title="Klicken zum Einfügen"
-                    >
-                      ${'{' + v.key + '}'}
-                    </code>
-                  ))}
+                {variables.map((variable, index) => (
+                  <VariableItem
+                    key={variable.id}
+                    variable={variable}
+                    index={index}
+                    total={variables.length}
+                    onChange={(updated) => handleVariableChange(index, updated)}
+                    onDelete={() => handleDeleteVariable(index)}
+                    onMoveUp={() => handleMoveUp(index)}
+                    onMoveDown={() => handleMoveDown(index)}
+                  />
+                ))}
+
+                <button
+                  onClick={handleAddVariable}
+                  className="flex items-center justify-center gap-2 w-full px-3.5 py-3.5 rounded-xl border-2 border-dashed border-slate-300 bg-white text-slate-500 text-sm font-medium cursor-pointer transition-all hover:border-primary hover:text-primary"
+                >
+                  <Plus size={18} />
+                  Eingabefeld hinzufügen
+                </button>
+
+                {variables.length === 0 && (
+                  <div className="text-center py-8 text-slate-400 text-sm">
+                    Noch keine Eingabefelder definiert.
+                  </div>
+                )}
+
+                {/* Option to allow user-defined variables */}
+                <div className="mt-6 pt-4 border-t border-slate-200">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={allowUserVariables}
+                      onChange={(e) => setAllowUserVariables(e.target.checked)}
+                      className="w-5 h-5 accent-primary mt-0.5"
+                    />
+                    <div>
+                      <span className="font-semibold text-slate-800 text-sm">
+                        Nutzer darf eigene Variablen hinzufügen
+                      </span>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Wenn aktiviert, kann der Nutzer beim Erstellen eines Briefings eigene zusätzliche Eingabefelder definieren.
+                      </p>
+                    </div>
+                  </label>
                 </div>
-              )}
+              </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-1.5">
-                  System-Prompt *
-                </label>
-                <textarea
-                  value={systemPrompt}
-                  onChange={(e) => setSystemPrompt(e.target.value)}
-                  placeholder={`Du bist ein erfahrener Experte für...
+            {/* Prompt Tab - Structured Editor */}
+            {activeTab === 'prompt' && (
+              <div className="space-y-6">
+                {/* AI Role */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-semibold text-slate-900">
+                      KI-Rolle *
+                    </label>
+                    {variables.length > 0 && (
+                      <VariableDropdown
+                        variables={variables}
+                        onSelect={(varKey) => insertVariableAt(aiRoleRef, setAiRole, aiRole, varKey)}
+                      />
+                    )}
+                  </div>
+                  <textarea
+                    ref={aiRoleRef}
+                    value={aiRole}
+                    onChange={(e) => setAiRole(e.target.value)}
+                    placeholder="z.B. 'Du bist ein erfahrener Sales-Coach mit 15+ Jahren B2B-Vertriebserfahrung...'"
+                    rows={3}
+                    className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-sm resize-y"
+                  />
+                </div>
 
-Erstelle ein strukturiertes Briefing für den Nutzer basierend auf folgenden Informationen:
-- Position: \${position}
-- Unternehmen: \${unternehmen}
+                {/* Sections */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-sm font-semibold text-slate-900">
+                      Briefing-Abschnitte *
+                    </label>
+                    <span className="text-xs text-slate-500">
+                      {sections.length} Abschnitt{sections.length !== 1 ? 'e' : ''}
+                    </span>
+                  </div>
 
-Das Briefing soll folgende Abschnitte enthalten:
-1. ...
-2. ...
+                  {sections.map((section, index) => (
+                    <SectionItem
+                      key={section.id}
+                      section={section}
+                      index={index}
+                      total={sections.length}
+                      variables={variables}
+                      onChange={(updated) => handleSectionChange(index, updated)}
+                      onDelete={() => handleDeleteSection(index)}
+                      onMoveUp={() => handleSectionMoveUp(index)}
+                      onMoveDown={() => handleSectionMoveDown(index)}
+                    />
+                  ))}
 
-Formatiere jeden Abschnitt mit einem Titel und 5-8 konkreten Bullet Points.`}
-                  rows={15}
-                  className="w-full px-3.5 py-3.5 rounded-xl border border-slate-200 text-sm font-mono resize-y leading-relaxed"
-                />
+                  <button
+                    onClick={handleAddSection}
+                    className="flex items-center justify-center gap-2 w-full px-3.5 py-3 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 text-indigo-600 text-sm font-medium cursor-pointer transition-all hover:bg-indigo-100"
+                  >
+                    <Plus size={18} />
+                    Abschnitt hinzufügen
+                  </button>
+                </div>
+
+                {/* AI Behavior */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-semibold text-slate-900">
+                      Verhalten & Stil (optional)
+                    </label>
+                    {variables.length > 0 && (
+                      <VariableDropdown
+                        variables={variables}
+                        onSelect={(varKey) => insertVariableAt(aiBehaviorRef, setAiBehavior, aiBehavior, varKey)}
+                      />
+                    )}
+                  </div>
+                  <textarea
+                    ref={aiBehaviorRef}
+                    value={aiBehavior}
+                    onChange={(e) => setAiBehavior(e.target.value)}
+                    placeholder="z.B. 'Schreibe praxisnah und actionable. Vermeide Theorie - fokussiere auf konkrete Formulierungen.'"
+                    rows={2}
+                    className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-sm resize-y"
+                  />
+                </div>
+
+                {/* Variable chips */}
+                {variables.length > 0 && (
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <HelpCircle size={14} className="text-slate-400" />
+                      <span className="text-xs font-semibold text-slate-500">Verfügbare Variablen (klicken zum Kopieren)</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {variables.map(v => (
+                        <button
+                          key={v.id}
+                          onClick={() => {
+                            navigator.clipboard.writeText(`\${${v.key}}`);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white rounded-lg border border-slate-200 text-xs cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+                        >
+                          <span className="text-slate-600">{v.label}</span>
+                          <code className="font-mono text-indigo-600">${'{'}${v.key}{'}'}</code>
+                          <Copy size={12} className="text-slate-400" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Syntax Check Result */}
+          {syntaxCheckResult && (
+            <div className={`px-6 py-3 border-t ${syntaxCheckResult.success ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+              <div className="flex items-center gap-2">
+                {syntaxCheckResult.success ? (
+                  <>
+                    <CheckCircle size={18} className="text-green-600" />
+                    <span className="text-green-700 text-sm font-medium">
+                      Syntax OK - Alle {syntaxCheckResult.usedVariables.length} Variablen sind definiert.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle size={18} className="text-amber-600" />
+                    <span className="text-amber-700 text-sm">
+                      <strong>Undefinierte Variablen:</strong> {syntaxCheckResult.undefinedVars.map(v => '${' + v + '}').join(', ')}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           )}
-        </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 flex justify-between items-center gap-3">
-          <button
-            onClick={onClose}
-            className="px-6 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors"
-          >
-            Abbrechen
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl border-none bg-brand-gradient text-white text-sm font-semibold transition-all ${
-              saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer opacity-100'
-            }`}
-          >
-            {saving ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Speichern...
-              </>
-            ) : (
-              <>
-                <Save size={18} />
-                {editTemplate ? 'Speichern' : 'Template erstellen'}
-              </>
-            )}
-          </button>
-        </div>
-      </motion.div>
-    </div>
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-slate-200 flex justify-between items-center gap-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors"
+            >
+              Abbrechen
+            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSyntaxCheck}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors"
+              >
+                <FileSearch size={16} />
+                Syntax prüfen
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl border-none bg-brand-gradient text-white text-sm font-semibold transition-all ${
+                  saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                }`}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Speichern...
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    {editTemplate ? 'Speichern' : 'Template erstellen'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Confirmation Dialog for Preset Overwrite */}
+      <AnimatePresence>
+        {pendingPreset && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl w-full max-w-[420px] shadow-2xl overflow-hidden"
+            >
+              <div className="px-6 py-4 border-b border-slate-200 bg-amber-50">
+                <div className="flex items-center gap-3">
+                  <AlertCircle size={24} className="text-amber-600" />
+                  <h3 className="text-lg font-bold text-slate-900">Daten überschreiben?</h3>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="text-slate-600 text-sm mb-4">
+                  Du hast bereits Eingabefelder oder KI-Anweisungen definiert.
+                  Wenn du die Vorlage <strong>"{pendingPreset.label}"</strong> anwendest,
+                  werden diese Daten überschrieben.
+                </p>
+                <div className="bg-slate-50 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-slate-500 font-medium mb-1">Was wird überschrieben:</p>
+                  <ul className="text-sm text-slate-600 space-y-1">
+                    {variables.length > 0 && (
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                        {variables.length} Eingabefeld{variables.length !== 1 ? 'er' : ''}
+                      </li>
+                    )}
+                    {aiRole && (
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                        KI-Rolle
+                      </li>
+                    )}
+                    {sections.length > 0 && (
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                        {sections.length} Briefing-Abschnitt{sections.length !== 1 ? 'e' : ''}
+                      </li>
+                    )}
+                    {aiBehavior && (
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                        Verhalten & Stil
+                      </li>
+                    )}
+                  </ul>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={cancelPresetApplication}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm cursor-pointer hover:bg-slate-50 transition-colors"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={() => applyPreset(pendingPreset)}
+                    className="flex-1 px-4 py-2.5 rounded-xl border-none bg-amber-500 text-white font-medium text-sm cursor-pointer hover:bg-amber-600 transition-colors"
+                  >
+                    Überschreiben
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

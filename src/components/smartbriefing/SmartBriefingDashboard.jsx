@@ -30,6 +30,7 @@ import {
   Heart,
   Folder,
   TrendingUp,
+  Copy,
 } from 'lucide-react';
 import ScenarioDashboard from '@/components/ui/composite/ScenarioDashboard';
 import FeatureInfoModal from '@/components/global/FeatureInfoModal';
@@ -60,11 +61,24 @@ const ICON_MAP = {
   'trending-up': TrendingUp,
 };
 
+/**
+ * Special "MEINE" category for user-created templates
+ */
+const MEINE_CATEGORY = {
+  key: 'MEINE',
+  label: 'Meine Templates',
+  shortLabel: 'Meine',
+  color: '#7C3AED',
+  bgColor: '#EDE9FE',
+  icon: Folder,
+};
+
 const SmartBriefingDashboard = ({
   onSelectTemplate,
   onShowList,
   onCreateTemplate,
   onEditTemplate,
+  onCopyTemplate,
   isAuthenticated,
   requireAuth,
   setPendingAction,
@@ -125,6 +139,31 @@ const SmartBriefingDashboard = ({
   };
 
   /**
+   * Handle copy template - creates a copy for the user to customize
+   */
+  const handleCopyTemplate = (e, template) => {
+    e.stopPropagation();
+    if (!isAuthenticated && !demoCode) {
+      if (requireAuth) {
+        setPendingAction(() => () => onCopyTemplate?.({
+          ...template,
+          title: `${template.title} (Kopie)`,
+          id: null, // Remove ID so it's treated as new
+          is_custom: true,
+        }));
+        requireAuth();
+      }
+      return;
+    }
+    onCopyTemplate?.({
+      ...template,
+      title: `${template.title} (Kopie)`,
+      id: null, // Remove ID so it's treated as new
+      is_custom: true,
+    });
+  };
+
+  /**
    * Confirm delete
    */
   const confirmDelete = async () => {
@@ -170,29 +209,109 @@ const SmartBriefingDashboard = ({
   };
 
   /**
-   * Render custom actions (edit/delete) for user templates
+   * Custom category badge renderer
+   * Shows "MEINE" badge for custom templates + regular category badge
+   * Avoids showing "MEINE" twice if category is already "MEINE"
    */
-  const getCardCustomActions = (template) => {
-    if (!template.is_custom) return null;
+  const renderCategoryBadge = (template, getCategoryConfig) => {
+    // Check if category is "MEINE" (can be string or array)
+    const categoryArray = Array.isArray(template.category) ? template.category : [template.category];
+    const isMeineCategory = categoryArray.includes('MEINE');
+
+    // Don't show regular category badge if it's "MEINE" - we'll show the is_custom badge instead
+    const categoryConfig = template.category && !isMeineCategory
+      ? getCategoryConfig(template.category)
+      : null;
 
     return (
-      <div className="flex gap-1">
-        <button
-          onClick={(e) => handleEditTemplate(e, template)}
-          className="p-1.5 rounded-md border-none bg-transparent text-slate-500 cursor-pointer flex items-center justify-center transition-all hover:bg-slate-100 hover:text-primary"
-          title="Template bearbeiten"
-        >
-          <Pencil size={16} />
-        </button>
-        <button
-          onClick={(e) => handleDeleteTemplate(e, template)}
-          className="p-1.5 rounded-md border-none bg-transparent text-slate-500 cursor-pointer flex items-center justify-center transition-all hover:bg-red-50 hover:text-red-500"
-          title="Template löschen"
-        >
-          <Trash2 size={16} />
-        </button>
+      <div className="flex flex-wrap gap-1.5">
+        {/* MEINE badge for custom templates - shown first */}
+        {template.is_custom && (
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-2xl text-[11px] font-semibold"
+            style={{
+              backgroundColor: MEINE_CATEGORY.bgColor,
+              color: MEINE_CATEGORY.color,
+            }}
+          >
+            <Folder style={{ width: '12px', height: '12px' }} />
+            {MEINE_CATEGORY.shortLabel}
+          </span>
+        )}
+
+        {/* Regular category badge (only if not "MEINE") */}
+        {categoryConfig && (
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-2xl text-[11px] font-semibold"
+            style={{
+              backgroundColor: categoryConfig.bgColor,
+              color: categoryConfig.color,
+            }}
+          >
+            {categoryConfig.IconComponent && (
+              <categoryConfig.IconComponent style={{ width: '12px', height: '12px' }} />
+            )}
+            {categoryConfig.shortLabel}
+          </span>
+        )}
       </div>
     );
+  };
+
+  /**
+   * Get custom className for card (tinted background for custom templates)
+   */
+  const getCardClassName = (template) => {
+    if (template.is_custom) {
+      return 'ring-2 ring-violet-200 bg-violet-50/30';
+    }
+    return '';
+  };
+
+  /**
+   * Render custom actions for templates
+   * - Custom templates: Edit + Delete
+   * - Non-custom templates: Copy (to create own version)
+   */
+  const getCardCustomActions = (template) => {
+    // For custom templates: Edit and Delete
+    if (template.is_custom) {
+      return (
+        <div className="flex gap-1">
+          <button
+            onClick={(e) => handleEditTemplate(e, template)}
+            className="p-1.5 rounded-md border-none bg-transparent text-slate-500 cursor-pointer flex items-center justify-center transition-all hover:bg-slate-100 hover:text-primary"
+            title="Template bearbeiten"
+          >
+            <Pencil size={16} />
+          </button>
+          <button
+            onClick={(e) => handleDeleteTemplate(e, template)}
+            className="p-1.5 rounded-md border-none bg-transparent text-slate-500 cursor-pointer flex items-center justify-center transition-all hover:bg-red-50 hover:text-red-500"
+            title="Template löschen"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      );
+    }
+
+    // For non-custom templates: Copy button (only if copy handler is provided)
+    if (onCopyTemplate) {
+      return (
+        <div className="flex gap-1">
+          <button
+            onClick={(e) => handleCopyTemplate(e, template)}
+            className="p-1.5 rounded-md border-none bg-transparent text-slate-500 cursor-pointer flex items-center justify-center transition-all hover:bg-indigo-50 hover:text-indigo-600"
+            title="Als eigenes Template kopieren"
+          >
+            <Copy size={16} />
+          </button>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   /**
@@ -306,13 +425,28 @@ const SmartBriefingDashboard = ({
 
       // Card rendering
       renderCardMeta={renderCardMeta}
+      renderCategoryBadge={renderCategoryBadge}
       getIconForScenario={getIconForScenario}
       getCardCustomActions={getCardCustomActions}
+      getCardClassName={getCardClassName}
       cardActionLabel="Briefing erstellen"
       cardActionIcon={ChevronRight}
 
       // Category
       categoryField="category"
+
+      // Additional categories: "Meine" filter for custom templates
+      additionalCategories={[{
+        key: MEINE_CATEGORY.key,
+        label: MEINE_CATEGORY.label,
+        shortLabel: MEINE_CATEGORY.shortLabel,
+        color: MEINE_CATEGORY.color,
+        bgColor: MEINE_CATEGORY.bgColor,
+        icon: MEINE_CATEGORY.icon,
+        IconComponent: MEINE_CATEGORY.icon,
+        // Custom filter function: show templates where is_custom is true
+        filterFn: (template) => template.is_custom === true,
+      }]}
 
       // Empty state
       emptyStateIcon={FileText}

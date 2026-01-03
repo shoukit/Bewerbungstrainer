@@ -41,14 +41,50 @@ const ConfirmDeleteDialog = ({
           <button
             onClick={onClose}
             disabled={isDeleting}
-            className="min-w-[100px] h-10 px-5 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm font-medium transition-all hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            style={{
+              minWidth: '100px',
+              height: '40px',
+              padding: '8px 20px',
+              borderRadius: '8px',
+              border: '1px solid #E2E8F0',
+              backgroundColor: '#FFFFFF',
+              color: '#1E293B',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              opacity: isDeleting ? 0.5 : 1,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isDeleting) e.target.style.backgroundColor = '#F8FAFC';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#FFFFFF';
+            }}
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={isDeleting}
-            className="min-w-[100px] h-10 px-5 py-2 rounded-lg border-none bg-gradient-to-br from-red-500 to-red-600 text-white text-sm font-medium transition-all inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            style={{
+              minWidth: '100px',
+              height: '40px',
+              padding: '8px 20px',
+              borderRadius: '8px',
+              border: 'none',
+              background: 'linear-gradient(to bottom right, #EF4444, #DC2626)',
+              color: '#FFFFFF',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              opacity: isDeleting ? 0.5 : 1,
+              transition: 'all 0.15s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
           >
             {isDeleting ? (
               <>

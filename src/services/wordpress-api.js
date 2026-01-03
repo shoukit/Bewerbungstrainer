@@ -369,6 +369,16 @@ class WordPressAPI {
         });
     }
 
+    /**
+     * Update video training session
+     */
+    async updateVideoTraining(trainingId, data) {
+        return this.request(`/video-training/sessions/${trainingId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
     // ===== Skill Simulator API Methods =====
 
     /**
@@ -982,6 +992,28 @@ class WordPressAPI {
         }
 
         throw new Error(response.message || 'Fehler beim Löschen der Entscheidung');
+    }
+
+    // ===== Smart Briefing API Methods =====
+
+    /**
+     * Update a briefing (e.g., rename title)
+     *
+     * @param {number} briefingId - Briefing ID
+     * @param {object} data - Data to update (e.g., { title: 'New Title' })
+     * @returns {Promise<object>} Updated briefing object
+     */
+    async updateBriefing(briefingId, data) {
+        const response = await this.request(`/smartbriefing/briefings/${briefingId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+
+        if (response.success && response.data?.briefing) {
+            return response.data.briefing;
+        }
+
+        throw new Error(response.message || 'Fehler beim Aktualisieren des Briefings');
     }
 
     // ===== Ikigai Career Pathfinder API Methods =====

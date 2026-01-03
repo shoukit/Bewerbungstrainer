@@ -224,46 +224,77 @@ const RationalScoreBar = ({ proScore, contraScore }) => {
 };
 
 /**
- * Brainstorm Suggestion Card
+ * Brainstorm Suggestion Card with weight adjustment
  */
 const SuggestionCard = ({ suggestion, onAdd, isAdded }) => {
   const isPro = suggestion.type === 'pro';
+  const [weight, setWeight] = React.useState(5);
+  const accentColor = isPro ? COLORS.green[500] : COLORS.red[500];
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`flex items-center gap-3 px-4 py-3 rounded-md border ${
+      className={`flex flex-col gap-2 px-4 py-3 rounded-lg border ${
         isPro
           ? 'bg-green-50 border-green-200'
           : 'bg-red-50 border-red-200'
       }`}
     >
-      <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
-        isPro ? 'bg-green-100' : 'bg-red-100'
-      }`}>
-        {isPro ? (
-          <ThumbsUp size={14} className="text-green-700" />
-        ) : (
-          <ThumbsDown size={14} className="text-red-700" />
-        )}
+      {/* Top row: Icon + Text */}
+      <div className="flex items-start gap-3">
+        <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 mt-0.5 ${
+          isPro ? 'bg-green-100' : 'bg-red-100'
+        }`}>
+          {isPro ? (
+            <ThumbsUp size={14} className="text-green-700" />
+          ) : (
+            <ThumbsDown size={14} className="text-red-700" />
+          )}
+        </div>
+        <span className="flex-1 text-base text-slate-600 leading-snug">
+          {suggestion.text}
+        </span>
       </div>
-      <span className="flex-1 text-base text-slate-600 leading-snug">
-        {suggestion.text}
-      </span>
-      <button
-        onClick={() => onAdd(suggestion)}
-        disabled={isAdded}
-        className={`w-12 h-12 rounded-lg border-none flex items-center justify-center shrink-0 transition-all ${
-          isAdded
-            ? 'bg-slate-200 text-slate-400 cursor-default'
-            : isPro
-              ? 'bg-green-500 text-white cursor-pointer hover:bg-green-600'
-              : 'bg-red-500 text-white cursor-pointer hover:bg-red-600'
-        }`}
-      >
-        {isAdded ? '✓' : <Plus size={24} color="white" strokeWidth={2.5} />}
-      </button>
+
+      {/* Bottom row: Weight slider + Add button */}
+      <div className="flex items-center justify-between gap-3 pl-9">
+        {/* Weight Slider */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500">Gewichtung:</span>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            value={weight}
+            onChange={(e) => setWeight(parseInt(e.target.value))}
+            disabled={isAdded}
+            className="w-[80px] h-1.5 rounded cursor-pointer appearance-none"
+            style={{
+              background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor} ${(weight - 1) * 11.1}%, ${COLORS.slate[200]} ${(weight - 1) * 11.1}%, ${COLORS.slate[200]} 100%)`,
+              opacity: isAdded ? 0.5 : 1,
+            }}
+          />
+          <span className={`min-w-[20px] text-center font-semibold text-sm ${isPro ? 'text-green-700' : 'text-red-700'}`}>
+            {weight}
+          </span>
+        </div>
+
+        {/* Add Button */}
+        <button
+          onClick={() => onAdd({ ...suggestion, weight })}
+          disabled={isAdded}
+          className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all ${
+            isAdded
+              ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-default'
+              : isPro
+                ? 'bg-green-50 border-green-300 text-green-600 cursor-pointer hover:bg-green-100 hover:border-green-400'
+                : 'bg-red-50 border-red-300 text-red-600 cursor-pointer hover:bg-red-100 hover:border-red-400'
+          }`}
+        >
+          {isAdded ? '✓' : <Plus size={20} strokeWidth={2.5} />}
+        </button>
+      </div>
     </motion.div>
   );
 };
@@ -521,6 +552,8 @@ const DecisionBoardInput = ({
   onSaveDraft,
   onUpdateSession,
   onDecisionIdChange,
+  selectedMicrophoneId,
+  onMicrophoneChange,
 }) => {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
@@ -721,7 +754,7 @@ const DecisionBoardInput = ({
     const newItem = {
       id: generateId(),
       text: suggestion.text,
-      weight: 5,
+      weight: suggestion.weight || 5,
     };
 
     if (suggestion.type === 'pro') {
@@ -923,7 +956,11 @@ const DecisionBoardInput = ({
               className="flex-[1_1_300px] min-w-0 text-base px-4 py-3 rounded-lg resize-y min-h-[80px]"
             />
             <div className="shrink-0 pb-1">
-              <AudioRecorder onTranscriptReady={handleTranscriptReady} warmUp={true} />
+              <AudioRecorder
+                onTranscriptReady={handleTranscriptReady}
+                warmUp={true}
+                deviceId={selectedMicrophoneId}
+              />
             </div>
           </div>
         </div>
@@ -1215,6 +1252,7 @@ const DecisionBoardInput = ({
         existingPros={pros}
         existingCons={cons}
         onAddItems={handleWizardAddItems}
+        selectedMicrophoneId={selectedMicrophoneId}
       />
     </div>
   );

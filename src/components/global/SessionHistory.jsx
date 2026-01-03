@@ -19,6 +19,8 @@ import {
   Sparkles,
   Trash2,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Button, Card, Skeleton, SkeletonListItem } from '@/components/ui';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
@@ -106,6 +108,46 @@ const TAB_CONFIG = [
 // Export TABS for use in extracted components
 export const SESSION_TABS = TABS;
 
+// Pagination settings
+const ITEMS_PER_PAGE = 15;
+
+/**
+ * Pagination Component
+ */
+const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
+  if (totalPages <= 1) return null;
+
+  const startItem = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const endItem = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+
+  return (
+    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
+      <span className="text-sm text-slate-500">
+        {startItem}–{endItem} von {totalItems}
+      </span>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <span className="text-sm font-medium text-slate-700 min-w-[80px] text-center">
+          Seite {currentPage} / {totalPages}
+        </span>
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession, initialTab, onNavigateToModule }) => {
   // Partner branding
   const { branding, demoCode } = usePartner();
@@ -139,6 +181,16 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const [roleplayScenarios, setRoleplayScenarios] = useState([]);
   const [simulatorScenarios, setSimulatorScenarios] = useState([]);
   const [videoScenarios, setVideoScenarios] = useState([]);
+
+  // Pagination state for each tab
+  const [currentPage, setCurrentPage] = useState({
+    [TABS.BRIEFINGS]: 1,
+    [TABS.DECISIONS]: 1,
+    [TABS.IKIGAI]: 1,
+    [TABS.SIMULATOR]: 1,
+    [TABS.VIDEO]: 1,
+    [TABS.ROLEPLAY]: 1,
+  });
 
   // Selected briefing for workbook view
   const [selectedBriefing, setSelectedBriefing] = useState(null);
@@ -195,17 +247,17 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         videoScenariosData,
       ] = await Promise.all([
         // Roleplay sessions (only pass demo_code if it exists)
-        getRoleplaySessions({ limit: 50, ...(demoCode && { demo_code: demoCode }) }).catch(() => ({ data: [] })),
+        getRoleplaySessions({ limit: 500, ...(demoCode && { demo_code: demoCode }) }).catch(() => ({ data: [] })),
         // Simulator sessions (pass demo_code)
-        fetch(`${apiUrl}/simulator/sessions?limit=50${demoQueryParam}`, {
+        fetch(`${apiUrl}/simulator/sessions?limit=500${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Video training sessions (pass demo_code)
-        fetch(`${apiUrl}/video-training/sessions?limit=50${demoQueryParam}`, {
+        fetch(`${apiUrl}/video-training/sessions?limit=500${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Smart Briefings (pass demo_code)
-        wordpressAPI.request(`/smartbriefing/briefings?limit=50${demoCode ? `&demo_code=${encodeURIComponent(demoCode)}` : ''}`, {
+        wordpressAPI.request(`/smartbriefing/briefings?limit=500${demoCode ? `&demo_code=${encodeURIComponent(demoCode)}` : ''}`, {
           method: 'GET',
         }).catch(() => ({ success: false, data: { briefings: [] } })),
         // Decision Board entries (pass demo_code)
@@ -225,12 +277,36 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       ]);
 
       // Extract sessions from API responses - each API has different structure
+      // Also filters out duplicates by ID to ensure count matches rendered items
       const extractSessions = (response, key = 'sessions') => {
-        if (Array.isArray(response?.data)) return response.data;
-        if (Array.isArray(response?.data?.[key])) return response.data[key];
-        if (Array.isArray(response?.[key])) return response[key];
-        if (Array.isArray(response)) return response;
-        return [];
+        let sessions = [];
+        if (Array.isArray(response?.data)) {
+          sessions = response.data;
+        } else if (Array.isArray(response?.data?.[key])) {
+          sessions = response.data[key];
+        } else if (Array.isArray(response?.[key])) {
+          sessions = response[key];
+        } else if (Array.isArray(response)) {
+          sessions = response;
+        }
+
+        // Filter out duplicates by ID to prevent count mismatch with rendered items
+        const seen = new Set();
+        const uniqueSessions = sessions.filter(session => {
+          if (!session?.id) return true; // Keep sessions without id
+          if (seen.has(session.id)) {
+            console.warn('[SessionHistory] Duplicate session ID found:', session.id);
+            return false;
+          }
+          seen.add(session.id);
+          return true;
+        });
+
+        if (uniqueSessions.length !== sessions.length) {
+          console.warn('[SessionHistory] Removed', sessions.length - uniqueSessions.length, 'duplicate sessions');
+        }
+
+        return uniqueSessions;
       };
 
       const extractScenarios = (response) => {
@@ -240,12 +316,31 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         return [];
       };
 
+      // Helper to dedupe any array by id
+      const dedupeById = (items, typeName) => {
+        if (!Array.isArray(items)) return [];
+        const seen = new Set();
+        const unique = items.filter(item => {
+          if (!item?.id) return true;
+          if (seen.has(item.id)) {
+            console.warn(`[SessionHistory] Duplicate ${typeName} ID found:`, item.id);
+            return false;
+          }
+          seen.add(item.id);
+          return true;
+        });
+        if (unique.length !== items.length) {
+          console.warn(`[SessionHistory] Removed ${items.length - unique.length} duplicate ${typeName}`);
+        }
+        return unique;
+      };
+
       setRoleplaySessions(extractSessions(roleplayData));
       setSimulatorSessions(extractSessions(simulatorData));
       setVideoSessions(extractSessions(videoData));
-      setBriefings(briefingsData?.data?.briefings || []);
-      setDecisions(decisionsData?.data?.decisions || []);
-      setIkigais(ikigaisData?.data?.ikigais || []);
+      setBriefings(dedupeById(briefingsData?.data?.briefings || [], 'briefing'));
+      setDecisions(dedupeById(decisionsData?.data?.decisions || [], 'decision'));
+      setIkigais(dedupeById(ikigaisData?.data?.ikigais || [], 'ikigai'));
       setRoleplayScenarios(extractScenarios(roleplayScenariosData));
       setSimulatorScenarios(extractScenarios(simulatorScenariosData));
       setVideoScenarios(extractScenarios(videoScenariosData));
@@ -299,6 +394,33 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Total sessions count
   const totalSessions = roleplaySessions.length + simulatorSessions.length + videoSessions.length + briefings.length + decisions.length;
 
+  // Pagination helpers
+  const handlePageChange = (newPage) => {
+    setCurrentPage((prev) => ({
+      ...prev,
+      [activeTab]: newPage,
+    }));
+    // Scroll to top of list
+    window.scrollTo({ top: 200, behavior: 'smooth' });
+  };
+
+  // Reset to page 1 when tab changes
+  useEffect(() => {
+    setCurrentPage((prev) => ({
+      ...prev,
+      [activeTab]: 1,
+    }));
+  }, [activeTab]);
+
+  // Get paginated items for current tab
+  const getPaginatedItems = (items) => {
+    const page = currentPage[activeTab] || 1;
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    return items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  };
+
+  const getTotalPages = (items) => Math.ceil(items.length / ITEMS_PER_PAGE);
+
   // Delete briefing handler
   const handleDeleteBriefing = async (briefingId) => {
     const response = await wordpressAPI.request(`/smartbriefing/briefings/${briefingId}`, {
@@ -308,6 +430,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     if (response.success) {
       setBriefings((prev) => prev.filter((b) => b.id !== briefingId));
     }
+  };
+
+  // Rename briefing handler
+  const handleRenameBriefing = async (briefing, newTitle) => {
+    const updatedBriefing = await wordpressAPI.updateBriefing(briefing.id, { title: newTitle });
+    setBriefings((prev) =>
+      prev.map((b) => (b.id === briefing.id ? { ...b, title: newTitle } : b))
+    );
+    return updatedBriefing;
   };
 
   // Handle briefing click - open workbook
@@ -327,6 +458,15 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
     if (response.success) {
       setDecisions((prev) => prev.filter((d) => d.id !== decisionId));
     }
+  };
+
+  // Rename decision handler
+  const handleRenameDecision = async (decision, newTopic) => {
+    const updatedDecision = await wordpressAPI.updateDecision(decision.id, { topic: newTopic });
+    setDecisions((prev) =>
+      prev.map((d) => (d.id === decision.id ? { ...d, topic: newTopic } : d))
+    );
+    return updatedDecision;
   };
 
   // Handle delete ikigai
@@ -538,6 +678,42 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       }
     } catch (err) {
       console.error('Failed to delete session:', err);
+      throw err;
+    }
+  };
+
+  // Handle rename session
+  const handleRenameSession = async (session, type, newTitle) => {
+    try {
+      let updateFn;
+
+      switch (type) {
+        case TABS.SIMULATOR:
+          await wordpressAPI.updateSimulatorSession(session.id, { custom_title: newTitle });
+          updateFn = (prev) => prev.map((s) =>
+            s.id === session.id ? { ...s, custom_title: newTitle } : s
+          );
+          setSimulatorSessions(updateFn);
+          break;
+        case TABS.ROLEPLAY:
+          await wordpressAPI.updateSession(session.id, { custom_title: newTitle });
+          updateFn = (prev) => prev.map((s) =>
+            s.id === session.id ? { ...s, custom_title: newTitle } : s
+          );
+          setRoleplaySessions(updateFn);
+          break;
+        case TABS.VIDEO:
+          await wordpressAPI.updateVideoTraining(session.id, { custom_title: newTitle });
+          updateFn = (prev) => prev.map((s) =>
+            s.id === session.id ? { ...s, custom_title: newTitle } : s
+          );
+          setVideoSessions(updateFn);
+          break;
+        default:
+          throw new Error('Unknown session type');
+      }
+    } catch (err) {
+      console.error('Failed to rename session:', err);
       throw err;
     }
   };
@@ -1017,66 +1193,101 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             </Button>
           </Card>
         ) : (
-          <motion.div
-            className="flex flex-col gap-3"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.05 },
-              },
-            }}
-          >
-            {activeTab === TABS.BRIEFINGS ? (
-              // Render briefings
-              briefings.map((briefing) => (
-                <BriefingCard
-                  key={briefing.id}
-                  briefing={briefing}
-                  onClick={() => handleBriefingClick(briefing)}
-                  onDelete={handleDeleteBriefing}
-                />
-              ))
-            ) : activeTab === TABS.DECISIONS ? (
-              // Render decisions
-              decisions.map((decision) => (
-                <DecisionCard
-                  key={decision.id}
-                  decision={decision}
-                  onClick={() => handleDecisionClick(decision)}
-                  onDelete={handleDeleteDecision}
-                />
-              ))
-            ) : activeTab === TABS.IKIGAI ? (
-              // Render ikigai analyses
-              ikigais.map((ikigai) => (
-                <IkigaiCard
-                  key={ikigai.id}
-                  ikigai={ikigai}
-                  onDelete={handleDeleteIkigai}
-                  onNavigate={() => handleIkigaiClick(ikigai)}
-                />
-              ))
-            ) : (
-              // Render regular sessions
-              activeSessions.map((session) => {
-                const scenario = activeScenarioMap[session.scenario_id];
-                return (
-                  <SessionCard
-                    key={session.id}
-                    session={session}
-                    type={activeTab}
-                    scenario={scenario}
-                    onClick={() => handleSessionClick(session)}
-                    onContinueSession={onContinueSession}
-                    onDeleteSession={handleDeleteSession}
+          <>
+            <motion.div
+              className="flex flex-col gap-3"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.05 },
+                },
+              }}
+            >
+              {activeTab === TABS.BRIEFINGS ? (
+                // Render briefings with pagination
+                getPaginatedItems(briefings).map((briefing) => (
+                  <BriefingCard
+                    key={briefing.id}
+                    briefing={briefing}
+                    onClick={() => handleBriefingClick(briefing)}
+                    onDelete={handleDeleteBriefing}
+                    onRename={handleRenameBriefing}
                   />
-                );
-              })
+                ))
+              ) : activeTab === TABS.DECISIONS ? (
+                // Render decisions with pagination
+                getPaginatedItems(decisions).map((decision) => (
+                  <DecisionCard
+                    key={decision.id}
+                    decision={decision}
+                    onClick={() => handleDecisionClick(decision)}
+                    onDelete={handleDeleteDecision}
+                    onRename={handleRenameDecision}
+                  />
+                ))
+              ) : activeTab === TABS.IKIGAI ? (
+                // Render ikigai analyses with pagination
+                getPaginatedItems(ikigais).map((ikigai) => (
+                  <IkigaiCard
+                    key={ikigai.id}
+                    ikigai={ikigai}
+                    onDelete={handleDeleteIkigai}
+                    onNavigate={() => handleIkigaiClick(ikigai)}
+                  />
+                ))
+              ) : (
+                // Render regular sessions with pagination
+                getPaginatedItems(activeSessions).map((session) => {
+                  const scenario = activeScenarioMap[session.scenario_id];
+                  return (
+                    <SessionCard
+                      key={session.id}
+                      session={session}
+                      type={activeTab}
+                      scenario={scenario}
+                      onClick={() => handleSessionClick(session)}
+                      onContinueSession={onContinueSession}
+                      onDeleteSession={handleDeleteSession}
+                      onRename={handleRenameSession}
+                    />
+                  );
+                })
+              )}
+            </motion.div>
+            {/* Pagination - use correct array for each tab type */}
+            {activeTab === TABS.BRIEFINGS ? (
+              <Pagination
+                currentPage={currentPage[activeTab] || 1}
+                totalPages={getTotalPages(briefings)}
+                totalItems={briefings.length}
+                onPageChange={handlePageChange}
+              />
+            ) : activeTab === TABS.DECISIONS ? (
+              <Pagination
+                currentPage={currentPage[activeTab] || 1}
+                totalPages={getTotalPages(decisions)}
+                totalItems={decisions.length}
+                onPageChange={handlePageChange}
+              />
+            ) : activeTab === TABS.IKIGAI ? (
+              <Pagination
+                currentPage={currentPage[activeTab] || 1}
+                totalPages={getTotalPages(ikigais)}
+                totalItems={ikigais.length}
+                onPageChange={handlePageChange}
+              />
+            ) : (
+              <Pagination
+                currentPage={currentPage[activeTab] || 1}
+                totalPages={getTotalPages(activeSessions)}
+                totalItems={activeSessions.length}
+                onPageChange={handlePageChange}
+              />
             )}
-          </motion.div>
+          </>
         )}
       </div>
     </div>

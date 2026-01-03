@@ -112,6 +112,13 @@ class Bewerbungstrainer_SmartBriefing_API {
             'permission_callback' => array($this, 'allow_all_users'),
         ));
 
+        // Update briefing (for renaming title)
+        register_rest_route($this->namespace, '/smartbriefing/briefings/(?P<id>\d+)', array(
+            'methods' => 'PUT',
+            'callback' => array($this, 'update_briefing'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
         // Delete briefing
         register_rest_route($this->namespace, '/smartbriefing/briefings/(?P<id>\d+)', array(
             'methods' => 'DELETE',
@@ -283,7 +290,11 @@ class Bewerbungstrainer_SmartBriefing_API {
             'icon' => isset($params['icon']) ? sanitize_text_field($params['icon']) : 'file-text',
             'category' => 'MEINE', // Always set to MEINE for custom templates
             'system_prompt' => $params['system_prompt'], // Don't over-sanitize the prompt
+            'ai_role' => isset($params['ai_role']) ? $params['ai_role'] : '',
+            'ai_task' => isset($params['ai_task']) ? $params['ai_task'] : '',
+            'ai_behavior' => isset($params['ai_behavior']) ? $params['ai_behavior'] : '',
             'variables_schema' => isset($params['variables_schema']) ? $params['variables_schema'] : array(),
+            'allow_custom_variables' => !empty($params['allow_user_variables']) ? 1 : 0,
             'is_active' => 1,
             'sort_order' => 0,
             'user_id' => $user_id ?: null,
@@ -374,8 +385,24 @@ class Bewerbungstrainer_SmartBriefing_API {
             $update_data['system_prompt'] = $params['system_prompt'];
         }
 
+        if (isset($params['ai_role'])) {
+            $update_data['ai_role'] = $params['ai_role'];
+        }
+
+        if (isset($params['ai_task'])) {
+            $update_data['ai_task'] = $params['ai_task'];
+        }
+
+        if (isset($params['ai_behavior'])) {
+            $update_data['ai_behavior'] = $params['ai_behavior'];
+        }
+
         if (isset($params['variables_schema'])) {
             $update_data['variables_schema'] = $params['variables_schema'];
+        }
+
+        if (isset($params['allow_user_variables'])) {
+            $update_data['allow_custom_variables'] = !empty($params['allow_user_variables']) ? 1 : 0;
         }
 
         if (empty($update_data)) {
@@ -954,6 +981,59 @@ class Bewerbungstrainer_SmartBriefing_API {
             'data' => array(
                 'section' => $this->format_section($updated_section),
                 'new_items_count' => count($new_items),
+            ),
+        ), 200);
+    }
+
+    /**
+     * Update briefing (e.g., rename title)
+     */
+    public function update_briefing($request) {
+        $briefing_id = intval($request['id']);
+        $user_id = get_current_user_id();
+        $params = $request->get_json_params();
+
+        // Validate briefing ownership
+        $briefing = $this->db->get_briefing($briefing_id);
+        if (!$briefing || (int) $briefing->user_id !== $user_id) {
+            return new WP_Error(
+                'not_found',
+                __('Briefing nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Build update data (only allow specific fields)
+        $update_data = array();
+        if (isset($params['title'])) {
+            $update_data['title'] = sanitize_text_field($params['title']);
+        }
+
+        if (empty($update_data)) {
+            return new WP_Error(
+                'no_data',
+                __('Keine Daten zum Aktualisieren.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        $result = $this->db->update_briefing($briefing_id, $update_data);
+
+        if (!$result) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Aktualisieren des Briefings.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Get updated briefing
+        $updated_briefing = $this->db->get_briefing($briefing_id);
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'briefing' => $this->format_briefing($updated_briefing),
             ),
         ), 200);
     }

@@ -726,6 +726,24 @@ class Bewerbungstrainer_Plugin {
             return;
         }
 
+        // Prevent page caching to ensure fresh JS chunks are always loaded
+        // This is important because dynamic imports use content-hashed filenames
+        if (!headers_sent()) {
+            header('Cache-Control: no-cache, no-store, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+        }
+        // Also set nocache constants for WordPress caching plugins
+        if (!defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+        if (!defined('DONOTCACHEOBJECT')) {
+            define('DONOTCACHEOBJECT', true);
+        }
+        if (!defined('DONOTCACHEDB')) {
+            define('DONOTCACHEDB', true);
+        }
+
         // Enqueue React app (built version)
         $asset_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/index.js';
         $css_file = BEWERBUNGSTRAINER_PLUGIN_DIR . 'dist/assets/FeatureInfoButton.css';
@@ -780,6 +798,8 @@ class Bewerbungstrainer_Plugin {
                 'firstName' => $is_logged_in ? get_user_meta($current_user_id, 'first_name', true) : '',
             ),
             'uploadsUrl' => wp_upload_dir()['baseurl'] . '/bewerbungstrainer',
+            'pluginUrl' => BEWERBUNGSTRAINER_PLUGIN_URL,
+            'assetsUrl' => BEWERBUNGSTRAINER_PLUGIN_URL . 'dist/assets/',
             'elevenlabsAgentId' => get_option('bewerbungstrainer_elevenlabs_agent_id', ''),
             'elevenlabsApiKey' => get_option('bewerbungstrainer_elevenlabs_api_key', ''),
             'geminiApiKey' => get_option('bewerbungstrainer_gemini_api_key', ''),
@@ -788,7 +808,9 @@ class Bewerbungstrainer_Plugin {
         // Add type="module" to script tag for ES6 module support
         add_filter('script_loader_tag', function($tag, $handle, $src) {
             if ('bewerbungstrainer-app' === $handle) {
-                $tag = '<script type="module" src="' . esc_url($src) . '"></script>';
+                // Remove query string from URL to prevent module resolution issues
+                $clean_src = preg_replace('/\?.*$/', '', $src);
+                $tag = '<script type="module" src="' . esc_url($clean_src) . '"></script>';
             }
             return $tag;
         }, 10, 3);

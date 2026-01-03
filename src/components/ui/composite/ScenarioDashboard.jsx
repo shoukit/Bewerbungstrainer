@@ -98,6 +98,7 @@ const DefaultCategoryBadge = ({ category, getCategoryConfig }) => {
  * @param {string} props.cardActionLabel - Label for card action button (default: 'Starten')
  * @param {React.Component} props.cardActionIcon - Icon for card action button
  * @param {Function} props.getCardCustomActions - (scenario) => React element for custom card actions (e.g., edit/delete)
+ * @param {Function} props.getCardClassName - (scenario) => additional className for the card
  * @param {boolean} props.isAuthenticated - Whether user is authenticated
  * @param {Function} props.requireAuth - Function to require authentication
  * @param {Function} props.setPendingAction - Function to set pending action for auth flow
@@ -130,6 +131,7 @@ const ScenarioDashboard = ({
   cardActionLabel = 'Starten',
   cardActionIcon,
   getCardCustomActions,
+  getCardClassName,
 
   // Category system
   categoryField = 'category',
@@ -163,6 +165,11 @@ const ScenarioDashboard = ({
   // Loading messages
   loadingMessage = 'Szenarien werden geladen...',
   errorRetryLabel = 'Erneut versuchen',
+
+  // Additional categories to prepend to filter (after "Alle")
+  // Format: [{ key, label, shortLabel, color, bgColor, icon, filterFn }]
+  // filterFn is optional function (scenario) => boolean for custom filtering
+  additionalCategories = [],
 }) => {
   // State
   const [scenarios, setScenarios] = useState([]);
@@ -246,9 +253,11 @@ const ScenarioDashboard = ({
 
   // Get available categories for filter UI - only categories with at least one scenario
   const availableCategories = useMemo(() => {
+    let cats = [];
+
     if (customCategoryConfig) {
       // Use custom category config - only include categories that have scenarios
-      return scenarioCategories
+      cats = scenarioCategories
         .filter(key => {
           // Check if at least one scenario matches this category
           return baseFilteredScenarios.some(scenario => scenario[categoryField] === key);
@@ -262,20 +271,34 @@ const ScenarioDashboard = ({
           icon: customCategoryConfig[key]?.icon,
           IconComponent: customCategoryConfig[key]?.icon,
         }));
+    } else {
+      // Use useCategories hook
+      cats = getCategoriesForFilter(scenarioCategories);
+
+      // Filter to only include categories that have at least one matching scenario
+      cats = cats.filter(cat => {
+        if (!cat || !cat.label || !cat.label.trim()) return false;
+        // Check if at least one scenario matches this category
+        return baseFilteredScenarios.some(scenario =>
+          matchesCategory(scenario[categoryField], cat.key)
+        );
+      });
     }
 
-    // Use useCategories hook
-    const cats = getCategoriesForFilter(scenarioCategories);
-
-    // Filter to only include categories that have at least one matching scenario
-    return cats.filter(cat => {
-      if (!cat || !cat.label || !cat.label.trim()) return false;
-      // Check if at least one scenario matches this category
+    // Prepend additional categories (if they have matching scenarios)
+    const validAdditional = additionalCategories.filter(addCat => {
+      if (!addCat || !addCat.key) return false;
+      // If filterFn is provided, use it; otherwise check if any scenario matches the key
+      if (addCat.filterFn) {
+        return baseFilteredScenarios.some(addCat.filterFn);
+      }
       return baseFilteredScenarios.some(scenario =>
-        matchesCategory(scenario[categoryField], cat.key)
+        scenario[categoryField] === addCat.key || matchesCategory(scenario[categoryField], addCat.key)
       );
     });
-  }, [scenarioCategories, customCategoryConfig, getCategoriesForFilter, baseFilteredScenarios, categoryField, matchesCategory]);
+
+    return [...validAdditional, ...cats];
+  }, [scenarioCategories, customCategoryConfig, getCategoriesForFilter, baseFilteredScenarios, categoryField, matchesCategory, additionalCategories]);
 
   // Filter scenarios by category and search
   const filteredScenarios = useMemo(() => {
@@ -283,7 +306,12 @@ const ScenarioDashboard = ({
 
     // Category filter
     if (selectedCategory) {
-      if (customCategoryConfig) {
+      // Check if this is an additional category with a custom filterFn
+      const additionalCat = additionalCategories.find(cat => cat.key === selectedCategory);
+      if (additionalCat?.filterFn) {
+        // Use the custom filter function
+        filtered = filtered.filter(additionalCat.filterFn);
+      } else if (customCategoryConfig) {
         // Direct field match for custom category system
         filtered = filtered.filter(scenario => scenario[categoryField] === selectedCategory);
       } else {
@@ -304,7 +332,7 @@ const ScenarioDashboard = ({
     }
 
     return filtered;
-  }, [baseFilteredScenarios, selectedCategory, searchQuery, categoryField, customCategoryConfig, matchesCategory]);
+  }, [baseFilteredScenarios, selectedCategory, searchQuery, categoryField, customCategoryConfig, matchesCategory, additionalCategories]);
 
   // Handle scenario selection with auth check
   const handleSelectScenario = useCallback((scenario) => {
@@ -477,6 +505,7 @@ const ScenarioDashboard = ({
             const IconComponent = getIconForScenario ? getIconForScenario(scenario) : null;
             const meta = renderCardMeta ? renderCardMeta(scenario) : [];
             const customActions = getCardCustomActions ? getCardCustomActions(scenario) : null;
+            const cardClassName = getCardClassName ? getCardClassName(scenario) : '';
 
             return (
               <ScenarioCard
@@ -490,6 +519,7 @@ const ScenarioDashboard = ({
                 onClick={() => handleSelectScenario(scenario)}
                 viewMode={viewMode}
                 customActions={customActions}
+                className={cardClassName}
               />
             );
           })}

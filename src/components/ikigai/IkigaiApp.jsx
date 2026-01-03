@@ -8,6 +8,7 @@ import FeatureAppHeader from '@/components/global/FeatureAppHeader';
 import { COLORS, createGradient } from '@/config/colors';
 import { DIMENSIONS } from '@/config/ikigaiDimensions';
 import { useScrollToTop } from '@/hooks';
+import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog';
 
 /**
  * View states for the Ikigai flow
@@ -39,6 +40,10 @@ const IkigaiApp = ({
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [savedIkigaiId, setSavedIkigaiId] = useState(null);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+
+  // Microphone state - managed at app level so it persists across views
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
   // Ikigai feature gradient (purple)
   const ikigaiGradient = createGradient(COLORS.purple[500], COLORS.purple[400]);
@@ -267,6 +272,9 @@ const IkigaiApp = ({
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+            selectedMicrophoneId={selectedMicrophoneId}
+            onMicrophoneChange={setSelectedMicrophoneId}
+            onTestMicrophone={() => setShowMicrophoneTest(true)}
           />
         );
 
@@ -314,6 +322,8 @@ const IkigaiApp = ({
               allDimensionsFilled={allDimensionsFilled}
               onSynthesize={handleSynthesize}
               isSynthesizing={isSynthesizing}
+              selectedMicrophoneId={selectedMicrophoneId}
+              onMicrophoneChange={setSelectedMicrophoneId}
             />
           </>
         );
@@ -323,6 +333,13 @@ const IkigaiApp = ({
   return (
     <div className="min-h-full">
       {renderContent()}
+
+      {/* Microphone Test Dialog - available from dashboard */}
+      <MicrophoneTestDialog
+        isOpen={showMicrophoneTest}
+        onClose={() => setShowMicrophoneTest(false)}
+        deviceId={selectedMicrophoneId}
+      />
     </div>
   );
 };
