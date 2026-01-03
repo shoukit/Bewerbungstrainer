@@ -214,8 +214,12 @@ const SmartBriefingDashboard = ({
    * Avoids showing "MEINE" twice if category is already "MEINE"
    */
   const renderCategoryBadge = (template, getCategoryConfig) => {
+    // Check if category is "MEINE" (can be string or array)
+    const categoryArray = Array.isArray(template.category) ? template.category : [template.category];
+    const isMeineCategory = categoryArray.includes('MEINE');
+
     // Don't show regular category badge if it's "MEINE" - we'll show the is_custom badge instead
-    const categoryConfig = template.category && template.category !== 'MEINE'
+    const categoryConfig = template.category && !isMeineCategory
       ? getCategoryConfig(template.category)
       : null;
 
