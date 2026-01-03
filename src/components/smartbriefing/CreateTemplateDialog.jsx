@@ -677,6 +677,55 @@ const CreateTemplateDialog = ({
   const aiRoleRef = useRef(null);
   const aiBehaviorRef = useRef(null);
 
+  /**
+   * Parse a legacy system_prompt into structured format (aiRole, sections, aiBehavior)
+   */
+  const parseLegacyPrompt = (prompt) => {
+    if (!prompt) return { aiRole: '', sections: [], aiBehavior: '' };
+
+    let aiRole = '';
+    let sections = [];
+    let aiBehavior = '';
+
+    // Extract behavior (everything after WICHTIG:)
+    const wichtigMatch = prompt.match(/\n*WICHTIG:\s*([\s\S]*?)$/i);
+    if (wichtigMatch) {
+      aiBehavior = wichtigMatch[1].trim();
+      prompt = prompt.replace(wichtigMatch[0], '').trim();
+    }
+
+    // Extract sections (### numbered items)
+    const sectionRegex = /###\s*\d+\.\s*([^\n]+)\n([\s\S]*?)(?=###\s*\d+\.|$)/g;
+    let sectionMatch;
+    const foundSections = [];
+
+    while ((sectionMatch = sectionRegex.exec(prompt)) !== null) {
+      foundSections.push({
+        id: generateId(),
+        title: sectionMatch[1].trim(),
+        instruction: sectionMatch[2].trim(),
+      });
+    }
+
+    if (foundSections.length > 0) {
+      sections = foundSections;
+      // Extract aiRole: everything before the first section or "Erstelle ein strukturiertes Briefing"
+      const firstSectionIndex = prompt.indexOf('###');
+      const briefingIntroIndex = prompt.indexOf('Erstelle ein strukturiertes Briefing');
+
+      if (briefingIntroIndex !== -1 && briefingIntroIndex < firstSectionIndex) {
+        aiRole = prompt.substring(0, briefingIntroIndex).trim();
+      } else if (firstSectionIndex !== -1) {
+        aiRole = prompt.substring(0, firstSectionIndex).trim();
+      }
+    } else {
+      // No sections found - put everything in aiRole
+      aiRole = prompt;
+    }
+
+    return { aiRole, sections, aiBehavior };
+  };
+
   // Initialize form when editing
   useEffect(() => {
     if (editTemplate) {
@@ -693,26 +742,29 @@ const CreateTemplateDialog = ({
 
       // Parse existing prompt into structured format
       if (editTemplate.ai_role) {
+        // New structured format - use directly
         setAiRole(editTemplate.ai_role);
-      } else if (editTemplate.system_prompt) {
-        // Try to extract role from legacy system_prompt
-        setAiRole(editTemplate.system_prompt);
-      }
 
-      if (editTemplate.ai_task) {
-        // Parse ai_task into sections
-        try {
-          const parsed = JSON.parse(editTemplate.ai_task);
-          if (Array.isArray(parsed)) {
-            setSections(parsed.map(s => ({ ...s, id: s.id || generateId() })));
+        if (editTemplate.ai_task) {
+          try {
+            const parsed = JSON.parse(editTemplate.ai_task);
+            if (Array.isArray(parsed)) {
+              setSections(parsed.map(s => ({ ...s, id: s.id || generateId() })));
+            }
+          } catch {
+            setSections([{ id: generateId(), title: 'Hauptabschnitt', instruction: editTemplate.ai_task }]);
           }
-        } catch {
-          // If not JSON, create single section
-          setSections([{ id: generateId(), title: 'Hauptabschnitt', instruction: editTemplate.ai_task }]);
         }
+
+        setAiBehavior(editTemplate.ai_behavior || '');
+      } else if (editTemplate.system_prompt) {
+        // Legacy format - parse the system_prompt into structured parts
+        const parsed = parseLegacyPrompt(editTemplate.system_prompt);
+        setAiRole(parsed.aiRole);
+        setSections(parsed.sections);
+        setAiBehavior(parsed.aiBehavior);
       }
 
-      setAiBehavior(editTemplate.ai_behavior || '');
       setAllowUserVariables(editTemplate.allow_user_variables || false);
       setSelectedPreset('empty');
     } else {
