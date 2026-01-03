@@ -19,6 +19,8 @@ import {
   Sparkles,
   Trash2,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Button, Card, Skeleton, SkeletonListItem } from '@/components/ui';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
@@ -106,6 +108,46 @@ const TAB_CONFIG = [
 // Export TABS for use in extracted components
 export const SESSION_TABS = TABS;
 
+// Pagination settings
+const ITEMS_PER_PAGE = 15;
+
+/**
+ * Pagination Component
+ */
+const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
+  if (totalPages <= 1) return null;
+
+  const startItem = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const endItem = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+
+  return (
+    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
+      <span className="text-sm text-slate-500">
+        {startItem}–{endItem} von {totalItems}
+      </span>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <span className="text-sm font-medium text-slate-700 min-w-[80px] text-center">
+          Seite {currentPage} / {totalPages}
+        </span>
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick, onContinueSession, onRepeatSession, initialTab, onNavigateToModule }) => {
   // Partner branding
   const { branding, demoCode } = usePartner();
@@ -139,6 +181,16 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const [roleplayScenarios, setRoleplayScenarios] = useState([]);
   const [simulatorScenarios, setSimulatorScenarios] = useState([]);
   const [videoScenarios, setVideoScenarios] = useState([]);
+
+  // Pagination state for each tab
+  const [currentPage, setCurrentPage] = useState({
+    [TABS.BRIEFINGS]: 1,
+    [TABS.DECISIONS]: 1,
+    [TABS.IKIGAI]: 1,
+    [TABS.SIMULATOR]: 1,
+    [TABS.VIDEO]: 1,
+    [TABS.ROLEPLAY]: 1,
+  });
 
   // Selected briefing for workbook view
   const [selectedBriefing, setSelectedBriefing] = useState(null);
@@ -341,6 +393,33 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Total sessions count
   const totalSessions = roleplaySessions.length + simulatorSessions.length + videoSessions.length + briefings.length + decisions.length;
+
+  // Pagination helpers
+  const handlePageChange = (newPage) => {
+    setCurrentPage((prev) => ({
+      ...prev,
+      [activeTab]: newPage,
+    }));
+    // Scroll to top of list
+    window.scrollTo({ top: 200, behavior: 'smooth' });
+  };
+
+  // Reset to page 1 when tab changes
+  useEffect(() => {
+    setCurrentPage((prev) => ({
+      ...prev,
+      [activeTab]: 1,
+    }));
+  }, [activeTab]);
+
+  // Get paginated items for current tab
+  const getPaginatedItems = (items) => {
+    const page = currentPage[activeTab] || 1;
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    return items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  };
+
+  const getTotalPages = (items) => Math.ceil(items.length / ITEMS_PER_PAGE);
 
   // Delete briefing handler
   const handleDeleteBriefing = async (briefingId) => {
@@ -1114,69 +1193,101 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             </Button>
           </Card>
         ) : (
-          <motion.div
-            className="flex flex-col gap-3"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.05 },
-              },
-            }}
-          >
-            {activeTab === TABS.BRIEFINGS ? (
-              // Render briefings
-              briefings.map((briefing) => (
-                <BriefingCard
-                  key={briefing.id}
-                  briefing={briefing}
-                  onClick={() => handleBriefingClick(briefing)}
-                  onDelete={handleDeleteBriefing}
-                  onRename={handleRenameBriefing}
-                />
-              ))
-            ) : activeTab === TABS.DECISIONS ? (
-              // Render decisions
-              decisions.map((decision) => (
-                <DecisionCard
-                  key={decision.id}
-                  decision={decision}
-                  onClick={() => handleDecisionClick(decision)}
-                  onDelete={handleDeleteDecision}
-                  onRename={handleRenameDecision}
-                />
-              ))
-            ) : activeTab === TABS.IKIGAI ? (
-              // Render ikigai analyses
-              ikigais.map((ikigai) => (
-                <IkigaiCard
-                  key={ikigai.id}
-                  ikigai={ikigai}
-                  onDelete={handleDeleteIkigai}
-                  onNavigate={() => handleIkigaiClick(ikigai)}
-                />
-              ))
-            ) : (
-              // Render regular sessions
-              activeSessions.map((session) => {
-                const scenario = activeScenarioMap[session.scenario_id];
-                return (
-                  <SessionCard
-                    key={session.id}
-                    session={session}
-                    type={activeTab}
-                    scenario={scenario}
-                    onClick={() => handleSessionClick(session)}
-                    onContinueSession={onContinueSession}
-                    onDeleteSession={handleDeleteSession}
-                    onRename={handleRenameSession}
+          <>
+            <motion.div
+              className="flex flex-col gap-3"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.05 },
+                },
+              }}
+            >
+              {activeTab === TABS.BRIEFINGS ? (
+                // Render briefings with pagination
+                getPaginatedItems(briefings).map((briefing) => (
+                  <BriefingCard
+                    key={briefing.id}
+                    briefing={briefing}
+                    onClick={() => handleBriefingClick(briefing)}
+                    onDelete={handleDeleteBriefing}
+                    onRename={handleRenameBriefing}
                   />
-                );
-              })
+                ))
+              ) : activeTab === TABS.DECISIONS ? (
+                // Render decisions with pagination
+                getPaginatedItems(decisions).map((decision) => (
+                  <DecisionCard
+                    key={decision.id}
+                    decision={decision}
+                    onClick={() => handleDecisionClick(decision)}
+                    onDelete={handleDeleteDecision}
+                    onRename={handleRenameDecision}
+                  />
+                ))
+              ) : activeTab === TABS.IKIGAI ? (
+                // Render ikigai analyses with pagination
+                getPaginatedItems(ikigais).map((ikigai) => (
+                  <IkigaiCard
+                    key={ikigai.id}
+                    ikigai={ikigai}
+                    onDelete={handleDeleteIkigai}
+                    onNavigate={() => handleIkigaiClick(ikigai)}
+                  />
+                ))
+              ) : (
+                // Render regular sessions with pagination
+                getPaginatedItems(activeSessions).map((session) => {
+                  const scenario = activeScenarioMap[session.scenario_id];
+                  return (
+                    <SessionCard
+                      key={session.id}
+                      session={session}
+                      type={activeTab}
+                      scenario={scenario}
+                      onClick={() => handleSessionClick(session)}
+                      onContinueSession={onContinueSession}
+                      onDeleteSession={handleDeleteSession}
+                      onRename={handleRenameSession}
+                    />
+                  );
+                })
+              )}
+            </motion.div>
+            {/* Pagination - use correct array for each tab type */}
+            {activeTab === TABS.BRIEFINGS ? (
+              <Pagination
+                currentPage={currentPage[activeTab] || 1}
+                totalPages={getTotalPages(briefings)}
+                totalItems={briefings.length}
+                onPageChange={handlePageChange}
+              />
+            ) : activeTab === TABS.DECISIONS ? (
+              <Pagination
+                currentPage={currentPage[activeTab] || 1}
+                totalPages={getTotalPages(decisions)}
+                totalItems={decisions.length}
+                onPageChange={handlePageChange}
+              />
+            ) : activeTab === TABS.IKIGAI ? (
+              <Pagination
+                currentPage={currentPage[activeTab] || 1}
+                totalPages={getTotalPages(ikigais)}
+                totalItems={ikigais.length}
+                onPageChange={handlePageChange}
+              />
+            ) : (
+              <Pagination
+                currentPage={currentPage[activeTab] || 1}
+                totalPages={getTotalPages(activeSessions)}
+                totalItems={activeSessions.length}
+                onPageChange={handlePageChange}
+              />
             )}
-          </motion.div>
+          </>
         )}
       </div>
     </div>
