@@ -266,12 +266,21 @@ const ReportAudioPlayer = ({ audioUrl, duration: durationHint, primaryAccent, br
             <button
               onClick={togglePlay}
               disabled={isLoading}
-              className="w-12 h-12 rounded-full border-none bg-indigo-500 cursor-pointer flex items-center justify-center disabled:opacity-50 hover:bg-indigo-600 transition-colors shadow-md"
+              className="rounded-full border-none cursor-pointer flex items-center justify-center disabled:opacity-50 transition-colors shadow-md"
+              style={{
+                width: '48px',
+                height: '48px',
+                minWidth: '48px',
+                minHeight: '48px',
+                backgroundColor: '#6366f1',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6366f1'}
             >
               {isPlaying ? (
-                <Pause size={20} className="text-white" />
+                <Pause size={20} style={{ color: 'white' }} />
               ) : (
-                <Play size={20} className="text-white ml-0.5" fill="white" />
+                <Play size={20} style={{ color: 'white', marginLeft: '2px' }} fill="white" />
               )}
             </button>
             <button
