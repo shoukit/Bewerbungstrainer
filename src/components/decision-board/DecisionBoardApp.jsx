@@ -5,6 +5,7 @@ import DecisionBoardInput from './DecisionBoardInput';
 import DecisionBoardResult from './DecisionBoardResult';
 import wordpressAPI from '@/services/wordpress-api';
 import FeatureAppHeader from '@/components/global/FeatureAppHeader';
+import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog';
 import { COLORS, createGradient } from '@/config/colors';
 import { useScrollToTop } from '@/hooks';
 
@@ -38,6 +39,10 @@ const DecisionBoardApp = ({
   const [analysisResult, setAnalysisResult] = useState(null);
   const [savedDecisionId, setSavedDecisionId] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Microphone state - managed at app level so it persists across views
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
 
   // Track if session was saved to avoid duplicate saves
   const sessionSavedRef = useRef(false);
@@ -257,6 +262,9 @@ const DecisionBoardApp = ({
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+            selectedMicrophoneId={selectedMicrophoneId}
+            onMicrophoneChange={setSelectedMicrophoneId}
+            onTestMicrophone={() => setShowMicrophoneTest(true)}
           />
         );
 
@@ -304,6 +312,8 @@ const DecisionBoardApp = ({
               onSaveDraft={saveSessionDraft}
               onUpdateSession={updateSession}
               onDecisionIdChange={setSavedDecisionId}
+              selectedMicrophoneId={selectedMicrophoneId}
+              onMicrophoneChange={setSelectedMicrophoneId}
             />
           </>
         );
@@ -313,6 +323,13 @@ const DecisionBoardApp = ({
   return (
     <div className="min-h-full">
       {renderContent()}
+
+      {/* Microphone Test Dialog - available from dashboard */}
+      <MicrophoneTestDialog
+        isOpen={showMicrophoneTest}
+        onClose={() => setShowMicrophoneTest(false)}
+        deviceId={selectedMicrophoneId}
+      />
     </div>
   );
 };

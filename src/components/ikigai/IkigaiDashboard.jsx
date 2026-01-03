@@ -21,12 +21,15 @@ import {
   Sparkles,
   ArrowRight,
   History,
+  Mic,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { Card } from '@/components/ui/base/card';
 import wordpressAPI from '@/services/wordpress-api';
 import FeatureInfoModal from '@/components/global/FeatureInfoModal';
 import FeatureInfoButton from '@/components/global/FeatureInfoButton';
 import FeatureAppHeader from '@/components/global/FeatureAppHeader';
+import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
 import { COLORS, createGradient } from '@/config/colors';
 
 /**
@@ -70,6 +73,9 @@ const IkigaiDashboard = ({
   isAuthenticated,
   requireAuth,
   setPendingAction,
+  selectedMicrophoneId,
+  onMicrophoneChange,
+  onTestMicrophone,
 }) => {
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -226,6 +232,28 @@ const IkigaiDashboard = ({
                 </p>
               </motion.div>
             ))}
+          </motion.div>
+
+          {/* Microphone Setup Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mb-8"
+          >
+            <Card className="p-5 bg-white border border-slate-200 rounded-2xl">
+              <div className="flex items-center gap-2.5 mb-4">
+                <Mic className="w-[22px] h-[22px] text-purple-500" />
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Mikrofon testen
+                </h3>
+              </div>
+              <MicrophoneSelector
+                selectedDeviceId={selectedMicrophoneId}
+                onDeviceChange={onMicrophoneChange}
+                onTestClick={onTestMicrophone}
+              />
+            </Card>
           </motion.div>
 
           {/* Start Button */}

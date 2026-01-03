@@ -521,6 +521,8 @@ const DecisionBoardInput = ({
   onSaveDraft,
   onUpdateSession,
   onDecisionIdChange,
+  selectedMicrophoneId,
+  onMicrophoneChange,
 }) => {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
@@ -923,7 +925,11 @@ const DecisionBoardInput = ({
               className="flex-[1_1_300px] min-w-0 text-base px-4 py-3 rounded-lg resize-y min-h-[80px]"
             />
             <div className="shrink-0 pb-1">
-              <AudioRecorder onTranscriptReady={handleTranscriptReady} warmUp={true} />
+              <AudioRecorder
+                onTranscriptReady={handleTranscriptReady}
+                warmUp={true}
+                deviceId={selectedMicrophoneId}
+              />
             </div>
           </div>
         </div>
