@@ -195,17 +195,17 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         videoScenariosData,
       ] = await Promise.all([
         // Roleplay sessions (only pass demo_code if it exists)
-        getRoleplaySessions({ limit: 50, ...(demoCode && { demo_code: demoCode }) }).catch(() => ({ data: [] })),
+        getRoleplaySessions({ limit: 500, ...(demoCode && { demo_code: demoCode }) }).catch(() => ({ data: [] })),
         // Simulator sessions (pass demo_code)
-        fetch(`${apiUrl}/simulator/sessions?limit=50${demoQueryParam}`, {
+        fetch(`${apiUrl}/simulator/sessions?limit=500${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Video training sessions (pass demo_code)
-        fetch(`${apiUrl}/video-training/sessions?limit=50${demoQueryParam}`, {
+        fetch(`${apiUrl}/video-training/sessions?limit=500${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Smart Briefings (pass demo_code)
-        wordpressAPI.request(`/smartbriefing/briefings?limit=50${demoCode ? `&demo_code=${encodeURIComponent(demoCode)}` : ''}`, {
+        wordpressAPI.request(`/smartbriefing/briefings?limit=500${demoCode ? `&demo_code=${encodeURIComponent(demoCode)}` : ''}`, {
           method: 'GET',
         }).catch(() => ({ success: false, data: { briefings: [] } })),
         // Decision Board entries (pass demo_code)
