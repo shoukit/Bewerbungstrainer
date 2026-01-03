@@ -575,10 +575,10 @@ const VariableDropdown = ({ variables, onSelect }) => {
                   onSelect(v.key);
                   setIsOpen(false);
                 }}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 border-none bg-transparent cursor-pointer flex items-center justify-between gap-2"
+                className="w-full px-3 py-2.5 text-left text-sm hover:bg-indigo-50 border-none bg-transparent cursor-pointer flex items-center justify-between gap-3"
               >
-                <span className="text-slate-700">{v.label}</span>
-                <code className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                <span className="text-slate-800 font-medium">{v.label}</span>
+                <code className="text-xs text-indigo-700 bg-indigo-100 px-2 py-1 rounded font-mono font-semibold whitespace-nowrap">
                   ${'{'}${v.key}{'}'}
                 </code>
               </button>
