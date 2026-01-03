@@ -225,12 +225,36 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       ]);
 
       // Extract sessions from API responses - each API has different structure
+      // Also filters out duplicates by ID to ensure count matches rendered items
       const extractSessions = (response, key = 'sessions') => {
-        if (Array.isArray(response?.data)) return response.data;
-        if (Array.isArray(response?.data?.[key])) return response.data[key];
-        if (Array.isArray(response?.[key])) return response[key];
-        if (Array.isArray(response)) return response;
-        return [];
+        let sessions = [];
+        if (Array.isArray(response?.data)) {
+          sessions = response.data;
+        } else if (Array.isArray(response?.data?.[key])) {
+          sessions = response.data[key];
+        } else if (Array.isArray(response?.[key])) {
+          sessions = response[key];
+        } else if (Array.isArray(response)) {
+          sessions = response;
+        }
+
+        // Filter out duplicates by ID to prevent count mismatch with rendered items
+        const seen = new Set();
+        const uniqueSessions = sessions.filter(session => {
+          if (!session?.id) return true; // Keep sessions without id
+          if (seen.has(session.id)) {
+            console.warn('[SessionHistory] Duplicate session ID found:', session.id);
+            return false;
+          }
+          seen.add(session.id);
+          return true;
+        });
+
+        if (uniqueSessions.length !== sessions.length) {
+          console.warn('[SessionHistory] Removed', sessions.length - uniqueSessions.length, 'duplicate sessions');
+        }
+
+        return uniqueSessions;
       };
 
       const extractScenarios = (response) => {
@@ -240,12 +264,31 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         return [];
       };
 
+      // Helper to dedupe any array by id
+      const dedupeById = (items, typeName) => {
+        if (!Array.isArray(items)) return [];
+        const seen = new Set();
+        const unique = items.filter(item => {
+          if (!item?.id) return true;
+          if (seen.has(item.id)) {
+            console.warn(`[SessionHistory] Duplicate ${typeName} ID found:`, item.id);
+            return false;
+          }
+          seen.add(item.id);
+          return true;
+        });
+        if (unique.length !== items.length) {
+          console.warn(`[SessionHistory] Removed ${items.length - unique.length} duplicate ${typeName}`);
+        }
+        return unique;
+      };
+
       setRoleplaySessions(extractSessions(roleplayData));
       setSimulatorSessions(extractSessions(simulatorData));
       setVideoSessions(extractSessions(videoData));
-      setBriefings(briefingsData?.data?.briefings || []);
-      setDecisions(decisionsData?.data?.decisions || []);
-      setIkigais(ikigaisData?.data?.ikigais || []);
+      setBriefings(dedupeById(briefingsData?.data?.briefings || [], 'briefing'));
+      setDecisions(dedupeById(decisionsData?.data?.decisions || [], 'decision'));
+      setIkigais(dedupeById(ikigaisData?.data?.ikigais || [], 'ikigai'));
       setRoleplayScenarios(extractScenarios(roleplayScenariosData));
       setSimulatorScenarios(extractScenarios(simulatorScenariosData));
       setVideoScenarios(extractScenarios(videoScenariosData));
