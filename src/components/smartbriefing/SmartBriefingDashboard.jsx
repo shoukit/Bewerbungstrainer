@@ -210,14 +210,32 @@ const SmartBriefingDashboard = ({
 
   /**
    * Custom category badge renderer
-   * Shows both the regular category AND "MEINE" badge for custom templates
+   * Shows "MEINE" badge for custom templates + regular category badge
+   * Avoids showing "MEINE" twice if category is already "MEINE"
    */
   const renderCategoryBadge = (template, getCategoryConfig) => {
-    const categoryConfig = template.category ? getCategoryConfig(template.category) : null;
+    // Don't show regular category badge if it's "MEINE" - we'll show the is_custom badge instead
+    const categoryConfig = template.category && template.category !== 'MEINE'
+      ? getCategoryConfig(template.category)
+      : null;
 
     return (
       <div className="flex flex-wrap gap-1.5">
-        {/* Regular category badge */}
+        {/* MEINE badge for custom templates - shown first */}
+        {template.is_custom && (
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-2xl text-[11px] font-semibold"
+            style={{
+              backgroundColor: MEINE_CATEGORY.bgColor,
+              color: MEINE_CATEGORY.color,
+            }}
+          >
+            <Folder style={{ width: '12px', height: '12px' }} />
+            {MEINE_CATEGORY.shortLabel}
+          </span>
+        )}
+
+        {/* Regular category badge (only if not "MEINE") */}
         {categoryConfig && (
           <span
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-2xl text-[11px] font-semibold"
@@ -230,20 +248,6 @@ const SmartBriefingDashboard = ({
               <categoryConfig.IconComponent style={{ width: '12px', height: '12px' }} />
             )}
             {categoryConfig.shortLabel}
-          </span>
-        )}
-
-        {/* MEINE badge for custom templates */}
-        {template.is_custom && (
-          <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-2xl text-[11px] font-semibold"
-            style={{
-              backgroundColor: MEINE_CATEGORY.bgColor,
-              color: MEINE_CATEGORY.color,
-            }}
-          >
-            <Folder style={{ width: '12px', height: '12px' }} />
-            {MEINE_CATEGORY.shortLabel}
           </span>
         )}
       </div>
@@ -426,6 +430,19 @@ const SmartBriefingDashboard = ({
 
       // Category
       categoryField="category"
+
+      // Additional categories: "Meine" filter for custom templates
+      additionalCategories={[{
+        key: MEINE_CATEGORY.key,
+        label: MEINE_CATEGORY.label,
+        shortLabel: MEINE_CATEGORY.shortLabel,
+        color: MEINE_CATEGORY.color,
+        bgColor: MEINE_CATEGORY.bgColor,
+        icon: MEINE_CATEGORY.icon,
+        IconComponent: MEINE_CATEGORY.icon,
+        // Custom filter function: show templates where is_custom is true
+        filterFn: (template) => template.is_custom === true,
+      }]}
 
       // Empty state
       emptyStateIcon={FileText}
