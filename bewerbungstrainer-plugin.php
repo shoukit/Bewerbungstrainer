@@ -788,7 +788,6 @@ class Bewerbungstrainer_Plugin {
         ));
 
         // Add type="module" to script tag for ES6 module support
-        // Use clean URL without query string to ensure proper relative import resolution
         add_filter('script_loader_tag', function($tag, $handle, $src) {
             if ('bewerbungstrainer-app' === $handle) {
                 // Remove query string from URL to prevent module resolution issues
