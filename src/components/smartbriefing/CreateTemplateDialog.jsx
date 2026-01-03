@@ -1115,19 +1115,24 @@ const CreateTemplateDialog = ({
               { key: 'basics', label: '1. Grundlagen' },
               { key: 'variables', label: '2. Eingabefelder' },
               { key: 'prompt', label: '3. KI-Anweisung' },
-            ].map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-5 py-3 text-sm font-semibold cursor-pointer -mb-px transition-all rounded-t-lg border-none ${
-                  activeTab === tab.key
-                    ? 'bg-indigo-100 text-indigo-700 border-b-[3px] border-indigo-600'
-                    : 'bg-transparent text-slate-500 border-b-[3px] border-transparent hover:text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            ].map(tab => {
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className="px-5 py-3 text-sm font-semibold cursor-pointer transition-all rounded-t-lg"
+                  style={{
+                    backgroundColor: isActive ? '#E0E7FF' : 'transparent',
+                    color: isActive ? '#4338CA' : '#64748B',
+                    borderBottom: isActive ? '3px solid #4F46E5' : '3px solid transparent',
+                    marginBottom: '-1px',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Content */}
