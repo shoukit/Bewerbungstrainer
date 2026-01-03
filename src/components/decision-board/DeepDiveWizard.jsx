@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/base/button';
 import { Textarea } from '@/components/ui/base/textarea';
 import { generateWizardQuestion, extractWizardArguments } from '@/services/gemini';
 import { COLORS } from '@/config/colors';
+import AudioRecorder from './AudioRecorder';
 
 /**
  * Generate unique ID for items
@@ -142,6 +143,7 @@ const DeepDiveWizard = ({
   existingPros,
   existingCons,
   onAddItems,
+  selectedMicrophoneId,
 }) => {
   // Wizard state
   const [step, setStep] = useState('loading_question'); // loading_question | input | analyzing | selection
@@ -378,13 +380,29 @@ const DeepDiveWizard = ({
                   <label className="block text-base font-medium text-slate-500 mb-2">
                     Deine Antwort
                   </label>
-                  <Textarea
-                    value={userAnswer}
-                    onChange={(e) => setUserAnswer(e.target.value)}
-                    placeholder="Schreib einfach drauf los... Was fällt dir ein? Was fühlst du dabei?"
-                    rows={5}
-                    className="text-base p-4 rounded-xl resize-y min-h-[120px]"
-                  />
+                  <div className="flex flex-wrap items-end gap-3">
+                    <Textarea
+                      value={userAnswer}
+                      onChange={(e) => setUserAnswer(e.target.value)}
+                      placeholder="Schreib einfach drauf los... Was fällt dir ein? Was fühlst du dabei?"
+                      rows={5}
+                      className="flex-[1_1_300px] min-w-0 text-base p-4 rounded-xl resize-y min-h-[120px]"
+                    />
+                    <div className="shrink-0 pb-1">
+                      <AudioRecorder
+                        onTranscriptReady={(transcript) => {
+                          setUserAnswer(prev => {
+                            if (prev.trim()) {
+                              return prev.trim() + '\n\n' + transcript;
+                            }
+                            return transcript;
+                          });
+                        }}
+                        warmUp={true}
+                        deviceId={selectedMicrophoneId}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

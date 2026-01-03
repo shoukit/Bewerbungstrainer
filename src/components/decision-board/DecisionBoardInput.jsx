@@ -254,15 +254,15 @@ const SuggestionCard = ({ suggestion, onAdd, isAdded }) => {
       <button
         onClick={() => onAdd(suggestion)}
         disabled={isAdded}
-        className={`w-12 h-12 rounded-lg border-none flex items-center justify-center shrink-0 transition-all ${
+        className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all ${
           isAdded
-            ? 'bg-slate-200 text-slate-400 cursor-default'
+            ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-default'
             : isPro
-              ? 'bg-green-500 text-white cursor-pointer hover:bg-green-600'
-              : 'bg-red-500 text-white cursor-pointer hover:bg-red-600'
+              ? 'bg-green-50 border-green-300 text-green-600 cursor-pointer hover:bg-green-100 hover:border-green-400'
+              : 'bg-red-50 border-red-300 text-red-600 cursor-pointer hover:bg-red-100 hover:border-red-400'
         }`}
       >
-        {isAdded ? '✓' : <Plus size={24} color="white" strokeWidth={2.5} />}
+        {isAdded ? '✓' : <Plus size={24} strokeWidth={2.5} />}
       </button>
     </motion.div>
   );
@@ -1221,6 +1221,7 @@ const DecisionBoardInput = ({
         existingPros={pros}
         existingCons={cons}
         onAddItems={handleWizardAddItems}
+        selectedMicrophoneId={selectedMicrophoneId}
       />
     </div>
   );
