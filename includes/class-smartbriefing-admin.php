@@ -484,12 +484,22 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 }
             }
 
+            // Handle category - convert array/object to JSON string for CSV export
+            $category_export = $template->category;
+            if (is_array($category_export) || is_object($category_export)) {
+                $category_export = json_encode($category_export, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+            // Ensure it's a string (fallback for any edge cases)
+            if (!is_string($category_export)) {
+                $category_export = '';
+            }
+
             fputcsv($output, array(
                 $template->id,
                 $clean_text($template->title),
                 $clean_text($template->description),
                 $template->icon,
-                $template->category,
+                $category_export,
                 $clean_text($template->target_audience ?? ''),
                 $clean_text($template->system_prompt),
                 $clean_text($template->ai_role ?? ''),
