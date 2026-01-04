@@ -966,19 +966,6 @@ const DecisionBoardInput = ({
         </div>
       </Card>
 
-      {/* Persona Toolbar - Brainstorming Section */}
-      <PersonaToolbar
-        topic={topic}
-        onSelectPersona={handleSelectPersona}
-        activePersona={brainstormState.activePersona}
-        isLoading={brainstormState.isLoading}
-        suggestions={brainstormState.suggestions}
-        onCloseBrainstorm={handleCloseBrainstorm}
-        onAddSuggestion={handleAddSuggestion}
-        onLoadMore={handleLoadMore}
-        addedSuggestions={addedSuggestions}
-      />
-
       {/* Deep Dive Wizard Card */}
       <Card
         variant="elevated"
@@ -1016,6 +1003,19 @@ const DecisionBoardInput = ({
           </Button>
         </div>
       </Card>
+
+      {/* Persona Toolbar - Brainstorming Section */}
+      <PersonaToolbar
+        topic={topic}
+        onSelectPersona={handleSelectPersona}
+        activePersona={brainstormState.activePersona}
+        isLoading={brainstormState.isLoading}
+        suggestions={brainstormState.suggestions}
+        onCloseBrainstorm={handleCloseBrainstorm}
+        onAddSuggestion={handleAddSuggestion}
+        onLoadMore={handleLoadMore}
+        addedSuggestions={addedSuggestions}
+      />
 
       {/* Pro/Contra Split - responsive grid */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] gap-4 mb-6">
