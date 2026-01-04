@@ -5,10 +5,65 @@ import {
   AlertCircle,
   Video,
   Info,
+  Target,
+  Lightbulb,
+  Mic,
+  Camera,
+  Clock,
+  CheckCircle,
+  MessageSquare,
+  Settings,
+  Sparkles,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/base/button';
 import { Input } from '@/components/ui/base/input';
 import { Textarea } from '@/components/ui/base/textarea';
+import { Card } from '@/components/ui';
+
+/**
+ * Render text with **bold** markdown syntax
+ */
+const renderBoldText = (text) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
+/**
+ * Icon mapping for dynamic tip icons from backend
+ */
+const iconMap = {
+  target: Target,
+  clock: Clock,
+  mic: Mic,
+  camera: Camera,
+  video: Video,
+  'message-square': MessageSquare,
+  lightbulb: Lightbulb,
+  brain: Lightbulb,
+  info: Info,
+  settings: Settings,
+  check: CheckCircle,
+  sparkles: Sparkles,
+  user: User,
+  x: AlertCircle,
+};
+
+/**
+ * Default tips for video training
+ */
+const defaultVideoTips = [
+  { icon: 'camera', text: 'Schaue direkt in die Kamera für Augenkontakt.' },
+  { icon: 'lightbulb', text: 'Achte auf gute Beleuchtung von vorne.' },
+  { icon: 'target', text: 'Struktur: Wer → Was → Warum.' },
+  { icon: 'mic', text: 'Sprich deutlich und in ruhigem Tempo.' },
+];
 
 /**
  * Dynamic Form Field Component
@@ -67,7 +122,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
           >
             {!field.default && <option value="">Bitte wählen...</option>}
             {field.options
-              ?.slice() // Create a copy to avoid mutating the original
+              ?.slice()
               .sort((a, b) => a.label.localeCompare(b.label, 'de'))
               .map((option) => (
               <option key={option.value} value={option.value}>
@@ -133,7 +188,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
 /**
  * VideoTrainingVariablesPage Component
  *
- * Collects variable inputs for the video training scenario.
+ * Layout matches SimulatorWizard for consistency.
  */
 const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
   const [formValues, setFormValues] = useState({});
@@ -237,79 +292,146 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
     return null;
   }
 
+  // Get tips from scenario or use defaults
+  const tips = scenario?.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
+    ? scenario.tips
+    : defaultVideoTips;
+
   return (
-    <div className="p-6 pb-52 max-w-2xl mx-auto">
-      {/* Header */}
+    <div className="p-6 md:p-8 pb-52 max-w-[700px] mx-auto">
+      {/* Header - matches SimulatorWizard */}
       <div className="mb-8">
-        <Button
+        <button
           onClick={onBack}
-          variant="ghost"
-          className="inline-flex items-center gap-2 px-3 py-2 mb-4 text-sm"
+          className="flex items-center gap-2 bg-transparent border-none text-slate-500 cursor-pointer text-sm py-2 mb-4 hover:text-slate-700 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft size={18} />
           Zurück zur Übersicht
-        </Button>
+        </button>
 
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-brand-gradient flex items-center justify-center">
-            <Video className="w-7 h-7 text-white" />
+          <div className="w-16 h-16 rounded-2xl bg-brand-gradient flex items-center justify-center">
+            <Lightbulb size={32} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 m-0">
-              {scenario.title}
+            <h1 className="text-[28px] font-bold text-slate-900 m-0">
+              Vorbereitung
             </h1>
-            <p className="text-sm text-slate-600 mt-1 mb-0">
-              Personalisiere dein Training
+            <p className="text-base text-slate-500 m-0 mt-1">
+              {scenario?.title}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Description Card */}
-      {scenario.description && (
-        <div className="p-4 px-5 rounded-xl bg-slate-100 mb-6">
-          <p className="text-sm text-slate-700 m-0 leading-relaxed">
-            {scenario.description}
-          </p>
-        </div>
+      {/* Long Description - "Deine Aufgabe" Card */}
+      {scenario?.long_description && (
+        <Card className="p-5 md:p-6 mb-6">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-brand-gradient flex items-center justify-center flex-shrink-0">
+              <Info className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 m-0 mb-2">
+                Deine Aufgabe
+              </h3>
+              <div className="text-[15px] leading-relaxed text-slate-600 m-0 whitespace-pre-wrap">
+                {renderBoldText(scenario.long_description)}
+              </div>
+            </div>
+          </div>
+        </Card>
       )}
 
-      {/* Info Box */}
-      <div className="p-4 px-5 rounded-xl bg-primary/10 mb-6 flex items-start gap-3">
-        <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-semibold text-slate-900 m-0 mb-1">
-            So funktioniert es
-          </p>
-          <p className="text-[13px] text-slate-600 m-0 leading-normal">
-            Die KI generiert {scenario.question_count || 5} personalisierte Fragen basierend auf deinen Angaben.
-            Beantworte jede Frage vor der Kamera und erhalte anschließend detailliertes Feedback.
-          </p>
+      {/* Form Card - "Dein Profil" */}
+      <Card className="p-5 md:p-6 mb-6">
+        <div className="flex items-start gap-3.5 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+            <User className="w-5 h-5 text-slate-600" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 m-0">
+              Dein Profil
+            </h3>
+            <p className="text-sm text-slate-500 m-0 mt-0.5">
+              Personalisiere dein Training
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} id="variables-form">
+          {inputConfig.map(field => (
+            <DynamicFormField
+              key={field.key}
+              field={field}
+              value={formValues[field.key]}
+              onChange={handleChange}
+              error={errors[field.key]}
+            />
+          ))}
+        </form>
+      </Card>
+
+      {/* Submit Button - Before Tips */}
+      <Button
+        type="submit"
+        form="variables-form"
+        size="lg"
+        className="w-full mb-6 gap-2.5"
+      >
+        Weiter
+        <ArrowRight className="w-5 h-5" />
+      </Button>
+
+      {/* Tips Section - After Button */}
+      {tips.length > 0 && (
+        <Card className="p-5 md:p-6 mb-6">
+          <div className="flex items-start gap-3.5 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 m-0">
+                Tipps für dein Training
+              </h3>
+              <p className="text-sm text-slate-500 m-0 mt-0.5">
+                Beachte diese Hinweise für optimale Ergebnisse
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            {tips.map((tip, index) => {
+              const IconComponent = iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb;
+              return (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-50"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <IconComponent className="w-4 h-4 text-slate-600" />
+                  </div>
+                  <p className="text-sm text-slate-700 m-0 pt-1">
+                    {tip.text || tip.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* Session Info */}
+      <div className="flex items-center justify-center gap-6 text-sm text-slate-400">
+        <div className="flex items-center gap-2">
+          <MessageSquare size={16} />
+          <span>{scenario?.question_count || 5} Fragen</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock size={16} />
+          <span>~{Math.ceil(((scenario?.question_count || 5) * (scenario?.time_limit_per_question || 90)) / 60)} Min.</span>
         </div>
       </div>
-
-      {/* Form */}
-      <form onSubmit={handleSubmit}>
-        {inputConfig.map(field => (
-          <DynamicFormField
-            key={field.key}
-            field={field}
-            value={formValues[field.key]}
-            onChange={handleChange}
-            error={errors[field.key]}
-          />
-        ))}
-
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          size="lg"
-          className="w-full mt-6 gap-2.5"
-        >
-          Weiter
-          <ArrowRight className="w-5 h-5" />
-        </Button>
-      </form>
     </div>
   );
 };
