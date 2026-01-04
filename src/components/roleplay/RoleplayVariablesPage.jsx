@@ -12,6 +12,23 @@ import { COLORS } from '@/config/colors';
 import DynamicFormField from '@/components/ui/composite/DynamicFormField';
 
 /**
+ * Render text with **bold** markdown syntax
+ * @param {string} text - Text with **bold** markers
+ * @returns {React.ReactNode[]} - Array of text and <strong> elements
+ */
+const renderBoldText = (text) => {
+  if (!text) return null;
+
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
+/**
  * RoleplayVariablesPage Component
  *
  * Collects variable inputs for the roleplay scenario.
@@ -236,9 +253,9 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext, primaryAccent, header
               <h3 className="text-base font-semibold text-slate-900 m-0 mb-2">
                 Deine Aufgabe
               </h3>
-              <p className="text-sm leading-relaxed text-slate-700 m-0 whitespace-pre-wrap">
-                {replaceVariables(scenario.long_description?.replace(/\/n/g, '\n'))}
-              </p>
+              <div className="text-sm leading-relaxed text-slate-700 m-0 whitespace-pre-wrap">
+                {renderBoldText(replaceVariables(scenario.long_description?.replace(/\/n/g, '\n')))}
+              </div>
             </div>
           </div>
         </div>
