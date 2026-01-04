@@ -617,11 +617,22 @@ ANWEISUNGEN:
 - Vermeide zu generische Begriffe wie "Menschen helfen" - sei spezifischer
 - Die Keywords sollten zur Dimension passen
 
+KRITISCH - KEINE HALLUZINATIONEN:
+- Extrahiere NUR Keywords, die TATSÄCHLICH im Text vorkommen oder DIREKT daraus ableitbar sind
+- Wenn der Input keinen sinnvollen karrierebezogenen Inhalt enthält (z.B. Unsinn, Tippfehler, Test-Eingaben, einzelne Buchstaben, "blabla", "test", "asdf"), gib ein LEERES Array zurück
+- Erfinde NIEMALS Keywords, die nicht aus dem User-Text stammen
+- Bei Zweifeln: Lieber zu wenige Keywords als erfundene
+
 WICHTIG: Antworte NUR mit gültigem JSON, ohne Markdown-Formatierung.
 
 OUTPUT FORMAT:
 {
   "keywords": ["Keyword1", "Keyword2", "Keyword3"]
+}
+
+Bei unsinnigem Input:
+{
+  "keywords": []
 }
 PROMPT;
     }

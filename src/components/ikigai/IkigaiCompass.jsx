@@ -87,6 +87,7 @@ const IkigaiCompass = ({
   const [inputValue, setInputValue] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [showDeviceSettings, setShowDeviceSettings] = useState(false);
+  const [extractionError, setExtractionError] = useState(null);
 
   // Use props if provided, otherwise use local state
   const [localSelectedMicrophoneId, setLocalSelectedMicrophoneId] = useState(null);
@@ -111,6 +112,7 @@ const IkigaiCompass = ({
   const handleCircleClick = (dimensionKey) => {
     setActiveCircle(dimensionKey);
     setInputValue(dimensions[dimensionKey]?.input || '');
+    setExtractionError(null); // Clear any previous error
   };
 
   /**
@@ -120,6 +122,7 @@ const IkigaiCompass = ({
     if (!inputValue.trim() || !activeCircle || isExtracting) return;
 
     setIsExtracting(true);
+    setExtractionError(null);
 
     try {
       const keywords = await onExtractKeywords(activeCircle, inputValue.trim());
@@ -130,13 +133,17 @@ const IkigaiCompass = ({
         const newTags = [...new Set([...existingTags, ...keywords])];
 
         await onUpdateDimension(activeCircle, inputValue.trim(), newTags);
-      }
 
-      // Close chat after successful extraction
-      setActiveCircle(null);
-      setInputValue('');
+        // Close chat after successful extraction
+        setActiveCircle(null);
+        setInputValue('');
+      } else {
+        // No keywords extracted - show user-friendly message
+        setExtractionError('Ich konnte keine relevanten Keywords erkennen. Bitte beschreibe deine Gedanken ausführlicher.');
+      }
     } catch (err) {
       console.error('[IkigaiCompass] Extraction failed:', err);
+      setExtractionError('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
     } finally {
       setIsExtracting(false);
     }
@@ -1212,6 +1219,26 @@ const IkigaiCompass = ({
                     )}
                   </button>
                 </div>
+
+                {/* Error Message */}
+                {extractionError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      marginTop: b.space[3],
+                      padding: `${b.space[3]} ${b.space[4]}`,
+                      borderRadius: b.radius.lg,
+                      background: `${b.error}10`,
+                      border: `1px solid ${b.error}30`,
+                      color: b.error,
+                      fontSize: b.fontSize.sm,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {extractionError}
+                  </motion.div>
+                )}
 
                 {/* Audio Recorder with Settings */}
                 <div style={{
