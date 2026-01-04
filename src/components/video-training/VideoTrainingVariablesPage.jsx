@@ -5,8 +5,6 @@ import {
   AlertCircle,
   Info,
   User,
-  Clock,
-  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/base/button';
 import { Input } from '@/components/ui/base/input';
@@ -361,23 +359,11 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
         type="submit"
         form="variables-form"
         size="lg"
-        className="w-full mb-6 gap-2.5"
+        className="w-full gap-2.5"
       >
         Video-Training starten
         <ArrowRight className="w-5 h-5" />
       </Button>
-
-      {/* Session Info */}
-      <div className="flex items-center justify-center gap-6 text-sm text-slate-400">
-        <div className="flex items-center gap-2">
-          <MessageSquare size={16} />
-          <span>{scenario?.question_count || 5} Fragen</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock size={16} />
-          <span>~{Math.ceil(((scenario?.question_count || 5) * (scenario?.time_limit_per_question || 90)) / 60)} Min.</span>
-        </div>
-      </div>
     </div>
   );
 };

@@ -450,28 +450,6 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
           </div>
         )}
 
-        {/* Session Info */}
-        <div className="py-4 px-5 rounded-lg mt-6 mb-6 flex gap-5 flex-wrap" style={{ backgroundColor: b.primaryAccentLight }}>
-          <div>
-            <span className="text-xs text-slate-500 block">Fragen</span>
-            <span className="text-base font-semibold text-slate-900">
-              {scenario.question_count_min}-{scenario.question_count_max}
-            </span>
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 block">Zeit pro Frage</span>
-            <span className="text-base font-semibold text-slate-900">
-              {Math.round(scenario.time_limit_per_question / 60)} Min
-            </span>
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 block">Wiederholen</span>
-            <span className="text-base font-semibold text-slate-900">
-              {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
-            </span>
-          </div>
-        </div>
-
         {/* Submit Button */}
         <button
           type="submit"
