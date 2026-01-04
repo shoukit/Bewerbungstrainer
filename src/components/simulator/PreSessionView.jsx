@@ -15,6 +15,23 @@ import {
 import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
 import { useBranding } from '@/hooks/useBranding';
 
+/**
+ * Render text with **bold** markdown syntax
+ * @param {string} text - Text with **bold** markers
+ * @returns {React.ReactNode[]} - Array of text and <strong> elements
+ */
+const renderBoldText = (text) => {
+  if (!text) return null;
+
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
 // Icon mapping for dynamic tips from database
 const iconMap = {
   target: Target,
@@ -204,9 +221,9 @@ const PreSessionView = ({
               <h3 className="text-base font-semibold m-0 mb-2" style={{ color: branding.textMain }}>
                 Deine Aufgabe
               </h3>
-              <p className="text-[15px] leading-relaxed m-0 whitespace-pre-wrap" style={{ color: branding.textSecondary }}>
-                {interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n'))}
-              </p>
+              <div className="text-[15px] leading-relaxed m-0 whitespace-pre-wrap" style={{ color: branding.textSecondary }}>
+                {renderBoldText(interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n')))}
+              </div>
             </div>
           </div>
         </div>
