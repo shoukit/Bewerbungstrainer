@@ -10,11 +10,8 @@ import {
   Sparkles,
   Clock,
   TrendingUp,
-  Rocket,
-  Handshake,
 } from 'lucide-react';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
-import { COLORS } from '@/config/colors';
 import ScenarioDashboard from '@/components/ui/composite/ScenarioDashboard';
 import FeatureInfoModal from '@/components/global/FeatureInfoModal';
 import FeatureInfoButton from '@/components/global/FeatureInfoButton';
@@ -30,39 +27,6 @@ const ICON_MAP = {
   banknote: Banknote,
 };
 
-// Scenario type configuration for category filter
-const SCENARIO_TYPE_CONFIG = {
-  self_presentation: {
-    label: 'Selbstpräsentation',
-    icon: User,
-    color: COLORS.indigo[500],
-    bgColor: COLORS.indigo[50],
-  },
-  interview: {
-    label: 'Bewerbungsgespräch',
-    icon: Briefcase,
-    color: COLORS.emerald[600],
-    bgColor: COLORS.emerald[100],
-  },
-  pitch: {
-    label: 'Elevator Pitch',
-    icon: Rocket,
-    color: COLORS.violet[600],
-    bgColor: COLORS.violet[100],
-  },
-  negotiation: {
-    label: 'Verhandlung',
-    icon: Handshake,
-    color: COLORS.amber[600],
-    bgColor: COLORS.amber[100],
-  },
-  custom: {
-    label: 'Training',
-    icon: Target,
-    color: COLORS.slate[500],
-    bgColor: COLORS.slate[100],
-  },
-};
 
 /**
  * Fetch video training scenarios from the API
@@ -162,9 +126,8 @@ const VideoTrainingDashboard = ({
       cardActionLabel="Starten"
       cardActionIcon={TrendingUp}
 
-      // Category - use scenario_type with custom config
-      categoryField="scenario_type"
-      customCategoryConfig={SCENARIO_TYPE_CONFIG}
+      // Category - use category field (same as SimulatorDashboard)
+      categoryField="category"
 
       // Empty state
       emptyStateIcon={Video}
