@@ -155,7 +155,7 @@ const SimulatorPreparationPage = ({
         </div>
       </div>
 
-      {/* Long Description - "Deine Aufgabe" Card */}
+      {/* 1. Long Description - "Deine Aufgabe" Card */}
       {scenario?.long_description && (
         <Card className="p-5 md:p-6 mb-6">
           <div className="flex items-start gap-3.5">
@@ -174,33 +174,7 @@ const SimulatorPreparationPage = ({
         </Card>
       )}
 
-      {/* Microphone Selection */}
-      <Card className="p-5 md:p-6 mb-6">
-        <div className="flex items-center gap-2.5 mb-4">
-          <Mic className="w-[22px] h-[22px] text-primary" />
-          <h3 className="text-base font-semibold text-slate-900 m-0">
-            Mikrofon testen
-          </h3>
-        </div>
-        <MicrophoneSelector
-          selectedDeviceId={selectedMicrophoneId}
-          onDeviceChange={setSelectedMicrophoneId}
-          onTestClick={() => setShowMicTest(true)}
-        />
-      </Card>
-
-      {/* Submit Button */}
-      <Button
-        onClick={handleNext}
-        disabled={!selectedMicrophoneId}
-        size="lg"
-        className="w-full mb-6 gap-2.5"
-      >
-        {hasVariables ? 'Weiter zur Konfiguration' : 'Training starten'}
-        <ArrowRight className="w-5 h-5" />
-      </Button>
-
-      {/* Tips Section */}
+      {/* 2. Tips Section */}
       <Card className="p-5 md:p-6 mb-6">
         <div className="flex items-start gap-3.5 mb-4">
           <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
@@ -240,6 +214,32 @@ const SimulatorPreparationPage = ({
           })}
         </div>
       </Card>
+
+      {/* 3. Microphone Selection */}
+      <Card className="p-5 md:p-6 mb-6">
+        <div className="flex items-center gap-2.5 mb-4">
+          <Mic className="w-[22px] h-[22px] text-primary" />
+          <h3 className="text-base font-semibold text-slate-900 m-0">
+            Mikrofon testen
+          </h3>
+        </div>
+        <MicrophoneSelector
+          selectedDeviceId={selectedMicrophoneId}
+          onDeviceChange={setSelectedMicrophoneId}
+          onTestClick={() => setShowMicTest(true)}
+        />
+      </Card>
+
+      {/* 4. Submit Button */}
+      <Button
+        onClick={handleNext}
+        disabled={!selectedMicrophoneId}
+        size="lg"
+        className="w-full mb-6 gap-2.5"
+      >
+        {hasVariables ? 'Weiter zur Konfiguration' : 'Training starten'}
+        <ArrowRight className="w-5 h-5" />
+      </Button>
 
       {/* Session Info */}
       <div className="flex items-center justify-center gap-6 text-sm text-slate-400">

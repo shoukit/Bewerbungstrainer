@@ -404,7 +404,7 @@ const VideoTrainingPreparationPage = ({
         </div>
       </div>
 
-      {/* Long Description - "Deine Aufgabe" Card */}
+      {/* 1. Long Description - "Deine Aufgabe" Card */}
       {scenario?.long_description && (
         <Card className="p-5 md:p-6 mb-6">
           <div className="flex items-start gap-3.5">
@@ -423,7 +423,45 @@ const VideoTrainingPreparationPage = ({
         </Card>
       )}
 
-      {/* Device Setup Section */}
+      {/* 2. Tips Section */}
+      {tips.length > 0 && (
+        <Card className="p-5 md:p-6 mb-6">
+          <div className="flex items-start gap-3.5 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 m-0">
+                Tipps für dein Training
+              </h3>
+              <p className="text-sm text-slate-500 m-0 mt-0.5">
+                Beachte diese Hinweise für optimale Ergebnisse
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            {tips.map((tip, index) => {
+              const IconComponent = iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb;
+              return (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-50"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <IconComponent className="w-4 h-4 text-slate-600" />
+                  </div>
+                  <p className="text-sm text-slate-700 m-0 pt-1">
+                    {tip.text || tip.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* 3. Device Setup Section */}
       {devicesLoading ? (
         <Card className="p-6 mb-6">
           <div className="flex flex-col items-center justify-center py-8">
@@ -475,7 +513,7 @@ const VideoTrainingPreparationPage = ({
         </>
       )}
 
-      {/* Submit Button */}
+      {/* 4. Submit Button */}
       <Button
         onClick={handleStart}
         disabled={!canStart}
@@ -485,44 +523,6 @@ const VideoTrainingPreparationPage = ({
         {hasVariables ? 'Weiter zur Konfiguration' : 'Video-Training starten'}
         <ArrowRight className="w-5 h-5" />
       </Button>
-
-      {/* Tips Section */}
-      {tips.length > 0 && (
-        <Card className="p-5 md:p-6 mb-6">
-          <div className="flex items-start gap-3.5 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <Lightbulb className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-slate-900 m-0">
-                Tipps für dein Training
-              </h3>
-              <p className="text-sm text-slate-500 m-0 mt-0.5">
-                Beachte diese Hinweise für optimale Ergebnisse
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-3">
-            {tips.map((tip, index) => {
-              const IconComponent = iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb;
-              return (
-                <div
-                  key={index}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-50"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <IconComponent className="w-4 h-4 text-slate-600" />
-                  </div>
-                  <p className="text-sm text-slate-700 m-0 pt-1">
-                    {tip.text || tip.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
 
       {/* Session Info */}
       <div className="flex items-center justify-center gap-6 text-sm text-slate-400">
