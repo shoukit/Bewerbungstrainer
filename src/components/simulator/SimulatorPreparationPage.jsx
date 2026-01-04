@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
 import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog';
-import { useBranding } from '@/hooks/useBranding';
 import { Card } from '@/components/ui';
 import { Button } from '@/components/ui/base/button';
 
@@ -67,12 +66,8 @@ const SimulatorPreparationPage = ({
   const [selectedMicrophoneId, setSelectedMicrophoneId] = React.useState(null);
   const [showMicTest, setShowMicTest] = React.useState(false);
 
-  const b = useBranding();
-
-  // Mode-based labels
+  // Mode-based label for tips
   const isSimulation = scenario?.mode === 'SIMULATION';
-  const questionsLabel = isSimulation ? 'Situationen' : 'Fragen';
-  const timePerQuestionLabel = isSimulation ? 'Zeit pro Situation' : 'Zeit pro Frage';
 
   // Default tips if no custom tips are configured
   const defaultTips = [
@@ -235,27 +230,11 @@ const SimulatorPreparationPage = ({
         onClick={handleNext}
         disabled={!selectedMicrophoneId}
         size="lg"
-        className="w-full mb-6 gap-2.5"
+        className="w-full gap-2.5"
       >
         {hasVariables ? 'Weiter zur Konfiguration' : 'Training starten'}
         <ArrowRight className="w-5 h-5" />
       </Button>
-
-      {/* Session Info */}
-      <div className="flex items-center justify-center gap-6 text-sm text-slate-400">
-        <div className="flex items-center gap-2">
-          <MessageSquare size={16} />
-          <span>
-            {scenario?.question_count_min}-{scenario?.question_count_max} {questionsLabel}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock size={16} />
-          <span>
-            {Math.round((scenario?.time_limit_per_question || 120) / 60)} Min/{isSimulation ? 'Situation' : 'Frage'}
-          </span>
-        </div>
-      </div>
 
       {/* Microphone Test Dialog */}
       <MicrophoneTestDialog
