@@ -518,23 +518,11 @@ const VideoTrainingPreparationPage = ({
         onClick={handleStart}
         disabled={!canStart}
         size="lg"
-        className="w-full mb-6 gap-2.5"
+        className="w-full gap-2.5"
       >
         {hasVariables ? 'Weiter zur Konfiguration' : 'Video-Training starten'}
         <ArrowRight className="w-5 h-5" />
       </Button>
-
-      {/* Session Info */}
-      <div className="flex items-center justify-center gap-6 text-sm text-slate-400">
-        <div className="flex items-center gap-2">
-          <MessageSquare size={16} />
-          <span>{scenario?.question_count || 5} Fragen</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock size={16} />
-          <span>~{Math.ceil(((scenario?.question_count || 5) * (scenario?.time_limit_per_question || 90)) / 60)} Min.</span>
-        </div>
-      </div>
 
       {/* Microphone Test Dialog */}
       <MicrophoneTestDialog
