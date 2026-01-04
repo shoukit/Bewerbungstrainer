@@ -722,6 +722,29 @@ Gib konkretes, umsetzbares Feedback.',
     }
 
     /**
+     * Get a scenario by title
+     *
+     * @param string $title Scenario title
+     * @return object|null Scenario object or null
+     */
+    public function get_scenario_by_title($title) {
+        global $wpdb;
+
+        $scenario = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_scenarios} WHERE title = %s LIMIT 1",
+                $title
+            )
+        );
+
+        if ($scenario) {
+            $scenario->input_configuration = json_decode($scenario->input_configuration, true);
+        }
+
+        return $scenario;
+    }
+
+    /**
      * Create a new scenario
      *
      * @param array $data Scenario data
