@@ -1224,7 +1224,7 @@ const IkigaiCompass = ({
                   <AudioRecorder
                     onTranscriptReady={handleTranscriptReady}
                     disabled={isExtracting}
-                    warmUp={true}
+                    warmUp={!!selectedMicrophoneId}
                     deviceId={selectedMicrophoneId}
                   />
                   <button

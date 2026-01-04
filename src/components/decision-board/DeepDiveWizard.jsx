@@ -398,7 +398,7 @@ const DeepDiveWizard = ({
                             return transcript;
                           });
                         }}
-                        warmUp={true}
+                        warmUp={!!selectedMicrophoneId}
                         deviceId={selectedMicrophoneId}
                       />
                     </div>

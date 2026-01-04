@@ -958,7 +958,7 @@ const DecisionBoardInput = ({
             <div className="shrink-0 pb-1">
               <AudioRecorder
                 onTranscriptReady={handleTranscriptReady}
-                warmUp={true}
+                warmUp={!!selectedMicrophoneId}
                 deviceId={selectedMicrophoneId}
               />
             </div>
