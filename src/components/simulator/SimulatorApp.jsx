@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import SimulatorDashboard from './SimulatorDashboard';
+import SimulatorPreparationPage from './SimulatorPreparationPage';
 import SimulatorVariablesPage from './SimulatorVariablesPage';
 import SimulatorSession from './SimulatorSession';
 import SessionComplete from './SessionComplete';
@@ -9,7 +10,8 @@ import SessionComplete from './SessionComplete';
  */
 const VIEWS = {
   DASHBOARD: 'dashboard',
-  VARIABLES: 'variables',
+  PREPARATION: 'preparation',  // NEW: Description + Device Setup first
+  VARIABLES: 'variables',      // Now comes AFTER preparation
   SESSION: 'session',
   COMPLETE: 'complete',
 };
@@ -19,9 +21,10 @@ const VIEWS = {
  *
  * Coordinates the flow between:
  * 1. Dashboard (scenario selection)
- * 2. Variables (variable input - if scenario has variables)
- * 3. Session (preparation + training with Q&A)
- * 4. Complete (summary)
+ * 2. Preparation (description + device setup) - NEW ORDER
+ * 3. Variables (variable input - if scenario has variables) - AFTER preparation
+ * 4. Session (training with Q&A)
+ * 5. Complete (summary)
  */
 const SimulatorApp = ({
   isAuthenticated,
@@ -47,11 +50,33 @@ const SimulatorApp = ({
   // Track which question to start from when continuing
   const [startFromQuestion, setStartFromQuestion] = useState(0);
 
-  // Handle pending scenario after login - automatically open variables page
+  // Track if we should skip the PreSessionView in SimulatorSession
+  // (when coming from the new PREPARATION flow)
+  const [skipPreSession, setSkipPreSession] = useState(false);
+
+  // Check if scenario has variables that need user input
+  const scenarioHasVariables = useMemo(() => {
+    if (!selectedScenario?.input_configuration) return false;
+
+    try {
+      const config = typeof selectedScenario.input_configuration === 'string'
+        ? JSON.parse(selectedScenario.input_configuration)
+        : selectedScenario.input_configuration;
+
+      if (!Array.isArray(config)) return false;
+
+      // Check if there are any fields that require user input
+      return config.filter(field => field.user_input !== false).length > 0;
+    } catch (e) {
+      return false;
+    }
+  }, [selectedScenario?.input_configuration]);
+
+  // Handle pending scenario after login - automatically open preparation page
   useEffect(() => {
     if (pendingScenario && isAuthenticated) {
       setSelectedScenario(pendingScenario);
-      setCurrentView(VIEWS.VARIABLES);
+      setCurrentView(VIEWS.PREPARATION);  // Go to preparation first
       setPendingScenario(null);
     }
   }, [pendingScenario, isAuthenticated]);
@@ -75,6 +100,7 @@ const SimulatorApp = ({
       setQuestions(sessionQuestions);
       setVariables({}); // Variables not stored in session, but not needed for continuation
       setStartFromQuestion(answeredCount);
+      setSkipPreSession(true);  // Skip preparation when continuing
       setCurrentView(VIEWS.SESSION);
 
       if (clearPendingContinueSession) {
@@ -83,7 +109,7 @@ const SimulatorApp = ({
     }
   }, [pendingContinueSession, isAuthenticated, clearPendingContinueSession]);
 
-  // Handle pending repeat session - new session with same questions (go to device setup)
+  // Handle pending repeat session - new session with same questions (go to preparation)
   useEffect(() => {
     if (pendingRepeatSession && isAuthenticated) {
       const { session, scenario } = pendingRepeatSession;
@@ -98,8 +124,8 @@ const SimulatorApp = ({
       setQuestions(sessionQuestions);
       setVariables({});
       setStartFromQuestion(0);
-      // Skip variables, go directly to session for repeat sessions
-      setCurrentView(VIEWS.SESSION);
+      // For repeat, start from preparation
+      setCurrentView(VIEWS.PREPARATION);
 
       if (clearPendingRepeatSession) {
         clearPendingRepeatSession();
@@ -117,11 +143,11 @@ const SimulatorApp = ({
    */
   const handleSelectScenario = useCallback((scenario) => {
     setSelectedScenario(scenario);
-    setCurrentView(VIEWS.VARIABLES);
+    setCurrentView(VIEWS.PREPARATION);  // Go to preparation first (NEW)
   }, []);
 
   /**
-   * Handle back from variables to dashboard
+   * Handle back from preparation to dashboard
    */
   const handleBackToDashboard = useCallback(() => {
     setSelectedScenario(null);
@@ -131,14 +157,50 @@ const SimulatorApp = ({
     setCompletedSession(null);
     setStartFromQuestion(0);
     setSelectedMicrophoneId(null);
+    setSkipPreSession(false);
     setCurrentView(VIEWS.DASHBOARD);
   }, []);
 
   /**
-   * Handle variables submitted - go to session preparation
+   * Handle preparation complete - go to variables (if needed) or session
+   */
+  const handlePreparationNext = useCallback((deviceData) => {
+    setSelectedMicrophoneId(deviceData.selectedMicrophoneId);
+
+    // Check if scenario has variables - if yes, go to variables page
+    if (selectedScenario?.input_configuration) {
+      const config = typeof selectedScenario.input_configuration === 'string'
+        ? JSON.parse(selectedScenario.input_configuration)
+        : selectedScenario.input_configuration;
+
+      if (Array.isArray(config)) {
+        const hasUserInputFields = config.filter(field => field.user_input !== false).length > 0;
+
+        if (hasUserInputFields) {
+          setCurrentView(VIEWS.VARIABLES);
+          return;
+        }
+      }
+    }
+
+    // No variables needed - start session directly
+    setSkipPreSession(true);
+    setCurrentView(VIEWS.SESSION);
+  }, [selectedScenario]);
+
+  /**
+   * Handle back from variables to preparation
+   */
+  const handleBackToPreparation = useCallback(() => {
+    setCurrentView(VIEWS.PREPARATION);
+  }, []);
+
+  /**
+   * Handle variables submitted - go to session
    */
   const handleVariablesNext = useCallback((collectedVariables) => {
     setVariables(collectedVariables);
+    setSkipPreSession(true);  // Skip PreSessionView since we already did preparation
     setCurrentView(VIEWS.SESSION);
   }, []);
 
@@ -178,7 +240,8 @@ const SimulatorApp = ({
     setCompletedSession(null);
     setStartFromQuestion(0);
     setSelectedMicrophoneId(null);
-    setCurrentView(VIEWS.VARIABLES);
+    setSkipPreSession(false);
+    setCurrentView(VIEWS.PREPARATION);  // Start from preparation again
   }, []);
 
   /**
@@ -197,11 +260,21 @@ const SimulatorApp = ({
           />
         );
 
+      case VIEWS.PREPARATION:
+        return (
+          <SimulatorPreparationPage
+            scenario={selectedScenario}
+            onBack={handleBackToDashboard}
+            onNext={handlePreparationNext}
+            hasVariables={scenarioHasVariables}
+          />
+        );
+
       case VIEWS.VARIABLES:
         return (
           <SimulatorVariablesPage
             scenario={selectedScenario}
-            onBack={handleBackToDashboard}
+            onBack={handleBackToPreparation}
             onNext={handleVariablesNext}
           />
         );
@@ -219,6 +292,7 @@ const SimulatorApp = ({
             onExit={handleSessionExit}
             startFromQuestion={startFromQuestion}
             initialMicrophoneId={selectedMicrophoneId}
+            skipPreSession={skipPreSession}
           />
         );
 

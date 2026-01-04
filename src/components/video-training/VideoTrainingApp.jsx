@@ -1,17 +1,21 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import VideoTrainingDashboard from './VideoTrainingDashboard';
+import VideoTrainingPreparationPage from './VideoTrainingPreparationPage';
 import VideoTrainingVariablesPage from './VideoTrainingVariablesPage';
-import VideoTrainingDeviceSetup from './VideoTrainingDeviceSetup';
 import VideoTrainingSession from './VideoTrainingSession';
 import VideoTrainingComplete from './VideoTrainingComplete';
+import FullscreenLoader from '@/components/ui/composite/fullscreen-loader';
+import { ErrorToast } from '@/components/ui/composite/StatusBanner';
+import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
+import { usePartner } from '@/context/PartnerContext';
 
 /**
  * View states for the video training flow
  */
 const VIEWS = {
   DASHBOARD: 'dashboard',
-  VARIABLES: 'variables',
-  DEVICE_SETUP: 'device_setup',
+  PREPARATION: 'preparation',  // NEW: Description + Device Setup first
+  VARIABLES: 'variables',      // Now comes AFTER preparation
   SESSION: 'session',
   COMPLETE: 'complete',
 };
@@ -21,8 +25,8 @@ const VIEWS = {
  *
  * Coordinates the flow between:
  * 1. Dashboard (scenario selection)
- * 2. Variables (variable input - if scenario has variables)
- * 3. Device Setup (camera and microphone selection)
+ * 2. Preparation (description + device setup) - NEW ORDER
+ * 3. Variables (variable input - if scenario has variables) - AFTER preparation
  * 4. Session (video recording)
  * 5. Complete (results)
  */
@@ -43,25 +47,47 @@ const VideoTrainingApp = ({
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
   const [selectedCameraId, setSelectedCameraId] = useState(null);
 
+  // Session creation state
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [sessionError, setSessionError] = useState(null);
+
   // Track pending scenario for after login (internal state for dashboard flow)
   const [internalPendingScenario, setInternalPendingScenario] = useState(null);
+
+  const { demoCode } = usePartner();
+
+  // Check if scenario has variables that need user input
+  const scenarioHasVariables = useMemo(() => {
+    if (!selectedScenario?.input_configuration) return false;
+
+    try {
+      const config = Array.isArray(selectedScenario.input_configuration)
+        ? selectedScenario.input_configuration
+        : [];
+
+      // Check if there are any fields that require user input
+      return config.filter(field => field.user_input !== false).length > 0;
+    } catch (e) {
+      return false;
+    }
+  }, [selectedScenario?.input_configuration]);
 
   // Handle external pending scenario from App.jsx (after login redirect)
   useEffect(() => {
     if (externalPendingScenario && isAuthenticated) {
       setSelectedScenario(externalPendingScenario);
-      setCurrentView(VIEWS.VARIABLES);
+      setCurrentView(VIEWS.PREPARATION);  // Go to preparation first
       if (clearPendingScenario) {
         clearPendingScenario();
       }
     }
   }, [externalPendingScenario, isAuthenticated, clearPendingScenario]);
 
-  // Handle internal pending scenario after login - automatically open variables page
+  // Handle internal pending scenario after login - automatically open preparation page
   useEffect(() => {
     if (internalPendingScenario && isAuthenticated) {
       setSelectedScenario(internalPendingScenario);
-      setCurrentView(VIEWS.VARIABLES);
+      setCurrentView(VIEWS.PREPARATION);  // Go to preparation first
       setInternalPendingScenario(null);
     }
   }, [internalPendingScenario, isAuthenticated]);
@@ -76,11 +102,11 @@ const VideoTrainingApp = ({
    */
   const handleSelectScenario = useCallback((scenario) => {
     setSelectedScenario(scenario);
-    setCurrentView(VIEWS.VARIABLES);
+    setCurrentView(VIEWS.PREPARATION);  // Go to preparation first (NEW)
   }, []);
 
   /**
-   * Handle back from variables to dashboard
+   * Handle back from preparation to dashboard
    */
   const handleBackToDashboard = useCallback(() => {
     setSelectedScenario(null);
@@ -90,35 +116,120 @@ const VideoTrainingApp = ({
     setCompletedSession(null);
     setSelectedMicrophoneId(null);
     setSelectedCameraId(null);
+    setSessionError(null);
     setCurrentView(VIEWS.DASHBOARD);
   }, []);
 
   /**
-   * Handle variables submitted - go to device setup
+   * Handle preparation complete - go to variables (if needed) or start session
+   */
+  const handlePreparationNext = useCallback((deviceData) => {
+    setSelectedMicrophoneId(deviceData.selectedMicrophoneId);
+    setSelectedCameraId(deviceData.selectedCameraId);
+
+    // Check if scenario has variables - if yes, go to variables page
+    // If no, directly start the session
+    if (selectedScenario?.input_configuration) {
+      const config = Array.isArray(selectedScenario.input_configuration)
+        ? selectedScenario.input_configuration
+        : [];
+
+      const hasUserInputFields = config.filter(field => field.user_input !== false).length > 0;
+
+      if (hasUserInputFields) {
+        setCurrentView(VIEWS.VARIABLES);
+        return;
+      }
+    }
+
+    // No variables needed - start session directly
+    startSession({}, deviceData.selectedMicrophoneId, deviceData.selectedCameraId);
+  }, [selectedScenario]);
+
+  /**
+   * Handle back from variables to preparation
+   */
+  const handleBackToPreparation = useCallback(() => {
+    setCurrentView(VIEWS.PREPARATION);
+  }, []);
+
+  /**
+   * Handle variables submitted - start session
    */
   const handleVariablesNext = useCallback((collectedVariables) => {
     setVariables(collectedVariables);
-    setCurrentView(VIEWS.DEVICE_SETUP);
-  }, []);
+    startSession(collectedVariables, selectedMicrophoneId, selectedCameraId);
+  }, [selectedMicrophoneId, selectedCameraId]);
 
   /**
-   * Handle back from device setup to variables
+   * Start the session (create session + generate questions)
    */
-  const handleBackToVariables = useCallback(() => {
-    setCurrentView(VIEWS.VARIABLES);
-  }, []);
+  const startSession = async (vars, micId, camId) => {
+    setIsCreatingSession(true);
+    setSessionError(null);
 
-  /**
-   * Handle session start from device setup
-   */
-  const handleStartSession = useCallback((data) => {
-    setActiveSession(data.session);
-    setQuestions(data.questions);
-    setVariables(data.variables);
-    setSelectedMicrophoneId(data.selectedMicrophoneId);
-    setSelectedCameraId(data.selectedCameraId);
-    setCurrentView(VIEWS.SESSION);
-  }, []);
+    try {
+      const apiUrl = getWPApiUrl();
+
+      // 1. Create session
+      const createResponse = await fetch(`${apiUrl}/video-training/sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': getWPNonce(),
+        },
+        body: JSON.stringify({
+          scenario_id: selectedScenario.id,
+          variables: vars,
+          demo_code: demoCode || null,
+        }),
+      });
+
+      if (!createResponse.ok) {
+        const errorData = await createResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Fehler beim Erstellen der Session');
+      }
+
+      const createData = await createResponse.json();
+      const session = createData.data?.session || createData.session;
+
+      if (!session) {
+        throw new Error('Keine Session-ID erhalten');
+      }
+
+      // 2. Generate questions
+      const questionsResponse = await fetch(`${apiUrl}/video-training/sessions/${session.id}/questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': getWPNonce(),
+        },
+        body: JSON.stringify({ variables: vars }),
+      });
+
+      if (!questionsResponse.ok) {
+        const errorData = await questionsResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Fehler beim Generieren der Fragen');
+      }
+
+      const questionsData = await questionsResponse.json();
+      const generatedQuestions = questionsData.data?.questions || questionsData.questions || [];
+
+      // 3. Start session
+      setActiveSession({ ...session, questions: generatedQuestions });
+      setQuestions(generatedQuestions);
+      setVariables(vars);
+      setSelectedMicrophoneId(micId);
+      setSelectedCameraId(camId);
+      setCurrentView(VIEWS.SESSION);
+
+    } catch (error) {
+      console.error('Error starting session:', error);
+      setSessionError(error.message);
+    } finally {
+      setIsCreatingSession(false);
+    }
+  };
 
   /**
    * Handle session completion
@@ -145,7 +256,8 @@ const VideoTrainingApp = ({
     setCompletedSession(null);
     setSelectedMicrophoneId(null);
     setSelectedCameraId(null);
-    setCurrentView(VIEWS.VARIABLES);
+    setSessionError(null);
+    setCurrentView(VIEWS.PREPARATION);  // Start from preparation again
   }, []);
 
   /**
@@ -164,22 +276,22 @@ const VideoTrainingApp = ({
           />
         );
 
+      case VIEWS.PREPARATION:
+        return (
+          <VideoTrainingPreparationPage
+            scenario={selectedScenario}
+            onBack={handleBackToDashboard}
+            onNext={handlePreparationNext}
+            hasVariables={scenarioHasVariables}
+          />
+        );
+
       case VIEWS.VARIABLES:
         return (
           <VideoTrainingVariablesPage
             scenario={selectedScenario}
-            onBack={handleBackToDashboard}
+            onBack={handleBackToPreparation}
             onNext={handleVariablesNext}
-          />
-        );
-
-      case VIEWS.DEVICE_SETUP:
-        return (
-          <VideoTrainingDeviceSetup
-            scenario={selectedScenario}
-            variables={variables}
-            onBack={handleBackToVariables}
-            onStart={handleStartSession}
           />
         );
 
@@ -223,6 +335,21 @@ const VideoTrainingApp = ({
   return (
     <div className="min-h-full">
       {renderView()}
+
+      {/* Error Display */}
+      {sessionError && (
+        <ErrorToast
+          message={sessionError}
+          onDismiss={() => setSessionError(null)}
+        />
+      )}
+
+      {/* Fullscreen Loading Overlay */}
+      <FullscreenLoader
+        isLoading={isCreatingSession}
+        message="Fragen werden generiert..."
+        subMessage="Die KI erstellt personalisierte Fragen basierend auf deinen Angaben."
+      />
     </div>
   );
 };

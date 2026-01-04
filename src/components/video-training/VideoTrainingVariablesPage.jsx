@@ -3,18 +3,10 @@ import {
   ArrowLeft,
   ArrowRight,
   AlertCircle,
-  Video,
   Info,
-  Target,
-  Lightbulb,
-  Mic,
-  Camera,
-  Clock,
-  CheckCircle,
-  MessageSquare,
-  Settings,
-  Sparkles,
   User,
+  Clock,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/base/button';
 import { Input } from '@/components/ui/base/input';
@@ -22,53 +14,24 @@ import { Textarea } from '@/components/ui/base/textarea';
 import { Card } from '@/components/ui';
 
 /**
- * Render text with **bold** markdown syntax
+ * Helper function to get the display label for a field value
+ * For select fields, returns the label instead of the technical value
  */
-const renderBoldText = (text) => {
-  if (!text) return null;
-  const parts = text.split(/(\*\*.*?\*\*)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index}>{part.slice(2, -2)}</strong>;
-    }
-    return part;
-  });
-};
+const getDisplayValue = (field, value) => {
+  if (!value) return null;
 
-/**
- * Icon mapping for dynamic tip icons from backend
- */
-const iconMap = {
-  target: Target,
-  clock: Clock,
-  mic: Mic,
-  camera: Camera,
-  video: Video,
-  'message-square': MessageSquare,
-  lightbulb: Lightbulb,
-  brain: Lightbulb,
-  info: Info,
-  settings: Settings,
-  check: CheckCircle,
-  sparkles: Sparkles,
-  user: User,
-  x: AlertCircle,
-};
+  if (field.type === 'select' && field.options) {
+    const option = field.options.find(opt => opt.value === value);
+    return option ? option.label : value;
+  }
 
-/**
- * Default tips for video training
- */
-const defaultVideoTips = [
-  { icon: 'camera', text: 'Schaue direkt in die Kamera für Augenkontakt.' },
-  { icon: 'lightbulb', text: 'Achte auf gute Beleuchtung von vorne.' },
-  { icon: 'target', text: 'Struktur: Wer → Was → Warum.' },
-  { icon: 'mic', text: 'Sprich deutlich und in ruhigem Tempo.' },
-];
+  return value;
+};
 
 /**
  * Dynamic Form Field Component
  */
-const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
+const DynamicFormField = ({ field, value, onChange, error }) => {
   const handleFocus = (e) => {
     setTimeout(() => {
       const element = e.target;
@@ -186,9 +149,41 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
 };
 
 /**
+ * Profile Summary Component
+ * Shows selected values with labels (not technical values)
+ */
+const ProfileSummary = ({ inputConfig, formValues }) => {
+  const filledFields = inputConfig.filter(field => {
+    const value = formValues[field.key];
+    return value && (typeof value !== 'string' || value.trim() !== '');
+  });
+
+  if (filledFields.length === 0) return null;
+
+  return (
+    <Card className="p-4 mb-5 bg-slate-50 border-slate-200">
+      <div className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">
+        Dein Profil
+      </div>
+      <div className="space-y-2">
+        {filledFields.map(field => (
+          <div key={field.key} className="flex flex-col">
+            <span className="text-xs text-slate-500">{field.label}</span>
+            <span className="text-sm font-medium text-slate-900">
+              {getDisplayValue(field, formValues[field.key])}
+            </span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+};
+
+/**
  * VideoTrainingVariablesPage Component
  *
- * Layout matches SimulatorWizard for consistency.
+ * Simple form-only page for collecting variables.
+ * Description and device setup are handled in PreparationPage.
  */
 const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
   const [formValues, setFormValues] = useState({});
@@ -277,7 +272,17 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
       return;
     }
 
-    onNext(formValues);
+    // Build variables object with both values and labels for display
+    const variables = { ...formValues };
+
+    // Add _label suffix for select fields to store the display label
+    inputConfig.forEach(field => {
+      if (field.type === 'select' && formValues[field.key]) {
+        variables[`${field.key}_label`] = getDisplayValue(field, formValues[field.key]);
+      }
+    });
+
+    onNext(variables);
   };
 
   // If no variables needed, auto-proceed to next step
@@ -292,30 +297,25 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
     return null;
   }
 
-  // Get tips from scenario or use defaults
-  const tips = scenario?.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
-    ? scenario.tips
-    : defaultVideoTips;
-
   return (
     <div className="p-6 md:p-8 pb-52 max-w-[700px] mx-auto">
-      {/* Header - matches SimulatorWizard */}
+      {/* Header */}
       <div className="mb-8">
         <button
           onClick={onBack}
           className="flex items-center gap-2 bg-transparent border-none text-slate-500 cursor-pointer text-sm py-2 mb-4 hover:text-slate-700 transition-colors"
         >
           <ArrowLeft size={18} />
-          Zurück zur Übersicht
+          Zurück
         </button>
 
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-brand-gradient flex items-center justify-center">
-            <Lightbulb size={32} className="text-white" />
+            <User size={32} className="text-white" />
           </div>
           <div>
             <h1 className="text-[28px] font-bold text-slate-900 m-0">
-              Vorbereitung
+              Personalisierung
             </h1>
             <p className="text-base text-slate-500 m-0 mt-1">
               {scenario?.title}
@@ -324,26 +324,10 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
         </div>
       </div>
 
-      {/* Long Description - "Deine Aufgabe" Card */}
-      {scenario?.long_description && (
-        <Card className="p-5 md:p-6 mb-6">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-brand-gradient flex items-center justify-center flex-shrink-0">
-              <Info className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-slate-900 m-0 mb-2">
-                Deine Aufgabe
-              </h3>
-              <div className="text-[15px] leading-relaxed text-slate-600 m-0 whitespace-pre-wrap">
-                {renderBoldText(scenario.long_description)}
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
+      {/* Profile Summary - Shows filled values with labels */}
+      <ProfileSummary inputConfig={inputConfig} formValues={formValues} />
 
-      {/* Form Card - "Dein Profil" */}
+      {/* Form Card */}
       <Card className="p-5 md:p-6 mb-6">
         <div className="flex items-start gap-3.5 mb-5">
           <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
@@ -351,10 +335,10 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
           </div>
           <div>
             <h3 className="text-base font-semibold text-slate-900 m-0">
-              Dein Profil
+              Dein Profil anpassen
             </h3>
             <p className="text-sm text-slate-500 m-0 mt-0.5">
-              Personalisiere dein Training
+              Diese Informationen personalisieren die Fragen
             </p>
           </div>
         </div>
@@ -372,54 +356,16 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
         </form>
       </Card>
 
-      {/* Submit Button - Before Tips */}
+      {/* Submit Button */}
       <Button
         type="submit"
         form="variables-form"
         size="lg"
         className="w-full mb-6 gap-2.5"
       >
-        Weiter
+        Video-Training starten
         <ArrowRight className="w-5 h-5" />
       </Button>
-
-      {/* Tips Section - After Button */}
-      {tips.length > 0 && (
-        <Card className="p-5 md:p-6 mb-6">
-          <div className="flex items-start gap-3.5 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <Lightbulb className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-slate-900 m-0">
-                Tipps für dein Training
-              </h3>
-              <p className="text-sm text-slate-500 m-0 mt-0.5">
-                Beachte diese Hinweise für optimale Ergebnisse
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-3">
-            {tips.map((tip, index) => {
-              const IconComponent = iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb;
-              return (
-                <div
-                  key={index}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-50"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <IconComponent className="w-4 h-4 text-slate-600" />
-                  </div>
-                  <p className="text-sm text-slate-700 m-0 pt-1">
-                    {tip.text || tip.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
 
       {/* Session Info */}
       <div className="flex items-center justify-center gap-6 text-sm text-slate-400">

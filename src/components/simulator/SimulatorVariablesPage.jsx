@@ -282,6 +282,15 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Get display label for a select field value
+   */
+  const getSelectLabel = (field, value) => {
+    if (field.type !== 'select' || !field.options || !value) return null;
+    const option = field.options.find(opt => opt.value === value);
+    return option ? option.label : value;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -294,6 +303,16 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
     customVariables.forEach(cv => {
       if (cv.key && cv.value) {
         allVariables[cv.key] = cv.value;
+      }
+    });
+
+    // Add _label suffix for select fields to store the display label
+    inputConfig.forEach(field => {
+      if (field.type === 'select' && formValues[field.key]) {
+        const label = getSelectLabel(field, formValues[field.key]);
+        if (label) {
+          allVariables[`${field.key}_label`] = label;
+        }
       }
     });
 
