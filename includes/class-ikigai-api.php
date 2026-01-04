@@ -601,40 +601,131 @@ class Bewerbungstrainer_Ikigai_API {
      * @return string Prompt
      */
     private function build_extraction_prompt($dimension, $label, $user_input) {
+        // Dimension-specific guidance and examples
+        $dimension_guidance = $this->get_dimension_guidance($dimension);
+
         return <<<PROMPT
-Du bist ein analytischer Karriere-Coach für das Ikigai-Modell.
-Deine Aufgabe: Extrahiere aus dem Text des Users 3 bis 5 prägnante Schlagworte (Keywords/Skills) für das Ikigai-Modell.
+Du bist ein präziser Karriere-Coach für das Ikigai-Modell.
+Deine Aufgabe: Extrahiere aus dem Text des Users 2 bis 5 prägnante Keywords für die Dimension "{$label}".
 
 DIMENSION: {$dimension} - {$label}
+{$dimension_guidance}
 
 USER TEXT:
 "{$user_input}"
 
-ANWEISUNGEN:
-- Extrahiere 3-5 Keywords, die die Kernaussagen des Users zusammenfassen
-- Die Keywords sollten prägnant sein (1-3 Wörter)
-- Fokussiere auf konkrete Fähigkeiten, Interessen oder Themen
-- Vermeide zu generische Begriffe wie "Menschen helfen" - sei spezifischer
-- Die Keywords sollten zur Dimension passen
+QUALITÄTSREGELN:
+1. Keywords müssen DIREKT aus dem Text ableitbar sein
+2. Prägnant: 1-3 Wörter pro Keyword
+3. Spezifisch statt generisch (siehe Beispiele oben)
+4. Lieber 2 gute Keywords als 5 mittelmäßige
 
 KRITISCH - KEINE HALLUZINATIONEN:
-- Extrahiere NUR Keywords, die TATSÄCHLICH im Text vorkommen oder DIREKT daraus ableitbar sind
-- Wenn der Input keinen sinnvollen karrierebezogenen Inhalt enthält (z.B. Unsinn, Tippfehler, Test-Eingaben, einzelne Buchstaben, "blabla", "test", "asdf"), gib ein LEERES Array zurück
-- Erfinde NIEMALS Keywords, die nicht aus dem User-Text stammen
-- Bei Zweifeln: Lieber zu wenige Keywords als erfundene
+- Extrahiere NUR was der User TATSÄCHLICH geschrieben hat
+- Bei unsinnigem Input (Tippfehler, "test", "asdf", einzelne Buchstaben): LEERES Array
+- Bei unklarem/vagem Input: LEERES Array
+- Erfinde NIEMALS Keywords
 
 WICHTIG: Antworte NUR mit gültigem JSON, ohne Markdown-Formatierung.
 
 OUTPUT FORMAT:
 {
-  "keywords": ["Keyword1", "Keyword2", "Keyword3"]
+  "keywords": ["Keyword1", "Keyword2"]
 }
 
-Bei unsinnigem Input:
+Bei unsinnigem/unklarem Input:
 {
   "keywords": []
 }
 PROMPT;
+    }
+
+    /**
+     * Get dimension-specific guidance and examples
+     *
+     * @param string $dimension Dimension key (love, talent, need, market)
+     * @return string Guidance text
+     */
+    private function get_dimension_guidance($dimension) {
+        $guidance = array(
+            'love' => <<<GUIDANCE
+
+WAS DIESE DIMENSION BEDEUTET:
+Aktivitäten und Themen, die den User begeistern und Energie geben.
+
+KEYWORD-TYP: Aktivitäten/Leidenschaften (oft Verben/Gerundien)
+
+BEISPIELE FÜR GUTE KEYWORDS:
+✅ "Programmieren" (spezifische Aktivität)
+✅ "Storytelling" (konkretes Interesse)
+✅ "Outdoor-Sport" (klares Thema)
+✅ "Strategiespiele" (spezifisch)
+
+BEISPIELE FÜR SCHLECHTE KEYWORDS:
+❌ "Menschen" (zu vage)
+❌ "Spaß haben" (nichtssagend)
+❌ "Kreativität" (zu abstrakt - besser: "Zeichnen", "Musik machen")
+GUIDANCE
+            ,
+            'talent' => <<<GUIDANCE
+
+WAS DIESE DIMENSION BEDEUTET:
+Fähigkeiten und Kompetenzen, in denen der User überdurchschnittlich gut ist.
+
+KEYWORD-TYP: Skills/Fähigkeiten (Substantive mit Kompetenz-Charakter)
+
+BEISPIELE FÜR GUTE KEYWORDS:
+✅ "Analytisches Denken" (konkrete Fähigkeit)
+✅ "Präsentieren" (messbarer Skill)
+✅ "Python-Entwicklung" (spezifisch)
+✅ "Konfliktmoderation" (klar definiert)
+
+BEISPIELE FÜR SCHLECHTE KEYWORDS:
+❌ "Gut mit Menschen" (zu vage - besser: "Teamführung", "Kundenberatung")
+❌ "Schnell lernen" (generisch)
+❌ "Organisiert" (besser: "Projektmanagement", "Eventplanung")
+GUIDANCE
+            ,
+            'need' => <<<GUIDANCE
+
+WAS DIESE DIMENSION BEDEUTET:
+Gesellschaftliche Probleme oder Bedürfnisse, die der User lösen möchte.
+
+KEYWORD-TYP: Problem-Felder/Gesellschaftliche Themen
+
+BEISPIELE FÜR GUTE KEYWORDS:
+✅ "Klimaschutz" (konkretes Problem)
+✅ "Bildungsgerechtigkeit" (gesellschaftliches Thema)
+✅ "Mentale Gesundheit" (spezifisches Bedürfnis)
+✅ "Digitale Inklusion" (klar definiert)
+
+BEISPIELE FÜR SCHLECHTE KEYWORDS:
+❌ "Menschen helfen" (zu generisch - WIE helfen?)
+❌ "Welt verbessern" (zu abstrakt)
+❌ "Gutes tun" (nichtssagend)
+GUIDANCE
+            ,
+            'market' => <<<GUIDANCE
+
+WAS DIESE DIMENSION BEDEUTET:
+Skills und Tätigkeiten, für die Unternehmen/Kunden bezahlen würden.
+
+KEYWORD-TYP: Monetarisierbare Skills/Job-relevante Fähigkeiten
+
+BEISPIELE FÜR GUTE KEYWORDS:
+✅ "Data Analysis" (gefragter Skill)
+✅ "Projektleitung" (Berufsfeld)
+✅ "UX Design" (Markt-Nachfrage)
+✅ "Vertriebsberatung" (Dienstleistung)
+
+BEISPIELE FÜR SCHLECHTE KEYWORDS:
+❌ "Geld verdienen" (keine Fähigkeit)
+❌ "Karriere machen" (zu abstrakt)
+❌ "Erfolgreich sein" (nichtssagend)
+GUIDANCE
+        );
+
+        return isset($guidance[$dimension]) ? $guidance[$dimension] : '';
     }
 
     /**
