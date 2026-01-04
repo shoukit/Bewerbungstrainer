@@ -505,10 +505,10 @@ class Bewerbungstrainer_Categories_Admin {
     }
 
     /**
-     * Parse categories from form submission
-     * Static helper to handle both single and multi-select
+     * Parse categories from form submission or CSV import
+     * Static helper to handle arrays, JSON strings, and single values
      *
-     * @param array|string $input The form input (can be array from checkboxes or string from dropdown)
+     * @param array|string $input The form input (can be array from checkboxes, JSON string from CSV, or string from dropdown)
      * @return string JSON encoded array of category slugs
      */
     public static function parse_categories_input($input) {
@@ -517,6 +517,16 @@ class Bewerbungstrainer_Categories_Admin {
             $slugs = array_map('sanitize_title', array_filter($input));
             return json_encode(array_values($slugs));
         } elseif (is_string($input) && !empty($input)) {
+            // Check if it's a JSON array string (from CSV import)
+            $trimmed = trim($input);
+            if (strpos($trimmed, '[') === 0) {
+                $decoded = json_decode($trimmed, true);
+                if (is_array($decoded)) {
+                    // Valid JSON array - sanitize each value
+                    $slugs = array_map('sanitize_title', array_filter($decoded));
+                    return json_encode(array_values($slugs));
+                }
+            }
             // Single dropdown value - convert to array
             return json_encode(array(sanitize_title($input)));
         }

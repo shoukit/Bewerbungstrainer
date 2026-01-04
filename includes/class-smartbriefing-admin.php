@@ -616,6 +616,14 @@ class Bewerbungstrainer_SmartBriefing_Admin {
                 }
             }
 
+            // Check if template with same title exists (fallback for imports without ID)
+            $existing_by_title = $this->db->get_template_by_title($template_data['title']);
+            if ($existing_by_title) {
+                $this->db->update_template($existing_by_title->id, $template_data);
+                $updated++;
+                continue;
+            }
+
             // Create new
             $this->db->create_template($template_data);
             $imported++;

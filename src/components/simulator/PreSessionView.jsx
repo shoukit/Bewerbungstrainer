@@ -15,6 +15,23 @@ import {
 import MicrophoneSelector from '@/components/device-setup/MicrophoneSelector';
 import { useBranding } from '@/hooks/useBranding';
 
+/**
+ * Render text with **bold** markdown syntax
+ * @param {string} text - Text with **bold** markers
+ * @returns {React.ReactNode[]} - Array of text and <strong> elements
+ */
+const renderBoldText = (text) => {
+  if (!text) return null;
+
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
 // Icon mapping for dynamic tips from database
 const iconMap = {
   target: Target,
@@ -110,32 +127,68 @@ const PreSessionView = ({
       })
     : defaultTips;
 
-  // Build label lookup from input_configuration
-  const inputConfigLabels = useMemo(() => {
-    if (!scenario?.input_configuration) return {};
+  // Build label lookup and select options from input_configuration
+  const { inputConfigLabels, selectOptionsMap } = useMemo(() => {
+    if (!scenario?.input_configuration) return { inputConfigLabels: {}, selectOptionsMap: {} };
     try {
       const config = typeof scenario.input_configuration === 'string'
         ? JSON.parse(scenario.input_configuration)
         : scenario.input_configuration;
-      if (!Array.isArray(config)) return {};
-      return config.reduce((acc, field) => {
+      if (!Array.isArray(config)) return { inputConfigLabels: {}, selectOptionsMap: {} };
+
+      const labels = {};
+      const options = {};
+
+      config.forEach(field => {
         if (field.key && field.label) {
-          acc[field.key] = field.label;
+          labels[field.key] = field.label;
         }
-        return acc;
-      }, {});
+        // Store select options for value-to-label lookup
+        if (field.type === 'select' && field.options) {
+          options[field.key] = field.options;
+        }
+      });
+
+      return { inputConfigLabels: labels, selectOptionsMap: options };
     } catch (e) {
-      return {};
+      return { inputConfigLabels: {}, selectOptionsMap: {} };
     }
   }, [scenario?.input_configuration]);
 
+  /**
+   * Get display value for a variable
+   * For select fields, returns the label instead of the technical value
+   */
+  const getDisplayValue = (key, value) => {
+    // Skip _label suffix keys (they're already the display value)
+    if (key.endsWith('_label')) return null;
+
+    // If there's a _label version in variables, use that
+    if (variables[`${key}_label`]) {
+      return variables[`${key}_label`];
+    }
+
+    // If this is a select field, find the label from options
+    if (selectOptionsMap[key]) {
+      const option = selectOptionsMap[key].find(opt => opt.value === value);
+      if (option) return option.label;
+    }
+
+    return value;
+  };
+
   const contextInfo = variables ? Object.entries(variables)
-    .filter(([key, value]) => value && value.trim && value.trim() !== '')
+    .filter(([key, value]) => {
+      // Skip _label suffix keys
+      if (key.endsWith('_label')) return false;
+      return value && (typeof value === 'string' ? value.trim() !== '' : true);
+    })
     .map(([key, value]) => ({
       // Use German label from input_configuration, fallback to formatted key
       label: inputConfigLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      value: value
-    })) : [];
+      value: getDisplayValue(key, value)
+    }))
+    .filter(item => item.value) : [];
 
   /**
    * Interpolate variables in text (e.g., ${variable_name} -> value)
@@ -204,9 +257,9 @@ const PreSessionView = ({
               <h3 className="text-base font-semibold m-0 mb-2" style={{ color: branding.textMain }}>
                 Deine Aufgabe
               </h3>
-              <p className="text-[15px] leading-relaxed m-0 whitespace-pre-wrap" style={{ color: branding.textSecondary }}>
-                {interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n'))}
-              </p>
+              <div className="text-[15px] leading-relaxed m-0 whitespace-pre-wrap" style={{ color: branding.textSecondary }}>
+                {renderBoldText(interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n')))}
+              </div>
             </div>
           </div>
         </div>

@@ -211,6 +211,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   const animationFrameRef = useRef(null);
   const userStreamRef = useRef(null);
   const hasReceivedFirstAiMessageRef = useRef(false); // Track first AI message to stop dial tone
+  const hasProcessedDisconnectRef = useRef(false); // Track if we've already processed agent disconnect
 
   // Get API credentials
   const apiKey = wordpressAPI.getElevenLabsApiKey();
@@ -434,10 +435,26 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
   // Handle agent ending the call
   useEffect(() => {
-    if (conversation.status === 'disconnected' && transcript.length > 0 && !isAnalyzing && !showFeedback) {
-      handleEndConversation();
+    // Only process disconnect once, when we have a transcript and aren't already analyzing
+    if (
+      conversation.status === 'disconnected' &&
+      transcript.length > 0 &&
+      !isAnalyzing &&
+      !showFeedback &&
+      !hasProcessedDisconnectRef.current &&
+      isStarted // Only if session was actually started
+    ) {
+      console.log('[RoleplaySession] Agent disconnected, triggering analysis...');
+      hasProcessedDisconnectRef.current = true;
+
+      // Small delay to ensure final transcript messages are captured
+      const timer = setTimeout(() => {
+        handleEndConversation();
+      }, 500);
+
+      return () => clearTimeout(timer);
     }
-  }, [conversation.status, transcript.length, isAnalyzing, showFeedback]);
+  }, [conversation.status, transcript.length, isAnalyzing, showFeedback, isStarted]);
 
   // Update duration every second
   useEffect(() => {
@@ -537,8 +554,9 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     try {
       setError(null);
 
-      // Reset first message tracking and start dial tone
+      // Reset tracking refs for new session
       hasReceivedFirstAiMessageRef.current = false;
+      hasProcessedDisconnectRef.current = false;
       await startDialTone({
         frequency: 425,     // German standard
         onDuration: 1000,   // 1 second on

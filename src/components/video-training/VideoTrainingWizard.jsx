@@ -1,16 +1,52 @@
 /**
  * VideoTrainingWizard - Configuration view before starting video training
  *
- * Migrated to Tailwind CSS for consistent styling.
+ * Layout matches SimulatorWizard/PreSessionView for consistency.
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ArrowLeft, Video, Info, Loader2, AlertCircle, ChevronRight, Settings, Sparkles, Mic, Camera, ChevronDown, RefreshCw, Target, Lightbulb, Brain, MessageSquare, CheckCircle, Clock } from 'lucide-react';
+import {
+  ArrowLeft,
+  Video,
+  Info,
+  Loader2,
+  AlertCircle,
+  Play,
+  Settings,
+  Sparkles,
+  Mic,
+  Camera,
+  ChevronDown,
+  RefreshCw,
+  Target,
+  Lightbulb,
+  Brain,
+  MessageSquare,
+  CheckCircle,
+  Clock,
+} from 'lucide-react';
 import { usePartner } from '../../context/PartnerContext';
 import { motion } from 'framer-motion';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import FullscreenLoader from '@/components/ui/composite/fullscreen-loader';
 import { Button, Card } from '@/components/ui';
+
+/**
+ * Render text with **bold** markdown syntax
+ * @param {string} text - Text with **bold** markers
+ * @returns {React.ReactNode[]} - Array of text and <strong> elements
+ */
+const renderBoldText = (text) => {
+  if (!text) return null;
+
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
 
 /**
  * Icon mapping for dynamic tip icons from backend
@@ -278,6 +314,7 @@ const DynamicFormField = ({ field, value, onChange, error }) => {
 
 /**
  * VideoTrainingWizard - Configuration view before starting
+ * Layout matches SimulatorWizard/PreSessionView
  */
 const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
   // Initialize variables with default values from input configuration
@@ -557,179 +594,97 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
 
   const inputConfig = scenario?.input_configuration || [];
 
+  // Get tips from scenario or use defaults
+  const tips = scenario?.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
+    ? scenario.tips.map((tip, idx) => {
+        if (typeof tip === 'string') {
+          return { icon: Lightbulb, title: `Tipp ${idx + 1}`, description: tip };
+        }
+        return {
+          icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
+          title: tip.title || `Tipp ${idx + 1}`,
+          description: tip.text || tip.description || '',
+        };
+      })
+    : defaultVideoTips;
+
   return (
     <div className="p-6 md:p-8 max-w-[700px] mx-auto">
-      {/* Header */}
+      {/* Header - matches SimulatorWizard/PreSessionView */}
       <div className="mb-8">
         <button
           onClick={onBack}
           className="flex items-center gap-2 bg-transparent border-none text-slate-500 cursor-pointer text-sm py-2 mb-4 hover:text-slate-700 transition-colors"
         >
           <ArrowLeft size={18} />
-          Zurück zur Übersicht
+          Zurück
         </button>
 
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-[14px] bg-brand-gradient flex items-center justify-center">
-            <Video size={28} className="text-white" />
+          <div className="w-16 h-16 rounded-2xl bg-brand-gradient flex items-center justify-center">
+            <Lightbulb size={32} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">
-              {scenario?.title}
+            <h1 className="text-[28px] font-bold text-slate-900 m-0">
+              Vorbereitung
             </h1>
-            <p className="text-sm text-slate-500">
-              Konfiguriere deine Wirkungs-Analyse
+            <p className="text-base text-slate-500 m-0 mt-1">
+              {scenario?.title}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Info Box */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="py-4 px-5 bg-primary/5 rounded-xl border border-primary/20 mb-8 flex items-start gap-3"
-      >
-        <Info size={20} className="text-primary flex-shrink-0 mt-0.5" />
-        <div>
-          <h4 className="font-semibold text-slate-900 mb-1 text-sm">
-            So funktioniert es
-          </h4>
-          <p className="text-[13px] text-slate-500 leading-relaxed">
-            Die KI generiert {scenario?.question_count || 5} personalisierte Fragen basierend auf deinen Angaben.
-            Beantworte jede Frage vor der Kamera und erhalte anschließend detailliertes Feedback.
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Long Description - Detailed task description */}
+      {/* Long Description - "Deine Aufgabe" (like SimulatorWizard) */}
       {scenario?.long_description && (
-        <Card
-          as={motion.div}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="p-5 md:p-6 mb-6"
-        >
+        <Card className="p-5 md:p-6 mb-6">
           <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-[10px] bg-brand-gradient flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-brand-gradient flex items-center justify-center flex-shrink-0">
               <Info className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold text-slate-900 mb-2">
+              <h3 className="text-base font-semibold text-slate-900 m-0 mb-2">
                 Deine Aufgabe
               </h3>
-              <p className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">
-                {scenario.long_description?.replace(/\/n/g, '\n')}
-              </p>
+              <div className="text-[15px] leading-relaxed text-slate-600 m-0 whitespace-pre-wrap">
+                {renderBoldText(scenario.long_description?.replace(/\/n/g, '\n'))}
+              </div>
             </div>
           </div>
         </Card>
       )}
 
-      {/* Tips Section */}
-      <Card
-        as={motion.div}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="p-6 mb-6"
-      >
-        <div className="flex items-center gap-2.5 mb-5">
-          <Lightbulb size={20} className="text-primary" />
-          <h2 className="text-lg font-semibold text-slate-900">
-            Tipps für dein Video-Training
-          </h2>
-        </div>
+      {/* Form Fields - Only if there are input fields */}
+      {inputConfig.length > 0 && (
+        <Card className="p-5 md:p-6 mb-6">
+          <div className="flex items-center gap-2.5 mb-4">
+            <Settings size={20} className="text-primary" />
+            <h2 className="text-lg font-semibold text-slate-900 m-0">
+              Dein Profil
+            </h2>
+          </div>
+          {inputConfig.map((field) => (
+            <DynamicFormField
+              key={field.key}
+              field={field}
+              value={variables[field.key]}
+              onChange={handleFieldChange}
+              error={errors[field.key]}
+            />
+          ))}
+        </Card>
+      )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(scenario?.tips && Array.isArray(scenario.tips) && scenario.tips.length > 0
-            ? scenario.tips.map((tip, idx) => {
-                // Handle legacy string format: ["Tip text 1", "Tip text 2"]
-                if (typeof tip === 'string') {
-                  return {
-                    icon: Lightbulb,
-                    title: `Tipp ${idx + 1}`,
-                    description: tip,
-                  };
-                }
-                // Handle new object format: [{icon, title, text}]
-                return {
-                  icon: iconMap[tip.icon] || iconMap[tip.icon?.toLowerCase()] || Lightbulb,
-                  title: tip.title || `Tipp ${idx + 1}`,
-                  description: tip.text || tip.description || '',
-                };
-              })
-            : defaultVideoTips
-          ).map((tip, index) => {
-            const IconComponent = tip.icon;
-            return (
-              <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-slate-50">
-                <div className="w-9 h-9 rounded-[10px] bg-brand-gradient flex items-center justify-center flex-shrink-0">
-                  <IconComponent className="w-[18px] h-[18px] text-white" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-slate-900 text-sm mb-1">
-                    {tip.title}
-                  </h4>
-                  <p className="text-[13px] text-slate-500 leading-relaxed">
-                    {tip.description}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* Form */}
-      <Card
-        as={motion.div}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="p-6 md:p-7 mb-6 shadow-sm"
-      >
-        <div className="flex items-center gap-2.5 mb-6">
-          <Settings size={20} className="text-primary" />
-          <h2 className="text-lg font-semibold text-slate-900">
-            Personalisiere dein Training
-          </h2>
-        </div>
-
-        {inputConfig.map((field) => (
-          <DynamicFormField
-            key={field.key}
-            field={field}
-            value={variables[field.key]}
-            onChange={handleFieldChange}
-            error={errors[field.key]}
-          />
-        ))}
-
-        {inputConfig.length === 0 && (
-          <p className="text-slate-500 text-center py-5">
-            Keine zusätzliche Konfiguration erforderlich.
-          </p>
-        )}
-      </Card>
-
-      {/* Device Selection */}
-      <Card
-        as={motion.div}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="p-6 md:p-7 mb-6 shadow-sm"
-      >
-        <div className="flex items-center gap-2.5 mb-6">
+      {/* Device Selection - Camera & Microphone */}
+      <Card className="p-5 md:p-6 mb-6">
+        <div className="flex items-center gap-2.5 mb-4">
           <Camera size={20} className="text-primary" />
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-slate-900 m-0">
             Kamera & Mikrofon
           </h2>
         </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           {/* Camera Selection */}
           <DeviceSelector
             type="video"
@@ -757,71 +712,83 @@ const VideoTrainingWizard = ({ scenario, onBack, onStart }) => {
         {(micError || cameraError) && (
           <p className="text-[13px] text-slate-400 mt-4 flex items-start gap-2">
             <Info size={16} className="flex-shrink-0 mt-0.5" />
-            Bitte erlaube den Zugriff auf Kamera und Mikrofon in deinen Browser-Einstellungen, um die Geräte nutzen zu können.
+            Bitte erlaube den Zugriff auf Kamera und Mikrofon in deinen Browser-Einstellungen.
           </p>
         )}
       </Card>
 
       {/* Error display */}
       {apiError && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-red-50 rounded-xl border border-red-200 mb-6 flex items-center gap-3"
-        >
+        <div className="p-4 bg-red-50 rounded-xl border border-red-200 mb-6 flex items-center gap-3">
           <AlertCircle size={20} className="text-red-500" />
-          <p className="text-red-600 text-sm">{apiError}</p>
-        </motion.div>
+          <p className="text-red-600 text-sm m-0">{apiError}</p>
+        </div>
       )}
 
-      {/* Training Info */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-slate-50 rounded-xl p-5 mb-8"
-      >
-        <div className="flex items-center gap-2.5 mb-3">
-          <Sparkles size={18} className="text-primary" />
-          <span className="font-semibold text-slate-900 text-sm">Training-Details</span>
-        </div>
-        <div className="flex flex-wrap gap-5">
-          <div>
-            <span className="text-xs text-slate-400 block">Fragen</span>
-            <span className="text-base font-semibold text-slate-900">
-              {scenario?.question_count || 5}
-            </span>
-          </div>
-          <div>
-            <span className="text-xs text-slate-400 block">Zeit pro Frage</span>
-            <span className="text-base font-semibold text-slate-900">
-              ~{Math.round((scenario?.time_limit_per_question || 120) / 60)} Min.
-            </span>
-          </div>
-          <div>
-            <span className="text-xs text-slate-400 block">Gesamtdauer</span>
-            <span className="text-base font-semibold text-slate-900">
-              ~{Math.round((scenario?.total_time_limit || 900) / 60)} Min.
-            </span>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Start Button */}
+      {/* Start Button - prominent, before tips */}
       <Button
-        as={motion.button}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
         onClick={handleStart}
         disabled={isLoading}
         size="lg"
         fullWidth
-        iconPosition="right"
-        icon={<ChevronRight size={20} />}
+        icon={<Play size={20} />}
+        className="mb-6"
       >
         Video Training starten
       </Button>
+
+      {/* Tips Section - after button (like SimulatorWizard) */}
+      <Card className="p-5 md:p-6 mb-6">
+        <div className="flex items-center gap-2.5 mb-4">
+          <Lightbulb size={20} className="text-amber-500" />
+          <h2 className="text-lg font-semibold text-slate-900 m-0">
+            Tipps für dein Video-Training
+          </h2>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {tips.map((tip, index) => {
+            const IconComponent = tip.icon;
+            return (
+              <div key={index} className="flex items-start gap-3 p-3 md:p-4 rounded-xl bg-slate-50">
+                <div className="w-9 h-9 rounded-[10px] bg-brand-gradient flex items-center justify-center flex-shrink-0">
+                  <IconComponent className="w-[18px] h-[18px] text-white" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-slate-900 text-sm mb-0.5">
+                    {tip.title}
+                  </h4>
+                  <p className="text-[13px] text-slate-500 leading-relaxed m-0">
+                    {tip.description}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Session Info - at bottom */}
+      <div className="bg-slate-50 rounded-xl py-4 px-5 flex flex-wrap gap-6">
+        <div>
+          <span className="text-xs text-slate-400 block">Fragen</span>
+          <span className="text-lg font-semibold text-slate-900">
+            {scenario?.question_count || 5}
+          </span>
+        </div>
+        <div>
+          <span className="text-xs text-slate-400 block">Zeit pro Frage</span>
+          <span className="text-lg font-semibold text-slate-900">
+            ~{Math.round((scenario?.time_limit_per_question || 120) / 60)} Min
+          </span>
+        </div>
+        <div>
+          <span className="text-xs text-slate-400 block">Gesamtdauer</span>
+          <span className="text-lg font-semibold text-slate-900">
+            ~{Math.round((scenario?.total_time_limit || 900) / 60)} Min
+          </span>
+        </div>
+      </div>
 
       {/* Fullscreen Loading Overlay */}
       <FullscreenLoader

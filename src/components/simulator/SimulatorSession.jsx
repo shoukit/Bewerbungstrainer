@@ -108,6 +108,7 @@ const SimulatorSession = ({
   onExit,
   startFromQuestion = 0,
   initialMicrophoneId,
+  skipPreSession = false,  // NEW: Skip preparation phase when coming from new flow
 }) => {
   // Mobile detection
   const isMobile = useMobile();
@@ -150,7 +151,12 @@ const SimulatorSession = ({
     ? Array.from({ length: startFromQuestion }, (_, i) => i)
     : [];
 
-  const [phase, setPhase] = useState(isContinuation ? 'interview' : 'preparation');
+  // Skip preparation phase if:
+  // 1. This is a continuation (resuming existing session)
+  // 2. skipPreSession prop is true (coming from new PREPARATION → VARIABLES flow)
+  const shouldSkipPreSession = isContinuation || skipPreSession;
+
+  const [phase, setPhase] = useState(shouldSkipPreSession ? 'interview' : 'preparation');
   const [currentIndex, setCurrentIndex] = useState(startFromQuestion || session?.current_question_index || 0);
   const [feedback, setFeedback] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -205,6 +211,65 @@ const SimulatorSession = ({
       }
     }
   }, [selectedMicrophoneId]);
+
+  // Auto-create session when skipPreSession is true and we're in interview phase without a session
+  useEffect(() => {
+    if (shouldSkipPreSession && phase === 'interview' && !session && !isCreatingSession) {
+      // Call handleStartInterview to create the session
+      // We need to define a simple session creation function here since handleStartInterview
+      // is defined later and we can't reference it in this effect
+      const createSessionAutomatically = async () => {
+        setIsCreatingSession(true);
+        setSessionCreateError(null);
+
+        try {
+          const sessionResponse = await wordpressAPI.createSimulatorSession({
+            scenario_id: scenario.id,
+            variables: variables,
+            demo_code: demoCode || null,
+            questions: preloadedQuestions || null,
+          });
+
+          if (!sessionResponse.success) {
+            throw new Error(sessionResponse.message || 'Fehler beim Erstellen der Session');
+          }
+
+          const newSession = sessionResponse.data.session;
+
+          let newQuestions;
+          if (preloadedQuestions && preloadedQuestions.length > 0) {
+            newQuestions = preloadedQuestions;
+            await wordpressAPI.updateSimulatorSessionQuestions(newSession.id, newQuestions);
+          } else {
+            const questionsResponse = await wordpressAPI.generateSimulatorQuestions(newSession.id);
+            if (!questionsResponse.success) {
+              throw new Error(questionsResponse.message || 'Fehler beim Generieren der Fragen');
+            }
+            newQuestions = questionsResponse.data.questions;
+          }
+
+          setSession({ ...newSession, questions_json: newQuestions });
+          setQuestions(newQuestions);
+
+          if (onSessionCreated) {
+            onSessionCreated({
+              session: { ...newSession, questions_json: newQuestions },
+              questions: newQuestions,
+              selectedMicrophoneId: selectedMicrophoneId,
+            });
+          }
+
+        } catch (err) {
+          console.error('Error creating session:', err);
+          setSessionCreateError(err.message || 'Ein Fehler ist aufgetreten');
+        } finally {
+          setIsCreatingSession(false);
+        }
+      };
+
+      createSessionAutomatically();
+    }
+  }, [shouldSkipPreSession, phase, session, isCreatingSession, scenario, variables, demoCode, preloadedQuestions, selectedMicrophoneId, onSessionCreated]);
 
   // Confirmation dialog states
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);

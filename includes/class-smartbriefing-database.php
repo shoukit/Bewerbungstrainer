@@ -819,6 +819,29 @@ Sei kundenorientiert, lösungsfokussiert und konkret.',
     }
 
     /**
+     * Get a template by title
+     *
+     * @param string $title Template title
+     * @return object|null Template object or null
+     */
+    public function get_template_by_title($title) {
+        global $wpdb;
+
+        $template = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_templates} WHERE title = %s LIMIT 1",
+                $title
+            )
+        );
+
+        if ($template) {
+            $template->variables_schema = json_decode($template->variables_schema, true);
+        }
+
+        return $template;
+    }
+
+    /**
      * Create a new template
      *
      * @param array $data Template data

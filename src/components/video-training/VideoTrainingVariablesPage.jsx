@@ -3,17 +3,33 @@ import {
   ArrowLeft,
   ArrowRight,
   AlertCircle,
-  Video,
   Info,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/base/button';
 import { Input } from '@/components/ui/base/input';
 import { Textarea } from '@/components/ui/base/textarea';
+import { Card } from '@/components/ui';
+
+/**
+ * Helper function to get the display label for a field value
+ * For select fields, returns the label instead of the technical value
+ */
+const getDisplayValue = (field, value) => {
+  if (!value) return null;
+
+  if (field.type === 'select' && field.options) {
+    const option = field.options.find(opt => opt.value === value);
+    return option ? option.label : value;
+  }
+
+  return value;
+};
 
 /**
  * Dynamic Form Field Component
  */
-const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
+const DynamicFormField = ({ field, value, onChange, error }) => {
   const handleFocus = (e) => {
     setTimeout(() => {
       const element = e.target;
@@ -67,7 +83,7 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
           >
             {!field.default && <option value="">Bitte wählen...</option>}
             {field.options
-              ?.slice() // Create a copy to avoid mutating the original
+              ?.slice()
               .sort((a, b) => a.label.localeCompare(b.label, 'de'))
               .map((option) => (
               <option key={option.value} value={option.value}>
@@ -131,9 +147,41 @@ const DynamicFormField = ({ field, value, onChange, error, focusColor }) => {
 };
 
 /**
+ * Profile Summary Component
+ * Shows selected values with labels (not technical values)
+ */
+const ProfileSummary = ({ inputConfig, formValues }) => {
+  const filledFields = inputConfig.filter(field => {
+    const value = formValues[field.key];
+    return value && (typeof value !== 'string' || value.trim() !== '');
+  });
+
+  if (filledFields.length === 0) return null;
+
+  return (
+    <Card className="p-4 mb-5 bg-slate-50 border-slate-200">
+      <div className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">
+        Dein Profil
+      </div>
+      <div className="space-y-2">
+        {filledFields.map(field => (
+          <div key={field.key} className="flex flex-col">
+            <span className="text-xs text-slate-500">{field.label}</span>
+            <span className="text-sm font-medium text-slate-900">
+              {getDisplayValue(field, formValues[field.key])}
+            </span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+};
+
+/**
  * VideoTrainingVariablesPage Component
  *
- * Collects variable inputs for the video training scenario.
+ * Simple form-only page for collecting variables.
+ * Description and device setup are handled in PreparationPage.
  */
 const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
   const [formValues, setFormValues] = useState({});
@@ -222,7 +270,17 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
       return;
     }
 
-    onNext(formValues);
+    // Build variables object with both values and labels for display
+    const variables = { ...formValues };
+
+    // Add _label suffix for select fields to store the display label
+    inputConfig.forEach(field => {
+      if (field.type === 'select' && formValues[field.key]) {
+        variables[`${field.key}_label`] = getDisplayValue(field, formValues[field.key]);
+      }
+    });
+
+    onNext(variables);
   };
 
   // If no variables needed, auto-proceed to next step
@@ -238,78 +296,74 @@ const VideoTrainingVariablesPage = ({ scenario, onBack, onNext }) => {
   }
 
   return (
-    <div className="p-6 pb-52 max-w-2xl mx-auto">
+    <div className="p-6 md:p-8 pb-52 max-w-[700px] mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <Button
+        <button
           onClick={onBack}
-          variant="ghost"
-          className="inline-flex items-center gap-2 px-3 py-2 mb-4 text-sm"
+          className="flex items-center gap-2 bg-transparent border-none text-slate-500 cursor-pointer text-sm py-2 mb-4 hover:text-slate-700 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Zurück zur Übersicht
-        </Button>
+          <ArrowLeft size={18} />
+          Zurück
+        </button>
 
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-brand-gradient flex items-center justify-center">
-            <Video className="w-7 h-7 text-white" />
+          <div className="w-16 h-16 rounded-2xl bg-brand-gradient flex items-center justify-center">
+            <User size={32} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 m-0">
-              {scenario.title}
+            <h1 className="text-[28px] font-bold text-slate-900 m-0">
+              Personalisierung
             </h1>
-            <p className="text-sm text-slate-600 mt-1 mb-0">
-              Personalisiere dein Training
+            <p className="text-base text-slate-500 m-0 mt-1">
+              {scenario?.title}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Description Card */}
-      {scenario.description && (
-        <div className="p-4 px-5 rounded-xl bg-slate-100 mb-6">
-          <p className="text-sm text-slate-700 m-0 leading-relaxed">
-            {scenario.description}
-          </p>
+      {/* Profile Summary - Shows filled values with labels */}
+      <ProfileSummary inputConfig={inputConfig} formValues={formValues} />
+
+      {/* Form Card */}
+      <Card className="p-5 md:p-6 mb-6">
+        <div className="flex items-start gap-3.5 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+            <User className="w-5 h-5 text-slate-600" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 m-0">
+              Dein Profil anpassen
+            </h3>
+            <p className="text-sm text-slate-500 m-0 mt-0.5">
+              Diese Informationen personalisieren die Fragen
+            </p>
+          </div>
         </div>
-      )}
 
-      {/* Info Box */}
-      <div className="p-4 px-5 rounded-xl bg-primary/10 mb-6 flex items-start gap-3">
-        <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-semibold text-slate-900 m-0 mb-1">
-            So funktioniert es
-          </p>
-          <p className="text-[13px] text-slate-600 m-0 leading-normal">
-            Die KI generiert {scenario.question_count || 5} personalisierte Fragen basierend auf deinen Angaben.
-            Beantworte jede Frage vor der Kamera und erhalte anschließend detailliertes Feedback.
-          </p>
-        </div>
-      </div>
+        <form onSubmit={handleSubmit} id="variables-form">
+          {inputConfig.map(field => (
+            <DynamicFormField
+              key={field.key}
+              field={field}
+              value={formValues[field.key]}
+              onChange={handleChange}
+              error={errors[field.key]}
+            />
+          ))}
+        </form>
+      </Card>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit}>
-        {inputConfig.map(field => (
-          <DynamicFormField
-            key={field.key}
-            field={field}
-            value={formValues[field.key]}
-            onChange={handleChange}
-            error={errors[field.key]}
-          />
-        ))}
-
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          size="lg"
-          className="w-full mt-6 gap-2.5"
-        >
-          Weiter
-          <ArrowRight className="w-5 h-5" />
-        </Button>
-      </form>
+      {/* Submit Button */}
+      <Button
+        type="submit"
+        form="variables-form"
+        size="lg"
+        className="w-full gap-2.5"
+      >
+        Video-Training starten
+        <ArrowRight className="w-5 h-5" />
+      </Button>
     </div>
   );
 };

@@ -282,6 +282,15 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Get display label for a select field value
+   */
+  const getSelectLabel = (field, value) => {
+    if (field.type !== 'select' || !field.options || !value) return null;
+    const option = field.options.find(opt => opt.value === value);
+    return option ? option.label : value;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -294,6 +303,16 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
     customVariables.forEach(cv => {
       if (cv.key && cv.value) {
         allVariables[cv.key] = cv.value;
+      }
+    });
+
+    // Add _label suffix for select fields to store the display label
+    inputConfig.forEach(field => {
+      if (field.type === 'select' && formValues[field.key]) {
+        const label = getSelectLabel(field, formValues[field.key]);
+        if (label) {
+          allVariables[`${field.key}_label`] = label;
+        }
       }
     });
 
@@ -430,28 +449,6 @@ const SimulatorVariablesPage = ({ scenario, onBack, onNext }) => {
             )}
           </div>
         )}
-
-        {/* Session Info */}
-        <div className="py-4 px-5 rounded-lg mt-6 mb-6 flex gap-5 flex-wrap" style={{ backgroundColor: b.primaryAccentLight }}>
-          <div>
-            <span className="text-xs text-slate-500 block">Fragen</span>
-            <span className="text-base font-semibold text-slate-900">
-              {scenario.question_count_min}-{scenario.question_count_max}
-            </span>
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 block">Zeit pro Frage</span>
-            <span className="text-base font-semibold text-slate-900">
-              {Math.round(scenario.time_limit_per_question / 60)} Min
-            </span>
-          </div>
-          <div>
-            <span className="text-xs text-slate-500 block">Wiederholen</span>
-            <span className="text-base font-semibold text-slate-900">
-              {scenario.allow_retry ? 'Erlaubt' : 'Nicht erlaubt'}
-            </span>
-          </div>
-        </div>
 
         {/* Submit Button */}
         <button

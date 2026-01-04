@@ -660,6 +660,14 @@ class Bewerbungstrainer_Simulator_Admin {
                 }
             }
 
+            // Check if scenario with same title exists (fallback for imports without ID)
+            $existing_by_title = $this->db->get_scenario_by_title($scenario_data['title']);
+            if ($existing_by_title) {
+                $this->db->update_scenario($existing_by_title->id, $scenario_data);
+                $updated++;
+                continue;
+            }
+
             // Create new
             $this->db->create_scenario($scenario_data);
             $imported++;

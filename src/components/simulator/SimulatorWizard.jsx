@@ -33,6 +33,23 @@ import { usePartner } from '@/context/PartnerContext';
 import { Button, Card } from '@/components/ui';
 
 /**
+ * Render text with **bold** markdown syntax
+ * @param {string} text - Text with **bold** markers
+ * @returns {React.ReactNode[]} - Array of text and <strong> elements
+ */
+const renderBoldText = (text) => {
+  if (!text) return null;
+
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
+/**
  * Icon mapping for dynamic tip icons from backend
  */
 const iconMap = {
@@ -331,9 +348,9 @@ const SimulatorWizard = ({ scenario, onBack, onStart, preloadedQuestions }) => {
               <h3 className="text-[15px] font-semibold text-slate-900 mb-2">
                 Deine Aufgabe
               </h3>
-              <p className="text-base leading-relaxed text-slate-700 whitespace-pre-wrap">
-                {interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n'), formValues)}
-              </p>
+              <div className="text-base leading-relaxed text-slate-700 whitespace-pre-wrap">
+                {renderBoldText(interpolateVariables(scenario.long_description?.replace(/\/n/g, '\n'), formValues))}
+              </div>
             </div>
           </div>
         </Card>
