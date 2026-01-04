@@ -441,17 +441,6 @@ const IkigaiResults = ({
                   </div>
                 )}
 
-                {/* No scenarios found */}
-                {!loadingScenarios && recommendedScenarios.length === 0 && (
-                  <div style={{ borderTop: `1px solid ${b.borderColor}`, paddingTop: b.space[4], marginTop: b.space[4] }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], color: b.textMuted }}>
-                      <GraduationCap size={18} />
-                      <span style={{ fontSize: b.fontSize.sm }}>
-                        Entdecke unsere Trainings im Menü links
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
             </motion.div>
           );
