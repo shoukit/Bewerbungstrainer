@@ -5,7 +5,7 @@
  * comprehensive AI coaching analysis with scenario-aware recommendations.
  */
 
-import { getWPNonce, getWPApiUrl } from './wordpress-api';
+import wordpressAPI, { getWPNonce, getWPApiUrl } from './wordpress-api';
 import { generateInterviewFeedback } from './gemini';
 import {
   generateComprehensiveCoachingPrompt,
@@ -428,7 +428,8 @@ async function callGeminiForCoaching(prompt) {
   // Import dynamically to avoid circular dependencies
   const { GoogleGenerativeAI } = await import('@google/generative-ai');
 
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || window.bewerbungstrainerSettings?.geminiApiKey;
+  // Get API key from WordPress config (same as other Gemini services)
+  const apiKey = wordpressAPI.getGeminiApiKey();
   if (!apiKey) {
     throw new Error('Gemini API key not configured');
   }
