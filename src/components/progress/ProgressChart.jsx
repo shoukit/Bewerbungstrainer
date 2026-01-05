@@ -330,8 +330,19 @@ const ProgressChart = ({
       return isNaN(date.getTime()) ? null : date;
     };
 
+    // Debug: Log all raw session counts and dates
+    console.log('[ProgressChart] Raw session data:', {
+      simulator: simulatorSessions.length,
+      video: videoSessions.length,
+      roleplay: roleplaySessions.length,
+      games: gameSessions.length,
+      cutoffDate: cutoffDate.toLocaleDateString('de-DE'),
+      today: today.toLocaleDateString('de-DE'),
+    });
+
     // Collect all sessions with normalized scores
     const allSessions = [];
+    const skippedSessions = { noDate: 0, beforeCutoff: 0, noScore: 0 };
 
     // Rhetorik-Gym sessions (score is 0-100)
     gameSessions.forEach(session => {
@@ -342,13 +353,20 @@ const ProgressChart = ({
       if (typeof score === 'string') {
         score = parseFloat(score);
       }
-      if (date && date >= cutoffDate && score !== null && score !== undefined && !isNaN(score)) {
-        allSessions.push({
-          date,
-          module: 'rhetorik',
-          score: normalizeScore(score, 100),
-        });
+
+      if (!date) { skippedSessions.noDate++; return; }
+      if (date < cutoffDate) {
+        skippedSessions.beforeCutoff++;
+        console.log('[ProgressChart] Game session before cutoff:', date.toLocaleDateString('de-DE'));
+        return;
       }
+      if (score === null || score === undefined || isNaN(score)) { skippedSessions.noScore++; return; }
+
+      allSessions.push({
+        date,
+        module: 'rhetorik',
+        score: normalizeScore(score, 100),
+      });
     });
 
     // Simulator sessions (overall_score is 0-10)
@@ -356,13 +374,20 @@ const ProgressChart = ({
       const date = parseDate(session.created_at);
       let score = session.overall_score;
       if (typeof score === 'string') score = parseFloat(score);
-      if (date && date >= cutoffDate && score !== null && score !== undefined && !isNaN(score)) {
-        allSessions.push({
-          date,
-          module: 'simulator',
-          score: normalizeScore(score, 10),
-        });
+
+      if (!date) { skippedSessions.noDate++; return; }
+      if (date < cutoffDate) {
+        skippedSessions.beforeCutoff++;
+        console.log('[ProgressChart] Simulator session before cutoff:', date.toLocaleDateString('de-DE'));
+        return;
       }
+      if (score === null || score === undefined || isNaN(score)) { skippedSessions.noScore++; return; }
+
+      allSessions.push({
+        date,
+        module: 'simulator',
+        score: normalizeScore(score, 10),
+      });
     });
 
     // Video sessions (overall_score is 0-10)
@@ -370,66 +395,82 @@ const ProgressChart = ({
       const date = parseDate(session.created_at);
       let score = session.overall_score;
       if (typeof score === 'string') score = parseFloat(score);
-      if (date && date >= cutoffDate && score !== null && score !== undefined && !isNaN(score)) {
-        allSessions.push({
-          date,
-          module: 'video',
-          score: normalizeScore(score, 10),
-        });
+
+      if (!date) { skippedSessions.noDate++; return; }
+      if (date < cutoffDate) {
+        skippedSessions.beforeCutoff++;
+        console.log('[ProgressChart] Video session before cutoff:', date.toLocaleDateString('de-DE'));
+        return;
       }
+      if (score === null || score === undefined || isNaN(score)) { skippedSessions.noScore++; return; }
+
+      allSessions.push({
+        date,
+        module: 'video',
+        score: normalizeScore(score, 10),
+      });
     });
 
     // Roleplay sessions - extract score from feedback_json or audio_analysis_json
     roleplaySessions.forEach(session => {
       const date = parseDate(session.created_at);
-      if (date && date >= cutoffDate) {
-        let overallScore = null;
 
-        // Try feedback_json first (skip if it's literally "missing" or invalid)
-        if (session.feedback_json && session.feedback_json !== 'missing') {
-          try {
-            const feedback = typeof session.feedback_json === 'string'
-              ? JSON.parse(session.feedback_json)
-              : session.feedback_json;
+      if (!date) { skippedSessions.noDate++; return; }
+      if (date < cutoffDate) {
+        skippedSessions.beforeCutoff++;
+        console.log('[ProgressChart] Roleplay session before cutoff:', date.toLocaleDateString('de-DE'));
+        return;
+      }
 
-            // Try to find an overall score in the feedback
-            // The feedback structure is: { rating: { overall: 1-10, ... }, ... }
-            overallScore =
-              feedback?.rating?.overall ||           // Standard format from feedbackPrompt
-              feedback?.rating?.gesamteindruck ||    // German variant
-              feedback?.overall_score ||             // Legacy format
-              feedback?.overallScore ||              // camelCase variant
-              feedback?.gesamtbewertung ||           // German legacy
-              feedback?.score;                       // Fallback
-          } catch (e) {
-            // Invalid JSON, continue to try other fields
-          }
-        }
+      let overallScore = null;
 
-        // Try audio_analysis_json as fallback (might have confidence score)
-        if (overallScore === null && session.audio_analysis_json && session.audio_analysis_json !== 'missing') {
-          try {
-            const audioAnalysis = typeof session.audio_analysis_json === 'string'
-              ? JSON.parse(session.audio_analysis_json)
-              : session.audio_analysis_json;
+      // Try feedback_json first (skip if it's literally "missing" or invalid)
+      if (session.feedback_json && session.feedback_json !== 'missing') {
+        try {
+          const feedback = typeof session.feedback_json === 'string'
+            ? JSON.parse(session.feedback_json)
+            : session.feedback_json;
 
-            // Audio analysis might have a confidence score (0-100)
-            if (audioAnalysis?.confidence?.score !== undefined) {
-              overallScore = audioAnalysis.confidence.score / 10; // Convert to 0-10 scale
-            }
-          } catch (e) {
-            // Invalid JSON
-          }
-        }
-
-        if (overallScore !== undefined && overallScore !== null) {
-          allSessions.push({
-            date,
-            module: 'roleplay',
-            score: normalizeScore(overallScore, 10),
-          });
+          // Try to find an overall score in the feedback
+          // The feedback structure is: { rating: { overall: 1-10, ... }, ... }
+          overallScore =
+            feedback?.rating?.overall ||           // Standard format from feedbackPrompt
+            feedback?.rating?.gesamteindruck ||    // German variant
+            feedback?.overall_score ||             // Legacy format
+            feedback?.overallScore ||              // camelCase variant
+            feedback?.gesamtbewertung ||           // German legacy
+            feedback?.score;                       // Fallback
+        } catch (e) {
+          // Invalid JSON, continue to try other fields
         }
       }
+
+      // Try audio_analysis_json as fallback (might have confidence score)
+      if (overallScore === null && session.audio_analysis_json && session.audio_analysis_json !== 'missing') {
+        try {
+          const audioAnalysis = typeof session.audio_analysis_json === 'string'
+            ? JSON.parse(session.audio_analysis_json)
+            : session.audio_analysis_json;
+
+          // Audio analysis might have a confidence score (0-100)
+          if (audioAnalysis?.confidence?.score !== undefined) {
+            overallScore = audioAnalysis.confidence.score / 10; // Convert to 0-10 scale
+          }
+        } catch (e) {
+          // Invalid JSON
+        }
+      }
+
+      if (overallScore === undefined || overallScore === null) {
+        skippedSessions.noScore++;
+        return;
+      }
+
+      allSessions.push({
+        date,
+        module: 'roleplay',
+        score: normalizeScore(overallScore, 10),
+      });
     });
 
     // Sort by date
@@ -443,6 +484,7 @@ const ProgressChart = ({
       ...moduleCounts,
       timeRange: timeRange === 0 ? 'all' : `${timeRange} days`,
       cutoffDate: cutoffDate.toISOString(),
+      skipped: skippedSessions,
     });
 
     // If no data, return empty
