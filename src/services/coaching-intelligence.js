@@ -38,11 +38,18 @@ export async function fetchAllUserSessions() {
       gamesRes.ok ? gamesRes.json() : { data: [] },
     ]);
 
+    // Ensure we always return arrays
+    const ensureArray = (data) => {
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.data)) return data.data;
+      return [];
+    };
+
     return {
-      simulator: simulatorData.data || simulatorData || [],
-      video: videoData.data || videoData || [],
-      roleplay: roleplayData.data || roleplayData || [],
-      games: gamesData.data || gamesData || [],
+      simulator: ensureArray(simulatorData),
+      video: ensureArray(videoData),
+      roleplay: ensureArray(roleplayData),
+      games: ensureArray(gamesData),
     };
   } catch (error) {
     console.error('[CoachingIntelligence] Failed to fetch sessions:', error);
@@ -72,11 +79,18 @@ export async function fetchAllScenarios() {
       briefingRes.ok ? briefingRes.json() : [],
     ]);
 
+    // Ensure we always return arrays
+    const ensureArray = (data) => {
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.data)) return data.data;
+      return [];
+    };
+
     return {
-      simulator: Array.isArray(simulatorData) ? simulatorData : (simulatorData.data || []),
-      video: Array.isArray(videoData) ? videoData : (videoData.data || []),
-      roleplay: Array.isArray(roleplayData) ? roleplayData : (roleplayData.data || []),
-      briefingTemplates: Array.isArray(briefingData) ? briefingData : (briefingData.data || []),
+      simulator: ensureArray(simulatorData),
+      video: ensureArray(videoData),
+      roleplay: ensureArray(roleplayData),
+      briefingTemplates: ensureArray(briefingData),
     };
   } catch (error) {
     console.error('[CoachingIntelligence] Failed to fetch scenarios:', error);
@@ -92,7 +106,11 @@ export async function fetchAllScenarios() {
  * Aggregate session statistics for coaching analysis
  */
 export function aggregateSessionStats(sessions) {
-  const { simulator, video, roleplay, games } = sessions;
+  // Ensure all session types are arrays
+  const simulator = Array.isArray(sessions?.simulator) ? sessions.simulator : [];
+  const video = Array.isArray(sessions?.video) ? sessions.video : [];
+  const roleplay = Array.isArray(sessions?.roleplay) ? sessions.roleplay : [];
+  const games = Array.isArray(sessions?.games) ? sessions.games : [];
 
   const allSessions = [
     ...simulator.map(s => ({ ...s, module: 'Szenario-Training' })),
@@ -291,7 +309,11 @@ export function aggregateSessionStats(sessions) {
  * Generate scenario catalog for the AI prompt
  */
 export function generateScenarioCatalog(scenarios) {
-  const { simulator, video, roleplay, briefingTemplates } = scenarios;
+  // Ensure all scenario types are arrays
+  const simulator = Array.isArray(scenarios?.simulator) ? scenarios.simulator : [];
+  const video = Array.isArray(scenarios?.video) ? scenarios.video : [];
+  const roleplay = Array.isArray(scenarios?.roleplay) ? scenarios.roleplay : [];
+  const briefingTemplates = Array.isArray(scenarios?.briefingTemplates) ? scenarios.briefingTemplates : [];
 
   let catalog = '\n## VERFÜGBARE TRAININGS-SZENARIEN\n\n';
 
