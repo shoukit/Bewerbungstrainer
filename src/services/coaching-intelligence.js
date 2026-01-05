@@ -28,28 +28,41 @@ export async function fetchAllUserSessions() {
       fetch(`${baseUrl}/simulator/sessions`, { headers, credentials: 'same-origin' }),
       fetch(`${baseUrl}/video-training/sessions`, { headers, credentials: 'same-origin' }),
       fetch(`${baseUrl}/sessions`, { headers, credentials: 'same-origin' }),
-      fetch(`${baseUrl}/games`, { headers, credentials: 'same-origin' }),
+      fetch(`${baseUrl}/game/sessions`, { headers, credentials: 'same-origin' }),
     ]);
 
     const [simulatorData, videoData, roleplayData, gamesData] = await Promise.all([
-      simulatorRes.ok ? simulatorRes.json() : { data: [] },
-      videoRes.ok ? videoRes.json() : { data: [] },
+      simulatorRes.ok ? simulatorRes.json() : { data: { sessions: [] } },
+      videoRes.ok ? videoRes.json() : { data: { sessions: [] } },
       roleplayRes.ok ? roleplayRes.json() : { data: [] },
       gamesRes.ok ? gamesRes.json() : { data: [] },
     ]);
 
-    // Ensure we always return arrays
-    const ensureArray = (data) => {
-      if (Array.isArray(data)) return data;
-      if (data && Array.isArray(data.data)) return data.data;
+    // Extract arrays from different API response structures
+    // - Simulator: { success, data: { sessions: [...], pagination } }
+    // - Video: { success, data: { sessions: [...], pagination } }
+    // - Roleplay: { success, data: [...], pagination }
+    // - Games: { success, data: [...] }
+    const extractArray = (response, nestedKey = null) => {
+      if (Array.isArray(response)) return response;
+      if (response?.data) {
+        if (nestedKey && response.data[nestedKey]) {
+          return Array.isArray(response.data[nestedKey]) ? response.data[nestedKey] : [];
+        }
+        if (Array.isArray(response.data)) return response.data;
+        // Fallback for nested sessions
+        if (response.data.sessions && Array.isArray(response.data.sessions)) {
+          return response.data.sessions;
+        }
+      }
       return [];
     };
 
     return {
-      simulator: ensureArray(simulatorData),
-      video: ensureArray(videoData),
-      roleplay: ensureArray(roleplayData),
-      games: ensureArray(gamesData),
+      simulator: extractArray(simulatorData, 'sessions'),
+      video: extractArray(videoData, 'sessions'),
+      roleplay: extractArray(roleplayData),
+      games: extractArray(gamesData),
     };
   } catch (error) {
     console.error('[CoachingIntelligence] Failed to fetch sessions:', error);
@@ -73,24 +86,33 @@ export async function fetchAllScenarios() {
     ]);
 
     const [simulatorData, videoData, roleplayData, briefingData] = await Promise.all([
-      simulatorRes.ok ? simulatorRes.json() : [],
-      videoRes.ok ? videoRes.json() : [],
-      roleplayRes.ok ? roleplayRes.json() : [],
-      briefingRes.ok ? briefingRes.json() : [],
+      simulatorRes.ok ? simulatorRes.json() : { data: { scenarios: [] } },
+      videoRes.ok ? videoRes.json() : { data: { scenarios: [] } },
+      roleplayRes.ok ? roleplayRes.json() : { data: [] },
+      briefingRes.ok ? briefingRes.json() : { data: [] },
     ]);
 
-    // Ensure we always return arrays
-    const ensureArray = (data) => {
-      if (Array.isArray(data)) return data;
-      if (data && Array.isArray(data.data)) return data.data;
+    // Extract arrays from different API response structures
+    // - Simulator scenarios: { success, data: { scenarios: [...] } }
+    // - Video scenarios: { success, data: { scenarios: [...] } }
+    // - Roleplay scenarios: { success, data: [...] }
+    // - Briefing templates: { success, data: [...] }
+    const extractArray = (response, nestedKey = null) => {
+      if (Array.isArray(response)) return response;
+      if (response?.data) {
+        if (nestedKey && response.data[nestedKey]) {
+          return Array.isArray(response.data[nestedKey]) ? response.data[nestedKey] : [];
+        }
+        if (Array.isArray(response.data)) return response.data;
+      }
       return [];
     };
 
     return {
-      simulator: ensureArray(simulatorData),
-      video: ensureArray(videoData),
-      roleplay: ensureArray(roleplayData),
-      briefingTemplates: ensureArray(briefingData),
+      simulator: extractArray(simulatorData, 'scenarios'),
+      video: extractArray(videoData, 'scenarios'),
+      roleplay: extractArray(roleplayData),
+      briefingTemplates: extractArray(briefingData),
     };
   } catch (error) {
     console.error('[CoachingIntelligence] Failed to fetch scenarios:', error);
@@ -146,11 +168,12 @@ export function aggregateSessionStats(sessions) {
       // Normalize to 0-100 if needed
       scores.overall.push(score <= 10 ? score * 10 : score);
     }
-    // Extract feedback scores
+    // Extract feedback scores (API returns summary_feedback, not summary_feedback_json)
     try {
-      const feedback = typeof session.summary_feedback_json === 'string'
-        ? JSON.parse(session.summary_feedback_json)
-        : session.summary_feedback_json;
+      const feedbackData = session.summary_feedback || session.summary_feedback_json;
+      const feedback = typeof feedbackData === 'string'
+        ? JSON.parse(feedbackData)
+        : feedbackData;
       if (feedback?.scores) {
         if (feedback.scores.content != null) scores.content.push(feedback.scores.content * 10);
         if (feedback.scores.structure != null) scores.structure.push(feedback.scores.structure * 10);
@@ -236,7 +259,8 @@ export function aggregateSessionStats(sessions) {
 
   [...simulator, ...video, ...roleplay].forEach(session => {
     try {
-      let feedback = session.summary_feedback_json || session.feedback_json || session.analysis_json;
+      // API returns summary_feedback (not summary_feedback_json)
+      let feedback = session.summary_feedback || session.summary_feedback_json || session.feedback_json || session.analysis_json;
       if (typeof feedback === 'string') feedback = JSON.parse(feedback);
       if (feedback?.strengths) {
         feedback.strengths.forEach(s => {
@@ -276,11 +300,11 @@ export function aggregateSessionStats(sessions) {
     ? Math.floor((Date.now() - new Date(sortedByDate[0].created_at)) / (1000 * 60 * 60 * 24))
     : null;
 
-  // Pacing issues from audio analysis
+  // Pacing issues from audio analysis (games API renames analysis_json to analysis)
   const pacingIssues = [];
   [...simulator, ...games].forEach(session => {
     try {
-      let analysis = session.audio_analysis || session.analysis_json;
+      let analysis = session.analysis || session.audio_analysis || session.analysis_json;
       if (typeof analysis === 'string') analysis = JSON.parse(analysis);
       if (analysis?.pacing?.rating && analysis.pacing.rating !== 'optimal') {
         if (!pacingIssues.includes(analysis.pacing.rating)) {
