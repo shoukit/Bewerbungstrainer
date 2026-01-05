@@ -210,16 +210,33 @@ const ScenarioDashboard = ({
   // Handle pending scenario after login - automatically trigger selection
   const pendingHandled = useRef(false);
   useEffect(() => {
-    if (pendingScenario && isAuthenticated && !pendingHandled.current) {
+    if (pendingScenario && isAuthenticated && scenarios.length > 0 && !pendingHandled.current) {
       pendingHandled.current = true;
+
+      let scenarioToSelect = pendingScenario;
+
+      // If we only have an ID (no title), find the full scenario from loaded scenarios
+      if (pendingScenario.id && !pendingScenario.title) {
+        const fullScenario = scenarios.find(s => s.id === pendingScenario.id || String(s.id) === String(pendingScenario.id));
+        if (fullScenario) {
+          scenarioToSelect = fullScenario;
+          console.log('[ScenarioDashboard] Found scenario by ID:', fullScenario.title);
+        } else {
+          console.warn('[ScenarioDashboard] Scenario not found for ID:', pendingScenario.id);
+          // Clear and don't select if not found
+          if (clearPendingScenario) clearPendingScenario();
+          return;
+        }
+      }
+
       // Clear the pending scenario first
       if (clearPendingScenario) {
         clearPendingScenario();
       }
       // Then trigger the selection
-      onSelectScenario(pendingScenario);
+      onSelectScenario(scenarioToSelect);
     }
-  }, [pendingScenario, isAuthenticated, clearPendingScenario, onSelectScenario]);
+  }, [pendingScenario, isAuthenticated, scenarios, clearPendingScenario, onSelectScenario]);
 
   // Get base filtered scenarios (by partner and setup)
   const baseFilteredScenarios = useMemo(() => {

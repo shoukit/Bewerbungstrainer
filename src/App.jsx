@@ -669,13 +669,30 @@ function AppContent() {
   }, [location.pathname]);
 
   // ===== NAVIGATION HANDLER =====
-  const handleSidebarNavigate = useCallback((viewId) => {
+  const handleSidebarNavigate = useCallback((viewId, scenarioId = null) => {
     // Scroll to top on every navigation
     scrollToTop();
 
     // Reset video training when navigating via sidebar
     if (viewId === 'video_training') {
       setVideoTrainingResetKey(prev => prev + 1);
+    }
+
+    // If a scenarioId is provided, set the appropriate pending state
+    // This allows KI-Coach to navigate directly to a specific scenario
+    if (scenarioId) {
+      switch (viewId) {
+        case 'dashboard': // Live-Simulation
+          setPendingRoleplayScenario({ id: scenarioId });
+          break;
+        case 'simulator': // Szenario-Training
+          setPendingSimulatorScenario({ id: scenarioId });
+          break;
+        case 'video_training': // Wirkungs-Analyse
+          setPendingVideoTrainingScenario({ id: scenarioId });
+          break;
+        // rhetorik-gym has no scenarios
+      }
     }
 
     // Use VIEW_TO_ROUTE mapping or fall back to overview
@@ -931,6 +948,8 @@ function AppContent() {
             clearPendingContinueSession={() => setPendingContinueSession(null)}
             pendingRepeatSession={pendingRepeatSession}
             clearPendingRepeatSession={() => setPendingRepeatSession(null)}
+            pendingScenario={pendingSimulatorScenario}
+            clearPendingScenario={() => setPendingSimulatorScenario(null)}
             onNavigateToHistory={() => handleNavigateToHistoryWithTab('simulator')}
           />
         }

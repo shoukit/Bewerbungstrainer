@@ -72,15 +72,42 @@ const VideoTrainingApp = ({
     }
   }, [selectedScenario?.input_configuration]);
 
-  // Handle external pending scenario from App.jsx (after login redirect)
+  // Handle external pending scenario from App.jsx (after login redirect or KI-Coach navigation)
   useEffect(() => {
-    if (externalPendingScenario && isAuthenticated) {
-      setSelectedScenario(externalPendingScenario);
-      setCurrentView(VIEWS.PREPARATION);  // Go to preparation first
-      if (clearPendingScenario) {
-        clearPendingScenario();
+    const loadAndSelectScenario = async () => {
+      if (externalPendingScenario && isAuthenticated) {
+        let scenarioToSelect = externalPendingScenario;
+
+        // If we only have an ID (no title), fetch the full scenario from API
+        if (externalPendingScenario.id && !externalPendingScenario.title) {
+          try {
+            const baseUrl = window.bewerbungstrainerData?.restUrl || '/wp-json/bewerbungstrainer/v1';
+            const response = await fetch(`${baseUrl}/video-training/scenarios/${externalPendingScenario.id}`);
+
+            if (response.ok) {
+              scenarioToSelect = await response.json();
+              console.log('[VideoTrainingApp] Fetched scenario:', scenarioToSelect.title);
+            } else {
+              console.error('[VideoTrainingApp] Failed to fetch scenario:', response.status);
+              if (clearPendingScenario) clearPendingScenario();
+              return;
+            }
+          } catch (error) {
+            console.error('[VideoTrainingApp] Error fetching scenario:', error);
+            if (clearPendingScenario) clearPendingScenario();
+            return;
+          }
+        }
+
+        setSelectedScenario(scenarioToSelect);
+        setCurrentView(VIEWS.PREPARATION);  // Go to preparation first
+        if (clearPendingScenario) {
+          clearPendingScenario();
+        }
       }
-    }
+    };
+
+    loadAndSelectScenario();
   }, [externalPendingScenario, isAuthenticated, clearPendingScenario]);
 
   // Handle internal pending scenario after login - automatically open preparation page
