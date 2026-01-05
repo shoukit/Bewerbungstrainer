@@ -8,7 +8,7 @@
  * Migrated to Tailwind CSS for consistent styling.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDuration } from '@/utils/formatting';
 import {
@@ -47,6 +47,8 @@ import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScen
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { Button, Card } from '@/components/ui';
+import AudioAnalysisPanel from '@/components/feedback/AudioAnalysisPanel';
+import { normalizeAudioMetrics, hasAudioMetricsData } from '@/utils/audioMetricsAdapter';
 
 // =============================================================================
 // CONSTANTS
@@ -408,9 +410,22 @@ const TranscriptEntry = ({ entry }) => {
  */
 const AnswerCard = ({ answer, index }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const audioRef = useRef(null);
   const feedback = answer.feedback ? (typeof answer.feedback === 'string' ? JSON.parse(answer.feedback) : answer.feedback) : null;
   const audioMetrics = answer.audio_analysis ? (typeof answer.audio_analysis === 'string' ? JSON.parse(answer.audio_analysis) : answer.audio_analysis) : null;
   const isNoSpeech = answer.transcript === '[Keine Sprache erkannt]' || audioMetrics?.speech_rate === 'keine_sprache';
+
+  // Normalize audio metrics for the professional panel
+  const normalizedMetrics = useMemo(() => normalizeAudioMetrics(audioMetrics), [audioMetrics]);
+  const showAudioAnalysis = hasAudioMetricsData(audioMetrics) && !isNoSpeech;
+
+  // Handler to jump to timestamp in audio
+  const handleJumpToTimestamp = (seconds) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = seconds;
+      audioRef.current.play();
+    }
+  };
 
   return (
     <motion.div
@@ -557,54 +572,16 @@ const AnswerCard = ({ answer, index }) => {
                   </div>
                 )}
 
-                {/* Audio Metrics */}
-                {audioMetrics && !isNoSpeech && (
+                {/* Audio Metrics - Professional Panel */}
+                {showAudioAnalysis && (
                   <div className="mt-4 pt-4 border-t border-slate-100">
                     <h5 className="text-[13px] font-semibold text-slate-900 mb-3 flex items-center gap-1.5">
                       <Mic size={14} className="text-primary" /> Sprechanalyse
                     </h5>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {audioMetrics.speech_rate && (
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                          <div className="text-[11px] text-slate-500 mb-1">Sprechtempo</div>
-                          <div className="text-sm font-semibold text-slate-900 capitalize">
-                            {audioMetrics.speech_rate === 'optimal' ? '✓ Optimal' : audioMetrics.speech_rate === 'zu_schnell' ? '⚡ Zu schnell' : audioMetrics.speech_rate === 'zu_langsam' ? '🐢 Zu langsam' : audioMetrics.speech_rate}
-                          </div>
-                        </div>
-                      )}
-                      {audioMetrics.filler_words && (
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                          <div className="text-[11px] text-slate-500 mb-1">Füllwörter</div>
-                          <div className={`text-sm font-semibold ${audioMetrics.filler_words.count <= 2 ? 'text-green-600' : audioMetrics.filler_words.count <= 5 ? 'text-amber-600' : 'text-red-600'}`}>
-                            {audioMetrics.filler_words.count || 0} erkannt
-                          </div>
-                          {audioMetrics.filler_words.words?.length > 0 && (
-                            <div className="text-[11px] text-slate-500 mt-1">
-                              {audioMetrics.filler_words.words.slice(0, 5).join(', ')}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {audioMetrics.confidence_score != null && (
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                          <div className="text-[11px] text-slate-500 mb-1">Selbstsicherheit</div>
-                          <div className="text-sm font-semibold" style={{ color: getScoreColor(audioMetrics.confidence_score) }}>
-                            {audioMetrics.confidence_score}%
-                          </div>
-                        </div>
-                      )}
-                      {audioMetrics.clarity_score != null && (
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                          <div className="text-[11px] text-slate-500 mb-1">Klarheit</div>
-                          <div className="text-sm font-semibold" style={{ color: getScoreColor(audioMetrics.clarity_score) }}>
-                            {audioMetrics.clarity_score}%
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {audioMetrics.notes && (
-                      <p className="text-xs text-slate-500 mt-2.5 italic">{audioMetrics.notes}</p>
-                    )}
+                    <AudioAnalysisPanel
+                      audioAnalysis={normalizedMetrics}
+                      onJumpToTimestamp={handleJumpToTimestamp}
+                    />
                   </div>
                 )}
               </div>
@@ -865,6 +842,26 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   const categoryScores = session?.category_scores || [];
   const analysis = session?.analysis || {};
 
+  // Video Training audio metrics from analysis object
+  const videoRef = useRef(null);
+  const videoAudioMetrics = useMemo(() => {
+    if (!isVideo || !analysis) return null;
+    if (analysis.filler_words || analysis.speech_metrics) {
+      return { filler_words: analysis.filler_words, speech_metrics: analysis.speech_metrics };
+    }
+    return null;
+  }, [isVideo, analysis]);
+  const normalizedVideoAudioMetrics = useMemo(() => normalizeAudioMetrics(videoAudioMetrics), [videoAudioMetrics]);
+  const showVideoAudioAnalysis = hasAudioMetricsData(videoAudioMetrics);
+
+  // Handler to jump to timestamp in video
+  const handleVideoJumpToTimestamp = (seconds) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = seconds;
+      videoRef.current.play();
+    }
+  };
+
   const getOverallScore = () => {
     let rawScore = 0;
     if (isRoleplay && roleplayData?.feedback?.rating?.overall) rawScore = roleplayData.feedback.rating.overall;
@@ -1001,6 +998,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                     <Video size={18} className="text-primary" /> Deine Aufnahme
                   </h3>
                   <video
+                    ref={videoRef}
                     src={session.video_url}
                     controls
                     className="w-full max-w-[640px] max-h-[360px] rounded-xl bg-black object-contain"
@@ -1102,6 +1100,21 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                 {categoryScores.map((category, index) => (
                   <CategoryScoreCard key={category.category || index} category={category} />
                 ))}
+              </motion.div>
+            )}
+
+            {/* Audio/Speech Analysis (Video) */}
+            {isVideo && showVideoAudioAnalysis && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mb-5">
+                <Card className="p-5">
+                  <h3 className="text-[15px] font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <Mic size={16} className="text-primary" /> Sprechanalyse
+                  </h3>
+                  <AudioAnalysisPanel
+                    audioAnalysis={normalizedVideoAudioMetrics}
+                    onJumpToTimestamp={handleVideoJumpToTimestamp}
+                  />
+                </Card>
               </motion.div>
             )}
 
