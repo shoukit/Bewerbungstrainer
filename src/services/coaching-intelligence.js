@@ -443,7 +443,7 @@ export function generateScenarioCatalog(scenarios) {
 /**
  * Generate comprehensive coaching analysis using Gemini
  */
-export async function generateCoachingAnalysis(sessionStats, scenarios) {
+export async function generateCoachingAnalysis(sessionStats, scenarios, userFocus = null) {
   const { totalSessions } = sessionStats;
 
   // For new users or users with very few sessions
@@ -640,7 +640,7 @@ export async function getCoachingIntelligence(userFocus = null) {
   });
 
   // Generate AI analysis
-  const coaching = await generateCoachingAnalysis(stats, scenarios);
+  const coaching = await generateCoachingAnalysis(stats, scenarios, userFocus);
 
   return {
     coaching,
