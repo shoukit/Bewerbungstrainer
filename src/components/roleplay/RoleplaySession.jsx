@@ -27,6 +27,7 @@ import {
   ChevronDown,
   Lightbulb,
   Settings,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/base/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/base/dialog';
@@ -354,7 +355,9 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       startTimeRef.current = now; // Also set ref for stable access in callbacks
     },
     onDisconnect: () => {
-      // Session disconnected
+      console.log('[RoleplaySession] onDisconnect callback triggered');
+      // Note: The useEffect watching conversation.status handles the analysis trigger
+      // This callback fires when ElevenLabs ends the session from their side
     },
     onMessage: (message) => {
       if (message.source === 'ai' || message.source === 'user') {
@@ -435,6 +438,18 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
 
   // Handle agent ending the call
   useEffect(() => {
+    // Debug logging
+    if (conversation.status === 'disconnected' && isStarted) {
+      console.log('[RoleplaySession] Disconnect detected:', {
+        status: conversation.status,
+        transcriptLength: transcript.length,
+        isAnalyzing,
+        showFeedback,
+        hasProcessedDisconnect: hasProcessedDisconnectRef.current,
+        isStarted,
+      });
+    }
+
     // Only process disconnect once, when we have a transcript and aren't already analyzing
     if (
       conversation.status === 'disconnected' &&
@@ -1049,14 +1064,30 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                         Gespräch beenden
                       </Button>
                     ) : conversation.status === 'disconnected' ? (
-                      <Button
-                        disabled
-                        size="lg"
-                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
-                      >
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Gespräch wurde beendet...
-                      </Button>
+                      // Show manual analysis button if disconnect happened but analysis didn't start
+                      transcript.length > 0 && !isAnalyzing ? (
+                        <Button
+                          onClick={() => {
+                            console.log('[RoleplaySession] Manual analysis trigger');
+                            hasProcessedDisconnectRef.current = true;
+                            handleEndConversation();
+                          }}
+                          size="lg"
+                          className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg"
+                        >
+                          <BarChart3 className="w-5 h-5 mr-2" />
+                          Auswertung starten
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled
+                          size="lg"
+                          className="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
+                        >
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Gespräch wurde beendet...
+                        </Button>
+                      )
                     ) : (
                       <Button
                         disabled
