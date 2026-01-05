@@ -82,7 +82,14 @@ Antworte NUR mit validem JSON in exakt diesem Format:
       "priority": "hoch|mittel|niedrig",
       "description": "Warum ist das wichtig?",
       "currentState": "Aktueller Stand basierend auf Daten",
-      "targetState": "Was sollte erreicht werden?"
+      "targetState": "Was sollte erreicht werden?",
+      "suggestedTrainings": [
+        {
+          "title": "Szenario-Titel aus dem Katalog",
+          "module": "szenario-training|wirkungs-analyse|live-simulation|rhetorik-gym",
+          "scenario_id": "ID aus Katalog oder null für Rhetorik-Gym"
+        }
+      ]
     }
   ],
   "recommendations": [
@@ -111,6 +118,7 @@ Antworte NUR mit validem JSON in exakt diesem Format:
 5. Bei wenig Daten (< 5 Sessions): Fokussiere auf "Erste Schritte" statt tiefe Analyse
 6. Maximal 3 Stärken, 3 Fokusbereiche, 4 Empfehlungen
 7. Der "nextStep" sollte der WICHTIGSTE und am leichtesten umsetzbare sein
+8. JEDER Fokusbereich muss 1-2 "suggestedTrainings" haben - nutze IDs aus dem Szenario-Katalog!
 
 ## LEVEL-KRITERIEN
 
@@ -150,7 +158,19 @@ Erstelle eine einladende Willkommens-Analyse, die den Nutzer motiviert, mit dem 
       "priority": "hoch",
       "description": "Lerne die verschiedenen Trainingsmodule kennen",
       "currentState": "Noch keine Trainings absolviert",
-      "targetState": "5 verschiedene Sessions in der ersten Woche"
+      "targetState": "5 verschiedene Sessions in der ersten Woche",
+      "suggestedTrainings": [
+        {
+          "title": "Rhetorik-Gym: Der Klassiker",
+          "module": "rhetorik-gym",
+          "scenario_id": null
+        },
+        {
+          "title": "Szenario-Training starten",
+          "module": "szenario-training",
+          "scenario_id": null
+        }
+      ]
     }
   ],
   "recommendations": [

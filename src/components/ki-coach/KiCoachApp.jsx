@@ -33,6 +33,7 @@ import {
   MessageSquare,
   FileText,
   Play,
+  Settings,
 } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { usePartner } from '@/context/PartnerContext';
@@ -41,6 +42,7 @@ import { COLORS, getScoreColor, createGradient } from '@/config/colors';
 import ProgressChart from '@/components/progress/ProgressChart';
 import FeatureAppHeader from '@/components/global/FeatureAppHeader';
 import { getCoachingIntelligence } from '@/services/coaching-intelligence';
+import FocusSelectionWizard, { hasSelectedFocus, getUserFocus, clearUserFocus, FOCUS_CATEGORIES } from './FocusSelectionWizard';
 
 // =============================================================================
 // CONSTANTS
@@ -155,15 +157,18 @@ const StrengthCard = ({ strength, index }) => (
 );
 
 /**
- * Focus Area Card
+ * Focus Area Card with Training Recommendations
  */
-const FocusAreaCard = ({ area, index }) => {
+const FocusAreaCard = ({ area, index, onNavigate, scenarios }) => {
   const priorityColors = {
     hoch: { bg: 'bg-red-100', text: 'text-red-600', border: 'border-red-500' },
     mittel: { bg: 'bg-amber-100', text: 'text-amber-600', border: 'border-amber-500' },
     niedrig: { bg: 'bg-blue-100', text: 'text-blue-600', border: 'border-blue-500' },
   };
   const colors = priorityColors[area.priority] || priorityColors.mittel;
+
+  // Get suggested trainings from AI or find matching scenarios
+  const suggestedTrainings = area.suggestedTrainings || [];
 
   return (
     <motion.div
@@ -181,7 +186,7 @@ const FocusAreaCard = ({ area, index }) => {
               </span>
             </div>
             <p className="text-xs text-slate-600 mt-1">{area.description}</p>
-            <div className="mt-2 flex gap-4 text-xs">
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
               <div>
                 <span className="text-slate-400">Aktuell: </span>
                 <span className="text-slate-600">{area.currentState}</span>
@@ -191,6 +196,29 @@ const FocusAreaCard = ({ area, index }) => {
                 <span className="text-green-600 font-medium">{area.targetState}</span>
               </div>
             </div>
+
+            {/* Suggested Trainings */}
+            {suggestedTrainings.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-slate-100">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-2">Passende Trainings:</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedTrainings.slice(0, 2).map((training, i) => {
+                    const ModuleIcon = MODULE_ICONS[training.module] || Target;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => onNavigate?.(training.module, training.scenario_id)}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-700"
+                      >
+                        <ModuleIcon size={12} />
+                        <span className="truncate max-w-[140px]">{training.title}</span>
+                        <ChevronRight size={12} className="text-slate-400" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
           <Target size={20} className={colors.text} />
         </div>
@@ -362,6 +390,8 @@ const KiCoachApp = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [coachingData, setCoachingData] = useState(null);
+  const [showFocusWizard, setShowFocusWizard] = useState(false);
+  const [userFocus, setUserFocus] = useState(getUserFocus());
 
   // Load coaching intelligence
   const loadCoaching = useCallback(async (isRefresh = false) => {
@@ -392,6 +422,35 @@ const KiCoachApp = ({
   useEffect(() => {
     loadCoaching();
   }, [loadCoaching]);
+
+  // Check if we should show focus wizard on first visit
+  useEffect(() => {
+    if (isAuthenticated && !isLoading && coachingData && !hasSelectedFocus()) {
+      // Show wizard after a short delay to let the page render first
+      const timer = setTimeout(() => setShowFocusWizard(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, isLoading, coachingData]);
+
+  // Handle focus wizard completion
+  const handleFocusComplete = (selectedFocus) => {
+    setUserFocus(selectedFocus);
+    setShowFocusWizard(false);
+    // Optionally refresh coaching to filter recommendations
+    loadCoaching(true);
+  };
+
+  // Handle focus wizard skip
+  const handleFocusSkip = () => {
+    setShowFocusWizard(false);
+  };
+
+  // Handle resetting focus (from settings)
+  const handleResetFocus = () => {
+    clearUserFocus();
+    setUserFocus(null);
+    setShowFocusWizard(true);
+  };
 
   // Handle navigation to module
   const handleNavigate = (module, scenarioId) => {
@@ -477,10 +536,25 @@ const KiCoachApp = ({
     );
   }
 
-  const { coaching, stats, sessions } = coachingData || {};
+  const { coaching, stats, sessions, scenarios } = coachingData || {};
+
+  // Get current focus category info
+  const currentFocusCategory = userFocus
+    ? FOCUS_CATEGORIES.find(f => f.id === userFocus)
+    : null;
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Focus Selection Wizard */}
+      <AnimatePresence>
+        {showFocusWizard && (
+          <FocusSelectionWizard
+            onComplete={handleFocusComplete}
+            onSkip={handleFocusSkip}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <FeatureAppHeader
         title="KI-Coach"
@@ -488,20 +562,34 @@ const KiCoachApp = ({
         icon={Brain}
         gradient={headerGradient}
         rightContent={
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => loadCoaching(true)}
-            disabled={isRefreshing}
-            className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-          >
-            {isRefreshing ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <RefreshCw size={16} />
+          <div className="flex items-center gap-2">
+            {/* Focus Badge */}
+            {currentFocusCategory && (
+              <button
+                onClick={handleResetFocus}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/20 border border-white/30 text-white text-xs rounded-lg hover:bg-white/30 transition-colors"
+                title="Fokus ändern"
+              >
+                <currentFocusCategory.icon size={14} />
+                <span>{currentFocusCategory.title}</span>
+                <Settings size={12} className="opacity-60" />
+              </button>
             )}
-            <span className="ml-2 hidden sm:inline">Aktualisieren</span>
-          </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => loadCoaching(true)}
+              disabled={isRefreshing}
+              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+            >
+              {isRefreshing ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <RefreshCw size={16} />
+              )}
+              <span className="ml-2 hidden sm:inline">Aktualisieren</span>
+            </Button>
+          </div>
         }
       />
 
@@ -568,7 +656,13 @@ const KiCoachApp = ({
               </h3>
               <div className="space-y-3">
                 {coaching?.focusAreas?.map((area, i) => (
-                  <FocusAreaCard key={i} area={area} index={i} />
+                  <FocusAreaCard
+                    key={i}
+                    area={area}
+                    index={i}
+                    onNavigate={handleNavigate}
+                    scenarios={scenarios}
+                  />
                 ))}
                 {(!coaching?.focusAreas || coaching.focusAreas.length === 0) && (
                   <Card className="p-4 text-center text-slate-500 text-sm">
