@@ -55,11 +55,11 @@ const MODULE_ICONS = {
 };
 
 const MODULE_ROUTES = {
-  'rhetorik-gym': 'rhetorik-gym',
+  'rhetorik-gym': 'gym',
   'szenario-training': 'simulator',
-  'wirkungs-analyse': 'video-training',
-  'live-simulation': 'roleplay',
-  'smart-briefing': 'smart-briefing',
+  'wirkungs-analyse': 'video_training',
+  'live-simulation': 'dashboard',  // Maps to Live Training dashboard, not session
+  'smart-briefing': 'smart_briefing',
 };
 
 const LEVEL_COLORS = {
