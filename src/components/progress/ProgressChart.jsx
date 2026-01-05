@@ -333,11 +333,13 @@ const ProgressChart = ({
     // Rhetorik-Gym sessions (score is 0-100)
     gameSessions.forEach(session => {
       const date = parseDate(session.created_at);
-      if (date && date >= cutoffDate && session.score !== null) {
+      // Score can be in different fields depending on API response
+      const score = session.score ?? session.total_score ?? session.game_score;
+      if (date && date >= cutoffDate && score !== null && score !== undefined) {
         allSessions.push({
           date,
           module: 'rhetorik',
-          score: normalizeScore(session.score, 100),
+          score: normalizeScore(score, 100),
         });
       }
     });
@@ -376,8 +378,14 @@ const ProgressChart = ({
             : session.feedback_json;
 
           // Try to find an overall score in the feedback
-          const overallScore = feedback.overall_score || feedback.overallScore ||
-                              feedback.gesamtbewertung || feedback.score;
+          // The feedback structure is: { rating: { overall: 1-10, ... }, ... }
+          const overallScore =
+            feedback?.rating?.overall ||           // Standard format from feedbackPrompt
+            feedback?.rating?.gesamteindruck ||    // German variant
+            feedback?.overall_score ||             // Legacy format
+            feedback?.overallScore ||              // camelCase variant
+            feedback?.gesamtbewertung ||           // German legacy
+            feedback?.score;                       // Fallback
 
           if (overallScore !== undefined && overallScore !== null) {
             allSessions.push({
@@ -454,7 +462,18 @@ const ProgressChart = ({
 
   // Calculate statistics
   const stats = useMemo(() => {
-    if (chartData.length === 0) {
+    // Collect all individual scores from all modules for accurate counting
+    const allScores = [];
+
+    // Get scores from chart data (grouped by day, so we need individual scores)
+    chartData.forEach(day => {
+      if (day.rhetorik !== undefined) allScores.push(day.rhetorik);
+      if (day.simulator !== undefined) allScores.push(day.simulator);
+      if (day.video !== undefined) allScores.push(day.video);
+      if (day.roleplay !== undefined) allScores.push(day.roleplay);
+    });
+
+    if (allScores.length === 0) {
       return {
         average: 0,
         trend: 0,
@@ -463,24 +482,15 @@ const ProgressChart = ({
       };
     }
 
-    // Get all overall scores
+    const average = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+    const best = Math.max(...allScores);
+
+    // Calculate trend (compare first half to second half of time period)
+    // Use overall scores per day for trend calculation
     const overallScores = chartData
       .filter(d => d.overall !== undefined)
       .map(d => d.overall);
 
-    if (overallScores.length === 0) {
-      return {
-        average: 0,
-        trend: 0,
-        best: 0,
-        totalSessions: 0,
-      };
-    }
-
-    const average = overallScores.reduce((a, b) => a + b, 0) / overallScores.length;
-    const best = Math.max(...overallScores);
-
-    // Calculate trend (compare first half to second half)
     let trend = 0;
     if (overallScores.length >= 2) {
       const midpoint = Math.floor(overallScores.length / 2);
@@ -493,20 +503,13 @@ const ProgressChart = ({
       trend = secondAvg - firstAvg;
     }
 
-    // Count total sessions
-    const totalSessions =
-      simulatorSessions.length +
-      videoSessions.length +
-      roleplaySessions.length +
-      gameSessions.length;
-
     return {
       average,
       trend,
       best,
-      totalSessions,
+      totalSessions: allScores.length,
     };
-  }, [chartData, simulatorSessions, videoSessions, roleplaySessions, gameSessions]);
+  }, [chartData]);
 
   // Toggle module visibility
   const toggleModule = (moduleKey) => {
@@ -548,9 +551,9 @@ const ProgressChart = ({
         />
         <StatCard
           icon={TrendingUp}
-          label="Trend"
+          label="Entwicklung"
           value={`${stats.trend >= 0 ? '+' : ''}${stats.trend.toFixed(0)}%`}
-          subValue="im Vergleich"
+          subValue={stats.trend > 0 ? 'Verbesserung 📈' : stats.trend < 0 ? 'Rückgang 📉' : 'Stabil ➡️'}
           trend={stats.trend}
           color="#10B981"
         />
@@ -565,7 +568,7 @@ const ProgressChart = ({
           icon={Target}
           label="Sessions"
           value={stats.totalSessions}
-          subValue="abgeschlossen"
+          subValue="mit Score"
           color="#F43F5E"
         />
       </div>
