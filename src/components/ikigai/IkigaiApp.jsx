@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Compass } from 'lucide-react';
 import IkigaiDashboard from './IkigaiDashboard';
 import IkigaiCompass from './IkigaiCompass';
@@ -9,6 +9,9 @@ import { COLORS, createGradient } from '@/config/colors';
 import { DIMENSIONS } from '@/config/ikigaiDimensions';
 import { useScrollToTop } from '@/hooks';
 import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog';
+
+// localStorage key for microphone persistence (shared across modules)
+const MICROPHONE_STORAGE_KEY = 'karriereheld_selected_microphone';
 
 /**
  * View states for the Ikigai flow
@@ -41,9 +44,28 @@ const IkigaiApp = ({
   const [savedIkigaiId, setSavedIkigaiId] = useState(null);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
 
-  // Microphone state - managed at app level so it persists across views
-  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  // Microphone state - managed at app level, persisted to localStorage
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(() => {
+    // Load from localStorage on mount (like SimulatorSession)
+    try {
+      return localStorage.getItem(MICROPHONE_STORAGE_KEY) || null;
+    } catch {
+      return null;
+    }
+  });
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
+
+  // Save microphone selection to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedMicrophoneId) {
+      try {
+        localStorage.setItem(MICROPHONE_STORAGE_KEY, selectedMicrophoneId);
+        console.log('[Ikigai] Microphone saved to localStorage:', selectedMicrophoneId);
+      } catch {
+        // localStorage might be unavailable
+      }
+    }
+  }, [selectedMicrophoneId]);
 
   // Ikigai feature gradient (purple)
   const ikigaiGradient = createGradient(COLORS.purple[500], COLORS.purple[400]);

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Scale } from 'lucide-react';
 import DecisionBoardDashboard from './DecisionBoardDashboard';
 import DecisionBoardInput from './DecisionBoardInput';
@@ -8,6 +8,9 @@ import FeatureAppHeader from '@/components/global/FeatureAppHeader';
 import MicrophoneTestDialog from '@/components/device-setup/MicrophoneTestDialog';
 import { COLORS, createGradient } from '@/config/colors';
 import { useScrollToTop } from '@/hooks';
+
+// localStorage key for microphone persistence (shared across modules)
+const MICROPHONE_STORAGE_KEY = 'karriereheld_selected_microphone';
 
 /**
  * View states for the decision board flow
@@ -40,9 +43,28 @@ const DecisionBoardApp = ({
   const [savedDecisionId, setSavedDecisionId] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Microphone state - managed at app level so it persists across views
-  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
+  // Microphone state - managed at app level, persisted to localStorage
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(() => {
+    // Load from localStorage on mount (like SimulatorSession)
+    try {
+      return localStorage.getItem(MICROPHONE_STORAGE_KEY) || null;
+    } catch {
+      return null;
+    }
+  });
   const [showMicrophoneTest, setShowMicrophoneTest] = useState(false);
+
+  // Save microphone selection to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedMicrophoneId) {
+      try {
+        localStorage.setItem(MICROPHONE_STORAGE_KEY, selectedMicrophoneId);
+        console.log('[DecisionBoard] Microphone saved to localStorage:', selectedMicrophoneId);
+      } catch {
+        // localStorage might be unavailable
+      }
+    }
+  }, [selectedMicrophoneId]);
 
   // Track if session was saved to avoid duplicate saves
   const sessionSavedRef = useRef(false);

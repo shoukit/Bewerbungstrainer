@@ -926,11 +926,33 @@ const DecisionBoardInput = ({
         </p>
       </div>
 
-      {/* Decision Question Card */}
-      <Card variant="elevated" className="mb-4 p-4 md:p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Lightbulb size={20} className="text-amber-500" />
-          <h3 className="text-lg font-semibold text-slate-800">Deine Entscheidungsfrage</h3>
+      {/* Decision Question Card - Enhanced with glassmorphism */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mb-4 p-5 md:p-6 rounded-2xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(251,191,36,0.08) 100%)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(251,191,36,0.2)',
+          boxShadow: '0 4px 24px rgba(251,191,36,0.1), inset 0 0 20px rgba(255,255,255,0.5)',
+        }}
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <motion.div
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%)',
+              boxShadow: '0 4px 12px rgba(245,158,11,0.3)',
+            }}
+          >
+            <Lightbulb size={20} color="white" />
+          </motion.div>
+          <h3 className="text-lg font-bold text-slate-800">Deine Entscheidungsfrage</h3>
         </div>
         <Input
           value={topic}
@@ -958,13 +980,100 @@ const DecisionBoardInput = ({
             <div className="shrink-0 pb-1">
               <AudioRecorder
                 onTranscriptReady={handleTranscriptReady}
-                warmUp={true}
+                warmUp={!!selectedMicrophoneId}
                 deviceId={selectedMicrophoneId}
               />
             </div>
           </div>
         </div>
-      </Card>
+      </motion.div>
+
+      {/* Deep Dive Wizard Card - Premium design with shimmer */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        whileHover={topic.trim() ? { scale: 1.01, boxShadow: '0 8px 32px rgba(99,102,241,0.25)' } : {}}
+        whileTap={topic.trim() ? { scale: 0.99 } : {}}
+        onClick={() => topic.trim() && setIsWizardOpen(true)}
+        className={`mb-4 p-5 md:p-6 rounded-2xl transition-all relative overflow-hidden ${
+          topic.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+        }`}
+        style={{
+          background: topic.trim()
+            ? 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%)'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.9) 100%)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: topic.trim() ? '2px solid rgba(99,102,241,0.3)' : '1px solid rgba(0,0,0,0.08)',
+          boxShadow: topic.trim()
+            ? '0 4px 24px rgba(99,102,241,0.15), inset 0 0 30px rgba(99,102,241,0.05)'
+            : '0 2px 12px rgba(0,0,0,0.06)',
+        }}
+      >
+        {/* Shimmer effect when active */}
+        {topic.trim() && (
+          <motion.div
+            animate={{ x: ['-100%', '200%'] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1 }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '40%',
+              height: '100%',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+
+        <div className="deep-dive-card-content flex items-center justify-between gap-3 flex-wrap relative z-10">
+          <div className="flex items-center gap-3 flex-[1_1_auto] min-w-[200px]">
+            <motion.div
+              animate={topic.trim() ? { scale: [1, 1.08, 1] } : {}}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+                boxShadow: topic.trim() ? '0 4px 16px rgba(99,102,241,0.4)' : '0 2px 8px rgba(99,102,241,0.2)',
+              }}
+            >
+              <Wand2 size={22} color="white" />
+            </motion.div>
+            <div className="min-w-0">
+              <h3 className="text-lg font-bold text-slate-800 m-0">
+                Deep Dive Interview
+              </h3>
+              <p className="text-sm text-slate-600 m-0 leading-snug">
+                Entdecke verborgene Argumente durch gezielte Coaching-Fragen
+              </p>
+            </div>
+          </div>
+          <motion.button
+            whileHover={topic.trim() ? { scale: 1.05 } : {}}
+            whileTap={topic.trim() ? { scale: 0.95 } : {}}
+            disabled={!topic.trim()}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (topic.trim()) setIsWizardOpen(true);
+            }}
+            className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+            style={{
+              background: topic.trim()
+                ? 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'
+                : '#E2E8F0',
+              color: topic.trim() ? 'white' : '#94A3B8',
+              border: 'none',
+              boxShadow: topic.trim() ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
+              cursor: topic.trim() ? 'pointer' : 'not-allowed',
+            }}
+          >
+            <Sparkles size={18} />
+            Starten
+          </motion.button>
+        </div>
+      </motion.div>
 
       {/* Persona Toolbar - Brainstorming Section */}
       <PersonaToolbar
@@ -979,55 +1088,37 @@ const DecisionBoardInput = ({
         addedSuggestions={addedSuggestions}
       />
 
-      {/* Deep Dive Wizard Card */}
-      <Card
-        variant="elevated"
-        className={`mb-4 p-4 md:p-6 transition-all ${
-          topic.trim() ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-60'
-        }`}
-        onClick={() => topic.trim() && setIsWizardOpen(true)}
-      >
-        <div className="deep-dive-card-content flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3 flex-[1_1_auto] min-w-[200px]">
-            <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand-gradient">
-              <Wand2 size={20} color="white" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-lg font-semibold text-slate-800 m-0">
-                Deep Dive Interview
-              </h3>
-              <p className="text-sm text-slate-600 m-0 leading-snug">
-                Entdecke verborgene Argumente durch gezielte Coaching-Fragen
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="solid"
-            size="sm"
-            disabled={!topic.trim()}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (topic.trim()) setIsWizardOpen(true);
-            }}
-            className={`shrink-0 ${topic.trim() ? 'bg-brand-gradient' : ''}`}
-          >
-            <Sparkles size={18} className="mr-1.5" />
-            Starten
-          </Button>
-        </div>
-      </Card>
-
-      {/* Pro/Contra Split - responsive grid */}
+      {/* Pro/Contra Split - responsive grid with enhanced cards */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] gap-4 mb-6">
-        {/* Pro Column */}
-        <div className="decision-card-pro bg-white rounded-lg p-6 shadow-md">
+        {/* Pro Column - Enhanced with glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="decision-card-pro rounded-2xl p-6"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(34,197,94,0.08) 100%)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '2px solid rgba(34,197,94,0.2)',
+            boxShadow: '0 4px 24px rgba(34,197,94,0.1), inset 0 0 30px rgba(34,197,94,0.03)',
+          }}
+        >
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-md bg-green-50 flex items-center justify-center">
-              <ThumbsUp size={20} className="text-green-700" />
-            </div>
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="w-11 h-11 rounded-xl flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                boxShadow: '0 4px 12px rgba(34,197,94,0.35)',
+              }}
+            >
+              <ThumbsUp size={20} color="white" />
+            </motion.div>
             <div>
-              <h3 className="text-xl font-semibold text-green-700 m-0">PRO</h3>
-              <p className="text-base text-slate-600 m-0">Was spricht dafür?</p>
+              <h3 className="text-xl font-bold m-0" style={{ color: '#16A34A' }}>PRO</h3>
+              <p className="text-sm text-slate-600 m-0">Was spricht dafür?</p>
             </div>
           </div>
           <div className="flex flex-col gap-3">
@@ -1044,26 +1135,52 @@ const DecisionBoardInput = ({
                 />
               ))}
             </AnimatePresence>
-            <Button
-              variant="outline"
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={addPro}
-              className="border-green-500 text-green-700 border-dashed"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-medium text-sm transition-all"
+              style={{
+                background: 'transparent',
+                border: '2px dashed rgba(34,197,94,0.4)',
+                color: '#16A34A',
+              }}
             >
-              <Plus size={18} className="mr-2" />
+              <Plus size={18} />
               Argument hinzufügen
-            </Button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Contra Column */}
-        <div className="decision-card-contra bg-white rounded-lg p-6 shadow-md">
+        {/* Contra Column - Enhanced with glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="decision-card-contra rounded-2xl p-6"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(239,68,68,0.08) 100%)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '2px solid rgba(239,68,68,0.2)',
+            boxShadow: '0 4px 24px rgba(239,68,68,0.1), inset 0 0 30px rgba(239,68,68,0.03)',
+          }}
+        >
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-md bg-red-50 flex items-center justify-center">
-              <ThumbsDown size={20} className="text-red-700" />
-            </div>
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+              className="w-11 h-11 rounded-xl flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                boxShadow: '0 4px 12px rgba(239,68,68,0.35)',
+              }}
+            >
+              <ThumbsDown size={20} color="white" />
+            </motion.div>
             <div>
-              <h3 className="text-xl font-semibold text-red-700 m-0">CONTRA</h3>
-              <p className="text-base text-slate-600 m-0">Was spricht dagegen?</p>
+              <h3 className="text-xl font-bold m-0" style={{ color: '#DC2626' }}>CONTRA</h3>
+              <p className="text-sm text-slate-600 m-0">Was spricht dagegen?</p>
             </div>
           </div>
           <div className="flex flex-col gap-3">
@@ -1080,16 +1197,22 @@ const DecisionBoardInput = ({
                 />
               ))}
             </AnimatePresence>
-            <Button
-              variant="outline"
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={addCon}
-              className="border-red-500 text-red-700 border-dashed"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-medium text-sm transition-all"
+              style={{
+                background: 'transparent',
+                border: '2px dashed rgba(239,68,68,0.4)',
+                color: '#DC2626',
+              }}
             >
-              <Plus size={18} className="mr-2" />
+              <Plus size={18} />
               Argument hinzufügen
-            </Button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Score Bar */}
@@ -1115,28 +1238,61 @@ const DecisionBoardInput = ({
         </motion.div>
       )}
 
-      {/* Analyze Button */}
-      <div className="flex justify-center">
-        <Button
+      {/* Analyze Button - Premium design with shimmer */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+        className="flex justify-center"
+      >
+        <motion.button
           onClick={handleAnalyze}
           disabled={!canAnalyze || isAnalyzing}
-          variant="solid"
-          size="lg"
-          className={`px-8 py-4 text-xl ${canAnalyze ? 'bg-brand-gradient' : ''}`}
+          whileHover={canAnalyze && !isAnalyzing ? { scale: 1.03, boxShadow: '0 12px 40px rgba(99,102,241,0.4)' } : {}}
+          whileTap={canAnalyze && !isAnalyzing ? { scale: 0.98 } : {}}
+          className="relative overflow-hidden flex items-center gap-3 px-10 py-4 rounded-2xl font-bold text-lg transition-all"
+          style={{
+            background: canAnalyze
+              ? 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #7C3AED 100%)'
+              : '#E2E8F0',
+            color: canAnalyze ? 'white' : '#94A3B8',
+            border: 'none',
+            boxShadow: canAnalyze
+              ? '0 8px 32px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.2)'
+              : 'none',
+            cursor: canAnalyze && !isAnalyzing ? 'pointer' : 'not-allowed',
+            opacity: isAnalyzing ? 0.85 : 1,
+          }}
         >
+          {/* Shimmer effect */}
+          {canAnalyze && !isAnalyzing && (
+            <motion.div
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1 }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '50%',
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
           {isAnalyzing ? (
             <>
-              <Loader2 size={22} className="mr-2.5 animate-spin" />
-              Analyse läuft...
+              <Loader2 size={22} className="animate-spin" />
+              <span>Analyse läuft...</span>
             </>
           ) : (
             <>
-              <Sparkles size={22} className="mr-2.5" />
-              Entscheidung analysieren
+              <Sparkles size={22} />
+              <span>Entscheidung analysieren</span>
             </>
           )}
-        </Button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       <style>
         {`
