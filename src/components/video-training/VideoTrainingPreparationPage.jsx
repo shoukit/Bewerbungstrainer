@@ -394,12 +394,12 @@ const VideoTrainingPreparationPage = ({
             <Video size={32} className="text-white" />
           </div>
           <div>
-            <h1 className="text-[28px] font-bold text-slate-900 m-0">
+            <p className="text-sm font-medium text-indigo-600 m-0 mb-1">
               Vorbereitung
-            </h1>
-            <p className="text-base text-slate-500 m-0 mt-1">
-              {scenario?.title}
             </p>
+            <h1 className="text-[24px] font-bold text-slate-900 m-0">
+              {scenario?.title || 'Training'}
+            </h1>
           </div>
         </div>
       </div>

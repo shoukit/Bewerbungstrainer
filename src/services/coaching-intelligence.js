@@ -467,7 +467,7 @@ export async function generateCoachingAnalysis(sessionStats, scenarios) {
 
   // For users with enough data - generate comprehensive analysis
   const scenarioCatalog = generateScenarioCatalog(scenarios);
-  const basePrompt = generateComprehensiveCoachingPrompt(sessionStats);
+  const basePrompt = generateComprehensiveCoachingPrompt(sessionStats, userFocus);
   const fullPrompt = basePrompt + '\n' + scenarioCatalog + `
 
 ## WICHTIG FÜR EMPFEHLUNGEN
@@ -581,8 +581,8 @@ function getDefaultWelcomeCoaching() {
 /**
  * Main function to get complete coaching intelligence
  */
-export async function getCoachingIntelligence() {
-  console.log('[CoachingIntelligence] Starting analysis...');
+export async function getCoachingIntelligence(userFocus = null) {
+  console.log('[CoachingIntelligence] Starting analysis...', userFocus ? `Focus: ${userFocus}` : 'No focus set');
 
   // Fetch all data in parallel
   const [sessions, scenarios] = await Promise.all([

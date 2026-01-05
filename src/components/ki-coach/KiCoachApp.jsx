@@ -394,7 +394,7 @@ const KiCoachApp = ({
   const [userFocus, setUserFocus] = useState(getUserFocus());
 
   // Load coaching intelligence
-  const loadCoaching = useCallback(async (isRefresh = false) => {
+  const loadCoaching = useCallback(async (isRefresh = false, focus = null) => {
     if (!isAuthenticated) {
       setIsLoading(false);
       return;
@@ -408,7 +408,9 @@ const KiCoachApp = ({
       }
       setError(null);
 
-      const data = await getCoachingIntelligence();
+      // Use provided focus or get from state/localStorage
+      const currentFocus = focus ?? userFocus ?? getUserFocus();
+      const data = await getCoachingIntelligence(currentFocus);
       setCoachingData(data);
     } catch (err) {
       console.error('[KiCoach] Failed to load coaching:', err);
@@ -417,7 +419,7 @@ const KiCoachApp = ({
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userFocus]);
 
   useEffect(() => {
     loadCoaching();
@@ -436,8 +438,8 @@ const KiCoachApp = ({
   const handleFocusComplete = (selectedFocus) => {
     setUserFocus(selectedFocus);
     setShowFocusWizard(false);
-    // Optionally refresh coaching to filter recommendations
-    loadCoaching(true);
+    // Refresh coaching with the new focus to get focus-specific recommendations
+    loadCoaching(true, selectedFocus);
   };
 
   // Handle focus wizard skip

@@ -9,7 +9,7 @@
  * - Concrete next steps
  */
 
-export const generateComprehensiveCoachingPrompt = (sessionSummary) => {
+export const generateComprehensiveCoachingPrompt = (sessionSummary, userFocus = null) => {
   const {
     totalSessions,
     moduleBreakdown,
@@ -23,7 +23,26 @@ export const generateComprehensiveCoachingPrompt = (sessionSummary) => {
     daysSinceLastSession,
   } = sessionSummary;
 
+  // Map focus IDs to German descriptions
+  const focusDescriptions = {
+    bewerbung: 'Bewerbung & Karriere (Vorstellungsgespräche, Selbstpräsentation)',
+    vertrieb: 'Vertrieb & Verkauf (Kundengespräche, Verkaufsverhandlungen)',
+    fuehrung: 'Führung & Management (Mitarbeitergespräche, Teamführung)',
+    kommunikation: 'Allgemeine Kommunikation (Präsentationen, Meetings)',
+  };
+
+  const focusSection = userFocus ? `
+### NUTZER-FOKUS (WICHTIG!)
+Der Nutzer hat folgenden Fokus gewählt: **${focusDescriptions[userFocus] || userFocus}**
+
+⚠️ ALLE Empfehlungen und Trainings-Vorschläge sollten primär auf diesen Fokusbereich ausgerichtet sein!
+- Bevorzuge Szenarien und Trainings, die zum Fokusbereich passen
+- Formuliere Stärken und Verbesserungsbereiche im Kontext des gewählten Fokus
+- Der "nächste Schritt" sollte direkt zum Fokusbereich relevant sein
+` : '';
+
   return `Du bist ein erfahrener Karriere-Coach und Kommunikationstrainer. Analysiere die Trainings-Statistiken eines Nutzers und erstelle eine umfassende, personalisierte Coaching-Analyse.
+${focusSection}
 
 ## NUTZER-STATISTIKEN
 
