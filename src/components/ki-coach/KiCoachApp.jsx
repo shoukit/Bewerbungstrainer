@@ -144,11 +144,11 @@ const StrengthCard = ({ strength, index }) => (
         <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
           <CheckCircle size={18} className="text-green-600" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <h4 className="text-sm font-semibold text-slate-900">{strength.title}</h4>
-          <p className="text-xs text-slate-600 mt-1">{strength.description}</p>
+          <p className="text-xs text-slate-600 mt-1 break-words">{strength.description}</p>
           {strength.evidence && (
-            <p className="text-xs text-slate-400 mt-1 italic">{strength.evidence}</p>
+            <p className="text-xs text-slate-400 mt-1 italic break-words">{strength.evidence}</p>
           )}
         </div>
       </div>
