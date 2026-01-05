@@ -436,30 +436,43 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     }
   }, [transcript]);
 
-  // Handle agent ending the call
+  // Handle agent ending the call (status changes from 'connected' to anything else)
+  const prevStatusRef = useRef(conversation.status);
   useEffect(() => {
-    // Debug logging
-    if (conversation.status === 'disconnected' && isStarted) {
-      console.log('[RoleplaySession] Disconnect detected:', {
-        status: conversation.status,
+    const currentStatus = conversation.status;
+    const prevStatus = prevStatusRef.current;
+    prevStatusRef.current = currentStatus;
+
+    // Debug logging for any status change
+    if (currentStatus !== prevStatus && isStarted) {
+      console.log('[RoleplaySession] Status changed:', {
+        from: prevStatus,
+        to: currentStatus,
         transcriptLength: transcript.length,
         isAnalyzing,
         showFeedback,
         hasProcessedDisconnect: hasProcessedDisconnectRef.current,
-        isStarted,
       });
     }
 
-    // Only process disconnect once, when we have a transcript and aren't already analyzing
+    // Trigger analysis when:
+    // - We were connected and now we're not (disconnected, idle, or undefined)
+    // - We have a transcript
+    // - We haven't already processed this disconnect
+    // - We're not already analyzing
+    const wasConnected = prevStatus === 'connected';
+    const isNowDisconnected = currentStatus !== 'connected' && currentStatus !== 'connecting';
+
     if (
-      conversation.status === 'disconnected' &&
+      wasConnected &&
+      isNowDisconnected &&
       transcript.length > 0 &&
       !isAnalyzing &&
       !showFeedback &&
       !hasProcessedDisconnectRef.current &&
-      isStarted // Only if session was actually started
+      isStarted
     ) {
-      console.log('[RoleplaySession] Agent disconnected, triggering analysis...');
+      console.log('[RoleplaySession] Connection ended, triggering analysis...', { currentStatus });
       hasProcessedDisconnectRef.current = true;
 
       // Small delay to ensure final transcript messages are captured
@@ -1063,12 +1076,22 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                         <X className="w-5 h-5 mr-2" />
                         Gespräch beenden
                       </Button>
-                    ) : conversation.status === 'disconnected' ? (
-                      // Show manual analysis button if disconnect happened but analysis didn't start
+                    ) : conversation.status === 'connecting' ? (
+                      <Button
+                        disabled
+                        size="lg"
+                        className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-50 cursor-not-allowed"
+                      >
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Verbindung wird hergestellt...
+                      </Button>
+                    ) : (
+                      // Status is 'disconnected', 'idle', or undefined - conversation ended
+                      // Show manual analysis button if we have a transcript
                       transcript.length > 0 && !isAnalyzing ? (
                         <Button
                           onClick={() => {
-                            console.log('[RoleplaySession] Manual analysis trigger');
+                            console.log('[RoleplaySession] Manual analysis trigger, status:', conversation.status);
                             hasProcessedDisconnectRef.current = true;
                             handleEndConversation();
                           }}
@@ -1078,25 +1101,25 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                           <BarChart3 className="w-5 h-5 mr-2" />
                           Auswertung starten
                         </Button>
-                      ) : (
+                      ) : isAnalyzing ? (
                         <Button
                           disabled
                           size="lg"
                           className="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
                         >
                           <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Gespräch wurde beendet...
+                          Analyse läuft...
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled
+                          size="lg"
+                          className="bg-gradient-to-r from-slate-400 to-slate-500 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
+                        >
+                          <AlertCircle className="w-5 h-5 mr-2" />
+                          Kein Gespräch aufgezeichnet
                         </Button>
                       )
-                    ) : (
-                      <Button
-                        disabled
-                        size="lg"
-                        className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-50 cursor-not-allowed"
-                      >
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Verbindung wird hergestellt...
-                      </Button>
                     )}
                   </div>
 
