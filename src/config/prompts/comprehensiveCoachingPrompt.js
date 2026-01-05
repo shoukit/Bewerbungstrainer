@@ -163,21 +163,26 @@ Erstelle eine einladende Willkommens-Analyse, die den Nutzer motiviert, mit dem 
     "score": 0,
     "description": "Bereit für den Start deiner Trainingsreise!"
   },
-  "summary": "Willkommen! Du stehst am Anfang einer spannenden Lernreise. Mit regelmäßigem Training wirst du schnell Fortschritte sehen.",
+  "summary": "Herzlich willkommen! Du befindest dich am Anfang einer spannenden Reise zur Verbesserung deiner Kommunikationsfähigkeiten. Wir freuen uns, dich dabei zu unterstützen. Regelmäßiges Training wird dir helfen, deine Ziele zu erreichen und selbstbewusster zu werden.",
   "strengths": [
     {
       "title": "Motivation",
-      "description": "Du hast den ersten Schritt gemacht und bist hier",
-      "evidence": "Das Interesse an Verbesserung ist der wichtigste Ausgangspunkt"
+      "description": "Du hast den ersten Schritt gemacht und dich für das Training entschieden!",
+      "evidence": "Dein Interesse an persönlicher Weiterentwicklung ist der wichtigste Ausgangspunkt für deinen Erfolg."
+    },
+    {
+      "title": "Offenheit",
+      "description": "Du bist bereit, Neues zu lernen und dich selbst zu verbessern.",
+      "evidence": "Die Bereitschaft, Feedback anzunehmen und sich neuen Herausforderungen zu stellen, ist ein großer Vorteil."
     }
   ],
   "focusAreas": [
     {
-      "title": "Erste Erfahrungen sammeln",
+      "title": "Erste Trainingserfahrungen sammeln",
       "priority": "hoch",
-      "description": "Lerne die verschiedenen Trainingsmodule kennen",
+      "description": "Lerne die verschiedenen Trainingsmodule kennen und finde heraus, welche am besten zu dir passen.",
       "currentState": "Noch keine Trainings absolviert",
-      "targetState": "5 verschiedene Sessions in der ersten Woche",
+      "targetState": "3-5 verschiedene Sessions in der ersten Woche ausprobieren",
       "suggestedTrainings": [
         {
           "title": "Rhetorik-Gym: Der Klassiker",
@@ -185,8 +190,46 @@ Erstelle eine einladende Willkommens-Analyse, die den Nutzer motiviert, mit dem 
           "scenario_id": null
         },
         {
-          "title": "Szenario-Training starten",
+          "title": "Smart Briefing erstellen",
+          "module": "smart-briefing",
+          "scenario_id": null
+        }
+      ]
+    },
+    {
+      "title": "Sprechsicherheit aufbauen",
+      "priority": "mittel",
+      "description": "Übe strukturiertes Sprechen und erhalte direktes Feedback zu deiner Performance.",
+      "currentState": "Noch keine Übungserfahrung",
+      "targetState": "2-3 strukturierte Trainings absolvieren",
+      "suggestedTrainings": [
+        {
+          "title": "Szenario-Training",
           "module": "szenario-training",
+          "scenario_id": null
+        },
+        {
+          "title": "Live-Simulation mit KI",
+          "module": "live-simulation",
+          "scenario_id": null
+        }
+      ]
+    },
+    {
+      "title": "Gesamtwirkung verstehen",
+      "priority": "niedrig",
+      "description": "Lerne, wie du auf andere wirkst - verbal und nonverbal.",
+      "currentState": "Noch keine Selbsteinschätzung",
+      "targetState": "Erste Wirkungs-Analyse durchführen",
+      "suggestedTrainings": [
+        {
+          "title": "Wirkungs-Analyse (Video)",
+          "module": "wirkungs-analyse",
+          "scenario_id": null
+        },
+        {
+          "title": "Rhetorik-Gym: Stress-Test",
+          "module": "rhetorik-gym",
           "scenario_id": null
         }
       ]
@@ -196,29 +239,41 @@ Erstelle eine einladende Willkommens-Analyse, die den Nutzer motiviert, mit dem 
     {
       "action": "Starte mit dem Rhetorik-Gym",
       "module": "rhetorik-gym",
-      "reason": "Kurze Sessions (60 Sekunden) - perfekt zum Einstieg",
+      "reason": "Kurze Sessions (60 Sekunden) - perfekt zum Einstieg ohne Zeitdruck",
       "frequency": "1x täglich"
     },
     {
       "action": "Erstelle dein erstes Smart Briefing",
       "module": "smart-briefing",
-      "reason": "Bereite dich auf ein konkretes Gespräch vor",
+      "reason": "Bereite dich strukturiert auf ein konkretes Gespräch vor",
       "frequency": "Vor wichtigen Terminen"
     },
     {
       "action": "Probiere das Szenario-Training",
       "module": "szenario-training",
-      "reason": "Strukturiertes Üben mit sofortigem Feedback",
+      "reason": "Strukturiertes Üben mit sofortigem KI-Feedback nach jeder Antwort",
       "frequency": "2-3x pro Woche"
+    },
+    {
+      "action": "Teste die Live-Simulation",
+      "module": "live-simulation",
+      "reason": "Erlebe ein realistisches Gespräch mit dem KI-Interviewer",
+      "frequency": "1x pro Woche"
+    },
+    {
+      "action": "Analysiere deine Wirkung",
+      "module": "wirkungs-analyse",
+      "reason": "Video-Feedback zu Körpersprache und Auftreten",
+      "frequency": "Alle 2 Wochen"
     }
   ],
   "nextStep": {
     "title": "Dein erstes Rhetorik-Gym Spiel",
-    "description": "Sprich 60 Sekunden zu einem beliebigen Thema. Du bekommst sofort Feedback zu deinen Füllwörtern und deinem Sprechtempo.",
+    "description": "Sprich 60 Sekunden frei zu einem Thema deiner Wahl. Du erhältst sofort Feedback zu deinen Füllwörtern, deinem Sprechtempo und weiteren Aspekten deiner Performance.",
     "module": "rhetorik-gym",
     "estimatedTime": "2 Minuten"
   },
-  "motivation": "Jede Reise beginnt mit dem ersten Schritt - und du hast ihn gerade gemacht! 🚀"
+  "motivation": "Jede Reise beginnt mit dem ersten Schritt - und du hast ihn gerade gemacht!"
 }`;
 };
 
