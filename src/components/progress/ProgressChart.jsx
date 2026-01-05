@@ -304,10 +304,13 @@ const ProgressChart = ({
 
   // Process data
   const chartData = useMemo(() => {
+    // Use start of today for accurate day-based filtering
     const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
     const cutoffDate = timeRange === 0
       ? new Date(0)
-      : new Date(now.getTime() - timeRange * 24 * 60 * 60 * 1000);
+      : new Date(today.getTime() - (timeRange - 1) * 24 * 60 * 60 * 1000);
+    cutoffDate.setHours(0, 0, 0, 0); // Start of cutoff day
 
     // Helper to normalize scores to 0-100
     const normalizeScore = (score, maxScore = 10) => {
@@ -334,8 +337,12 @@ const ProgressChart = ({
     gameSessions.forEach(session => {
       const date = parseDate(session.created_at);
       // Score can be in different fields depending on API response
-      const score = session.score ?? session.total_score ?? session.game_score;
-      if (date && date >= cutoffDate && score !== null && score !== undefined) {
+      // Also handle string scores by parsing them
+      let score = session.score ?? session.total_score ?? session.game_score;
+      if (typeof score === 'string') {
+        score = parseFloat(score);
+      }
+      if (date && date >= cutoffDate && score !== null && score !== undefined && !isNaN(score)) {
         allSessions.push({
           date,
           module: 'rhetorik',
@@ -347,11 +354,13 @@ const ProgressChart = ({
     // Simulator sessions (overall_score is 0-10)
     simulatorSessions.forEach(session => {
       const date = parseDate(session.created_at);
-      if (date && date >= cutoffDate && session.overall_score !== null) {
+      let score = session.overall_score;
+      if (typeof score === 'string') score = parseFloat(score);
+      if (date && date >= cutoffDate && score !== null && score !== undefined && !isNaN(score)) {
         allSessions.push({
           date,
           module: 'simulator',
-          score: normalizeScore(session.overall_score, 10),
+          score: normalizeScore(score, 10),
         });
       }
     });
@@ -359,11 +368,13 @@ const ProgressChart = ({
     // Video sessions (overall_score is 0-10)
     videoSessions.forEach(session => {
       const date = parseDate(session.created_at);
-      if (date && date >= cutoffDate && session.overall_score !== null) {
+      let score = session.overall_score;
+      if (typeof score === 'string') score = parseFloat(score);
+      if (date && date >= cutoffDate && score !== null && score !== undefined && !isNaN(score)) {
         allSessions.push({
           date,
           module: 'video',
-          score: normalizeScore(session.overall_score, 10),
+          score: normalizeScore(score, 10),
         });
       }
     });
