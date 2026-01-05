@@ -267,8 +267,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         fetch(`${apiUrl}/video-training/sessions?limit=500${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
-        // Rhetorik-Gym games (pass demo_code)
-        fetch(`${apiUrl}/games?limit=500${demoQueryParam}`, {
+        // Rhetorik-Gym games (pass demo_code) - endpoint is /game/sessions
+        fetch(`${apiUrl}/game/sessions?limit=500${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Smart Briefings (pass demo_code)
