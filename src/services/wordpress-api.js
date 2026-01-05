@@ -129,7 +129,8 @@ class WordPressAPI {
         const defaultOptions = {
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            credentials: 'same-origin' // Send cookies for session/demo-code support
         };
 
         const mergedOptions = {
@@ -1140,13 +1141,16 @@ class WordPressAPI {
 
     /**
      * Extract keywords from user input for a dimension
+     * Uses publicRequest with credentials for session/cookie support
      *
      * @param {string} dimension - Dimension key (love, talent, need, market)
      * @param {string} userInput - User's text input
      * @returns {Promise<object>} Object with keywords array
      */
     async extractIkigaiKeywords(dimension, userInput) {
-        const response = await this.request('/ikigai/extract', {
+        console.log('[WordPressAPI] extractIkigaiKeywords called:', { dimension, userInput: userInput.substring(0, 50) });
+
+        const response = await this.publicRequest('/ikigai/extract', {
             method: 'POST',
             body: JSON.stringify({
                 dimension,
@@ -1154,8 +1158,16 @@ class WordPressAPI {
             })
         });
 
+        console.log('[WordPressAPI] extractIkigaiKeywords response:', response);
+
         if (response.success && response.data?.keywords) {
             return { keywords: response.data.keywords };
+        }
+
+        // If response.success but no keywords, return empty array (not an error)
+        if (response.success) {
+            console.log('[WordPressAPI] extractIkigaiKeywords: API returned success but no keywords');
+            return { keywords: [] };
         }
 
         throw new Error(response.message || 'Fehler beim Extrahieren der Keywords');
@@ -1163,12 +1175,13 @@ class WordPressAPI {
 
     /**
      * Synthesize career paths from all dimensions
+     * Uses publicRequest with credentials for session/cookie support
      *
      * @param {object} tags - Object with love_tags, talent_tags, need_tags, market_tags arrays
      * @returns {Promise<object>} Object with summary and paths array
      */
     async synthesizeIkigaiPaths(tags) {
-        const response = await this.request('/ikigai/synthesize', {
+        const response = await this.publicRequest('/ikigai/synthesize', {
             method: 'POST',
             body: JSON.stringify(tags)
         });
