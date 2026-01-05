@@ -21,6 +21,8 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
+  Mic,
 } from 'lucide-react';
 import { Button, Card, Skeleton, SkeletonListItem } from '@/components/ui';
 import { getRoleplaySessions, getRoleplayScenarios } from '@/services/roleplay-feedback-adapter';
@@ -36,6 +38,7 @@ import { BriefingCard, SessionCard, DecisionCard, IkigaiCard } from '@/component
 import IkigaiCompass from '@/components/ikigai/IkigaiCompass';
 import IkigaiResults from '@/components/ikigai/IkigaiResults';
 import SessionDetailHeader from '@/components/session-detail/SessionDetailHeader';
+import ProgressChart from '@/components/progress/ProgressChart';
 import { Scale, Compass } from 'lucide-react';
 
 import { IKIGAI_COLORS } from '@/config/colors';
@@ -88,21 +91,25 @@ const IKIGAI_DIMENSIONS = {
  * Tab configuration
  */
 const TABS = {
+  PROGRESS: 'progress',
   SIMULATOR: 'simulator',
   ROLEPLAY: 'roleplay',
   VIDEO: 'video',
   BRIEFINGS: 'briefings',
   DECISIONS: 'decisions',
   IKIGAI: 'ikigai',
+  RHETORIK: 'rhetorik',
 };
 
 const TAB_CONFIG = [
+  { id: TABS.PROGRESS, label: 'Fortschritt', icon: TrendingUp },
   { id: TABS.BRIEFINGS, label: 'Smart Briefings', icon: Sparkles },
   { id: TABS.DECISIONS, label: 'Entscheidungs-Kompass', icon: Scale },
   { id: TABS.IKIGAI, label: 'Ikigai-Kompass', icon: Compass },
   { id: TABS.SIMULATOR, label: 'Szenario-Training', icon: Target },
   { id: TABS.VIDEO, label: 'Wirkungs-Analyse', icon: Video },
   { id: TABS.ROLEPLAY, label: 'Live-Simulationen', icon: MessageSquare },
+  { id: TABS.RHETORIK, label: 'Rhetorik-Gym', icon: Mic },
 ];
 
 // Export TABS for use in extracted components
@@ -152,8 +159,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Partner branding
   const { branding, demoCode } = usePartner();
 
-  // Active tab - use initialTab prop if provided, otherwise default to Smart Briefings
-  const [activeTab, setActiveTab] = useState(initialTab || TABS.BRIEFINGS);
+  // Active tab - use initialTab prop if provided, otherwise default to Progress
+  const [activeTab, setActiveTab] = useState(initialTab || TABS.PROGRESS);
 
   // Update active tab when initialTab prop changes
   useEffect(() => {
@@ -175,6 +182,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   const [roleplaySessions, setRoleplaySessions] = useState([]);
   const [simulatorSessions, setSimulatorSessions] = useState([]);
   const [videoSessions, setVideoSessions] = useState([]);
+  const [gameSessions, setGameSessions] = useState([]);
   const [briefings, setBriefings] = useState([]);
   const [decisions, setDecisions] = useState([]);
   const [ikigais, setIkigais] = useState([]);
@@ -184,12 +192,14 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Pagination state for each tab
   const [currentPage, setCurrentPage] = useState({
+    [TABS.PROGRESS]: 1,
     [TABS.BRIEFINGS]: 1,
     [TABS.DECISIONS]: 1,
     [TABS.IKIGAI]: 1,
     [TABS.SIMULATOR]: 1,
     [TABS.VIDEO]: 1,
     [TABS.ROLEPLAY]: 1,
+    [TABS.RHETORIK]: 1,
   });
 
   // Selected briefing for workbook view
@@ -239,6 +249,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         roleplayData,
         simulatorData,
         videoData,
+        gamesData,
         briefingsData,
         decisionsData,
         ikigaisData,
@@ -254,6 +265,10 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Video training sessions (pass demo_code)
         fetch(`${apiUrl}/video-training/sessions?limit=500${demoQueryParam}`, {
+          headers: { 'X-WP-Nonce': getWPNonce() },
+        }).then(r => r.json()).catch(() => ({ data: [] })),
+        // Rhetorik-Gym games (pass demo_code)
+        fetch(`${apiUrl}/games?limit=500${demoQueryParam}`, {
           headers: { 'X-WP-Nonce': getWPNonce() },
         }).then(r => r.json()).catch(() => ({ data: [] })),
         // Smart Briefings (pass demo_code)
@@ -338,6 +353,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       setRoleplaySessions(extractSessions(roleplayData));
       setSimulatorSessions(extractSessions(simulatorData));
       setVideoSessions(extractSessions(videoData));
+      setGameSessions(extractSessions(gamesData, 'games'));
       setBriefings(dedupeById(briefingsData?.data?.briefings || [], 'briefing'));
       setDecisions(dedupeById(decisionsData?.data?.decisions || [], 'decision'));
       setIkigais(dedupeById(ikigaisData?.data?.ikigais || [], 'ikigai'));
@@ -379,6 +395,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       case TABS.BRIEFINGS: return briefings;
       case TABS.DECISIONS: return decisions;
       case TABS.IKIGAI: return ikigais;
+      case TABS.RHETORIK: return gameSessions;
+      case TABS.PROGRESS: return []; // Progress tab doesn't show sessions list
       default: return roleplaySessions;
     }
   };
@@ -392,7 +410,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   };
 
   // Total sessions count
-  const totalSessions = roleplaySessions.length + simulatorSessions.length + videoSessions.length + briefings.length + decisions.length;
+  const totalSessions = roleplaySessions.length + simulatorSessions.length + videoSessions.length + gameSessions.length + briefings.length + decisions.length + ikigais.length;
 
   // Pagination helpers
   const handlePageChange = (newPage) => {
@@ -1052,11 +1070,13 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         {TAB_CONFIG.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
+          const count = tab.id === TABS.PROGRESS ? null :
+                       tab.id === TABS.SIMULATOR ? simulatorSessions.length :
                        tab.id === TABS.VIDEO ? videoSessions.length :
                        tab.id === TABS.BRIEFINGS ? briefings.length :
                        tab.id === TABS.DECISIONS ? decisions.length :
                        tab.id === TABS.IKIGAI ? ikigais.length :
+                       tab.id === TABS.RHETORIK ? gameSessions.length :
                        roleplaySessions.length;
 
           return (
@@ -1071,11 +1091,13 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             >
               <Icon size={18} />
               <span>{tab.label}</span>
-              <span className={`py-0.5 px-2 rounded-xl text-xs font-semibold min-w-[24px] text-center ${
-                isActive ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
-              }`}>
-                {count}
-              </span>
+              {count !== null && (
+                <span className={`py-0.5 px-2 rounded-xl text-xs font-semibold min-w-[24px] text-center ${
+                  isActive ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
+                }`}>
+                  {count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -1083,33 +1105,43 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
       {/* Mobile Tabs - Icons with counts + active label below */}
       <div className="lg:hidden mx-4 mb-4">
-        <div className="flex gap-2 justify-center mb-3">
+        <div className="flex gap-2 justify-center mb-3 flex-wrap">
           {TAB_CONFIG.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
+            const count = tab.id === TABS.PROGRESS ? null :
+                         tab.id === TABS.SIMULATOR ? simulatorSessions.length :
                          tab.id === TABS.VIDEO ? videoSessions.length :
                          tab.id === TABS.BRIEFINGS ? briefings.length :
                          tab.id === TABS.DECISIONS ? decisions.length :
                          tab.id === TABS.IKIGAI ? ikigais.length :
+                         tab.id === TABS.RHETORIK ? gameSessions.length :
                          roleplaySessions.length;
 
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 max-w-[80px] py-3 px-2 rounded-xl border-2 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all ${
+                className={`flex-1 max-w-[60px] py-3 px-2 rounded-xl border-2 cursor-pointer flex flex-col items-center justify-center gap-1 transition-all ${
                   isActive
                     ? 'bg-white shadow-md border-indigo-500'
                     : 'bg-slate-100 border-transparent hover:bg-white/60'
                 }`}
               >
-                <Icon size={20} className={isActive ? 'text-indigo-500' : 'text-slate-500'} />
-                <span className={`py-0.5 px-1.5 rounded-lg text-[11px] font-semibold min-w-[20px] text-center ${
-                  isActive ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
-                }`}>
-                  {count}
-                </span>
+                <Icon size={18} className={isActive ? 'text-indigo-500' : 'text-slate-500'} />
+                {count !== null ? (
+                  <span className={`py-0.5 px-1.5 rounded-lg text-[11px] font-semibold min-w-[20px] text-center ${
+                    isActive ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
+                  }`}>
+                    {count}
+                  </span>
+                ) : (
+                  <span className={`py-0.5 px-1.5 rounded-lg text-[11px] font-semibold ${
+                    isActive ? 'text-indigo-500' : 'text-slate-400'
+                  }`}>
+                    📈
+                  </span>
+                )}
               </button>
             );
           })}
@@ -1120,40 +1152,52 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         </div>
       </div>
 
-      {/* Desktop Action buttons */}
-      <div className="hidden sm:flex justify-center lg:justify-end flex-wrap gap-3 mx-6 mb-6">
-        <Button variant="outline" onClick={loadAllData} disabled={isLoading} title="Aktualisieren">
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-        </Button>
-        {onNavigateToModule && (
-          <Button
-            onClick={() => {
-              // Navigate to the corresponding module based on active tab
-              const moduleMap = {
-                [TABS.BRIEFINGS]: 'smart_briefing',
-                [TABS.DECISIONS]: 'decision_board',
-                [TABS.IKIGAI]: 'ikigai',
-                [TABS.SIMULATOR]: 'simulator',
-                [TABS.VIDEO]: 'video_training',
-                [TABS.ROLEPLAY]: 'dashboard',
-              };
-              onNavigateToModule(moduleMap[activeTab] || 'overview');
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {activeTab === TABS.BRIEFINGS ? 'Neues Briefing' :
-             activeTab === TABS.DECISIONS ? 'Neue Entscheidungs-Analyse' :
-             activeTab === TABS.IKIGAI ? 'Neue Ikigai-Analyse' :
-             activeTab === TABS.SIMULATOR ? 'Neues Szenario-Training' :
-             activeTab === TABS.VIDEO ? 'Neue Wirkungs-Analyse' :
-             'Neue Live-Simulation'}
+      {/* Desktop Action buttons - hide for Progress tab */}
+      {activeTab !== TABS.PROGRESS && (
+        <div className="hidden sm:flex justify-center lg:justify-end flex-wrap gap-3 mx-6 mb-6">
+          <Button variant="outline" onClick={loadAllData} disabled={isLoading} title="Aktualisieren">
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
-        )}
-      </div>
+          {onNavigateToModule && (
+            <Button
+              onClick={() => {
+                // Navigate to the corresponding module based on active tab
+                const moduleMap = {
+                  [TABS.BRIEFINGS]: 'smart_briefing',
+                  [TABS.DECISIONS]: 'decision_board',
+                  [TABS.IKIGAI]: 'ikigai',
+                  [TABS.SIMULATOR]: 'simulator',
+                  [TABS.VIDEO]: 'video_training',
+                  [TABS.ROLEPLAY]: 'dashboard',
+                  [TABS.RHETORIK]: 'rhetorik_gym',
+                };
+                onNavigateToModule(moduleMap[activeTab] || 'overview');
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {activeTab === TABS.BRIEFINGS ? 'Neues Briefing' :
+               activeTab === TABS.DECISIONS ? 'Neue Entscheidungs-Analyse' :
+               activeTab === TABS.IKIGAI ? 'Neue Ikigai-Analyse' :
+               activeTab === TABS.SIMULATOR ? 'Neues Szenario-Training' :
+               activeTab === TABS.VIDEO ? 'Neue Wirkungs-Analyse' :
+               activeTab === TABS.RHETORIK ? 'Neue Rhetorik-Session' :
+               'Neue Live-Simulation'}
+            </Button>
+          )}
+        </div>
+      )}
 
-      {/* Sessions List */}
+      {/* Content Area */}
       <div className="mx-4 sm:mx-6">
-        {activeSessions.length === 0 ? (
+        {/* Progress Chart Tab */}
+        {activeTab === TABS.PROGRESS ? (
+          <ProgressChart
+            simulatorSessions={simulatorSessions}
+            videoSessions={videoSessions}
+            roleplaySessions={roleplaySessions}
+            gameSessions={gameSessions}
+          />
+        ) : activeSessions.length === 0 ? (
           <Card className="text-center py-16 px-6 rounded-2xl shadow-card">
             {activeTab === TABS.SIMULATOR && <Target className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
             {activeTab === TABS.ROLEPLAY && <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
@@ -1161,8 +1205,9 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
             {activeTab === TABS.BRIEFINGS && <Sparkles className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
             {activeTab === TABS.DECISIONS && <Scale className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
             {activeTab === TABS.IKIGAI && <Compass className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
+            {activeTab === TABS.RHETORIK && <Mic className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
             <h3 className="text-xl font-semibold text-slate-600 mb-2">
-              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : activeTab === TABS.DECISIONS ? 'Entscheidungs-Analysen' : activeTab === TABS.IKIGAI ? 'Ikigai-Analysen' : 'Live-Simulationen'}
+              Noch keine {activeTab === TABS.SIMULATOR ? 'Szenario-Trainings' : activeTab === TABS.VIDEO ? 'Wirkungs-Analysen' : activeTab === TABS.BRIEFINGS ? 'Smart Briefings' : activeTab === TABS.DECISIONS ? 'Entscheidungs-Analysen' : activeTab === TABS.IKIGAI ? 'Ikigai-Analysen' : activeTab === TABS.RHETORIK ? 'Rhetorik-Sessions' : 'Live-Simulationen'}
             </h3>
             <p className="text-slate-500 mb-6">
               {activeTab === TABS.BRIEFINGS
@@ -1171,6 +1216,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                 ? 'Nutze den Entscheidungs-Kompass, um deine erste Entscheidung zu analysieren.'
                 : activeTab === TABS.IKIGAI
                 ? 'Entdecke deinen idealen Karrierepfad mit dem Ikigai-Kompass.'
+                : activeTab === TABS.RHETORIK
+                ? 'Trainiere deine Rhetorik und reduziere Füllwörter.'
                 : 'Starte dein erstes Training, um hier deine Fortschritte zu sehen.'}
             </p>
             <Button onClick={() => {
@@ -1182,6 +1229,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                   [TABS.SIMULATOR]: 'simulator',
                   [TABS.VIDEO]: 'video_training',
                   [TABS.ROLEPLAY]: 'dashboard',
+                  [TABS.RHETORIK]: 'rhetorik_gym',
                 };
                 onNavigateToModule(moduleMap[activeTab] || 'overview');
               } else {
@@ -1189,7 +1237,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
               }
             }}>
               <Play className="w-4 h-4 mr-2" />
-              {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : activeTab === TABS.DECISIONS ? 'Entscheidung analysieren' : activeTab === TABS.IKIGAI ? 'Ikigai entdecken' : 'Training starten'}
+              {activeTab === TABS.BRIEFINGS ? 'Briefing erstellen' : activeTab === TABS.DECISIONS ? 'Entscheidung analysieren' : activeTab === TABS.IKIGAI ? 'Ikigai entdecken' : activeTab === TABS.RHETORIK ? 'Rhetorik trainieren' : 'Training starten'}
             </Button>
           </Card>
         ) : (
