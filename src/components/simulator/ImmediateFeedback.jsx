@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ChevronRight,
   RotateCcw,
@@ -24,6 +24,8 @@ import { formatDuration } from '@/utils/formatting';
 import { usePartner } from '@/context/PartnerContext';
 import { DEFAULT_BRANDING } from '@/config/partners';
 import { useBranding } from '@/hooks/useBranding';
+import AudioAnalysisPanel from '@/components/feedback/AudioAnalysisPanel';
+import { normalizeAudioMetrics, hasAudioMetricsData } from '@/utils/audioMetricsAdapter';
 
 /**
  * Score Badge Component
@@ -140,120 +142,13 @@ const FeedbackItem = ({ text, type }) => {
   );
 };
 
-/**
- * Audio Metrics Display
- */
-const AudioMetricsDisplay = ({ metrics }) => {
-  if (!metrics) return null;
-
-  const getSpeechRateLabel = (rate) => {
-    switch (rate) {
-      case 'optimal': return { label: 'Optimal', colorClass: 'text-green-600' };
-      case 'zu_schnell': return { label: 'Zu schnell', colorClass: 'text-amber-600' };
-      case 'zu_langsam': return { label: 'Zu langsam', colorClass: 'text-amber-600' };
-      default: return { label: rate || 'N/A', colorClass: 'text-slate-400' };
-    }
-  };
-
-  const speechRate = getSpeechRateLabel(metrics.speech_rate);
-
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case 'niedrig': return 'text-green-600';
-      case 'mittel': return 'text-amber-600';
-      case 'hoch': return 'text-red-600';
-      default: return 'text-slate-400';
-    }
-  };
-
-  return (
-    <div className="grid grid-cols-2 gap-4">
-      {/* Speech Rate */}
-      <div className="p-4 rounded-xl bg-slate-50">
-        <span className="text-xs text-slate-500 block mb-1">
-          Sprechtempo
-        </span>
-        <span className={`text-lg font-semibold ${speechRate.colorClass}`}>
-          {speechRate.label}
-        </span>
-      </div>
-
-      {/* Filler Words */}
-      {metrics.filler_words && (
-        <div className="p-4 rounded-xl bg-slate-50">
-          <span className="text-xs text-slate-500 block mb-1">
-            Füllwörter
-          </span>
-          <span className={`text-lg font-semibold ${getSeverityColor(metrics.filler_words.severity)}`}>
-            {metrics.filler_words.count || 0}
-            {metrics.filler_words.words?.length > 0 && (
-              <span className="text-xs font-normal ml-2">
-                ({metrics.filler_words.words.slice(0, 3).join(', ')})
-              </span>
-            )}
-          </span>
-        </div>
-      )}
-
-      {/* Confidence Score */}
-      {metrics.confidence_score !== undefined && (
-        <div className="p-4 rounded-xl bg-slate-50">
-          <span className="text-xs text-slate-500 block mb-1">
-            Selbstbewusstsein
-          </span>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full ${
-                  metrics.confidence_score >= 70 ? 'bg-green-500' : 'bg-amber-500'
-                }`}
-                style={{ width: `${metrics.confidence_score}%` }}
-              />
-            </div>
-            <span className="text-sm font-semibold text-slate-700">
-              {metrics.confidence_score}%
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Clarity Score */}
-      {metrics.clarity_score !== undefined && (
-        <div className="p-4 rounded-xl bg-slate-50">
-          <span className="text-xs text-slate-500 block mb-1">
-            Klarheit
-          </span>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full ${
-                  metrics.clarity_score >= 70 ? 'bg-green-500' : 'bg-amber-500'
-                }`}
-                style={{ width: `${metrics.clarity_score}%` }}
-              />
-            </div>
-            <span className="text-sm font-semibold text-slate-700">
-              {metrics.clarity_score}%
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Notes */}
-      {metrics.notes && (
-        <div className="col-span-2 p-4 rounded-xl bg-blue-50 text-sm text-slate-700 leading-relaxed">
-          💡 {metrics.notes}
-        </div>
-      )}
-    </div>
-  );
-};
 
 /**
  * Compact Audio Player for feedback view
  */
-const CompactAudioPlayer = ({ audioUrl }) => {
-  const audioRef = useRef(null);
+const CompactAudioPlayer = ({ audioUrl, externalAudioRef }) => {
+  const internalRef = useRef(null);
+  const audioRef = externalAudioRef || internalRef;
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -433,8 +328,25 @@ const ImmediateFeedback = ({
   isLastQuestion,
   hideButtons = false,
 }) => {
+  const audioRef = useRef(null);
+
   // Parse feedback if it's a string
   const parsedFeedback = typeof feedback === 'string' ? JSON.parse(feedback) : feedback;
+
+  // Normalize audio metrics for the professional panel
+  const normalizedMetrics = useMemo(
+    () => normalizeAudioMetrics(audioMetrics),
+    [audioMetrics]
+  );
+  const showAudioAnalysis = hasAudioMetricsData(audioMetrics);
+
+  // Handler to jump to timestamp in audio
+  const handleJumpToTimestamp = (seconds) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = seconds;
+      audioRef.current.play();
+    }
+  };
 
   return (
     <div className="bg-slate-50 rounded-2xl p-6 shadow-card">
@@ -475,7 +387,7 @@ const ImmediateFeedback = ({
       {/* Audio Player - own section between transcript and strengths */}
       {audioUrl && (
         <CollapsibleSection title="Deine Aufnahme" icon={Volume2} defaultOpen={true}>
-          <CompactAudioPlayer audioUrl={audioUrl} />
+          <CompactAudioPlayer audioUrl={audioUrl} externalAudioRef={audioRef} />
         </CollapsibleSection>
       )}
 
@@ -506,10 +418,13 @@ const ImmediateFeedback = ({
         </CollapsibleSection>
       )}
 
-      {/* Audio Metrics */}
-      {audioMetrics && (
+      {/* Audio Metrics - Professional Panel */}
+      {showAudioAnalysis && (
         <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={true}>
-          <AudioMetricsDisplay metrics={audioMetrics} />
+          <AudioAnalysisPanel
+            audioAnalysis={normalizedMetrics}
+            onJumpToTimestamp={handleJumpToTimestamp}
+          />
         </CollapsibleSection>
       )}
 
