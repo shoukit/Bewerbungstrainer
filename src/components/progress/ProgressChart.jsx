@@ -448,11 +448,19 @@ const ProgressChart = ({
     // If no data, return empty
     if (allSessions.length === 0) return [];
 
-    // Group by date (day)
+    // Helper to get local date key (YYYY-MM-DD in local timezone)
+    const getLocalDateKey = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    // Group by date (day) - using local timezone
     const dateGroups = new Map();
 
     allSessions.forEach(session => {
-      const dateKey = session.date.toISOString().split('T')[0];
+      const dateKey = getLocalDateKey(session.date);
       if (!dateGroups.has(dateKey)) {
         dateGroups.set(dateKey, {
           date: session.date,
@@ -479,8 +487,18 @@ const ProgressChart = ({
 
       // Create entries for each day in the range
       const currentDate = new Date(startDate);
+      const seenDates = new Set(); // Prevent duplicates
+
       while (currentDate <= endDate) {
-        const dateKey = currentDate.toISOString().split('T')[0];
+        const dateKey = getLocalDateKey(currentDate);
+
+        // Skip if we've already processed this date
+        if (seenDates.has(dateKey)) {
+          currentDate.setDate(currentDate.getDate() + 1);
+          continue;
+        }
+        seenDates.add(dateKey);
+
         const group = dateGroups.get(dateKey) || {
           date: new Date(currentDate),
           rhetorik: [],
@@ -491,7 +509,7 @@ const ProgressChart = ({
 
         const entry = {
           date: dateKey,
-          dateFormatted: dateFormatter.format(group.date),
+          dateFormatted: dateFormatter.format(new Date(currentDate)),
         };
 
         // Calculate average for each module

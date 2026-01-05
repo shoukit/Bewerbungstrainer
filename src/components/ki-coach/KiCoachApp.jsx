@@ -562,40 +562,48 @@ const KiCoachApp = ({
         icon={Brain}
         gradient={headerGradient}
         rightContent={
-          <div className="flex items-center gap-2">
-            {/* Focus Badge / Settings Button */}
-            <button
-              onClick={handleResetFocus}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 border border-white/30 text-white text-xs rounded-lg hover:bg-white/30 transition-colors"
-              title="Fokus ändern"
-            >
-              {currentFocusCategory ? (
-                <>
-                  <currentFocusCategory.icon size={14} />
-                  <span className="hidden sm:inline">{currentFocusCategory.title}</span>
-                </>
-              ) : (
-                <span className="hidden sm:inline">Fokus wählen</span>
-              )}
-              <Settings size={14} />
-            </button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => loadCoaching(true)}
-              disabled={isRefreshing}
-              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-            >
-              {isRefreshing ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <RefreshCw size={16} />
-              )}
-              <span className="ml-2 hidden sm:inline">Aktualisieren</span>
-            </Button>
-          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => loadCoaching(true)}
+            disabled={isRefreshing}
+            className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+          >
+            {isRefreshing ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <RefreshCw size={16} />
+            )}
+            <span className="ml-2 hidden sm:inline">Aktualisieren</span>
+          </Button>
         }
       />
+
+      {/* Focus Selector Banner */}
+      <div className="bg-white border-b border-slate-200">
+        <div className={`${isMobile ? 'px-4 py-3' : 'px-8 py-4'} max-w-6xl mx-auto`}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-500">Mein Fokus:</span>
+              {currentFocusCategory ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
+                  <currentFocusCategory.icon size={16} style={{ color: currentFocusCategory.color }} />
+                  <span className="text-sm font-medium text-slate-700">{currentFocusCategory.title}</span>
+                </div>
+              ) : (
+                <span className="text-sm text-slate-400 italic">Nicht festgelegt</span>
+              )}
+            </div>
+            <button
+              onClick={handleResetFocus}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors"
+            >
+              <Settings size={14} />
+              <span>{currentFocusCategory ? 'Ändern' : 'Festlegen'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className={`${isMobile ? 'p-4' : 'px-8 py-6'}`}>
