@@ -55,6 +55,9 @@ const DecisionBoardApp = lazy(() => import('./components/decision-board').then(m
 // Ikigai
 const IkigaiApp = lazy(() => import('./components/ikigai/IkigaiApp'));
 
+// KI-Coach
+const KiCoachApp = lazy(() => import('./components/ki-coach').then(m => ({ default: m.KiCoachApp })));
+
 // Usage Limits
 const UsageLimitsDisplay = lazy(() => import('./components/global/UsageLimitsDisplay'));
 
@@ -985,6 +988,19 @@ function AppContent() {
             isAuthenticated={isAuthenticated}
             requireAuth={requireAuth}
             setPendingAction={setPendingAction}
+            onNavigateToHistory={() => navigate(ROUTES.HISTORY)}
+          />
+        }
+      />
+
+      {/* KI-Coach */}
+      <Route
+        path={ROUTES.KI_COACH}
+        element={
+          <KiCoachApp
+            isAuthenticated={isAuthenticated}
+            requireAuth={requireAuth}
+            onNavigate={handleSidebarNavigate}
             onNavigateToHistory={() => navigate(ROUTES.HISTORY)}
           />
         }

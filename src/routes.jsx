@@ -33,6 +33,9 @@ export const ROUTES = {
   // Ikigai Career Pathfinder routes
   IKIGAI: '/ikigai-kompass',
 
+  // KI-Coach routes
+  KI_COACH: '/ki-coach',
+
   // Rhetorik-Gym routes
   RHETORIK_GYM: '/rhetorik-gym',
   RHETORIK_GYM_SESSION: '/rhetorik-gym/session',
@@ -87,6 +90,7 @@ export const VIEW_TO_ROUTE = {
   smart_briefing: ROUTES.SMART_BRIEFING,
   decision_board: ROUTES.DECISION_BOARD,
   ikigai: ROUTES.IKIGAI,
+  ki_coach: ROUTES.KI_COACH,
   history: ROUTES.HISTORY,
   session_detail: ROUTES.SESSION_DETAIL,
   usage_limits: ROUTES.USAGE_LIMITS,
@@ -116,6 +120,7 @@ export const ROUTE_TO_VIEW = {
   [ROUTES.SMART_BRIEFING]: 'smart_briefing',
   [ROUTES.DECISION_BOARD]: 'decision_board',
   [ROUTES.IKIGAI]: 'ikigai',
+  [ROUTES.KI_COACH]: 'ki_coach',
   [ROUTES.RHETORIK_GYM]: 'gym_klassiker',
   [ROUTES.RHETORIK_GYM_SESSION]: 'gym_klassiker',
   [ROUTES.HISTORY]: 'history',
