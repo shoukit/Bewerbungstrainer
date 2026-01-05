@@ -379,40 +379,71 @@ const ProgressChart = ({
       }
     });
 
-    // Roleplay sessions - extract score from feedback_json
+    // Roleplay sessions - extract score from feedback_json or audio_analysis_json
     roleplaySessions.forEach(session => {
       const date = parseDate(session.created_at);
-      if (date && date >= cutoffDate && session.feedback_json) {
-        try {
-          const feedback = typeof session.feedback_json === 'string'
-            ? JSON.parse(session.feedback_json)
-            : session.feedback_json;
+      if (date && date >= cutoffDate) {
+        let overallScore = null;
 
-          // Try to find an overall score in the feedback
-          // The feedback structure is: { rating: { overall: 1-10, ... }, ... }
-          const overallScore =
-            feedback?.rating?.overall ||           // Standard format from feedbackPrompt
-            feedback?.rating?.gesamteindruck ||    // German variant
-            feedback?.overall_score ||             // Legacy format
-            feedback?.overallScore ||              // camelCase variant
-            feedback?.gesamtbewertung ||           // German legacy
-            feedback?.score;                       // Fallback
+        // Try feedback_json first (skip if it's literally "missing" or invalid)
+        if (session.feedback_json && session.feedback_json !== 'missing') {
+          try {
+            const feedback = typeof session.feedback_json === 'string'
+              ? JSON.parse(session.feedback_json)
+              : session.feedback_json;
 
-          if (overallScore !== undefined && overallScore !== null) {
-            allSessions.push({
-              date,
-              module: 'roleplay',
-              score: normalizeScore(overallScore, 10),
-            });
+            // Try to find an overall score in the feedback
+            // The feedback structure is: { rating: { overall: 1-10, ... }, ... }
+            overallScore =
+              feedback?.rating?.overall ||           // Standard format from feedbackPrompt
+              feedback?.rating?.gesamteindruck ||    // German variant
+              feedback?.overall_score ||             // Legacy format
+              feedback?.overallScore ||              // camelCase variant
+              feedback?.gesamtbewertung ||           // German legacy
+              feedback?.score;                       // Fallback
+          } catch (e) {
+            // Invalid JSON, continue to try other fields
           }
-        } catch (e) {
-          // Skip sessions with invalid JSON
+        }
+
+        // Try audio_analysis_json as fallback (might have confidence score)
+        if (overallScore === null && session.audio_analysis_json && session.audio_analysis_json !== 'missing') {
+          try {
+            const audioAnalysis = typeof session.audio_analysis_json === 'string'
+              ? JSON.parse(session.audio_analysis_json)
+              : session.audio_analysis_json;
+
+            // Audio analysis might have a confidence score (0-100)
+            if (audioAnalysis?.confidence?.score !== undefined) {
+              overallScore = audioAnalysis.confidence.score / 10; // Convert to 0-10 scale
+            }
+          } catch (e) {
+            // Invalid JSON
+          }
+        }
+
+        if (overallScore !== undefined && overallScore !== null) {
+          allSessions.push({
+            date,
+            module: 'roleplay',
+            score: normalizeScore(overallScore, 10),
+          });
         }
       }
     });
 
     // Sort by date
     allSessions.sort((a, b) => a.date - b.date);
+
+    // Debug: Log session counts per module
+    const moduleCounts = { rhetorik: 0, simulator: 0, video: 0, roleplay: 0 };
+    allSessions.forEach(s => moduleCounts[s.module]++);
+    console.log('[ProgressChart] Sessions in range:', {
+      total: allSessions.length,
+      ...moduleCounts,
+      timeRange: timeRange === 0 ? 'all' : `${timeRange} days`,
+      cutoffDate: cutoffDate.toISOString(),
+    });
 
     // If no data, return empty
     if (allSessions.length === 0) return [];
@@ -600,8 +631,8 @@ const ProgressChart = ({
 
         {/* Chart */}
         {hasData ? (
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full" style={{ height: 400, minHeight: 400 }}>
+            <ResponsiveContainer width="100%" height={400} minHeight={400}>
               <ComposedChart
                 data={chartData}
                 margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
