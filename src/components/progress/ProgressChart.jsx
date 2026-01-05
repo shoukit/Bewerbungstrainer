@@ -472,32 +472,78 @@ const ProgressChart = ({
       month: 'short'
     });
 
-    dateGroups.forEach((group, dateKey) => {
-      const entry = {
-        date: dateKey,
-        dateFormatted: dateFormatter.format(group.date),
-      };
+    // Generate all dates in the selected range (for non-zero timeRange)
+    if (timeRange > 0) {
+      const endDate = new Date(today);
+      const startDate = new Date(cutoffDate);
 
-      // Calculate average for each module
-      ['rhetorik', 'simulator', 'video', 'roleplay'].forEach(module => {
-        if (group[module].length > 0) {
-          entry[module] = group[module].reduce((a, b) => a + b, 0) / group[module].length;
+      // Create entries for each day in the range
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const dateKey = currentDate.toISOString().split('T')[0];
+        const group = dateGroups.get(dateKey) || {
+          date: new Date(currentDate),
+          rhetorik: [],
+          simulator: [],
+          video: [],
+          roleplay: [],
+        };
+
+        const entry = {
+          date: dateKey,
+          dateFormatted: dateFormatter.format(group.date),
+        };
+
+        // Calculate average for each module
+        ['rhetorik', 'simulator', 'video', 'roleplay'].forEach(module => {
+          if (group[module].length > 0) {
+            entry[module] = group[module].reduce((a, b) => a + b, 0) / group[module].length;
+          }
+        });
+
+        // Calculate overall average
+        const allScores = [
+          ...group.rhetorik,
+          ...group.simulator,
+          ...group.video,
+          ...group.roleplay,
+        ];
+        if (allScores.length > 0) {
+          entry.overall = allScores.reduce((a, b) => a + b, 0) / allScores.length;
         }
-      });
 
-      // Calculate overall average
-      const allScores = [
-        ...group.rhetorik,
-        ...group.simulator,
-        ...group.video,
-        ...group.roleplay,
-      ];
-      if (allScores.length > 0) {
-        entry.overall = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+        data.push(entry);
+        currentDate.setDate(currentDate.getDate() + 1);
       }
+    } else {
+      // For "All time", just show days with data
+      dateGroups.forEach((group, dateKey) => {
+        const entry = {
+          date: dateKey,
+          dateFormatted: dateFormatter.format(group.date),
+        };
 
-      data.push(entry);
-    });
+        // Calculate average for each module
+        ['rhetorik', 'simulator', 'video', 'roleplay'].forEach(module => {
+          if (group[module].length > 0) {
+            entry[module] = group[module].reduce((a, b) => a + b, 0) / group[module].length;
+          }
+        });
+
+        // Calculate overall average
+        const allScores = [
+          ...group.rhetorik,
+          ...group.simulator,
+          ...group.video,
+          ...group.roleplay,
+        ];
+        if (allScores.length > 0) {
+          entry.overall = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+        }
+
+        data.push(entry);
+      });
+    }
 
     return data;
   }, [simulatorSessions, videoSessions, roleplaySessions, gameSessions, timeRange]);

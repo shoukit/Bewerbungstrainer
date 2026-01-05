@@ -201,18 +201,18 @@ const FocusAreaCard = ({ area, index, onNavigate, scenarios }) => {
             {suggestedTrainings.length > 0 && (
               <div className="mt-3 pt-3 border-t border-slate-100">
                 <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-2">Passende Trainings:</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col gap-1.5">
                   {suggestedTrainings.slice(0, 2).map((training, i) => {
                     const ModuleIcon = MODULE_ICONS[training.module] || Target;
                     return (
                       <button
                         key={i}
                         onClick={() => onNavigate?.(training.module, training.scenario_id)}
-                        className="flex items-center gap-1.5 px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-700"
+                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-700 text-left w-full"
                       >
-                        <ModuleIcon size={12} />
-                        <span className="truncate max-w-[140px]">{training.title}</span>
-                        <ChevronRight size={12} className="text-slate-400" />
+                        <ModuleIcon size={14} className="flex-shrink-0 text-slate-500" />
+                        <span className="flex-1">{training.title}</span>
+                        <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
                       </button>
                     );
                   })}
@@ -563,18 +563,22 @@ const KiCoachApp = ({
         gradient={headerGradient}
         rightContent={
           <div className="flex items-center gap-2">
-            {/* Focus Badge */}
-            {currentFocusCategory && (
-              <button
-                onClick={handleResetFocus}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/20 border border-white/30 text-white text-xs rounded-lg hover:bg-white/30 transition-colors"
-                title="Fokus ändern"
-              >
-                <currentFocusCategory.icon size={14} />
-                <span>{currentFocusCategory.title}</span>
-                <Settings size={12} className="opacity-60" />
-              </button>
-            )}
+            {/* Focus Badge / Settings Button */}
+            <button
+              onClick={handleResetFocus}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 border border-white/30 text-white text-xs rounded-lg hover:bg-white/30 transition-colors"
+              title="Fokus ändern"
+            >
+              {currentFocusCategory ? (
+                <>
+                  <currentFocusCategory.icon size={14} />
+                  <span className="hidden sm:inline">{currentFocusCategory.title}</span>
+                </>
+              ) : (
+                <span className="hidden sm:inline">Fokus wählen</span>
+              )}
+              <Settings size={14} />
+            </button>
             <Button
               variant="secondary"
               size="sm"
