@@ -27,7 +27,7 @@ export async function fetchAllUserSessions() {
     const [simulatorRes, videoRes, roleplayRes, gamesRes] = await Promise.all([
       fetch(`${baseUrl}/simulator/sessions`, { headers, credentials: 'same-origin' }),
       fetch(`${baseUrl}/video-training/sessions`, { headers, credentials: 'same-origin' }),
-      fetch(`${baseUrl}/sessions`, { headers, credentials: 'same-origin' }),
+      fetch(`${baseUrl}/roleplays/sessions`, { headers, credentials: 'same-origin' }),  // Same endpoint as SessionHistory
       fetch(`${baseUrl}/game/sessions`, { headers, credentials: 'same-origin' }),
     ]);
 
