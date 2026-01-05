@@ -306,11 +306,18 @@ const ProgressChart = ({
   const chartData = useMemo(() => {
     // Use start of today for accurate day-based filtering
     const now = new Date();
+    // Create today at end of day (local timezone)
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-    const cutoffDate = timeRange === 0
-      ? new Date(0)
-      : new Date(today.getTime() - (timeRange - 1) * 24 * 60 * 60 * 1000);
-    cutoffDate.setHours(0, 0, 0, 0); // Start of cutoff day
+
+    // Calculate cutoff date using date arithmetic (safer than milliseconds)
+    // This properly handles month/year boundaries
+    let cutoffDate;
+    if (timeRange === 0) {
+      cutoffDate = new Date(0); // All time
+    } else {
+      // Create a new date at start of cutoff day
+      cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (timeRange - 1), 0, 0, 0, 0);
+    }
 
     // Helper to normalize scores to 0-100
     const normalizeScore = (score, maxScore = 10) => {
@@ -336,12 +343,9 @@ const ProgressChart = ({
     // Rhetorik-Gym sessions (score is 0-100)
     gameSessions.forEach(session => {
       const date = parseDate(session.created_at);
-      // Score can be in different fields depending on API response
-      // Also handle string scores by parsing them
       let score = session.score ?? session.total_score ?? session.game_score;
-      if (typeof score === 'string') {
-        score = parseFloat(score);
-      }
+      if (typeof score === 'string') score = parseFloat(score);
+
       if (date && date >= cutoffDate && score !== null && score !== undefined && !isNaN(score)) {
         allSessions.push({
           date,
@@ -356,6 +360,7 @@ const ProgressChart = ({
       const date = parseDate(session.created_at);
       let score = session.overall_score;
       if (typeof score === 'string') score = parseFloat(score);
+
       if (date && date >= cutoffDate && score !== null && score !== undefined && !isNaN(score)) {
         allSessions.push({
           date,
@@ -370,6 +375,7 @@ const ProgressChart = ({
       const date = parseDate(session.created_at);
       let score = session.overall_score;
       if (typeof score === 'string') score = parseFloat(score);
+
       if (date && date >= cutoffDate && score !== null && score !== undefined && !isNaN(score)) {
         allSessions.push({
           date,
@@ -379,35 +385,54 @@ const ProgressChart = ({
       }
     });
 
-    // Roleplay sessions - extract score from feedback_json
+    // Roleplay sessions - extract score from feedback_json or audio_analysis_json
     roleplaySessions.forEach(session => {
       const date = parseDate(session.created_at);
-      if (date && date >= cutoffDate && session.feedback_json) {
+      if (!date || date < cutoffDate) return;
+
+      let overallScore = null;
+
+      // Try feedback_json first (skip if it's literally "missing" or invalid)
+      if (session.feedback_json && session.feedback_json !== 'missing') {
         try {
           const feedback = typeof session.feedback_json === 'string'
             ? JSON.parse(session.feedback_json)
             : session.feedback_json;
 
           // Try to find an overall score in the feedback
-          // The feedback structure is: { rating: { overall: 1-10, ... }, ... }
-          const overallScore =
+          overallScore =
             feedback?.rating?.overall ||           // Standard format from feedbackPrompt
             feedback?.rating?.gesamteindruck ||    // German variant
             feedback?.overall_score ||             // Legacy format
             feedback?.overallScore ||              // camelCase variant
             feedback?.gesamtbewertung ||           // German legacy
             feedback?.score;                       // Fallback
+        } catch (e) {
+          // Invalid JSON, continue to try other fields
+        }
+      }
 
-          if (overallScore !== undefined && overallScore !== null) {
-            allSessions.push({
-              date,
-              module: 'roleplay',
-              score: normalizeScore(overallScore, 10),
-            });
+      // Try audio_analysis_json as fallback (might have confidence score)
+      if (overallScore === null && session.audio_analysis_json && session.audio_analysis_json !== 'missing') {
+        try {
+          const audioAnalysis = typeof session.audio_analysis_json === 'string'
+            ? JSON.parse(session.audio_analysis_json)
+            : session.audio_analysis_json;
+
+          if (audioAnalysis?.confidence?.score !== undefined) {
+            overallScore = audioAnalysis.confidence.score / 10; // Convert to 0-10 scale
           }
         } catch (e) {
-          // Skip sessions with invalid JSON
+          // Invalid JSON
         }
+      }
+
+      if (overallScore !== undefined && overallScore !== null) {
+        allSessions.push({
+          date,
+          module: 'roleplay',
+          score: normalizeScore(overallScore, 10),
+        });
       }
     });
 
@@ -417,11 +442,19 @@ const ProgressChart = ({
     // If no data, return empty
     if (allSessions.length === 0) return [];
 
-    // Group by date (day)
+    // Helper to get local date key (YYYY-MM-DD in local timezone)
+    const getLocalDateKey = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    // Group by date (day) - using local timezone
     const dateGroups = new Map();
 
     allSessions.forEach(session => {
-      const dateKey = session.date.toISOString().split('T')[0];
+      const dateKey = getLocalDateKey(session.date);
       if (!dateGroups.has(dateKey)) {
         dateGroups.set(dateKey, {
           date: session.date,
@@ -441,32 +474,88 @@ const ProgressChart = ({
       month: 'short'
     });
 
-    dateGroups.forEach((group, dateKey) => {
-      const entry = {
-        date: dateKey,
-        dateFormatted: dateFormatter.format(group.date),
-      };
+    // Generate all dates in the selected range (for non-zero timeRange)
+    if (timeRange > 0) {
+      const endDate = new Date(today);
+      const startDate = new Date(cutoffDate);
 
-      // Calculate average for each module
-      ['rhetorik', 'simulator', 'video', 'roleplay'].forEach(module => {
-        if (group[module].length > 0) {
-          entry[module] = group[module].reduce((a, b) => a + b, 0) / group[module].length;
+      // Create entries for each day in the range
+      const currentDate = new Date(startDate);
+      const seenDates = new Set(); // Prevent duplicates
+
+      while (currentDate <= endDate) {
+        const dateKey = getLocalDateKey(currentDate);
+
+        // Skip if we've already processed this date
+        if (seenDates.has(dateKey)) {
+          currentDate.setDate(currentDate.getDate() + 1);
+          continue;
         }
-      });
+        seenDates.add(dateKey);
 
-      // Calculate overall average
-      const allScores = [
-        ...group.rhetorik,
-        ...group.simulator,
-        ...group.video,
-        ...group.roleplay,
-      ];
-      if (allScores.length > 0) {
-        entry.overall = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+        const group = dateGroups.get(dateKey) || {
+          date: new Date(currentDate),
+          rhetorik: [],
+          simulator: [],
+          video: [],
+          roleplay: [],
+        };
+
+        const entry = {
+          date: dateKey,
+          dateFormatted: dateFormatter.format(new Date(currentDate)),
+        };
+
+        // Calculate average for each module
+        ['rhetorik', 'simulator', 'video', 'roleplay'].forEach(module => {
+          if (group[module].length > 0) {
+            entry[module] = group[module].reduce((a, b) => a + b, 0) / group[module].length;
+          }
+        });
+
+        // Calculate overall average
+        const allScores = [
+          ...group.rhetorik,
+          ...group.simulator,
+          ...group.video,
+          ...group.roleplay,
+        ];
+        if (allScores.length > 0) {
+          entry.overall = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+        }
+
+        data.push(entry);
+        currentDate.setDate(currentDate.getDate() + 1);
       }
+    } else {
+      // For "All time", just show days with data
+      dateGroups.forEach((group, dateKey) => {
+        const entry = {
+          date: dateKey,
+          dateFormatted: dateFormatter.format(group.date),
+        };
 
-      data.push(entry);
-    });
+        // Calculate average for each module
+        ['rhetorik', 'simulator', 'video', 'roleplay'].forEach(module => {
+          if (group[module].length > 0) {
+            entry[module] = group[module].reduce((a, b) => a + b, 0) / group[module].length;
+          }
+        });
+
+        // Calculate overall average
+        const allScores = [
+          ...group.rhetorik,
+          ...group.simulator,
+          ...group.video,
+          ...group.roleplay,
+        ];
+        if (allScores.length > 0) {
+          entry.overall = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+        }
+
+        data.push(entry);
+      });
+    }
 
     return data;
   }, [simulatorSessions, videoSessions, roleplaySessions, gameSessions, timeRange]);
@@ -600,8 +689,8 @@ const ProgressChart = ({
 
         {/* Chart */}
         {hasData ? (
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full" style={{ height: 400, minHeight: 400 }}>
+            <ResponsiveContainer width="100%" height={400} minHeight={400}>
               <ComposedChart
                 data={chartData}
                 margin={{ top: 20, right: 30, left: 0, bottom: 20 }}

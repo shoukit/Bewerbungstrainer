@@ -34,6 +34,8 @@ const SimulatorApp = ({
   clearPendingContinueSession,
   pendingRepeatSession,
   clearPendingRepeatSession,
+  pendingScenario: externalPendingScenario,
+  clearPendingScenario,
   onNavigateToHistory,
 }) => {
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
@@ -44,8 +46,16 @@ const SimulatorApp = ({
   const [completedSession, setCompletedSession] = useState(null);
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(null);
 
-  // Track pending scenario for after login
+  // Track pending scenario for after login (internal state or from external prop)
   const [pendingScenario, setPendingScenario] = useState(null);
+
+  // Handle external pending scenario from KI-Coach navigation
+  useEffect(() => {
+    if (externalPendingScenario && isAuthenticated) {
+      setPendingScenario(externalPendingScenario);
+      clearPendingScenario?.();
+    }
+  }, [externalPendingScenario, isAuthenticated, clearPendingScenario]);
 
   // Track which question to start from when continuing
   const [startFromQuestion, setStartFromQuestion] = useState(0);
@@ -74,11 +84,38 @@ const SimulatorApp = ({
 
   // Handle pending scenario after login - automatically open preparation page
   useEffect(() => {
-    if (pendingScenario && isAuthenticated) {
-      setSelectedScenario(pendingScenario);
-      setCurrentView(VIEWS.PREPARATION);  // Go to preparation first
-      setPendingScenario(null);
-    }
+    const loadAndSelectScenario = async () => {
+      if (pendingScenario && isAuthenticated) {
+        let scenarioToSelect = pendingScenario;
+
+        // If we only have an ID (no title), fetch the full scenario from API
+        if (pendingScenario.id && !pendingScenario.title) {
+          try {
+            const baseUrl = window.bewerbungstrainerData?.restUrl || '/wp-json/bewerbungstrainer/v1';
+            const response = await fetch(`${baseUrl}/simulator/scenarios/${pendingScenario.id}`);
+
+            if (response.ok) {
+              scenarioToSelect = await response.json();
+              console.log('[SimulatorApp] Fetched scenario:', scenarioToSelect.title);
+            } else {
+              console.error('[SimulatorApp] Failed to fetch scenario:', response.status);
+              setPendingScenario(null);
+              return;
+            }
+          } catch (error) {
+            console.error('[SimulatorApp] Error fetching scenario:', error);
+            setPendingScenario(null);
+            return;
+          }
+        }
+
+        setSelectedScenario(scenarioToSelect);
+        setCurrentView(VIEWS.PREPARATION);  // Go to preparation first
+        setPendingScenario(null);
+      }
+    };
+
+    loadAndSelectScenario();
   }, [pendingScenario, isAuthenticated]);
 
   // Handle pending continue session - resume existing session (go directly to session)

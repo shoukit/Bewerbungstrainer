@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Trophy, ArrowLeft, RefreshCw, Star, ChevronDown, ChevronRight, CheckCircle,
   AlertCircle, Lightbulb, Video, User, MessageSquare, Eye, Mic, Award
@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/base/button';
 import { useConfetti } from '@/components/ui/composite/Confetti';
 import { COLORS, getScoreColor } from '@/config/colors';
+import AudioAnalysisPanel from '@/components/feedback/AudioAnalysisPanel';
+import { normalizeAudioMetrics, hasAudioMetricsData } from '@/utils/audioMetricsAdapter';
 
 // Category icons
 const CATEGORY_ICONS = {
@@ -181,6 +183,7 @@ const CategoryScoreCard = ({ category, primaryAccent }) => {
 const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNew }) => {
   const { branding } = usePartner();
   const primaryAccent = branding?.['--primary-accent'] || COLORS.indigo[500];
+  const videoRef = useRef(null);
 
   // Confetti celebration for good scores
   const { triggerConfetti, ConfettiComponent } = useConfetti();
@@ -189,6 +192,35 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
   const categoryScores = session?.category_scores || [];
   const analysis = session?.analysis || {};
   const summary = session?.summary_feedback || '';
+
+  // Extract and normalize audio metrics from the analysis object
+  // Video training stores filler_words and speech_metrics in the analysis JSON
+  const audioMetricsFromAnalysis = useMemo(() => {
+    if (!analysis) return null;
+
+    // Check if we have speech-related data in the analysis
+    if (analysis.filler_words || analysis.speech_metrics) {
+      return {
+        filler_words: analysis.filler_words,
+        speech_metrics: analysis.speech_metrics,
+      };
+    }
+    return null;
+  }, [analysis]);
+
+  const normalizedAudioMetrics = useMemo(
+    () => normalizeAudioMetrics(audioMetricsFromAnalysis),
+    [audioMetricsFromAnalysis]
+  );
+  const showAudioAnalysis = hasAudioMetricsData(audioMetricsFromAnalysis);
+
+  // Handler to jump to timestamp in video
+  const handleJumpToTimestamp = (seconds) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = seconds;
+      videoRef.current.play();
+    }
+  };
 
   // Get grade label
   const getGradeLabel = (score) => {
@@ -310,6 +342,26 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
         </motion.div>
       )}
 
+      {/* Audio/Speech Analysis Panel */}
+      {showAudioAnalysis && (
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="bg-white rounded-2xl p-6 border border-slate-200 mb-6"
+        >
+          <h4 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Mic size={18} color={primaryAccent} />
+            Sprechanalyse
+          </h4>
+          <AudioAnalysisPanel
+            audioAnalysis={normalizedAudioMetrics}
+            primaryAccent={primaryAccent}
+            onJumpToTimestamp={handleJumpToTimestamp}
+          />
+        </motion.div>
+      )}
+
       {/* Video Player */}
       {session?.video_url && (
         <motion.div
@@ -323,6 +375,7 @@ const VideoTrainingComplete = ({ session, scenario, onBackToDashboard, onStartNe
             Deine Aufnahme
           </h4>
           <video
+            ref={videoRef}
             src={session.video_url}
             controls
             className="w-full max-w-[640px] max-h-[360px] rounded-xl bg-black object-contain"

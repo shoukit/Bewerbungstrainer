@@ -35,6 +35,7 @@ import {
   Lightbulb,
   Settings,
   Wifi,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/base/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/base/dialog';
@@ -435,6 +436,12 @@ const RoleplaySessionUnified = ({
                         <span className="text-sm font-semibold text-white">Verbunden</span>
                       </>
                     )}
+                    {status !== 'connected' && status !== 'connecting' && transcript.length > 0 && (
+                      <>
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                        <span className="text-sm font-semibold text-white">Beendet</span>
+                      </>
+                    )}
                   </div>
                   <div className="h-4 w-px bg-white/30" />
                   <div className="flex items-center gap-2">
@@ -495,6 +502,19 @@ const RoleplaySessionUnified = ({
                 >
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   Verbinde...
+                </Button>
+              ) : isStarted && transcript.length > 0 ? (
+                // Fallback: Show manual analysis button when disconnected but has transcript
+                <Button
+                  onClick={handleEndConversation}
+                  size="lg"
+                  className="text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg"
+                  style={{
+                    background: themedStyles.headerGradient,
+                  }}
+                >
+                  <BarChart3 className="w-5 h-5 mr-2" />
+                  Auswertung starten
                 </Button>
               ) : null}
             </div>

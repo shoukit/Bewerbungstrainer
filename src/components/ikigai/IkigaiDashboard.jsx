@@ -318,29 +318,25 @@ const IkigaiDashboard = ({
                     className="bg-white rounded-xl p-4 border border-slate-200 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer group"
                     onClick={() => onContinueSession(session)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center"
-                          style={{ background: `${COLORS.purple[500]}15` }}
-                        >
-                          <Compass className="w-5 h-5" style={{ color: COLORS.purple[500] }} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-800">
-                            {session.summary
-                              ? session.summary.substring(0, 50) + (session.summary.length > 50 ? '...' : '')
-                              : 'Ikigai-Analyse'}
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            {formatDate(session.created_at)}
-                          </p>
-                        </div>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: `${COLORS.purple[500]}15` }}
+                      >
+                        <Compass className="w-5 h-5" style={{ color: COLORS.purple[500] }} />
                       </div>
-                      <div className="flex items-center gap-3">
-                        {getStatusBadge(session)}
-                        <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-purple-500 transition-colors" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          {getStatusBadge(session)}
+                        </div>
+                        <p className="font-medium text-slate-800 truncate">
+                          {session.summary || 'Ikigai-Analyse'}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          {formatDate(session.created_at)}
+                        </p>
                       </div>
+                      <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-purple-500 transition-colors shrink-0" />
                     </div>
                   </motion.div>
                 ))}

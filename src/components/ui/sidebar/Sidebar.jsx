@@ -23,6 +23,7 @@ import {
   Scale,
   Compass,
   AlertTriangle,
+  Brain,
 } from 'lucide-react';
 import { usePartner, useAuth } from '@/context/PartnerContext';
 import { useToast } from '@/components/global/Toast';
@@ -191,6 +192,14 @@ const NAV_ITEMS = [
     icon: LayoutDashboard,
     description: 'Alle Trainingsmöglichkeiten',
     alwaysVisible: true,
+  },
+  {
+    id: 'ki_coach',
+    moduleId: 'ki_coach',
+    label: 'KI-Coach',
+    shortLabel: 'Coach',
+    icon: Brain,
+    description: 'Dein persönlicher Trainings-Coach',
   },
   {
     id: 'ikigai',
@@ -565,9 +574,9 @@ const AppSidebar = ({
 
                 {!isCollapsed && (
                   <>
-                    <div className="flex flex-col overflow-hidden flex-1 min-w-0">
+                    <div className="flex flex-col flex-1 min-w-0">
                       <span className="whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: isActive ? colors.activeText : colors.sidebarText }}>{item.label}</span>
-                      <span className="text-xs leading-snug" style={{ color: colors.sidebarTextMuted }}>
+                      <span className="text-xs leading-snug break-words" style={{ color: colors.sidebarTextMuted }}>
                         {item.description}
                       </span>
                     </div>

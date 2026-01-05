@@ -227,12 +227,12 @@ const PreSessionView = ({
             <Lightbulb className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-[28px] font-bold m-0" style={{ color: branding.textMain }}>
-              Vorbereitung
-            </h1>
-            <p className="text-base m-0 mt-1" style={{ color: branding.textSecondary }}>
-              {scenario.title}{questions.length > 0 ? ` • ${questions.length} ${questionsLabel}` : ''}
+            <p className="text-sm font-medium m-0 mb-1" style={{ color: branding.primaryAccent }}>
+              Vorbereitung{questions.length > 0 ? ` • ${questions.length} ${questionsLabel}` : ''}
             </p>
+            <h1 className="text-[24px] font-bold m-0" style={{ color: branding.textMain }}>
+              {scenario.title}
+            </h1>
           </div>
         </div>
       </div>

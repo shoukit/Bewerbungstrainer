@@ -75,6 +75,8 @@ export const useRoleplaySession = ({
   const transcriptRef = useRef([]);
   const durationRef = useRef(0);
   const startTimeRef = useRef(null);
+  const prevStatusRef = useRef(null);
+  const endSessionTriggeredRef = useRef(false);
 
   // Message handler
   const handleMessage = useCallback((entry) => {
@@ -124,6 +126,38 @@ export const useRoleplaySession = ({
   const agentId = useMemo(() => {
     return scenario?.agent_id || wordpressAPI.getElevenLabsAgentId();
   }, [scenario?.agent_id]);
+
+  // Auto-trigger analysis when ElevenLabs disconnects the call
+  useEffect(() => {
+    const currentStatus = adapter.status;
+    const prevStatus = prevStatusRef.current;
+    prevStatusRef.current = currentStatus;
+
+    // Detect transition from 'connected' to anything else (disconnected, idle, undefined)
+    const wasConnected = prevStatus === 'connected';
+    const isNowDisconnected = currentStatus !== 'connected' && currentStatus !== 'connecting';
+
+    // Auto-trigger endSession if:
+    // - We were connected and now we're not
+    // - We have transcript data
+    // - We're not already analyzing
+    // - We haven't already triggered endSession
+    if (
+      wasConnected &&
+      isNowDisconnected &&
+      transcriptRef.current.length > 0 &&
+      !isAnalyzing &&
+      !endSessionTriggeredRef.current
+    ) {
+      console.log('[useRoleplaySession] Connection ended by ElevenLabs, auto-triggering analysis...');
+      console.log('[useRoleplaySession] Status transition:', prevStatus, '->', currentStatus);
+      endSessionTriggeredRef.current = true;
+      // Small delay to ensure adapter cleanup is complete
+      setTimeout(() => {
+        endSession();
+      }, 100);
+    }
+  }, [adapter.status, isAnalyzing, endSession]);
 
   // Duration timer
   useEffect(() => {
@@ -180,6 +214,7 @@ export const useRoleplaySession = ({
     try {
       setIsStarted(true);
       setError(null);
+      endSessionTriggeredRef.current = false; // Reset for new session
 
       // Create session in database
       const currentUser = wordpressAPI.getCurrentUser();

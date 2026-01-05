@@ -27,6 +27,7 @@ import {
   ChevronDown,
   Lightbulb,
   Settings,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/base/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/base/dialog';
@@ -354,7 +355,9 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       startTimeRef.current = now; // Also set ref for stable access in callbacks
     },
     onDisconnect: () => {
-      // Session disconnected
+      console.log('[RoleplaySession] onDisconnect callback triggered');
+      // Note: The useEffect watching conversation.status handles the analysis trigger
+      // This callback fires when ElevenLabs ends the session from their side
     },
     onMessage: (message) => {
       if (message.source === 'ai' || message.source === 'user') {
@@ -433,18 +436,43 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
     }
   }, [transcript]);
 
-  // Handle agent ending the call
+  // Handle agent ending the call (status changes from 'connected' to anything else)
+  const prevStatusRef = useRef(conversation.status);
   useEffect(() => {
-    // Only process disconnect once, when we have a transcript and aren't already analyzing
+    const currentStatus = conversation.status;
+    const prevStatus = prevStatusRef.current;
+    prevStatusRef.current = currentStatus;
+
+    // Debug logging for any status change
+    if (currentStatus !== prevStatus && isStarted) {
+      console.log('[RoleplaySession] Status changed:', {
+        from: prevStatus,
+        to: currentStatus,
+        transcriptLength: transcript.length,
+        isAnalyzing,
+        showFeedback,
+        hasProcessedDisconnect: hasProcessedDisconnectRef.current,
+      });
+    }
+
+    // Trigger analysis when:
+    // - We were connected and now we're not (disconnected, idle, or undefined)
+    // - We have a transcript
+    // - We haven't already processed this disconnect
+    // - We're not already analyzing
+    const wasConnected = prevStatus === 'connected';
+    const isNowDisconnected = currentStatus !== 'connected' && currentStatus !== 'connecting';
+
     if (
-      conversation.status === 'disconnected' &&
+      wasConnected &&
+      isNowDisconnected &&
       transcript.length > 0 &&
       !isAnalyzing &&
       !showFeedback &&
       !hasProcessedDisconnectRef.current &&
-      isStarted // Only if session was actually started
+      isStarted
     ) {
-      console.log('[RoleplaySession] Agent disconnected, triggering analysis...');
+      console.log('[RoleplaySession] Connection ended, triggering analysis...', { currentStatus });
       hasProcessedDisconnectRef.current = true;
 
       // Small delay to ensure final transcript messages are captured
@@ -1048,16 +1076,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                         <X className="w-5 h-5 mr-2" />
                         Gespräch beenden
                       </Button>
-                    ) : conversation.status === 'disconnected' ? (
-                      <Button
-                        disabled
-                        size="lg"
-                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
-                      >
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Gespräch wurde beendet...
-                      </Button>
-                    ) : (
+                    ) : conversation.status === 'connecting' ? (
                       <Button
                         disabled
                         size="lg"
@@ -1066,6 +1085,41 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         Verbindung wird hergestellt...
                       </Button>
+                    ) : (
+                      // Status is 'disconnected', 'idle', or undefined - conversation ended
+                      // Show manual analysis button if we have a transcript
+                      transcript.length > 0 && !isAnalyzing ? (
+                        <Button
+                          onClick={() => {
+                            console.log('[RoleplaySession] Manual analysis trigger, status:', conversation.status);
+                            hasProcessedDisconnectRef.current = true;
+                            handleEndConversation();
+                          }}
+                          size="lg"
+                          className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg"
+                        >
+                          <BarChart3 className="w-5 h-5 mr-2" />
+                          Auswertung starten
+                        </Button>
+                      ) : isAnalyzing ? (
+                        <Button
+                          disabled
+                          size="lg"
+                          className="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
+                        >
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Analyse läuft...
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled
+                          size="lg"
+                          className="bg-gradient-to-r from-slate-400 to-slate-500 text-white font-semibold text-base py-6 px-8 rounded-xl shadow-lg opacity-70 cursor-not-allowed"
+                        >
+                          <AlertCircle className="w-5 h-5 mr-2" />
+                          Kein Gespräch aufgezeichnet
+                        </Button>
+                      )
                     )}
                   </div>
 

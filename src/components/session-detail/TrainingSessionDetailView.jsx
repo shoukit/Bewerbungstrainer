@@ -8,7 +8,7 @@
  * Migrated to Tailwind CSS for consistent styling.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDuration } from '@/utils/formatting';
 import {
@@ -47,6 +47,8 @@ import { getRoleplaySessionAnalysis, getRoleplaySessionAudioUrl, getRoleplayScen
 import { parseFeedbackJSON, parseAudioAnalysisJSON, parseTranscriptJSON } from '@/utils/parseJSON';
 import { getWPNonce, getWPApiUrl } from '@/services/wordpress-api';
 import { Button, Card } from '@/components/ui';
+import AudioAnalysisPanel from '@/components/feedback/AudioAnalysisPanel';
+import { normalizeAudioMetrics, hasAudioMetricsData } from '@/utils/audioMetricsAdapter';
 
 // =============================================================================
 // CONSTANTS
@@ -404,13 +406,61 @@ const TranscriptEntry = ({ entry }) => {
 };
 
 /**
+ * Collapsible Section for accordion functionality
+ */
+const CollapsibleSection = ({ title, icon: Icon, iconColor = 'text-primary', children, defaultOpen = true, className = '' }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className={`border border-slate-100 rounded-lg overflow-hidden ${className}`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2.5 bg-slate-50 border-none cursor-pointer flex items-center gap-2 text-left hover:bg-slate-100 transition-colors"
+      >
+        {Icon && <Icon size={14} className={iconColor} />}
+        <span className="flex-1 text-[13px] font-semibold text-slate-900">{title}</span>
+        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="p-3">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+/**
  * Expandable answer card for simulator sessions
  */
 const AnswerCard = ({ answer, index }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const audioRef = useRef(null);
   const feedback = answer.feedback ? (typeof answer.feedback === 'string' ? JSON.parse(answer.feedback) : answer.feedback) : null;
   const audioMetrics = answer.audio_analysis ? (typeof answer.audio_analysis === 'string' ? JSON.parse(answer.audio_analysis) : answer.audio_analysis) : null;
   const isNoSpeech = answer.transcript === '[Keine Sprache erkannt]' || audioMetrics?.speech_rate === 'keine_sprache';
+
+  // Normalize audio metrics for the professional panel
+  const normalizedMetrics = useMemo(() => normalizeAudioMetrics(audioMetrics), [audioMetrics]);
+  const showAudioAnalysis = hasAudioMetricsData(audioMetrics) && !isNoSpeech;
+
+  // Handler to jump to timestamp in audio
+  const handleJumpToTimestamp = (seconds) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = seconds;
+      audioRef.current.play();
+    }
+  };
 
   return (
     <motion.div
@@ -442,47 +492,35 @@ const AnswerCard = ({ answer, index }) => {
         <AnimatePresence>
           {isExpanded && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <div className="px-5 pb-5 pt-4 border-t border-slate-100">
+              <div className="px-4 pb-4 pt-3 border-t border-slate-100 flex flex-col gap-3">
                 {/* Full Question */}
                 {answer.question_text && (
-                  <div className="mb-4">
-                    <h5 className="text-[13px] font-semibold text-slate-900 mb-2 flex items-center gap-1.5">
-                      <MessageSquare size={14} className="text-primary" /> Frage / Situation
-                    </h5>
+                  <CollapsibleSection title="Frage / Situation" icon={MessageSquare} defaultOpen={false}>
                     <p className="text-sm text-slate-900 leading-relaxed bg-primary/5 p-3 rounded-lg m-0 border border-primary/10">
                       {answer.question_text}
                     </p>
-                  </div>
+                  </CollapsibleSection>
                 )}
 
                 {/* Audio Player */}
                 {answer.audio_url && (
-                  <div className="mb-4">
-                    <h5 className="text-[13px] font-semibold text-slate-900 mb-2 flex items-center gap-1.5">
-                      <Mic size={14} className="text-primary" /> Deine Aufnahme
-                    </h5>
+                  <CollapsibleSection title="Deine Aufnahme" icon={Mic} defaultOpen={true}>
                     <AudioPlayer audioUrl={answer.audio_url} durationHint={answer.audio_duration_seconds} />
-                  </div>
+                  </CollapsibleSection>
                 )}
 
                 {/* Transcript */}
                 {answer.transcript && (
-                  <div className="mb-4">
-                    <h5 className="text-[13px] font-semibold text-slate-900 mb-2 flex items-center gap-1.5">
-                      <FileText size={14} className="text-primary" /> Transkript
-                    </h5>
+                  <CollapsibleSection title="Transkript" icon={FileText} defaultOpen={true}>
                     <p className={`text-[13px] leading-relaxed bg-slate-50 p-3 rounded-lg m-0 italic break-words ${isNoSpeech ? 'text-slate-400' : 'text-slate-600'}`}>
                       "{answer.transcript}"
                     </p>
-                  </div>
+                  </CollapsibleSection>
                 )}
 
                 {/* Scores Grid */}
                 {feedback?.scores && !isNoSpeech && (
-                  <div className="mb-4">
-                    <h5 className="text-[13px] font-semibold text-slate-900 mb-2.5 flex items-center gap-1.5">
-                      <Star size={14} className="text-primary" /> Bewertung
-                    </h5>
+                  <CollapsibleSection title="Bewertung" icon={Star} defaultOpen={true}>
                     <div className="grid grid-cols-4 gap-2 mb-2">
                       {[
                         { key: 'content', label: 'Inhalt' },
@@ -515,97 +553,46 @@ const AnswerCard = ({ answer, index }) => {
                         </div>
                       );
                     })()}
-                  </div>
+                    {/* Summary */}
+                    {feedback?.summary && <p className="text-[13px] text-slate-600 leading-snug mt-3">{feedback.summary}</p>}
+                  </CollapsibleSection>
                 )}
-
-                {/* Summary */}
-                {feedback?.summary && <p className="text-[13px] text-slate-600 leading-snug mb-3">{feedback.summary}</p>}
 
                 {/* Strengths */}
                 {feedback?.strengths?.length > 0 && !isNoSpeech && (
-                  <div className="mb-3">
-                    <h6 className="text-xs font-semibold text-green-600 mb-1.5 flex items-center gap-1">
-                      <CheckCircle size={12} /> Stärken
-                    </h6>
+                  <CollapsibleSection title="Stärken" icon={CheckCircle} iconColor="text-green-600" defaultOpen={true}>
                     <ul className="m-0 pl-4 text-slate-600 text-xs">
                       {feedback.strengths.map((s, i) => <li key={i} className="mb-1">{s}</li>)}
                     </ul>
-                  </div>
+                  </CollapsibleSection>
                 )}
 
                 {/* Improvements */}
                 {feedback?.improvements?.length > 0 && (
-                  <div className="mb-3">
-                    <h6 className="text-xs font-semibold text-amber-600 mb-1.5 flex items-center gap-1">
-                      <AlertCircle size={12} /> Verbesserungspotenzial
-                    </h6>
+                  <CollapsibleSection title="Verbesserungspotenzial" icon={AlertCircle} iconColor="text-amber-600" defaultOpen={true}>
                     <ul className="m-0 pl-4 text-slate-600 text-xs">
                       {feedback.improvements.map((s, i) => <li key={i} className="mb-1">{s}</li>)}
                     </ul>
-                  </div>
+                  </CollapsibleSection>
                 )}
 
                 {/* Tips */}
                 {feedback?.tips?.length > 0 && !isNoSpeech && (
-                  <div className="mb-3">
-                    <h6 className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1">
-                      <Lightbulb size={12} /> Tipps
-                    </h6>
+                  <CollapsibleSection title="Tipps" icon={Lightbulb} iconColor="text-primary" defaultOpen={true}>
                     <ul className="m-0 pl-4 text-slate-600 text-xs">
                       {feedback.tips.map((s, i) => <li key={i} className="mb-1">{s}</li>)}
                     </ul>
-                  </div>
+                  </CollapsibleSection>
                 )}
 
-                {/* Audio Metrics */}
-                {audioMetrics && !isNoSpeech && (
-                  <div className="mt-4 pt-4 border-t border-slate-100">
-                    <h5 className="text-[13px] font-semibold text-slate-900 mb-3 flex items-center gap-1.5">
-                      <Mic size={14} className="text-primary" /> Sprechanalyse
-                    </h5>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {audioMetrics.speech_rate && (
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                          <div className="text-[11px] text-slate-500 mb-1">Sprechtempo</div>
-                          <div className="text-sm font-semibold text-slate-900 capitalize">
-                            {audioMetrics.speech_rate === 'optimal' ? '✓ Optimal' : audioMetrics.speech_rate === 'zu_schnell' ? '⚡ Zu schnell' : audioMetrics.speech_rate === 'zu_langsam' ? '🐢 Zu langsam' : audioMetrics.speech_rate}
-                          </div>
-                        </div>
-                      )}
-                      {audioMetrics.filler_words && (
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                          <div className="text-[11px] text-slate-500 mb-1">Füllwörter</div>
-                          <div className={`text-sm font-semibold ${audioMetrics.filler_words.count <= 2 ? 'text-green-600' : audioMetrics.filler_words.count <= 5 ? 'text-amber-600' : 'text-red-600'}`}>
-                            {audioMetrics.filler_words.count || 0} erkannt
-                          </div>
-                          {audioMetrics.filler_words.words?.length > 0 && (
-                            <div className="text-[11px] text-slate-500 mt-1">
-                              {audioMetrics.filler_words.words.slice(0, 5).join(', ')}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {audioMetrics.confidence_score != null && (
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                          <div className="text-[11px] text-slate-500 mb-1">Selbstsicherheit</div>
-                          <div className="text-sm font-semibold" style={{ color: getScoreColor(audioMetrics.confidence_score) }}>
-                            {audioMetrics.confidence_score}%
-                          </div>
-                        </div>
-                      )}
-                      {audioMetrics.clarity_score != null && (
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                          <div className="text-[11px] text-slate-500 mb-1">Klarheit</div>
-                          <div className="text-sm font-semibold" style={{ color: getScoreColor(audioMetrics.clarity_score) }}>
-                            {audioMetrics.clarity_score}%
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {audioMetrics.notes && (
-                      <p className="text-xs text-slate-500 mt-2.5 italic">{audioMetrics.notes}</p>
-                    )}
-                  </div>
+                {/* Audio Metrics - Professional Panel */}
+                {showAudioAnalysis && (
+                  <CollapsibleSection title="Sprechanalyse" icon={Mic} defaultOpen={false}>
+                    <AudioAnalysisPanel
+                      audioAnalysis={normalizedMetrics}
+                      onJumpToTimestamp={handleJumpToTimestamp}
+                    />
+                  </CollapsibleSection>
                 )}
               </div>
             </motion.div>
@@ -865,6 +852,26 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
   const categoryScores = session?.category_scores || [];
   const analysis = session?.analysis || {};
 
+  // Video Training audio metrics from analysis object
+  const videoRef = useRef(null);
+  const videoAudioMetrics = useMemo(() => {
+    if (!isVideo || !analysis) return null;
+    if (analysis.filler_words || analysis.speech_metrics) {
+      return { filler_words: analysis.filler_words, speech_metrics: analysis.speech_metrics };
+    }
+    return null;
+  }, [isVideo, analysis]);
+  const normalizedVideoAudioMetrics = useMemo(() => normalizeAudioMetrics(videoAudioMetrics), [videoAudioMetrics]);
+  const showVideoAudioAnalysis = hasAudioMetricsData(videoAudioMetrics);
+
+  // Handler to jump to timestamp in video
+  const handleVideoJumpToTimestamp = (seconds) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = seconds;
+      videoRef.current.play();
+    }
+  };
+
   const getOverallScore = () => {
     let rawScore = 0;
     if (isRoleplay && roleplayData?.feedback?.rating?.overall) rawScore = roleplayData.feedback.rating.overall;
@@ -987,27 +994,135 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
 
       {/* Main Content */}
       <div className={`overflow-hidden ${isMobile ? 'p-4' : 'px-8 py-6'}`}>
+        {/* Video Training - Compact Layout */}
+        {isVideo && (
+          <div className="max-w-[1400px] mx-auto">
+            {/* Top Row: Video + Summary side by side */}
+            <div className={`grid gap-5 mb-5 ${(isMobile || isTablet) ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {/* Video Player - Compact */}
+              {session?.video_url && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                  <Card className="p-4 h-full">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <Video size={16} className="text-primary" /> Deine Aufnahme
+                    </h3>
+                    <video
+                      ref={videoRef}
+                      src={session.video_url}
+                      controls
+                      className="w-full rounded-xl bg-black object-contain"
+                      style={{ maxHeight: '280px' }}
+                    />
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Summary + Main Score */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                <Card className="p-4 h-full flex flex-col">
+                  <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <Award size={16} className="text-primary" /> Gesamtbewertung
+                  </h3>
+                  <div className="flex-1 flex flex-col items-center justify-center">
+                    <ScoreGauge score={overallScore} size={100} />
+                    <p className="text-lg font-semibold mt-2" style={{ color: getScoreColor(overallScore) }}>
+                      {getGradeLabel(overallScore)}
+                    </p>
+                    {session?.summary_feedback && (
+                      <p className="text-[13px] text-slate-600 leading-relaxed text-center mt-3 line-clamp-4">
+                        {session.summary_feedback}
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* Middle Row: Categories + Audio Analysis side by side */}
+            <div className={`grid gap-5 mb-5 ${(isMobile || isTablet) ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {/* Category Scores */}
+              {categoryScores.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                  <Card className="p-4">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <Star size={16} className="text-primary" /> Detaillierte Bewertung
+                    </h3>
+                    {/* Only limit height on desktop - no nested scrolling on mobile */}
+                    <div className={!(isMobile || isTablet) ? 'max-h-[300px] overflow-y-auto pr-1' : ''}>
+                      {categoryScores.map((category, index) => (
+                        <CategoryScoreCard key={category.category || index} category={category} />
+                      ))}
+                    </div>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Audio/Speech Analysis */}
+              {showVideoAudioAnalysis && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                  <Card className="p-4">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <Mic size={16} className="text-primary" /> Sprechanalyse
+                    </h3>
+                    {/* Only limit height on desktop - no nested scrolling on mobile */}
+                    <div className={!(isMobile || isTablet) ? 'max-h-[300px] overflow-y-auto pr-1' : ''}>
+                      <AudioAnalysisPanel
+                        audioAnalysis={normalizedVideoAudioMetrics}
+                        onJumpToTimestamp={handleVideoJumpToTimestamp}
+                      />
+                    </div>
+                  </Card>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Bottom Row: Strengths + Tips side by side */}
+            {(analysis.key_strengths?.length > 0 || analysis.actionable_tips?.length > 0) && (
+              <div className={`grid gap-5 ${(isMobile || isTablet) ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {/* Strengths */}
+                {analysis.key_strengths?.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <Card className="p-4 h-full">
+                      <h4 className="text-sm font-semibold text-green-600 mb-3 flex items-center gap-1.5">
+                        <CheckCircle size={16} /> Deine Stärken
+                      </h4>
+                      <ul className="m-0 pl-5">
+                        {analysis.key_strengths.map((item, i) => (
+                          <li key={i} className="text-[13px] text-slate-600 mb-1.5 leading-snug">{item}</li>
+                        ))}
+                      </ul>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Tips */}
+                {analysis.actionable_tips?.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+                    <Card className="p-4 h-full">
+                      <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-1.5">
+                        <Lightbulb size={16} /> Tipps zur Verbesserung
+                      </h4>
+                      <ul className="m-0 pl-5">
+                        {analysis.actionable_tips.map((item, i) => (
+                          <li key={i} className="text-[13px] text-slate-600 mb-1.5 leading-snug">{item}</li>
+                        ))}
+                      </ul>
+                    </Card>
+                  </motion.div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Non-Video Sessions (Simulator, Roleplay) - Original 2-Column Layout */}
+        {!isVideo && (
         <div
           className="grid gap-6 overflow-hidden"
           style={{ gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '1fr 400px' }}
         >
           {/* LEFT COLUMN - Media */}
           <div className="min-w-0 overflow-hidden">
-            {/* Video Player */}
-            {isVideo && session?.video_url && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <Card className="mb-5 p-5">
-                  <h3 className="text-[15px] font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                    <Video size={18} className="text-primary" /> Deine Aufnahme
-                  </h3>
-                  <video
-                    src={session.video_url}
-                    controls
-                    className="w-full max-w-[640px] max-h-[360px] rounded-xl bg-black object-contain"
-                  />
-                </Card>
-              </motion.div>
-            )}
 
             {/* Simulator Answers */}
             {isSimulator && answers.length > 0 && (
@@ -1093,60 +1208,6 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
 
           {/* RIGHT COLUMN - Analysis */}
           <div className="min-w-0 overflow-hidden">
-            {/* Category Scores (Video) */}
-            {isVideo && categoryScores.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-5">
-                <h3 className="text-[15px] font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                  <Star size={16} className="text-primary" /> Detaillierte Bewertung
-                </h3>
-                {categoryScores.map((category, index) => (
-                  <CategoryScoreCard key={category.category || index} category={category} />
-                ))}
-              </motion.div>
-            )}
-
-            {/* Analysis Details (Video) */}
-            {isVideo && (analysis.key_strengths?.length > 0 || analysis.actionable_tips?.length > 0) && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                <Card className="mb-5 p-5">
-                  {analysis.key_strengths?.length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-semibold text-green-600 mb-2.5 flex items-center gap-1.5">
-                        <CheckCircle size={16} /> Deine Stärken
-                      </h4>
-                      <ul className="m-0 pl-5">
-                        {analysis.key_strengths.map((item, i) => (
-                          <li key={i} className="text-[13px] text-slate-600 mb-1.5 leading-snug">{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {analysis.actionable_tips?.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-primary mb-2.5 flex items-center gap-1.5">
-                        <Lightbulb size={16} /> Tipps zur Verbesserung
-                      </h4>
-                      <ul className="m-0 pl-5">
-                        {analysis.actionable_tips.map((item, i) => (
-                          <li key={i} className="text-[13px] text-slate-600 mb-1.5 leading-snug">{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Summary (Video) */}
-            {isVideo && session?.summary_feedback && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                <div className="bg-slate-50 rounded-2xl p-5">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-2.5">Zusammenfassung</h4>
-                  <p className="text-[13px] text-slate-600 leading-relaxed m-0">{session.summary_feedback}</p>
-                </div>
-              </motion.div>
-            )}
-
             {/* Simulator Summary */}
             {isSimulator && summaryFeedback && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
@@ -1270,6 +1331,7 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}

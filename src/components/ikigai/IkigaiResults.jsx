@@ -184,12 +184,7 @@ const IkigaiResults = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-          gap: b.space[3],
-          marginBottom: b.space[8],
-        }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8"
       >
         {Object.entries(DIMENSIONS).map(([key, config]) => {
           const Icon = DIMENSION_ICONS[key];

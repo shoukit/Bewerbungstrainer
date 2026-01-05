@@ -152,24 +152,24 @@ const RationalScoreDisplay = ({ proScore, contraScore }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-between mb-3">
+        <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-4 mb-3">
           <div className="flex items-center gap-2">
-            <ThumbsUp size={20} className="text-green-600" />
-            <span className="text-4xl font-bold text-green-600">
+            <ThumbsUp size={18} className="text-green-600 shrink-0" />
+            <span className="text-2xl sm:text-4xl font-bold text-green-600">
               {proPercentage}%
             </span>
-            <span className="text-slate-600 text-base">
+            <span className="text-slate-600 text-sm sm:text-base">
               ({proScore} Punkte)
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-600 text-base">
-              ({contraScore} Punkte)
-            </span>
-            <span className="text-4xl font-bold text-red-600">
+          <div className="flex items-center gap-2 sm:flex-row-reverse">
+            <ThumbsDown size={18} className="text-red-600 shrink-0" />
+            <span className="text-2xl sm:text-4xl font-bold text-red-600">
               {contraPercentage}%
             </span>
-            <ThumbsDown size={20} className="text-red-600" />
+            <span className="text-slate-600 text-sm sm:text-base">
+              ({contraScore} Punkte)
+            </span>
           </div>
         </div>
 
@@ -243,14 +243,14 @@ const DecisionBoardResult = ({
           </Button>
         </div>
 
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-brand-gradient mb-4 shadow-lg">
-            <Sparkles size={32} color="white" />
+        <div className="text-center px-2">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-brand-gradient mb-4 shadow-lg">
+            <Sparkles size={28} className="sm:w-8 sm:h-8" color="white" />
           </div>
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">
+          <h1 className="text-2xl sm:text-4xl font-bold text-slate-800 mb-2">
             Deine Entscheidungsanalyse
           </h1>
-          <p className="text-xl text-slate-600 italic">
+          <p className="text-base sm:text-xl text-slate-600 italic break-words">
             "{decisionData?.topic}"
           </p>
         </div>
@@ -365,22 +365,23 @@ const DecisionBoardResult = ({
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex justify-center gap-4 mt-8">
+      <div className="flex flex-col sm:flex-row justify-center gap-3 mt-8 px-4">
         <Button
           variant="outline"
           size="lg"
           onClick={onEditDecision}
+          className="w-full sm:w-auto"
         >
-          <Edit3 size={18} className="mr-2" />
+          <Edit3 size={18} className="mr-2 shrink-0" />
           Argumente anpassen
         </Button>
         <Button
           variant="solid"
           size="lg"
           onClick={onStartNew}
-          className="bg-brand-gradient"
+          className="bg-brand-gradient w-full sm:w-auto"
         >
-          <RefreshCw size={18} className="mr-2" />
+          <RefreshCw size={18} className="mr-2 shrink-0" />
           Neue Entscheidung
         </Button>
       </div>
