@@ -266,20 +266,20 @@ const DecisionBoardDashboard = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-center mb-12"
+            className="text-center mb-12 px-4"
           >
             <Button
               onClick={handleStartNew}
               size="lg"
-              className="px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
+              className="w-full sm:w-auto px-6 sm:px-8 py-4 text-base sm:text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
               style={{
                 background: decisionGradient,
                 color: 'white',
               }}
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Neue Entscheidung starten
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <Plus className="w-5 h-5 mr-2 shrink-0" />
+              <span className="truncate">Neue Entscheidung starten</span>
+              <ArrowRight className="w-5 h-5 ml-2 shrink-0" />
             </Button>
             {!isAuthenticated && (
               <p className="text-sm text-slate-500 mt-3">
@@ -323,29 +323,25 @@ const DecisionBoardDashboard = ({
                     className="bg-white rounded-xl p-4 border border-slate-200 hover:border-teal-300 hover:shadow-md transition-all cursor-pointer group"
                     onClick={() => onContinueSession(session)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center"
-                          style={{ background: `${COLORS.teal[500]}15` }}
-                        >
-                          <Scale className="w-5 h-5" style={{ color: COLORS.teal[500] }} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-800">
-                            {session.topic
-                              ? session.topic.substring(0, 50) + (session.topic.length > 50 ? '...' : '')
-                              : 'Entscheidungsanalyse'}
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            {formatDate(session.created_at)}
-                          </p>
-                        </div>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: `${COLORS.teal[500]}15` }}
+                      >
+                        <Scale className="w-5 h-5" style={{ color: COLORS.teal[500] }} />
                       </div>
-                      <div className="flex items-center gap-3">
-                        {getStatusBadge(session)}
-                        <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-500 transition-colors" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          {getStatusBadge(session)}
+                        </div>
+                        <p className="font-medium text-slate-800 truncate">
+                          {session.topic || 'Entscheidungsanalyse'}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          {formatDate(session.created_at)}
+                        </p>
                       </div>
+                      <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-500 transition-colors shrink-0" />
                     </div>
                   </motion.div>
                 ))}

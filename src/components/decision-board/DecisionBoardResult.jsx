@@ -365,22 +365,23 @@ const DecisionBoardResult = ({
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex justify-center gap-4 mt-8">
+      <div className="flex flex-col sm:flex-row justify-center gap-3 mt-8 px-4">
         <Button
           variant="outline"
           size="lg"
           onClick={onEditDecision}
+          className="w-full sm:w-auto"
         >
-          <Edit3 size={18} className="mr-2" />
+          <Edit3 size={18} className="mr-2 shrink-0" />
           Argumente anpassen
         </Button>
         <Button
           variant="solid"
           size="lg"
           onClick={onStartNew}
-          className="bg-brand-gradient"
+          className="bg-brand-gradient w-full sm:w-auto"
         >
-          <RefreshCw size={18} className="mr-2" />
+          <RefreshCw size={18} className="mr-2 shrink-0" />
           Neue Entscheidung
         </Button>
       </div>
