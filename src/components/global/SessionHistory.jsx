@@ -21,7 +21,6 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
   Mic,
 } from 'lucide-react';
 import { Button, Card, Skeleton, SkeletonListItem } from '@/components/ui';
@@ -38,7 +37,6 @@ import { BriefingCard, SessionCard, DecisionCard, IkigaiCard } from '@/component
 import IkigaiCompass from '@/components/ikigai/IkigaiCompass';
 import IkigaiResults from '@/components/ikigai/IkigaiResults';
 import SessionDetailHeader from '@/components/session-detail/SessionDetailHeader';
-import ProgressChart from '@/components/progress/ProgressChart';
 import { Scale, Compass } from 'lucide-react';
 
 import { IKIGAI_COLORS } from '@/config/colors';
@@ -91,7 +89,6 @@ const IKIGAI_DIMENSIONS = {
  * Tab configuration
  */
 const TABS = {
-  PROGRESS: 'progress',
   SIMULATOR: 'simulator',
   ROLEPLAY: 'roleplay',
   VIDEO: 'video',
@@ -102,7 +99,6 @@ const TABS = {
 };
 
 const TAB_CONFIG = [
-  { id: TABS.PROGRESS, label: 'Fortschritt', icon: TrendingUp },
   { id: TABS.BRIEFINGS, label: 'Smart Briefings', icon: Sparkles },
   { id: TABS.DECISIONS, label: 'Entscheidungs-Kompass', icon: Scale },
   { id: TABS.IKIGAI, label: 'Ikigai-Kompass', icon: Compass },
@@ -159,8 +155,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
   // Partner branding
   const { branding, demoCode } = usePartner();
 
-  // Active tab - use initialTab prop if provided, otherwise default to Progress
-  const [activeTab, setActiveTab] = useState(initialTab || TABS.PROGRESS);
+  // Active tab - use initialTab prop if provided, otherwise default to Briefings
+  const [activeTab, setActiveTab] = useState(initialTab || TABS.BRIEFINGS);
 
   // Update active tab when initialTab prop changes
   useEffect(() => {
@@ -192,7 +188,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
 
   // Pagination state for each tab
   const [currentPage, setCurrentPage] = useState({
-    [TABS.PROGRESS]: 1,
     [TABS.BRIEFINGS]: 1,
     [TABS.DECISIONS]: 1,
     [TABS.IKIGAI]: 1,
@@ -396,7 +391,6 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
       case TABS.DECISIONS: return decisions;
       case TABS.IKIGAI: return ikigais;
       case TABS.RHETORIK: return gameSessions;
-      case TABS.PROGRESS: return []; // Progress tab doesn't show sessions list
       default: return roleplaySessions;
     }
   };
@@ -1070,8 +1064,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         {TAB_CONFIG.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          const count = tab.id === TABS.PROGRESS ? null :
-                       tab.id === TABS.SIMULATOR ? simulatorSessions.length :
+          const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
                        tab.id === TABS.VIDEO ? videoSessions.length :
                        tab.id === TABS.BRIEFINGS ? briefings.length :
                        tab.id === TABS.DECISIONS ? decisions.length :
@@ -1109,8 +1102,7 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
           {TAB_CONFIG.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const count = tab.id === TABS.PROGRESS ? null :
-                         tab.id === TABS.SIMULATOR ? simulatorSessions.length :
+            const count = tab.id === TABS.SIMULATOR ? simulatorSessions.length :
                          tab.id === TABS.VIDEO ? videoSessions.length :
                          tab.id === TABS.BRIEFINGS ? briefings.length :
                          tab.id === TABS.DECISIONS ? decisions.length :
@@ -1152,9 +1144,8 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
         </div>
       </div>
 
-      {/* Desktop Action buttons - hide for Progress tab */}
-      {activeTab !== TABS.PROGRESS && (
-        <div className="hidden sm:flex justify-center lg:justify-end flex-wrap gap-3 mx-6 mb-6">
+      {/* Desktop Action buttons */}
+      <div className="hidden sm:flex justify-center lg:justify-end flex-wrap gap-3 mx-6 mb-6">
           <Button variant="outline" onClick={loadAllData} disabled={isLoading} title="Aktualisieren">
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
@@ -1184,20 +1175,11 @@ const SessionHistory = ({ onBack, onSelectSession, isAuthenticated, onLoginClick
                'Neue Live-Simulation'}
             </Button>
           )}
-        </div>
-      )}
+      </div>
 
       {/* Content Area */}
       <div className="mx-4 sm:mx-6">
-        {/* Progress Chart Tab */}
-        {activeTab === TABS.PROGRESS ? (
-          <ProgressChart
-            simulatorSessions={simulatorSessions}
-            videoSessions={videoSessions}
-            roleplaySessions={roleplaySessions}
-            gameSessions={gameSessions}
-          />
-        ) : activeSessions.length === 0 ? (
+        {activeSessions.length === 0 ? (
           <Card className="text-center py-16 px-6 rounded-2xl shadow-card">
             {activeTab === TABS.SIMULATOR && <Target className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
             {activeTab === TABS.ROLEPLAY && <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />}
