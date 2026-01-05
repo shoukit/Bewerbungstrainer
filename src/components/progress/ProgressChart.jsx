@@ -306,11 +306,24 @@ const ProgressChart = ({
   const chartData = useMemo(() => {
     // Use start of today for accurate day-based filtering
     const now = new Date();
+    // Create today at end of day (local timezone)
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-    const cutoffDate = timeRange === 0
-      ? new Date(0)
-      : new Date(today.getTime() - (timeRange - 1) * 24 * 60 * 60 * 1000);
-    cutoffDate.setHours(0, 0, 0, 0); // Start of cutoff day
+
+    // Calculate cutoff date using date arithmetic (safer than milliseconds)
+    // This properly handles month/year boundaries
+    let cutoffDate;
+    if (timeRange === 0) {
+      cutoffDate = new Date(0); // All time
+    } else {
+      // Create a new date at start of cutoff day
+      cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (timeRange - 1), 0, 0, 0, 0);
+    }
+
+    console.log('[ProgressChart] Date range:', {
+      today: today.toLocaleDateString('de-DE'),
+      cutoffDate: cutoffDate.toLocaleDateString('de-DE'),
+      timeRange: timeRange === 0 ? 'all' : `${timeRange} days`,
+    });
 
     // Helper to normalize scores to 0-100
     const normalizeScore = (score, maxScore = 10) => {
