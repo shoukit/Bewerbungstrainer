@@ -81,7 +81,7 @@ export async function fetchAllScenarios() {
     const [simulatorRes, videoRes, roleplayRes, briefingRes] = await Promise.all([
       fetch(`${baseUrl}/simulator/scenarios`, { headers, credentials: 'same-origin' }),
       fetch(`${baseUrl}/video-training/scenarios`, { headers, credentials: 'same-origin' }),
-      fetch(`${baseUrl}/scenarios`, { headers, credentials: 'same-origin' }),
+      fetch(`${baseUrl}/roleplays`, { headers, credentials: 'same-origin' }),
       fetch(`${baseUrl}/smartbriefing/templates`, { headers, credentials: 'same-origin' }),
     ]);
 
@@ -189,17 +189,31 @@ export function aggregateSessionStats(sessions) {
     }
   });
 
-  // Process roleplay sessions
+  // Process roleplay sessions - handle multiple score locations
   roleplay.forEach(session => {
     try {
       const feedback = typeof session.feedback_json === 'string'
         ? JSON.parse(session.feedback_json)
         : session.feedback_json;
-      if (feedback?.rating?.overall != null) {
-        scores.overall.push(feedback.rating.overall * 10);
+
+      // Try multiple score locations (different feedback formats)
+      const overallScore = feedback?.rating?.overall ??
+        feedback?.rating?.gesamteindruck ??
+        feedback?.overall_score ??
+        feedback?.overallScore ??
+        feedback?.score;
+
+      if (overallScore != null) {
+        // Normalize: if <= 10, multiply by 10
+        const normalized = parseFloat(overallScore) <= 10 ? parseFloat(overallScore) * 10 : parseFloat(overallScore);
+        scores.overall.push(normalized);
       }
-      if (feedback?.rating?.communication != null) {
-        scores.communication.push(feedback.rating.communication * 10);
+
+      // Try communication score
+      const commScore = feedback?.rating?.communication ??
+        feedback?.rating?.kommunikation;
+      if (commScore != null) {
+        scores.communication.push(parseFloat(commScore) * 10);
       }
     } catch {}
   });
@@ -234,15 +248,48 @@ export function aggregateSessionStats(sessions) {
   const recentScores = [];
   const olderScores = [];
 
+  // Helper to get date from session (try multiple fields)
+  const getSessionDate = (session) => {
+    const dateStr = session.created_at || session.started_at || session.updated_at;
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? null : date;
+  };
+
+  // Helper to get score from session
+  const getSessionScore = (session) => {
+    // Direct score fields
+    if (session.overall_score != null) {
+      const s = parseFloat(session.overall_score);
+      return s <= 10 ? s * 10 : s;
+    }
+    if (session.score != null) {
+      return parseFloat(session.score);
+    }
+    // Try to extract from feedback_json
+    try {
+      const feedback = typeof session.feedback_json === 'string'
+        ? JSON.parse(session.feedback_json)
+        : session.feedback_json;
+      const score = feedback?.rating?.overall ??
+        feedback?.rating?.gesamteindruck ??
+        feedback?.overall_score;
+      if (score != null) {
+        const s = parseFloat(score);
+        return s <= 10 ? s * 10 : s;
+      }
+    } catch {}
+    return null;
+  };
+
   allSessions.forEach(session => {
-    const sessionDate = new Date(session.created_at);
-    const score = session.overall_score || session.score;
-    if (score != null) {
-      const normalizedScore = parseFloat(score) <= 10 ? parseFloat(score) * 10 : parseFloat(score);
+    const sessionDate = getSessionDate(session);
+    const score = getSessionScore(session);
+    if (sessionDate && score != null) {
       if (sessionDate >= thirtyDaysAgo) {
-        recentScores.push(normalizedScore);
+        recentScores.push(score);
       } else {
-        olderScores.push(normalizedScore);
+        olderScores.push(score);
       }
     }
   });
@@ -288,16 +335,18 @@ export function aggregateSessionStats(sessions) {
     .map(([text]) => text);
 
   // Find last session date
-  const sortedByDate = allSessions
-    .filter(s => s.created_at)
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const sessionsWithDates = allSessions
+    .map(s => ({ session: s, date: getSessionDate(s) }))
+    .filter(({ date }) => date !== null);
 
-  const lastSessionDate = sortedByDate[0]?.created_at
-    ? new Date(sortedByDate[0].created_at).toLocaleDateString('de-DE')
+  const sortedByDate = sessionsWithDates.sort((a, b) => b.date - a.date);
+
+  const lastSessionDate = sortedByDate[0]?.date
+    ? sortedByDate[0].date.toLocaleDateString('de-DE')
     : null;
 
-  const daysSinceLastSession = sortedByDate[0]?.created_at
-    ? Math.floor((Date.now() - new Date(sortedByDate[0].created_at)) / (1000 * 60 * 60 * 24))
+  const daysSinceLastSession = sortedByDate[0]?.date
+    ? Math.floor((Date.now() - sortedByDate[0].date) / (1000 * 60 * 60 * 24))
     : null;
 
   // Pacing issues from audio analysis (games API renames analysis_json to analysis)
@@ -556,11 +605,38 @@ export async function getCoachingIntelligence() {
     },
   });
 
+  // Debug: Log sample session data to understand structure
+  if (sessions.simulator.length > 0) {
+    console.log('[CoachingIntelligence] Sample simulator session:', {
+      id: sessions.simulator[0].id,
+      overall_score: sessions.simulator[0].overall_score,
+      created_at: sessions.simulator[0].created_at,
+    });
+  }
+  if (sessions.roleplay.length > 0) {
+    console.log('[CoachingIntelligence] Sample roleplay session:', {
+      id: sessions.roleplay[0].id,
+      feedback_json: sessions.roleplay[0].feedback_json ? 'present' : 'missing',
+      rating: sessions.roleplay[0].feedback_json?.rating,
+      created_at: sessions.roleplay[0].created_at,
+    });
+  }
+  if (sessions.games.length > 0) {
+    console.log('[CoachingIntelligence] Sample game session:', {
+      id: sessions.games[0].id,
+      score: sessions.games[0].score,
+      created_at: sessions.games[0].created_at,
+    });
+  }
+
   // Aggregate statistics
   const stats = aggregateSessionStats(sessions);
   console.log('[CoachingIntelligence] Stats aggregated:', {
     totalSessions: stats.totalSessions,
     averageScores: stats.averageScores,
+    daysSinceLastSession: stats.daysSinceLastSession,
+    lastSessionDate: stats.lastSessionDate,
+    moduleBreakdown: stats.moduleBreakdown,
   });
 
   // Generate AI analysis
