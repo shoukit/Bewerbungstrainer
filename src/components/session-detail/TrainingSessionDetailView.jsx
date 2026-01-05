@@ -1037,7 +1037,8 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                     <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
                       <Star size={16} className="text-primary" /> Detaillierte Bewertung
                     </h3>
-                    <div className="max-h-[300px] overflow-y-auto pr-1">
+                    {/* Only limit height on desktop - no nested scrolling on mobile */}
+                    <div className={!(isMobile || isTablet) ? 'max-h-[300px] overflow-y-auto pr-1' : ''}>
                       {categoryScores.map((category, index) => (
                         <CategoryScoreCard key={category.category || index} category={category} />
                       ))}
@@ -1053,7 +1054,8 @@ const TrainingSessionDetailView = ({ session, type, scenario, onBack, onContinue
                     <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
                       <Mic size={16} className="text-primary" /> Sprechanalyse
                     </h3>
-                    <div className="max-h-[300px] overflow-y-auto pr-1">
+                    {/* Only limit height on desktop - no nested scrolling on mobile */}
+                    <div className={!(isMobile || isTablet) ? 'max-h-[300px] overflow-y-auto pr-1' : ''}>
                       <AudioAnalysisPanel
                         audioAnalysis={normalizedVideoAudioMetrics}
                         onJumpToTimestamp={handleVideoJumpToTimestamp}
