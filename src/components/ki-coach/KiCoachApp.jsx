@@ -394,6 +394,8 @@ const KiCoachApp = ({
   const [userFocus, setUserFocus] = useState(getUserFocus());
 
   // Load coaching intelligence
+  // Note: userFocus is NOT in dependencies to prevent re-analysis when resetting focus
+  // Focus is either passed explicitly or read from localStorage
   const loadCoaching = useCallback(async (isRefresh = false, focus = null) => {
     if (!isAuthenticated) {
       setIsLoading(false);
@@ -408,8 +410,8 @@ const KiCoachApp = ({
       }
       setError(null);
 
-      // Use provided focus or get from state/localStorage
-      const currentFocus = focus ?? userFocus ?? getUserFocus();
+      // Use provided focus or get from localStorage (not state, to avoid dependency)
+      const currentFocus = focus ?? getUserFocus();
       const data = await getCoachingIntelligence(currentFocus);
       setCoachingData(data);
     } catch (err) {
@@ -419,7 +421,7 @@ const KiCoachApp = ({
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [isAuthenticated, userFocus]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     loadCoaching();
