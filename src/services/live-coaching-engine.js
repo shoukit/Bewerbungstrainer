@@ -98,10 +98,6 @@ function isModelNotFoundError(error) {
  * @param {string} options.nextAgentInput - The text the agent will say next
  * @param {Array} options.transcriptHistory - Recent transcript [{role, text}]
  * @param {Object} options.scenarioContext - Scenario configuration
- * @param {string} options.scenarioContext.userRole - User's role label
- * @param {string} options.scenarioContext.agentRole - Agent's role label
- * @param {string} options.scenarioContext.agentProperties - Agent characteristics
- * @param {string} options.scenarioContext.agentPainPoints - Agent's typical objections
  * @returns {Promise<Object>} - Coaching tips object
  */
 export async function generateLiveCoaching({
@@ -122,12 +118,16 @@ export async function generateLiveCoaching({
     return DEFAULT_COACHING;
   }
 
-  // Build prompt
+  // Build prompt with all scenario context
   const prompt = getLiveCoachingPrompt({
+    scenarioTitle: scenarioContext.scenarioTitle || '',
+    scenarioDescription: scenarioContext.scenarioDescription || '',
     userRole: scenarioContext.userRole || 'Bewerber',
     agentRole: scenarioContext.agentRole || 'Interviewer',
+    agentName: scenarioContext.agentName || '',
     agentProperties: scenarioContext.agentProperties || '',
     agentPainPoints: scenarioContext.agentPainPoints || '',
+    agentQuestions: scenarioContext.agentQuestions || '',
     transcriptHistory,
     nextAgentInput,
   });
