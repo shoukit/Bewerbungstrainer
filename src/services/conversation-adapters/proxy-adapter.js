@@ -308,6 +308,14 @@ export const useProxyAdapter = ({
           onError?.(new Error(data.message || data.error_message || 'Server-Fehler'));
           break;
 
+        case 'conversation_end':
+          // ElevenLabs signals end of conversation - close WebSocket to trigger onclose handler
+          console.log('[ProxyAdapter] Received conversation_end event from ElevenLabs');
+          if (wsRef.current) {
+            wsRef.current.close();
+          }
+          break;
+
         default:
           // Unhandled message types ignored
           break;
@@ -315,7 +323,7 @@ export const useProxyAdapter = ({
     } catch (err) {
       console.error('[ProxyAdapter] Message parse error:', err);
     }
-  }, [onConnect, onMessage, onError, queueAudio, startAudioCapture]);
+  }, [onConnect, onMessage, onError, onDisconnect, queueAudio, startAudioCapture]);
 
   /**
    * Create a transcript entry
