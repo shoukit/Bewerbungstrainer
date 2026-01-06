@@ -131,6 +131,17 @@ export const useRoleplaySession = ({
   useEffect(() => {
     const currentStatus = adapter.status;
     const prevStatus = prevStatusRef.current;
+
+    // Always log status changes for debugging
+    if (prevStatus !== currentStatus) {
+      console.log('[useRoleplaySession] Status changed:', prevStatus, '->', currentStatus, {
+        isStarted,
+        transcriptLength: transcriptRef.current.length,
+        isAnalyzing,
+        endSessionTriggered: endSessionTriggeredRef.current,
+      });
+    }
+
     prevStatusRef.current = currentStatus;
 
     // Detect transition from 'connected' to anything else (disconnected, idle, undefined)
@@ -157,7 +168,7 @@ export const useRoleplaySession = ({
         endSession();
       }, 100);
     }
-  }, [adapter.status, isAnalyzing, endSession]);
+  }, [adapter.status, isAnalyzing, isStarted, endSession]);
 
   // Duration timer
   useEffect(() => {

@@ -390,7 +390,12 @@ export const useProxyAdapter = ({
         handleMessage(event, scenario, variables);
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
+        console.log('[ProxyAdapter] WebSocket closed:', {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean,
+        });
         setStatus('disconnected');
         onDisconnect?.();
       };

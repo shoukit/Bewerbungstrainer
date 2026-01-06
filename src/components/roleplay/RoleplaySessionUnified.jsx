@@ -453,6 +453,8 @@ const RoleplaySessionUnified = ({
             </div>
 
             {/* Action Buttons */}
+            {/* Debug: Log button state */}
+            {console.log('[RoleplayUI] Button state:', { isStarted, status, transcriptLength: transcript.length, isAnalyzing })}
             <div className="bg-white px-4 py-3 shadow-xl flex justify-center gap-3">
               <button
                 onClick={() => setShowDeviceSettings(true)}
