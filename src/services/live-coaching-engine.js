@@ -213,15 +213,26 @@ export function shouldGenerateCoaching(message) {
  * @returns {Object} - Coaching context object
  */
 export function extractCoachingContext(scenario) {
-  const profile = scenario.interviewer_profile || {};
+  const profile = scenario?.interviewer_profile || {};
 
   return {
-    userRole: scenario.user_role_label || 'Bewerber',
+    // Scenario info
+    scenarioTitle: scenario?.title || '',
+    scenarioDescription: scenario?.long_description || scenario?.description || '',
+
+    // Role info
+    userRole: scenario?.user_role_label || 'Bewerber',
     agentRole: profile.role || 'Interviewer',
+
+    // Agent personality
+    agentName: profile.name || '',
     agentProperties: profile.properties || '',
     agentPainPoints: Array.isArray(profile.typical_objections)
       ? profile.typical_objections.join('\n')
       : (profile.typical_objections || ''),
+    agentQuestions: Array.isArray(profile.important_questions)
+      ? profile.important_questions.join('\n')
+      : (profile.important_questions || ''),
   };
 }
 
