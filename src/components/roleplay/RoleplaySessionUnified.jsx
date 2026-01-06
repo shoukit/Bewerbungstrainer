@@ -146,11 +146,6 @@ const RoleplaySessionUnified = ({
     };
   }, [scenario?.interviewer_profile, variables]);
 
-  // Debug: Log button state changes
-  useEffect(() => {
-    console.log('[RoleplayUI] Button state:', { isStarted, status, transcriptLength: transcript.length, isAnalyzing });
-  }, [isStarted, status, transcript.length, isAnalyzing]);
-
   // Auto-scroll transcript
   useEffect(() => {
     if (transcriptEndRef.current) {
