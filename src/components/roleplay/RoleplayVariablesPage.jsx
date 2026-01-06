@@ -274,11 +274,13 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext, primaryAccent, header
       {scenario.interviewer_profile && editableInterviewerFields.length === 0 && (
         <div className="p-4 px-5 rounded-lg border border-slate-200 mb-6 flex items-center gap-4">
           {getCurrentInterviewerProfile().image_url ? (
-            <img
-              src={getCurrentInterviewerProfile().image_url}
-              alt={getCurrentInterviewerProfile().name}
-              className="w-12 h-12 rounded-full object-cover"
-            />
+            <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+              <img
+                src={getCurrentInterviewerProfile().image_url}
+                alt={getCurrentInterviewerProfile().name}
+                className="w-full h-full object-cover"
+              />
+            </div>
           ) : (
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center bg-primary/10"

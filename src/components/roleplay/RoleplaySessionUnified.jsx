@@ -393,13 +393,17 @@ const RoleplaySessionUnified = ({
               {/* Profile Info */}
               <div className="flex items-center justify-center gap-4 mb-3">
                 {effectiveInterviewerProfile?.image_url ? (
-                  <img
-                    src={effectiveInterviewerProfile.image_url}
-                    alt={replaceVariables(effectiveInterviewerProfile.name)}
-                    className={`rounded-full shadow-md object-cover ${
+                  <div
+                    className={`rounded-full shadow-md overflow-hidden ${
                       isMobile ? 'w-16 h-16 border-[3px]' : 'w-20 h-20 border-4'
                     } border-white`}
-                  />
+                  >
+                    <img
+                      src={effectiveInterviewerProfile.image_url}
+                      alt={replaceVariables(effectiveInterviewerProfile.name)}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 ) : (
                   <div
                     className={`rounded-full bg-white shadow-md flex items-center justify-center ${
@@ -604,11 +608,13 @@ const RoleplaySessionUnified = ({
                           <div className="flex flex-col items-center gap-1 flex-shrink-0">
                             {entry.role === 'agent' ? (
                               effectiveInterviewerProfile?.image_url ? (
-                                <img
-                                  src={effectiveInterviewerProfile.image_url}
-                                  alt="Interviewer"
-                                  className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
-                                />
+                                <div className="w-8 h-8 rounded-full overflow-hidden shadow-sm border-2 border-blue-200">
+                                  <img
+                                    src={effectiveInterviewerProfile.image_url}
+                                    alt="Interviewer"
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
                               ) : (
                                 <div
                                   className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"

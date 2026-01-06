@@ -969,11 +969,13 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                     {isMobile && (
                       <div className="flex items-center gap-3 mb-2">
                         {scenario.interviewer_profile.image_url ? (
-                          <img
-                            src={scenario.interviewer_profile.image_url}
-                            alt={replaceVariables(scenario.interviewer_profile.name)}
-                            className="w-16 h-16 rounded-full border-[3px] border-white shadow-md object-cover"
-                          />
+                          <div className="w-16 h-16 rounded-full border-[3px] border-white shadow-md overflow-hidden">
+                            <img
+                              src={scenario.interviewer_profile.image_url}
+                              alt={replaceVariables(scenario.interviewer_profile.name)}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         ) : (
                           <div className="w-16 h-16 rounded-full border-[3px] border-white shadow-md bg-white flex items-center justify-center">
                             <User className="w-8 h-8 text-slate-400" />
@@ -997,11 +999,13 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                       <div>
                         <div className="flex items-center justify-center gap-4 mb-4">
                           {scenario.interviewer_profile.image_url ? (
-                            <img
-                              src={scenario.interviewer_profile.image_url}
-                              alt={replaceVariables(scenario.interviewer_profile.name)}
-                              className="w-20 h-20 rounded-full border-4 border-white shadow-md object-cover"
-                            />
+                            <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden">
+                              <img
+                                src={scenario.interviewer_profile.image_url}
+                                alt={replaceVariables(scenario.interviewer_profile.name)}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
                           ) : (
                             <div className="w-20 h-20 rounded-full border-4 border-white shadow-md bg-white flex items-center justify-center">
                               <User className="w-10 h-10 text-slate-400" />
@@ -1235,11 +1239,13 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                           <div className="flex flex-col items-center gap-1 flex-shrink-0">
                             {entry.role === 'agent' ? (
                               scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
-                                <img
-                                  src={scenario.interviewer_profile.image_url}
-                                  alt={replaceVariables(scenario.interviewer_profile.name) || 'Interviewer'}
-                                  className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
-                                />
+                                <div className="w-8 h-8 rounded-full overflow-hidden shadow-sm border-2 border-blue-200">
+                                  <img
+                                    src={scenario.interviewer_profile.image_url}
+                                    alt={replaceVariables(scenario.interviewer_profile.name) || 'Interviewer'}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
                               ) : (
                                 <div
                                   className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
@@ -1536,11 +1542,13 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
                             <div className="flex flex-col items-center gap-1 flex-shrink-0">
                               {entry.role === 'agent' ? (
                                 scenario.interviewer_profile && scenario.interviewer_profile.image_url ? (
-                                  <img
-                                    src={scenario.interviewer_profile.image_url}
-                                    alt={replaceVariables(scenario.interviewer_profile.name) || 'Interviewer'}
-                                    className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
-                                  />
+                                  <div className="w-8 h-8 rounded-full overflow-hidden shadow-sm border-2 border-blue-200">
+                                    <img
+                                      src={scenario.interviewer_profile.image_url}
+                                      alt={replaceVariables(scenario.interviewer_profile.name) || 'Interviewer'}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
                                 ) : (
                                   <div
                                     className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"

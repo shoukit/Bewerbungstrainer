@@ -102,11 +102,13 @@ export function TranscriptCard({
                   <div className="flex flex-col items-center gap-1 flex-shrink-0">
                     {isAgent ? (
                       scenario?.interviewer_profile?.image_url ? (
-                        <img
-                          src={scenario.interviewer_profile.image_url}
-                          alt={scenario.interviewer_profile.name || SPEAKER_STYLES.agent.label}
-                          className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-blue-200"
-                        />
+                        <div className="w-8 h-8 rounded-full overflow-hidden shadow-sm border-2 border-blue-200">
+                          <img
+                            src={scenario.interviewer_profile.image_url}
+                            alt={scenario.interviewer_profile.name || SPEAKER_STYLES.agent.label}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       ) : (
                         <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-500 to-blue-600">
                           <Bot className="icon-sm text-white" />
