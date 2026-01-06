@@ -453,7 +453,11 @@ export async function generateCoachingAnalysis(sessionStats, scenarios, userFocu
 
     try {
       // Use a simple call to get the welcome response
-      const response = await callGeminiForCoaching(welcomePrompt);
+      const response = await callGeminiForCoaching(welcomePrompt, {
+        type: 'welcome',
+        totalSessions,
+        userFocus: userFocus || 'none',
+      });
       return {
         ...response,
         isWelcome: true,
@@ -481,7 +485,13 @@ Format für Empfehlungen:
 }`;
 
   try {
-    const response = await callGeminiForCoaching(fullPrompt);
+    const response = await callGeminiForCoaching(fullPrompt, {
+      type: 'comprehensive',
+      totalSessions,
+      userFocus: userFocus || 'none',
+      moduleBreakdown: sessionStats.moduleBreakdown,
+      scenarioCatalogLength: scenarioCatalog.length,
+    });
     return {
       ...response,
       isWelcome: false,
@@ -497,7 +507,7 @@ Format für Empfehlungen:
 /**
  * Call Gemini API for coaching analysis
  */
-async function callGeminiForCoaching(prompt) {
+async function callGeminiForCoaching(prompt, metadata = {}) {
   // Import dynamically to avoid circular dependencies
   const { GoogleGenerativeAI } = await import('@google/generative-ai');
 
@@ -519,10 +529,44 @@ async function callGeminiForCoaching(prompt) {
     // Extract JSON from markdown code blocks if present
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     const jsonString = jsonMatch ? jsonMatch[1].trim() : text.trim();
-    return JSON.parse(jsonString);
+    const parsed = JSON.parse(jsonString);
+
+    // Log prompt and response to server-side prompts.log
+    wordpressAPI.logPrompt(
+      'KI_COACH_ANALYSIS',
+      'KI-Coach: Umfassende Coaching-Analyse basierend auf allen User-Sessions.',
+      prompt,
+      {
+        ...metadata,
+        model: 'gemini-2.0-flash-exp',
+        promptLength: prompt.length,
+        responseLength: text.length,
+      },
+      text,
+      false
+    );
+
+    return parsed;
   } catch (parseError) {
     console.error('[CoachingIntelligence] Failed to parse Gemini response:', parseError);
     console.log('[CoachingIntelligence] Raw response:', text);
+
+    // Log error to prompts.log
+    wordpressAPI.logPrompt(
+      'KI_COACH_ANALYSIS',
+      'KI-Coach: Umfassende Coaching-Analyse - PARSE ERROR',
+      prompt,
+      {
+        ...metadata,
+        model: 'gemini-2.0-flash-exp',
+        promptLength: prompt.length,
+        responseLength: text.length,
+        error: parseError.message,
+      },
+      text,
+      true
+    );
+
     throw new Error('Failed to parse AI response');
   }
 }
