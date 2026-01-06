@@ -146,6 +146,11 @@ const RoleplaySessionUnified = ({
     };
   }, [scenario?.interviewer_profile, variables]);
 
+  // Debug: Log button state changes
+  useEffect(() => {
+    console.log('[RoleplayUI] Button state:', { isStarted, status, transcriptLength: transcript.length, isAnalyzing });
+  }, [isStarted, status, transcript.length, isAnalyzing]);
+
   // Auto-scroll transcript
   useEffect(() => {
     if (transcriptEndRef.current) {
@@ -453,8 +458,6 @@ const RoleplaySessionUnified = ({
             </div>
 
             {/* Action Buttons */}
-            {/* Debug: Log button state */}
-            {console.log('[RoleplayUI] Button state:', { isStarted, status, transcriptLength: transcript.length, isAnalyzing })}
             <div className="bg-white px-4 py-3 shadow-xl flex justify-center gap-3">
               <button
                 onClick={() => setShowDeviceSettings(true)}
