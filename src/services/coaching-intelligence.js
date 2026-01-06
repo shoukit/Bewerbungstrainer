@@ -530,6 +530,17 @@ Format für Empfehlungen:
       userFocus: userFocus || 'none',
       moduleBreakdown: sessionStats.moduleBreakdown,
       scenarioCatalogLength: scenarioCatalog.length,
+      scenarioCounts: {
+        simulator: scenarios.simulator?.length || 0,
+        video: scenarios.video?.length || 0,
+        roleplay: scenarios.roleplay?.length || 0,
+        briefingTemplates: scenarios.briefingTemplates?.length || 0,
+      },
+      practicedCounts: {
+        simulator: sessionStats.practicedScenarios?.simulator?.length || 0,
+        video: sessionStats.practicedScenarios?.video?.length || 0,
+        roleplay: sessionStats.practicedScenarios?.roleplay?.length || 0,
+      },
     });
     return {
       ...response,
