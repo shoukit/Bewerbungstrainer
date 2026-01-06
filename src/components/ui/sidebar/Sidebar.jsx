@@ -576,7 +576,7 @@ const AppSidebar = ({
                   <>
                     <div className="flex flex-col flex-1 min-w-0">
                       <span className="whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: isActive ? colors.activeText : colors.sidebarText }}>{item.label}</span>
-                      <span className="text-xs leading-snug break-words" style={{ color: colors.sidebarTextMuted }}>
+                      <span className="text-xs leading-relaxed whitespace-normal" style={{ color: colors.sidebarTextMuted }}>
                         {item.description}
                       </span>
                     </div>

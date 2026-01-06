@@ -9,8 +9,8 @@ import { ChevronDown, ChevronUp, User } from 'lucide-react';
 const InterviewerProfile = ({ profile, replaceVariables = (text) => text }) => {
   const [expandedSections, setExpandedSections] = useState({
     properties: true,
-    objections: false,
-    questions: false,
+    objections: true,
+    questions: true,
   });
 
   const toggleSection = (section) => {
