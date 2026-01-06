@@ -317,7 +317,8 @@ export const useProxyAdapter = ({
           break;
 
         default:
-          // Unhandled message types ignored
+          // Log unhandled message types for debugging
+          console.log('[ProxyAdapter] Unhandled message type:', data.type, data);
           break;
       }
     } catch (err) {
