@@ -921,11 +921,13 @@ const RoleplayProxySession = ({
               {/* Profile Info */}
               <div className="flex items-center justify-center gap-4 mb-3">
                 {scenario.interviewer_profile?.image_url ? (
-                  <img
-                    src={scenario.interviewer_profile.image_url}
-                    alt={scenario.interviewer_profile.name}
-                    className="w-20 h-20 rounded-full border-4 border-white shadow-md object-cover"
-                  />
+                  <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden">
+                    <img
+                      src={scenario.interviewer_profile.image_url}
+                      alt={scenario.interviewer_profile.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 ) : (
                   <div className="w-20 h-20 rounded-full border-4 border-white shadow-md bg-white flex items-center justify-center">
                     <User className="w-10 h-10 text-slate-400" />
