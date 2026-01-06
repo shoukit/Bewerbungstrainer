@@ -310,15 +310,13 @@ export const useProxyAdapter = ({
 
         case 'conversation_end':
           // ElevenLabs signals end of conversation - close WebSocket to trigger onclose handler
-          console.log('[ProxyAdapter] Received conversation_end event from ElevenLabs');
           if (wsRef.current) {
             wsRef.current.close();
           }
           break;
 
         default:
-          // Log unhandled message types for debugging
-          console.log('[ProxyAdapter] Unhandled message type:', data.type, data);
+          // Silently ignore other message types (agent_response_correction, etc.)
           break;
       }
     } catch (err) {
@@ -390,12 +388,7 @@ export const useProxyAdapter = ({
         handleMessage(event, scenario, variables);
       };
 
-      ws.onclose = (event) => {
-        console.log('[ProxyAdapter] WebSocket closed:', {
-          code: event.code,
-          reason: event.reason,
-          wasClean: event.wasClean,
-        });
+      ws.onclose = () => {
         setStatus('disconnected');
         onDisconnect?.();
       };

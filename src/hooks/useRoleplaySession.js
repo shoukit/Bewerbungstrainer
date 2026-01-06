@@ -371,17 +371,6 @@ export const useRoleplaySession = ({
   useEffect(() => {
     const currentStatus = adapter.status;
     const prevStatus = prevStatusRef.current;
-
-    // Always log status changes for debugging
-    if (prevStatus !== currentStatus) {
-      console.log('[useRoleplaySession] Status changed:', prevStatus, '->', currentStatus, {
-        isStarted,
-        transcriptLength: transcriptRef.current.length,
-        isAnalyzing,
-        endSessionTriggered: endSessionTriggeredRef.current,
-      });
-    }
-
     prevStatusRef.current = currentStatus;
 
     // Detect transition from 'connected' to anything else (disconnected, idle, undefined)
@@ -400,8 +389,6 @@ export const useRoleplaySession = ({
       !isAnalyzing &&
       !endSessionTriggeredRef.current
     ) {
-      console.log('[useRoleplaySession] Connection ended by ElevenLabs, auto-triggering analysis...');
-      console.log('[useRoleplaySession] Status transition:', prevStatus, '->', currentStatus);
       endSessionTriggeredRef.current = true;
       // Small delay to ensure adapter cleanup is complete
       setTimeout(() => {
