@@ -846,15 +846,65 @@ class Bewerbungstrainer_Roleplay_Scenarios {
 
             <tr>
                 <th scope="row">
-                    <label for="roleplay_interviewer_image"><?php _e('Profilbild URL', 'bewerbungstrainer'); ?></label>
+                    <label for="roleplay_interviewer_image"><?php _e('Profilbild', 'bewerbungstrainer'); ?></label>
                 </th>
                 <td>
-                    <input type="url" id="roleplay_interviewer_image" name="roleplay_interviewer_image"
-                           value="<?php echo esc_url($interviewer_image); ?>"
-                           class="large-text" />
-                    <p class="description">
-                        <?php _e('URL zum Profilbild des Gesprächspartners (wird im Frontend angezeigt)', 'bewerbungstrainer'); ?>
-                    </p>
+                    <div class="interviewer-image-container">
+                        <div id="interviewer-image-preview" style="margin-bottom: 10px; <?php echo $interviewer_image ? '' : 'display: none;'; ?>">
+                            <img src="<?php echo esc_url($interviewer_image); ?>" style="max-width: 150px; height: auto; border-radius: 50%; border: 2px solid #ddd;" />
+                        </div>
+                        <input type="hidden" id="roleplay_interviewer_image" name="roleplay_interviewer_image" value="<?php echo esc_url($interviewer_image); ?>" />
+                        <button type="button" class="button" id="upload-interviewer-image-btn">
+                            <?php echo $interviewer_image ? __('Bild ändern', 'bewerbungstrainer') : __('Bild auswählen', 'bewerbungstrainer'); ?>
+                        </button>
+                        <button type="button" class="button" id="remove-interviewer-image-btn" <?php echo $interviewer_image ? '' : 'style="display: none;"'; ?>>
+                            <?php _e('Bild entfernen', 'bewerbungstrainer'); ?>
+                        </button>
+                        <p class="description" style="margin-top: 10px;">
+                            <?php _e('Profilbild des Gesprächspartners aus der Mediathek auswählen. Wird im Frontend rund angezeigt.', 'bewerbungstrainer'); ?>
+                        </p>
+                    </div>
+                    <script>
+                    jQuery(document).ready(function($) {
+                        var interviewerMediaUploader;
+
+                        $('#upload-interviewer-image-btn').on('click', function(e) {
+                            e.preventDefault();
+
+                            if (interviewerMediaUploader) {
+                                interviewerMediaUploader.open();
+                                return;
+                            }
+
+                            interviewerMediaUploader = wp.media({
+                                title: '<?php _e('Profilbild auswählen', 'bewerbungstrainer'); ?>',
+                                button: { text: '<?php _e('Bild verwenden', 'bewerbungstrainer'); ?>' },
+                                multiple: false,
+                                library: { type: 'image' }
+                            });
+
+                            interviewerMediaUploader.on('select', function() {
+                                var attachment = interviewerMediaUploader.state().get('selection').first().toJSON();
+                                var imgUrl = attachment.sizes && attachment.sizes.medium ? attachment.sizes.medium.url : attachment.url;
+                                $('#roleplay_interviewer_image').val(imgUrl);
+                                $('#interviewer-image-preview img').attr('src', imgUrl);
+                                $('#interviewer-image-preview').show();
+                                $('#upload-interviewer-image-btn').text('<?php _e('Bild ändern', 'bewerbungstrainer'); ?>');
+                                $('#remove-interviewer-image-btn').show();
+                            });
+
+                            interviewerMediaUploader.open();
+                        });
+
+                        $('#remove-interviewer-image-btn').on('click', function(e) {
+                            e.preventDefault();
+                            $('#roleplay_interviewer_image').val('');
+                            $('#interviewer-image-preview').hide();
+                            $('#upload-interviewer-image-btn').text('<?php _e('Bild auswählen', 'bewerbungstrainer'); ?>');
+                            $(this).hide();
+                        });
+                    });
+                    </script>
                 </td>
             </tr>
 

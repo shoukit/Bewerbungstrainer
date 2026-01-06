@@ -92,6 +92,7 @@ class Bewerbungstrainer_Roleplay_Admin {
         }
 
         wp_enqueue_script('jquery-ui-sortable');
+        wp_enqueue_media();
         wp_add_inline_style('wp-admin', $this->get_admin_styles());
 
         // Enqueue tips builder script
@@ -1374,14 +1375,67 @@ class Bewerbungstrainer_Roleplay_Admin {
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="interviewer_image">Profilbild URL</label></th>
+                        <th><label for="interviewer_image">Profilbild</label></th>
                         <td>
-                            <input type="url" name="interviewer_image" id="interviewer_image" class="large-text" value="<?php echo esc_attr($scenario->interviewer_image ?? ''); ?>">
-                            <p class="description">URL zu einem Profilbild des KI-Gesprächspartners. Verfügbar als <code>{{interviewer_image}}</code></p>
+                            <?php $interviewer_image_url = $scenario->interviewer_image ?? ''; ?>
+                            <div class="interviewer-image-container">
+                                <div id="interviewer-image-preview-db" style="margin-bottom: 10px; <?php echo $interviewer_image_url ? '' : 'display: none;'; ?>">
+                                    <img src="<?php echo esc_url($interviewer_image_url); ?>" style="max-width: 150px; height: auto; border-radius: 50%; border: 2px solid #ddd;" />
+                                </div>
+                                <input type="hidden" name="interviewer_image" id="interviewer_image" value="<?php echo esc_attr($interviewer_image_url); ?>">
+                                <button type="button" class="button" id="upload-interviewer-image-btn-db">
+                                    <?php echo $interviewer_image_url ? 'Bild ändern' : 'Bild auswählen'; ?>
+                                </button>
+                                <button type="button" class="button" id="remove-interviewer-image-btn-db" <?php echo $interviewer_image_url ? '' : 'style="display: none;"'; ?>>
+                                    Bild entfernen
+                                </button>
+                            </div>
+                            <p class="description" style="margin-top: 10px;">Profilbild des KI-Gesprächspartners aus der Mediathek. Verfügbar als <code>{{interviewer_image}}</code></p>
                             <label style="margin-top: 8px; display: inline-block;">
                                 <input type="checkbox" name="interviewer_editable[image]" value="1" <?php checked(!empty($editable_fields['image'])); ?>>
                                 <span style="color: #2271b1;">User kann im Frontend bearbeiten</span>
                             </label>
+                            <script>
+                            jQuery(document).ready(function($) {
+                                var interviewerMediaUploaderDb;
+
+                                $('#upload-interviewer-image-btn-db').on('click', function(e) {
+                                    e.preventDefault();
+
+                                    if (interviewerMediaUploaderDb) {
+                                        interviewerMediaUploaderDb.open();
+                                        return;
+                                    }
+
+                                    interviewerMediaUploaderDb = wp.media({
+                                        title: 'Profilbild auswählen',
+                                        button: { text: 'Bild verwenden' },
+                                        multiple: false,
+                                        library: { type: 'image' }
+                                    });
+
+                                    interviewerMediaUploaderDb.on('select', function() {
+                                        var attachment = interviewerMediaUploaderDb.state().get('selection').first().toJSON();
+                                        var imgUrl = attachment.sizes && attachment.sizes.medium ? attachment.sizes.medium.url : attachment.url;
+                                        $('#interviewer_image').val(imgUrl);
+                                        $('#interviewer-image-preview-db img').attr('src', imgUrl);
+                                        $('#interviewer-image-preview-db').show();
+                                        $('#upload-interviewer-image-btn-db').text('Bild ändern');
+                                        $('#remove-interviewer-image-btn-db').show();
+                                    });
+
+                                    interviewerMediaUploaderDb.open();
+                                });
+
+                                $('#remove-interviewer-image-btn-db').on('click', function(e) {
+                                    e.preventDefault();
+                                    $('#interviewer_image').val('');
+                                    $('#interviewer-image-preview-db').hide();
+                                    $('#upload-interviewer-image-btn-db').text('Bild auswählen');
+                                    $(this).hide();
+                                });
+                            });
+                            </script>
                         </td>
                     </tr>
                     <tr>
