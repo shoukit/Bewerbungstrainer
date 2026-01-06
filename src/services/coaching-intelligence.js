@@ -301,38 +301,59 @@ export function aggregateSessionStats(sessions) {
     : null;
 
   // Extract common strengths and weaknesses from feedback
+  // Store full text with count for better AI analysis
   const strengthsMap = {};
   const weaknessesMap = {};
 
+  // Also track which scenarios were practiced
+  const practicedScenarios = {
+    simulator: new Set(),
+    video: new Set(),
+    roleplay: new Set(),
+  };
+
   [...simulator, ...video, ...roleplay].forEach(session => {
+    // Track practiced scenarios
+    if (session.scenario_id) {
+      if (simulator.includes(session)) practicedScenarios.simulator.add(session.scenario_id);
+      else if (video.includes(session)) practicedScenarios.video.add(session.scenario_id);
+      else if (roleplay.includes(session)) practicedScenarios.roleplay.add(session.scenario_id);
+    }
+
     try {
       // API returns summary_feedback (not summary_feedback_json)
       let feedback = session.summary_feedback || session.summary_feedback_json || session.feedback_json || session.analysis_json;
       if (typeof feedback === 'string') feedback = JSON.parse(feedback);
       if (feedback?.strengths) {
         feedback.strengths.forEach(s => {
-          const key = s.toLowerCase().substring(0, 50);
-          strengthsMap[key] = (strengthsMap[key] || 0) + 1;
+          // Use full text, normalize for deduplication
+          const key = s.toLowerCase().trim();
+          if (key.length > 10) { // Skip very short entries
+            strengthsMap[key] = (strengthsMap[key] || 0) + 1;
+          }
         });
       }
       if (feedback?.improvements || feedback?.weaknesses) {
         (feedback.improvements || feedback.weaknesses || []).forEach(w => {
-          const key = w.toLowerCase().substring(0, 50);
-          weaknessesMap[key] = (weaknessesMap[key] || 0) + 1;
+          const key = w.toLowerCase().trim();
+          if (key.length > 10) { // Skip very short entries
+            weaknessesMap[key] = (weaknessesMap[key] || 0) + 1;
+          }
         });
       }
     } catch {}
   });
 
+  // Get top 20 strengths and weaknesses with full text
   const topStrengths = Object.entries(strengthsMap)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([text]) => text);
+    .slice(0, 20)
+    .map(([text, count]) => ({ text, count }));
 
   const topWeaknesses = Object.entries(weaknessesMap)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([text]) => text);
+    .slice(0, 20)
+    .map(([text, count]) => ({ text, count }));
 
   // Find last session date
   const sessionsWithDates = allSessions
@@ -375,27 +396,41 @@ export function aggregateSessionStats(sessions) {
     lastSessionDate,
     daysSinceLastSession: daysSinceLastSession ?? 999,
     rawSessions: sessions,
+    practicedScenarios: {
+      simulator: Array.from(practicedScenarios.simulator),
+      video: Array.from(practicedScenarios.video),
+      roleplay: Array.from(practicedScenarios.roleplay),
+    },
   };
 }
 
 /**
  * Generate scenario catalog for the AI prompt
+ * @param {Object} scenarios - All available scenarios
+ * @param {Object} practicedScenarios - IDs of scenarios the user has already practiced
  */
-export function generateScenarioCatalog(scenarios) {
+export function generateScenarioCatalog(scenarios, practicedScenarios = {}) {
   // Ensure all scenario types are arrays
   const simulator = Array.isArray(scenarios?.simulator) ? scenarios.simulator : [];
   const video = Array.isArray(scenarios?.video) ? scenarios.video : [];
   const roleplay = Array.isArray(scenarios?.roleplay) ? scenarios.roleplay : [];
   const briefingTemplates = Array.isArray(scenarios?.briefingTemplates) ? scenarios.briefingTemplates : [];
 
-  let catalog = '\n## VERFÜGBARE TRAININGS-SZENARIEN\n\n';
+  // Convert practiced arrays to Sets for fast lookup
+  const practicedSim = new Set(practicedScenarios?.simulator || []);
+  const practicedVid = new Set(practicedScenarios?.video || []);
+  const practicedRole = new Set(practicedScenarios?.roleplay || []);
+
+  let catalog = '\n## VERFÜGBARE TRAININGS-SZENARIEN\n';
+  catalog += '(✓ = bereits geübt, empfehle bevorzugt NEUE Szenarien)\n\n';
 
   // Szenario-Training
   if (simulator.length > 0) {
     catalog += '### Szenario-Training (strukturiertes Q&A mit Feedback)\n';
     simulator.forEach(s => {
-      const difficulty = s.difficulty || s.meta?.difficulty || 'Mittel';
-      catalog += `- ID:${s.id} "${s.title}" [${difficulty}]${s.description ? ` - ${s.description.substring(0, 100)}` : ''}\n`;
+      const practiced = practicedSim.has(s.id) || practicedSim.has(String(s.id));
+      const marker = practiced ? '✓ ' : '';
+      catalog += `- ${marker}ID:${s.id} "${s.title}"\n`;
     });
     catalog += '\n';
   }
@@ -404,7 +439,9 @@ export function generateScenarioCatalog(scenarios) {
   if (video.length > 0) {
     catalog += '### Wirkungs-Analyse (Video-Training mit Körpersprache-Feedback)\n';
     video.forEach(s => {
-      catalog += `- ID:${s.id} "${s.title}"${s.description ? ` - ${s.description.substring(0, 100)}` : ''}\n`;
+      const practiced = practicedVid.has(s.id) || practicedVid.has(String(s.id));
+      const marker = practiced ? '✓ ' : '';
+      catalog += `- ${marker}ID:${s.id} "${s.title}"\n`;
     });
     catalog += '\n';
   }
@@ -413,12 +450,14 @@ export function generateScenarioCatalog(scenarios) {
   if (roleplay.length > 0) {
     catalog += '### Live-Simulation (Echtzeit-Gespräch mit KI)\n';
     roleplay.forEach(s => {
-      catalog += `- ID:${s.id} "${s.title}"${s.description ? ` - ${s.description.substring(0, 100)}` : ''}\n`;
+      const practiced = practicedRole.has(s.id) || practicedRole.has(String(s.id));
+      const marker = practiced ? '✓ ' : '';
+      catalog += `- ${marker}ID:${s.id} "${s.title}"\n`;
     });
     catalog += '\n';
   }
 
-  // Smart Briefing Templates
+  // Smart Briefing Templates (no practice tracking)
   if (briefingTemplates.length > 0) {
     catalog += '### Smart Briefing (KI-generierte Wissenspakete)\n';
     briefingTemplates.forEach(t => {
@@ -470,7 +509,7 @@ export async function generateCoachingAnalysis(sessionStats, scenarios, userFocu
   }
 
   // For users with enough data - generate comprehensive analysis
-  const scenarioCatalog = generateScenarioCatalog(scenarios);
+  const scenarioCatalog = generateScenarioCatalog(scenarios, sessionStats.practicedScenarios);
   const basePrompt = generateComprehensiveCoachingPrompt(sessionStats, userFocus);
   const fullPrompt = basePrompt + '\n' + scenarioCatalog + `
 
