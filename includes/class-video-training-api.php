@@ -1027,12 +1027,27 @@ JSON Output:";
      * Build video analysis prompt
      */
     private function build_video_analysis_prompt($scenario, $variables, $questions, $timeline, $feedback_prompt) {
+        // Determine which questions were actually answered based on timeline
+        $answered_question_indices = array();
+        if (!empty($timeline)) {
+            foreach ($timeline as $entry) {
+                if (isset($entry['question_index'])) {
+                    $answered_question_indices[] = (int) $entry['question_index'];
+                }
+            }
+        }
+
+        // Only include questions that were actually answered
         $questions_text = '';
-        if (!empty($questions)) {
-            $questions_text = "\n\nGESTELLTE FRAGEN:\n";
-            foreach ($questions as $i => $q) {
-                $question_text = is_array($q) ? ($q['question'] ?? 'Frage ' . ($i + 1)) : $q;
-                $questions_text .= ($i + 1) . ". {$question_text}\n";
+        $answered_count = count($answered_question_indices);
+        if (!empty($questions) && $answered_count > 0) {
+            $questions_text = "\n\nBEANTWORTETE FRAGEN ({$answered_count} von " . count($questions) . "):\n";
+            foreach ($answered_question_indices as $idx) {
+                if (isset($questions[$idx])) {
+                    $q = $questions[$idx];
+                    $question_text = is_array($q) ? ($q['question'] ?? 'Frage ' . ($idx + 1)) : $q;
+                    $questions_text .= ($idx + 1) . ". {$question_text}\n";
+                }
             }
         }
 
@@ -1066,12 +1081,22 @@ AUFGABE: Analysiere das folgende Video eines {$scenario->title}-Trainings.
 {$feedback_prompt}
 
 ANALYSE-KATEGORIEN:
-1. **Auftreten** - Erste Eindrücke, Gesamtwirkung, Professionalität
+1. **Auftreten** - Erste Eindrücke, Gesamtwirkung, Ausstrahlung
 2. **Selbstbewusstsein** - Sicherheit, Überzeugungskraft, Authentizität
-3. **Körpersprache** - Haltung, Gestik, Mimik, Augenkontakt
+3. **Körpersprache** - Haltung, Gestik, Mimik, Augenkontakt (Blick in die Kamera)
 4. **Kommunikation** - Sprechweise, Klarheit, Struktur, Füllwörter
-5. **Professionalität** - Erscheinungsbild, Hintergrund, Technik
-6. **Inhalt** - Qualität der Antworten, Relevanz, Beispiele
+5. **Professionalität** - KRITISCH BEWERTEN:
+   - Hintergrund: Muss aufgeräumt und neutral sein
+   - Keine ablenkenden Gegenstände im Bild (Flaschen, Tassen, Unordnung = starker Punktabzug!)
+   - Beleuchtung: Gesicht gut erkennbar?
+   - Kameraposition: Auf Augenhöhe?
+   - Erscheinungsbild: Angemessen für den Kontext?
+6. **Inhalt** - Qualität der Antworten, Relevanz, konkrete Beispiele
+
+BEWERTUNGSHINWEISE:
+- Professionalität: Bei sichtbaren Getränkeflaschen, Tassen oder Unordnung im Bild maximal 50 Punkte!
+- Körpersprache: Fehlender Blickkontakt zur Kamera ist ein wichtiger Verbesserungspunkt
+- Bewerte NUR die tatsächlich beantworteten Fragen, nicht mehr
 
 WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
 
