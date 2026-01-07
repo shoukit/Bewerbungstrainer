@@ -1,7 +1,8 @@
 # Briefing: Live-Simulation (Roleplay-Modul)
 
-**Stand:** Dezember 2024
+**Stand:** Dezember 2025
 **Zielgruppe:** Agentur / Partner
+**Status:** Aktuell
 
 ---
 
