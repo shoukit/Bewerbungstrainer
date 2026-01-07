@@ -1343,13 +1343,54 @@ class Bewerbungstrainer_Simulator_API {
 
         $overall_score = $score_count > 0 ? round($total_score / $score_count, 2) : null;
 
-        // Generate summary feedback
+        // Calculate average scores from feedback_json for each answer
+        $content_scores = array();
+        $structure_scores = array();
+        $relevance_scores = array();
+        $delivery_scores = array();
+
+        foreach ($answers as $answer) {
+            $feedback = $answer->feedback_json;
+            if (is_string($feedback)) {
+                $feedback = json_decode($feedback, true);
+            }
+            if (isset($feedback['scores'])) {
+                if (isset($feedback['scores']['content'])) {
+                    $content_scores[] = (float) $feedback['scores']['content'];
+                }
+                if (isset($feedback['scores']['structure'])) {
+                    $structure_scores[] = (float) $feedback['scores']['structure'];
+                }
+                if (isset($feedback['scores']['relevance'])) {
+                    $relevance_scores[] = (float) $feedback['scores']['relevance'];
+                }
+                if (isset($feedback['scores']['delivery'])) {
+                    $delivery_scores[] = (float) $feedback['scores']['delivery'];
+                }
+            }
+        }
+
+        // Helper function to calculate average
+        $calc_avg = function($arr) {
+            return count($arr) > 0 ? round(array_sum($arr) / count($arr), 1) : null;
+        };
+
+        // Generate summary feedback with proper scores structure
         $summary_feedback = array(
             'total_questions' => (int) $session->total_questions,
             'completed_questions' => count($answers),
             'overall_score' => $overall_score,
-            'average_content_score' => $this->calculate_average_score($answers, 'content_score'),
-            'average_delivery_score' => $this->calculate_average_score($answers, 'delivery_score'),
+            // Keep legacy fields for backwards compatibility
+            'average_content_score' => $calc_avg($content_scores),
+            'average_delivery_score' => $calc_avg($delivery_scores),
+            // Add proper scores object for frontend components
+            'scores' => array(
+                'content' => $calc_avg($content_scores),
+                'structure' => $calc_avg($structure_scores),
+                'relevance' => $calc_avg($relevance_scores),
+                'delivery' => $calc_avg($delivery_scores),
+                'overall' => $overall_score,
+            ),
         );
 
         // Update session

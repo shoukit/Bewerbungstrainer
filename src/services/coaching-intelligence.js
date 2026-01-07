@@ -264,9 +264,14 @@ export function aggregateSessionStats(sessions) {
       const feedback = typeof feedbackData === 'string'
         ? JSON.parse(feedbackData)
         : feedbackData;
+
+      // Try new format (scores object) first, then fall back to legacy format
       if (feedback?.scores) {
         if (feedback.scores.content != null) scores.content.push(feedback.scores.content * 10);
         if (feedback.scores.structure != null) scores.structure.push(feedback.scores.structure * 10);
+      } else {
+        // Legacy format: average_content_score, average_delivery_score
+        if (feedback?.average_content_score != null) scores.content.push(feedback.average_content_score * 10);
       }
     } catch {}
   });
