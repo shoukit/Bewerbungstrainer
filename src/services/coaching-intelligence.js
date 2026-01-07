@@ -242,11 +242,16 @@ export function aggregateSessionStats(sessions) {
   };
 
   // Calculate average scores per category
+  // Using unified dimensions across all modules:
+  // - overall, content, structure, relevance, delivery
   const scores = {
     overall: [],
-    communication: [],
     content: [],
     structure: [],
+    relevance: [],
+    delivery: [],
+    // Legacy dimensions (kept for backwards compatibility)
+    communication: [],
     confidence: [],
     fillerWords: [],
   };
@@ -269,9 +274,12 @@ export function aggregateSessionStats(sessions) {
       if (feedback?.scores) {
         if (feedback.scores.content != null) scores.content.push(feedback.scores.content * 10);
         if (feedback.scores.structure != null) scores.structure.push(feedback.scores.structure * 10);
+        if (feedback.scores.relevance != null) scores.relevance.push(feedback.scores.relevance * 10);
+        if (feedback.scores.delivery != null) scores.delivery.push(feedback.scores.delivery * 10);
       } else {
         // Legacy format: average_content_score, average_delivery_score
         if (feedback?.average_content_score != null) scores.content.push(feedback.average_content_score * 10);
+        if (feedback?.average_delivery_score != null) scores.delivery.push(feedback.average_delivery_score * 10);
       }
     } catch {}
   });
@@ -282,9 +290,25 @@ export function aggregateSessionStats(sessions) {
       const score = parseFloat(session.overall_score);
       scores.overall.push(score <= 10 ? score * 10 : score);
     }
+    // Extract scores from category_scores (video-specific structure)
+    try {
+      const categoryScores = session.category_scores || session.category_scores_json;
+      const cats = typeof categoryScores === 'string' ? JSON.parse(categoryScores) : categoryScores;
+      if (Array.isArray(cats)) {
+        cats.forEach(cat => {
+          // Map video categories to standard dimensions
+          if (cat.category === 'inhalt' && cat.score != null) {
+            scores.content.push(parseFloat(cat.score));
+          }
+          if (cat.category === 'kommunikation' && cat.score != null) {
+            scores.delivery.push(parseFloat(cat.score));
+          }
+        });
+      }
+    } catch {}
   });
 
-  // Process roleplay sessions - handle multiple score locations
+  // Process roleplay sessions - handle both old and new rating formats
   roleplay.forEach(session => {
     try {
       const feedback = typeof session.feedback_json === 'string'
@@ -304,11 +328,16 @@ export function aggregateSessionStats(sessions) {
         scores.overall.push(normalized);
       }
 
-      // Try communication score
-      const commScore = feedback?.rating?.communication ??
-        feedback?.rating?.kommunikation;
-      if (commScore != null) {
-        scores.communication.push(parseFloat(commScore) * 10);
+      // Extract unified dimensions (new format after prompt update)
+      const rating = feedback?.rating;
+      if (rating) {
+        if (rating.content != null) scores.content.push(parseFloat(rating.content) * 10);
+        if (rating.structure != null) scores.structure.push(parseFloat(rating.structure) * 10);
+        if (rating.relevance != null) scores.relevance.push(parseFloat(rating.relevance) * 10);
+        if (rating.delivery != null) scores.delivery.push(parseFloat(rating.delivery) * 10);
+
+        // Legacy dimensions (for backwards compatibility with old sessions)
+        if (rating.communication != null) scores.communication.push(parseFloat(rating.communication) * 10);
       }
     } catch {}
   });
@@ -329,11 +358,13 @@ export function aggregateSessionStats(sessions) {
   // Calculate averages
   const calculateAvg = (arr) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
 
+  // Unified score dimensions matching all modules
   const averageScores = {
     'Gesamt': calculateAvg(scores.overall),
-    'Kommunikation': calculateAvg(scores.communication),
     'Inhalt': calculateAvg(scores.content),
     'Struktur': calculateAvg(scores.structure),
+    'Relevanz': calculateAvg(scores.relevance),
+    'Präsentation': calculateAvg(scores.delivery),
   };
 
   // Calculate trend (last 30 days vs before)

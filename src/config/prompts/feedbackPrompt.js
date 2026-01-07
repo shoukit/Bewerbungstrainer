@@ -14,18 +14,26 @@
  */
 
 /**
+ * Standard rating dimensions used across all modules for consistency
+ * These match the Simulator/Szenario-Training dimensions
+ */
+const STANDARD_RATING_DIMENSIONS = {
+  overall: 'Gesamteindruck',
+  content: 'Inhalt & Argumentation',
+  structure: 'Struktur & Aufbau',
+  relevance: 'Relevanz & Bezug',
+  delivery: 'Präsentation & Auftreten',
+};
+
+/**
  * Coach type configurations with role, rating dimensions, and analysis focus
+ * All coach types use the same standard rating dimensions for consistency
  */
 const COACH_TYPES = {
   general: {
     role: 'Kommunikations-Coach',
     intro: 'Du bist ein erfahrener Kommunikations-Coach. Analysiere das folgende Gespräch und gib konstruktives, praxisnahes Feedback auf Deutsch.',
-    ratingDimensions: {
-      overall: 'Gesamteindruck',
-      communication: 'Kommunikation',
-      empathy: 'Empathie',
-      goal_achievement: 'Zielerreichung',
-    },
+    ratingDimensions: STANDARD_RATING_DIMENSIONS,
     analysisFocus: [
       'Klarheit und Struktur der Kommunikation',
       'Aktives Zuhören und Eingehen auf den Gesprächspartner',
@@ -36,12 +44,7 @@ const COACH_TYPES = {
   interview: {
     role: 'Karriere-Coach',
     intro: 'Du bist ein erfahrener Karriere-Coach und Interview-Trainer. Analysiere das folgende Vorstellungsgespräch und gib konstruktives, praxisnahes Feedback auf Deutsch.',
-    ratingDimensions: {
-      overall: 'Gesamteindruck',
-      communication: 'Kommunikation & Präsentation',
-      motivation: 'Motivation & Begeisterung',
-      preparation: 'Vorbereitung & Fachwissen',
-    },
+    ratingDimensions: STANDARD_RATING_DIMENSIONS,
     analysisFocus: [
       'Struktur und Klarheit der Antworten (STAR-Methode)',
       'Relevante Beispiele und messbare Erfolge',
@@ -52,12 +55,7 @@ const COACH_TYPES = {
   sales: {
     role: 'Vertriebs-Coach',
     intro: 'Du bist ein erfahrener Sales-Coach und Vertriebstrainer. Analysiere das folgende Verkaufsgespräch und gib konstruktives, praxisnahes Feedback auf Deutsch.',
-    ratingDimensions: {
-      overall: 'Gesamteindruck',
-      needs_analysis: 'Bedarfsanalyse',
-      objection_handling: 'Einwandbehandlung',
-      closing: 'Abschlusstechnik',
-    },
+    ratingDimensions: STANDARD_RATING_DIMENSIONS,
     analysisFocus: [
       'Qualität der Bedarfsanalyse und Fragetechnik',
       'Nutzenargumentation und Mehrwert-Kommunikation',
@@ -68,12 +66,7 @@ const COACH_TYPES = {
   leadership: {
     role: 'Führungskräfte-Coach',
     intro: 'Du bist ein erfahrener Leadership-Coach und Führungskräftetrainer. Analysiere das folgende Führungsgespräch und gib konstruktives, praxisnahes Feedback auf Deutsch.',
-    ratingDimensions: {
-      overall: 'Gesamteindruck',
-      clarity: 'Klarheit & Erwartungen',
-      empathy: 'Empathie & Wertschätzung',
-      delegation: 'Delegation & Empowerment',
-    },
+    ratingDimensions: STANDARD_RATING_DIMENSIONS,
     analysisFocus: [
       'Klarheit in der Kommunikation von Zielen und Erwartungen',
       'Wertschätzung und Anerkennung des Mitarbeiters',
@@ -84,12 +77,7 @@ const COACH_TYPES = {
   conflict: {
     role: 'Konflikt- und Mediations-Coach',
     intro: 'Du bist ein erfahrener Konflikt-Coach und Mediator. Analysiere das folgende Konfliktgespräch und gib konstruktives, praxisnahes Feedback auf Deutsch.',
-    ratingDimensions: {
-      overall: 'Gesamteindruck',
-      de_escalation: 'Deeskalation',
-      active_listening: 'Aktives Zuhören',
-      solution_focus: 'Lösungsorientierung',
-    },
+    ratingDimensions: STANDARD_RATING_DIMENSIONS,
     analysisFocus: [
       'Deeskalationstechniken und Ruhe bewahren',
       'Aktives Zuhören und Verständnis zeigen',
@@ -100,12 +88,7 @@ const COACH_TYPES = {
   customer: {
     role: 'Kundenservice-Coach',
     intro: 'Du bist ein erfahrener Service-Coach und Kundenservice-Trainer. Analysiere das folgende Kundengespräch und gib konstruktives, praxisnahes Feedback auf Deutsch.',
-    ratingDimensions: {
-      overall: 'Gesamteindruck',
-      problem_solving: 'Problemlösung',
-      friendliness: 'Freundlichkeit',
-      efficiency: 'Effizienz',
-    },
+    ratingDimensions: STANDARD_RATING_DIMENSIONS,
     analysisFocus: [
       'Schnelle und effektive Problemlösung',
       'Freundlichkeit und Serviceorientierung',
@@ -315,4 +298,5 @@ export default {
   getCoachTypes,
   getCoachConfig,
   COACH_TYPES,
+  STANDARD_RATING_DIMENSIONS,
 };
