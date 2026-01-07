@@ -736,7 +736,7 @@ const ProgressChart = ({
 
                 <Tooltip content={<CustomTooltip />} />
 
-                {/* Area fills for active modules */}
+                {/* Area fills for active modules (hidden from tooltip) */}
                 {activeModules.overall && (
                   <Area
                     type="monotone"
@@ -744,6 +744,7 @@ const ProgressChart = ({
                     stroke="none"
                     fill={`url(#gradient-overall)`}
                     connectNulls
+                    tooltipType="none"
                   />
                 )}
 
