@@ -13,6 +13,96 @@ import {
 } from '@/config/prompts/comprehensiveCoachingPrompt';
 
 // =============================================================================
+// CACHING
+// =============================================================================
+
+const CACHE_KEY = 'ki_coach_analysis_cache';
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Generate a simple hash of session counts for cache invalidation
+ * When user completes a new session, this hash changes and cache is invalidated
+ */
+function generateSessionCountHash(sessions) {
+  const counts = {
+    simulator: sessions?.simulator?.length || 0,
+    video: sessions?.video?.length || 0,
+    roleplay: sessions?.roleplay?.length || 0,
+    games: sessions?.games?.length || 0,
+  };
+  return `${counts.simulator}-${counts.video}-${counts.roleplay}-${counts.games}`;
+}
+
+/**
+ * Get cached coaching data if valid
+ * @param {string} sessionCountHash - Current session count hash
+ * @param {string|null} userFocus - Current user focus
+ * @returns {Object|null} - Cached data or null if invalid
+ */
+function getCachedCoaching(sessionCountHash, userFocus) {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+
+    const { data, timestamp, hash, focus } = JSON.parse(cached);
+
+    // Check TTL
+    if (Date.now() - timestamp > CACHE_TTL_MS) {
+      console.log('[CoachingIntelligence] Cache expired (TTL)');
+      return null;
+    }
+
+    // Check if session counts changed (user completed new session)
+    if (hash !== sessionCountHash) {
+      console.log('[CoachingIntelligence] Cache invalidated (session count changed)');
+      return null;
+    }
+
+    // Check if focus changed
+    if (focus !== (userFocus || 'none')) {
+      console.log('[CoachingIntelligence] Cache invalidated (focus changed)');
+      return null;
+    }
+
+    console.log('[CoachingIntelligence] ✓ Using cached analysis');
+    return data;
+  } catch (error) {
+    console.error('[CoachingIntelligence] Cache read error:', error);
+    return null;
+  }
+}
+
+/**
+ * Cache coaching data
+ */
+function setCachedCoaching(data, sessionCountHash, userFocus) {
+  try {
+    const cacheEntry = {
+      data,
+      timestamp: Date.now(),
+      hash: sessionCountHash,
+      focus: userFocus || 'none',
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheEntry));
+    console.log('[CoachingIntelligence] ✓ Analysis cached');
+  } catch (error) {
+    console.error('[CoachingIntelligence] Cache write error:', error);
+  }
+}
+
+/**
+ * Clear the coaching cache (for testing or manual invalidation)
+ */
+export function clearCoachingCache() {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+    console.log('[CoachingIntelligence] Cache cleared');
+  } catch (error) {
+    console.error('[CoachingIntelligence] Cache clear error:', error);
+  }
+}
+
+// =============================================================================
 // DATA FETCHING
 // =============================================================================
 
@@ -753,56 +843,53 @@ function getDefaultWelcomeCoaching() {
 
 /**
  * Main function to get complete coaching intelligence
+ * @param {string|null} userFocus - User's selected focus area
+ * @param {boolean} forceRefresh - If true, bypass cache and regenerate analysis
  */
-export async function getCoachingIntelligence(userFocus = null) {
-  console.log('[CoachingIntelligence] Starting analysis...', userFocus ? `Focus: ${userFocus}` : 'No focus set');
-
-  // Fetch all data in parallel
-  const [sessions, scenarios] = await Promise.all([
-    fetchAllUserSessions(),
-    fetchAllScenarios(),
-  ]);
-
-  console.log('[CoachingIntelligence] Data fetched:', {
-    sessions: {
-      simulator: sessions.simulator.length,
-      video: sessions.video.length,
-      roleplay: sessions.roleplay.length,
-      games: sessions.games.length,
-    },
-    scenarios: {
-      simulator: scenarios.simulator.length,
-      video: scenarios.video.length,
-      roleplay: scenarios.roleplay.length,
-      briefingTemplates: scenarios.briefingTemplates.length,
-    },
+export async function getCoachingIntelligence(userFocus = null, forceRefresh = false) {
+  console.log('[CoachingIntelligence] Starting...', {
+    userFocus: userFocus || 'none',
+    forceRefresh,
   });
 
-  // Debug: Log sample session data to understand structure
-  if (sessions.simulator.length > 0) {
-    console.log('[CoachingIntelligence] Sample simulator session:', {
-      id: sessions.simulator[0].id,
-      overall_score: sessions.simulator[0].overall_score,
-      created_at: sessions.simulator[0].created_at,
-    });
-  }
-  if (sessions.roleplay.length > 0) {
-    console.log('[CoachingIntelligence] Sample roleplay session:', {
-      id: sessions.roleplay[0].id,
-      feedback_json: sessions.roleplay[0].feedback_json ? 'present' : 'missing',
-      rating: sessions.roleplay[0].feedback_json?.rating,
-      created_at: sessions.roleplay[0].created_at,
-    });
-  }
-  if (sessions.games.length > 0) {
-    console.log('[CoachingIntelligence] Sample game session:', {
-      id: sessions.games[0].id,
-      score: sessions.games[0].score,
-      created_at: sessions.games[0].created_at,
-    });
+  // Step 1: Fetch sessions first (quick, needed for cache validation)
+  const sessions = await fetchAllUserSessions();
+  const sessionCountHash = generateSessionCountHash(sessions);
+
+  console.log('[CoachingIntelligence] Sessions fetched:', {
+    simulator: sessions.simulator.length,
+    video: sessions.video.length,
+    roleplay: sessions.roleplay.length,
+    games: sessions.games.length,
+    hash: sessionCountHash,
+  });
+
+  // Step 2: Check cache (unless force refresh)
+  if (!forceRefresh) {
+    const cached = getCachedCoaching(sessionCountHash, userFocus);
+    if (cached) {
+      // Return cached data but with fresh session data for the progress chart
+      return {
+        ...cached,
+        sessions, // Fresh session data for charts
+        fromCache: true,
+      };
+    }
+  } else {
+    console.log('[CoachingIntelligence] Force refresh requested');
+    clearCoachingCache();
   }
 
-  // Aggregate statistics
+  // Step 3: Fetch scenarios (only if not cached)
+  const scenarios = await fetchAllScenarios();
+  console.log('[CoachingIntelligence] Scenarios fetched:', {
+    simulator: scenarios.simulator.length,
+    video: scenarios.video.length,
+    roleplay: scenarios.roleplay.length,
+    briefingTemplates: scenarios.briefingTemplates.length,
+  });
+
+  // Step 4: Aggregate statistics
   const stats = aggregateSessionStats(sessions);
   console.log('[CoachingIntelligence] Stats aggregated:', {
     totalSessions: stats.totalSessions,
@@ -812,19 +899,27 @@ export async function getCoachingIntelligence(userFocus = null) {
     moduleBreakdown: stats.moduleBreakdown,
   });
 
-  // Generate AI analysis
+  // Step 5: Generate AI analysis (the expensive part)
+  console.log('[CoachingIntelligence] Generating AI analysis...');
   const coaching = await generateCoachingAnalysis(stats, scenarios, userFocus);
 
-  return {
+  const result = {
     coaching,
     stats,
     scenarios,
     sessions,
+    fromCache: false,
   };
+
+  // Step 6: Cache the result
+  setCachedCoaching(result, sessionCountHash, userFocus);
+
+  return result;
 }
 
 export default {
   getCoachingIntelligence,
+  clearCoachingCache,
   fetchAllUserSessions,
   fetchAllScenarios,
   aggregateSessionStats,
