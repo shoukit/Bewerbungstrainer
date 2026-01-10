@@ -44,7 +44,7 @@ import {
 
 /**
  * Extract individual bullet points/action items from AI response text
- * Returns objects with label (bold part) and content (rest)
+ * Returns objects with label (clean, no markdown) and content (description)
  */
 const parseActionPoints = (text) => {
   if (!text) return [];
@@ -54,31 +54,50 @@ const parseActionPoints = (text) => {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    // Match bullet points: *, -, •, or numbered lists 1., 2., etc.
-    const bulletMatch = trimmed.match(/^[\*\-•]\s+(.+)$/);
-    const numberedMatch = trimmed.match(/^\d+[\.\)]\s+(.+)$/);
+    if (!trimmed) continue;
 
+    // Try to extract content from different formats
     let content = null;
+
+    // Format 1: Bullet point (*, -, •)
+    const bulletMatch = trimmed.match(/^[\*\-•]\s+(.+)$/);
     if (bulletMatch) {
       content = bulletMatch[1].trim();
-    } else if (numberedMatch) {
+    }
+
+    // Format 2: Numbered list (1., 2., etc.)
+    const numberedMatch = trimmed.match(/^\d+[\.\)]\s+(.+)$/);
+    if (!content && numberedMatch) {
       content = numberedMatch[1].trim();
     }
 
+    // Format 3: Line starting with **Bold:** (no bullet)
+    const directBoldMatch = trimmed.match(/^\*\*([^*]+)\*\*:?\s*(.+)$/);
+    if (!content && directBoldMatch) {
+      content = trimmed; // Use the whole line
+    }
+
     if (content) {
-      // Try to extract bold label: **Label:** rest
+      // Try to extract bold label: **Label:** rest or **Label** rest
       const boldMatch = content.match(/^\*\*([^*]+)\*\*:?\s*(.*)$/);
-      if (boldMatch) {
+      if (boldMatch && boldMatch[1]) {
+        const label = boldMatch[1].trim();
+        const description = boldMatch[2]?.trim() || '';
         actionPoints.push({
-          label: boldMatch[1].trim(),
-          content: boldMatch[2].trim() || '',
+          id: `ap-${actionPoints.length}`,
+          label: label,
+          content: description,
         });
       } else {
-        // No bold label - use first part as label
-        const firstSentence = content.split(/[.!?]/)[0];
+        // No bold label - create a short label from the content
+        // Remove any remaining markdown asterisks
+        const cleanContent = content.replace(/\*\*/g, '').replace(/\*/g, '');
+        const words = cleanContent.split(/\s+/);
+        const shortLabel = words.slice(0, 4).join(' ');
         actionPoints.push({
-          label: firstSentence.length > 50 ? firstSentence.substring(0, 50) + '...' : firstSentence,
-          content: content,
+          id: `ap-${actionPoints.length}`,
+          label: shortLabel.length > 40 ? shortLabel.substring(0, 40) + '...' : shortLabel,
+          content: cleanContent,
         });
       }
     }
@@ -284,7 +303,16 @@ const DeletedItemRow = ({ item, onRestore }) => (
  */
 const ExplanationCard = ({ explanation, onDelete, onAddAsItem, onAddActionPoint, itemLabel }) => {
   const [isExpanded, setIsExpanded] = useState(true); // Initially expanded
+  const [addedPointIds, setAddedPointIds] = useState(new Set()); // Track added points
   const actionPoints = parseActionPoints(explanation.answer);
+
+  // Filter out points that have already been added
+  const availablePoints = actionPoints.filter(point => !addedPointIds.has(point.id));
+
+  const handleAddPoint = (point) => {
+    onAddActionPoint(point);
+    setAddedPointIds(prev => new Set([...prev, point.id]));
+  };
 
   const getTitle = () => {
     if (explanation.quick_action) {
@@ -374,39 +402,50 @@ const ExplanationCard = ({ explanation, onDelete, onAddAsItem, onAddActionPoint,
                   <p className="text-[11px] font-medium text-amber-700 mb-2 flex items-center gap-1">
                     <Plus size={12} />
                     Einzelne Punkte hinzufügen:
+                    {addedPointIds.size > 0 && (
+                      <span className="text-green-600 ml-1">
+                        ({addedPointIds.size} hinzugefügt)
+                      </span>
+                    )}
                   </p>
-                  <div className="space-y-2">
-                    {actionPoints.map((point, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 bg-white rounded-xl border border-amber-100 hover:border-amber-200 hover:shadow-sm transition-all group"
-                      >
-                        <div className="flex items-start gap-2">
-                          {/* Bullet point */}
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0 mt-1.5" />
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
-                            <h5 className="text-[13px] font-semibold text-slate-800 m-0 mb-0.5 leading-snug">
-                              {point.label}
-                            </h5>
-                            {point.content && point.content !== point.label && (
-                              <p className="text-[12px] text-slate-600 m-0 leading-snug">
-                                {point.content.length > 120 ? point.content.substring(0, 120) + '...' : point.content}
-                              </p>
-                            )}
+                  {availablePoints.length > 0 ? (
+                    <div className="space-y-2">
+                      {availablePoints.map((point) => (
+                        <div
+                          key={point.id}
+                          className="p-2.5 bg-white rounded-xl border border-amber-100 hover:border-amber-200 hover:shadow-sm transition-all group"
+                        >
+                          <div className="flex items-start gap-2">
+                            {/* Bullet point */}
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0 mt-1.5" />
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <h5 className="text-[13px] font-semibold text-slate-800 m-0 mb-0.5 leading-snug">
+                                {point.label}
+                              </h5>
+                              {point.content && (
+                                <p className="text-[12px] text-slate-600 m-0 leading-snug">
+                                  {point.content.length > 150 ? point.content.substring(0, 150) + '...' : point.content}
+                                </p>
+                              )}
+                            </div>
+                            {/* Add button */}
+                            <button
+                              onClick={() => handleAddPoint(point)}
+                              title="Diesen Punkt zur Liste hinzufügen"
+                              className="p-1.5 rounded-lg bg-transparent border-none text-amber-600 cursor-pointer hover:text-white hover:bg-indigo-500 transition-all opacity-60 group-hover:opacity-100 flex-shrink-0"
+                            >
+                              <Plus size={14} />
+                            </button>
                           </div>
-                          {/* Add button */}
-                          <button
-                            onClick={() => onAddActionPoint(point)}
-                            title="Diesen Punkt zur Liste hinzufügen"
-                            className="p-1.5 rounded-lg bg-transparent border-none text-amber-600 cursor-pointer hover:text-white hover:bg-indigo-500 transition-all opacity-60 group-hover:opacity-100 flex-shrink-0"
-                          >
-                            <Plus size={14} />
-                          </button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[12px] text-green-600 italic m-0">
+                      ✓ Alle Punkte wurden hinzugefügt
+                    </p>
+                  )}
                 </div>
               )}
             </div>
