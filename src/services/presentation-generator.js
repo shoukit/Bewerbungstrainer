@@ -29,22 +29,17 @@ const SLIDE_COLORS = {
 // =============================================================================
 
 /**
- * Get API key from WordPress settings
+ * Get API key from WordPress config
  */
-const getApiKey = async () => {
-  try {
-    const settings = await wordpressAPI.request('/settings');
-    return settings?.gemini_api_key || import.meta.env.VITE_GEMINI_API_KEY || '';
-  } catch {
-    return import.meta.env.VITE_GEMINI_API_KEY || '';
-  }
+const getApiKey = () => {
+  return wordpressAPI.getGeminiApiKey();
 };
 
 /**
  * Generate presentation structure using Gemini
  */
 const generatePresentationStructure = async (data) => {
-  const apiKey = await getApiKey();
+  const apiKey = getApiKey();
   if (!apiKey) {
     throw new Error('Gemini API Key nicht konfiguriert');
   }
