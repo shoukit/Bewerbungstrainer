@@ -4,7 +4,7 @@
  * Migrated to Tailwind CSS for consistent styling.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePartner } from '@/context/PartnerContext';
 import { useMobile } from '@/hooks/useMobile';
@@ -24,6 +24,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   RotateCcw,
   Lightbulb,
   FileText,
@@ -36,6 +37,35 @@ import {
   Plus,
   X,
 } from 'lucide-react';
+
+// ============================================================================
+// HELPER: Parse bullet points from AI answer
+// ============================================================================
+
+/**
+ * Extract individual bullet points/action items from AI response text
+ */
+const parseActionPoints = (text) => {
+  if (!text) return [];
+
+  const lines = text.split('\n');
+  const actionPoints = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Match bullet points: *, -, •, or numbered lists 1., 2., etc.
+    const bulletMatch = trimmed.match(/^[\*\-•]\s+(.+)$/);
+    const numberedMatch = trimmed.match(/^\d+[\.\)]\s+(.+)$/);
+
+    if (bulletMatch) {
+      actionPoints.push(bulletMatch[1].trim());
+    } else if (numberedMatch) {
+      actionPoints.push(numberedMatch[1].trim());
+    }
+  }
+
+  return actionPoints;
+};
 
 // ============================================================================
 // CONSTANTS
@@ -230,9 +260,134 @@ const DeletedItemRow = ({ item, onRestore }) => (
 );
 
 /**
+ * ExplanationCard - Collapsible AI explanation with individual action points
+ */
+const ExplanationCard = ({ explanation, onDelete, onAddAsItem, onAddActionPoint, itemLabel }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const actionPoints = parseActionPoints(explanation.answer);
+
+  const getTitle = () => {
+    if (explanation.quick_action) {
+      switch (explanation.quick_action) {
+        case 'explain': return '💡 Erklärung';
+        case 'examples': return '📝 Beispiele';
+        case 'howto': return '🚀 Umsetzung';
+        default: return 'Frage';
+      }
+    }
+    return `❓ ${explanation.question}`;
+  };
+
+  // Truncate answer for preview (first 100 chars)
+  const previewText = explanation.answer?.length > 100
+    ? explanation.answer.substring(0, 100) + '...'
+    : explanation.answer;
+
+  return (
+    <div className="bg-white rounded-xl border border-amber-200 overflow-hidden">
+      {/* Collapsible Header */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-3 py-2.5 bg-transparent border-none cursor-pointer flex items-center gap-2 text-left hover:bg-amber-50/50 transition-colors"
+      >
+        <ChevronRight
+          size={14}
+          className={`text-amber-600 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+        />
+        <span className="text-[12px] font-medium text-amber-700 flex-1 truncate">
+          {getTitle()}
+        </span>
+        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          {onAddAsItem && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddAsItem(explanation.answer, itemLabel);
+              }}
+              title="Gesamten Block als neuen Punkt hinzufügen"
+              className="p-1 rounded bg-transparent border-none text-slate-400 cursor-pointer hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+            >
+              <Plus size={14} />
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(explanation.id);
+            }}
+            title="Erklärung löschen"
+            className="p-1 rounded bg-transparent border-none text-slate-400 cursor-pointer hover:text-red-500 hover:bg-red-50 transition-all"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </button>
+
+      {/* Preview when collapsed */}
+      {!isExpanded && (
+        <div className="px-3 pb-2.5 pt-0">
+          <p className="text-[12px] text-slate-500 m-0 line-clamp-2">
+            {previewText}
+          </p>
+        </div>
+      )}
+
+      {/* Expanded Content */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 border-t border-amber-100">
+              {/* Full answer text */}
+              <div className="text-[13px] text-slate-600 whitespace-pre-wrap mt-2.5 leading-relaxed">
+                {renderInlineMarkdown(explanation.answer)}
+              </div>
+
+              {/* Individual action points to add */}
+              {actionPoints.length > 0 && onAddActionPoint && (
+                <div className="mt-3 pt-3 border-t border-amber-100">
+                  <p className="text-[11px] font-medium text-amber-700 mb-2 flex items-center gap-1">
+                    <Plus size={12} />
+                    Einzelne Punkte hinzufügen:
+                  </p>
+                  <div className="space-y-1.5">
+                    {actionPoints.map((point, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-2 p-2 bg-amber-50/50 rounded-lg hover:bg-amber-100/50 transition-colors group"
+                      >
+                        <span className="text-[12px] text-slate-600 flex-1 leading-snug">
+                          {point.length > 80 ? point.substring(0, 80) + '...' : point}
+                        </span>
+                        <button
+                          onClick={() => onAddActionPoint(point)}
+                          title="Diesen Punkt zur Liste hinzufügen"
+                          className="p-1 rounded bg-transparent border-none text-amber-600 cursor-pointer hover:text-indigo-600 hover:bg-white transition-all opacity-60 group-hover:opacity-100"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+/**
  * Item Card Component - Individual briefing item with note, AI help, and delete
  */
-const ItemCard = ({ item, sectionId, onUpdateItem, onAskItem, onDeleteExplanation, onAddAsItem }) => {
+const ItemCard = ({ item, sectionId, onUpdateItem, onAskItem, onDeleteExplanation, onAddAsItem, onAddActionPoint }) => {
   const [note, setNote] = useState(item.user_note || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -452,7 +607,7 @@ const ItemCard = ({ item, sectionId, onUpdateItem, onAskItem, onDeleteExplanatio
             </div>
           )}
 
-          {/* Existing Explanations */}
+          {/* Existing Explanations - Collapsible Cards */}
           {explanations.length > 0 && (
             <div className="mt-3">
               <button
@@ -466,38 +621,14 @@ const ItemCard = ({ item, sectionId, onUpdateItem, onAskItem, onDeleteExplanatio
               {showExplanations && (
                 <div className="space-y-2">
                   {explanations.map((exp) => (
-                    <div key={exp.id} className="bg-white rounded-xl p-3 border border-amber-200">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <p className="text-[12px] font-medium text-amber-700 m-0">
-                          {exp.quick_action ? (
-                            exp.quick_action === 'explain' ? '💡 Erklärung' :
-                            exp.quick_action === 'examples' ? '📝 Beispiele' :
-                            exp.quick_action === 'howto' ? '🚀 Umsetzung' : 'Frage'
-                          ) : `❓ ${exp.question}`}
-                        </p>
-                        <div className="flex items-center gap-1">
-                          {onAddAsItem && (
-                            <button
-                              onClick={() => onAddAsItem(sectionId, exp.answer, item.label)}
-                              title="Als neuen Punkt hinzufügen"
-                              className="p-1 rounded bg-transparent border-none text-slate-400 cursor-pointer hover:text-indigo-600 hover:bg-indigo-50 transition-all"
-                            >
-                              <Plus size={14} />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteExplanation(exp.id)}
-                            title="Erklärung löschen"
-                            className="p-1 rounded bg-transparent border-none text-slate-400 cursor-pointer hover:text-red-500 hover:bg-red-50 transition-all"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="text-[13px] text-slate-600 whitespace-pre-wrap">
-                        {renderInlineMarkdown(exp.answer)}
-                      </div>
-                    </div>
+                    <ExplanationCard
+                      key={exp.id}
+                      explanation={exp}
+                      itemLabel={item.label}
+                      onDelete={handleDeleteExplanation}
+                      onAddAsItem={onAddAsItem ? (answer, label) => onAddAsItem(sectionId, answer, label) : null}
+                      onAddActionPoint={onAddActionPoint ? (point) => onAddActionPoint(sectionId, point, item.label) : null}
+                    />
                   ))}
                 </div>
               )}
@@ -573,7 +704,7 @@ const GenerateMoreButton = ({ onClick, isGenerating }) => (
 /**
  * Section Card Component - Handles both item-based and legacy markdown content
  */
-const SectionCard = ({ section, onUpdateItem, onGenerateMore, onAskItem, onDeleteExplanation, onAddAsItem, isExpanded, onToggle }) => {
+const SectionCard = ({ section, onUpdateItem, onGenerateMore, onAskItem, onDeleteExplanation, onAddAsItem, onAddActionPoint, isExpanded, onToggle }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateMore = async () => {
@@ -655,6 +786,7 @@ const SectionCard = ({ section, onUpdateItem, onGenerateMore, onAskItem, onDelet
                   onAskItem={onAskItem}
                   onDeleteExplanation={onDeleteExplanation}
                   onAddAsItem={onAddAsItem}
+                  onAddActionPoint={onAddActionPoint}
                 />
               ))}
 
@@ -679,6 +811,7 @@ const SectionCard = ({ section, onUpdateItem, onGenerateMore, onAskItem, onDelet
                       onAskItem={onAskItem}
                       onDeleteExplanation={onDeleteExplanation}
                       onAddAsItem={onAddAsItem}
+                      onAddActionPoint={onAddActionPoint}
                     />
                   ))}
                 </div>
@@ -842,7 +975,22 @@ const BriefingWorkbook = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
+  // Scroll-based header minimization
+  const [isHeaderMinimized, setIsHeaderMinimized] = useState(false);
+  const scrollContainerRef = useRef(null);
+
   const IconComponent = getIcon(briefing?.template_icon) || FileText;
+
+  // Track scroll position to minimize header
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      setIsHeaderMinimized(scrollTop > 80);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch full briefing with sections if needed
   useEffect(() => {
@@ -1062,6 +1210,49 @@ const BriefingWorkbook = ({
     // A proper implementation would save via the update_section endpoint.
   }, []);
 
+  // Handler for adding a single action point from AI explanation
+  const handleAddActionPoint = useCallback((sectionId, actionPoint, sourceLabel) => {
+    // Create a concise label from the action point
+    const newLabel = actionPoint.length > 60
+      ? actionPoint.substring(0, 60) + '...'
+      : actionPoint;
+
+    // Update local state to add the new item
+    setBriefing((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+
+        // Parse ai_content if it's a string (it's stored as JSON string)
+        let content;
+        try {
+          content = typeof s.ai_content === 'string'
+            ? JSON.parse(s.ai_content)
+            : s.ai_content;
+        } catch {
+          console.error('[SmartBriefing] Failed to parse ai_content');
+          return s;
+        }
+
+        if (!content?.items) return s;
+
+        const newItem = {
+          id: crypto.randomUUID(),
+          label: newLabel,
+          content: actionPoint,
+          user_note: '',
+          deleted: false,
+          ai_explanations: [],
+        };
+
+        return {
+          ...s,
+          ai_content: JSON.stringify({ ...content, items: [...content.items, newItem] }),
+        };
+      }),
+    }));
+  }, []);
+
   const handleDownloadPdf = useCallback(async () => {
     if (isDownloadingPdf || !briefing?.id) return;
 
@@ -1118,55 +1309,114 @@ const BriefingWorkbook = ({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header - Full width sticky */}
-      <div
-        className="sticky top-0 z-40 px-4 py-5 md:px-8 md:py-6"
+      {/* Header - Full width sticky with minimize on scroll */}
+      <motion.div
+        className="sticky top-0 z-40 transition-all duration-300"
         style={{ background: 'var(--header-gradient, linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%))' }}
+        animate={{
+          paddingTop: isHeaderMinimized ? (isMobile ? '8px' : '10px') : (isMobile ? '20px' : '24px'),
+          paddingBottom: isHeaderMinimized ? (isMobile ? '8px' : '10px') : (isMobile ? '20px' : '24px'),
+        }}
+        transition={{ duration: 0.2 }}
       >
-        <div className="max-w-[1400px] mx-auto">
-          {/* Back Button */}
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1.5 bg-white/15 border-none rounded-xl px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 hover:shadow-lg transition-all"
-            >
-              <ArrowLeft size={16} />
-              Zurück zur Übersicht
-            </button>
-          )}
+        <div className={`max-w-[1400px] mx-auto ${isMobile ? 'px-4' : 'px-8'}`}>
+          {/* Back Button - Hidden when minimized */}
+          <AnimatePresence>
+            {onBack && !isHeaderMinimized && (
+              <motion.button
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                onClick={onBack}
+                className="flex items-center gap-1.5 bg-white/15 border-none rounded-xl px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 hover:shadow-lg transition-all"
+              >
+                <ArrowLeft size={16} />
+                Zurück zur Übersicht
+              </motion.button>
+            )}
+          </AnimatePresence>
 
           {/* Header Content */}
-          <div className="flex items-center gap-6">
-            {/* Icon - Hidden on mobile */}
-            {!isMobile && (
-              <div className="w-[90px] h-[90px] rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <IconComponent size={40} className="text-white" />
+          <div className="flex items-center gap-4 md:gap-6">
+            {/* Icon - Hidden on mobile and when minimized */}
+            <AnimatePresence>
+              {!isMobile && !isHeaderMinimized && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, width: 0 }}
+                  animate={{ opacity: 1, scale: 1, width: '90px' }}
+                  exit={{ opacity: 0, scale: 0.8, width: 0 }}
+                  className="h-[90px] rounded-full bg-white/20 flex items-center justify-center flex-shrink-0"
+                >
+                  <IconComponent size={40} className="text-white" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Small icon when minimized (non-mobile) */}
+            {!isMobile && isHeaderMinimized && (
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                <IconComponent size={20} className="text-white" />
               </div>
             )}
 
             {/* Title & Meta */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 flex-wrap mb-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
-                  Smart Briefing
-                </span>
-                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-indigo-700">
-                  {briefing.template_title}
-                </span>
-              </div>
-              <h1 className={`font-bold text-white m-0 mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
+            <div className="flex-1 min-w-0">
+              {/* Tags - Hidden when minimized */}
+              <AnimatePresence>
+                {!isHeaderMinimized && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center gap-3 flex-wrap mb-2"
+                  >
+                    <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
+                      Smart Briefing
+                    </span>
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-indigo-700">
+                      {briefing.template_title}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Title - Smaller when minimized */}
+              <h1 className={`font-bold text-white m-0 truncate transition-all duration-200 ${
+                isHeaderMinimized
+                  ? 'text-base md:text-lg mb-0'
+                  : isMobile ? 'text-xl mb-2' : 'text-2xl mb-2'
+              }`}>
                 {briefing.title || 'Briefing'}
               </h1>
-              <div className="flex items-center gap-4 flex-wrap">
-                <span className="flex items-center gap-1.5 text-[13px] text-white/80">
-                  <Calendar size={14} />
-                  {formatDateTime(briefing.created_at)}
-                </span>
-              </div>
+
+              {/* Date - Hidden when minimized */}
+              <AnimatePresence>
+                {!isHeaderMinimized && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center gap-4 flex-wrap"
+                  >
+                    <span className="flex items-center gap-1.5 text-[13px] text-white/80">
+                      <Calendar size={14} />
+                      {formatDateTime(briefing.created_at)}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2.5 flex-shrink-0">
+            <div className="flex gap-2 md:gap-2.5 flex-shrink-0">
+              {/* Back button (icon only) when minimized */}
+              {onBack && isHeaderMinimized && (
+                <HeaderActionButton
+                  onClick={onBack}
+                  icon={ArrowLeft}
+                  title="Zurück zur Übersicht"
+                />
+              )}
               <HeaderActionButton
                 onClick={handleDownloadPdf}
                 disabled={isDownloadingPdf}
@@ -1185,7 +1435,7 @@ const BriefingWorkbook = ({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
       <div className={`max-w-[900px] mx-auto ${isMobile ? 'p-4' : 'px-8 py-6'}`}>
@@ -1233,6 +1483,7 @@ const BriefingWorkbook = ({
                 onAskItem={handleAskItem}
                 onDeleteExplanation={handleDeleteExplanation}
                 onAddAsItem={handleAddAsItem}
+                onAddActionPoint={handleAddActionPoint}
                 isExpanded={expandedSections[section.id]}
                 onToggle={() => toggleSection(section.id)}
               />
