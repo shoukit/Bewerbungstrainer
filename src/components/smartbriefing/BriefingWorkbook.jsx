@@ -1418,9 +1418,9 @@ const BriefingWorkbook = ({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header - Full width sticky with minimize on scroll (using CSS transitions to prevent flickering) */}
+      {/* Header - Full width sticky, instant switch between minimized/expanded (no animation) */}
       <div
-        className={`sticky top-0 z-40 transition-all duration-300 ease-out ${
+        className={`sticky top-0 z-40 ${
           isHeaderMinimized
             ? isMobile ? 'py-2' : 'py-2.5'
             : isMobile ? 'py-5' : 'py-6'
@@ -1428,48 +1428,38 @@ const BriefingWorkbook = ({
         style={{ background: 'var(--header-gradient, linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%))' }}
       >
         <div className={`max-w-[1400px] mx-auto ${isMobile ? 'px-4' : 'px-8'}`}>
-          {/* Back Button - Hidden when minimized (CSS transition) */}
-          {onBack && (
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-out ${
-                isHeaderMinimized ? 'max-h-0 opacity-0 mb-0' : 'max-h-12 opacity-100 mb-4'
-              }`}
+          {/* Back Button - Hidden when minimized */}
+          {onBack && !isHeaderMinimized && (
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 bg-white/15 border-none rounded-xl px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 hover:shadow-lg transition-colors"
             >
-              <button
-                onClick={onBack}
-                className="flex items-center gap-1.5 bg-white/15 border-none rounded-xl px-3 py-2 cursor-pointer text-white text-[13px] hover:bg-white/25 hover:shadow-lg transition-all"
-              >
-                <ArrowLeft size={16} />
-                Zurück zur Übersicht
-              </button>
-            </div>
+              <ArrowLeft size={16} />
+              Zurück zur Übersicht
+            </button>
           )}
 
           {/* Header Content */}
           <div className="flex items-center gap-4 md:gap-6">
-            {/* Icon - Transforms between large and small based on minimize state */}
+            {/* Icon - Large when expanded, small when minimized */}
             {!isMobile && (
               <div
-                className={`rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 transition-all duration-300 ease-out ${
+                className={`rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 ${
                   isHeaderMinimized ? 'w-10 h-10' : 'w-[90px] h-[90px]'
                 }`}
               >
                 <IconComponent
                   size={isHeaderMinimized ? 20 : 40}
-                  className="text-white transition-all duration-300"
+                  className="text-white"
                 />
               </div>
             )}
 
             {/* Title & Meta */}
             <div className="flex-1 min-w-0">
-              {/* Tags - Hidden when minimized (CSS transition) */}
-              <div
-                className={`overflow-hidden transition-all duration-300 ease-out ${
-                  isHeaderMinimized ? 'max-h-0 opacity-0 mb-0' : 'max-h-10 opacity-100 mb-2'
-                }`}
-              >
-                <div className="flex items-center gap-3 flex-wrap">
+              {/* Tags - Hidden when minimized */}
+              {!isHeaderMinimized && (
+                <div className="flex items-center gap-3 flex-wrap mb-2">
                   <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
                     Smart Briefing
                   </span>
@@ -1477,30 +1467,26 @@ const BriefingWorkbook = ({
                     {briefing.template_title}
                   </span>
                 </div>
-              </div>
+              )}
 
               {/* Title - Smaller when minimized */}
-              <h1 className={`font-bold text-white m-0 truncate transition-all duration-300 ease-out ${
+              <h1 className={`font-bold text-white m-0 truncate ${
                 isHeaderMinimized
-                  ? 'text-base md:text-lg mb-0'
+                  ? 'text-base md:text-lg'
                   : isMobile ? 'text-xl mb-2' : 'text-2xl mb-2'
               }`}>
                 {briefing.title || 'Briefing'}
               </h1>
 
-              {/* Date - Hidden when minimized (CSS transition) */}
-              <div
-                className={`overflow-hidden transition-all duration-300 ease-out ${
-                  isHeaderMinimized ? 'max-h-0 opacity-0' : 'max-h-8 opacity-100'
-                }`}
-              >
+              {/* Date - Hidden when minimized */}
+              {!isHeaderMinimized && (
                 <div className="flex items-center gap-4 flex-wrap">
                   <span className="flex items-center gap-1.5 text-[13px] text-white/80">
                     <Calendar size={14} />
                     {formatDateTime(briefing.created_at)}
                   </span>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Action Buttons */}
