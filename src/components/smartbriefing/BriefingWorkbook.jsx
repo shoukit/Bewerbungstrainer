@@ -39,7 +39,10 @@ import {
   Presentation,
 } from 'lucide-react';
 import PresentationExportDialog from './PresentationExportDialog';
-import { generatePresentationFromBriefing } from '@/services/presentation-generator';
+import {
+  generateStructureProposal,
+  generateFromApprovedStructure,
+} from '@/services/presentation-generator';
 
 // ============================================================================
 // HELPER: Parse bullet points from AI answer
@@ -1055,7 +1058,8 @@ const BriefingWorkbook = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [showPresentationDialog, setShowPresentationDialog] = useState(false);
-  const [isGeneratingPresentation, setIsGeneratingPresentation] = useState(false);
+  const [presentationLoading, setPresentationLoading] = useState(false);
+  const [presentationLoadingStep, setPresentationLoadingStep] = useState(null); // 'structure' | 'presentation'
 
   // Scroll-based header minimization
   const [isHeaderMinimized, setIsHeaderMinimized] = useState(false);
@@ -1404,21 +1408,41 @@ const BriefingWorkbook = ({
     }
   }, [briefing?.id, isDownloadingPdf]);
 
-  // Handle presentation generation
-  const handleGeneratePresentation = useCallback(async (data) => {
-    if (isGeneratingPresentation) return;
+  // Handle presentation structure generation (Step 1)
+  const handleGenerateStructure = useCallback(async (data) => {
+    if (presentationLoading) return null;
 
-    setIsGeneratingPresentation(true);
+    setPresentationLoading(true);
+    setPresentationLoadingStep('structure');
     try {
-      await generatePresentationFromBriefing(data);
+      const structure = await generateStructureProposal(data);
+      return structure;
+    } catch (err) {
+      console.error('[SmartBriefing] Structure generation error:', err);
+      return null;
+    } finally {
+      setPresentationLoading(false);
+      setPresentationLoadingStep(null);
+    }
+  }, [presentationLoading]);
+
+  // Handle final presentation generation (Step 2)
+  const handleGenerateFinalPresentation = useCallback(async (data, structure) => {
+    if (presentationLoading) return;
+
+    setPresentationLoading(true);
+    setPresentationLoadingStep('presentation');
+    try {
+      await generateFromApprovedStructure(data, structure);
       setShowPresentationDialog(false);
     } catch (err) {
       console.error('[SmartBriefing] Presentation generation error:', err);
       // TODO: Show error toast
     } finally {
-      setIsGeneratingPresentation(false);
+      setPresentationLoading(false);
+      setPresentationLoadingStep(null);
     }
-  }, [isGeneratingPresentation]);
+  }, [presentationLoading]);
 
   const handleDelete = async () => {
     if (!onDelete || !briefing?.id) return;
@@ -1631,13 +1655,15 @@ const BriefingWorkbook = ({
         isDeleting={isDeleting}
       />
 
-      {/* Presentation Export Dialog */}
+      {/* Presentation Export Dialog - Two-step process */}
       <PresentationExportDialog
         isOpen={showPresentationDialog}
         onClose={() => setShowPresentationDialog(false)}
         briefing={briefing}
-        onGenerate={handleGeneratePresentation}
-        isGenerating={isGeneratingPresentation}
+        onGenerateStructure={handleGenerateStructure}
+        onGeneratePresentation={handleGenerateFinalPresentation}
+        isLoading={presentationLoading}
+        loadingStep={presentationLoadingStep}
       />
     </div>
   );

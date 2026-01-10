@@ -646,15 +646,16 @@ const createSummarySlide = (pptx, data) => {
     fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
   });
 
-  // Bullet points with checkmarks
+  // Bullet points with checkmarks - proper formatting with line breaks
   if (data.bullets && data.bullets.length > 0) {
     const bulletItems = data.bullets.map(text => ({
-      text: `✓  ${cleanMarkdown(text)}`,
+      text: cleanMarkdown(text),
       options: {
-        fontSize: 20,
+        bullet: { code: '2713', color: SLIDE_COLORS.success }, // ✓ checkmark
+        fontSize: 18,
         color: SLIDE_COLORS.dark,
-        paraSpaceAfter: 16,
-        bold: true,
+        paraSpaceAfter: 18,
+        indentLevel: 0,
       },
     }));
 
@@ -679,18 +680,209 @@ const cleanMarkdown = (text) => {
 };
 
 // =============================================================================
-// MAIN EXPORT FUNCTION
+// TWO-STEP GENERATION PROCESS
 // =============================================================================
 
 /**
- * Generate presentation from briefing data
+ * Step 1: Generate structure proposal (quick, lightweight)
+ * Returns only slide outline for user review
+ */
+export const generateStructureProposal = async (data) => {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('Gemini API Key nicht konfiguriert');
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+
+  // Build concise input data (just labels, no full content)
+  const inputSummary = data.sections.map(section => {
+    const labels = section.items.map(item => `- ${item.label}`).join('\n');
+    return `### ${section.sectionTitle}\n${labels}`;
+  }).join('\n\n');
+
+  const totalItems = data.sections.reduce((acc, s) => acc + s.items.length, 0);
+
+  const prompt = `Du bist ein Präsentationsdesigner. Erstelle eine Slide-Struktur für folgende Präsentation:
+
+**Ziel:** "${data.goal}"
+**Briefing:** "${data.briefingTitle || 'Präsentation'}"
+
+**Inhalte (${totalItems} Punkte):**
+${inputSummary}
+
+AUFGABE: Erstelle NUR die Slide-Struktur (Titel + Typ), KEINE Inhalte!
+
+Dokumenttyp-spezifische Slides hinzufügen:
+- Kickoff: Team, Timeline, Spielregeln
+- Pitch: Problem, Lösung, Team, Call-to-Action
+- Status: Fortschritt, Herausforderungen, Nächste Schritte
+- Workshop: Agenda mit Zeiten, Methodik
+
+AUSGABE (nur JSON):
+{
+  "title": "Präsentationstitel",
+  "slides": [
+    {"type": "title", "title": "Titelfolie", "description": "Einführung mit Datum/Anlass"},
+    {"type": "agenda", "title": "Agenda", "description": "Zeitplan mit 6 Punkten"},
+    {"type": "content", "title": "Projektziele", "description": "4 Hauptziele des Projekts"},
+    {"type": "team", "title": "Das Team", "description": "Rollen & Verantwortlichkeiten"},
+    {"type": "timeline", "title": "Meilensteine", "description": "6 wichtige Termine"},
+    {"type": "summary", "title": "Nächste Schritte", "description": "Call-to-Action"}
+  ]
+}
+
+Slide-Typen: title, agenda, content, team, timeline, quote, two_columns, summary
+
+Antworte NUR mit JSON!`;
+
+  // Try models in fallback order
+  for (const modelName of GEMINI_MODELS.FALLBACK_ORDER) {
+    try {
+      console.log(`[PresentationGen] Structure proposal with: ${modelName}`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = result.response.text();
+
+      // Log
+      await logPromptAndResponse(prompt, response, {
+        model: modelName,
+        step: 'structure_proposal',
+      });
+
+      // Parse JSON
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Keine gültige JSON-Struktur');
+      }
+
+      const structure = JSON.parse(jsonMatch[0]);
+      console.log('[PresentationGen] Structure proposal:', structure.slides?.length, 'slides');
+      return structure;
+    } catch (err) {
+      console.warn(`[PresentationGen] Model ${modelName} failed:`, err.message);
+      if (modelName === GEMINI_MODELS.FALLBACK_ORDER[GEMINI_MODELS.FALLBACK_ORDER.length - 1]) {
+        throw err;
+      }
+    }
+  }
+
+  throw new Error('Struktur-Generierung fehlgeschlagen');
+};
+
+/**
+ * Step 2: Generate full presentation from approved structure
+ * Takes the user-approved slide structure and fills it with content
+ */
+export const generateFromApprovedStructure = async (data, approvedStructure) => {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('Gemini API Key nicht konfiguriert');
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+
+  // Build full input data
+  const inputData = data.sections.map(section => {
+    const itemsList = section.items.map(item => {
+      let itemText = `- **${item.label}**`;
+      if (item.content) itemText += `: ${item.content}`;
+      if (item.userNote) itemText += `\n  → WICHTIG (Nutzer-Notiz): "${item.userNote}"`;
+      return itemText;
+    }).join('\n');
+    return `### ${section.sectionTitle}\n${itemsList}`;
+  }).join('\n\n');
+
+  const slideStructure = approvedStructure.slides.map((s, i) =>
+    `${i + 1}. [${s.type}] ${s.title}`
+  ).join('\n');
+
+  const prompt = `Du bist ein Präsentationsdesigner. Fülle diese genehmigte Struktur mit vollständigen Inhalten.
+
+**Präsentation:** "${approvedStructure.title}"
+**Ziel:** "${data.goal}"
+
+## GENEHMIGTE SLIDE-STRUKTUR (NICHT ÄNDERN!)
+${slideStructure}
+
+## BRIEFING-INHALTE (alle Punkte verwenden!)
+${inputData}
+
+AUFGABE:
+1. Fülle JEDE Slide mit vollständigen, ausformulierten Inhalten
+2. ALLE Punkte aus dem Briefing müssen vorkommen
+3. Nutzer-Notizen (→ WICHTIG) besonders betonen
+4. Platzhalter "[PLATZHALTER: ...]" für fehlende Infos
+
+AUSGABE: Vollständiges JSON mit allen Slide-Details.
+
+Beispiel pro Slide-Typ:
+- title: {"type":"title","title":"...","subtitle":"..."}
+- agenda: {"type":"agenda","title":"...","items":[{"time":"5 Min","topic":"..."}]}
+- content: {"type":"content","title":"...","bullets":["...","..."]}
+- team: {"type":"team","title":"...","members":[{"role":"...","name":"...","responsibility":"..."}]}
+- timeline: {"type":"timeline","title":"...","milestones":[{"date":"...","title":"...","status":"current/upcoming"}]}
+- quote: {"type":"quote","quote":"...","source":"..."}
+- two_columns: {"type":"two_columns","title":"...","left":{"heading":"...","bullets":[]},"right":{"heading":"...","bullets":[]}}
+- summary: {"type":"summary","title":"...","bullets":["..."]}
+
+Antworte NUR mit JSON!`;
+
+  // Try models
+  for (const modelName of GEMINI_MODELS.FALLBACK_ORDER) {
+    try {
+      console.log(`[PresentationGen] Full content with: ${modelName}`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = result.response.text();
+
+      await logPromptAndResponse(prompt, response, {
+        model: modelName,
+        step: 'full_content',
+      });
+
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Keine gültige JSON-Struktur');
+      }
+
+      const fullStructure = JSON.parse(jsonMatch[0]);
+      console.log('[PresentationGen] Full content generated');
+
+      // Create and download PowerPoint
+      const pptx = createPowerPoint(fullStructure);
+      const sanitizedTitle = (fullStructure.title || 'Praesentation')
+        .replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .substring(0, 50);
+      const filename = `${sanitizedTitle}.pptx`;
+
+      await pptx.writeFile({ fileName: filename });
+      return { success: true, filename };
+    } catch (err) {
+      console.warn(`[PresentationGen] Model ${modelName} failed:`, err.message);
+      if (modelName === GEMINI_MODELS.FALLBACK_ORDER[GEMINI_MODELS.FALLBACK_ORDER.length - 1]) {
+        throw err;
+      }
+    }
+  }
+
+  throw new Error('Content-Generierung fehlgeschlagen');
+};
+
+// =============================================================================
+// LEGACY: SINGLE-STEP GENERATION (kept for backwards compatibility)
+// =============================================================================
+
+/**
+ * Generate presentation from briefing data (single step - legacy)
  * @param {Object} data - Selected items and presentation goal
  * @param {string} data.goal - Presentation goal/audience
  * @param {string} data.briefingTitle - Original briefing title
  * @param {Array} data.sections - Selected sections with items
  */
 export const generatePresentationFromBriefing = async (data) => {
-  console.log('[PresentationGen] Starting generation...', data);
+  console.log('[PresentationGen] Starting single-step generation...', data);
 
   // 1. Generate structure with Gemini
   console.log('[PresentationGen] Calling Gemini for structure...');
@@ -717,4 +909,6 @@ export const generatePresentationFromBriefing = async (data) => {
 
 export default {
   generatePresentationFromBriefing,
+  generateStructureProposal,
+  generateFromApprovedStructure,
 };
