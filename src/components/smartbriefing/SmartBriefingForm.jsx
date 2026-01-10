@@ -15,48 +15,10 @@ import {
   ArrowLeft,
   Sparkles,
   AlertCircle,
-  Plus,
-  Trash2,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
 
-/**
- * Custom Variable Item Component - Vertical Layout
- * Variable name on top, multiline textarea below
- */
-const CustomVariableItem = ({ variable, index, onChange, onDelete }) => {
-  return (
-    <div className="bg-white border border-slate-200 rounded-lg p-3 mb-3">
-      {/* Header with variable name and delete button */}
-      <div className="flex items-center justify-between mb-2">
-        <input
-          type="text"
-          value={variable.key || ''}
-          onChange={(e) => onChange(index, 'key', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
-          placeholder="variable_name"
-          className="flex-1 py-2 px-3 rounded-md border border-slate-200 text-sm font-mono bg-slate-50 mr-2 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-        />
-        <button
-          type="button"
-          onClick={() => onDelete(index)}
-          className="p-2 border-none bg-transparent cursor-pointer text-red-500 flex items-center justify-center hover:bg-red-50 rounded-md transition-colors"
-        >
-          <Trash2 size={18} />
-        </button>
-      </div>
-
-      {/* Multiline textarea for value */}
-      <textarea
-        value={variable.value || ''}
-        onChange={(e) => onChange(index, 'value', e.target.value)}
-        placeholder="Wert eingeben... (mehrzeilig möglich)"
-        rows={3}
-        className="w-full py-2.5 px-3 rounded-md border border-slate-200 text-sm resize-y min-h-[80px] box-border outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-      />
-    </div>
-  );
-};
 
 /**
  * SmartBriefingForm Component
@@ -74,9 +36,9 @@ const SmartBriefingForm = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  // Custom variables state
-  const [customVariables, setCustomVariables] = useState([]);
-  const [showCustomVariables, setShowCustomVariables] = useState(false);
+  // Additional info state (simple freetext field)
+  const [additionalInfo, setAdditionalInfo] = useState('');
+  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
 
   const IconComponent = getIcon(template?.icon);
 
@@ -91,25 +53,10 @@ const SmartBriefingForm = ({
       });
       setFormData(initialData);
     }
-    // Reset custom variables when template changes
-    setCustomVariables([]);
-    setShowCustomVariables(false);
+    // Reset additional info when template changes
+    setAdditionalInfo('');
+    setShowAdditionalInfo(false);
   }, [template]);
-
-  // Custom variables handlers
-  const addCustomVariable = () => {
-    setCustomVariables([...customVariables, { key: '', value: '' }]);
-  };
-
-  const updateCustomVariable = (index, field, value) => {
-    const updated = [...customVariables];
-    updated[index][field] = value;
-    setCustomVariables(updated);
-  };
-
-  const deleteCustomVariable = (index) => {
-    setCustomVariables(customVariables.filter((_, i) => i !== index));
-  };
 
   // Handle field change
   const handleFieldChange = (key, value) => {
@@ -150,22 +97,14 @@ const SmartBriefingForm = ({
     setApiError(null);
 
     try {
-      // Build custom variables object from array
-      const customVarsObj = {};
-      customVariables.forEach((cv) => {
-        if (cv.key && cv.value) {
-          customVarsObj[cv.key] = cv.value;
-        }
-      });
-
       const requestBody = {
         template_id: template.id,
         variables: formData,
       };
 
-      // Include custom_variables if there are any
-      if (Object.keys(customVarsObj).length > 0) {
-        requestBody.custom_variables = customVarsObj;
+      // Include additional_info if provided
+      if (additionalInfo.trim()) {
+        requestBody.additional_info = additionalInfo.trim();
       }
 
       const response = await wordpressAPI.request('/smartbriefing/generate', {
@@ -239,49 +178,30 @@ const SmartBriefingForm = ({
               />
             ))}
 
-            {/* Custom Variables Section - only shown if template allows */}
+            {/* Additional Info Section - only shown if template allows */}
             {template.allow_custom_variables && (
               <div className="mt-6 mb-5 pt-5 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowCustomVariables(!showCustomVariables)}
-                  className={`flex items-start gap-2 p-0 border-none bg-transparent text-slate-500 text-sm font-medium cursor-pointer text-left ${showCustomVariables ? 'mb-4' : ''}`}
+                  onClick={() => setShowAdditionalInfo(!showAdditionalInfo)}
+                  className="flex items-center gap-2 p-0 border-none bg-transparent text-slate-500 text-sm font-medium cursor-pointer text-left"
                 >
-                  <span className="flex items-center gap-2 flex-shrink-0">
-                    {showCustomVariables ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                    <Plus size={16} />
-                  </span>
-                  <span className="leading-relaxed">Zusätzliche Variablen hinzufügen (optional)</span>
+                  {showAdditionalInfo ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  <span className="leading-relaxed">Zusätzliche Informationen (optional)</span>
                 </button>
 
-                {showCustomVariables && (
-                  <div className="bg-slate-50 rounded-xl p-4">
+                {showAdditionalInfo && (
+                  <div className="mt-4 bg-slate-50 rounded-xl p-4">
                     <p className="text-[13px] text-slate-500 mb-3">
-                      Füge eigene Variablen hinzu, die in die Briefing-Generierung einfließen sollen.
+                      Ergänze hier alles, was dein Briefing noch relevanter machen könnte.
                     </p>
-
-                    {customVariables.length > 0 && (
-                      <div className="mb-3">
-                        {customVariables.map((cv, index) => (
-                          <CustomVariableItem
-                            key={index}
-                            variable={cv}
-                            index={index}
-                            onChange={updateCustomVariable}
-                            onDelete={deleteCustomVariable}
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={addCustomVariable}
-                      className="flex items-center gap-1.5 py-2 px-3 border border-dashed border-slate-300 rounded-lg bg-white text-slate-500 text-[13px] cursor-pointer w-full justify-center hover:border-primary hover:text-primary transition-colors"
-                    >
-                      <Plus size={14} />
-                      Variable hinzufügen
-                    </button>
+                    <textarea
+                      value={additionalInfo}
+                      onChange={(e) => setAdditionalInfo(e.target.value)}
+                      placeholder="z.B. besondere Erfahrungen, spezifische Herausforderungen, wichtige Hintergrundinformationen..."
+                      rows={4}
+                      className="w-full py-3 px-3.5 rounded-lg border border-slate-200 bg-white text-sm resize-y min-h-[100px] box-border outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 placeholder:text-slate-400"
+                    />
                   </div>
                 )}
               </div>

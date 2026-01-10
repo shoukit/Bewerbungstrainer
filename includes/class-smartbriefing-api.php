@@ -532,12 +532,11 @@ class Bewerbungstrainer_SmartBriefing_API {
         $user_id = get_current_user_id();
         $variables = isset($params['variables']) ? $params['variables'] : array();
 
-        // Merge custom variables (always allowed)
-        $custom_variables = isset($params['custom_variables']) ? $params['custom_variables'] : array();
-        if (!empty($custom_variables) && is_array($custom_variables)) {
-            // Custom variables take precedence
-            $variables = array_merge($variables, $custom_variables);
-            error_log('[SMARTBRIEFING] Custom variables added: ' . json_encode(array_keys($custom_variables)));
+        // Add additional_info as a variable if provided (simple freetext field)
+        $additional_info = isset($params['additional_info']) ? trim($params['additional_info']) : '';
+        if (!empty($additional_info)) {
+            $variables['additional_info'] = $additional_info;
+            error_log('[SMARTBRIEFING] Additional info added: ' . substr($additional_info, 0, 100) . '...');
         }
 
         // Generate title from variables or date
@@ -1938,9 +1937,14 @@ PROMPT;
             foreach ($variables as $key => $value) {
                 if ($value !== '' && $value !== null) {
                     // Use label from schema if available, otherwise format the key nicely
-                    $label = isset($schema_labels[$key])
-                        ? $schema_labels[$key]
-                        : ucfirst(str_replace('_', ' ', $key));
+                    // Special handling for additional_info
+                    if ($key === 'additional_info') {
+                        $label = 'Zusätzliche Informationen vom Nutzer';
+                    } else {
+                        $label = isset($schema_labels[$key])
+                            ? $schema_labels[$key]
+                            : ucfirst(str_replace('_', ' ', $key));
+                    }
                     $user_data_lines[] = "- {$label}: {$value}";
                 }
             }
