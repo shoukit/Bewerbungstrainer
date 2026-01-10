@@ -4,7 +4,7 @@
  * Migrated to Tailwind CSS for consistent styling.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePartner } from '@/context/PartnerContext';
 import { useMobile } from '@/hooks/useMobile';
@@ -24,11 +24,87 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   RotateCcw,
   Lightbulb,
   FileText,
   Download,
+  MessageCircle,
+  HelpCircle,
+  BookOpen,
+  Rocket,
+  Send,
+  Plus,
+  X,
 } from 'lucide-react';
+
+// ============================================================================
+// HELPER: Parse bullet points from AI answer
+// ============================================================================
+
+/**
+ * Extract individual bullet points/action items from AI response text
+ * Returns objects with label (clean, no markdown) and content (description)
+ */
+const parseActionPoints = (text) => {
+  if (!text) return [];
+
+  const lines = text.split('\n');
+  const actionPoints = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Try to extract content from different formats
+    let content = null;
+
+    // Format 1: Bullet point (*, -, •)
+    const bulletMatch = trimmed.match(/^[\*\-•]\s+(.+)$/);
+    if (bulletMatch) {
+      content = bulletMatch[1].trim();
+    }
+
+    // Format 2: Numbered list (1., 2., etc.)
+    const numberedMatch = trimmed.match(/^\d+[\.\)]\s+(.+)$/);
+    if (!content && numberedMatch) {
+      content = numberedMatch[1].trim();
+    }
+
+    // Format 3: Line starting with **Bold:** (no bullet)
+    const directBoldMatch = trimmed.match(/^\*\*([^*]+)\*\*:?\s*(.+)$/);
+    if (!content && directBoldMatch) {
+      content = trimmed; // Use the whole line
+    }
+
+    if (content) {
+      // Try to extract bold label: **Label:** rest or **Label** rest
+      const boldMatch = content.match(/^\*\*([^*]+)\*\*:?\s*(.*)$/);
+      if (boldMatch && boldMatch[1]) {
+        const label = boldMatch[1].trim();
+        const description = boldMatch[2]?.trim() || '';
+        actionPoints.push({
+          id: `ap-${actionPoints.length}`,
+          label: label,
+          content: description,
+        });
+      } else {
+        // No bold label - create a short label from the content
+        // Remove any remaining markdown asterisks
+        const cleanContent = content.replace(/\*\*/g, '').replace(/\*/g, '');
+        const words = cleanContent.split(/\s+/);
+        const shortLabel = words.slice(0, 4).join(' ');
+        actionPoints.push({
+          id: `ap-${actionPoints.length}`,
+          label: shortLabel.length > 40 ? shortLabel.substring(0, 40) + '...' : shortLabel,
+          content: cleanContent,
+        });
+      }
+    }
+  }
+
+  return actionPoints;
+};
 
 // ============================================================================
 // CONSTANTS
@@ -223,14 +299,180 @@ const DeletedItemRow = ({ item, onRestore }) => (
 );
 
 /**
- * Item Card Component - Individual briefing item with note and delete
+ * ExplanationCard - Collapsible AI explanation with individual action points
  */
-const ItemCard = ({ item, sectionId, onUpdateItem }) => {
+const ExplanationCard = ({ explanation, onDelete, onAddAsItem, onAddActionPoint, itemLabel }) => {
+  const [isExpanded, setIsExpanded] = useState(true); // Initially expanded
+  const [addedPointIds, setAddedPointIds] = useState(new Set()); // Track added points
+  const actionPoints = parseActionPoints(explanation.answer);
+
+  // Filter out points that have already been added
+  const availablePoints = actionPoints.filter(point => !addedPointIds.has(point.id));
+
+  const handleAddPoint = (point) => {
+    onAddActionPoint(point);
+    setAddedPointIds(prev => new Set([...prev, point.id]));
+  };
+
+  const getTitle = () => {
+    if (explanation.quick_action) {
+      switch (explanation.quick_action) {
+        case 'explain': return '💡 Erklärung';
+        case 'examples': return '📝 Beispiele';
+        case 'howto': return '🚀 Umsetzung';
+        default: return 'Frage';
+      }
+    }
+    return `❓ ${explanation.question}`;
+  };
+
+  // Truncate answer for preview (first 100 chars)
+  const previewText = explanation.answer?.length > 100
+    ? explanation.answer.substring(0, 100) + '...'
+    : explanation.answer;
+
+  return (
+    <div className="bg-white rounded-xl border border-amber-200 overflow-hidden">
+      {/* Collapsible Header */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-3 py-2.5 bg-transparent border-none cursor-pointer flex items-center gap-2 text-left hover:bg-amber-50/50 transition-colors"
+      >
+        <ChevronRight
+          size={14}
+          className={`text-amber-600 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+        />
+        <span className="text-[12px] font-medium text-amber-700 flex-1 truncate">
+          {getTitle()}
+        </span>
+        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          {onAddAsItem && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddAsItem(explanation.answer, itemLabel);
+              }}
+              title="Gesamten Block als neuen Punkt hinzufügen"
+              className="p-1 rounded bg-transparent border-none text-slate-400 cursor-pointer hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+            >
+              <Plus size={14} />
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(explanation.id);
+            }}
+            title="Erklärung löschen"
+            className="p-1 rounded bg-transparent border-none text-slate-400 cursor-pointer hover:text-red-500 hover:bg-red-50 transition-all"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </button>
+
+      {/* Preview when collapsed */}
+      {!isExpanded && (
+        <div className="px-3 pb-2.5 pt-0">
+          <p className="text-[12px] text-slate-500 m-0 line-clamp-2">
+            {previewText}
+          </p>
+        </div>
+      )}
+
+      {/* Expanded Content */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 border-t border-amber-100">
+              {/* Full answer text */}
+              <div className="text-[13px] text-slate-600 whitespace-pre-wrap mt-2.5 leading-relaxed">
+                {renderInlineMarkdown(explanation.answer)}
+              </div>
+
+              {/* Individual action points to add */}
+              {actionPoints.length > 0 && onAddActionPoint && (
+                <div className="mt-3 pt-3 border-t border-amber-100">
+                  <p className="text-[11px] font-medium text-amber-700 mb-2 flex items-center gap-1">
+                    <Plus size={12} />
+                    Einzelne Punkte hinzufügen:
+                    {addedPointIds.size > 0 && (
+                      <span className="text-green-600 ml-1">
+                        ({addedPointIds.size} hinzugefügt)
+                      </span>
+                    )}
+                  </p>
+                  {availablePoints.length > 0 ? (
+                    <div className="space-y-2">
+                      {availablePoints.map((point) => (
+                        <div
+                          key={point.id}
+                          className="p-2.5 bg-white rounded-xl border border-amber-100 hover:border-amber-200 hover:shadow-sm transition-all group"
+                        >
+                          <div className="flex items-start gap-2">
+                            {/* Bullet point */}
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0 mt-1.5" />
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <h5 className="text-[13px] font-semibold text-slate-800 m-0 mb-0.5 leading-snug">
+                                {point.label}
+                              </h5>
+                              {point.content && (
+                                <p className="text-[12px] text-slate-600 m-0 leading-snug">
+                                  {point.content.length > 150 ? point.content.substring(0, 150) + '...' : point.content}
+                                </p>
+                              )}
+                            </div>
+                            {/* Add button */}
+                            <button
+                              onClick={() => handleAddPoint(point)}
+                              title="Diesen Punkt zur Liste hinzufügen"
+                              className="p-1.5 rounded-lg bg-transparent border-none text-amber-600 cursor-pointer hover:text-white hover:bg-indigo-500 transition-all opacity-60 group-hover:opacity-100 flex-shrink-0"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[12px] text-green-600 italic m-0">
+                      ✓ Alle Punkte wurden hinzugefügt
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+/**
+ * Item Card Component - Individual briefing item with note, AI help, and delete
+ */
+const ItemCard = ({ item, sectionId, onUpdateItem, onAskItem, onDeleteExplanation, onAddAsItem, onAddActionPoint }) => {
   const [note, setNote] = useState(item.user_note || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showNoteField, setShowNoteField] = useState(!!item.user_note);
+
+  // AI Help states
+  const [showAiHelp, setShowAiHelp] = useState(false);
+  const [customQuestion, setCustomQuestion] = useState('');
+  const [isAsking, setIsAsking] = useState(false);
+  const [showExplanations, setShowExplanations] = useState(true);
+
+  const explanations = item.ai_explanations || [];
 
   useEffect(() => {
     setHasChanges(note !== (item.user_note || ''));
@@ -266,6 +508,42 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
     }
   };
 
+  const handleQuickAction = async (action) => {
+    if (!onAskItem) return;
+    setIsAsking(true);
+    try {
+      await onAskItem(sectionId, item.id, { quick_action: action });
+      setShowExplanations(true);
+    } catch (err) {
+      console.error('Error asking AI:', err);
+    } finally {
+      setIsAsking(false);
+    }
+  };
+
+  const handleCustomQuestion = async () => {
+    if (!onAskItem || !customQuestion.trim()) return;
+    setIsAsking(true);
+    try {
+      await onAskItem(sectionId, item.id, { question: customQuestion.trim() });
+      setCustomQuestion('');
+      setShowExplanations(true);
+    } catch (err) {
+      console.error('Error asking AI:', err);
+    } finally {
+      setIsAsking(false);
+    }
+  };
+
+  const handleDeleteExplanation = async (explanationId) => {
+    if (!onDeleteExplanation) return;
+    try {
+      await onDeleteExplanation(sectionId, item.id, explanationId);
+    } catch (err) {
+      console.error('Error deleting explanation:', err);
+    }
+  };
+
   if (item.deleted) {
     return <DeletedItemRow item={item} onRestore={handleRestore} />;
   }
@@ -291,13 +569,35 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
 
         {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0">
+          {explanations.length > 0 && !showAiHelp && (
+            <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+              {explanations.length} KI
+            </span>
+          )}
           {item.user_note && !showNoteField && (
             <span className="text-[11px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
               Notiz
             </span>
           )}
           <button
-            onClick={() => setShowNoteField(!showNoteField)}
+            onClick={() => {
+              setShowAiHelp(!showAiHelp);
+              if (!showAiHelp) setShowNoteField(false);
+            }}
+            title="KI-Hilfe"
+            className={`p-1.5 rounded-lg border-none cursor-pointer flex items-center justify-center transition-all ${
+              showAiHelp
+                ? 'bg-amber-100 text-amber-600'
+                : 'bg-transparent text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+            }`}
+          >
+            <MessageCircle size={16} />
+          </button>
+          <button
+            onClick={() => {
+              setShowNoteField(!showNoteField);
+              if (!showNoteField) setShowAiHelp(false);
+            }}
             title="Notiz hinzufügen"
             className={`p-1.5 rounded-lg border-none cursor-pointer flex items-center justify-center transition-all ${
               showNoteField
@@ -316,6 +616,103 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
           </button>
         </div>
       </div>
+
+      {/* AI Help Panel (collapsible) */}
+      {showAiHelp && (
+        <div className="px-3.5 py-3 bg-amber-50 border-t border-amber-100">
+          {/* Quick Actions */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              onClick={() => handleQuickAction('explain')}
+              disabled={isAsking}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 text-[12px] font-medium cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-all disabled:opacity-50 disabled:cursor-wait"
+            >
+              <HelpCircle size={14} />
+              Erkläre genauer
+            </button>
+            <button
+              onClick={() => handleQuickAction('examples')}
+              disabled={isAsking}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 text-[12px] font-medium cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-all disabled:opacity-50 disabled:cursor-wait"
+            >
+              <BookOpen size={14} />
+              Beispiele
+            </button>
+            <button
+              onClick={() => handleQuickAction('howto')}
+              disabled={isAsking}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 text-[12px] font-medium cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-all disabled:opacity-50 disabled:cursor-wait"
+            >
+              <Rocket size={14} />
+              Wie umsetzen?
+            </button>
+          </div>
+
+          {/* Custom Question Input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customQuestion}
+              onChange={(e) => setCustomQuestion(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !isAsking && handleCustomQuestion()}
+              placeholder="Oder stelle eine eigene Frage..."
+              disabled={isAsking}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+              data-form-type="other"
+              className="flex-1 px-3 py-2 rounded-xl border border-amber-200 text-[13px] text-slate-700 outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-gray-50"
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleCustomQuestion}
+              disabled={isAsking || !customQuestion.trim()}
+              icon={isAsking ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              className="bg-amber-500 hover:bg-amber-600 border-amber-500"
+            >
+              Fragen
+            </Button>
+          </div>
+
+          {/* Loading State */}
+          {isAsking && (
+            <div className="mt-3 flex items-center gap-2 text-amber-600 text-[13px]">
+              <Loader2 size={14} className="animate-spin" />
+              KI denkt nach...
+            </div>
+          )}
+
+          {/* Existing Explanations - Collapsible Cards */}
+          {explanations.length > 0 && (
+            <div className="mt-3">
+              <button
+                onClick={() => setShowExplanations(!showExplanations)}
+                className="flex items-center gap-1 text-[12px] font-medium text-amber-700 bg-transparent border-none cursor-pointer mb-2"
+              >
+                {showExplanations ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                KI-Erklärungen ({explanations.length})
+              </button>
+
+              {showExplanations && (
+                <div className="space-y-2">
+                  {explanations.map((exp) => (
+                    <ExplanationCard
+                      key={exp.id}
+                      explanation={exp}
+                      itemLabel={item.label}
+                      onDelete={handleDeleteExplanation}
+                      onAddAsItem={onAddAsItem ? (answer, label) => onAddAsItem(sectionId, answer, label) : null}
+                      onAddActionPoint={onAddActionPoint ? (point) => onAddActionPoint(sectionId, point, item.label) : null}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Note Field (collapsible) */}
       {showNoteField && (
@@ -384,7 +781,7 @@ const GenerateMoreButton = ({ onClick, isGenerating }) => (
 /**
  * Section Card Component - Handles both item-based and legacy markdown content
  */
-const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onToggle }) => {
+const SectionCard = ({ section, onUpdateItem, onGenerateMore, onAskItem, onDeleteExplanation, onAddAsItem, onAddActionPoint, isExpanded, onToggle }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateMore = async () => {
@@ -463,6 +860,10 @@ const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onTogg
                   item={item}
                   sectionId={section.id}
                   onUpdateItem={onUpdateItem}
+                  onAskItem={onAskItem}
+                  onDeleteExplanation={onDeleteExplanation}
+                  onAddAsItem={onAddAsItem}
+                  onAddActionPoint={onAddActionPoint}
                 />
               ))}
 
@@ -484,6 +885,10 @@ const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onTogg
                       item={item}
                       sectionId={section.id}
                       onUpdateItem={onUpdateItem}
+                      onAskItem={onAskItem}
+                      onDeleteExplanation={onDeleteExplanation}
+                      onAddAsItem={onAddAsItem}
+                      onAddActionPoint={onAddActionPoint}
                     />
                   ))}
                 </div>
@@ -647,7 +1052,22 @@ const BriefingWorkbook = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
+  // Scroll-based header minimization
+  const [isHeaderMinimized, setIsHeaderMinimized] = useState(false);
+  const scrollContainerRef = useRef(null);
+
   const IconComponent = getIcon(briefing?.template_icon) || FileText;
+
+  // Track scroll position to minimize header
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      setIsHeaderMinimized(scrollTop > 80);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch full briefing with sections if needed
   useEffect(() => {
@@ -741,6 +1161,207 @@ const BriefingWorkbook = ({
     return response.data.new_items_count;
   }, []);
 
+  // Handler for asking AI about an item
+  const handleAskItem = useCallback(async (sectionId, itemId, params) => {
+    const response = await wordpressAPI.askBriefingItem(sectionId, itemId, params);
+
+    // Update the section with the new item data (includes new explanation)
+    setBriefing((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+
+        // Parse ai_content if it's a string (it's stored as JSON string)
+        let content;
+        try {
+          content = typeof s.ai_content === 'string'
+            ? JSON.parse(s.ai_content)
+            : s.ai_content;
+        } catch {
+          console.error('[SmartBriefing] Failed to parse ai_content');
+          return s;
+        }
+
+        if (!content?.items) return s;
+
+        // Update the specific item in the section
+        const updatedItems = content.items.map((item) =>
+          item.id === itemId ? response.item : item
+        );
+
+        return {
+          ...s,
+          ai_content: JSON.stringify({ ...content, items: updatedItems }),
+        };
+      }),
+    }));
+
+    return response;
+  }, []);
+
+  // Handler for deleting an AI explanation from an item
+  const handleDeleteExplanation = useCallback(async (sectionId, itemId, explanationId) => {
+    await wordpressAPI.deleteBriefingItemExplanation(sectionId, itemId, explanationId);
+
+    // Update state to remove the explanation
+    setBriefing((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+
+        // Parse ai_content if it's a string (it's stored as JSON string)
+        let content;
+        try {
+          content = typeof s.ai_content === 'string'
+            ? JSON.parse(s.ai_content)
+            : s.ai_content;
+        } catch {
+          console.error('[SmartBriefing] Failed to parse ai_content');
+          return s;
+        }
+
+        if (!content?.items) return s;
+
+        const updatedItems = content.items.map((item) => {
+          if (item.id !== itemId) return item;
+
+          return {
+            ...item,
+            ai_explanations: (item.ai_explanations || []).filter(
+              (exp) => exp.id !== explanationId
+            ),
+          };
+        });
+
+        return {
+          ...s,
+          ai_content: JSON.stringify({ ...content, items: updatedItems }),
+        };
+      }),
+    }));
+  }, []);
+
+  // Handler for adding AI explanation as a new item in the section
+  const handleAddAsItem = useCallback(async (sectionId, answer, sourceLabel) => {
+    // Create a summary label from the answer (first 50 chars)
+    const newLabel = `Vertiefung: ${sourceLabel}`;
+    const newContent = answer.length > 200 ? answer.substring(0, 200) + '...' : answer;
+
+    // Find the section and create updated content
+    const section = briefing?.sections?.find(s => s.id === sectionId);
+    if (!section) return;
+
+    let content;
+    try {
+      content = typeof section.ai_content === 'string'
+        ? JSON.parse(section.ai_content)
+        : section.ai_content;
+    } catch {
+      console.error('[SmartBriefing] Failed to parse ai_content');
+      return;
+    }
+
+    if (!content?.items) return;
+
+    const newItem = {
+      id: crypto.randomUUID(),
+      label: newLabel,
+      content: newContent,
+      user_note: `Vollständige KI-Antwort:\n\n${answer}`,
+      deleted: false,
+      ai_explanations: [],
+    };
+
+    const updatedContent = { ...content, items: [...content.items, newItem] };
+    const updatedContentJson = JSON.stringify(updatedContent);
+
+    // Update local state immediately for responsiveness
+    setBriefing((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) =>
+        s.id === sectionId ? { ...s, ai_content: updatedContentJson } : s
+      ),
+    }));
+
+    // Persist to backend
+    try {
+      await wordpressAPI.request(`/smartbriefing/sections/${sectionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ai_content: updatedContentJson }),
+      });
+    } catch (err) {
+      console.error('[SmartBriefing] Failed to save new item:', err);
+      // Revert on error
+      setBriefing((prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.id === sectionId ? { ...s, ai_content: section.ai_content } : s
+        ),
+      }));
+    }
+  }, [briefing?.sections]);
+
+  // Handler for adding a single action point from AI explanation
+  // actionPoint is now an object: { label: string, content: string }
+  const handleAddActionPoint = useCallback(async (sectionId, actionPoint, sourceLabel) => {
+    // Use the parsed label and content from actionPoint object
+    const newLabel = actionPoint.label || 'Neuer Punkt';
+    const newContent = actionPoint.content || actionPoint.label || '';
+
+    // Find the section and create updated content
+    const section = briefing?.sections?.find(s => s.id === sectionId);
+    if (!section) return;
+
+    let content;
+    try {
+      content = typeof section.ai_content === 'string'
+        ? JSON.parse(section.ai_content)
+        : section.ai_content;
+    } catch {
+      console.error('[SmartBriefing] Failed to parse ai_content');
+      return;
+    }
+
+    if (!content?.items) return;
+
+    const newItem = {
+      id: crypto.randomUUID(),
+      label: newLabel,
+      content: newContent,
+      user_note: '',
+      deleted: false,
+      ai_explanations: [],
+    };
+
+    const updatedContent = { ...content, items: [...content.items, newItem] };
+    const updatedContentJson = JSON.stringify(updatedContent);
+
+    // Update local state immediately for responsiveness
+    setBriefing((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) =>
+        s.id === sectionId ? { ...s, ai_content: updatedContentJson } : s
+      ),
+    }));
+
+    // Persist to backend
+    try {
+      await wordpressAPI.request(`/smartbriefing/sections/${sectionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ai_content: updatedContentJson }),
+      });
+    } catch (err) {
+      console.error('[SmartBriefing] Failed to save new item:', err);
+      // Revert on error
+      setBriefing((prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.id === sectionId ? { ...s, ai_content: section.ai_content } : s
+        ),
+      }));
+    }
+  }, [briefing?.sections]);
+
   const handleDownloadPdf = useCallback(async () => {
     if (isDownloadingPdf || !briefing?.id) return;
 
@@ -797,17 +1418,21 @@ const BriefingWorkbook = ({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header - Full width sticky */}
+      {/* Header - Full width sticky, instant switch between minimized/expanded (no animation) */}
       <div
-        className="sticky top-0 z-40 px-4 py-5 md:px-8 md:py-6"
+        className={`sticky top-0 z-40 ${
+          isHeaderMinimized
+            ? isMobile ? 'py-2' : 'py-2.5'
+            : isMobile ? 'py-5' : 'py-6'
+        }`}
         style={{ background: 'var(--header-gradient, linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%))' }}
       >
-        <div className="max-w-[1400px] mx-auto">
-          {/* Back Button */}
-          {onBack && (
+        <div className={`max-w-[1400px] mx-auto ${isMobile ? 'px-4' : 'px-8'}`}>
+          {/* Back Button - Hidden when minimized */}
+          {onBack && !isHeaderMinimized && (
             <button
               onClick={onBack}
-              className="flex items-center gap-1.5 bg-white/15 border-none rounded-xl px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 hover:shadow-lg transition-all"
+              className="flex items-center gap-1.5 bg-white/15 border-none rounded-xl px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 hover:shadow-lg transition-colors"
             >
               <ArrowLeft size={16} />
               Zurück zur Übersicht
@@ -815,37 +1440,65 @@ const BriefingWorkbook = ({
           )}
 
           {/* Header Content */}
-          <div className="flex items-center gap-6">
-            {/* Icon - Hidden on mobile */}
+          <div className="flex items-center gap-4 md:gap-6">
+            {/* Icon - Large when expanded, small when minimized */}
             {!isMobile && (
-              <div className="w-[90px] h-[90px] rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <IconComponent size={40} className="text-white" />
+              <div
+                className={`rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 ${
+                  isHeaderMinimized ? 'w-10 h-10' : 'w-[90px] h-[90px]'
+                }`}
+              >
+                <IconComponent
+                  size={isHeaderMinimized ? 20 : 40}
+                  className="text-white"
+                />
               </div>
             )}
 
             {/* Title & Meta */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 flex-wrap mb-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
-                  Smart Briefing
-                </span>
-                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-indigo-700">
-                  {briefing.template_title}
-                </span>
-              </div>
-              <h1 className={`font-bold text-white m-0 mb-2 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
+            <div className="flex-1 min-w-0">
+              {/* Tags - Hidden when minimized */}
+              {!isHeaderMinimized && (
+                <div className="flex items-center gap-3 flex-wrap mb-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
+                    Smart Briefing
+                  </span>
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-indigo-700">
+                    {briefing.template_title}
+                  </span>
+                </div>
+              )}
+
+              {/* Title - Smaller when minimized */}
+              <h1 className={`font-bold text-white m-0 truncate ${
+                isHeaderMinimized
+                  ? 'text-base md:text-lg'
+                  : isMobile ? 'text-xl mb-2' : 'text-2xl mb-2'
+              }`}>
                 {briefing.title || 'Briefing'}
               </h1>
-              <div className="flex items-center gap-4 flex-wrap">
-                <span className="flex items-center gap-1.5 text-[13px] text-white/80">
-                  <Calendar size={14} />
-                  {formatDateTime(briefing.created_at)}
-                </span>
-              </div>
+
+              {/* Date - Hidden when minimized */}
+              {!isHeaderMinimized && (
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="flex items-center gap-1.5 text-[13px] text-white/80">
+                    <Calendar size={14} />
+                    {formatDateTime(briefing.created_at)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2.5 flex-shrink-0">
+            <div className="flex gap-2 md:gap-2.5 flex-shrink-0">
+              {/* Back button (icon only) when minimized */}
+              {onBack && isHeaderMinimized && (
+                <HeaderActionButton
+                  onClick={onBack}
+                  icon={ArrowLeft}
+                  title="Zurück zur Übersicht"
+                />
+              )}
               <HeaderActionButton
                 onClick={handleDownloadPdf}
                 disabled={isDownloadingPdf}
@@ -909,6 +1562,10 @@ const BriefingWorkbook = ({
                 section={section}
                 onUpdateItem={handleUpdateItem}
                 onGenerateMore={handleGenerateMore}
+                onAskItem={handleAskItem}
+                onDeleteExplanation={handleDeleteExplanation}
+                onAddAsItem={handleAddAsItem}
+                onAddActionPoint={handleAddActionPoint}
                 isExpanded={expandedSections[section.id]}
                 onToggle={() => toggleSection(section.id)}
               />

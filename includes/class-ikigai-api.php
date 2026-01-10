@@ -107,6 +107,13 @@ class Bewerbungstrainer_Ikigai_API {
             'callback' => array($this, 'get_current_ikigai'),
             'permission_callback' => array($this, 'allow_all_users'),
         ));
+
+        // Generate more career paths (AI endpoint)
+        register_rest_route($this->namespace, '/ikigai/(?P<id>\d+)/generate-more', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'generate_more_paths'),
+            'permission_callback' => array($this, 'allow_all_users'),
+        ));
     }
 
     /**
@@ -588,6 +595,123 @@ class Bewerbungstrainer_Ikigai_API {
         ), 200);
     }
 
+    /**
+     * Generate more career paths for an existing ikigai session
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error Response
+     */
+    public function generate_more_paths($request) {
+        $ikigai_id = intval($request['id']);
+
+        if (!$this->can_access_ikigai($ikigai_id)) {
+            return new WP_Error(
+                'not_found',
+                __('Ikigai-Analyse nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get existing ikigai session
+        $ikigai = $this->db->get_ikigai($ikigai_id);
+
+        if (!$ikigai) {
+            return new WP_Error(
+                'not_found',
+                __('Ikigai-Analyse nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get existing tags
+        $love_tags = $ikigai->love_tags ?: array();
+        $talent_tags = $ikigai->talent_tags ?: array();
+        $need_tags = $ikigai->need_tags ?: array();
+        $market_tags = $ikigai->market_tags ?: array();
+
+        if (empty($love_tags) || empty($talent_tags) || empty($need_tags) || empty($market_tags)) {
+            return new WP_Error(
+                'incomplete_dimensions',
+                __('Bitte fülle alle vier Dimensionen aus.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get existing path titles to exclude
+        $existing_paths = $ikigai->paths_json ?: array();
+        $exclude_titles = array();
+        foreach ($existing_paths as $path) {
+            if (isset($path['role_title'])) {
+                $exclude_titles[] = $path['role_title'];
+            }
+        }
+
+        // Get Gemini API key
+        $gemini_api_key = get_option('bewerbungstrainer_gemini_api_key');
+
+        if (empty($gemini_api_key)) {
+            return new WP_Error(
+                'api_key_missing',
+                __('Gemini API-Schlüssel nicht konfiguriert.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Build synthesis prompt with exclusions
+        $prompt = $this->build_synthesis_prompt($love_tags, $talent_tags, $need_tags, $market_tags, $exclude_titles);
+
+        // Log the prompt
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'IKIGAI_GENERATE_MORE',
+                'Generiere weitere Ikigai-Karrierepfade (ohne bestehende)',
+                $prompt,
+                array(
+                    'ikigai_id' => $ikigai_id,
+                    'exclude_count' => count($exclude_titles),
+                    'exclude_titles' => $exclude_titles,
+                )
+            );
+        }
+
+        // Call Gemini API
+        $result = $this->call_gemini_api($gemini_api_key, $prompt);
+
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        // Log the response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('IKIGAI_GENERATE_MORE', json_encode($result));
+        }
+
+        // Merge new paths with existing ones
+        $new_paths = isset($result['paths']) ? $result['paths'] : array();
+        $merged_paths = array_merge($existing_paths, $new_paths);
+
+        // Update ikigai session with merged paths
+        $update_result = $this->db->update_ikigai($ikigai_id, array(
+            'paths_json' => $merged_paths,
+        ));
+
+        if (!$update_result) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Speichern der neuen Karrierepfade.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'new_paths' => $new_paths,
+                'all_paths' => $merged_paths,
+            ),
+        ), 200);
+    }
+
     // =========================================================================
     // HELPER METHODS
     // =========================================================================
@@ -735,13 +859,26 @@ GUIDANCE
      * @param array $talent_tags Talent dimension tags
      * @param array $need_tags   Need dimension tags
      * @param array $market_tags Market dimension tags
+     * @param array $exclude_titles Optional titles to exclude (for generating more paths)
      * @return string Prompt
      */
-    private function build_synthesis_prompt($love_tags, $talent_tags, $need_tags, $market_tags) {
+    private function build_synthesis_prompt($love_tags, $talent_tags, $need_tags, $market_tags, $exclude_titles = array()) {
         $love_str = implode(', ', $love_tags);
         $talent_str = implode(', ', $talent_tags);
         $need_str = implode(', ', $need_tags);
         $market_str = implode(', ', $market_tags);
+
+        $exclude_section = '';
+        if (!empty($exclude_titles)) {
+            $exclude_list = implode(', ', array_map(function($title) { return '"' . $title . '"'; }, $exclude_titles));
+            $exclude_section = <<<EXCLUDE
+
+WICHTIG - VERMEIDE DIESE BEREITS VORGESCHLAGENEN ROLLEN:
+{$exclude_list}
+Generiere komplett NEUE und ANDERE Karrierepfade, die sich deutlich von den obigen unterscheiden!
+
+EXCLUDE;
+        }
 
         return <<<PROMPT
 Du bist ein visionärer Karriere-Architekt für das Ikigai-Modell.
@@ -753,13 +890,19 @@ INPUT DATEN:
 2. ⭐ TALENT (Worin du gut bist): {$talent_str}
 3. 🌍 WELT BRAUCHT (Was die Welt braucht): {$need_str}
 4. 💰 MARKT (Wofür du bezahlt wirst): {$market_str}
-
+{$exclude_section}
 GENERATION RULES:
 - Sei kreativ und verbinde ungewöhnliche Punkte miteinander
 - Beispiel: "Design" + "Psychologie" = "UX Researcher"
 - Jeder Pfad sollte einen inspirierenden Titel haben
 - Erkläre warum dieser Pfad zum User passt
 - WICHTIG: Generiere für jeden Pfad "training_tags" (z.B. "sales", "leadership", "kommunikation"), damit wir passende Übungen empfehlen können
+
+JOB-RESSOURCEN FÜR JEDEN PFAD:
+Gib für jeden Karrierepfad konkrete Ressourcen an, wo man solche Jobs finden kann:
+- "companies": 2-3 konkrete Firmen/Organisationen in Deutschland/DACH, die solche Rollen haben
+- "job_boards": 1-2 relevante Jobbörsen oder Plattformen
+- "search_tips": 1 konkreter Suchtipp (z.B. Suchbegriffe, Netzwerke, Verbände)
 
 MÖGLICHE TRAINING TAGS (wähle passende aus):
 - interview (Vorstellungsgespräche)
@@ -781,19 +924,34 @@ OUTPUT FORMAT:
       "role_title": "Der kreative Titel der Rolle",
       "description": "Beschreibung was diese Rolle beinhaltet und warum sie zum User passt (2-3 Sätze).",
       "why_fit": "Kurze Erklärung wie diese Rolle alle 4 Dimensionen verbindet.",
-      "training_tags": ["tag1", "tag2", "tag3"]
+      "training_tags": ["tag1", "tag2", "tag3"],
+      "job_resources": {
+        "companies": ["Firma 1", "Firma 2"],
+        "job_boards": ["Plattform 1"],
+        "search_tips": "Suche nach 'XYZ' oder kontaktiere Verband ABC"
+      }
     },
     {
       "role_title": "...",
       "description": "...",
       "why_fit": "...",
-      "training_tags": ["..."]
+      "training_tags": ["..."],
+      "job_resources": {
+        "companies": ["..."],
+        "job_boards": ["..."],
+        "search_tips": "..."
+      }
     },
     {
       "role_title": "...",
       "description": "...",
       "why_fit": "...",
-      "training_tags": ["..."]
+      "training_tags": ["..."],
+      "job_resources": {
+        "companies": ["..."],
+        "job_boards": ["..."],
+        "search_tips": "..."
+      }
     }
   ]
 }
