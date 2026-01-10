@@ -105,25 +105,23 @@ class Bewerbungstrainer_SmartBriefing_API {
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
-        // Get specific briefing
+        // Single briefing operations (GET, PUT, DELETE must be combined for WordPress REST API)
         register_rest_route($this->namespace, '/smartbriefing/briefings/(?P<id>\d+)', array(
-            'methods' => 'GET',
-            'callback' => array($this, 'get_briefing'),
-            'permission_callback' => array($this, 'allow_all_users'),
-        ));
-
-        // Update briefing (for renaming title)
-        register_rest_route($this->namespace, '/smartbriefing/briefings/(?P<id>\d+)', array(
-            'methods' => 'PUT',
-            'callback' => array($this, 'update_briefing'),
-            'permission_callback' => array($this, 'check_user_logged_in'),
-        ));
-
-        // Delete briefing
-        register_rest_route($this->namespace, '/smartbriefing/briefings/(?P<id>\d+)', array(
-            'methods' => 'DELETE',
-            'callback' => array($this, 'delete_briefing'),
-            'permission_callback' => array($this, 'check_user_logged_in'),
+            array(
+                'methods' => 'GET',
+                'callback' => array($this, 'get_briefing'),
+                'permission_callback' => array($this, 'allow_all_users'),
+            ),
+            array(
+                'methods' => 'PUT',
+                'callback' => array($this, 'update_briefing'),
+                'permission_callback' => array($this, 'check_user_logged_in'),
+            ),
+            array(
+                'methods' => 'DELETE',
+                'callback' => array($this, 'delete_briefing'),
+                'permission_callback' => array($this, 'check_user_logged_in'),
+            ),
         ));
 
         // ===== Section Endpoints =====
