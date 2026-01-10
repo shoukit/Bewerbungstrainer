@@ -247,6 +247,7 @@ WICHTIG:
 
 /**
  * Create PowerPoint from structure
+ * Uses native PowerPoint placeholders for CI-template compatibility
  */
 const createPowerPoint = (structure) => {
   const pptx = new PptxGenJS();
@@ -257,25 +258,113 @@ const createPowerPoint = (structure) => {
   pptx.subject = 'Generiert aus Smart Briefing';
   pptx.company = 'Karriereheld';
 
-  // Define master slide layouts
+  // Define slide masters with placeholders for CI-template compatibility
+  // Title Slide Layout
   pptx.defineSlideMaster({
     title: 'TITLE_SLIDE',
     background: { color: SLIDE_COLORS.primary },
+    objects: [
+      // Title placeholder (ctrTitle = centered title)
+      {
+        placeholder: {
+          options: { name: 'title', type: 'ctrTitle', x: 0.5, y: 1.8, w: 9, h: 1.5 },
+          text: '',
+        },
+      },
+      // Subtitle placeholder
+      {
+        placeholder: {
+          options: { name: 'subtitle', type: 'subTitle', x: 0.5, y: 3.5, w: 9, h: 1 },
+          text: '',
+        },
+      },
+    ],
   });
 
+  // Content Slide Layout (Title + Body)
   pptx.defineSlideMaster({
     title: 'CONTENT_SLIDE',
     background: { color: SLIDE_COLORS.white },
+    objects: [
+      // Title bar background
+      { rect: { x: 0, y: 0, w: 10, h: 1.3, fill: { color: SLIDE_COLORS.primary } } },
+      // Title placeholder
+      {
+        placeholder: {
+          options: { name: 'title', type: 'title', x: 0.5, y: 0.3, w: 9, h: 0.7 },
+          text: '',
+        },
+      },
+      // Body placeholder
+      {
+        placeholder: {
+          options: { name: 'body', type: 'body', x: 0.7, y: 1.6, w: 8.6, h: 4.2 },
+          text: '',
+        },
+      },
+    ],
   });
 
+  // Accent Slide Layout (for Team, Timeline - colored header)
+  pptx.defineSlideMaster({
+    title: 'ACCENT_SLIDE',
+    background: { color: SLIDE_COLORS.white },
+    objects: [
+      { rect: { x: 0, y: 0, w: 10, h: 1.3, fill: { color: SLIDE_COLORS.accent } } },
+      {
+        placeholder: {
+          options: { name: 'title', type: 'title', x: 0.5, y: 0.3, w: 9, h: 0.7 },
+          text: '',
+        },
+      },
+      {
+        placeholder: {
+          options: { name: 'body', type: 'body', x: 0.7, y: 1.6, w: 8.6, h: 4.2 },
+          text: '',
+        },
+      },
+    ],
+  });
+
+  // Quote Slide Layout
   pptx.defineSlideMaster({
     title: 'QUOTE_SLIDE',
     background: { color: SLIDE_COLORS.primaryLight },
+    objects: [
+      {
+        placeholder: {
+          options: { name: 'title', type: 'ctrTitle', x: 1, y: 2, w: 8, h: 2 },
+          text: '',
+        },
+      },
+      {
+        placeholder: {
+          options: { name: 'subtitle', type: 'subTitle', x: 1, y: 4.2, w: 8, h: 0.5 },
+          text: '',
+        },
+      },
+    ],
   });
 
+  // Summary Slide Layout (green header)
   pptx.defineSlideMaster({
-    title: 'ACCENT_SLIDE',
-    background: { color: SLIDE_COLORS.dark },
+    title: 'SUMMARY_SLIDE',
+    background: { color: SLIDE_COLORS.white },
+    objects: [
+      { rect: { x: 0, y: 0, w: 10, h: 1.3, fill: { color: SLIDE_COLORS.success } } },
+      {
+        placeholder: {
+          options: { name: 'title', type: 'title', x: 0.5, y: 0.3, w: 9, h: 0.7 },
+          text: '',
+        },
+      },
+      {
+        placeholder: {
+          options: { name: 'body', type: 'body', x: 0.7, y: 1.6, w: 8.6, h: 4.2 },
+          text: '',
+        },
+      },
+    ],
   });
 
   // Generate slides
@@ -314,17 +403,14 @@ const createPowerPoint = (structure) => {
 };
 
 /**
- * Create title slide
+ * Create title slide using placeholders
  */
 const createTitleSlide = (pptx, data) => {
   const slide = pptx.addSlide({ masterName: 'TITLE_SLIDE' });
 
-  // Main title
+  // Use placeholder for title (CI-template compatible)
   slide.addText(data.title || 'Präsentation', {
-    x: 0.5,
-    y: 2.2,
-    w: 9,
-    h: 1.5,
+    placeholder: 'title',
     fontSize: 44,
     fontFace: 'Arial',
     color: SLIDE_COLORS.white,
@@ -333,13 +419,10 @@ const createTitleSlide = (pptx, data) => {
     valign: 'middle',
   });
 
-  // Subtitle
+  // Use placeholder for subtitle
   if (data.subtitle) {
     slide.addText(data.subtitle, {
-      x: 0.5,
-      y: 3.8,
-      w: 9,
-      h: 0.8,
+      placeholder: 'subtitle',
       fontSize: 22,
       fontFace: 'Arial',
       color: SLIDE_COLORS.white,
@@ -347,26 +430,33 @@ const createTitleSlide = (pptx, data) => {
       valign: 'middle',
     });
   }
+
+  // Add details as smaller text if present (not in placeholder - optional info)
+  if (data.details) {
+    slide.addText(data.details, {
+      x: 0.5, y: 4.8, w: 9, h: 0.5,
+      fontSize: 14,
+      fontFace: 'Arial',
+      color: SLIDE_COLORS.white,
+      align: 'center',
+    });
+  }
 };
 
 /**
  * Create agenda slide with time blocks
+ * Uses placeholders for title, custom layout for agenda items
  */
 const createAgendaSlide = (pptx, data) => {
   const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
 
-  // Title bar
-  slide.addShape('rect', {
-    x: 0, y: 0, w: 10, h: 1.3,
-    fill: { color: SLIDE_COLORS.primary },
-  });
-
+  // Title in placeholder (CI-template compatible)
   slide.addText(data.title || 'Agenda', {
-    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    placeholder: 'title',
     fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
   });
 
-  // Agenda items with time
+  // Agenda items with time (custom layout in body area)
   if (data.items && data.items.length > 0) {
     const startY = 1.7;
     const rowHeight = 0.65;
@@ -394,23 +484,18 @@ const createAgendaSlide = (pptx, data) => {
 };
 
 /**
- * Create content slide with bullets
+ * Create content slide with bullets using placeholders
  */
 const createContentSlide = (pptx, data) => {
   const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
 
-  // Title bar
-  slide.addShape('rect', {
-    x: 0, y: 0, w: 10, h: 1.3,
-    fill: { color: SLIDE_COLORS.primary },
-  });
-
+  // Title in placeholder (CI-template compatible)
   slide.addText(data.title || 'Inhalt', {
-    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    placeholder: 'title',
     fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
   });
 
-  // Bullet points
+  // Bullet points in body placeholder
   if (data.bullets && data.bullets.length > 0) {
     const bulletItems = data.bullets.map(text => ({
       text: cleanMarkdown(text),
@@ -423,30 +508,25 @@ const createContentSlide = (pptx, data) => {
     }));
 
     slide.addText(bulletItems, {
-      x: 0.7, y: 1.7, w: 8.6, h: 4.2,
+      placeholder: 'body',
       fontFace: 'Arial', valign: 'top',
     });
   }
 };
 
 /**
- * Create team slide
+ * Create team slide using placeholders
  */
 const createTeamSlide = (pptx, data) => {
-  const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
+  const slide = pptx.addSlide({ masterName: 'ACCENT_SLIDE' });
 
-  // Title bar
-  slide.addShape('rect', {
-    x: 0, y: 0, w: 10, h: 1.3,
-    fill: { color: SLIDE_COLORS.accent },
-  });
-
+  // Title in placeholder (CI-template compatible)
   slide.addText(data.title || 'Das Team', {
-    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    placeholder: 'title',
     fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
   });
 
-  // Team members
+  // Team members as custom layout (complex grid doesn't fit body placeholder)
   if (data.members && data.members.length > 0) {
     const cols = Math.min(data.members.length, 3);
     const colWidth = 9 / cols;
@@ -483,19 +563,14 @@ const createTeamSlide = (pptx, data) => {
 };
 
 /**
- * Create timeline/milestones slide
+ * Create timeline/milestones slide using placeholders
  */
 const createTimelineSlide = (pptx, data) => {
-  const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
+  const slide = pptx.addSlide({ masterName: 'SUMMARY_SLIDE' });
 
-  // Title bar
-  slide.addShape('rect', {
-    x: 0, y: 0, w: 10, h: 1.3,
-    fill: { color: SLIDE_COLORS.success },
-  });
-
+  // Title in placeholder (CI-template compatible)
   slide.addText(data.title || 'Meilensteine', {
-    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    placeholder: 'title',
     fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
   });
 
@@ -542,50 +617,46 @@ const createTimelineSlide = (pptx, data) => {
 };
 
 /**
- * Create quote/highlight slide
+ * Create quote/highlight slide using placeholders
  */
 const createQuoteSlide = (pptx, data) => {
   const slide = pptx.addSlide({ masterName: 'QUOTE_SLIDE' });
 
-  // Large quote mark
+  // Large quote mark (decorative)
   slide.addText('"', {
     x: 0.5, y: 1, w: 1, h: 1.5,
     fontSize: 120, fontFace: 'Georgia', color: SLIDE_COLORS.primary, bold: true,
   });
 
-  // Quote text
+  // Quote text in title placeholder (CI-template compatible)
   slide.addText(cleanMarkdown(data.quote || ''), {
-    x: 1, y: 2.2, w: 8, h: 2.5,
+    placeholder: 'title',
     fontSize: 28, fontFace: 'Georgia', color: SLIDE_COLORS.dark,
     italic: true, align: 'center', valign: 'middle',
   });
 
-  // Source
+  // Source in subtitle placeholder
   if (data.source) {
     slide.addText(`— ${data.source}`, {
-      x: 1, y: 4.8, w: 8, h: 0.5,
+      placeholder: 'subtitle',
       fontSize: 14, fontFace: 'Arial', color: SLIDE_COLORS.textLight, align: 'center',
     });
   }
 };
 
 /**
- * Create two-column comparison slide
+ * Create two-column comparison slide using placeholders
  */
 const createTwoColumnsSlide = (pptx, data) => {
   const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
 
-  // Title bar
-  slide.addShape('rect', {
-    x: 0, y: 0, w: 10, h: 1.3,
-    fill: { color: SLIDE_COLORS.primary },
-  });
-
+  // Title in placeholder (CI-template compatible)
   slide.addText(data.title || 'Vergleich', {
-    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    placeholder: 'title',
     fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
   });
 
+  // Two-column layout (custom, doesn't fit body placeholder)
   // Left column
   if (data.left) {
     slide.addText(data.left.heading || '', {
@@ -630,23 +701,18 @@ const createTwoColumnsSlide = (pptx, data) => {
 };
 
 /**
- * Create summary/closing slide
+ * Create summary/closing slide using placeholders
  */
 const createSummarySlide = (pptx, data) => {
-  const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
+  const slide = pptx.addSlide({ masterName: 'ACCENT_SLIDE' });
 
-  // Title bar with accent color
-  slide.addShape('rect', {
-    x: 0, y: 0, w: 10, h: 1.3,
-    fill: { color: SLIDE_COLORS.accent },
-  });
-
+  // Title in placeholder (CI-template compatible)
   slide.addText(data.title || 'Zusammenfassung', {
-    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    placeholder: 'title',
     fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
   });
 
-  // Bullet points with checkmarks - proper formatting with line breaks
+  // Bullet points in body placeholder with checkmarks
   if (data.bullets && data.bullets.length > 0) {
     const bulletItems = data.bullets.map(text => ({
       text: cleanMarkdown(text),
@@ -660,7 +726,7 @@ const createSummarySlide = (pptx, data) => {
     }));
 
     slide.addText(bulletItems, {
-      x: 0.7, y: 1.8, w: 8.6, h: 4,
+      placeholder: 'body',
       fontFace: 'Arial', valign: 'top',
     });
   }
