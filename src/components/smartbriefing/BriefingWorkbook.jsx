@@ -36,7 +36,10 @@ import {
   Send,
   Plus,
   X,
+  Presentation,
 } from 'lucide-react';
+import PresentationExportDialog from './PresentationExportDialog';
+import { generatePresentationFromBriefing } from '@/services/presentation-generator';
 
 // ============================================================================
 // HELPER: Parse bullet points from AI answer
@@ -1051,6 +1054,8 @@ const BriefingWorkbook = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [showPresentationDialog, setShowPresentationDialog] = useState(false);
+  const [isGeneratingPresentation, setIsGeneratingPresentation] = useState(false);
 
   // Scroll-based header minimization
   const [isHeaderMinimized, setIsHeaderMinimized] = useState(false);
@@ -1399,6 +1404,22 @@ const BriefingWorkbook = ({
     }
   }, [briefing?.id, isDownloadingPdf]);
 
+  // Handle presentation generation
+  const handleGeneratePresentation = useCallback(async (data) => {
+    if (isGeneratingPresentation) return;
+
+    setIsGeneratingPresentation(true);
+    try {
+      await generatePresentationFromBriefing(data);
+      setShowPresentationDialog(false);
+    } catch (err) {
+      console.error('[SmartBriefing] Presentation generation error:', err);
+      // TODO: Show error toast
+    } finally {
+      setIsGeneratingPresentation(false);
+    }
+  }, [isGeneratingPresentation]);
+
   const handleDelete = async () => {
     if (!onDelete || !briefing?.id) return;
     setIsDeleting(true);
@@ -1506,6 +1527,11 @@ const BriefingWorkbook = ({
                 icon={Download}
                 title="Als PDF herunterladen"
               />
+              <HeaderActionButton
+                onClick={() => setShowPresentationDialog(true)}
+                icon={Presentation}
+                title="Präsentation erstellen"
+              />
               {onDelete && (
                 <HeaderActionButton
                   onClick={() => setShowDeleteConfirm(true)}
@@ -1603,6 +1629,15 @@ const BriefingWorkbook = ({
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDelete}
         isDeleting={isDeleting}
+      />
+
+      {/* Presentation Export Dialog */}
+      <PresentationExportDialog
+        isOpen={showPresentationDialog}
+        onClose={() => setShowPresentationDialog(false)}
+        briefing={briefing}
+        onGenerate={handleGeneratePresentation}
+        isGenerating={isGeneratingPresentation}
       />
     </div>
   );

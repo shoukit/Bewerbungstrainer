@@ -1,0 +1,1 @@
+import{a as t}from"./react-vendor-CQ8o-PK1.js";const o=(e=768)=>{const[i,r]=t.useState(()=>typeof window>"u"?!1:window.innerWidth<e);return t.useEffect(()=>{const n=()=>{r(window.innerWidth<e)};return n(),window.addEventListener("resize",n),()=>window.removeEventListener("resize",n)},[e]),i};export{o as u};
