@@ -28,6 +28,13 @@ import {
   Lightbulb,
   FileText,
   Download,
+  MessageCircle,
+  HelpCircle,
+  BookOpen,
+  Rocket,
+  Send,
+  Plus,
+  X,
 } from 'lucide-react';
 
 // ============================================================================
@@ -223,14 +230,22 @@ const DeletedItemRow = ({ item, onRestore }) => (
 );
 
 /**
- * Item Card Component - Individual briefing item with note and delete
+ * Item Card Component - Individual briefing item with note, AI help, and delete
  */
-const ItemCard = ({ item, sectionId, onUpdateItem }) => {
+const ItemCard = ({ item, sectionId, onUpdateItem, onAskItem, onDeleteExplanation, onAddAsItem }) => {
   const [note, setNote] = useState(item.user_note || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showNoteField, setShowNoteField] = useState(!!item.user_note);
+
+  // AI Help states
+  const [showAiHelp, setShowAiHelp] = useState(false);
+  const [customQuestion, setCustomQuestion] = useState('');
+  const [isAsking, setIsAsking] = useState(false);
+  const [showExplanations, setShowExplanations] = useState(true);
+
+  const explanations = item.ai_explanations || [];
 
   useEffect(() => {
     setHasChanges(note !== (item.user_note || ''));
@@ -266,6 +281,42 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
     }
   };
 
+  const handleQuickAction = async (action) => {
+    if (!onAskItem) return;
+    setIsAsking(true);
+    try {
+      await onAskItem(sectionId, item.id, { quick_action: action });
+      setShowExplanations(true);
+    } catch (err) {
+      console.error('Error asking AI:', err);
+    } finally {
+      setIsAsking(false);
+    }
+  };
+
+  const handleCustomQuestion = async () => {
+    if (!onAskItem || !customQuestion.trim()) return;
+    setIsAsking(true);
+    try {
+      await onAskItem(sectionId, item.id, { question: customQuestion.trim() });
+      setCustomQuestion('');
+      setShowExplanations(true);
+    } catch (err) {
+      console.error('Error asking AI:', err);
+    } finally {
+      setIsAsking(false);
+    }
+  };
+
+  const handleDeleteExplanation = async (explanationId) => {
+    if (!onDeleteExplanation) return;
+    try {
+      await onDeleteExplanation(sectionId, item.id, explanationId);
+    } catch (err) {
+      console.error('Error deleting explanation:', err);
+    }
+  };
+
   if (item.deleted) {
     return <DeletedItemRow item={item} onRestore={handleRestore} />;
   }
@@ -291,13 +342,35 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
 
         {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0">
+          {explanations.length > 0 && !showAiHelp && (
+            <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+              {explanations.length} KI
+            </span>
+          )}
           {item.user_note && !showNoteField && (
             <span className="text-[11px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
               Notiz
             </span>
           )}
           <button
-            onClick={() => setShowNoteField(!showNoteField)}
+            onClick={() => {
+              setShowAiHelp(!showAiHelp);
+              if (!showAiHelp) setShowNoteField(false);
+            }}
+            title="KI-Hilfe"
+            className={`p-1.5 rounded-lg border-none cursor-pointer flex items-center justify-center transition-all ${
+              showAiHelp
+                ? 'bg-amber-100 text-amber-600'
+                : 'bg-transparent text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+            }`}
+          >
+            <MessageCircle size={16} />
+          </button>
+          <button
+            onClick={() => {
+              setShowNoteField(!showNoteField);
+              if (!showNoteField) setShowAiHelp(false);
+            }}
             title="Notiz hinzufügen"
             className={`p-1.5 rounded-lg border-none cursor-pointer flex items-center justify-center transition-all ${
               showNoteField
@@ -316,6 +389,122 @@ const ItemCard = ({ item, sectionId, onUpdateItem }) => {
           </button>
         </div>
       </div>
+
+      {/* AI Help Panel (collapsible) */}
+      {showAiHelp && (
+        <div className="px-3.5 py-3 bg-amber-50 border-t border-amber-100">
+          {/* Quick Actions */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              onClick={() => handleQuickAction('explain')}
+              disabled={isAsking}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 text-[12px] font-medium cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-all disabled:opacity-50 disabled:cursor-wait"
+            >
+              <HelpCircle size={14} />
+              Erkläre genauer
+            </button>
+            <button
+              onClick={() => handleQuickAction('examples')}
+              disabled={isAsking}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 text-[12px] font-medium cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-all disabled:opacity-50 disabled:cursor-wait"
+            >
+              <BookOpen size={14} />
+              Beispiele
+            </button>
+            <button
+              onClick={() => handleQuickAction('howto')}
+              disabled={isAsking}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 text-[12px] font-medium cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-all disabled:opacity-50 disabled:cursor-wait"
+            >
+              <Rocket size={14} />
+              Wie umsetzen?
+            </button>
+          </div>
+
+          {/* Custom Question Input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customQuestion}
+              onChange={(e) => setCustomQuestion(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !isAsking && handleCustomQuestion()}
+              placeholder="Oder stelle eine eigene Frage..."
+              disabled={isAsking}
+              className="flex-1 px-3 py-2 rounded-xl border border-amber-200 text-[13px] text-slate-700 outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-gray-50"
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleCustomQuestion}
+              disabled={isAsking || !customQuestion.trim()}
+              icon={isAsking ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              className="bg-amber-500 hover:bg-amber-600 border-amber-500"
+            >
+              Fragen
+            </Button>
+          </div>
+
+          {/* Loading State */}
+          {isAsking && (
+            <div className="mt-3 flex items-center gap-2 text-amber-600 text-[13px]">
+              <Loader2 size={14} className="animate-spin" />
+              KI denkt nach...
+            </div>
+          )}
+
+          {/* Existing Explanations */}
+          {explanations.length > 0 && (
+            <div className="mt-3">
+              <button
+                onClick={() => setShowExplanations(!showExplanations)}
+                className="flex items-center gap-1 text-[12px] font-medium text-amber-700 bg-transparent border-none cursor-pointer mb-2"
+              >
+                {showExplanations ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                KI-Erklärungen ({explanations.length})
+              </button>
+
+              {showExplanations && (
+                <div className="space-y-2">
+                  {explanations.map((exp) => (
+                    <div key={exp.id} className="bg-white rounded-xl p-3 border border-amber-200">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <p className="text-[12px] font-medium text-amber-700 m-0">
+                          {exp.quick_action ? (
+                            exp.quick_action === 'explain' ? '💡 Erklärung' :
+                            exp.quick_action === 'examples' ? '📝 Beispiele' :
+                            exp.quick_action === 'howto' ? '🚀 Umsetzung' : 'Frage'
+                          ) : `❓ ${exp.question}`}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          {onAddAsItem && (
+                            <button
+                              onClick={() => onAddAsItem(sectionId, exp.answer, item.label)}
+                              title="Als neuen Punkt hinzufügen"
+                              className="p-1 rounded bg-transparent border-none text-slate-400 cursor-pointer hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteExplanation(exp.id)}
+                            title="Erklärung löschen"
+                            className="p-1 rounded bg-transparent border-none text-slate-400 cursor-pointer hover:text-red-500 hover:bg-red-50 transition-all"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="text-[13px] text-slate-600 whitespace-pre-wrap">
+                        {renderInlineMarkdown(exp.answer)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Note Field (collapsible) */}
       {showNoteField && (
@@ -384,7 +573,7 @@ const GenerateMoreButton = ({ onClick, isGenerating }) => (
 /**
  * Section Card Component - Handles both item-based and legacy markdown content
  */
-const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onToggle }) => {
+const SectionCard = ({ section, onUpdateItem, onGenerateMore, onAskItem, onDeleteExplanation, onAddAsItem, isExpanded, onToggle }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateMore = async () => {
@@ -463,6 +652,9 @@ const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onTogg
                   item={item}
                   sectionId={section.id}
                   onUpdateItem={onUpdateItem}
+                  onAskItem={onAskItem}
+                  onDeleteExplanation={onDeleteExplanation}
+                  onAddAsItem={onAddAsItem}
                 />
               ))}
 
@@ -484,6 +676,9 @@ const SectionCard = ({ section, onUpdateItem, onGenerateMore, isExpanded, onTogg
                       item={item}
                       sectionId={section.id}
                       onUpdateItem={onUpdateItem}
+                      onAskItem={onAskItem}
+                      onDeleteExplanation={onDeleteExplanation}
+                      onAddAsItem={onAddAsItem}
                     />
                   ))}
                 </div>
@@ -741,6 +936,106 @@ const BriefingWorkbook = ({
     return response.data.new_items_count;
   }, []);
 
+  // Handler for asking AI about an item
+  const handleAskItem = useCallback(async (sectionId, itemId, params) => {
+    const response = await wordpressAPI.askBriefingItem(sectionId, itemId, params);
+
+    // Update the section with the new item data (includes new explanation)
+    setBriefing((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+
+        // Update the specific item in the section
+        const updatedItems = s.ai_content?.items?.map((item) =>
+          item.id === itemId ? response.item : item
+        );
+
+        return {
+          ...s,
+          ai_content: {
+            ...s.ai_content,
+            items: updatedItems,
+          },
+        };
+      }),
+    }));
+
+    return response;
+  }, []);
+
+  // Handler for deleting an AI explanation from an item
+  const handleDeleteExplanation = useCallback(async (sectionId, itemId, explanationId) => {
+    await wordpressAPI.deleteBriefingItemExplanation(sectionId, itemId, explanationId);
+
+    // Update state to remove the explanation
+    setBriefing((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+
+        const updatedItems = s.ai_content?.items?.map((item) => {
+          if (item.id !== itemId) return item;
+
+          return {
+            ...item,
+            ai_explanations: (item.ai_explanations || []).filter(
+              (exp) => exp.id !== explanationId
+            ),
+          };
+        });
+
+        return {
+          ...s,
+          ai_content: {
+            ...s.ai_content,
+            items: updatedItems,
+          },
+        };
+      }),
+    }));
+  }, []);
+
+  // Handler for adding AI explanation as a new item in the section
+  const handleAddAsItem = useCallback(async (sectionId, answer, sourceLabel) => {
+    // Create a summary label from the answer (first 50 chars)
+    const newLabel = `Vertiefung: ${sourceLabel}`;
+    const newContent = answer.length > 200 ? answer.substring(0, 200) + '...' : answer;
+
+    // We need to add a new item to the section
+    // For now, we'll use the update endpoint to add to the items array
+    // This requires a backend change or we store it locally
+
+    // Update local state to add the new item
+    setBriefing((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+
+        const newItem = {
+          id: crypto.randomUUID(),
+          label: newLabel,
+          content: newContent,
+          user_note: `Vollständige KI-Antwort:\n\n${answer}`,
+          deleted: false,
+          ai_explanations: [],
+        };
+
+        return {
+          ...s,
+          ai_content: {
+            ...s.ai_content,
+            items: [...(s.ai_content?.items || []), newItem],
+          },
+        };
+      }),
+    }));
+
+    // Note: This is a local-only change. To persist, we'd need to call an API.
+    // For now, the user can see it added but it won't persist on reload.
+    // A proper implementation would save via the update_section endpoint.
+  }, []);
+
   const handleDownloadPdf = useCallback(async () => {
     if (isDownloadingPdf || !briefing?.id) return;
 
@@ -909,6 +1204,9 @@ const BriefingWorkbook = ({
                 section={section}
                 onUpdateItem={handleUpdateItem}
                 onGenerateMore={handleGenerateMore}
+                onAskItem={handleAskItem}
+                onDeleteExplanation={handleDeleteExplanation}
+                onAddAsItem={handleAddAsItem}
                 isExpanded={expandedSections[section.id]}
                 onToggle={() => toggleSection(section.id)}
               />

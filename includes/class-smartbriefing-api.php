@@ -149,6 +149,20 @@ class Bewerbungstrainer_SmartBriefing_API {
             'permission_callback' => array($this, 'check_user_logged_in'),
         ));
 
+        // Ask AI about a specific item (explain, examples, how-to, or custom question)
+        register_rest_route($this->namespace, '/smartbriefing/sections/(?P<section_id>\d+)/items/(?P<item_id>[a-f0-9-]+)/ask', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'ask_item'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
+        // Delete an AI explanation from an item
+        register_rest_route($this->namespace, '/smartbriefing/sections/(?P<section_id>\d+)/items/(?P<item_id>[a-f0-9-]+)/explanations/(?P<explanation_id>[a-f0-9-]+)', array(
+            'methods' => 'DELETE',
+            'callback' => array($this, 'delete_item_explanation'),
+            'permission_callback' => array($this, 'check_user_logged_in'),
+        ));
+
         // ===== PDF Export Endpoint =====
 
         // Export briefing as PDF
@@ -1059,6 +1073,355 @@ class Bewerbungstrainer_SmartBriefing_API {
             'success' => true,
             'message' => __('Briefing gelöscht.', 'bewerbungstrainer'),
         ), 200);
+    }
+
+    // =========================================================================
+    // ASK ITEM METHODS (AI-powered explanations for items)
+    // =========================================================================
+
+    /**
+     * Ask AI about a specific item (explain, examples, how-to, or custom question)
+     *
+     * @param WP_REST_Request $request Request object with section_id, item_id, and question/quick_action
+     * @return WP_REST_Response|WP_Error Response with AI answer
+     */
+    public function ask_item($request) {
+        $section_id = intval($request['section_id']);
+        $item_id = sanitize_text_field($request['item_id']);
+        $params = $request->get_json_params();
+
+        if (empty($params)) {
+            $params = $request->get_params();
+        }
+
+        // Get question - either custom question or quick_action
+        $question = isset($params['question']) ? sanitize_text_field($params['question']) : '';
+        $quick_action = isset($params['quick_action']) ? sanitize_text_field($params['quick_action']) : '';
+
+        if (empty($question) && empty($quick_action)) {
+            return new WP_Error(
+                'missing_question',
+                __('Bitte stelle eine Frage oder wähle eine Aktion.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Get the section
+        $section = $this->db->get_section($section_id);
+
+        if (!$section) {
+            return new WP_Error(
+                'not_found',
+                __('Section nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Verify user owns this briefing
+        $briefing = $this->db->get_briefing($section->briefing_id);
+        if (!$briefing || (int) $briefing->user_id !== get_current_user_id()) {
+            return new WP_Error(
+                'unauthorized',
+                __('Du bist nicht berechtigt, diese Section zu bearbeiten.', 'bewerbungstrainer'),
+                array('status' => 403)
+            );
+        }
+
+        // Parse ai_content to get items
+        $ai_content = json_decode($section->ai_content, true);
+
+        if (!$ai_content || !isset($ai_content['items']) || !is_array($ai_content['items'])) {
+            return new WP_Error(
+                'invalid_format',
+                __('Diese Section unterstützt keine Item-Fragen.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Find the item
+        $item_found = null;
+        $item_index = null;
+        foreach ($ai_content['items'] as $index => $item) {
+            if ($item['id'] === $item_id) {
+                $item_found = $item;
+                $item_index = $index;
+                break;
+            }
+        }
+
+        if (!$item_found) {
+            return new WP_Error(
+                'item_not_found',
+                __('Item nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Get API key
+        $api_key = get_option('bewerbungstrainer_gemini_api_key', '');
+        if (empty($api_key)) {
+            return new WP_Error(
+                'missing_api_key',
+                __('Gemini API Key ist nicht konfiguriert.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        // Build the actual question from quick_action if provided
+        if (!empty($quick_action)) {
+            $question = $this->get_quick_action_question($quick_action, $item_found);
+        }
+
+        // Get template for context
+        $template = $this->db->get_template($briefing->template_id);
+
+        // Build prompt for asking about the item
+        $prompt = $this->build_ask_item_prompt(
+            $item_found,
+            $question,
+            $section->section_title,
+            $briefing->variables_json,
+            $template ? $template->title : 'Briefing'
+        );
+
+        // Log prompt
+        if (function_exists('bewerbungstrainer_log_prompt')) {
+            bewerbungstrainer_log_prompt(
+                'SMARTBRIEFING_ASK_ITEM',
+                'Smart Briefing: KI-Frage zu einem Punkt.',
+                $prompt,
+                array(
+                    'Item' => $item_found['label'],
+                    'Question' => $question,
+                    'Quick-Action' => $quick_action,
+                )
+            );
+        }
+
+        // Call Gemini API
+        $response = $this->call_gemini_api($prompt, $api_key);
+
+        if (is_wp_error($response)) {
+            if (function_exists('bewerbungstrainer_log_response')) {
+                bewerbungstrainer_log_response('SMARTBRIEFING_ASK_ITEM', $response->get_error_message(), true);
+            }
+            return $response;
+        }
+
+        // Log successful response
+        if (function_exists('bewerbungstrainer_log_response')) {
+            bewerbungstrainer_log_response('SMARTBRIEFING_ASK_ITEM', $response);
+        }
+
+        // Create explanation entry
+        $explanation = array(
+            'id' => wp_generate_uuid4(),
+            'question' => $question,
+            'quick_action' => $quick_action,
+            'answer' => $response,
+            'created_at' => current_time('mysql'),
+        );
+
+        // Initialize ai_explanations array if not exists
+        if (!isset($ai_content['items'][$item_index]['ai_explanations'])) {
+            $ai_content['items'][$item_index]['ai_explanations'] = array();
+        }
+
+        // Add explanation to item
+        $ai_content['items'][$item_index]['ai_explanations'][] = $explanation;
+
+        // Save updated ai_content
+        $result = $this->db->update_section($section_id, array(
+            'ai_content' => json_encode($ai_content, JSON_UNESCAPED_UNICODE),
+        ));
+
+        if (!$result) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Speichern der Erklärung.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => array(
+                'explanation' => $explanation,
+                'item' => $ai_content['items'][$item_index],
+            ),
+        ), 200);
+    }
+
+    /**
+     * Delete an AI explanation from an item
+     *
+     * @param WP_REST_Request $request Request object with section_id, item_id, explanation_id
+     * @return WP_REST_Response|WP_Error Response
+     */
+    public function delete_item_explanation($request) {
+        $section_id = intval($request['section_id']);
+        $item_id = sanitize_text_field($request['item_id']);
+        $explanation_id = sanitize_text_field($request['explanation_id']);
+
+        // Get the section
+        $section = $this->db->get_section($section_id);
+
+        if (!$section) {
+            return new WP_Error(
+                'not_found',
+                __('Section nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Verify user owns this briefing
+        $briefing = $this->db->get_briefing($section->briefing_id);
+        if (!$briefing || (int) $briefing->user_id !== get_current_user_id()) {
+            return new WP_Error(
+                'unauthorized',
+                __('Du bist nicht berechtigt, diese Section zu bearbeiten.', 'bewerbungstrainer'),
+                array('status' => 403)
+            );
+        }
+
+        // Parse ai_content
+        $ai_content = json_decode($section->ai_content, true);
+
+        if (!$ai_content || !isset($ai_content['items']) || !is_array($ai_content['items'])) {
+            return new WP_Error(
+                'invalid_format',
+                __('Ungültiges Format.', 'bewerbungstrainer'),
+                array('status' => 400)
+            );
+        }
+
+        // Find and update the item
+        $item_found = false;
+        $explanation_found = false;
+
+        foreach ($ai_content['items'] as &$item) {
+            if ($item['id'] === $item_id) {
+                $item_found = true;
+
+                if (isset($item['ai_explanations']) && is_array($item['ai_explanations'])) {
+                    $original_count = count($item['ai_explanations']);
+                    $item['ai_explanations'] = array_values(array_filter(
+                        $item['ai_explanations'],
+                        function($exp) use ($explanation_id) {
+                            return $exp['id'] !== $explanation_id;
+                        }
+                    ));
+                    $explanation_found = $original_count > count($item['ai_explanations']);
+                }
+                break;
+            }
+        }
+
+        if (!$item_found) {
+            return new WP_Error(
+                'item_not_found',
+                __('Item nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        if (!$explanation_found) {
+            return new WP_Error(
+                'explanation_not_found',
+                __('Erklärung nicht gefunden.', 'bewerbungstrainer'),
+                array('status' => 404)
+            );
+        }
+
+        // Save updated ai_content
+        $result = $this->db->update_section($section_id, array(
+            'ai_content' => json_encode($ai_content, JSON_UNESCAPED_UNICODE),
+        ));
+
+        if (!$result) {
+            return new WP_Error(
+                'update_failed',
+                __('Fehler beim Löschen der Erklärung.', 'bewerbungstrainer'),
+                array('status' => 500)
+            );
+        }
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => __('Erklärung gelöscht.', 'bewerbungstrainer'),
+        ), 200);
+    }
+
+    /**
+     * Get the question text for a quick action
+     *
+     * @param string $quick_action Quick action type (explain, examples, howto)
+     * @param array $item The item to ask about
+     * @return string The question text
+     */
+    private function get_quick_action_question($quick_action, $item) {
+        $label = $item['label'];
+
+        switch ($quick_action) {
+            case 'explain':
+                return "Erkläre mir genauer, was mit \"{$label}\" gemeint ist und warum das wichtig ist.";
+            case 'examples':
+                return "Gib mir konkrete Beispiele und Formulierungen für \"{$label}\".";
+            case 'howto':
+                return "Wie setze ich \"{$label}\" praktisch um? Gib mir konkrete Schritte.";
+            default:
+                return "Erkläre mir mehr über \"{$label}\".";
+        }
+    }
+
+    /**
+     * Build prompt for asking AI about an item
+     *
+     * @param array $item The item to ask about
+     * @param string $question The question to ask
+     * @param string $section_title The section title for context
+     * @param array $variables The briefing variables for context
+     * @param string $template_title The template title for context
+     * @return string The prompt
+     */
+    private function build_ask_item_prompt($item, $question, $section_title, $variables, $template_title) {
+        $variables_json = is_string($variables) ? $variables : json_encode($variables, JSON_UNESCAPED_UNICODE);
+        $variables_arr = is_array($variables) ? $variables : json_decode($variables, true);
+
+        $variables_text = '';
+        if (is_array($variables_arr)) {
+            foreach ($variables_arr as $key => $value) {
+                if (!empty($value)) {
+                    $variables_text .= "- {$key}: {$value}\n";
+                }
+            }
+        }
+
+        return <<<PROMPT
+Du bist ein hilfreicher Karriere-Coach und Experte für berufliche Kommunikation.
+
+KONTEXT:
+Der Nutzer arbeitet an einem "{$template_title}" Briefing.
+{$variables_text}
+Im Abschnitt "{$section_title}" gibt es folgenden Punkt:
+
+PUNKT:
+Titel: {$item['label']}
+Inhalt: {$item['content']}
+
+FRAGE DES NUTZERS:
+{$question}
+
+ANWEISUNGEN:
+- Beantworte die Frage präzise und hilfreich
+- Beziehe dich auf den spezifischen Kontext (Position, Unternehmen, etc.)
+- Gib praktische, umsetzbare Tipps
+- Halte die Antwort kompakt (2-4 Absätze oder 3-5 Bulletpoints)
+- Schreibe auf Deutsch
+- Nutze einen freundlichen, coaching-artigen Ton
+
+ANTWORT:
+PROMPT;
     }
 
     // =========================================================================

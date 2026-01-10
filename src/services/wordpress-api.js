@@ -1017,6 +1017,47 @@ class WordPressAPI {
         throw new Error(response.message || 'Fehler beim Aktualisieren des Briefings');
     }
 
+    /**
+     * Ask AI about a specific briefing item
+     *
+     * @param {number} sectionId - Section ID
+     * @param {string} itemId - Item UUID
+     * @param {object} params - Either { question: string } or { quick_action: 'explain'|'examples'|'howto' }
+     * @returns {Promise<object>} Object with explanation and updated item
+     */
+    async askBriefingItem(sectionId, itemId, params) {
+        const response = await this.request(`/smartbriefing/sections/${sectionId}/items/${itemId}/ask`, {
+            method: 'POST',
+            body: JSON.stringify(params)
+        });
+
+        if (response.success && response.data) {
+            return response.data;
+        }
+
+        throw new Error(response.message || 'Fehler beim Abrufen der KI-Erklärung');
+    }
+
+    /**
+     * Delete an AI explanation from a briefing item
+     *
+     * @param {number} sectionId - Section ID
+     * @param {string} itemId - Item UUID
+     * @param {string} explanationId - Explanation UUID
+     * @returns {Promise<boolean>} True on success
+     */
+    async deleteBriefingItemExplanation(sectionId, itemId, explanationId) {
+        const response = await this.request(`/smartbriefing/sections/${sectionId}/items/${itemId}/explanations/${explanationId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.success) {
+            return true;
+        }
+
+        throw new Error(response.message || 'Fehler beim Löschen der Erklärung');
+    }
+
     // ===== Ikigai Career Pathfinder API Methods =====
 
     /**
