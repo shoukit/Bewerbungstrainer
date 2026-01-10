@@ -13,6 +13,96 @@ import {
 } from '@/config/prompts/comprehensiveCoachingPrompt';
 
 // =============================================================================
+// CACHING
+// =============================================================================
+
+const CACHE_KEY = 'ki_coach_analysis_cache';
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Generate a simple hash of session counts for cache invalidation
+ * When user completes a new session, this hash changes and cache is invalidated
+ */
+function generateSessionCountHash(sessions) {
+  const counts = {
+    simulator: sessions?.simulator?.length || 0,
+    video: sessions?.video?.length || 0,
+    roleplay: sessions?.roleplay?.length || 0,
+    games: sessions?.games?.length || 0,
+  };
+  return `${counts.simulator}-${counts.video}-${counts.roleplay}-${counts.games}`;
+}
+
+/**
+ * Get cached coaching data if valid
+ * @param {string} sessionCountHash - Current session count hash
+ * @param {string|null} userFocus - Current user focus
+ * @returns {Object|null} - Cached data or null if invalid
+ */
+function getCachedCoaching(sessionCountHash, userFocus) {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+
+    const { data, timestamp, hash, focus } = JSON.parse(cached);
+
+    // Check TTL
+    if (Date.now() - timestamp > CACHE_TTL_MS) {
+      console.log('[CoachingIntelligence] Cache expired (TTL)');
+      return null;
+    }
+
+    // Check if session counts changed (user completed new session)
+    if (hash !== sessionCountHash) {
+      console.log('[CoachingIntelligence] Cache invalidated (session count changed)');
+      return null;
+    }
+
+    // Check if focus changed
+    if (focus !== (userFocus || 'none')) {
+      console.log('[CoachingIntelligence] Cache invalidated (focus changed)');
+      return null;
+    }
+
+    console.log('[CoachingIntelligence] ✓ Using cached analysis');
+    return data;
+  } catch (error) {
+    console.error('[CoachingIntelligence] Cache read error:', error);
+    return null;
+  }
+}
+
+/**
+ * Cache coaching data
+ */
+function setCachedCoaching(data, sessionCountHash, userFocus) {
+  try {
+    const cacheEntry = {
+      data,
+      timestamp: Date.now(),
+      hash: sessionCountHash,
+      focus: userFocus || 'none',
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheEntry));
+    console.log('[CoachingIntelligence] ✓ Analysis cached');
+  } catch (error) {
+    console.error('[CoachingIntelligence] Cache write error:', error);
+  }
+}
+
+/**
+ * Clear the coaching cache (for testing or manual invalidation)
+ */
+export function clearCoachingCache() {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+    console.log('[CoachingIntelligence] Cache cleared');
+  } catch (error) {
+    console.error('[CoachingIntelligence] Cache clear error:', error);
+  }
+}
+
+// =============================================================================
 // DATA FETCHING
 // =============================================================================
 
@@ -152,11 +242,16 @@ export function aggregateSessionStats(sessions) {
   };
 
   // Calculate average scores per category
+  // Using unified dimensions across all modules:
+  // - overall, content, structure, relevance, delivery
   const scores = {
     overall: [],
-    communication: [],
     content: [],
     structure: [],
+    relevance: [],
+    delivery: [],
+    // Legacy dimensions (kept for backwards compatibility)
+    communication: [],
     confidence: [],
     fillerWords: [],
   };
@@ -174,9 +269,17 @@ export function aggregateSessionStats(sessions) {
       const feedback = typeof feedbackData === 'string'
         ? JSON.parse(feedbackData)
         : feedbackData;
+
+      // Try new format (scores object) first, then fall back to legacy format
       if (feedback?.scores) {
         if (feedback.scores.content != null) scores.content.push(feedback.scores.content * 10);
         if (feedback.scores.structure != null) scores.structure.push(feedback.scores.structure * 10);
+        if (feedback.scores.relevance != null) scores.relevance.push(feedback.scores.relevance * 10);
+        if (feedback.scores.delivery != null) scores.delivery.push(feedback.scores.delivery * 10);
+      } else {
+        // Legacy format: average_content_score, average_delivery_score
+        if (feedback?.average_content_score != null) scores.content.push(feedback.average_content_score * 10);
+        if (feedback?.average_delivery_score != null) scores.delivery.push(feedback.average_delivery_score * 10);
       }
     } catch {}
   });
@@ -187,9 +290,25 @@ export function aggregateSessionStats(sessions) {
       const score = parseFloat(session.overall_score);
       scores.overall.push(score <= 10 ? score * 10 : score);
     }
+    // Extract scores from category_scores (video-specific structure)
+    try {
+      const categoryScores = session.category_scores || session.category_scores_json;
+      const cats = typeof categoryScores === 'string' ? JSON.parse(categoryScores) : categoryScores;
+      if (Array.isArray(cats)) {
+        cats.forEach(cat => {
+          // Map video categories to standard dimensions
+          if (cat.category === 'inhalt' && cat.score != null) {
+            scores.content.push(parseFloat(cat.score));
+          }
+          if (cat.category === 'kommunikation' && cat.score != null) {
+            scores.delivery.push(parseFloat(cat.score));
+          }
+        });
+      }
+    } catch {}
   });
 
-  // Process roleplay sessions - handle multiple score locations
+  // Process roleplay sessions - handle both old and new rating formats
   roleplay.forEach(session => {
     try {
       const feedback = typeof session.feedback_json === 'string'
@@ -209,11 +328,16 @@ export function aggregateSessionStats(sessions) {
         scores.overall.push(normalized);
       }
 
-      // Try communication score
-      const commScore = feedback?.rating?.communication ??
-        feedback?.rating?.kommunikation;
-      if (commScore != null) {
-        scores.communication.push(parseFloat(commScore) * 10);
+      // Extract unified dimensions (new format after prompt update)
+      const rating = feedback?.rating;
+      if (rating) {
+        if (rating.content != null) scores.content.push(parseFloat(rating.content) * 10);
+        if (rating.structure != null) scores.structure.push(parseFloat(rating.structure) * 10);
+        if (rating.relevance != null) scores.relevance.push(parseFloat(rating.relevance) * 10);
+        if (rating.delivery != null) scores.delivery.push(parseFloat(rating.delivery) * 10);
+
+        // Legacy dimensions (for backwards compatibility with old sessions)
+        if (rating.communication != null) scores.communication.push(parseFloat(rating.communication) * 10);
       }
     } catch {}
   });
@@ -234,11 +358,13 @@ export function aggregateSessionStats(sessions) {
   // Calculate averages
   const calculateAvg = (arr) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
 
+  // Unified score dimensions matching all modules
   const averageScores = {
     'Gesamt': calculateAvg(scores.overall),
-    'Kommunikation': calculateAvg(scores.communication),
     'Inhalt': calculateAvg(scores.content),
     'Struktur': calculateAvg(scores.structure),
+    'Relevanz': calculateAvg(scores.relevance),
+    'Präsentation': calculateAvg(scores.delivery),
   };
 
   // Calculate trend (last 30 days vs before)
@@ -301,38 +427,59 @@ export function aggregateSessionStats(sessions) {
     : null;
 
   // Extract common strengths and weaknesses from feedback
+  // Store full text with count for better AI analysis
   const strengthsMap = {};
   const weaknessesMap = {};
 
+  // Also track which scenarios were practiced
+  const practicedScenarios = {
+    simulator: new Set(),
+    video: new Set(),
+    roleplay: new Set(),
+  };
+
   [...simulator, ...video, ...roleplay].forEach(session => {
+    // Track practiced scenarios
+    if (session.scenario_id) {
+      if (simulator.includes(session)) practicedScenarios.simulator.add(session.scenario_id);
+      else if (video.includes(session)) practicedScenarios.video.add(session.scenario_id);
+      else if (roleplay.includes(session)) practicedScenarios.roleplay.add(session.scenario_id);
+    }
+
     try {
       // API returns summary_feedback (not summary_feedback_json)
       let feedback = session.summary_feedback || session.summary_feedback_json || session.feedback_json || session.analysis_json;
       if (typeof feedback === 'string') feedback = JSON.parse(feedback);
       if (feedback?.strengths) {
         feedback.strengths.forEach(s => {
-          const key = s.toLowerCase().substring(0, 50);
-          strengthsMap[key] = (strengthsMap[key] || 0) + 1;
+          // Use full text, normalize for deduplication
+          const key = s.toLowerCase().trim();
+          if (key.length > 10) { // Skip very short entries
+            strengthsMap[key] = (strengthsMap[key] || 0) + 1;
+          }
         });
       }
       if (feedback?.improvements || feedback?.weaknesses) {
         (feedback.improvements || feedback.weaknesses || []).forEach(w => {
-          const key = w.toLowerCase().substring(0, 50);
-          weaknessesMap[key] = (weaknessesMap[key] || 0) + 1;
+          const key = w.toLowerCase().trim();
+          if (key.length > 10) { // Skip very short entries
+            weaknessesMap[key] = (weaknessesMap[key] || 0) + 1;
+          }
         });
       }
     } catch {}
   });
 
+  // Get top 20 strengths and weaknesses with full text
   const topStrengths = Object.entries(strengthsMap)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([text]) => text);
+    .slice(0, 20)
+    .map(([text, count]) => ({ text, count }));
 
   const topWeaknesses = Object.entries(weaknessesMap)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([text]) => text);
+    .slice(0, 20)
+    .map(([text, count]) => ({ text, count }));
 
   // Find last session date
   const sessionsWithDates = allSessions
@@ -375,27 +522,41 @@ export function aggregateSessionStats(sessions) {
     lastSessionDate,
     daysSinceLastSession: daysSinceLastSession ?? 999,
     rawSessions: sessions,
+    practicedScenarios: {
+      simulator: Array.from(practicedScenarios.simulator),
+      video: Array.from(practicedScenarios.video),
+      roleplay: Array.from(practicedScenarios.roleplay),
+    },
   };
 }
 
 /**
  * Generate scenario catalog for the AI prompt
+ * @param {Object} scenarios - All available scenarios
+ * @param {Object} practicedScenarios - IDs of scenarios the user has already practiced
  */
-export function generateScenarioCatalog(scenarios) {
+export function generateScenarioCatalog(scenarios, practicedScenarios = {}) {
   // Ensure all scenario types are arrays
   const simulator = Array.isArray(scenarios?.simulator) ? scenarios.simulator : [];
   const video = Array.isArray(scenarios?.video) ? scenarios.video : [];
   const roleplay = Array.isArray(scenarios?.roleplay) ? scenarios.roleplay : [];
   const briefingTemplates = Array.isArray(scenarios?.briefingTemplates) ? scenarios.briefingTemplates : [];
 
-  let catalog = '\n## VERFÜGBARE TRAININGS-SZENARIEN\n\n';
+  // Convert practiced arrays to Sets for fast lookup
+  const practicedSim = new Set(practicedScenarios?.simulator || []);
+  const practicedVid = new Set(practicedScenarios?.video || []);
+  const practicedRole = new Set(practicedScenarios?.roleplay || []);
+
+  let catalog = '\n## VERFÜGBARE TRAININGS-SZENARIEN\n';
+  catalog += '(✓ = bereits geübt, empfehle bevorzugt NEUE Szenarien)\n\n';
 
   // Szenario-Training
   if (simulator.length > 0) {
     catalog += '### Szenario-Training (strukturiertes Q&A mit Feedback)\n';
     simulator.forEach(s => {
-      const difficulty = s.difficulty || s.meta?.difficulty || 'Mittel';
-      catalog += `- ID:${s.id} "${s.title}" [${difficulty}]${s.description ? ` - ${s.description.substring(0, 100)}` : ''}\n`;
+      const practiced = practicedSim.has(s.id) || practicedSim.has(String(s.id));
+      const marker = practiced ? '✓ ' : '';
+      catalog += `- ${marker}ID:${s.id} "${s.title}"\n`;
     });
     catalog += '\n';
   }
@@ -404,7 +565,9 @@ export function generateScenarioCatalog(scenarios) {
   if (video.length > 0) {
     catalog += '### Wirkungs-Analyse (Video-Training mit Körpersprache-Feedback)\n';
     video.forEach(s => {
-      catalog += `- ID:${s.id} "${s.title}"${s.description ? ` - ${s.description.substring(0, 100)}` : ''}\n`;
+      const practiced = practicedVid.has(s.id) || practicedVid.has(String(s.id));
+      const marker = practiced ? '✓ ' : '';
+      catalog += `- ${marker}ID:${s.id} "${s.title}"\n`;
     });
     catalog += '\n';
   }
@@ -413,12 +576,14 @@ export function generateScenarioCatalog(scenarios) {
   if (roleplay.length > 0) {
     catalog += '### Live-Simulation (Echtzeit-Gespräch mit KI)\n';
     roleplay.forEach(s => {
-      catalog += `- ID:${s.id} "${s.title}"${s.description ? ` - ${s.description.substring(0, 100)}` : ''}\n`;
+      const practiced = practicedRole.has(s.id) || practicedRole.has(String(s.id));
+      const marker = practiced ? '✓ ' : '';
+      catalog += `- ${marker}ID:${s.id} "${s.title}"\n`;
     });
     catalog += '\n';
   }
 
-  // Smart Briefing Templates
+  // Smart Briefing Templates (no practice tracking)
   if (briefingTemplates.length > 0) {
     catalog += '### Smart Briefing (KI-generierte Wissenspakete)\n';
     briefingTemplates.forEach(t => {
@@ -453,7 +618,11 @@ export async function generateCoachingAnalysis(sessionStats, scenarios, userFocu
 
     try {
       // Use a simple call to get the welcome response
-      const response = await callGeminiForCoaching(welcomePrompt);
+      const response = await callGeminiForCoaching(welcomePrompt, {
+        type: 'welcome',
+        totalSessions,
+        userFocus: userFocus || 'none',
+      });
       return {
         ...response,
         isWelcome: true,
@@ -466,7 +635,7 @@ export async function generateCoachingAnalysis(sessionStats, scenarios, userFocu
   }
 
   // For users with enough data - generate comprehensive analysis
-  const scenarioCatalog = generateScenarioCatalog(scenarios);
+  const scenarioCatalog = generateScenarioCatalog(scenarios, sessionStats.practicedScenarios);
   const basePrompt = generateComprehensiveCoachingPrompt(sessionStats, userFocus);
   const fullPrompt = basePrompt + '\n' + scenarioCatalog + `
 
@@ -481,7 +650,24 @@ Format für Empfehlungen:
 }`;
 
   try {
-    const response = await callGeminiForCoaching(fullPrompt);
+    const response = await callGeminiForCoaching(fullPrompt, {
+      type: 'comprehensive',
+      totalSessions,
+      userFocus: userFocus || 'none',
+      moduleBreakdown: sessionStats.moduleBreakdown,
+      scenarioCatalogLength: scenarioCatalog.length,
+      scenarioCounts: {
+        simulator: scenarios.simulator?.length || 0,
+        video: scenarios.video?.length || 0,
+        roleplay: scenarios.roleplay?.length || 0,
+        briefingTemplates: scenarios.briefingTemplates?.length || 0,
+      },
+      practicedCounts: {
+        simulator: sessionStats.practicedScenarios?.simulator?.length || 0,
+        video: sessionStats.practicedScenarios?.video?.length || 0,
+        roleplay: sessionStats.practicedScenarios?.roleplay?.length || 0,
+      },
+    });
     return {
       ...response,
       isWelcome: false,
@@ -497,7 +683,7 @@ Format für Empfehlungen:
 /**
  * Call Gemini API for coaching analysis
  */
-async function callGeminiForCoaching(prompt) {
+async function callGeminiForCoaching(prompt, metadata = {}) {
   // Import dynamically to avoid circular dependencies
   const { GoogleGenerativeAI } = await import('@google/generative-ai');
 
@@ -519,10 +705,44 @@ async function callGeminiForCoaching(prompt) {
     // Extract JSON from markdown code blocks if present
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     const jsonString = jsonMatch ? jsonMatch[1].trim() : text.trim();
-    return JSON.parse(jsonString);
+    const parsed = JSON.parse(jsonString);
+
+    // Log prompt and response to server-side prompts.log
+    wordpressAPI.logPrompt(
+      'KI_COACH_ANALYSIS',
+      'KI-Coach: Umfassende Coaching-Analyse basierend auf allen User-Sessions.',
+      prompt,
+      {
+        ...metadata,
+        model: 'gemini-2.0-flash-exp',
+        promptLength: prompt.length,
+        responseLength: text.length,
+      },
+      text,
+      false
+    );
+
+    return parsed;
   } catch (parseError) {
     console.error('[CoachingIntelligence] Failed to parse Gemini response:', parseError);
     console.log('[CoachingIntelligence] Raw response:', text);
+
+    // Log error to prompts.log
+    wordpressAPI.logPrompt(
+      'KI_COACH_ANALYSIS',
+      'KI-Coach: Umfassende Coaching-Analyse - PARSE ERROR',
+      prompt,
+      {
+        ...metadata,
+        model: 'gemini-2.0-flash-exp',
+        promptLength: prompt.length,
+        responseLength: text.length,
+        error: parseError.message,
+      },
+      text,
+      true
+    );
+
     throw new Error('Failed to parse AI response');
   }
 }
@@ -659,56 +879,53 @@ function getDefaultWelcomeCoaching() {
 
 /**
  * Main function to get complete coaching intelligence
+ * @param {string|null} userFocus - User's selected focus area
+ * @param {boolean} forceRefresh - If true, bypass cache and regenerate analysis
  */
-export async function getCoachingIntelligence(userFocus = null) {
-  console.log('[CoachingIntelligence] Starting analysis...', userFocus ? `Focus: ${userFocus}` : 'No focus set');
-
-  // Fetch all data in parallel
-  const [sessions, scenarios] = await Promise.all([
-    fetchAllUserSessions(),
-    fetchAllScenarios(),
-  ]);
-
-  console.log('[CoachingIntelligence] Data fetched:', {
-    sessions: {
-      simulator: sessions.simulator.length,
-      video: sessions.video.length,
-      roleplay: sessions.roleplay.length,
-      games: sessions.games.length,
-    },
-    scenarios: {
-      simulator: scenarios.simulator.length,
-      video: scenarios.video.length,
-      roleplay: scenarios.roleplay.length,
-      briefingTemplates: scenarios.briefingTemplates.length,
-    },
+export async function getCoachingIntelligence(userFocus = null, forceRefresh = false) {
+  console.log('[CoachingIntelligence] Starting...', {
+    userFocus: userFocus || 'none',
+    forceRefresh,
   });
 
-  // Debug: Log sample session data to understand structure
-  if (sessions.simulator.length > 0) {
-    console.log('[CoachingIntelligence] Sample simulator session:', {
-      id: sessions.simulator[0].id,
-      overall_score: sessions.simulator[0].overall_score,
-      created_at: sessions.simulator[0].created_at,
-    });
-  }
-  if (sessions.roleplay.length > 0) {
-    console.log('[CoachingIntelligence] Sample roleplay session:', {
-      id: sessions.roleplay[0].id,
-      feedback_json: sessions.roleplay[0].feedback_json ? 'present' : 'missing',
-      rating: sessions.roleplay[0].feedback_json?.rating,
-      created_at: sessions.roleplay[0].created_at,
-    });
-  }
-  if (sessions.games.length > 0) {
-    console.log('[CoachingIntelligence] Sample game session:', {
-      id: sessions.games[0].id,
-      score: sessions.games[0].score,
-      created_at: sessions.games[0].created_at,
-    });
+  // Step 1: Fetch sessions first (quick, needed for cache validation)
+  const sessions = await fetchAllUserSessions();
+  const sessionCountHash = generateSessionCountHash(sessions);
+
+  console.log('[CoachingIntelligence] Sessions fetched:', {
+    simulator: sessions.simulator.length,
+    video: sessions.video.length,
+    roleplay: sessions.roleplay.length,
+    games: sessions.games.length,
+    hash: sessionCountHash,
+  });
+
+  // Step 2: Check cache (unless force refresh)
+  if (!forceRefresh) {
+    const cached = getCachedCoaching(sessionCountHash, userFocus);
+    if (cached) {
+      // Return cached data but with fresh session data for the progress chart
+      return {
+        ...cached,
+        sessions, // Fresh session data for charts
+        fromCache: true,
+      };
+    }
+  } else {
+    console.log('[CoachingIntelligence] Force refresh requested');
+    clearCoachingCache();
   }
 
-  // Aggregate statistics
+  // Step 3: Fetch scenarios (only if not cached)
+  const scenarios = await fetchAllScenarios();
+  console.log('[CoachingIntelligence] Scenarios fetched:', {
+    simulator: scenarios.simulator.length,
+    video: scenarios.video.length,
+    roleplay: scenarios.roleplay.length,
+    briefingTemplates: scenarios.briefingTemplates.length,
+  });
+
+  // Step 4: Aggregate statistics
   const stats = aggregateSessionStats(sessions);
   console.log('[CoachingIntelligence] Stats aggregated:', {
     totalSessions: stats.totalSessions,
@@ -718,19 +935,27 @@ export async function getCoachingIntelligence(userFocus = null) {
     moduleBreakdown: stats.moduleBreakdown,
   });
 
-  // Generate AI analysis
+  // Step 5: Generate AI analysis (the expensive part)
+  console.log('[CoachingIntelligence] Generating AI analysis...');
   const coaching = await generateCoachingAnalysis(stats, scenarios, userFocus);
 
-  return {
+  const result = {
     coaching,
     stats,
     scenarios,
     sessions,
+    fromCache: false,
   };
+
+  // Step 6: Cache the result
+  setCachedCoaching(result, sessionCountHash, userFocus);
+
+  return result;
 }
 
 export default {
   getCoachingIntelligence,
+  clearCoachingCache,
   fetchAllUserSessions,
   fetchAllScenarios,
   aggregateSessionStats,

@@ -59,11 +59,11 @@ ${Object.entries(averageScores).map(([category, score]) => `- ${category}: ${sco
 ### Trend (letzte 30 Tage vs. davor)
 ${recentTrend ? `${recentTrend > 0 ? '+' : ''}${recentTrend.toFixed(1)}% Veränderung` : 'Nicht genug Daten'}
 
-### Identifizierte Stärken (aus Feedback)
-${topStrengths.length > 0 ? topStrengths.map(s => `- ${s}`).join('\n') : 'Noch keine identifiziert'}
+### Identifizierte Stärken (aus Feedback, Anzahl = wie oft genannt)
+${topStrengths.length > 0 ? topStrengths.map(s => `- [${s.count}x] ${s.text}`).join('\n') : 'Noch keine identifiziert'}
 
-### Identifizierte Schwächen (aus Feedback)
-${topWeaknesses.length > 0 ? topWeaknesses.map(w => `- ${w}`).join('\n') : 'Noch keine identifiziert'}
+### Identifizierte Schwächen (aus Feedback, Anzahl = wie oft genannt)
+${topWeaknesses.length > 0 ? topWeaknesses.map(w => `- [${w.count}x] ${w.text}`).join('\n') : 'Noch keine identifiziert'}
 
 ### Sprechanalyse-Metriken
 - Durchschnittliche Füllwörter pro Session: ${fillerWordAverage !== null ? fillerWordAverage.toFixed(1) : 'Keine Daten'}

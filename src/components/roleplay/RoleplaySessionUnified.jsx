@@ -122,13 +122,17 @@ const RoleplaySessionUnified = ({
     };
   }, [branding]);
 
-  // Helper to replace variables
+  // Helper to replace variables - supports both {{var}} and ${var} syntax
   const replaceVariables = (text) => {
     if (!text) return text;
     let result = text;
     Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-      result = result.replace(regex, value || '');
+      // Replace {{key}} syntax (ElevenLabs standard)
+      const regexDoubleBrace = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      result = result.replace(regexDoubleBrace, value || '');
+      // Replace ${key} syntax (legacy/alternative)
+      const regexDollarBrace = new RegExp(`\\$\\{${key}\\}`, 'g');
+      result = result.replace(regexDollarBrace, value || '');
     });
     return result;
   };

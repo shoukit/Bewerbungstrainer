@@ -92,15 +92,23 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext, primaryAccent, header
   };
 
   // Helper function to replace {{variable}} placeholders with values
+  // Supports both {{var}} and ${var} syntax
   // Includes: form values, interviewer profile, and scenario fields
   const replaceVariables = (text) => {
     if (!text) return text;
     let result = text;
 
+    // Helper to replace both syntaxes
+    const replaceAllSyntaxes = (key, value) => {
+      const regexDoubleBrace = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      result = result.replace(regexDoubleBrace, value || '');
+      const regexDollarBrace = new RegExp(`\\$\\{${key}\\}`, 'g');
+      result = result.replace(regexDollarBrace, value || '');
+    };
+
     // 1. Replace with form values (user inputs)
     Object.entries(formValues).forEach(([key, value]) => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-      result = result.replace(regex, value || '');
+      replaceAllSyntaxes(key, value);
     });
 
     // 2. Replace interviewer profile fields (using current values which may be edited)
@@ -114,8 +122,7 @@ const RoleplayVariablesPage = ({ scenario, onBack, onNext, primaryAccent, header
     };
     Object.entries(profileMappings).forEach(([key, value]) => {
       if (value) {
-        const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-        result = result.replace(regex, value);
+        replaceAllSyntaxes(key, value);
       }
     });
 

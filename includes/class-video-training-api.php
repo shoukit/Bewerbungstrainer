@@ -1027,12 +1027,27 @@ JSON Output:";
      * Build video analysis prompt
      */
     private function build_video_analysis_prompt($scenario, $variables, $questions, $timeline, $feedback_prompt) {
+        // Determine which questions were actually answered based on timeline
+        $answered_question_indices = array();
+        if (!empty($timeline)) {
+            foreach ($timeline as $entry) {
+                if (isset($entry['question_index'])) {
+                    $answered_question_indices[] = (int) $entry['question_index'];
+                }
+            }
+        }
+
+        // Only include questions that were actually answered
         $questions_text = '';
-        if (!empty($questions)) {
-            $questions_text = "\n\nGESTELLTE FRAGEN:\n";
-            foreach ($questions as $i => $q) {
-                $question_text = is_array($q) ? ($q['question'] ?? 'Frage ' . ($i + 1)) : $q;
-                $questions_text .= ($i + 1) . ". {$question_text}\n";
+        $answered_count = count($answered_question_indices);
+        if (!empty($questions) && $answered_count > 0) {
+            $questions_text = "\n\nBEANTWORTETE FRAGEN ({$answered_count} von " . count($questions) . "):\n";
+            foreach ($answered_question_indices as $idx) {
+                if (isset($questions[$idx])) {
+                    $q = $questions[$idx];
+                    $question_text = is_array($q) ? ($q['question'] ?? 'Frage ' . ($idx + 1)) : $q;
+                    $questions_text .= ($idx + 1) . ". {$question_text}\n";
+                }
             }
         }
 
@@ -1056,7 +1071,8 @@ JSON Output:";
             }
         }
 
-        return "Du bist ein professioneller Karriere-Coach und Video-Analyse-Experte.
+        return "Du bist ein STRENGER professioneller Karriere-Coach und Video-Analyse-Experte.
+Du bewertest KRITISCH und EHRLICH - zu milde Bewertungen helfen niemandem!
 
 AUFGABE: Analysiere das folgende Video eines {$scenario->title}-Trainings.
 {$context}
@@ -1066,14 +1082,30 @@ AUFGABE: Analysiere das folgende Video eines {$scenario->title}-Trainings.
 {$feedback_prompt}
 
 ANALYSE-KATEGORIEN:
-1. **Auftreten** - Erste Eindrücke, Gesamtwirkung, Professionalität
+1. **Auftreten** - Erste Eindrücke, Gesamtwirkung, Ausstrahlung
 2. **Selbstbewusstsein** - Sicherheit, Überzeugungskraft, Authentizität
-3. **Körpersprache** - Haltung, Gestik, Mimik, Augenkontakt
+3. **Körpersprache** - Haltung, Gestik, Mimik, Augenkontakt (Blick in die Kamera)
+   - WICHTIG: Schaut die Person NICHT in die Kamera → maximal 50 Punkte!
 4. **Kommunikation** - Sprechweise, Klarheit, Struktur, Füllwörter
-5. **Professionalität** - Erscheinungsbild, Hintergrund, Technik
-6. **Inhalt** - Qualität der Antworten, Relevanz, Beispiele
+5. **Professionalität** - SEHR STRENG BEWERTEN nach dieser Checkliste:
+   ❌ Flaschen, Tassen, Gläser im Bild → MAXIMAL 40 Punkte
+   ❌ Unordnung/Chaos im Hintergrund → MAXIMAL 40 Punkte
+   ❌ Weihnachtsdeko, persönliche Gegenstände → MAXIMAL 50 Punkte
+   ❌ Schlechte Beleuchtung (Gesicht dunkel) → Abzug 20 Punkte
+   ❌ Kamera nicht auf Augenhöhe → Abzug 10 Punkte
+   ✅ Nur bei neutralem, aufgeräumtem Hintergrund OHNE Ablenkungen → 70+ Punkte möglich
+6. **Inhalt** - Qualität der Antworten, Relevanz, konkrete Beispiele
 
-WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
+VERBINDLICHE BEWERTUNGSREGELN (MÜSSEN eingehalten werden!):
+1. Professionalität bei Flaschen/Tassen/Gläsern im Bild: NIEMALS mehr als 40 Punkte!
+2. Körpersprache ohne Blickkontakt zur Kamera: NIEMALS mehr als 50 Punkte!
+3. Bei mehreren Problemen: Punkte KUMULATIV abziehen!
+4. Sei STRENG - ein echtes Bewerbungsgespräch verzeiht solche Fehler nicht!
+
+WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format.
+ACHTUNG: Die Scores im Beispiel sind NUR Platzhalter! Bewerte STRENG nach den obigen Regeln!
+- Bei Flaschen/Unordnung: professionalitaet MAXIMAL 40!
+- Ohne Blickkontakt: koerpersprache MAXIMAL 50!
 
 {
   \"transcript\": \"Vollständige Transkription dessen, was gesprochen wurde\",
@@ -1082,7 +1114,7 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
     {
       \"category\": \"auftreten\",
       \"label\": \"Auftreten\",
-      \"score\": 75,
+      \"score\": 55,
       \"feedback\": \"Detailliertes Feedback zu dieser Kategorie\",
       \"strengths\": [\"Stärke 1\", \"Stärke 2\"],
       \"improvements\": [\"Verbesserung 1\", \"Verbesserung 2\"]
@@ -1090,7 +1122,7 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
     {
       \"category\": \"selbstbewusstsein\",
       \"label\": \"Selbstbewusstsein\",
-      \"score\": 70,
+      \"score\": 50,
       \"feedback\": \"...\",
       \"strengths\": [],
       \"improvements\": []
@@ -1098,7 +1130,7 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
     {
       \"category\": \"koerpersprache\",
       \"label\": \"Körpersprache\",
-      \"score\": 65,
+      \"score\": 45,
       \"feedback\": \"...\",
       \"strengths\": [],
       \"improvements\": []
@@ -1106,7 +1138,7 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
     {
       \"category\": \"kommunikation\",
       \"label\": \"Kommunikation\",
-      \"score\": 80,
+      \"score\": 55,
       \"feedback\": \"...\",
       \"strengths\": [],
       \"improvements\": []
@@ -1114,7 +1146,7 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
     {
       \"category\": \"professionalitaet\",
       \"label\": \"Professionalität\",
-      \"score\": 85,
+      \"score\": 35,
       \"feedback\": \"...\",
       \"strengths\": [],
       \"improvements\": []
@@ -1122,7 +1154,7 @@ WICHTIG: Antworte NUR mit einem JSON-Objekt im folgenden Format:
     {
       \"category\": \"inhalt\",
       \"label\": \"Inhalt\",
-      \"score\": 72,
+      \"score\": 40,
       \"feedback\": \"...\",
       \"strengths\": [],
       \"improvements\": []

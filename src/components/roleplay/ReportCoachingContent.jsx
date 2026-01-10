@@ -311,7 +311,7 @@ const ReportCoachingContent = ({ feedback: rawFeedback, audioAnalysis, primaryAc
         </div>
       )}
 
-      {/* Rating Bars */}
+      {/* Rating Bars - Unified dimensions */}
       {feedback?.rating && (
         <div className="bg-white rounded-xl p-4 border border-slate-200">
           <div className="flex items-center gap-2 mb-4">
@@ -320,6 +320,23 @@ const ReportCoachingContent = ({ feedback: rawFeedback, audioAnalysis, primaryAc
               Bewertungskriterien
             </span>
           </div>
+          {/* New unified dimensions */}
+          {feedback.rating.overall !== undefined && (
+            <RatingBar label="Gesamteindruck" value={feedback.rating.overall} primaryAccent={primaryAccent} branding={branding} />
+          )}
+          {feedback.rating.content !== undefined && (
+            <RatingBar label="Inhalt & Argumentation" value={feedback.rating.content} primaryAccent={primaryAccent} branding={branding} />
+          )}
+          {feedback.rating.structure !== undefined && (
+            <RatingBar label="Struktur & Aufbau" value={feedback.rating.structure} primaryAccent={primaryAccent} branding={branding} />
+          )}
+          {feedback.rating.relevance !== undefined && (
+            <RatingBar label="Relevanz & Bezug" value={feedback.rating.relevance} primaryAccent={primaryAccent} branding={branding} />
+          )}
+          {feedback.rating.delivery !== undefined && (
+            <RatingBar label="Präsentation & Auftreten" value={feedback.rating.delivery} primaryAccent={primaryAccent} branding={branding} />
+          )}
+          {/* Legacy dimensions for backwards compatibility with old sessions */}
           {feedback.rating.communication !== undefined && (
             <RatingBar label="Kommunikation" value={feedback.rating.communication} primaryAccent={primaryAccent} branding={branding} />
           )}

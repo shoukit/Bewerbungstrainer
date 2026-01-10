@@ -412,7 +412,16 @@ const KiCoachApp = ({
 
       // Use provided focus or get from localStorage (not state, to avoid dependency)
       const currentFocus = focus ?? getUserFocus();
-      const data = await getCoachingIntelligence(currentFocus);
+      // Pass forceRefresh=true when manually refreshing to bypass cache
+      const data = await getCoachingIntelligence(currentFocus, isRefresh);
+
+      // Log cache status
+      if (data.fromCache) {
+        console.log('[KiCoach] ✓ Loaded from cache (no Gemini API call)');
+      } else {
+        console.log('[KiCoach] Generated fresh analysis');
+      }
+
       setCoachingData(data);
     } catch (err) {
       console.error('[KiCoach] Failed to load coaching:', err);

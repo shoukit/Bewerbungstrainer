@@ -474,13 +474,27 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
         <h1 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-slate-900`}>
           {scenario?.title}
         </h1>
-        <button
-          onClick={handleExit}
-          className={`${isMobile ? 'py-2.5 px-3.5' : 'py-2 px-4'} rounded-lg bg-slate-100 text-slate-500 text-sm flex items-center justify-center gap-1.5 hover:bg-slate-200 transition-colors`}
-        >
-          <X size={16} />
-          Abbrechen
-        </button>
+        <div className={`flex gap-2 items-center ${isMobile ? 'justify-between' : 'justify-end'}`}>
+          <button
+            onClick={finishRecording}
+            disabled={!hasRecordings}
+            className={`${isMobile ? 'flex-1 py-2.5 px-3.5' : 'py-2.5 px-4'} rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              hasRecordings
+                ? 'bg-green-500 shadow-md hover:bg-green-600 hover:shadow-lg'
+                : 'bg-slate-300 cursor-not-allowed'
+            }`}
+          >
+            <Check size={16} />
+            {isMobile ? 'Abschließen' : 'Training abschließen'}
+          </button>
+          <button
+            onClick={handleExit}
+            className={`${isMobile ? 'flex-1 py-2.5 px-3.5' : 'py-2.5 px-4'} rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-200 transition-colors`}
+          >
+            <X size={16} />
+            Abbrechen
+          </button>
+        </div>
       </div>
 
       {/* Progress */}
@@ -572,45 +586,34 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
                 )}
               </div>
 
-              {/* Navigation and finish buttons */}
-              <div className="flex gap-2">
-                {canNavigatePrev && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    icon={<ChevronLeft size={16} />}
-                    onClick={goToPrevQuestion}
-                    className="flex-1"
-                  >
-                    Zurück
-                  </Button>
-                )}
+              {/* Navigation buttons */}
+              {(canNavigatePrev || canNavigateNext) && (
+                <div className="flex gap-2">
+                  {canNavigatePrev && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={<ChevronLeft size={16} />}
+                      onClick={goToPrevQuestion}
+                      className="flex-1"
+                    >
+                      Zurück
+                    </Button>
+                  )}
 
-                {canNavigateNext && (
-                  <Button
-                    size="sm"
-                    iconPosition="right"
-                    icon={<ChevronRight size={16} />}
-                    onClick={goToNextQuestion}
-                    className="flex-1"
-                  >
-                    Nächste
-                  </Button>
-                )}
-
-                <button
-                  onClick={finishRecording}
-                  disabled={!hasRecordings}
-                  className={`flex-1 py-2.5 px-3.5 rounded-lg text-white text-[13px] font-semibold flex items-center justify-center gap-1 ${
-                    hasRecordings
-                      ? 'bg-green-500 shadow-md shadow-green-500/30'
-                      : 'bg-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  <Check size={16} />
-                  Abschließen
-                </button>
-              </div>
+                  {canNavigateNext && (
+                    <Button
+                      size="sm"
+                      iconPosition="right"
+                      icon={<ChevronRight size={16} />}
+                      onClick={goToNextQuestion}
+                      className="flex-1"
+                    >
+                      Nächste
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -687,40 +690,29 @@ const VideoTrainingSession = ({ session, questions, scenario, variables, onCompl
               </div>
 
               {/* Navigation buttons */}
-              <div className="flex justify-center gap-3 flex-wrap">
-                {canNavigatePrev && (
-                  <Button
-                    variant="secondary"
-                    icon={<ChevronLeft size={18} />}
-                    onClick={goToPrevQuestion}
-                  >
-                    Vorherige
-                  </Button>
-                )}
+              {(canNavigatePrev || canNavigateNext) && (
+                <div className="flex justify-center gap-3 flex-wrap">
+                  {canNavigatePrev && (
+                    <Button
+                      variant="secondary"
+                      icon={<ChevronLeft size={18} />}
+                      onClick={goToPrevQuestion}
+                    >
+                      Vorherige
+                    </Button>
+                  )}
 
-                {canNavigateNext && (
-                  <Button
-                    iconPosition="right"
-                    icon={<ChevronRight size={18} />}
-                    onClick={goToNextQuestion}
-                  >
-                    Nächste
-                  </Button>
-                )}
-
-                <button
-                  onClick={finishRecording}
-                  disabled={!hasRecordings}
-                  className={`py-2.5 px-5 rounded-lg text-white text-sm font-semibold flex items-center gap-1.5 ${
-                    hasRecordings
-                      ? 'bg-green-500 shadow-md shadow-green-500/30'
-                      : 'bg-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  <Check size={18} />
-                  Training abschließen
-                </button>
-              </div>
+                  {canNavigateNext && (
+                    <Button
+                      iconPosition="right"
+                      icon={<ChevronRight size={18} />}
+                      onClick={goToNextQuestion}
+                    >
+                      Nächste
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

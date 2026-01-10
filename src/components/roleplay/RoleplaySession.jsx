@@ -61,16 +61,26 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
   // Confetti celebration for successful completion
   const { triggerConfetti, ConfettiComponent } = useConfetti();
 
-  // Helper function to replace {{variable}} placeholders with actual values
+  // Helper function to replace variable placeholders with actual values
+  // Supports both {{variable}} (ElevenLabs syntax) and ${variable} (our legacy syntax)
   // Includes: user variables and interviewer profile fields
   const replaceVariables = (text) => {
     if (!text) return text;
     let result = text;
 
+    // Helper to replace both syntaxes for a given key-value pair
+    const replaceAllSyntaxes = (key, value) => {
+      // Replace {{key}} syntax (ElevenLabs standard)
+      const regexDoubleBrace = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      result = result.replace(regexDoubleBrace, value || '');
+      // Replace ${key} syntax (legacy/alternative)
+      const regexDollarBrace = new RegExp(`\\$\\{${key}\\}`, 'g');
+      result = result.replace(regexDollarBrace, value || '');
+    };
+
     // 1. Replace with user variables
     Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-      result = result.replace(regex, value || '');
+      replaceAllSyntaxes(key, value);
     });
 
     // 2. Replace interviewer profile fields
@@ -84,8 +94,7 @@ const RoleplaySession = ({ scenario, variables = {}, selectedMicrophoneId, onEnd
       };
       Object.entries(profileMappings).forEach(([key, value]) => {
         if (value) {
-          const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-          result = result.replace(regex, value);
+          replaceAllSyntaxes(key, value);
         }
       });
     }

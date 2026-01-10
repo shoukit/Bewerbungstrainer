@@ -370,7 +370,7 @@ const ProgressChart = ({
       }
     });
 
-    // Video sessions (overall_score is 0-10)
+    // Video sessions (overall_score is 0-100, average of category_scores)
     videoSessions.forEach(session => {
       const date = parseDate(session.created_at);
       let score = session.overall_score;
@@ -380,7 +380,7 @@ const ProgressChart = ({
         allSessions.push({
           date,
           module: 'video',
-          score: normalizeScore(score, 10),
+          score: normalizeScore(score, 100),
         });
       }
     });
@@ -736,7 +736,7 @@ const ProgressChart = ({
 
                 <Tooltip content={<CustomTooltip />} />
 
-                {/* Area fills for active modules */}
+                {/* Area fills for active modules (hidden from tooltip) */}
                 {activeModules.overall && (
                   <Area
                     type="monotone"
@@ -744,6 +744,7 @@ const ProgressChart = ({
                     stroke="none"
                     fill={`url(#gradient-overall)`}
                     connectNulls
+                    tooltipType="none"
                   />
                 )}
 
