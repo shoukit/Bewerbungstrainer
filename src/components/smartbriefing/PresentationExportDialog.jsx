@@ -24,17 +24,40 @@ import {
 import { Button, Card } from '@/components/ui';
 
 /**
- * Parse ai_content which can be a JSON string or already parsed array
+ * Parse ai_content which can be:
+ * - A JSON string with { items: [...] } structure
+ * - An object with { items: [...] }
+ * - An array directly (legacy)
  */
 const parseAiContent = (aiContent) => {
   if (!aiContent) return [];
+
+  // Already an array (legacy format)
   if (Array.isArray(aiContent)) return aiContent;
-  try {
-    const parsed = JSON.parse(aiContent);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+
+  // Object with items property
+  if (typeof aiContent === 'object' && Array.isArray(aiContent.items)) {
+    return aiContent.items;
   }
+
+  // JSON string - parse it
+  if (typeof aiContent === 'string') {
+    try {
+      const parsed = JSON.parse(aiContent);
+      // Check for { items: [...] } structure
+      if (parsed && Array.isArray(parsed.items)) {
+        return parsed.items;
+      }
+      // Direct array
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
 };
 
 /**
