@@ -732,10 +732,22 @@ class Bewerbungstrainer_SmartBriefing_API {
             );
         }
 
-        // Update user_notes
+        // Update user_notes and/or ai_content
         $update_data = array();
         if (isset($params['user_notes'])) {
             $update_data['user_notes'] = $params['user_notes'];
+        }
+        if (isset($params['ai_content'])) {
+            // Validate that ai_content is valid JSON with items array
+            $content = is_string($params['ai_content'])
+                ? json_decode($params['ai_content'], true)
+                : $params['ai_content'];
+
+            if ($content && isset($content['items']) && is_array($content['items'])) {
+                $update_data['ai_content'] = is_string($params['ai_content'])
+                    ? $params['ai_content']
+                    : json_encode($content, JSON_UNESCAPED_UNICODE);
+            }
         }
 
         if (empty($update_data)) {

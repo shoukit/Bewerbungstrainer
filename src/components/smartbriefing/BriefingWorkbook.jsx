@@ -657,6 +657,11 @@ const ItemCard = ({ item, sectionId, onUpdateItem, onAskItem, onDeleteExplanatio
               onKeyDown={(e) => e.key === 'Enter' && !isAsking && handleCustomQuestion()}
               placeholder="Oder stelle eine eigene Frage..."
               disabled={isAsking}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+              data-form-type="other"
               className="flex-1 px-3 py-2 rounded-xl border border-amber-200 text-[13px] text-slate-700 outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-gray-50"
             />
             <Button
@@ -1242,88 +1247,120 @@ const BriefingWorkbook = ({
     const newLabel = `Vertiefung: ${sourceLabel}`;
     const newContent = answer.length > 200 ? answer.substring(0, 200) + '...' : answer;
 
-    // Update local state to add the new item
+    // Find the section and create updated content
+    const section = briefing?.sections?.find(s => s.id === sectionId);
+    if (!section) return;
+
+    let content;
+    try {
+      content = typeof section.ai_content === 'string'
+        ? JSON.parse(section.ai_content)
+        : section.ai_content;
+    } catch {
+      console.error('[SmartBriefing] Failed to parse ai_content');
+      return;
+    }
+
+    if (!content?.items) return;
+
+    const newItem = {
+      id: crypto.randomUUID(),
+      label: newLabel,
+      content: newContent,
+      user_note: `Vollständige KI-Antwort:\n\n${answer}`,
+      deleted: false,
+      ai_explanations: [],
+    };
+
+    const updatedContent = { ...content, items: [...content.items, newItem] };
+    const updatedContentJson = JSON.stringify(updatedContent);
+
+    // Update local state immediately for responsiveness
     setBriefing((prev) => ({
       ...prev,
-      sections: prev.sections.map((s) => {
-        if (s.id !== sectionId) return s;
-
-        // Parse ai_content if it's a string (it's stored as JSON string)
-        let content;
-        try {
-          content = typeof s.ai_content === 'string'
-            ? JSON.parse(s.ai_content)
-            : s.ai_content;
-        } catch {
-          console.error('[SmartBriefing] Failed to parse ai_content');
-          return s;
-        }
-
-        if (!content?.items) return s;
-
-        const newItem = {
-          id: crypto.randomUUID(),
-          label: newLabel,
-          content: newContent,
-          user_note: `Vollständige KI-Antwort:\n\n${answer}`,
-          deleted: false,
-          ai_explanations: [],
-        };
-
-        return {
-          ...s,
-          ai_content: JSON.stringify({ ...content, items: [...content.items, newItem] }),
-        };
-      }),
+      sections: prev.sections.map((s) =>
+        s.id === sectionId ? { ...s, ai_content: updatedContentJson } : s
+      ),
     }));
 
-    // Note: This is a local-only change. To persist, we'd need to call an API.
-    // For now, the user can see it added but it won't persist on reload.
-    // A proper implementation would save via the update_section endpoint.
-  }, []);
+    // Persist to backend
+    try {
+      await wordpressAPI.request(`/smartbriefing/sections/${sectionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ai_content: updatedContentJson }),
+      });
+    } catch (err) {
+      console.error('[SmartBriefing] Failed to save new item:', err);
+      // Revert on error
+      setBriefing((prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.id === sectionId ? { ...s, ai_content: section.ai_content } : s
+        ),
+      }));
+    }
+  }, [briefing?.sections]);
 
   // Handler for adding a single action point from AI explanation
   // actionPoint is now an object: { label: string, content: string }
-  const handleAddActionPoint = useCallback((sectionId, actionPoint, sourceLabel) => {
+  const handleAddActionPoint = useCallback(async (sectionId, actionPoint, sourceLabel) => {
     // Use the parsed label and content from actionPoint object
     const newLabel = actionPoint.label || 'Neuer Punkt';
     const newContent = actionPoint.content || actionPoint.label || '';
 
-    // Update local state to add the new item
+    // Find the section and create updated content
+    const section = briefing?.sections?.find(s => s.id === sectionId);
+    if (!section) return;
+
+    let content;
+    try {
+      content = typeof section.ai_content === 'string'
+        ? JSON.parse(section.ai_content)
+        : section.ai_content;
+    } catch {
+      console.error('[SmartBriefing] Failed to parse ai_content');
+      return;
+    }
+
+    if (!content?.items) return;
+
+    const newItem = {
+      id: crypto.randomUUID(),
+      label: newLabel,
+      content: newContent,
+      user_note: '',
+      deleted: false,
+      ai_explanations: [],
+    };
+
+    const updatedContent = { ...content, items: [...content.items, newItem] };
+    const updatedContentJson = JSON.stringify(updatedContent);
+
+    // Update local state immediately for responsiveness
     setBriefing((prev) => ({
       ...prev,
-      sections: prev.sections.map((s) => {
-        if (s.id !== sectionId) return s;
-
-        // Parse ai_content if it's a string (it's stored as JSON string)
-        let content;
-        try {
-          content = typeof s.ai_content === 'string'
-            ? JSON.parse(s.ai_content)
-            : s.ai_content;
-        } catch {
-          console.error('[SmartBriefing] Failed to parse ai_content');
-          return s;
-        }
-
-        if (!content?.items) return s;
-
-        const newItem = {
-          id: crypto.randomUUID(),
-          label: newLabel,
-          content: newContent,
-          user_note: '',
-          deleted: false,
-          ai_explanations: [],
-        };
-
-        return {
-          ...s,
-          ai_content: JSON.stringify({ ...content, items: [...content.items, newItem] }),
-        };
-      }),
+      sections: prev.sections.map((s) =>
+        s.id === sectionId ? { ...s, ai_content: updatedContentJson } : s
+      ),
     }));
-  }, []);
+
+    // Persist to backend
+    try {
+      await wordpressAPI.request(`/smartbriefing/sections/${sectionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ai_content: updatedContentJson }),
+      });
+    } catch (err) {
+      console.error('[SmartBriefing] Failed to save new item:', err);
+      // Revert on error
+      setBriefing((prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.id === sectionId ? { ...s, ai_content: section.ai_content } : s
+        ),
+      }));
+    }
+  }, [briefing?.sections]);
 
   const handleDownloadPdf = useCallback(async () => {
     if (isDownloadingPdf || !briefing?.id) return;
