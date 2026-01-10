@@ -22,6 +22,8 @@ const SLIDE_COLORS = {
   textLight: '64748B',    // Slate-500
   white: 'FFFFFF',
   accent: '7C3AED',       // Violet
+  success: '059669',      // Emerald
+  warning: 'D97706',      // Amber
 };
 
 // =============================================================================
@@ -66,69 +68,141 @@ const generatePresentationStructure = async (data) => {
 
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // Build input data string
+  // Build input data string with full details
   const inputData = data.sections.map(section => {
     const itemsList = section.items.map(item => {
-      let itemText = `- ${item.label}`;
+      let itemText = `- **${item.label}**`;
       if (item.content) itemText += `: ${item.content}`;
-      if (item.userNote) itemText += `\n  [Nutzer-Notiz: "${item.userNote}"]`;
+      if (item.userNote) itemText += `\n  → WICHTIG (Nutzer-Notiz): "${item.userNote}"`;
       return itemText;
     }).join('\n');
 
-    return `## ${section.sectionTitle}\n${itemsList}`;
+    return `### ${section.sectionTitle}\n${itemsList}`;
   }).join('\n\n');
 
-  const prompt = `Du bist ein Experte für Präsentationsdesign und Storytelling. Transformiere die folgenden Briefing-Punkte in eine überzeugende Präsentationsstruktur.
+  // Count items for context
+  const totalItems = data.sections.reduce((acc, s) => acc + s.items.length, 0);
 
-## KONTEXT
-- Briefing-Titel: "${data.briefingTitle || 'Smart Briefing'}"
-- Präsentationsziel: "${data.goal}"
-
-## BRIEFING-INHALTE (vom Nutzer ausgewählt)
-${inputData}
+  const prompt = `Du bist ein erfahrener Präsentationsdesigner und Strategieberater.
 
 ## DEINE AUFGABE
-Erstelle eine Präsentation mit 5-8 Slides, die:
-1. Eine klare Story mit rotem Faden erzählt
-2. Die wichtigsten Punkte hervorhebt (besonders jene mit Nutzer-Notizen!)
-3. Minimalistisch ist (wenig Text pro Slide, max 4-5 Bullet Points)
-4. Zum angegebenen Präsentationsziel passt
+Erstelle eine **vollständige, professionelle Präsentation** für folgenden Zweck:
+
+**Präsentationsziel:** "${data.goal}"
+**Briefing-Titel:** "${data.briefingTitle || 'Präsentation'}"
+
+## WICHTIGE REGELN
+
+### 1. DOKUMENTTYP VERSTEHEN
+Analysiere das Präsentationsziel und füge ALLE Slides hinzu, die für diesen Präsentationstyp üblich und professionell sind - auch wenn sie nicht explizit im Input stehen!
+
+Typische Slides je nach Präsentationstyp:
+- **Kickoff/Projektstart:** Team-Vorstellung, Timeline/Meilensteine, Rollen & Verantwortlichkeiten, Spielregeln
+- **Pitch/Präsentation:** Problem, Lösung, Markt, Geschäftsmodell, Team, Call-to-Action
+- **Status-Update:** Fortschritt, Erfolge, Herausforderungen, Nächste Schritte
+- **Workshop:** Agenda mit Zeiten, Ziele, Methodik, Erwartete Ergebnisse
+
+### 2. INHALTE VOLLSTÄNDIG AUSARBEITEN
+- ALLE ${totalItems} Punkte aus dem Input MÜSSEN in der Präsentation vorkommen
+- Nicht nur Stichworte, sondern ausformulierte, verständliche Sätze
+- Konkrete Details übernehmen (Zeitangaben, Namen, Zahlen!)
+- Punkte mit Nutzer-Notizen (→ WICHTIG) besonders hervorheben
+- Jeder Bullet sollte für sich alleine verständlich sein
+
+### 3. PLATZHALTER FÜR FEHLENDE INFOS
+Wenn eine wichtige Slide zum Dokumenttyp gehört, aber du den Inhalt nicht kennst, erstelle sie mit "[PLATZHALTER: ...]" Bullets.
+
+Beispiel für Team-Slide:
+"bullets": ["[PLATZHALTER: Projektleiter - Name & Rolle]", "[PLATZHALTER: Teammitglied 1]", ...]
+
+### 4. PROFESSIONELLE STRUKTUR
+- Beginne mit einer packenden Titelfolie
+- Baue einen logischen roten Faden auf
+- Nutze verschiedene Slide-Typen für Abwechslung
+- Ende mit klarem Call-to-Action oder Zusammenfassung
+- Ziel: 8-15 Slides für eine vollständige Präsentation
+
+## BRIEFING-INHALTE (alle ${totalItems} Punkte müssen verwendet werden!)
+
+${inputData}
 
 ## AUSGABEFORMAT (JSON)
-Antworte NUR mit validem JSON in diesem Format:
+
+Antworte NUR mit validem JSON:
 {
-  "title": "Präsentationstitel",
+  "title": "Präsentationstitel (kurz & prägnant)",
   "slides": [
     {
       "type": "title",
       "title": "Haupttitel",
-      "subtitle": "Untertitel oder Anlass"
+      "subtitle": "Untertitel mit Datum/Anlass"
+    },
+    {
+      "type": "agenda",
+      "title": "Agenda",
+      "items": [
+        {"time": "5 Min", "topic": "Begrüßung & Einführung"},
+        {"time": "15 Min", "topic": "Projektziele vorstellen"}
+      ]
     },
     {
       "type": "content",
       "title": "Slide-Titel",
-      "bullets": ["Punkt 1", "Punkt 2", "Punkt 3"]
+      "bullets": ["Ausformulierter Punkt 1", "Ausformulierter Punkt 2"]
+    },
+    {
+      "type": "team",
+      "title": "Das Team",
+      "members": [
+        {"role": "Projektleiter", "name": "[PLATZHALTER]", "responsibility": "Gesamtverantwortung"},
+        {"role": "Entwicklung", "name": "[PLATZHALTER]", "responsibility": "Technische Umsetzung"}
+      ]
+    },
+    {
+      "type": "timeline",
+      "title": "Meilensteine",
+      "milestones": [
+        {"date": "KW 2", "title": "Kickoff", "status": "current"},
+        {"date": "KW 4", "title": "Anforderungen final", "status": "upcoming"},
+        {"date": "KW 8", "title": "MVP fertig", "status": "upcoming"}
+      ]
     },
     {
       "type": "quote",
-      "quote": "Wichtige Aussage oder Kernbotschaft",
-      "source": "Optional: Quelle"
+      "quote": "Wichtige Kernbotschaft oder Motto",
+      "source": "Optional"
+    },
+    {
+      "type": "two_columns",
+      "title": "Vergleich oder Gegenüberstellung",
+      "left": {"heading": "Links", "bullets": ["Punkt 1", "Punkt 2"]},
+      "right": {"heading": "Rechts", "bullets": ["Punkt A", "Punkt B"]}
     },
     {
       "type": "summary",
-      "title": "Zusammenfassung",
-      "bullets": ["Takeaway 1", "Takeaway 2"]
+      "title": "Nächste Schritte",
+      "bullets": ["Konkrete Aktion 1", "Konkrete Aktion 2"]
     }
   ]
 }
 
-Slide-Typen:
-- "title": Titelfolie (nur am Anfang)
-- "content": Normale Inhaltsfolie mit Bullets
-- "quote": Hervorgehobenes Zitat/Kernbotschaft (sparsam verwenden)
-- "summary": Zusammenfassung/Call-to-Action (am Ende)
+## SLIDE-TYPEN
 
-WICHTIG: Antworte NUR mit dem JSON, keine Erklärungen davor oder danach!`;
+| Typ | Verwendung |
+|-----|------------|
+| title | Titelfolie (immer am Anfang) |
+| agenda | Agenda mit Zeitangaben |
+| content | Standard-Inhaltsfolie mit Bullets |
+| team | Team-Vorstellung mit Rollen |
+| timeline | Meilensteine/Projektplan |
+| quote | Hervorgehobene Kernbotschaft |
+| two_columns | Zwei-Spalten-Vergleich |
+| summary | Zusammenfassung/Call-to-Action (am Ende) |
+
+WICHTIG:
+- Antworte NUR mit dem JSON, keine Erklärungen!
+- Verwende verschiedene Slide-Typen für eine professionelle Präsentation!
+- ALLE Input-Punkte müssen in der Präsentation erscheinen!`;
 
   // Try models in fallback order
   for (const modelName of GEMINI_MODELS.FALLBACK_ORDER) {
@@ -144,7 +218,7 @@ WICHTIG: Antworte NUR mit dem JSON, keine Erklärungen davor oder danach!`;
         briefingTitle: data.briefingTitle,
         goal: data.goal,
         sectionsCount: data.sections?.length,
-        itemsCount: data.sections?.reduce((acc, s) => acc + s.items.length, 0),
+        itemsCount: totalItems,
       });
 
       // Parse JSON from response
@@ -199,17 +273,34 @@ const createPowerPoint = (structure) => {
     background: { color: SLIDE_COLORS.primaryLight },
   });
 
+  pptx.defineSlideMaster({
+    title: 'ACCENT_SLIDE',
+    background: { color: SLIDE_COLORS.dark },
+  });
+
   // Generate slides
-  structure.slides.forEach((slideData, index) => {
+  structure.slides.forEach((slideData) => {
     switch (slideData.type) {
       case 'title':
         createTitleSlide(pptx, slideData);
         break;
+      case 'agenda':
+        createAgendaSlide(pptx, slideData);
+        break;
       case 'content':
         createContentSlide(pptx, slideData);
         break;
+      case 'team':
+        createTeamSlide(pptx, slideData);
+        break;
+      case 'timeline':
+        createTimelineSlide(pptx, slideData);
+        break;
       case 'quote':
         createQuoteSlide(pptx, slideData);
+        break;
+      case 'two_columns':
+        createTwoColumnsSlide(pptx, slideData);
         break;
       case 'summary':
         createSummarySlide(pptx, slideData);
@@ -231,7 +322,7 @@ const createTitleSlide = (pptx, data) => {
   // Main title
   slide.addText(data.title || 'Präsentation', {
     x: 0.5,
-    y: 2.5,
+    y: 2.2,
     w: 9,
     h: 1.5,
     fontSize: 44,
@@ -246,14 +337,58 @@ const createTitleSlide = (pptx, data) => {
   if (data.subtitle) {
     slide.addText(data.subtitle, {
       x: 0.5,
-      y: 4,
+      y: 3.8,
       w: 9,
       h: 0.8,
-      fontSize: 20,
+      fontSize: 22,
       fontFace: 'Arial',
       color: SLIDE_COLORS.white,
       align: 'center',
       valign: 'middle',
+    });
+  }
+};
+
+/**
+ * Create agenda slide with time blocks
+ */
+const createAgendaSlide = (pptx, data) => {
+  const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
+
+  // Title bar
+  slide.addShape('rect', {
+    x: 0, y: 0, w: 10, h: 1.3,
+    fill: { color: SLIDE_COLORS.primary },
+  });
+
+  slide.addText(data.title || 'Agenda', {
+    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
+  });
+
+  // Agenda items with time
+  if (data.items && data.items.length > 0) {
+    const startY = 1.7;
+    const rowHeight = 0.65;
+
+    data.items.forEach((item, index) => {
+      const y = startY + (index * rowHeight);
+
+      // Time badge
+      slide.addText(item.time || '', {
+        x: 0.5, y, w: 1.2, h: 0.5,
+        fontSize: 14, fontFace: 'Arial', color: SLIDE_COLORS.white,
+        fill: { color: SLIDE_COLORS.primary },
+        align: 'center', valign: 'middle',
+        shape: 'roundRect',
+      });
+
+      // Topic
+      slide.addText(item.topic || '', {
+        x: 1.9, y, w: 7.5, h: 0.5,
+        fontSize: 18, fontFace: 'Arial', color: SLIDE_COLORS.text,
+        valign: 'middle',
+      });
     });
   }
 };
@@ -266,44 +401,142 @@ const createContentSlide = (pptx, data) => {
 
   // Title bar
   slide.addShape('rect', {
-    x: 0,
-    y: 0,
-    w: 10,
-    h: 1.3,
+    x: 0, y: 0, w: 10, h: 1.3,
     fill: { color: SLIDE_COLORS.primary },
   });
 
-  // Title text
   slide.addText(data.title || 'Inhalt', {
-    x: 0.5,
-    y: 0.35,
-    w: 9,
-    h: 0.6,
-    fontSize: 28,
-    fontFace: 'Arial',
-    color: SLIDE_COLORS.white,
-    bold: true,
+    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
   });
 
   // Bullet points
   if (data.bullets && data.bullets.length > 0) {
     const bulletItems = data.bullets.map(text => ({
-      text,
+      text: cleanMarkdown(text),
       options: {
         bullet: { type: 'bullet', color: SLIDE_COLORS.primary },
         fontSize: 18,
         color: SLIDE_COLORS.text,
-        paraSpaceAfter: 12,
+        paraSpaceAfter: 14,
       },
     }));
 
     slide.addText(bulletItems, {
-      x: 0.7,
-      y: 1.8,
-      w: 8.6,
-      h: 4,
-      fontFace: 'Arial',
-      valign: 'top',
+      x: 0.7, y: 1.7, w: 8.6, h: 4.2,
+      fontFace: 'Arial', valign: 'top',
+    });
+  }
+};
+
+/**
+ * Create team slide
+ */
+const createTeamSlide = (pptx, data) => {
+  const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
+
+  // Title bar
+  slide.addShape('rect', {
+    x: 0, y: 0, w: 10, h: 1.3,
+    fill: { color: SLIDE_COLORS.accent },
+  });
+
+  slide.addText(data.title || 'Das Team', {
+    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
+  });
+
+  // Team members
+  if (data.members && data.members.length > 0) {
+    const cols = Math.min(data.members.length, 3);
+    const colWidth = 9 / cols;
+    const startY = 1.7;
+
+    data.members.forEach((member, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const x = 0.5 + (col * colWidth);
+      const y = startY + (row * 1.8);
+
+      // Role (bold)
+      slide.addText(member.role || 'Rolle', {
+        x, y, w: colWidth - 0.3, h: 0.4,
+        fontSize: 16, fontFace: 'Arial', color: SLIDE_COLORS.primary,
+        bold: true,
+      });
+
+      // Name
+      slide.addText(member.name || '[Name]', {
+        x, y: y + 0.4, w: colWidth - 0.3, h: 0.35,
+        fontSize: 14, fontFace: 'Arial', color: SLIDE_COLORS.dark,
+      });
+
+      // Responsibility
+      if (member.responsibility) {
+        slide.addText(member.responsibility, {
+          x, y: y + 0.75, w: colWidth - 0.3, h: 0.5,
+          fontSize: 12, fontFace: 'Arial', color: SLIDE_COLORS.textLight,
+        });
+      }
+    });
+  }
+};
+
+/**
+ * Create timeline/milestones slide
+ */
+const createTimelineSlide = (pptx, data) => {
+  const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
+
+  // Title bar
+  slide.addShape('rect', {
+    x: 0, y: 0, w: 10, h: 1.3,
+    fill: { color: SLIDE_COLORS.success },
+  });
+
+  slide.addText(data.title || 'Meilensteine', {
+    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
+  });
+
+  // Timeline
+  if (data.milestones && data.milestones.length > 0) {
+    const lineY = 3;
+    const count = data.milestones.length;
+    const spacing = 8 / Math.max(count - 1, 1);
+
+    // Horizontal line
+    slide.addShape('line', {
+      x: 1, y: lineY, w: 8, h: 0,
+      line: { color: SLIDE_COLORS.textLight, width: 2 },
+    });
+
+    data.milestones.forEach((milestone, index) => {
+      const x = 1 + (index * spacing);
+      const isCurrent = milestone.status === 'current';
+      const dotColor = isCurrent ? SLIDE_COLORS.primary : SLIDE_COLORS.textLight;
+
+      // Dot
+      slide.addShape('ellipse', {
+        x: x - 0.15, y: lineY - 0.15, w: 0.3, h: 0.3,
+        fill: { color: dotColor },
+      });
+
+      // Date above
+      slide.addText(milestone.date || '', {
+        x: x - 0.6, y: lineY - 0.9, w: 1.2, h: 0.4,
+        fontSize: 12, fontFace: 'Arial', color: SLIDE_COLORS.textLight,
+        align: 'center',
+      });
+
+      // Title below
+      slide.addText(milestone.title || '', {
+        x: x - 0.8, y: lineY + 0.4, w: 1.6, h: 0.8,
+        fontSize: 13, fontFace: 'Arial',
+        color: isCurrent ? SLIDE_COLORS.primary : SLIDE_COLORS.text,
+        bold: isCurrent,
+        align: 'center',
+      });
     });
   }
 };
@@ -316,42 +549,83 @@ const createQuoteSlide = (pptx, data) => {
 
   // Large quote mark
   slide.addText('"', {
-    x: 0.5,
-    y: 1,
-    w: 1,
-    h: 1.5,
-    fontSize: 120,
-    fontFace: 'Georgia',
-    color: SLIDE_COLORS.primary,
-    bold: true,
+    x: 0.5, y: 1, w: 1, h: 1.5,
+    fontSize: 120, fontFace: 'Georgia', color: SLIDE_COLORS.primary, bold: true,
   });
 
   // Quote text
-  slide.addText(data.quote || '', {
-    x: 1,
-    y: 2.2,
-    w: 8,
-    h: 2.5,
-    fontSize: 28,
-    fontFace: 'Georgia',
-    color: SLIDE_COLORS.dark,
-    italic: true,
-    align: 'center',
-    valign: 'middle',
+  slide.addText(cleanMarkdown(data.quote || ''), {
+    x: 1, y: 2.2, w: 8, h: 2.5,
+    fontSize: 28, fontFace: 'Georgia', color: SLIDE_COLORS.dark,
+    italic: true, align: 'center', valign: 'middle',
   });
 
-  // Source (if provided)
+  // Source
   if (data.source) {
     slide.addText(`— ${data.source}`, {
-      x: 1,
-      y: 4.8,
-      w: 8,
-      h: 0.5,
-      fontSize: 14,
-      fontFace: 'Arial',
-      color: SLIDE_COLORS.textLight,
-      align: 'center',
+      x: 1, y: 4.8, w: 8, h: 0.5,
+      fontSize: 14, fontFace: 'Arial', color: SLIDE_COLORS.textLight, align: 'center',
     });
+  }
+};
+
+/**
+ * Create two-column comparison slide
+ */
+const createTwoColumnsSlide = (pptx, data) => {
+  const slide = pptx.addSlide({ masterName: 'CONTENT_SLIDE' });
+
+  // Title bar
+  slide.addShape('rect', {
+    x: 0, y: 0, w: 10, h: 1.3,
+    fill: { color: SLIDE_COLORS.primary },
+  });
+
+  slide.addText(data.title || 'Vergleich', {
+    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
+  });
+
+  // Left column
+  if (data.left) {
+    slide.addText(data.left.heading || '', {
+      x: 0.5, y: 1.6, w: 4.2, h: 0.5,
+      fontSize: 20, fontFace: 'Arial', color: SLIDE_COLORS.primary, bold: true,
+    });
+
+    if (data.left.bullets) {
+      const leftItems = data.left.bullets.map(text => ({
+        text: cleanMarkdown(text),
+        options: { bullet: { type: 'bullet' }, fontSize: 16, color: SLIDE_COLORS.text, paraSpaceAfter: 10 },
+      }));
+      slide.addText(leftItems, {
+        x: 0.5, y: 2.2, w: 4.2, h: 3.5, fontFace: 'Arial', valign: 'top',
+      });
+    }
+  }
+
+  // Divider line
+  slide.addShape('line', {
+    x: 5, y: 1.6, w: 0, h: 4,
+    line: { color: SLIDE_COLORS.textLight, width: 1 },
+  });
+
+  // Right column
+  if (data.right) {
+    slide.addText(data.right.heading || '', {
+      x: 5.3, y: 1.6, w: 4.2, h: 0.5,
+      fontSize: 20, fontFace: 'Arial', color: SLIDE_COLORS.accent, bold: true,
+    });
+
+    if (data.right.bullets) {
+      const rightItems = data.right.bullets.map(text => ({
+        text: cleanMarkdown(text),
+        options: { bullet: { type: 'bullet' }, fontSize: 16, color: SLIDE_COLORS.text, paraSpaceAfter: 10 },
+      }));
+      slide.addText(rightItems, {
+        x: 5.3, y: 2.2, w: 4.2, h: 3.5, fontFace: 'Arial', valign: 'top',
+      });
+    }
   }
 };
 
@@ -363,29 +637,19 @@ const createSummarySlide = (pptx, data) => {
 
   // Title bar with accent color
   slide.addShape('rect', {
-    x: 0,
-    y: 0,
-    w: 10,
-    h: 1.3,
+    x: 0, y: 0, w: 10, h: 1.3,
     fill: { color: SLIDE_COLORS.accent },
   });
 
-  // Title text
   slide.addText(data.title || 'Zusammenfassung', {
-    x: 0.5,
-    y: 0.35,
-    w: 9,
-    h: 0.6,
-    fontSize: 28,
-    fontFace: 'Arial',
-    color: SLIDE_COLORS.white,
-    bold: true,
+    x: 0.5, y: 0.35, w: 9, h: 0.6,
+    fontSize: 28, fontFace: 'Arial', color: SLIDE_COLORS.white, bold: true,
   });
 
   // Bullet points with checkmarks
   if (data.bullets && data.bullets.length > 0) {
     const bulletItems = data.bullets.map(text => ({
-      text: `✓  ${text}`,
+      text: `✓  ${cleanMarkdown(text)}`,
       options: {
         fontSize: 20,
         color: SLIDE_COLORS.dark,
@@ -395,14 +659,23 @@ const createSummarySlide = (pptx, data) => {
     }));
 
     slide.addText(bulletItems, {
-      x: 0.7,
-      y: 1.8,
-      w: 8.6,
-      h: 4,
-      fontFace: 'Arial',
-      valign: 'top',
+      x: 0.7, y: 1.8, w: 8.6, h: 4,
+      fontFace: 'Arial', valign: 'top',
     });
   }
+};
+
+/**
+ * Clean markdown formatting from text (remove ** etc.)
+ */
+const cleanMarkdown = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/\*\*/g, '')  // Remove bold **
+    .replace(/\*/g, '')    // Remove italic *
+    .replace(/__/g, '')    // Remove bold __
+    .replace(/_/g, ' ')    // Replace underscores
+    .trim();
 };
 
 // =============================================================================
