@@ -946,17 +946,27 @@ const BriefingWorkbook = ({
       sections: prev.sections.map((s) => {
         if (s.id !== sectionId) return s;
 
+        // Parse ai_content if it's a string (it's stored as JSON string)
+        let content;
+        try {
+          content = typeof s.ai_content === 'string'
+            ? JSON.parse(s.ai_content)
+            : s.ai_content;
+        } catch {
+          console.error('[SmartBriefing] Failed to parse ai_content');
+          return s;
+        }
+
+        if (!content?.items) return s;
+
         // Update the specific item in the section
-        const updatedItems = s.ai_content?.items?.map((item) =>
+        const updatedItems = content.items.map((item) =>
           item.id === itemId ? response.item : item
         );
 
         return {
           ...s,
-          ai_content: {
-            ...s.ai_content,
-            items: updatedItems,
-          },
+          ai_content: JSON.stringify({ ...content, items: updatedItems }),
         };
       }),
     }));
@@ -974,7 +984,20 @@ const BriefingWorkbook = ({
       sections: prev.sections.map((s) => {
         if (s.id !== sectionId) return s;
 
-        const updatedItems = s.ai_content?.items?.map((item) => {
+        // Parse ai_content if it's a string (it's stored as JSON string)
+        let content;
+        try {
+          content = typeof s.ai_content === 'string'
+            ? JSON.parse(s.ai_content)
+            : s.ai_content;
+        } catch {
+          console.error('[SmartBriefing] Failed to parse ai_content');
+          return s;
+        }
+
+        if (!content?.items) return s;
+
+        const updatedItems = content.items.map((item) => {
           if (item.id !== itemId) return item;
 
           return {
@@ -987,10 +1010,7 @@ const BriefingWorkbook = ({
 
         return {
           ...s,
-          ai_content: {
-            ...s.ai_content,
-            items: updatedItems,
-          },
+          ai_content: JSON.stringify({ ...content, items: updatedItems }),
         };
       }),
     }));
@@ -1002,15 +1022,24 @@ const BriefingWorkbook = ({
     const newLabel = `Vertiefung: ${sourceLabel}`;
     const newContent = answer.length > 200 ? answer.substring(0, 200) + '...' : answer;
 
-    // We need to add a new item to the section
-    // For now, we'll use the update endpoint to add to the items array
-    // This requires a backend change or we store it locally
-
     // Update local state to add the new item
     setBriefing((prev) => ({
       ...prev,
       sections: prev.sections.map((s) => {
         if (s.id !== sectionId) return s;
+
+        // Parse ai_content if it's a string (it's stored as JSON string)
+        let content;
+        try {
+          content = typeof s.ai_content === 'string'
+            ? JSON.parse(s.ai_content)
+            : s.ai_content;
+        } catch {
+          console.error('[SmartBriefing] Failed to parse ai_content');
+          return s;
+        }
+
+        if (!content?.items) return s;
 
         const newItem = {
           id: crypto.randomUUID(),
@@ -1023,10 +1052,7 @@ const BriefingWorkbook = ({
 
         return {
           ...s,
-          ai_content: {
-            ...s.ai_content,
-            items: [...(s.ai_content?.items || []), newItem],
-          },
+          ai_content: JSON.stringify({ ...content, items: [...content.items, newItem] }),
         };
       }),
     }));
