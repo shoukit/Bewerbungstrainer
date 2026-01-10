@@ -44,6 +44,7 @@ import {
 
 /**
  * Extract individual bullet points/action items from AI response text
+ * Returns objects with label (bold part) and content (rest)
  */
 const parseActionPoints = (text) => {
   if (!text) return [];
@@ -57,10 +58,29 @@ const parseActionPoints = (text) => {
     const bulletMatch = trimmed.match(/^[\*\-•]\s+(.+)$/);
     const numberedMatch = trimmed.match(/^\d+[\.\)]\s+(.+)$/);
 
+    let content = null;
     if (bulletMatch) {
-      actionPoints.push(bulletMatch[1].trim());
+      content = bulletMatch[1].trim();
     } else if (numberedMatch) {
-      actionPoints.push(numberedMatch[1].trim());
+      content = numberedMatch[1].trim();
+    }
+
+    if (content) {
+      // Try to extract bold label: **Label:** rest
+      const boldMatch = content.match(/^\*\*([^*]+)\*\*:?\s*(.*)$/);
+      if (boldMatch) {
+        actionPoints.push({
+          label: boldMatch[1].trim(),
+          content: boldMatch[2].trim() || '',
+        });
+      } else {
+        // No bold label - use first part as label
+        const firstSentence = content.split(/[.!?]/)[0];
+        actionPoints.push({
+          label: firstSentence.length > 50 ? firstSentence.substring(0, 50) + '...' : firstSentence,
+          content: content,
+        });
+      }
     }
   }
 
@@ -263,7 +283,7 @@ const DeletedItemRow = ({ item, onRestore }) => (
  * ExplanationCard - Collapsible AI explanation with individual action points
  */
 const ExplanationCard = ({ explanation, onDelete, onAddAsItem, onAddActionPoint, itemLabel }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true); // Initially expanded
   const actionPoints = parseActionPoints(explanation.answer);
 
   const getTitle = () => {
@@ -355,22 +375,35 @@ const ExplanationCard = ({ explanation, onDelete, onAddAsItem, onAddActionPoint,
                     <Plus size={12} />
                     Einzelne Punkte hinzufügen:
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {actionPoints.map((point, idx) => (
                       <div
                         key={idx}
-                        className="flex items-start gap-2 p-2 bg-amber-50/50 rounded-lg hover:bg-amber-100/50 transition-colors group"
+                        className="p-2.5 bg-white rounded-xl border border-amber-100 hover:border-amber-200 hover:shadow-sm transition-all group"
                       >
-                        <span className="text-[12px] text-slate-600 flex-1 leading-snug">
-                          {point.length > 80 ? point.substring(0, 80) + '...' : point}
-                        </span>
-                        <button
-                          onClick={() => onAddActionPoint(point)}
-                          title="Diesen Punkt zur Liste hinzufügen"
-                          className="p-1 rounded bg-transparent border-none text-amber-600 cursor-pointer hover:text-indigo-600 hover:bg-white transition-all opacity-60 group-hover:opacity-100"
-                        >
-                          <Plus size={14} />
-                        </button>
+                        <div className="flex items-start gap-2">
+                          {/* Bullet point */}
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0 mt-1.5" />
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <h5 className="text-[13px] font-semibold text-slate-800 m-0 mb-0.5 leading-snug">
+                              {point.label}
+                            </h5>
+                            {point.content && point.content !== point.label && (
+                              <p className="text-[12px] text-slate-600 m-0 leading-snug">
+                                {point.content.length > 120 ? point.content.substring(0, 120) + '...' : point.content}
+                              </p>
+                            )}
+                          </div>
+                          {/* Add button */}
+                          <button
+                            onClick={() => onAddActionPoint(point)}
+                            title="Diesen Punkt zur Liste hinzufügen"
+                            className="p-1.5 rounded-lg bg-transparent border-none text-amber-600 cursor-pointer hover:text-white hover:bg-indigo-500 transition-all opacity-60 group-hover:opacity-100 flex-shrink-0"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1211,11 +1244,11 @@ const BriefingWorkbook = ({
   }, []);
 
   // Handler for adding a single action point from AI explanation
+  // actionPoint is now an object: { label: string, content: string }
   const handleAddActionPoint = useCallback((sectionId, actionPoint, sourceLabel) => {
-    // Create a concise label from the action point
-    const newLabel = actionPoint.length > 60
-      ? actionPoint.substring(0, 60) + '...'
-      : actionPoint;
+    // Use the parsed label and content from actionPoint object
+    const newLabel = actionPoint.label || 'Neuer Punkt';
+    const newContent = actionPoint.content || actionPoint.label || '';
 
     // Update local state to add the new item
     setBriefing((prev) => ({
@@ -1239,7 +1272,7 @@ const BriefingWorkbook = ({
         const newItem = {
           id: crypto.randomUUID(),
           label: newLabel,
-          content: actionPoint,
+          content: newContent,
           user_note: '',
           deleted: false,
           ai_explanations: [],
@@ -1309,79 +1342,69 @@ const BriefingWorkbook = ({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header - Full width sticky with minimize on scroll */}
-      <motion.div
-        className="sticky top-0 z-40 transition-all duration-300"
+      {/* Header - Full width sticky with minimize on scroll (using CSS transitions to prevent flickering) */}
+      <div
+        className={`sticky top-0 z-40 transition-all duration-300 ease-out ${
+          isHeaderMinimized
+            ? isMobile ? 'py-2' : 'py-2.5'
+            : isMobile ? 'py-5' : 'py-6'
+        }`}
         style={{ background: 'var(--header-gradient, linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%))' }}
-        animate={{
-          paddingTop: isHeaderMinimized ? (isMobile ? '8px' : '10px') : (isMobile ? '20px' : '24px'),
-          paddingBottom: isHeaderMinimized ? (isMobile ? '8px' : '10px') : (isMobile ? '20px' : '24px'),
-        }}
-        transition={{ duration: 0.2 }}
       >
         <div className={`max-w-[1400px] mx-auto ${isMobile ? 'px-4' : 'px-8'}`}>
-          {/* Back Button - Hidden when minimized */}
-          <AnimatePresence>
-            {onBack && !isHeaderMinimized && (
-              <motion.button
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
+          {/* Back Button - Hidden when minimized (CSS transition) */}
+          {onBack && (
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out ${
+                isHeaderMinimized ? 'max-h-0 opacity-0 mb-0' : 'max-h-12 opacity-100 mb-4'
+              }`}
+            >
+              <button
                 onClick={onBack}
-                className="flex items-center gap-1.5 bg-white/15 border-none rounded-xl px-3 py-2 cursor-pointer text-white text-[13px] mb-4 hover:bg-white/25 hover:shadow-lg transition-all"
+                className="flex items-center gap-1.5 bg-white/15 border-none rounded-xl px-3 py-2 cursor-pointer text-white text-[13px] hover:bg-white/25 hover:shadow-lg transition-all"
               >
                 <ArrowLeft size={16} />
                 Zurück zur Übersicht
-              </motion.button>
-            )}
-          </AnimatePresence>
+              </button>
+            </div>
+          )}
 
           {/* Header Content */}
           <div className="flex items-center gap-4 md:gap-6">
-            {/* Icon - Hidden on mobile and when minimized */}
-            <AnimatePresence>
-              {!isMobile && !isHeaderMinimized && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8, width: 0 }}
-                  animate={{ opacity: 1, scale: 1, width: '90px' }}
-                  exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                  className="h-[90px] rounded-full bg-white/20 flex items-center justify-center flex-shrink-0"
-                >
-                  <IconComponent size={40} className="text-white" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Small icon when minimized (non-mobile) */}
-            {!isMobile && isHeaderMinimized && (
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <IconComponent size={20} className="text-white" />
+            {/* Icon - Transforms between large and small based on minimize state */}
+            {!isMobile && (
+              <div
+                className={`rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 transition-all duration-300 ease-out ${
+                  isHeaderMinimized ? 'w-10 h-10' : 'w-[90px] h-[90px]'
+                }`}
+              >
+                <IconComponent
+                  size={isHeaderMinimized ? 20 : 40}
+                  className="text-white transition-all duration-300"
+                />
               </div>
             )}
 
             {/* Title & Meta */}
             <div className="flex-1 min-w-0">
-              {/* Tags - Hidden when minimized */}
-              <AnimatePresence>
-                {!isHeaderMinimized && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-3 flex-wrap mb-2"
-                  >
-                    <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
-                      Smart Briefing
-                    </span>
-                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-indigo-700">
-                      {briefing.template_title}
-                    </span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Tags - Hidden when minimized (CSS transition) */}
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-out ${
+                  isHeaderMinimized ? 'max-h-0 opacity-0 mb-0' : 'max-h-10 opacity-100 mb-2'
+                }`}
+              >
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/20 text-white">
+                    Smart Briefing
+                  </span>
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/90 text-indigo-700">
+                    {briefing.template_title}
+                  </span>
+                </div>
+              </div>
 
               {/* Title - Smaller when minimized */}
-              <h1 className={`font-bold text-white m-0 truncate transition-all duration-200 ${
+              <h1 className={`font-bold text-white m-0 truncate transition-all duration-300 ease-out ${
                 isHeaderMinimized
                   ? 'text-base md:text-lg mb-0'
                   : isMobile ? 'text-xl mb-2' : 'text-2xl mb-2'
@@ -1389,22 +1412,19 @@ const BriefingWorkbook = ({
                 {briefing.title || 'Briefing'}
               </h1>
 
-              {/* Date - Hidden when minimized */}
-              <AnimatePresence>
-                {!isHeaderMinimized && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-4 flex-wrap"
-                  >
-                    <span className="flex items-center gap-1.5 text-[13px] text-white/80">
-                      <Calendar size={14} />
-                      {formatDateTime(briefing.created_at)}
-                    </span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Date - Hidden when minimized (CSS transition) */}
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-out ${
+                  isHeaderMinimized ? 'max-h-0 opacity-0' : 'max-h-8 opacity-100'
+                }`}
+              >
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="flex items-center gap-1.5 text-[13px] text-white/80">
+                    <Calendar size={14} />
+                    {formatDateTime(briefing.created_at)}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Action Buttons */}
@@ -1435,7 +1455,7 @@ const BriefingWorkbook = ({
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Main Content */}
       <div className={`max-w-[900px] mx-auto ${isMobile ? 'p-4' : 'px-8 py-6'}`}>
