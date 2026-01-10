@@ -43,6 +43,7 @@ const IkigaiApp = ({
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [savedIkigaiId, setSavedIkigaiId] = useState(null);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [isGeneratingMore, setIsGeneratingMore] = useState(false);
 
   // Microphone state - managed at app level, persisted to localStorage
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState(() => {
@@ -281,6 +282,34 @@ const IkigaiApp = ({
   }, []);
 
   /**
+   * Handle generate more career paths
+   */
+  const handleGenerateMore = useCallback(async () => {
+    if (!savedIkigaiId) {
+      console.error('[Ikigai] Cannot generate more paths: No saved session ID');
+      return;
+    }
+
+    setIsGeneratingMore(true);
+
+    try {
+      const response = await wordpressAPI.generateMoreIkigaiPaths(savedIkigaiId);
+
+      if (response?.allPaths) {
+        setSynthesisResult((prev) => ({
+          ...prev,
+          paths: response.allPaths,
+        }));
+        console.log('[Ikigai] Generated more paths:', response.newPaths?.length || 0, 'new paths');
+      }
+    } catch (err) {
+      console.error('[Ikigai] Failed to generate more paths:', err);
+    } finally {
+      setIsGeneratingMore(false);
+    }
+  }, [savedIkigaiId]);
+
+  /**
    * Render current view
    */
   const renderContent = () => {
@@ -317,6 +346,8 @@ const IkigaiApp = ({
               synthesisResult={synthesisResult}
               onStartNew={handleStartNew}
               onEdit={handleEdit}
+              onGenerateMore={savedIkigaiId ? handleGenerateMore : null}
+              isGeneratingMore={isGeneratingMore}
               DIMENSIONS={DIMENSIONS}
             />
           </>

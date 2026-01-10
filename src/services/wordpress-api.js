@@ -1196,6 +1196,28 @@ class WordPressAPI {
         throw new Error(response.message || 'Fehler beim Erstellen der Karrierepfade');
     }
 
+    /**
+     * Generate more career paths for an existing ikigai session
+     *
+     * @param {number} ikigaiId - Ikigai session ID
+     * @returns {Promise<object>} Object with newPaths and allPaths
+     */
+    async generateMoreIkigaiPaths(ikigaiId) {
+        const response = await this.request(`/ikigai/${ikigaiId}/generate-more`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+
+        if (response.success && response.data) {
+            return {
+                newPaths: response.data.new_paths,
+                allPaths: response.data.all_paths
+            };
+        }
+
+        throw new Error(response.message || 'Fehler beim Generieren weiterer Karrierepfade');
+    }
+
     // ===== Audio Transcription API Methods =====
 
     /**

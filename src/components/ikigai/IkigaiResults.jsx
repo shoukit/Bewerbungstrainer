@@ -14,6 +14,11 @@ import {
   Star,
   Globe,
   Coins,
+  Building2,
+  MapPin,
+  Lightbulb,
+  Loader2,
+  Plus,
 } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 import { useMobile } from '@/hooks/useMobile';
@@ -37,14 +42,17 @@ const DIMENSION_ICONS = {
  *
  * Shows the synthesized career paths with:
  * - Summary connecting all dimensions
- * - 3 career path cards
+ * - Career path cards with job resources
  * - Training scenario recommendations
+ * - Button to generate more suggestions
  */
 const IkigaiResults = ({
   dimensions,
   synthesisResult,
   onStartNew,
   onEdit,
+  onGenerateMore,
+  isGeneratingMore,
   DIMENSIONS,
 }) => {
   const b = useBranding();
@@ -124,12 +132,17 @@ const IkigaiResults = ({
   };
 
   /**
-   * Card colors for paths (using dimension colors)
+   * Card colors for paths (using dimension colors + additional colors for more paths)
    */
   const pathColors = [
     { bg: `${DIMENSIONS.love.color}08`, border: DIMENSIONS.love.color, accent: DIMENSIONS.love.color },
     { bg: `${DIMENSIONS.talent.color}08`, border: DIMENSIONS.talent.color, accent: DIMENSIONS.talent.color },
     { bg: `${DIMENSIONS.need.color}08`, border: DIMENSIONS.need.color, accent: DIMENSIONS.need.color },
+    { bg: `${DIMENSIONS.market.color}08`, border: DIMENSIONS.market.color, accent: DIMENSIONS.market.color },
+    { bg: `${COLORS.violet[500]}08`, border: COLORS.violet[500], accent: COLORS.violet[500] },
+    { bg: `${COLORS.cyan[500]}08`, border: COLORS.cyan[500], accent: COLORS.cyan[500] },
+    { bg: `${COLORS.rose[500]}08`, border: COLORS.rose[500], accent: COLORS.rose[500] },
+    { bg: `${COLORS.teal[500]}08`, border: COLORS.teal[500], accent: COLORS.teal[500] },
   ];
 
   return (
@@ -339,6 +352,97 @@ const IkigaiResults = ({
                   </div>
                 </div>
 
+                {/* Job Resources Section */}
+                {path.job_resources && (
+                  <div
+                    style={{
+                      padding: b.space[4],
+                      borderRadius: b.radius.xl,
+                      marginBottom: b.space[4],
+                      backgroundColor: `${COLORS.amber[500]}10`,
+                      border: `1px solid ${COLORS.amber[500]}30`,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], marginBottom: b.space[3] }}>
+                      <MapPin size={18} style={{ color: COLORS.amber[600] }} />
+                      <span style={{ fontWeight: b.fontWeight.semibold, color: COLORS.amber[700] }}>
+                        Wo findest du solche Jobs?
+                      </span>
+                    </div>
+
+                    {/* Companies */}
+                    {path.job_resources.companies && path.job_resources.companies.length > 0 && (
+                      <div style={{ marginBottom: b.space[3] }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], marginBottom: b.space[1] }}>
+                          <Building2 size={14} style={{ color: b.textMuted }} />
+                          <span style={{ fontSize: b.fontSize.sm, fontWeight: b.fontWeight.medium, color: b.textSecondary }}>
+                            Unternehmen & Organisationen:
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginLeft: '22px' }}>
+                          {path.job_resources.companies.map((company, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                padding: `2px ${b.space[2]}`,
+                                borderRadius: b.radius.md,
+                                fontSize: b.fontSize.sm,
+                                backgroundColor: b.cardBgColor,
+                                color: b.textMain,
+                                border: `1px solid ${b.borderColor}`,
+                              }}
+                            >
+                              {company}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Job Boards */}
+                    {path.job_resources.job_boards && path.job_resources.job_boards.length > 0 && (
+                      <div style={{ marginBottom: b.space[3] }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: b.space[2], marginBottom: b.space[1] }}>
+                          <Globe size={14} style={{ color: b.textMuted }} />
+                          <span style={{ fontSize: b.fontSize.sm, fontWeight: b.fontWeight.medium, color: b.textSecondary }}>
+                            Jobbörsen & Plattformen:
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginLeft: '22px' }}>
+                          {path.job_resources.job_boards.map((board, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                padding: `2px ${b.space[2]}`,
+                                borderRadius: b.radius.md,
+                                fontSize: b.fontSize.sm,
+                                backgroundColor: b.cardBgColor,
+                                color: b.textMain,
+                                border: `1px solid ${b.borderColor}`,
+                              }}
+                            >
+                              {board}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Search Tips */}
+                    {path.job_resources.search_tips && (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: b.space[2] }}>
+                          <Lightbulb size={14} style={{ color: COLORS.amber[600], flexShrink: 0, marginTop: '2px' }} />
+                          <span style={{ fontSize: b.fontSize.sm, color: b.textSecondary }}>
+                            <span style={{ fontWeight: b.fontWeight.medium }}>Tipp: </span>
+                            {path.job_resources.search_tips}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Training tags */}
                 {path.training_tags && path.training_tags.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: b.space[2], marginBottom: b.space[4] }}>
@@ -441,6 +545,51 @@ const IkigaiResults = ({
           );
         })}
       </div>
+
+      {/* Generate More Button */}
+      {onGenerateMore && synthesisResult?.paths?.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: b.space[8],
+          }}
+        >
+          <Button
+            onClick={onGenerateMore}
+            disabled={isGeneratingMore}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: b.space[2],
+              padding: `${b.space[3]} ${b.space[6]}`,
+              borderRadius: b.radius.xl,
+              fontWeight: b.fontWeight.medium,
+              border: `2px dashed ${COLORS.emerald[500]}`,
+              color: isGeneratingMore ? b.textMuted : COLORS.emerald[600],
+              background: isGeneratingMore ? b.disabledBg : `${COLORS.emerald[500]}10`,
+              cursor: isGeneratingMore ? 'wait' : 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {isGeneratingMore ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                <span>Generiere weitere Vorschläge...</span>
+              </>
+            ) : (
+              <>
+                <Plus size={20} />
+                <span>Weitere 3 Vorschläge generieren</span>
+              </>
+            )}
+          </Button>
+        </motion.div>
+      )}
 
       {/* Actions */}
       <motion.div
