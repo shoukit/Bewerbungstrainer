@@ -36,6 +36,26 @@ const getApiKey = () => {
 };
 
 /**
+ * Log prompt and response via WordPress API
+ */
+const logPromptAndResponse = async (prompt, response, metadata = {}) => {
+  try {
+    await wordpressAPI.request('/log-prompt', {
+      method: 'POST',
+      body: JSON.stringify({
+        scenario: 'PRESENTATION_GENERATOR',
+        description: 'Transformation von Smart Briefing zu PowerPoint-Präsentation',
+        prompt: prompt,
+        response: response,
+        metadata: metadata,
+      }),
+    });
+  } catch (err) {
+    console.warn('[PresentationGen] Failed to log prompt:', err.message);
+  }
+};
+
+/**
  * Generate presentation structure using Gemini
  */
 const generatePresentationStructure = async (data) => {
@@ -117,6 +137,15 @@ WICHTIG: Antworte NUR mit dem JSON, keine Erklärungen davor oder danach!`;
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent(prompt);
       const response = result.response.text();
+
+      // Log prompt and response
+      await logPromptAndResponse(prompt, response, {
+        model: modelName,
+        briefingTitle: data.briefingTitle,
+        goal: data.goal,
+        sectionsCount: data.sections?.length,
+        itemsCount: data.sections?.reduce((acc, s) => acc + s.items.length, 0),
+      });
 
       // Parse JSON from response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
